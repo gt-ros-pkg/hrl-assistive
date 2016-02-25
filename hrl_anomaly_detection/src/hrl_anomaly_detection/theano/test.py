@@ -1,6 +1,7 @@
 import theano
 import theano.tensor as T
 import layer as l
+from theano import function, config, shared, sandbox
 
 # system util
 import sys, os
@@ -31,7 +32,7 @@ def load_params(filename):
 
 def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size, time_window, \
           filename, nSingleData, \
-          viz=False, max_iteration=100000, save=False):
+          viz=False, max_iteration=100000, save=False, cuda=False):
 
     # Set initial parameter values
     W_init_en = []
@@ -45,10 +46,12 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
     for n_input, n_output in zip(layer_sizes[:-1], layer_sizes[1:]):
         W_init_en.append(np.random.randn(n_output, n_input))
         b_init_en.append(np.ones(n_output))
+            
         # We'll use sigmoid activation for all layers
         # Note that this doesn't make a ton of sense when using squared distance
         # because the sigmoid function is bounded on [0, 1].
-        activations_en.append(T.tanh) #T.nnet.tanh
+        activations_en.append( T.tanh ) #T.nnet.tanh
+            
 
     # Decoder layers
     layer_sizes = list(reversed(layer_sizes))
@@ -56,6 +59,7 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
         W_init_de.append(np.random.randn(n_output, n_input))
         b_init_de.append(np.ones(n_output))
         activations_de.append(T.tanh)
+            
     ## activations_de[-1] = None
 
     # Create an instance of the MLP class
@@ -63,8 +67,8 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
                W_init_de, b_init_de, activations_de, nEncoderLayers=len(layer_sizes)-1)
 
     # Create Theano variables for the MLP input
-    mlp_input = T.matrix('mlp_input')
-    mlp_target = T.matrix('mlp_target')
+    mlp_input = T.dmatrix('mlp_input')
+    mlp_target = T.dmatrix('mlp_target')
     cost = mlp.squared_error(mlp_input, mlp_target)
     print 'Creating a theano function for training the network'
     train = theano.function([mlp_input, mlp_target], cost,
@@ -100,7 +104,12 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
         count = 0.0
         for i in range(0, X_train.shape[1]-batch_size+1, batch_size):
             count += 1.0
-            train_loss += train(X_train[:,i:i+batch_size], X_train[:,i:i+batch_size])
+            if cuda:
+                train_loss += train( shared(X_train[:,i:i+batch_size], borrow=True), \
+                                     shared(X_train[:,i:i+batch_size], borrow=True))
+            else:
+                train_loss += train(X_train[:,i:i+batch_size], X_train[:,i:i+batch_size])
+                
         train_loss /= (count*batch_size)
         train_loss /= float(time_window)
         if np.isnan(train_loss) or np.isinf(train_loss):
@@ -109,7 +118,12 @@ def train(X_train, layer_sizes, learning_rate, momentum, lambda_reg, batch_size,
         
         if iteration%20 == 0:
             # testing
-            test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
+            if cuda:
+                test_loss = mlp_cost( shared(X_test, borrow=True),
+                                      shared(X_test, borrow=True))/float(len(X_test[0]))
+            else:
+                test_loss = mlp_cost(X_test, X_test)/float(len(X_test[0]))
+                
             test_loss /= float(time_window)
             if np.isnan(test_loss) or np.isinf(test_loss):
                 print "Test loss is NaN with iter ", iteration
@@ -159,8 +173,6 @@ def test(X_test, filename, nSingleData, time_window, bReconstruct=False):
     mlp_features = load_params(filename)
     err = 0.0
 
-    fig = plt.figure(1)
-    ax = fig.add_subplot(111)
     print "X_test: ", np.shape( X_test )
 
     feature_list = []
@@ -170,20 +182,22 @@ def test(X_test, filename, nSingleData, time_window, bReconstruct=False):
         test_features = mlp_features( X_test[:,i:i+nSingleData] )
         feature_list.append(test_features)
 
-    print "Total samples : ", count
+        print "Total samples : ", count
 
-    for i in xrange(len(feature_list)):
+        fig = plt.figure(1)
+        ax = fig.add_subplot(111)
+        for i in xrange(len(feature_list)):
 
-        # get mean, var        
-        colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])        
-        for j in xrange(5):
-            color = colors.next()
-            ax.plot(feature_list[i][j,:], c=color)
+            # get mean, var        
+            colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])        
+            for j in xrange(3):
+                color = colors.next()
+                ax.plot(feature_list[i][j,:], c=color)
 
-        if i==3:
-            break
-    plt.show()
-        
+            ## if i==3:
+            ##     break
+        plt.show()
+
     
 if __name__ == '__main__':
 
@@ -205,14 +219,14 @@ if __name__ == '__main__':
     p.add_option('--learning_rate', '--lr', action='store', dest='fLearningRate',
                  type="float", default=0.001, help='Size of time window ....')
     p.add_option('--momentum', '--m', action='store', dest='fMomentum',
-                 type="float", default=0, help='Size of time window ....1e-5')
+                 type="float", default=1e-5, help='Size of time window ....1e-5')
     p.add_option('--lambda', '--lb', action='store', dest='fLambda',
-                 type="float", default=0, help='Lambda for regularization 1e-8')
+                 type="float", default=1e-5, help='Lambda for regularization 1e-8')
     p.add_option('--batch_size', '--bs', action='store', dest='nBatchSize',
-                 type="int", default=1, help='Size of batches ....')
+                 type="int", default=64, help='Size of batches ....')
 
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
-                 default="[25, 15, 5]", help='Size of layers ....')
+                 default="[256, 64, 16]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
                  type="int", default=100000, help='Max iteration ....')
     
