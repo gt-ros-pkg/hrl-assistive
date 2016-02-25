@@ -51,12 +51,14 @@ from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
+        self.listener = tf.TransformListener()
 
         #Variables...! #
         self.stop_motion = False
         self.verbose = verbose
 
         self.default_frame      = PyKDL.Frame()
+        self.knee_left = None
 
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -132,7 +134,8 @@ class armReachAction(mpcBaseAction):
 
         now = rospy.Time.now()
         self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(15))
-        (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
+        (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', )
+        print trans, '\n', rot
         p = PyKDL.Vector(trans[0], trans[1], trans[2])
         M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
         self.knee_left = PyKDL.Frame(M, p)
@@ -140,10 +143,10 @@ class armReachAction(mpcBaseAction):
         # import tf.transformations as tft
         # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
 
-        self.motions['left_knee'] = {}
-        self.motions['left_knee']['left'] = \
+        self.motions['leftKnee'] = {}
+        self.motions['leftKnee']['left'] = \
           [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 2., 'self.knee_left']]
-        self.motions['initTest']['right'] = []
+        self.motions['leftKnee']['right'] = []
                                                             
         rospy.loginfo("Parameters are loaded.")
 
