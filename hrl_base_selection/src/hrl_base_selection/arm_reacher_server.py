@@ -129,9 +129,20 @@ class armReachAction(mpcBaseAction):
         self.motions['initTest']['right'] = []
 
 
-        self.motions['right_knee'] = {}
-        self.motions['right_knee']['left'] = \
-          [['MOVES', '[1.406576, -0.041661, 0.714539, 1.4465015328401096, 1.2775181543905938, -1.70597295530571]', 2., 'autobed/calf_right_link']]
+
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(15))
+        (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
+        p = PyKDL.Vector(trans[0], trans[1], trans[2])
+        M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
+        self.knee_left = PyKDL.Frame(M, p)
+        # reference_B_goal = (array([-0.04310556,  0.07347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
+        # import tf.transformations as tft
+        # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
+
+        self.motions['left_knee'] = {}
+        self.motions['left_knee']['left'] = \
+          [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 2., 'self.knee_left']]
         self.motions['initTest']['right'] = []
                                                             
         rospy.loginfo("Parameters are loaded.")

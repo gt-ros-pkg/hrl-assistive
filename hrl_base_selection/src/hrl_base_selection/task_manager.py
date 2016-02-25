@@ -61,7 +61,13 @@ class BaseSelectionManager(object):
             self.pkg_path = rospack.get_path('hrl_base_selection')
             self.autobed_empty_model_file = ''.join([self.pkg_path, '/urdf/empty_autobed.URDF'])
             self.autobed_occupied_model_file = ''.join([self.pkg_path, '/urdf/occupied_autobed.URDF'])
-            self.autobed_occupied_status = autobed_occupied_status_client().state
+            rospy.wait_for_service('autobed_occ_status')
+            try:
+                AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+                self.autobed_occupied_status = AutobedOcc().data
+
+            except rospy.ServiceException, e:
+                print "Service call failed: %s"%e
 
         if self.mode == 'ar_tag':
             self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
@@ -153,7 +159,7 @@ class BaseSelectionManager(object):
         rospy.loginfo("[%s] Found head frame" % rospy.get_name())
         # self.test_head_pub.publish(self.head_pose)
         if self.model == 'autobed':
-            self.autobed_occupied_status = autobed_occupied_status_client().state
+            self.autobed_occupied_status = AutobedOcc().data
             if self.autobed_occupied_status:
                 continue
                 # autobed_description_file = self.autobed_occupied_model_file

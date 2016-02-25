@@ -33,6 +33,14 @@ class AutobedStatePublisherNode(object):
     def __init__(self):
         self.joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=100)
 
+        rospy.wait_for_service('autobed_occ_status')
+        try:
+            AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+            self.autobed_occupied_status = AutobedOcc().data
+
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+
         # self.autobed_occupied_state_client = autobed_occupied_status_client()
         # self.pressure_grid_pub = rospy.Publisher('pressure_grid', Marker)
         self.sendToRviz=tf.TransformBroadcaster()
@@ -144,7 +152,7 @@ class AutobedStatePublisherNode(object):
             self.joint_pub.publish(joint_state)
 
             # self.set_autobed_user_configuration(self.head_filt_data, autobed_occupied_status_client().state)
-            self.set_autobed_user_configuration(self.head_filt_data, True)
+            self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
             rate.sleep()
         return
 
@@ -172,7 +180,6 @@ class AutobedStatePublisherNode(object):
         human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
         human_joint_state.name[15] = "autobed/head_neck_joint1"
         human_joint_state.name[16] = "autobed/head_neck_joint2"
-
 
         bth = m.degrees(headrest_th)
         # bth = headrest_th
