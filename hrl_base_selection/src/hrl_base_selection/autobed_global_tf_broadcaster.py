@@ -18,31 +18,30 @@ class AutobedGlobalTFBroadcaster(object):
         self.out_trans = None
         self.out_rot = None
         self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
-        try:
-            while (not self.tf_listener.canTransform('odom_combined', 'torso_lift_link', rospy.Time(0))):
+
+        while (not self.tf_listener.canTransform('odom_combined', 'torso_lift_link', rospy.Time(0))):
+            try:
+                print 'Waiting for PR2 localization in world.'
+                rospy.sleep(1)
+            except:
+                print 'Bed TF broadcaster crashed!'
+                break
+        rospy.sleep(1)
+        while not rospy.is_shutdown():
+            if self.map_B_bed is not None:
                 try:
-                    print 'Waiting for PR2 localization in world.'
-                    rospy.sleep(1)
+                    self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
+                                                      rospy.Time.now(),
+                                                      'autobed/base_link',
+                                                      'odom_combined')
+                    rate.sleep()
                 except:
-                    print 'Bed TF broadcaster crashed!'
+                    print 'Bed TF broadcaster crashed trying to broadcast!'
                     break
-            rospy.sleep(1)
-            while not rospy.is_shutdown():
-                if self.map_B_bed is not None:
-                    try:
-                        self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
-                                                          rospy.Time.now(),
-                                                          'autobed/base_link',
-                                                          'odom_combined')
-                        rate.sleep()
-                    except:
-                        print 'Bed TF broadcaster crashed!'
-                        break
-                else:
-                    print 'Waiting to detect bed AR tag at least once.'
-                    rospy.sleep(1)
-        except:
-            print 'Bed TF broadcaster crashed!'
+            else:
+                print 'Waiting to detect bed AR tag at least once.'
+                rospy.sleep(1)
+        print 'Bed TF broadcaster crashed!'
 
     def ar_tag_autobed_cb(self, msg):
         trans = [msg.pose.position.x,

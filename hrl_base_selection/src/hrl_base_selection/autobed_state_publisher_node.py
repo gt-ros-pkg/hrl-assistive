@@ -10,6 +10,7 @@ import math as m
 import operator
 from scipy.signal import remez
 from scipy.signal import lfilter
+from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
@@ -151,8 +152,9 @@ class AutobedStatePublisherNode(object):
             joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
             self.joint_pub.publish(joint_state)
 
-            # self.set_autobed_user_configuration(self.head_filt_data, autobed_occupied_status_client().state)
-            self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
+            # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
+
+            self.set_autobed_user_configuration(self.head_filt_data, True)
             rate.sleep()
         return
 

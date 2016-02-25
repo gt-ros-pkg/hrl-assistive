@@ -7,8 +7,8 @@
     <node name="autobed_occupied_server" pkg="hrl_base_selection" type="autobed_occupied_server.py" output="screen"/>
 
     <!--Initialize the global transforms to localize the bed and head in the world.-->
-    <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
-    <node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>
+    <!--<node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>-->
+    <!--<node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>-->
 
 
     <!--<node name="map_server" pkg="map_server" type="map_server" args="$(find hrl_base_selection)/data/maps/lab_map.yaml" output="screen"/>-->
