@@ -1,12 +1,15 @@
 <launch>
 
+    <!--Initialize Autobed things-->
+    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/occupied_autobed.URDF" />
+    <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
+    <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
+    <node name="autobed_occupied_server" pkg="hrl_base_selection" type="autobed_occupied_server.py" output="screen"/>
 
-    <!--<node name="autobed_robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">-->
-        <!--<remap from="robot_description" to="autobed_robot_description" />-->
-        <!--<remap from="joint_states" to="autobed_joint_states" />-->
-    <!--</node>-->
-
+    <!--Initialize the global transforms to localize the bed and head in the world.-->
     <!--<node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>-->
+    <!--<node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>-->
+
 
     <!--<node name="map_server" pkg="map_server" type="map_server" args="$(find hrl_base_selection)/data/maps/lab_map.yaml" output="screen"/>-->
     <!--<include file="$(find pr2_navigation_perception)/lasers_and_filters.xml"/>-->
@@ -14,11 +17,11 @@
     <!--<include file="$(find hrl_base_selection)/config/move_base.xml"/>-->
     <!--<include file="$(find hrl_base_selection)/config/amcl_node.xml"/>-->
     <!--<include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>-->
-    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">
-        <arg name="mode" value="normal"/>
-        <arg name="user" value="autobed"/>
-        <arg name="load" value="scratching_knee_right"/>
-	</node>
+    <!--<node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen">-->
+        <!--<arg name="mode" value="normal"/>-->
+        <!--<arg name="user" value="autobed"/>-->
+        <!--<arg name="load" value="scratching_knee_right"/>-->
+	<!--</node>-->
 
     <!-- For arm reacher -->
     <!--<arg name="arm" default="l"/>-->

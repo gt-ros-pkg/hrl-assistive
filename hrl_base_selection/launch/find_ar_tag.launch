@@ -1,6 +1,6 @@
 <launch>
 	<arg name="marker_size" default="5.3" />
-	<!--arg name="marker_size" default="13.3" /-->
+	<!--<arg name="marker_size" default="13.3" />-->
 	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
 
@@ -12,17 +12,18 @@
 
 
 	<!-- Vision sensor -->
-	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
 	<!-- Find AR Tag on Autobed -->
 	<arg name="mode" value="autobed"/>
-	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode autobed">
-		<!--<arg name="mode" value="autobed"/>-->
-	</node>
+	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode autobed"/>
 
 	<!-- Find AR Tag on Head -->
-	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head">
-			<!--<arg name="mode" value="head"/>-->
-	</node>
+	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head"/>
+
+	<!--Initialize the global transforms to localize the bed and head in the world.-->
+    <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
+    <node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>
+
 
 </launch>
