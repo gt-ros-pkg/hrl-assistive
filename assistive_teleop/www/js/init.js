@@ -60,7 +60,7 @@ var assistive_teleop = {
         initARServoTab('tabServoing');
         initRunStop('runStopDiv');
         initTrajPlay();
-        initBodyRegistration('tabBodyReg');
+        //initBodyRegistration('tabBodyReg');
         initEllControl();
         initCartControl();
         initTaskInterface('tabTasks');
