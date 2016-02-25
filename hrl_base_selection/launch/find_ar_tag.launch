@@ -16,13 +16,14 @@
 
 	<!-- Find AR Tag on Autobed -->
 	<arg name="mode" value="autobed"/>
-	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode autobed">
-		<!--<arg name="mode" value="autobed"/>-->
-	</node>
+	<node name="find_autobed" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode autobed"/>
 
 	<!-- Find AR Tag on Head -->
-	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head">
-			<!--<arg name="mode" value="head"/>-->
-	</node>
+	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head"/>
+
+	<!--Initialize the global transforms to localize the bed and head in the world.-->
+    <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
+    <node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>
+
 
 </launch>

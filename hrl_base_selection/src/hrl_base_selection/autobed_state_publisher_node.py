@@ -11,6 +11,7 @@ import operator
 import threading
 from scipy.signal import remez
 from scipy.signal import lfilter
+from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
@@ -33,6 +34,14 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 class AutobedStatePublisherNode(object):
     def __init__(self):
         self.joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=100)
+
+        rospy.wait_for_service('autobed_occ_status')
+        try:
+            AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+            self.autobed_occupied_status = AutobedOcc().data
+
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
 
         # self.autobed_occupied_state_client = autobed_occupied_status_client()
         # self.pressure_grid_pub = rospy.Publisher('pressure_grid', Marker)
@@ -150,7 +159,8 @@ class AutobedStatePublisherNode(object):
             joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
             self.joint_pub.publish(joint_state)
 
-            # self.set_autobed_user_configuration(self.head_filt_data, autobed_occupied_status_client().state)
+            # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
+
             self.set_autobed_user_configuration(self.head_filt_data, True)
             rate.sleep()
         return
@@ -179,7 +189,6 @@ class AutobedStatePublisherNode(object):
         human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
         human_joint_state.name[15] = "autobed/head_neck_joint1"
         human_joint_state.name[16] = "autobed/head_neck_joint2"
-
 
         bth = m.degrees(headrest_th)
         # bth = headrest_th
