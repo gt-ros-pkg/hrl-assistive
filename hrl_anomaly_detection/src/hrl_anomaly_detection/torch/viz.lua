@@ -59,7 +59,9 @@ print('==> loading model to '..filename)
 local model = torch.load(filename)
 
 local figure2 = gnuplot.figure(2)
+local result_vec = torch.Tensor(testData:size(1)/singleLength, singleLength, params.outputsize)
 
+local iter = 1
 for t = 1,testData:size(1),singleLength do
 
     -- get data
@@ -75,7 +77,7 @@ for t = 1,testData:size(1),singleLength do
         model.decoder:updateOutput(model.encoder.output)
         preds[i]    = model.decoder.output
         features[i] = model.encoder.output
-
+        
 
         for j=1, nDim do
             viz_inputs[i][j] = inputs[i][j*params.timewindow]
@@ -85,6 +87,10 @@ for t = 1,testData:size(1),singleLength do
 
     end
 
+    print(iter, testData:size(1)/singleLength, #result_vec, #features)
+    result_vec[iter] = features
+    iter = iter + 1
+
     -- visualize original inputs & predictions
     --[[
     local figure1 = gnuplot.figure(1)
@@ -93,14 +99,19 @@ for t = 1,testData:size(1),singleLength do
     --]]                                    
 
     -- visualize reduced features
+    --io.flush()
+    --answer=io.read()
+
+    collectgarbage()
+end
+
+
+for t = 1,testData:size(1)/singleLength do
+    features = result_vec[t]
     gnuplot.plot(
         {'1', features:t()[1], '-'},
         {'2', features:t()[2], '-'},
         {'3', features:t()[3], '-'},
         {'4', features:t()[4], '-'},
         {'5', features:t()[5], '-'})
-    io.flush()
-    answer=io.read()
-
-    collectgarbage()
 end

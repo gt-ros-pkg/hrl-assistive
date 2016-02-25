@@ -128,14 +128,14 @@ def getData3(time_window, renew=False):
     # scaling by the number of dimensions in each feature
     dataDim = param_dict['dataDim']
     index   = 0
-    for feature_name, nDim in dataDim:
-        pre_index = index
-        index    += nDim
+    ## for feature_name, nDim in dataDim:
+    ##     pre_index = index
+    ##     index    += nDim
 
-        normalTrainingData[pre_index:index]   /= np.sqrt(nDim)
-        abnormalTrainingData[pre_index:index] /= np.sqrt(nDim)
-        normalTestData[pre_index:index]       /= np.sqrt(nDim)
-        abnormalTestData[pre_index:index]     /= np.sqrt(nDim)
+    ##     normalTrainingData[pre_index:index]   /= np.sqrt(nDim)
+    ##     abnormalTrainingData[pre_index:index] /= np.sqrt(nDim)
+    ##     normalTestData[pre_index:index]       /= np.sqrt(nDim)
+    ##     abnormalTestData[pre_index:index]     /= np.sqrt(nDim)
         
 
     new_trainingData = np.vstack([np.swapaxes(normalTrainingData, 0, 1), \
