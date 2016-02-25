@@ -8,6 +8,7 @@ from sensor_msgs.msg import JointState
 from math import *
 import math as m
 import operator
+import threading
 from scipy.signal import remez
 from scipy.signal import lfilter
 
@@ -71,7 +72,7 @@ class AutobedStatePublisherNode(object):
         # self.pressuremap_flat = np.zeros((1, NUMOFTAXELS_X*NUMOFTAXELS_Y))
         #Publisher for Markers (can send them all as one marker message instead of an array because they're all spheres of the same size
         # self.marker_pub=rospy.Publisher('visualization_marker', Marker)
-
+        self.frame_lock = threading.RLock()
         print 'Autobed robot state publisher is ready and running!'
 
 
@@ -85,13 +86,14 @@ class AutobedStatePublisherNode(object):
                 > 0) else 0
         head_angle = (poses[0]*pi/180)
         leg_angle = (poses[2]*pi/180 - 0.1)
-        self.collated_head_angle = np.delete(self.collated_head_angle, 0)
-        self.collated_head_angle = np.append(self.collated_head_angle,
-                [head_angle])
-        self.collated_leg_angle = np.delete(self.collated_leg_angle, 0)
-        self.collated_leg_angle = np.append(self.collated_leg_angle,
-                [leg_angle])
- 
+        with self.frame_lock:
+            self.collated_head_angle = np.delete(self.collated_head_angle, 0)
+            self.collated_head_angle = np.append(self.collated_head_angle,
+                    [head_angle])
+            self.collated_leg_angle = np.delete(self.collated_leg_angle, 0)
+            self.collated_leg_angle = np.append(self.collated_leg_angle,
+                    [leg_angle])
+     
 
     # def pressure_map_cb(self, data):
     #     '''This callback accepts incoming pressure map from
@@ -101,9 +103,14 @@ class AutobedStatePublisherNode(object):
 
     def filter_data(self):
         '''Creates a low pass filter to filter out high frequency noise'''
-        self.leg_filt_data = self.truncate(np.dot(self.lpf_for_legs,
-                    self.collated_leg_angle))
-        self.head_filt_data = np.dot(self.lpf, self.collated_head_angle)
+        if np.shape(self.lpf_for_legs) == np.shape(self.collated_leg_angle):
+            self.leg_filt_data = np.dot(self.lpf_for_legs, self.collated_leg_angle)
+        else:
+            pass
+        if np.shape(self.lpf) == np.shape(self.collated_head_angle):
+            self.head_filt_data = np.dot(self.lpf, self.collated_head_angle)
+        else:
+            pass
         return
 
     def truncate(self, f):
