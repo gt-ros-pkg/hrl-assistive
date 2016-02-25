@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<robot name="human">
+  <link
+    name="head_link">
+    <inertial>
+      <origin
+        xyz="0.00931747164111318 -9.91266701204326E-09 2.0105706865051194"
+        rpy="0 0 0" />
+      <mass
+        value="3.9328527892651" />
+      <inertia
+        ixx="0.0165678861121358"
+        ixy="8.90148620513218E-10"
+        ixz="-0.0027682732644648"
+        iyy="0.0177023015774365"
+        iyz="-5.42183952528328E-09"
+        izz="0.0166046206450058" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 2"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_gazebo_autobed/urdf/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 2"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_gazebo_autobed/urdf/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

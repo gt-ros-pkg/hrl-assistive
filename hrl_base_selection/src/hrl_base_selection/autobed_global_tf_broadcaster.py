@@ -17,16 +17,32 @@ class AutobedGlobalTFBroadcaster(object):
         self.map_B_bed = None
         self.out_trans = None
         self.out_rot = None
-        self.ar_tag_autobed_sub = rospy.Subscriber('/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
-        while (not self.tf_listener.canTransform('map', 'torso_lift_link', rospy.Time(0))):
-            print 'Waiting for PR2 localization in world.'
+        self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
+        try:
+            while (not self.tf_listener.canTransform('odom_combined', 'torso_lift_link', rospy.Time(0))):
+                try:
+                    print 'Waiting for PR2 localization in world.'
+                    rospy.sleep(1)
+                except:
+                    print 'Bed TF broadcaster crashed!'
+                    break
             rospy.sleep(1)
-        while not rospy.is_shutdown() and self.map_B_bed is not None:
-            self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
-                                              rospy.Time.now(),
-                                              'map',
-                                              'autobed/base_link')
-            rate.sleep()
+            while not rospy.is_shutdown():
+                if self.map_B_bed is not None:
+                    try:
+                        self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
+                                                          rospy.Time.now(),
+                                                          'autobed/base_link',
+                                                          'odom_combined')
+                        rate.sleep()
+                    except:
+                        print 'Bed TF broadcaster crashed!'
+                        break
+                else:
+                    print 'Waiting to detect bed AR tag at least once.'
+                    rospy.sleep(1)
+        except:
+            print 'Bed TF broadcaster crashed!'
 
     def ar_tag_autobed_cb(self, msg):
         trans = [msg.pose.position.x,
@@ -38,9 +54,9 @@ class AutobedGlobalTFBroadcaster(object):
                msg.pose.orientation.w]
         now = rospy.Time.now()
         pr2_B_bed = createBMatrix(trans, rot)
-        self.listener.waitForTransform('map', 'torso_lift_link', now, rospy.Duration(1))
-        (trans, rot) = self.tf_listener.lookupTransform('map', 'torso_lift_link', now)
-        map_B_pr2 = createBMatrix(trans, rot)
+        self.tf_listener.waitForTransform('odom_combined', msg.header.frame_id, now, rospy.Duration(1))
+        (newtrans, newrot) = self.tf_listener.lookupTransform('odom_combined', msg.header.frame_id, now)
+        map_B_pr2 = createBMatrix(newtrans, newrot)
         self.map_B_bed = map_B_pr2*pr2_B_bed
         (self.out_trans, self.out_rot) = Bmat_to_pos_quat(self.map_B_bed)
 
