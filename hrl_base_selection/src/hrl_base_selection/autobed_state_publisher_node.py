@@ -12,6 +12,7 @@ import threading
 from scipy.signal import remez
 from scipy.signal import lfilter
 from hrl_srvs.srv import None_Bool, None_BoolResponse
+from std_msgs.msg import Bool
 
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
@@ -55,6 +56,8 @@ class AutobedStatePublisherNode(object):
         init_centered.name[0] = "autobed/head_bed_leftright_joint"
         init_centered.position[0] = 0
         self.joint_pub.publish(init_centered)
+        self.bed_status = None
+        rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
 
         rospy.Subscriber("/abdout0", FloatArrayBare, self.bed_pose_cb)
 
@@ -70,11 +73,13 @@ class AutobedStatePublisherNode(object):
         # self.camera_q = tuple(quaternion_from_euler(1.57, 1.57, 0.0))
         #Low pass filter design
         self.bed_height = 0
-        self.bin_numbers = 5
+        self.bin_numbers = 21
         self.bin_numbers_for_leg_filter = 21
         self.collated_head_angle = np.zeros((self.bin_numbers, 1))
         self.collated_leg_angle = np.zeros((
             self.bin_numbers_for_leg_filter, 1))
+	self.head_filt_data = 0
+	self.leg_filt_data = 0
         self.lpf = remez(self.bin_numbers, [0, 0.1, 0.25, 0.5], [1.0, 0.0])
         self.lpf_for_legs = remez(self.bin_numbers_for_leg_filter, 
                 [0, 0.0005, 0.1, 0.5], [1.0, 0.0])
@@ -103,6 +108,9 @@ class AutobedStatePublisherNode(object):
             self.collated_leg_angle = np.append(self.collated_leg_angle,
                     [leg_angle])
      
+    #Callback for autobed pose status
+    def bed_status_cb(self, data):
+        self.bed_status = data.data
 
     # def pressure_map_cb(self, data):
     #     '''This callback accepts incoming pressure map from
@@ -136,33 +144,46 @@ class AutobedStatePublisherNode(object):
                           '/leg_rest_upper_link':1.04266,
                           '/leg_rest_lower_link':1.41236})
         list_of_links = dict_of_links.keys()
+        #Allow autobed sensor filters to fill up
+        rospy.sleep(2.)
+        self.filter_data()
+
+        joint_state_stable = [self.bed_height,
+                              self.head_filt_data,
+                              0,#self.leg_filt_data
+                              0]# -(1+(4.0/9.0))*self.leg_filt_data
+
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
-            joint_state.header.stamp = rospy.Time.now()
-            #Resize the pressure map data
-            # p_map = np.reshape(self.pressuremap_flat, (NUMOFTAXELS_X,
-            #     NUMOFTAXELS_Y))
-            #Clear pressure map grid
-            #Filter data
-            self.filter_data()
+            with self.frame_lock:
+                joint_state.header.stamp = rospy.Time.now()
+                #Resize the pressure map data
+                # p_map = np.reshape(self.pressuremap_flat, (NUMOFTAXELS_X,
+                #     NUMOFTAXELS_Y))
+                #Clear pressure map grid
+                #Filter data
+                self.filter_data()
 
-            joint_state.name = [None]*(4)
-            joint_state.position = [None]*(4)
-            joint_state.name[0] = "autobed/tele_legs_joint"
-            joint_state.name[1] = "autobed/head_rest_hinge"
-            joint_state.name[2] = "autobed/leg_rest_upper_joint"
-            joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
-            # print self.bed_height
-            joint_state.position[0] = self.bed_height
-            joint_state.position[1] = self.head_filt_data
-            joint_state.position[2] = 0  # self.leg_filt_data
-            joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
-            self.joint_pub.publish(joint_state)
-
-            # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
-
-            self.set_autobed_user_configuration(self.head_filt_data, True)
-            rate.sleep()
+                joint_state.name = [None]*(4)
+                joint_state.position = [None]*(4)
+                joint_state.name[0] = "autobed/tele_legs_joint"
+                joint_state.name[1] = "autobed/head_rest_hinge"
+                joint_state.name[2] = "autobed/leg_rest_upper_joint"
+                joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
+                # print self.bed_height
+                if not self.bed_status:
+                    joint_state.position[0] = self.bed_height
+                    joint_state.position[1] = self.head_filt_data
+                    joint_state.position[2] = 0  # self.leg_filt_data
+                    joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                    joint_state_stable = joint_state.position[:]
+                else:
+                    joint_state.position = joint_state_stable
+                    
+                self.joint_pub.publish(joint_state)
+                # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
+                self.set_autobed_user_configuration(self.head_filt_data, True)
+                rate.sleep()
         return
 
     def set_autobed_user_configuration(self, headrest_th, occupied_state):
