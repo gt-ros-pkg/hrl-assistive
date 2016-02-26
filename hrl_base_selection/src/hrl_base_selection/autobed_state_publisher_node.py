@@ -12,6 +12,7 @@ import threading
 from scipy.signal import remez
 from scipy.signal import lfilter
 from hrl_srvs.srv import None_Bool, None_BoolResponse
+from std_msgs.msg import Bool
 
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
@@ -55,9 +56,11 @@ class AutobedStatePublisherNode(object):
         init_centered.name[0] = "autobed/head_bed_leftright_joint"
         init_centered.position[0] = 0
         self.joint_pub.publish(init_centered)
+        self.bed_status = None
+        rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
 
         rospy.Subscriber("/abdout0", FloatArrayBare, self.bed_pose_cb)
-        rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
+
         #rospy.Subscriber("/camera_o/pose", TransformStamped, 
         #        self.camera_pose_cb)
         # rospy.Subscriber("/fsascan", FloatArrayBare,
