@@ -53,15 +53,15 @@ class BaseSelectionManager(object):
             # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
             self.autobed_joint_sub = rospy.Subscriber('autobed/joint_states', JointState, self.bed_state_cb)
-            rospy.wait_for_service('autobed_occ_status')
+            # rospy.wait_for_service('autobed_occ_status')
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
 
-            rospy.wait_for_service("/arm_reach_enable")
-            self.armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+            # rospy.wait_for_service("/arm_reach_enable")
+            self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
 
             # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
