@@ -144,8 +144,9 @@ class AutobedStatePublisherNode(object):
                           '/leg_rest_upper_link':1.04266,
                           '/leg_rest_lower_link':1.41236})
         list_of_links = dict_of_links.keys()
-        for i in range(self.bin_numbers):
-            self.filter_data()
+        #Allow autobed sensor filters to fill up
+        rospy.sleep(2.)
+        self.filter_data()
 
         joint_state_stable = [self.bed_height,
                               self.head_filt_data,
@@ -176,16 +177,11 @@ class AutobedStatePublisherNode(object):
                     joint_state.position[2] = 0  # self.leg_filt_data
                     joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
                     joint_state_stable = joint_state.position[:]
-                    print "Updating Bed Joint State"
                 else:
                     joint_state.position = joint_state_stable
-                    print "Not Updating Bed Joint State"
-
                     
                 self.joint_pub.publish(joint_state)
-
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
-
                 self.set_autobed_user_configuration(self.head_filt_data, True)
                 rate.sleep()
         return
