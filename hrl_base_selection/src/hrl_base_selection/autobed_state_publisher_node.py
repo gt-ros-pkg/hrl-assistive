@@ -57,7 +57,7 @@ class AutobedStatePublisherNode(object):
         self.joint_pub.publish(init_centered)
 
         rospy.Subscriber("/abdout0", FloatArrayBare, self.bed_pose_cb)
-
+        rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
         #rospy.Subscriber("/camera_o/pose", TransformStamped, 
         #        self.camera_pose_cb)
         # rospy.Subscriber("/fsascan", FloatArrayBare,
@@ -70,7 +70,7 @@ class AutobedStatePublisherNode(object):
         # self.camera_q = tuple(quaternion_from_euler(1.57, 1.57, 0.0))
         #Low pass filter design
         self.bed_height = 0
-        self.bin_numbers = 5
+        self.bin_numbers = 21
         self.bin_numbers_for_leg_filter = 21
         self.collated_head_angle = np.zeros((self.bin_numbers, 1))
         self.collated_leg_angle = np.zeros((
@@ -105,6 +105,9 @@ class AutobedStatePublisherNode(object):
             self.collated_leg_angle = np.append(self.collated_leg_angle,
                     [leg_angle])
      
+    #Callback for autobed pose status
+    def bed_status_cb(self, data):
+        self.bed_status = data.data
 
     # def pressure_map_cb(self, data):
     #     '''This callback accepts incoming pressure map from
@@ -156,10 +159,13 @@ class AutobedStatePublisherNode(object):
                 joint_state.name[2] = "autobed/leg_rest_upper_joint"
                 joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
                 # print self.bed_height
-                joint_state.position[0] = self.bed_height
-                joint_state.position[1] = self.head_filt_data
-                joint_state.position[2] = 0  # self.leg_filt_data
-                joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                if not self.bed_status:
+                    joint_state.position[0] = self.bed_height
+                    joint_state.position[1] = self.head_filt_data
+                    joint_state.position[2] = 0  # self.leg_filt_data
+                    joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                else:
+                    pass
                 self.joint_pub.publish(joint_state)
 
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
