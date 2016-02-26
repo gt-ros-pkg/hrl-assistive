@@ -47,7 +47,7 @@ class BaseSelector(object):
         self.mode = mode
         self.model = model
         self.load = load
-        self.vis_pub = rospy.Publisher("~service_subject_model", Marker, latch=True)
+        self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
@@ -187,7 +187,7 @@ class BaseSelector(object):
         else:
             print 'I got a bad model. What is going on???'
             return None
-        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~', name]), Marker, queue_size=100, latch=True)
         marker.ns = ''.join(['base_service_', name])
         vis_pub.publish(marker)
         print 'Published a model of the subject to rviz'
