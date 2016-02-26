@@ -10,14 +10,14 @@ var TaskInterface = function (ros) {
     taskUI.startTaskPub.advertise();
 
     taskUI.startTask = function () {
-      var loc = $("#task_location_select option:selected").text();
+      var act = $("#task_action_select option:selected").text();
       var side = $("#task_side_select option:selected").text();
       var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: loc + ' ' + side + ' ' + area
+        data: act + ' ' + side + ' ' + area
       });
       taskUI.startTaskPub.publish(msg);
-      var txt = "Starting Task, including moving base to perform the task: " + act + " the " + side + " " + loc;
+      var txt = "Starting Task, including moving base to perform the task: " + act + " the " + side + " " + area;
       assistive_teleop.log(txt);
     };
 
@@ -28,14 +28,14 @@ var TaskInterface = function (ros) {
     taskUI.moveArmPub.advertise();
 
     taskUI.moveArm = function () {
-      var loc = $("#task_location_select option:selected").text();
+      var act = $("#task_action_select option:selected").text();
       var side = $("#task_side_select option:selected").text();
       var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: loc + ' ' + side + ' ' + area
+        data: act + ' ' + side + ' ' + area
       });
       taskUI.moveArmPub.publish(msg);
-      var txt = "Moving Arm to perform the task: " + act + " the " + side + " " + loc;
+      var txt = "Moving Arm to perform the task: " + act + " the " + side + " " + area;
       assistive_teleop.log(txt);
     };
 }
