@@ -37,6 +37,8 @@ class BaseSelectionManager(object):
         self.model = 'autobed'  # options are 'chair' and 'autobed'
         self.mode = mode
 
+        self.listener = TransformListener()
+
         self.send_task_count = 0
 
         self.head_pose = None
@@ -47,29 +49,35 @@ class BaseSelectionManager(object):
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
-            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
-            self.autobed_joint_pub = rospy.Publisher('autobed_joint_states', JointState, queue_size=1)
+            self.autobed_joint_sub = rospy.Subscriber('autobed/joint_states', JointState, self.bed_state_cb)
+            rospy.wait_for_service('autobed_occ_status')
+            try:
+                self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+                self.autobed_occupied_status = self.AutobedOcc().data
+            except rospy.ServiceException, e:
+                print "Service call failed: %s" % e
+            # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
             self.world_B_head = None
             self.world_B_ref_model = None
             self.world_B_robot = None
 
             rospack = rospkg.RosPack()
-            self.pkg_path = rospack.get_path('hrl_base_selection')
-            self.autobed_empty_model_file = ''.join([self.pkg_path,'/urdf/empty_autobed.urdf'])
-            self.autobed_occupied_model_file = ''.join([self.pkg_path,'/urdf/occupied_autobed.urdf'])
-            self.autobed_occupied_status = autobed_occupied_status_client().state
+            # self.pkg_path = rospack.get_path('hrl_base_selection')
+            # self.autobed_empty_model_file = ''.join([self.pkg_path,'/urdf/empty_autobed.urdf'])
+            # self.autobed_occupied_model_file = ''.join([self.pkg_path,'/urdf/occupied_autobed.urdf'])
+            # self.autobed_occupied_status = autobed_occupied_status_client().state
 
 
         if self.mode == 'ar_tag':
-            self.ar_tag_autobed_sub = rospy.Subscriber('/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
-            self.ar_tag_head_sub = rospy.Subscriber('/head_pose', PoseStamped, self.ar_tag_head_cb)
+            # self.ar_tag_autobed_sub = rospy.Subscriber('/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
+            # self.ar_tag_head_sub = rospy.Subscriber('/head_pose', PoseStamped, self.ar_tag_head_cb)
 
             self.nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
 
 
-        self.tfl = TransformListener()
 
         if self.mode == 'manual':
             self.base_pose = None
@@ -86,56 +94,56 @@ class BaseSelectionManager(object):
             self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, latch=True)
             # self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
             # self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
+
+
+
         # self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         # self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
-        self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped, queue_size=1)
+
         # self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
         # self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
+
+
+        # self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped, queue_size=1)
+
+
         self.feedback_pub = rospy.Publisher('wt_log_out', String)
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, queue_size=10, latch=True)
 
+        rospy.wait_for_service('autobed_occ_status')
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-
+        rospy.wait_for_service('autobed_occ_status')
         self.reach_service = rospy.ServiceProxy("/base_selection/arm_reach_enable", None_Bool)
 
-        self.ui_input_sub = rospy.Subscriber("action_location_goal", String, self.ui_cb)
+        rospy.wait_for_service("/arm_reach_enable")
+        armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+
+        ## Place motions! PR2 will executes it sequencially ----------------
+        # print armReachActionLeft("leftKnee")
+
+        self.start_task_input_sub = rospy.Subscriber("action_location_goal", String, self.start_task_ui_cb)
+        self.move_arm_input_sub = rospy.Subscriber("move_arm_to_goal", String, self.move_arm_ui_cb)
         # self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
         self.lock = Lock()
 
         rospy.loginfo("[%s] Ready" %rospy.get_name())
 
-        self.base_selection_complete = False
+        # self.base_selection_complete = False
 
-        self.send_task_count = 0
+        # self.send_task_count = 0
 
-    def ar_tag_autobed_cb(self, msg):
-        self.autobed_pose = msg
+    # def ar_tag_autobed_cb(self, msg):
+    #     self.autobed_pose = msg
+    #
+    # def ar_tag_head_cb(self, msg):
+    #     self.head_pose = msg
 
-    def ar_tag_head_cb(self, msg):
-        self.head_pose = msg
-    '''
-    def servo_fdbk_cb(self, msg):
-        # if not msg.data == 5:
-        #     return
-        #self.reach_goal_pub.publish(self.goal_pose)
-        #self.feedback_pub.publish("Servoing succeeded. Reaching to location.")
-        #rospy.loginfo("Servoing Succeeded. Sending goal to arm reacher.")
-        msg = "Servoing Succeeded."
-        if self.base_selection_complete and self.send_task_count > 1:
-            movement = False
-            msg = "Servoing Succeeded. Arms will proceed to move."
-            self.base_selection_complete = False
-            self.send_task_count = 0
-            movement = self.call_arm_reacher()
-            
-        self.feedback_pub.publish(msg)
-        rospy.loginfo(msg)
-    '''
-
-    def ui_cb(self, msg):
+    def start_task_ui_cb(self, msg):
         print 'My task is: ', msg.data
+        print msg.data.split()
+        print msg.data.split(':')
         self.task = msg.data
         if self.send_task_count > 1 and self.base_selection_complete:
             self.base_selection_complete = False
@@ -175,8 +183,8 @@ class BaseSelectionManager(object):
             head_x = 0
 
             now = rospy.Time.now()
-            self.listener.waitForTransform('/autobed_base_link', '/head_link', now, rospy.Duration(15))
-            (trans, rot) = self.listener.lookupTransform('/autobed_base_link', '/head_link', now)
+            self.listener.waitForTransform('/autobed/base_link', '/head_link', now, rospy.Duration(15))
+            (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/head_link', now)
             head_y = trans[1]
 
             self.set_autobed_user_configuration(headrest_theta, head_x, head_y)
