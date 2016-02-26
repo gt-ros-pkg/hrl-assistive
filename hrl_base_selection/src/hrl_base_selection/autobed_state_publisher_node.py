@@ -144,6 +144,12 @@ class AutobedStatePublisherNode(object):
                           '/leg_rest_upper_link':1.04266,
                           '/leg_rest_lower_link':1.41236})
         list_of_links = dict_of_links.keys()
+        self.filter_data()
+        joint_state_stable = [self.bed_height,
+                              self.head_filt_data,
+                              0,#self.leg_filt_data
+                              0]# -(1+(4.0/9.0))*self.leg_filt_data
+
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
             with self.frame_lock:
