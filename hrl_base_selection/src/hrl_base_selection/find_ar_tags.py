@@ -41,7 +41,7 @@ class arTagDetector:
             print 'I do not know what AR tag to look for... Abort!'
             return
 
-        self.hist_size = 10
+        self.hist_size = 30
         self.pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
 
@@ -50,12 +50,12 @@ class arTagDetector:
 
     def config_head_AR_detector(self):
         self.tag_id = 10 #9
-        self.tag_side_length = 0.053 #0.033
+        self.tag_side_length = 0.067 #0.054 #0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
-        model_trans_B_ar[0:3, 3] = np.array([0.1, 0.0, 0.13])
+        model_trans_B_ar[0:3, 3] = np.array([0.048, 0.0, 0.09])
 
         ar_roty_B = np.eye(4)
         ar_roty_B[0:3, 0:3] = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
@@ -75,12 +75,12 @@ class arTagDetector:
         self.tag_id = 4  # 9
 
         self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        self.tag_side_length = 0.053  # 0.033
+        self.tag_side_length = 0.067  # 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
-        model_trans_B_ar[0:3, 3] = np.array([-0.02, .01, 1.60])
+        model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         ar_rotz_B = np.eye(4)
         ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
@@ -140,7 +140,7 @@ class arTagDetector:
 
                     pos = None
                     quat = None
-                    if False:
+                    if True:
                         # Moving average
                         pos = np.sum(positions, axis=0)
                         pos /= float(len(positions))
