@@ -164,8 +164,13 @@ class AutobedStatePublisherNode(object):
                     joint_state.position[1] = self.head_filt_data
                     joint_state.position[2] = 0  # self.leg_filt_data
                     joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                    joint_state_stable = joint_state.position[:]
+                    print "Updating Bed Joint State"
                 else:
-                    pass
+                    joint_state.position = joint_state_stable
+                    print "Not Updating Bed Joint State"
+
+                    
                 self.joint_pub.publish(joint_state)
 
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
