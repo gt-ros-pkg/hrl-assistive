@@ -11,12 +11,13 @@ var TaskInterface = function (ros) {
 
     taskUI.startTask = function () {
       var loc = $("#task_location_select option:selected").text();
-      var act = $("#task_action_select option:selected").text();
+      var side = $("#task_side_select option:selected").text();
+      var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: loc
+        data: side + ' ' + area
       });
       taskUI.startTaskPub.publish(msg);
-      var txt = "Starting Task, including moving base to perform the task: " + act + " the " + loc;
+      var txt = "Starting Task, including moving base to perform the task: " + act + " the " + side + " " + loc;
       assistive_teleop.log(txt);
     };
 
@@ -28,12 +29,13 @@ var TaskInterface = function (ros) {
 
     taskUI.moveArm = function () {
       var loc = $("#task_location_select option:selected").text();
-      var act = $("#task_action_select option:selected").text();
+      var side = $("#task_side_select option:selected").text();
+      var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: loc
+        data: side + ' ' + area
       });
       taskUI.moveArmPub.publish(msg);
-      var txt = "Moving Arm to perform the task: " + act + " the " + loc;
+      var txt = "Moving Arm to perform the task: " + act + " the " + side + " " + loc;
       assistive_teleop.log(txt);
     };
 }
@@ -45,11 +47,13 @@ var initTaskInterface = function (tabDivId) {
     $(divRef).append('<table id="' + tabDivId + '_T0">' +
                        '<tr>' + 
                          '<th id="' + tabDivId + '_R0C0">Action</th>' +
-                         '<th id="' + tabDivId + '_R0C1">Location</th>' +
+                         '<th id="' + tabDivId + '_R0C1">Side</th>' +
+                         '<th id="' + tabDivId + '_R0C2">Area</th>' +
                        '</tr>' +
                        '<tr>' +
                          '<td id="' + tabDivId + '_R1C0"></td>' +
                          '<td id="' + tabDivId + '_R1C1"></td>' +
+                         '<td id="' + tabDivId + '_R1C2"></td>' +
                        '</tr>' +
                        '<tr>' +
                          '<td id="' + tabDivId + '_R2C0" colspan="2"></td>' +
@@ -59,11 +63,14 @@ var initTaskInterface = function (tabDivId) {
     $(divRef+'_R1C0').append('<select id="task_action_select">' + 
                                '<option>Touch</option>' +
                              '</select>');
-    $(divRef+'_R1C1').append('<select id="task_location_select">' + 
-                               '<option>Knee</option>' +
-                               '<option>Arm</option>' +
-                               '<option>Shoulder</option>' +
-                               '<option>Face</option>' +
+    $(divRef+'_R1C1').append('<select id="task_side_select">' +
+                               '<option>left</option>' +
+                               '<option>right</option>' +
+                             '</select>');
+    $(divRef+'_R1C2').append('<select id="task_area_select">' +
+                               '<option>knee</option>' +
+                               '<option>upper_arm</option>' +
+                               '<option>face</option>' +
                              '</select>');
     $(divRef+'_R2C0').append('<button id="start_task"> Start Task </button>');
     $("#start_task").button()
