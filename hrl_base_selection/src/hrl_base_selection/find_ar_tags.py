@@ -144,7 +144,7 @@ class arTagDetector:
 
                     pos = None
                     quat = None
-                    if False:
+                    if True:
                         # Moving average
                         pos = np.sum(positions, axis=0)
                         pos /= float(len(positions))
@@ -182,10 +182,10 @@ class arTagDetector:
 
     # I now project the bed pose onto the ground plane to mitigate potential problems with AR tag orientation
     def shift_to_ground(self, this_pr2_B_ar):
-        now = rospy.Time.now()
-        self.listener.waitForTransform('/torso_lift_link', '/base_footprint', now, rospy.Duration(5))
-        (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/base_footprint', now)
         with self.frame_lock:
+            now = rospy.Time.now()
+            self.listener.waitForTransform('/torso_lift_link', '/base_footprint', now, rospy.Duration(5))
+            (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/base_footprint', now)
 
             ar_rotz_B = np.eye(4)
             ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
