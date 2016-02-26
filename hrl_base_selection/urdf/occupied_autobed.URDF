@@ -85,7 +85,7 @@
     name="autobed/origin_wall_joint"
     type="fixed">
     <origin
-      xyz="-0.75 0. 0."
+      xyz="-0.02 0. 0."
       rpy="0 0 0" />
     <parent
       link="autobed/base_link" />
