@@ -151,8 +151,8 @@ class BaseSelector(object):
     # wheelchair. This is for visualization, serves no vital purpose.
     def publish_sub_marker(self, pos, ori):
         marker = Marker()
-        #marker.header.frame_id = "/base_footprint"
-        marker.header.frame_id = "/base_link"
+        marker.header.frame_id = "/base_footprint"
+        # marker.header.frame_id = "/base_link"
         marker.header.stamp = rospy.Time()
         marker.id = 0
         marker.type = Marker.MESH_RESOURCE

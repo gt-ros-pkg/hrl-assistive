@@ -14,7 +14,7 @@ var TaskInterface = function (ros) {
       var side = $("#task_side_select option:selected").text();
       var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: side + ' ' + area
+        data: loc + ' ' + side + ' ' + area
       });
       taskUI.startTaskPub.publish(msg);
       var txt = "Starting Task, including moving base to perform the task: " + act + " the " + side + " " + loc;
@@ -32,7 +32,7 @@ var TaskInterface = function (ros) {
       var side = $("#task_side_select option:selected").text();
       var area = $("#task_area_select option:selected").text();
       var msg = new taskUI.ros.Message({
-        data: side + ' ' + area
+        data: loc + ' ' + side + ' ' + area
       });
       taskUI.moveArmPub.publish(msg);
       var txt = "Moving Arm to perform the task: " + act + " the " + side + " " + loc;
@@ -61,7 +61,7 @@ var initTaskInterface = function (tabDivId) {
                        '</tr>' +
                      '</table>');
     $(divRef+'_R1C0').append('<select id="task_action_select">' + 
-                               '<option>Touch</option>' +
+                               '<option>scratching</option>' +
                              '</select>');
     $(divRef+'_R1C1').append('<select id="task_side_select">' +
                                '<option>left</option>' +

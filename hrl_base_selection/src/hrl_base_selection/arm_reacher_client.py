@@ -50,7 +50,7 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
 
     ## Place motions! PR2 will executes it sequencially ----------------    
-    print armReachActionLeft("leftKnee")
+    print armReachActionLeft("scratching_knee_left")
     # print armReachActionLeft("initTest")
     ## sys.exit()
     

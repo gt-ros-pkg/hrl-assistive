@@ -130,12 +130,12 @@ class armReachAction(mpcBaseAction):
           ]
         self.motions['initTest']['right'] = []
 
-        self.motions['leftKnee'] = {}
+        self.motions['scratching_knee_left'] = {}
 #        self.motions['leftKnee']['left'] = \
  #         [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 10., 'self.knee_left']]
-        self.motions['leftKnee']['left'] = \
-          [['MOVES', '[-0.04310556,  0.17347758,  0.00485197, 0.48790861, -0.50380292,  0.51703901, -0.4907122]', 10., 'self.knee_left']]
-        self.motions['leftKnee']['right'] = []
+        self.motions['scratching_knee_left']['left'] = \
+          [['MOVES', '[-0.04310556,  0.07347758+0.05,  0.00485197, 0.48790861, -0.50380292,  0.51703901, -0.4907122]', 10., 'self.knee_left']]
+        self.motions['scratching_knee_left']['right'] = []
                                                             
         rospy.loginfo("Parameters are loaded.")
 

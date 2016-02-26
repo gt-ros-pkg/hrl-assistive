@@ -20,8 +20,9 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
-from autobed_occupied_client import autobed_occupied_status_client
-from tf_goal import TF_Goal
+from hrl_srvs.srv import String_String
+# from autobed_occupied_client import autobed_occupied_status_client
+# from tf_goal import TF_Goal
 # from navigation_feedback import *
 
 POSES = {'Knee': ([0.443, -0.032, -0.716], [0.162, 0.739, 0.625, 0.195]),
@@ -33,7 +34,7 @@ class BaseSelectionManager(object):
     """ Manager for providing test goals to pr2 ar servoing. """
 
     def __init__(self, mode='ar_tag'):
-        self.task = 'scratching_knee_right'
+        self.task = 'scratching_knee_left'
         self.model = 'autobed'  # options are 'chair' and 'autobed'
         self.mode = mode
 
@@ -58,6 +59,10 @@ class BaseSelectionManager(object):
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
+
+            rospy.wait_for_service("/arm_reach_enable")
+            self.armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+
             # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
             self.world_B_head = None
@@ -70,14 +75,11 @@ class BaseSelectionManager(object):
             # self.autobed_occupied_model_file = ''.join([self.pkg_path,'/urdf/occupied_autobed.urdf'])
             # self.autobed_occupied_status = autobed_occupied_status_client().state
 
-
         if self.mode == 'ar_tag':
             # self.ar_tag_autobed_sub = rospy.Subscriber('/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
             # self.ar_tag_head_sub = rospy.Subscriber('/head_pose', PoseStamped, self.ar_tag_head_cb)
 
             self.nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
-
-
 
         if self.mode == 'manual':
             self.base_pose = None
@@ -91,11 +93,9 @@ class BaseSelectionManager(object):
             # self.head_pub = rospy.Publisher('/head_frame', PoseStamped, latch=True)
             # self.base_pub = rospy.Publisher('/robot_frame', PoseStamped, latch=True)
             # self.object_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
-            self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, latch=True)
+            self.base_goal_pub = rospy.Publisher('/base_goal', PoseStamped, queue_size=1, latch=True)
             # self.robot_location_pub = rospy.Publisher('/robot_location', PoseStamped, latch=True)
             # self.navigation = NavigationHelper(robot='/robot_location', target='/base_goal')
-
-
 
         # self.goal_data_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData)
         # self.servo_goal_pub = rospy.Publisher('servo_goal_pose', PoseStamped, latch=True)
@@ -103,21 +103,20 @@ class BaseSelectionManager(object):
         # self.test_pub = rospy.Publisher("test_goal_pose", PoseStamped, latch=True)
         # self.test_head_pub = rospy.Publisher("test_head_pose", PoseStamped, latch=True)
 
-
         # self.reach_goal_pub = rospy.Publisher("arm_reacher/goal_pose", PoseStamped, queue_size=1)
 
-
-        self.feedback_pub = rospy.Publisher('wt_log_out', String)
+        self.feedback_pub = rospy.Publisher('wt_log_out', String, queue_size=1)
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, queue_size=10, latch=True)
 
-        rospy.wait_for_service('autobed_occ_status')
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-        rospy.wait_for_service('autobed_occ_status')
-        self.reach_service = rospy.ServiceProxy("/base_selection/arm_reach_enable", None_Bool)
 
-        rospy.wait_for_service("/arm_reach_enable")
-        armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
+        # rospy.wait_for_service('autobed_occ_status')
+        # self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
+        # rospy.wait_for_service('autobed_occ_status')
+        # self.reach_service = rospy.ServiceProxy("/base_selection/arm_reach_enable", None_Bool)
+        #
+        # rospy.wait_for_service("/arm_reach_enable")
+        # armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
 
         ## Place motions! PR2 will executes it sequencially ----------------
         # print armReachActionLeft("leftKnee")
@@ -127,6 +126,8 @@ class BaseSelectionManager(object):
         # self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
         self.lock = Lock()
+
+        print 'ready!!'
 
         rospy.loginfo("[%s] Ready" %rospy.get_name())
 
@@ -140,54 +141,71 @@ class BaseSelectionManager(object):
     # def ar_tag_head_cb(self, msg):
     #     self.head_pose = msg
 
+    def move_arm_ui_cb(self, msg):
+        print 'Moving arm for task: ', msg.data
+        split_msg = msg.data.split()
+        self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print self.armReachActionLeft(self.task)
+        return
+
     def start_task_ui_cb(self, msg):
         print 'My task is: ', msg.data
-        print msg.data.split()
-        print msg.data.split(':')
-        self.task = msg.data
-        if self.send_task_count > 1 and self.base_selection_complete:
-            self.base_selection_complete = False
-            self.send_task_count = 0
-            rospy.sleep(2)
-            movement = self.call_arm_reacher()
-        if self.send_task_count > 3:
-            self.send_task_count = 0
-            return
-        self.base_selection_complete = False
+        split_msg = msg.data.split()
+        self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        # if self.send_task_count > 1 and self.base_selection_complete:
+        #     self.base_selection_complete = False
+        #     self.send_task_count = 0
+        #     rospy.sleep(2)
+        #     movement = self.call_arm_reacher()
+        # if self.send_task_count > 3:
+        #     self.send_task_count = 0
+        #     return
+        # self.base_selection_complete = False
         # self.head_pose = self.world_B_head
-        if self.head_pose is None:
-            log_msg = "Please register your head before sending a task."
+        # self.head_pose =
+
+        if self.get_head_pose():
+            log_msg = "Head not currently found. Please look at the head."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
-        rospy.loginfo("[%s] Found head frame" % rospy.get_name())
-        # self.test_head_pub.publish(self.head_pose)
+        if self.get_bed_pose():
+            log_msg = "Bed not currently found. Please look at the AR tag by the bed."
+            self.feedback_pub.publish(String(log_msg))
+            rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
+            return
+
         if self.model == 'autobed':
-            self.autobed_occupied_status = autobed_occupied_status_client().state
-            if self.autobed_occupied_status:
-                autobed_description_file = self.autobed_occupied_model_file
-                paramlist = rosparam.load_file(autobed_description_file)
-                for params, ns in paramlist:
-                    rosparam.upload_params(ns, params)
-            else:
-                autobed_description_file = self.autobed_empty_model_file
-                paramlist = rosparam.load_file(autobed_description_file)
-                for params, ns in paramlist:
-                    rosparam.upload_params(ns, params)
-                log_msg = "A user is not on the bed. A user must be on the bed to perform the task for that user."
+
+            # self.autobed_occupied_status = autobed_occupied_status_client().state
+            if self.AutobedOcc().data:
+                log_msg = "Bed is currently unoccupied. Can't do the task with nobody in the bed."
                 self.feedback_pub.publish(String(log_msg))
                 rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
                 return
+                # autobed_description_file = self.autobed_occupied_model_file
+                # paramlist = rosparam.load_file(autobed_description_file)
+                # for params, ns in paramlist:
+                #     rosparam.upload_params(ns, params)
+            # else:
+            #     autobed_description_file = self.autobed_empty_model_file
+            #     paramlist = rosparam.load_file(autobed_description_file)
+            #     for params, ns in paramlist:
+            #         rosparam.upload_params(ns, params)
+            #     log_msg = "A user is not on the bed. A user must be on the bed to perform the task for that user."
+            #     self.feedback_pub.publish(String(log_msg))
+            #     rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
+            #     return
 
-            headrest_theta = self.bed_state_head_theta
-            head_x = 0
-
-            now = rospy.Time.now()
-            self.listener.waitForTransform('/autobed/base_link', '/head_link', now, rospy.Duration(15))
-            (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/head_link', now)
-            head_y = trans[1]
-
-            self.set_autobed_user_configuration(headrest_theta, head_x, head_y)
+            # headrest_theta = self.bed_state_head_theta
+            # head_x = 0
+            #
+            # now = rospy.Time.now()
+            # self.listener.waitForTransform('/autobed/base_link', '/head_link', now, rospy.Duration(15))
+            # (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/head_link', now)
+            # head_y = trans[1]
+            #
+            # self.set_autobed_user_configuration(headrest_theta, head_x, head_y)
 
         # loc = msg.data
         # if loc not in POSES:
@@ -291,8 +309,8 @@ class BaseSelectionManager(object):
             pr2_goal_pose.pose.orientation.w = rot_out[3]
 
             self.nav_pub(pr2_goal_pose)
-            rospy.sleep(2)
-            self.base_selection_complete = True
+            # rospy.sleep(2)
+            # self.base_selection_complete = True
         '''
         elif self.mode == 'manual':
             self.navigation.start_navigate()
@@ -321,7 +339,7 @@ class BaseSelectionManager(object):
 
             rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
         '''
-        self.send_task_count += 1
+        # self.send_task_count += 1
         # self.goal_data_pub.publish(ar_data)
     '''
     def servo_to_pose(self, world_B_goal):
@@ -469,15 +487,6 @@ class BaseSelectionManager(object):
         return self.reach_service()
 
     def call_base_selection(self):
-        # Place holder return
-        #bg = PoseStamped()
-        #bg.header.stamp = rospy.Time.now()
-        #bg.header.frame_id = 'ar_marker'
-        #bg.pose.position = Point(0., 0., 0.5)
-        #q = tft.quaternion_from_euler(0., np.pi/2, 0.)
-        #bg.pose.orientation = Quaternion(*q)
-        #return bg
-        ## End Place Holder
         self.feedback_pub.publish("Finding a good base location, please wait.")
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
 
@@ -499,107 +508,26 @@ class BaseSelectionManager(object):
         self.bed_state_z = data.data[1]
         self.bed_state_head_theta = data.data[0]
         self.bed_state_leg_theta = data.data[2]
-    '''
-    def base_goal_cb(self, data):
-        goal_trans = [data.pose.position.x,
-                 data.pose.position.y,
-                 data.pose.position.z]
-        goal_rot = [data.pose.orientation.x,
-               data.pose.orientation.y,
-               data.pose.orientation.z,
-               data.pose.orientation.w]
-        pr2_B_goal = createBMatrix(goal_trans, goal_rot)
-        pr2_trans = [data.pose.position.x,
-                 data.pose.position.y,
-                 data.pose.position.z]
-        pr2_rot = [data.pose.orientation.x,
-               data.pose.orientation.y,
-               data.pose.orientation.z,
-               data.pose.orientation.w]
-        world_B_pr2 = createBMatrix(pr2_trans, pr2_rot)
-        world_B_goal = world_B_pr2*pr2_B_goal
 
-        # self.head_pose = data
+    def get_head_pose(self, head_frame="/user_head_link"):
+        try:
+            now = rospy.Time.now()
+            self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
+            pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
+            return True
+        except Exception as e:
+            rospy.loginfo("TF Exception:\r\n%s" %e)
+            return False
 
-    def update_relations(self):
-        pr2_trans = [self.raw_base_pose.pose.position.x,
-                     self.raw_base_pose.pose.position.y,
-                     self.raw_base_pose.pose.position.z]
-        pr2_rot = [self.raw_base_pose.pose.orientation.x,
-                   self.raw_base_pose.pose.orientation.y,
-                   self.raw_base_pose.pose.orientation.z,
-                   self.raw_base_pose.pose.orientation.w]
-        world_B_pr2 = createBMatrix(pr2_trans, pr2_rot)
-        head_trans = [self.raw_head_pose.pose.position.x,
-                     self.raw_head_pose.pose.position.y,
-                     self.raw_head_pose.pose.position.z]
-        head_rot = [self.raw_head_pose.pose.orientation.x,
-                   self.raw_head_pose.pose.orientation.y,
-                   self.raw_head_pose.pose.orientation.z,
-                   self.raw_head_pose.pose.orientation.w]
-        world_B_head = createBMatrix(head_trans, head_rot)
-        pr2_B_head = world_B_pr2.I*world_B_head
-        pos, ori = Bmat_to_pos_quat(pr2_B_head)
-        psm = PoseStamped()
-        psm.header.frame_id = '/base_link'
-        psm.pose.position.x = pos[0]
-        psm.pose.position.y = pos[1]
-        psm.pose.position.z = pos[2]
-        psm.pose.orientation.x = ori[0]
-        psm.pose.orientation.y = ori[1]
-        psm.pose.orientation.z = ori[2]
-        psm.pose.orientation.w = ori[3]
-        self.head_pub(psm)
-
-    def head_frame_cb(self, data):
-        trans = [data.pose.position.x,
-                 data.pose.position.y,
-                 data.pose.position.z]
-        rot = [data.pose.orientation.x,
-               data.pose.orientation.y,
-               data.pose.orientation.z,
-               data.pose.orientation.w]
-        self.world_B_head = createBMatrix(trans, rot)
-        # self.update_relations()
-
-    def robot_frame_cb(self, data):
-        trans = [data.pose.position.x,
-                 data.pose.position.y,
-                 data.pose.position.z]
-        rot = [data.pose.orientation.x,
-               data.pose.orientation.y,
-               data.pose.orientation.z,
-               data.pose.orientation.w]
-        self.world_B_robot = createBMatrix(trans, rot)
-        # self.update_relations()
-
-    def reference_cb(self, data):
-        trans = [data.pose.position.x,
-                 data.pose.position.y,
-                 data.pose.position.z]
-        rot = [data.pose.orientation.x,
-               data.pose.orientation.y,
-               data.pose.orientation.z,
-               data.pose.orientation.w]
-        self.world_B_ref_model = createBMatrix(trans, rot)
-    '''
-    def get_head_pose(self, head_frame="/head_frame"):
-        if self.mode == 'mo-cap' or self.mode == 'ar_tag':
-            return self.head_pose
-        else:
-            try:
-                now = rospy.Time.now()
-                self.tfl.waitForTransform("/base_link", head_frame, now, rospy.Duration(15))
-                pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
-                head_pose = PoseStamped()
-                head_pose.header.frame_id = "/base_link"
-                head_pose.header.stamp = now
-                head_pose.pose.position = Point(*pos)
-                head_pose.pose.orientation = Quaternion(*quat)
-                return head_pose
-            except Exception as e:
-                rospy.loginfo("TF Exception:\r\n%s" %e)
-                return None
+    def get_bed_pose(self, bed_frame="/autobed/base_link"):
+        try:
+            now = rospy.Time.now()
+            self.listener.waitForTransform("/base_link", bed_frame, now, rospy.Duration(5))
+            pos, quat = self.tfl.lookupTransform("/base_link", bed_frame, now)
+            return True
+        except Exception as e:
+            rospy.loginfo("TF Exception:\r\n%s" %e)
+            return False
 
     def set_autobed_user_configuration(self, headrest_th, head_x, head_y):
 
