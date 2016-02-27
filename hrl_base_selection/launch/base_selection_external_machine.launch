@@ -18,6 +18,9 @@
     <!--<include file="$(find hrl_base_selection)/config/amcl_node.xml"/>-->
     <!--<include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>-->
     <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service.py" output="screen" args="--mode normal --user autobed --load scratching_knee_left"/>
+
+    <node name="task_manager" pkg="hrl_base_selection" type="task_manager.py" output="screen"/>
+
         <!--<arg name="mode" value="normal"/>-->
         <!--<arg name="user" value="autobed"/>-->
         <!--<arg name="load" value="scratching_knee_left"/>-->
