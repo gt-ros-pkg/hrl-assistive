@@ -249,6 +249,8 @@ class AutobedStatePublisherNode(object):
             human_joint_state.position[14] = -0.1
         else:
             print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
+            print 'Instead it is: ', bth
+            print 'Raw value (rad): ', headrest_th
         human_joint_state.position[15] = 0.
         human_joint_state.position[16] = 0.
         self.joint_pub.publish(human_joint_state)
