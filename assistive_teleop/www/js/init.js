@@ -56,12 +56,12 @@ var assistive_teleop = {
         initPr2(); 
         initGripper('horizontal');
         initTorsoSlider('horizontal');
-        initTTS('tabTTS');
+        //initTTS('tabTTS');
         //initARServoTab('tabServoing');
         initRunStop('runStopDiv');
-        initTrajPlay();
+        //initTrajPlay();
         //initBodyRegistration('tabBodyReg');
-        initEllControl();
+        //initEllControl();
         initCartControl();
         initTaskInterface('tabTasks');
         //initRYDSTab('tabRYDS');

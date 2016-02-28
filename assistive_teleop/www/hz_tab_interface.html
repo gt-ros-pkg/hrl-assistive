@@ -25,15 +25,15 @@
   <script type="text/javascript" src="js/teleop/pr2.js"></script>
   <script type="text/javascript" src="js/teleop/pr2_teleop.js"></script>
   <script type="text/javascript" src="js/teleop/cart_control.js"></script>
-  <script type="text/javascript" src="js/tts.js"></script>
+  <!--<script type="text/javascript" src="js/tts.js"></script>-->
   <!--<script type="text/javascript" src="js/ar_servo.js"></script>-->
   <script type="text/javascript" src="js/run_stop.js"></script>
-  <script type="text/javascript" src="js/body_registration.js"></script>
+  <!--<script type="text/javascript" src="js/body_registration.js"></script>-->
   <script type="text/javascript" src="js/tasks.js"></script>
-  <script type="text/javascript" src="js/ell_control.js"></script>
+  <!--<script type="text/javascript" src="js/ell_control.js"></script>-->
   <script type="text/javascript" src="js/force_level_widget.js"></script>
   <script type="text/javascript" src="js/skin_util.js"></script>
-  <script type="text/javascript" src="js/traj_play.js"></script>
+  <!--<script type="text/javascript" src="js/traj_play.js"></script>-->
   <!--<script type="text/javascript" src="js/ryds.js"></script>-->
   <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
 
@@ -83,14 +83,14 @@
                   </li>
                   <!--<li><a href="#tabServoing">Servoing</a>-->
                   <!--</li>-->
-                  <li><a href="#tab_traj_play">Traj. Playback</a>
-                  </li>
-                  <li><a href="#tab_ellipse">Ellipsoidal Control</a>
-                  </li>
-                  <li><a href="#tabBodyReg">Body Registration</a>
-                  </li>
-                  <li><a href="#tabTTS">TTS</a>
-                  </li>
+                  <!--<li><a href="#tab_traj_play">Traj. Playback</a>-->
+                  <!--</li>-->
+                  <!--<li><a href="#tab_ellipse">Ellipsoidal Control</a>-->
+                  <!--</li>-->
+                  <!--<li><a href="#tabBodyReg">Body Registration</a>-->
+                  <!--</li>-->
+                  <!--<li><a href="#tabTTS">TTS</a>-->
+                  <!--</li>-->
                   <li><a href="#tabTasks">Tasks</a>
                   </li>
                   <!--<li><a href="#tabRYDS">RYDS</a>-->
@@ -231,7 +231,7 @@
                 <!-- END TAB CART CONTROL -->
 
                 <!--<div id="tabServoing"></div>-->
-
+                <!--
                 <div id="tab_traj_play">
                   <table id="traj_play_layout">
                     <tr>
@@ -312,178 +312,179 @@
                     </tr>
                   </table>
                 </div>
+                -->
                 <!-- End Tab Traj Playbak -->
 
-                <div id="tab_ellipse">
-                  <table>
-                    <tr>
-                      <td>
-                        <table>
-                          <tr>
-                            <td>
-                            </td>
-                            <tr>
-                              <tr>
-                                <td>
-                                  <select class="centered" id="ell_mode_sel">
-                                    <!--<option id="mode_opt_wiping" value="wiping"> Wiping </option>-->
-                                    <option id="mode_opt_shaving" value="shaving" selected="selected">Shaving</option>
-                                    <!--<option id="mode_opt_scratching" value="scratching"> Scratching </option>-->
-                                    <!--<option id="mode_opt_feeding" value="feeding"> Feeding </option>-->
-                                  </select>
-                                </td>
-                                <tr>
-                                  <td>
-                                    <input type="checkbox" class="centered ell_control" id="ell_controller" />
-                                    <label id="ell_cont_state_check" for="ell_controller">Ellipsoid Controller</label>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <button class="centered ell_control" id="adj_mirror">Adjust Mirror</button>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <tr>
-                                    <td>
-                                      <button class="centered ell_control" id="tool_power">Start/Stop Razor</button>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td>
-                                      <div id='shave_select'>
-                                        <!--Shaving Selection Drop-Down and Entry -->
-                                        <table class='centered ell_control' frame=box rules=none border=3>
-                                          <tr>
-                                            <td>
-                                              <select class="centered ell_control" id='shave_list'></select>
-                                            </td>
-                                          </tr>
-                                          <tr>
-                                            <td>
-                                              <button class="centered ell_control" id="send_shave_select">Move to Selection</button>
-                                            </td>
-                                          </tr>
-                                        </table>
-                                      </div>
-                                      <!--End Shaving Drop-Down -->
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td>
-                                      <button class="centered ell_control" id="shave_stop">Stop</button>
-                                    </td>
-                                  </tr>
-                        </table>
-                      </td>
-                      <td>
-                        <div class="ell_control" id='bpd_ell_trans'>
-                          <!-- Translate Ellipse Buttonpad-->
-                          <table>
-                            <!--TODO:make id's unique-->
-                            <tr>
-                              <th colspan="4">Translate</th>
-                            </tr>
-                            <tr>
-                              <td rowspan="4">
-                                <div class="slider" id="ell_trans_slider" style="height:235px"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <button class="bpd arrow_trans_in" id="b7" value=1></button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_trans_up" id="b8" value=1></button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_trans_out" id="b9" value=1></button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <button class="bpd arrow_trans_left" id="b4" value="1"></button>
-                              </td>
-                              <td>
-                                <img id="gripper_icon" src="css/arrows/gripper_icon.png">
-                                </button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_trans_right" id="b6" value="-1"></button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td></td>
-                              <td>
-                                <button class="bpd arrow_trans_down" id="b2"></button>
-                              </td>
-                              <td></td>
-                            </tr>
-                          </table>
-                        </div>
-                        <!--END Translate Ellipse Buttonpad -->
-                      </td>
-                      <td>
-                        <div class="ell_control" id='bpd_ell_rot'>
-                          <!--Rotate Ellipse Buttonpad-->
-                          <table>
-                            <!-- TODO: make id's unique -->
-                            <tr>
-                              <th colspan="4">Rotate</th>
-                            </tr>
-                            <tr>
-                              <td rowspan="4">
-                                <div class="slider" id="ell_rot_slider" style="height:235px"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <button class="bpd arrow_rot_x_pos" id="b7" value=1></button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_rot_y_pos" id="b8" value=1></button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_rot_x_neg" id="b9" value=1></button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <button class="bpd arrow_rot_z_pos" id="b4" value=1></button>
-                              </td>
-                              <td>
-                                <img id="gripper_icon" src="css/arrows/gripper_icon.png">
-                                </button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_rot_z_neg" id="b6" value=-1></button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <button class="bpd" id="b1" value=1>Reset</button>
-                              </td>
-                              <td>
-                                <button class="bpd arrow_rot_y_neg" id="b2"></button>
-                              </td>
-                              <td></td>
-                            </tr>
-                          </table>
-                        </div>
-                        <!--END Ellipse Rotate buttonpad -->
-                      </td>
-                      </tr>
-                  </table>
-                </div>
+                <!--<div id="tab_ellipse">-->
+                  <!--<table>-->
+                    <!--<tr>-->
+                      <!--<td>-->
+                        <!--<table>-->
+                          <!--<tr>-->
+                            <!--<td>-->
+                            <!--</td>-->
+                            <!--<tr>-->
+                              <!--<tr>-->
+                                <!--<td>-->
+                                  <!--<select class="centered" id="ell_mode_sel">-->
+                                    <!--&lt;!&ndash;<option id="mode_opt_wiping" value="wiping"> Wiping </option>&ndash;&gt;-->
+                                    <!--<option id="mode_opt_shaving" value="shaving" selected="selected">Shaving</option>-->
+                                    <!--&lt;!&ndash;<option id="mode_opt_scratching" value="scratching"> Scratching </option>&ndash;&gt;-->
+                                    <!--&lt;!&ndash;<option id="mode_opt_feeding" value="feeding"> Feeding </option>&ndash;&gt;-->
+                                  <!--</select>-->
+                                <!--</td>-->
+                                <!--<tr>-->
+                                  <!--<td>-->
+                                    <!--<input type="checkbox" class="centered ell_control" id="ell_controller" />-->
+                                    <!--<label id="ell_cont_state_check" for="ell_controller">Ellipsoid Controller</label>-->
+                                  <!--</td>-->
+                                <!--</tr>-->
+                                <!--<tr>-->
+                                  <!--<td>-->
+                                    <!--<button class="centered ell_control" id="adj_mirror">Adjust Mirror</button>-->
+                                  <!--</td>-->
+                                <!--</tr>-->
+                                <!--<tr>-->
+                                  <!--<tr>-->
+                                    <!--<td>-->
+                                      <!--<button class="centered ell_control" id="tool_power">Start/Stop Razor</button>-->
+                                    <!--</td>-->
+                                  <!--</tr>-->
+                                  <!--<tr>-->
+                                    <!--<td>-->
+                                      <!--<div id='shave_select'>-->
+                                        <!--&lt;!&ndash;Shaving Selection Drop-Down and Entry &ndash;&gt;-->
+                                        <!--<table class='centered ell_control' frame=box rules=none border=3>-->
+                                          <!--<tr>-->
+                                            <!--<td>-->
+                                              <!--<select class="centered ell_control" id='shave_list'></select>-->
+                                            <!--</td>-->
+                                          <!--</tr>-->
+                                          <!--<tr>-->
+                                            <!--<td>-->
+                                              <!--<button class="centered ell_control" id="send_shave_select">Move to Selection</button>-->
+                                            <!--</td>-->
+                                          <!--</tr>-->
+                                        <!--</table>-->
+                                      <!--</div>-->
+                                      <!--&lt;!&ndash;End Shaving Drop-Down &ndash;&gt;-->
+                                    <!--</td>-->
+                                  <!--</tr>-->
+                                  <!--<tr>-->
+                                    <!--<td>-->
+                                      <!--<button class="centered ell_control" id="shave_stop">Stop</button>-->
+                                    <!--</td>-->
+                                  <!--</tr>-->
+                        <!--</table>-->
+                      <!--</td>-->
+                      <!--<td>-->
+                        <!--<div class="ell_control" id='bpd_ell_trans'>-->
+                          <!--&lt;!&ndash; Translate Ellipse Buttonpad&ndash;&gt;-->
+                          <!--<table>-->
+                            <!--&lt;!&ndash;TODO:make id's unique&ndash;&gt;-->
+                            <!--<tr>-->
+                              <!--<th colspan="4">Translate</th>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td rowspan="4">-->
+                                <!--<div class="slider" id="ell_trans_slider" style="height:235px"></div>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_in" id="b7" value=1></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_up" id="b8" value=1></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_out" id="b9" value=1></button>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_left" id="b4" value="1"></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<img id="gripper_icon" src="css/arrows/gripper_icon.png">-->
+                                <!--</button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_right" id="b6" value="-1"></button>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td></td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_trans_down" id="b2"></button>-->
+                              <!--</td>-->
+                              <!--<td></td>-->
+                            <!--</tr>-->
+                          <!--</table>-->
+                        <!--</div>-->
+                        <!--&lt;!&ndash;END Translate Ellipse Buttonpad &ndash;&gt;-->
+                      <!--</td>-->
+                      <!--<td>-->
+                        <!--<div class="ell_control" id='bpd_ell_rot'>-->
+                          <!--&lt;!&ndash;Rotate Ellipse Buttonpad&ndash;&gt;-->
+                          <!--<table>-->
+                            <!--&lt;!&ndash; TODO: make id's unique &ndash;&gt;-->
+                            <!--<tr>-->
+                              <!--<th colspan="4">Rotate</th>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td rowspan="4">-->
+                                <!--<div class="slider" id="ell_rot_slider" style="height:235px"></div>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_x_pos" id="b7" value=1></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_y_pos" id="b8" value=1></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_x_neg" id="b9" value=1></button>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_z_pos" id="b4" value=1></button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<img id="gripper_icon" src="css/arrows/gripper_icon.png">-->
+                                <!--</button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_z_neg" id="b6" value=-1></button>-->
+                              <!--</td>-->
+                            <!--</tr>-->
+                            <!--<tr>-->
+                              <!--<td>-->
+                                <!--<button class="bpd" id="b1" value=1>Reset</button>-->
+                              <!--</td>-->
+                              <!--<td>-->
+                                <!--<button class="bpd arrow_rot_y_neg" id="b2"></button>-->
+                              <!--</td>-->
+                              <!--<td></td>-->
+                            <!--</tr>-->
+                          <!--</table>-->
+                        <!--</div>-->
+                        <!--&lt;!&ndash;END Ellipse Rotate buttonpad &ndash;&gt;-->
+                      <!--</td>-->
+                      <!--</tr>-->
+                  <!--</table>-->
+                <!--</div>-->
                 <!--END Tab ellipse -->
 
-                <div id="tabBodyReg"></div>
+                <!--<div id="tabBodyReg"></div>-->
 
-                <div id="tabTTS"></div>
+                <!--<div id="tabTTS"></div>-->
 
                 <div id="tabTasks"></div>
 
-                <div id="tabRYDS"></div>
+                <!--<div id="tabRYDS"></div>-->
 
               </div>
               <!-- END Tabs -->
