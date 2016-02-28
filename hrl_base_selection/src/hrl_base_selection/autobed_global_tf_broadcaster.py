@@ -6,20 +6,22 @@ import rospy
 import tf
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from geometry_msgs.msg import PoseStamped
+import threading
 
 
 class AutobedGlobalTFBroadcaster(object):
     def __init__(self):
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
-        rospy.sleep(2)
+        self.frame_lock = threading.RLock()
+        rospy.sleep(1)
         rate = rospy.Rate(10.0)
         self.map_B_bed = None
         self.out_trans = None
         self.out_rot = None
         self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
 
-        while (not self.tf_listener.canTransform('odom_combined', 'torso_lift_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('map', 'torso_lift_link', rospy.Time(0))):
             try:
                 print 'Waiting for PR2 localization in world.'
                 rospy.sleep(1)
@@ -33,7 +35,7 @@ class AutobedGlobalTFBroadcaster(object):
                     self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
                                                       rospy.Time.now(),
                                                       'autobed/base_link',
-                                                      'odom_combined')
+                                                      'map')
                     rate.sleep()
                 except:
                     print 'Bed TF broadcaster crashed trying to broadcast!'
@@ -44,21 +46,21 @@ class AutobedGlobalTFBroadcaster(object):
         print 'Bed TF broadcaster crashed!'
 
     def ar_tag_autobed_cb(self, msg):
-        trans = [msg.pose.position.x,
-                 msg.pose.position.y,
-                 msg.pose.position.z]
-        rot = [msg.pose.orientation.x,
-               msg.pose.orientation.y,
-               msg.pose.orientation.z,
-               msg.pose.orientation.w]
-        now = rospy.Time.now()
-        pr2_B_bed = createBMatrix(trans, rot)
-        self.tf_listener.waitForTransform('odom_combined', msg.header.frame_id, now, rospy.Duration(1))
-        (newtrans, newrot) = self.tf_listener.lookupTransform('odom_combined', msg.header.frame_id, now)
-        map_B_pr2 = createBMatrix(newtrans, newrot)
-        self.map_B_bed = map_B_pr2*pr2_B_bed
-        (self.out_trans, self.out_rot) = Bmat_to_pos_quat(self.map_B_bed)
-
+        with self.frame_lock:
+            trans = [msg.pose.position.x,
+                     msg.pose.position.y,
+                     msg.pose.position.z]
+            rot = [msg.pose.orientation.x,
+                   msg.pose.orientation.y,
+                   msg.pose.orientation.z,
+                   msg.pose.orientation.w]
+            now = rospy.Time.now()
+            pr2_B_bed = createBMatrix(trans, rot)
+            self.tf_listener.waitForTransform('map', msg.header.frame_id, now, rospy.Duration(1))
+            (newtrans, newrot) = self.tf_listener.lookupTransform('map', msg.header.frame_id, now)
+            map_B_pr2 = createBMatrix(newtrans, newrot)
+            self.map_B_bed = map_B_pr2*pr2_B_bed
+            (self.out_trans, self.out_rot) = Bmat_to_pos_quat(self.map_B_bed)
 
 if __name__ == '__main__':
     rospy.init_node('autobed_global_tf_broadcaster')
