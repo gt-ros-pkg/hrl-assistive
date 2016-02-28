@@ -84,8 +84,8 @@ var initTaskInterface = function (tabDivId) {
                    "To send a task:</br></br>"+
                    "1. Select the action you would like the robot to perform.</br>"+
                    "2. Select the location where you would like the robot to perform this action.</br>" +
-                   "3. Click 'Start Task. The PR2 will move its base and the bed will adjust.'</br></br>" +
-                   "4. Click 'Move Arm. The PR2 will move its arm to the task area.'</br></br>" +
+                   "3. Click 'Start Task'. The PR2 will move its base and the bed will adjust.</br>" +
+                   "4. Click 'Move Arm'. The PR2 will move its arm to the task area.</br>" +
                    "The interface will prompt you if further assistance is required."
 
     $(divRef).append('<div id="'+tabDivId+'_infoDialog">' + INFOTEXT + '</div>');
