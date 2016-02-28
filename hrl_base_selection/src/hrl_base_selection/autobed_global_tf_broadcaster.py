@@ -14,12 +14,11 @@ class AutobedGlobalTFBroadcaster(object):
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         self.frame_lock = threading.RLock()
-        rospy.sleep(1)
+        rospy.sleep(10)
         rate = rospy.Rate(10.0)
         self.map_B_bed = None
         self.out_trans = None
         self.out_rot = None
-        self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
 
         while (not self.tf_listener.canTransform('map', 'torso_lift_link', rospy.Time(0))):
             try:
@@ -29,6 +28,9 @@ class AutobedGlobalTFBroadcaster(object):
                 print 'Bed TF broadcaster crashed!'
                 break
         rospy.sleep(1)
+        self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
+        rospy.sleep(1)
+        print 'Now have the map-to-pr2 transform. Will now try to starting broadcasting Autobeds position globally!'
         while not rospy.is_shutdown():
             if self.map_B_bed is not None:
                 try:
@@ -42,7 +44,7 @@ class AutobedGlobalTFBroadcaster(object):
                     break
             else:
                 print 'Waiting to detect bed AR tag at least once.'
-                rospy.sleep(1)
+                rospy.sleep(2)
         print 'Bed TF broadcaster crashed!'
 
     def ar_tag_autobed_cb(self, msg):
@@ -56,7 +58,7 @@ class AutobedGlobalTFBroadcaster(object):
                    msg.pose.orientation.w]
             now = rospy.Time.now()
             pr2_B_bed = createBMatrix(trans, rot)
-            self.tf_listener.waitForTransform('map', msg.header.frame_id, now, rospy.Duration(1))
+            self.tf_listener.waitForTransform('map', msg.header.frame_id, now, rospy.Duration(3))
             (newtrans, newrot) = self.tf_listener.lookupTransform('map', msg.header.frame_id, now)
             map_B_pr2 = createBMatrix(newtrans, newrot)
             self.map_B_bed = map_B_pr2*pr2_B_bed

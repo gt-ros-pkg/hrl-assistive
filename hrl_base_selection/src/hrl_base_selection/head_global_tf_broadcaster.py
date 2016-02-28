@@ -14,12 +14,11 @@ class HeadGlobalTFBroadcaster(object):
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         self.frame_lock = threading.RLock()
-        rospy.sleep(1)
+        rospy.sleep(10)
         rate = rospy.Rate(10.0)
         self.map_B_head = None
         self.out_trans = None
         self.out_rot = None
-        self.ar_tag_head_sub = rospy.Subscriber('/ar_tag_tracking/head_pose', PoseStamped, self.ar_tag_head_cb)
 
         while (not self.tf_listener.canTransform('map', 'torso_lift_link', rospy.Time(0))):
             try:
@@ -29,6 +28,9 @@ class HeadGlobalTFBroadcaster(object):
                 print 'Head TF broadcaster crashed here!'
                 break
         rospy.sleep(1)
+        self.ar_tag_head_sub = rospy.Subscriber('/ar_tag_tracking/head_pose', PoseStamped, self.ar_tag_head_cb)
+        rospy.sleep(1)
+        print 'The map-to-pr2 transform is now known. Starting to try to publish head global location!'
         while not rospy.is_shutdown():
             if self.map_B_head is not None:
                 try:
@@ -42,7 +44,7 @@ class HeadGlobalTFBroadcaster(object):
                     break
             else:
                 print 'Waiting to detect head AR tag at least once.'
-                rospy.sleep(1)
+                rospy.sleep(2)
         print 'Head TF broadcaster crashed!'
 
     def ar_tag_head_cb(self, msg):
@@ -56,7 +58,7 @@ class HeadGlobalTFBroadcaster(object):
                    msg.pose.orientation.w]
             now = rospy.Time.now()
             pr2_B_head = createBMatrix(trans, rot)
-            self.tf_listener.waitForTransform('map', 'torso_lift_link', now, rospy.Duration(1))
+            self.tf_listener.waitForTransform('map', 'torso_lift_link', now, rospy.Duration(3))
             (newtrans, newrot) = self.tf_listener.lookupTransform('map', 'torso_lift_link', now)
             map_B_pr2 = createBMatrix(newtrans, newrot)
             self.map_B_head = map_B_pr2*pr2_B_head

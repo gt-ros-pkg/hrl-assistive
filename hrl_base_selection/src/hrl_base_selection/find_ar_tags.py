@@ -48,6 +48,7 @@ class arTagDetector:
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
 
         self.pose_pub = rospy.Publisher(''.join(['ar_tag_tracking/', self.mode, '_pose']), PoseStamped, queue_size=1, latch=True)
+        rospy.sleep(1)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
     def config_head_AR_detector(self):
@@ -104,10 +105,8 @@ class arTagDetector:
         self.bed_state_leg_theta = data.data[2]
 
     def arTagCallback(self, msg):
-
-        markers = msg.markers
-
         with self.frame_lock:
+            markers = msg.markers
             for i in xrange(len(markers)):
                 if markers[i].id == self.tag_id:
                     cur_p = np.array([markers[i].pose.pose.position.x,

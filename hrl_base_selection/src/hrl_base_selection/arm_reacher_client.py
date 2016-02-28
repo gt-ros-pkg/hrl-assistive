@@ -51,6 +51,6 @@ if __name__ == '__main__':
 
     ## Place motions! PR2 will executes it sequencially ----------------    
     print armReachActionLeft("scratching_knee_left")
-    # print armReachActionLeft("initTest")
+    #print armReachActionLeft("initTest")
     ## sys.exit()
     

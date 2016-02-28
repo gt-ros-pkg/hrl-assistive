@@ -145,24 +145,26 @@ class armReachAction(mpcBaseAction):
     def serverCallback(self, req):
         task = req.data
         self.stop_motion = False
-
-        print 'Will now interpret right knee'
-
-        now = rospy.Time.now()
-        rospy.sleep(1)
-        self.listener.waitForTransform('/torso_lift_link', '/autobed/calf_left_link', now, rospy.Duration(5))
-        print 'here!'
-        now = rospy.Time.now()
-        rospy.sleep(1)
-        (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/autobed/calf_left_link', now)
-        print trans, '\n', rot
-        p = PyKDL.Vector(trans[0], trans[1], trans[2])
-        M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
-        self.knee_left = PyKDL.Frame(M, p)
-        # reference_B_goal = (array([-0.04310556,  0.17347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
-        # import tf.transformations as tft
-        # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
-
+        
+        if 'knee' in task.split('_') and 'left' in task.split('_'):
+         
+            print 'Will now interpret left knee'
+          
+            now = rospy.Time.now()
+            rospy.sleep(1)
+            self.listener.waitForTransform('/torso_lift_link', '/autobed/calf_left_link', now, rospy.Duration(5))
+            print 'here!'
+            now = rospy.Time.now()
+            rospy.sleep(1)
+            (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/autobed/calf_left_link', now)
+            print trans, '\n', rot
+            p = PyKDL.Vector(trans[0], trans[1], trans[2])
+            M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
+            self.knee_left = PyKDL.Frame(M, p)
+            # reference_B_goal = (array([-0.04310556,  0.17347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
+            # import tf.transformations as tft
+            # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
+           
         self.parsingMovements(self.motions[task][self.arm_name])
         return "Completed to execute "+task
 

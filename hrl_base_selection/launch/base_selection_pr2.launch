@@ -10,11 +10,10 @@
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
 
     <!-- For arm reacher -->
-    <!--
     <arg name="arm" default="l"/>
     <rosparam command="load" file="$(find hrl_base_selection)/params/pr2_config_params_l.yaml" />
     <node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen">
-    </node>-->
+    </node>
 
 
 </launch>
