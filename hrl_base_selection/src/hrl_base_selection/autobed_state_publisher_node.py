@@ -98,7 +98,12 @@ class AutobedStatePublisherNode(object):
         
         self.bed_height = ((poses[1]/100) - 0.09) if (((poses[1]/100) - 0.09) 
                 > 0) else 0
+        if poses[0]<0.02:
+            poses[0]=0.02
+        if poses[0]>79.9:
+            poses[0]=79.9
         head_angle = (poses[0]*pi/180)
+
         leg_angle = (poses[2]*pi/180 - 0.1)
         with self.frame_lock:
             self.collated_head_angle = np.delete(self.collated_head_angle, 0)
@@ -215,7 +220,7 @@ class AutobedStatePublisherNode(object):
         # bth = headrest_th
         # print bth
         # 0 degrees, 0 height
-        if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
+        if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
             human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
             human_joint_state.position[1] = (bth/40)*(-.17-.4)+.4
             human_joint_state.position[2] = (bth/40)*(-.76-(-.72))+(-.72)
@@ -231,7 +236,7 @@ class AutobedStatePublisherNode(object):
             human_joint_state.position[12] = (bth/40)*(.58-0.05)+.05
             human_joint_state.position[13] = -0.1
             human_joint_state.position[14] = -0.1
-        elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
+        elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
             human_joint_state.position[0] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
             human_joint_state.position[1] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
             human_joint_state.position[2] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
