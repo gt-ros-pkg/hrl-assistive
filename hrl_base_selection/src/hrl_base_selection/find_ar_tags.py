@@ -143,7 +143,7 @@ class arTagDetector:
 
                     pos = None
                     quat = None
-                    if True:
+                    if False:
                         # Moving average
                         pos = np.sum(positions, axis=0)
                         pos /= float(len(positions))

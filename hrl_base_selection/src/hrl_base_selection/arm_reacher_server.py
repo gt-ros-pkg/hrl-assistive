@@ -117,13 +117,14 @@ class armReachAction(mpcBaseAction):
         
         self.motions = {}
 
-        ## test motoins --------------------------------------------------------
+        ## test motions --------------------------------------------------------
         # It uses the l_gripper_push_frame
         self.motions['initTest'] = {}
         self.motions['initTest']['left'] = \
           [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
            ['PAUSE', 1.0],
-           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           ['MOVES', '[0.3, 0.45, 0.2, -3.1415, 0.0, 1.57]', 2.],
            #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],
            #['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],
            #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],
@@ -136,11 +137,20 @@ class armReachAction(mpcBaseAction):
         self.motions['scratching_knee_left']['left'] = \
           [['MOVES', '[-0.04310556,  0.07347758+0.05,  0.00485197, 0.48790861, -0.50380292,  0.51703901, -0.4907122]', 10., 'self.knee_left']]
         self.motions['scratching_knee_left']['right'] = []
-                                                            
+
+        self.motions['reach_initialization'] = {}
+        self.motions['reach_initialization']['left'] = \
+          [['MOVEJ', '[0.7629304700932569, -0.3365186041095207, 0.5240000202473829, -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]', 10.0],
+           ['PAUSE', 1.0],
+           #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVES', '[0.3, 0.45, 0.2, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],
+           #['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],
+           #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],
+          ]
+        self.motions['reach_initialization']['right'] = []
+                                                           
         rospy.loginfo("Parameters are loaded.")
-
-
-
         
     def serverCallback(self, req):
         task = req.data

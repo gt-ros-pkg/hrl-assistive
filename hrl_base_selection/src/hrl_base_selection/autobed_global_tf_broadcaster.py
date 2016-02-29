@@ -15,7 +15,7 @@ class AutobedGlobalTFBroadcaster(object):
         self.tf_listener = tf.TransformListener()
         self.frame_lock = threading.RLock()
         rospy.sleep(10)
-        rate = rospy.Rate(10.0)
+        rate = rospy.Rate(50.0)
         self.map_B_bed = None
         self.out_trans = None
         self.out_rot = None
