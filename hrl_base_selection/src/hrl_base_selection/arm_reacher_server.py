@@ -57,6 +57,7 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
 
         self.default_frame      = PyKDL.Frame()
+        self.listener = tf.TransformListener()
 
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -139,11 +140,11 @@ class armReachAction(mpcBaseAction):
         # reference_B_goal = (array([-0.04310556,  0.07347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
         # import tf.transformations as tft
         # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
-
-        self.motions['left_knee'] = {}
-        self.motions['left_knee']['left'] = \
+-1.5545391757129157, -0.010091262211602251, -1.6131045463852083
+        self.motions['leftKnee'] = {}
+        self.motions['leftKnee']['left'] = \
           [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 2., 'self.knee_left']]
-        self.motions['initTest']['right'] = []
+        self.motions['leftKnee']['right'] = []
                                                             
         rospy.loginfo("Parameters are loaded.")
 

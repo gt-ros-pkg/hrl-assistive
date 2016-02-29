@@ -7,8 +7,8 @@ import numpy as np
 import os, threading, copy
 
 import hrl_lib.circular_buffer as cb
-
-from ar_track_alvar_msgs.msg import AlvarMarkers
+import tf
+from ar_track_alvar.msg import AlvarMarkers
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from geometry_msgs.msg import PoseStamped  # , PointStamped, PoseArray
 from hrl_msgs.msg import FloatArrayBare
@@ -20,6 +20,8 @@ class arTagDetector:
         print 'Starting detection of', mode, 'AR tag'
         self.frame_lock = threading.RLock()
         self.mode = mode
+
+        self.listener = tf.TransformListener()
 
         self.tag_id = None
         self.tag_side_length = None
@@ -41,7 +43,7 @@ class arTagDetector:
             print 'I do not know what AR tag to look for... Abort!'
             return
 
-        self.hist_size = 10
+        self.hist_size = 30
         self.pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
 
@@ -50,12 +52,12 @@ class arTagDetector:
 
     def config_head_AR_detector(self):
         self.tag_id = 10 #9
-        self.tag_side_length = 0.053 #0.033
+        self.tag_side_length = 0.067 #0.054 #0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
-        model_trans_B_ar[0:3, 3] = np.array([0.1, 0.0, 0.13])
+        model_trans_B_ar[0:3, 3] = np.array([0.048, 0.0, 0.09])
 
         ar_roty_B = np.eye(4)
         ar_roty_B[0:3, 0:3] = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
@@ -75,21 +77,24 @@ class arTagDetector:
         self.tag_id = 4  # 9
 
         self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        self.tag_side_length = 0.053  # 0.033
+        self.tag_side_length = 0.067  # 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
-        model_trans_B_ar[0:3, 3] = np.array([-0.02, .01, 1.60])
+        # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
+        # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
+        model_trans_B_ar[0:3, 3] = np.array([-0.01, 0.00, 0.])
         ar_rotz_B = np.eye(4)
+        ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
         ar_roty_B = np.eye(4)
-        ar_roty_B[0:3, 0:3] = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
+        ar_roty_B[0:3, 0:3] = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
         # If left side of bed should be np.array([[-1,0],[0,-1]])
         # If right side of bed should be np.array([[1,0],[0,1]])
         ar_rotx_B = np.eye(4)
         # ar_rotx_B[1:3, 1:3] = np.array([[0,1],[-1,0]])
-        self.reference_B_ar = np.matrix(model_trans_B_ar)*np.matrix(ar_rotz_B)*np.matrix(ar_rotx_B)
+        self.reference_B_ar = np.matrix(model_trans_B_ar)*np.matrix(ar_roty_B)*np.matrix(ar_rotz_B)
 
     # When we are using the autobed, we probably need to know the state of the autobed. This records the current
     # state of the autobed.
@@ -113,8 +118,8 @@ class arTagDetector:
                                       markers[i].pose.pose.orientation.z,
                                       markers[i].pose.pose.orientation.w])
 
-                    # frame_id = markers[i].pose.header.frame_id
-                    # print 'Frame ID is: ', frame_id
+                    #frame_id = markers[i].pose.header.frame_id
+                    #print 'Frame ID is: ', frame_id
 
                     if np.linalg.norm(cur_p) > 4.0:
                         print "Detected tag is located too far away."
@@ -156,6 +161,9 @@ class arTagDetector:
 
                     pr2_B_ar = createBMatrix(pos, quat)
 
+                    if self.mode == 'autobed':
+                        pr2_B_ar = self.shift_to_ground(pr2_B_ar)
+
                     out_pos, out_quat = Bmat_to_pos_quat(pr2_B_ar*self.reference_B_ar.I)
 
                     ps = PoseStamped()
@@ -171,6 +179,29 @@ class arTagDetector:
                     ps.pose.orientation.w = out_quat[3]
 
                     self.pose_pub.publish(ps)
+
+    # I now project the bed pose onto the ground plane to mitigate potential problems with AR tag orientation
+    def shift_to_ground(self, this_pr2_B_ar):
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/torso_lift_link', '/base_footprint', now, rospy.Duration(5))
+        (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/base_footprint', now)
+        with self.frame_lock:
+            z_origin = np.array([0, 0, 1])
+            x_bed = np.array([this_pr2_B_ar[0, 0], this_pr2_B_ar[1, 0], this_pr2_B_ar[2, 0]])
+            y_bed_project = np.cross(z_origin, x_bed)
+            y_bed_project = y_bed_project/np.linalg.norm(y_bed_project)
+            x_bed_project = np.cross(y_bed_project, z_origin)
+            x_bed_project = x_bed_project/np.linalg.norm(x_bed_project)
+            pr2_liftlink_B_ar_project = np.eye(4)
+            for i in xrange(3):
+                pr2_liftlink_B_ar_project[i, 0] = x_bed_project[i]
+                pr2_liftlink_B_ar_project[i, 1] = y_bed_project[i]
+                pr2_liftlink_B_ar_project[i, 3] = this_pr2_B_ar[i, 3]
+            # liftlink_B_footprint = createBMatrix(trans, rot)
+
+            pr2_liftlink_B_ar_floor = copy.deepcopy(np.matrix(self.pr2_B_bed_project))
+            pr2_liftlink_B_ar_floor[2, 3] = 0. - trans[2]
+            return pr2_liftlink_B_ar_floor
 
 if __name__ == '__main__':
     rospy.init_node('find_ar_tags')

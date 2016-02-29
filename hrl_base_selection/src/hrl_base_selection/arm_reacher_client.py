@@ -40,7 +40,7 @@ import rospy
 from hrl_srvs.srv import String_String
 import hrl_lib.util as ut
 
-from hrl_manipulation_task.record_data import logger
+# from hrl_manipulation_task.record_data import logger
 
 if __name__ == '__main__':
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
 
     ## Place motions! PR2 will executes it sequencially ----------------    
-    print armReachActionLeft("left_knee")
+    print armReachActionLeft("leftKnee")
     # print armReachActionLeft("initTest")
     ## sys.exit()
     

@@ -54,5 +54,7 @@
   <run_depend>pixel_2_3d</run_depend>
   <run_depend>rosbridge_server</run_depend>
   <run_depend>mjpeg_server</run_depend>
+  <run_depend>pr2_gripper_sensor_action</run_depend>
+  <run_depend>tf2_web_republisher</run_depend>
 
 </package>

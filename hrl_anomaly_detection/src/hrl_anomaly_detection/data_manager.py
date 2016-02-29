@@ -35,6 +35,7 @@ import os, sys, copy
 import numpy as np
 import scipy
 import hrl_lib.util as ut
+import hrl_lib.quaternion as qt
 from hrl_anomaly_detection import util
 
 from mvpa2.datasets.base import Dataset
