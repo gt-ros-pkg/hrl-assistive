@@ -21,10 +21,10 @@ class Layer(object):
         '''
         n_output, n_input = W_init.shape
         assert b_init.shape == (n_output,)
-        self.W = theano.shared(value=W_init.astype(theano.config.floatX),
+        self.W = theano.shared(value=W_init.astype('float32'),
                                name='W',
                                borrow=True)
-        self.b = theano.shared(value=b_init.reshape(n_output, 1).astype(theano.config.floatX),
+        self.b = theano.shared(value=b_init.reshape(n_output, 1).astype('float32'),
                                name='b',
                                borrow=True,
                                broadcastable=(False, True))
@@ -182,8 +182,26 @@ class AD(object):
         return T.sum((self.output(x) - y)**2)
 
 
+    def L1_error(self, x, y):
+        '''
+        Compute the L1 error of the network output against the "true" output y
+        
+        :parameters:
+            - x : theano.tensor.var.TensorVariable
+                Theano symbolic variable for network input
+            - y : theano.tensor.var.TensorVariable
+                Theano symbolic variable for desired network output
 
-def gradient_updates_momentum(cost, params, learning_rate, momentum, lambda_reg):
+        :returns:
+            - error : theano.tensor.var.TensorVariable
+                The error between the network output and y
+        '''
+        return T.sum(abs(self.output(x) - y))
+
+
+
+def gradient_updates_momentum(cost, params, learning_rate, learning_rate_decay, momentum, dampening, \
+                              lambda_reg):
     '''
     Compute updates for gradient descent with momentum
     
@@ -194,8 +212,12 @@ def gradient_updates_momentum(cost, params, learning_rate, momentum, lambda_reg)
             Parameters to compute gradient against
         - learning_rate : float
             Gradient descent learning rate
+        - learning_rate_decay : float
+            Gradient descent learning rate decay
         - momentum : float
             Momentum parameter, should be at least 0 (standard gradient descent) and less than 1
+        - dampening : float
+            dampening for momentum
         - lambda_reg : float
             Regularization weight
    
@@ -209,10 +231,15 @@ def gradient_updates_momentum(cost, params, learning_rate, momentum, lambda_reg)
     updates = []
     # Just gradient descent on cost
     for param in params:
-        
+
         param_update = theano.shared(param.get_value()*0., broadcastable=param.broadcastable)
-        updates.append((param, param - learning_rate*param_update))
-        updates.append((param_update, momentum*param_update + (1. - momentum)*T.grad(cost, param) + lambda_reg*param*param))
+        updates.append((param, param - learning_rate/(np.float32(1.0)+learning_rate_decay)\
+                        *( momentum*param_update \
+                           +(np.float32(1.)-dampening)*(T.grad(cost, param) - lambda_reg*param))\
+                           ))
+        updates.append((param_update, momentum*param_update \
+                        +(np.float32(1.)-dampening)*(T.grad(cost, param) - lambda_reg*param)
+                        )) 
         
     return updates
 
