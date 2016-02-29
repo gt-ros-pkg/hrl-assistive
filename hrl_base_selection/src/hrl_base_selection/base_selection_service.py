@@ -268,9 +268,11 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/autobed/base_link', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/autobed/base_link', now)
+                    self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/autobed/base_link', now)
                     self.pr2_B_model = createBMatrix(trans, rot)
+                    # print 'The transform from PR2 to autobed is:'
+                    # print self.pr2_B_model
 
                     # Here I do some manual conversion to covert between the coordinate frame of the bed, which should
                     # be located in the center of the headboard of the bed on the floor, to the AR tag's coordinate
@@ -560,11 +562,18 @@ class BaseSelector(object):
                                        [m.sin(best_score_cfg[2][i]),  m.cos(best_score_cfg[2][i]), 0., best_score_cfg[1][i]],
                                        [0.,                      0.,                           1.,           0.],
                                        [0.,                      0.,                           0.,           1.]])
+            print 'model origin to goal:'
+            print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            print 'pr2_B_goal:'
+            print pr2_B_goal
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
             pos_goal, ori_goal = Bmat_to_pos_quat(pr2_B_goal)
-            pr2_base_output.append([pos_goal[0], pos_goal[1], m.acos(pr2_B_goal[0, 0])])
+            if pr2_B_goal[0,1]<=0:
+                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], m.acos(pr2_B_goal[0, 0])])
+            else:
+                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
         print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))
