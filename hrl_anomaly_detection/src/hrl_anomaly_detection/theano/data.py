@@ -57,7 +57,7 @@ def getData3(time_window, renew=False):
     local_range         = 1.25    
     nSet                = 1
     downSampleSize      = 200
-    nAugment            = 0
+    nAugment            = 4
 
     ## feature_list = ['unimodal_audioPower',\
     ##                 'unimodal_kinVel',\

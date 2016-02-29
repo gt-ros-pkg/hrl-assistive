@@ -300,7 +300,7 @@ if __name__ == '__main__':
                  type="int", default=1024, help='Size of batches ....')
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
                  ## default="[3]", help='Size of layers ....')
-                 default="[256,128]", help='Size of layers ....')
+                 default="[256,64,16]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
                  type="int", default=100000, help='Max iteration ....')
     
