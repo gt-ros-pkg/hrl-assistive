@@ -57,7 +57,7 @@ retrieving:
 
 Running sample:
 	install winequality-white from UCI dataset
-	put winequality-white in either /scratch/sgeadmin/ or /home/sgeadmin/ of all node
+	put winequality-white in either /scratch/user_name/ or /home/uer_name/ of all node
 	install scikit-learn on all node by either:
 		1. $starcluster runplugin machine-learn-installer clust_name
 		2. having node img already have sklearn at initialization 
