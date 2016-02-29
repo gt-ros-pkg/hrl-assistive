@@ -151,11 +151,15 @@ class BaseSelectionManager(object):
 
     def move_base_ui_cb(self, msg):
         print 'Trying to move base. Received input to move base from user!'
-        while not self.autobed_move_status:
+        if not self.autobed_move_status:
             log_msg = 'Waiting for autobed to complete its configuration change before moving PR2 base!'
             print log_msg
             self.feedback_pub.publish(String(log_msg))
-            rospy.sleep(2)
+            # rospy.sleep(2)
+        else:
+            log_msg = 'Moving PR2 base'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
             self.nav_pub.publish(self.pr2_goal_pose)
         return
 
@@ -189,12 +193,12 @@ class BaseSelectionManager(object):
         # self.head_pose = self.world_B_head
         # self.head_pose =
 
-        if self.get_head_pose():
+        if not self.get_head_pose():
             log_msg = "Head not currently found. Please look at the head."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
-        if self.get_bed_pose():
+        if not self.get_bed_pose():
             log_msg = "Bed not currently found. Please look at the AR tag by the bed."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
@@ -323,8 +327,8 @@ class BaseSelectionManager(object):
 
             pr2_B_goal = np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]), 0., base_goals[0]],
                                     [m.sin(base_goals[2]),  m.cos(base_goals[2]), 0., base_goals[1]],
-                                    [0.,               0.,                    1.,                0.],
-                                    [0.,               0.,                    0.,                1.]])
+                                    [0.,                   0.,                    1.,                0.],
+                                    [0.,                   0.,                    0.,                1.]])
             now = rospy.Time.now()
             self.listener.waitForTransform('/map', '/base_footprint', now, rospy.Duration(15))
             (trans, rot) = self.listener.lookupTransform('/map', '/base_footprint', now)

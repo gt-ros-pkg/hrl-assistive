@@ -158,7 +158,7 @@ class AutobedStatePublisherNode(object):
                               0,#self.leg_filt_data
                               0]# -(1+(4.0/9.0))*self.leg_filt_data
 
-        rate = rospy.Rate(20.0)
+        rate = rospy.Rate(10.0)
         while not rospy.is_shutdown():
             with self.frame_lock:
                 joint_state.header.stamp = rospy.Time.now()
@@ -192,86 +192,94 @@ class AutobedStatePublisherNode(object):
         return
 
     def set_autobed_user_configuration(self, headrest_th, occupied_state):
+        with self.frame_lock:
+            human_joint_state = JointState()
+            human_joint_state.header.stamp = rospy.Time.now()
 
-        human_joint_state = JointState()
-        human_joint_state.header.stamp = rospy.Time.now()
+            human_joint_state.name = [None]*(17)
+            human_joint_state.position = [None]*(17)
+            human_joint_state.name[0] = "autobed/neck_body_joint"
+            human_joint_state.name[1] = "autobed/upper_mid_body_joint"
+            human_joint_state.name[2] = "autobed/mid_lower_body_joint"
+            human_joint_state.name[3] = "autobed/body_quad_left_joint"
+            human_joint_state.name[4] = "autobed/body_quad_right_joint"
+            human_joint_state.name[5] = "autobed/quad_calf_left_joint"
+            human_joint_state.name[6] = "autobed/quad_calf_right_joint"
+            human_joint_state.name[7] = "autobed/calf_foot_left_joint"
+            human_joint_state.name[8] = "autobed/calf_foot_right_joint"
+            human_joint_state.name[9] = "autobed/body_arm_left_joint"
+            human_joint_state.name[10] = "autobed/body_arm_right_joint"
+            human_joint_state.name[11] = "autobed/arm_forearm_left_joint"
+            human_joint_state.name[12] = "autobed/arm_forearm_right_joint"
+            human_joint_state.name[13] = "autobed/forearm_hand_left_joint"
+            human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
+            human_joint_state.name[15] = "autobed/head_neck_joint1"
+            human_joint_state.name[16] = "autobed/head_neck_joint2"
 
-        human_joint_state.name = [None]*(17)
-        human_joint_state.position = [None]*(17)
-        human_joint_state.name[0] = "autobed/neck_body_joint"
-        human_joint_state.name[1] = "autobed/upper_mid_body_joint"
-        human_joint_state.name[2] = "autobed/mid_lower_body_joint"
-        human_joint_state.name[3] = "autobed/body_quad_left_joint"
-        human_joint_state.name[4] = "autobed/body_quad_right_joint"
-        human_joint_state.name[5] = "autobed/quad_calf_left_joint"
-        human_joint_state.name[6] = "autobed/quad_calf_right_joint"
-        human_joint_state.name[7] = "autobed/calf_foot_left_joint"
-        human_joint_state.name[8] = "autobed/calf_foot_right_joint"
-        human_joint_state.name[9] = "autobed/body_arm_left_joint"
-        human_joint_state.name[10] = "autobed/body_arm_right_joint"
-        human_joint_state.name[11] = "autobed/arm_forearm_left_joint"
-        human_joint_state.name[12] = "autobed/arm_forearm_right_joint"
-        human_joint_state.name[13] = "autobed/forearm_hand_left_joint"
-        human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
-        human_joint_state.name[15] = "autobed/head_neck_joint1"
-        human_joint_state.name[16] = "autobed/head_neck_joint2"
+            bth = m.degrees(headrest_th)
+            # bth = headrest_th
+            # print bth
+            # 0 degrees, 0 height
+            if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
+                human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
+                human_joint_state.position[1] = (bth/40)*(-.17-.4)+.4
+                human_joint_state.position[2] = (bth/40)*(-.76-(-.72))+(-.72)
+                human_joint_state.position[3] = -0.4
+                human_joint_state.position[4] = -0.4
+                human_joint_state.position[5] = 0.1
+                human_joint_state.position[6] = 0.1
+                human_joint_state.position[7] = (bth/40)*(-.05-.02)+.02
+                human_joint_state.position[8] = (bth/40)*(-.05-.02)+.0
+                human_joint_state.position[9] = (bth/40)*(-.06-(-.12))+(-.12)
+                human_joint_state.position[10] = (bth/40)*(-.06-(-.12))+(-.12)
+                human_joint_state.position[11] = (bth/40)*(.58-0.05)+.05
+                human_joint_state.position[12] = (bth/40)*(.58-0.05)+.05
+                human_joint_state.position[13] = -0.1
+                human_joint_state.position[14] = -0.1
+            elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
+                human_joint_state.position[0] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
+                human_joint_state.position[1] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
+                human_joint_state.position[2] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
+                human_joint_state.position[3] = -0.4
+                human_joint_state.position[4] = -0.4
+                human_joint_state.position[5] = 0.1
+                human_joint_state.position[6] = 0.1
+                human_joint_state.position[7] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+                human_joint_state.position[8] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+                human_joint_state.position[9] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+                human_joint_state.position[10] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+                human_joint_state.position[11] = ((bth-40)/40)*(.88-0.58)+.58
+                human_joint_state.position[12] = ((bth-40)/40)*(.88-0.58)+.58
+                human_joint_state.position[13] = -0.1
+                human_joint_state.position[14] = -0.1
+            else:
+                print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
+                print 'Instead it is: ', bth
+                print 'Raw value (rad): ', headrest_th
+            human_joint_state.position[15] = 0.
+            human_joint_state.position[16] = 0.
+            self.joint_pub.publish(human_joint_state)
+            unoccupied_shift = JointState()
+            unoccupied_shift.header.stamp = rospy.Time.now()
+            unoccupied_shift.name = [None]*(2)
+            unoccupied_shift.position = [None]*(2)
+            unoccupied_shift.name[0] = "autobed/head_bed_updown_joint"
+            unoccupied_shift.name[1] = "autobed/head_bed_leftright_joint"
+            if not occupied_state:
+                unoccupied_shift.position[0] = 15
+            else:
+                unoccupied_shift.position[0] = 0.
+            try:
+                now = rospy.Time.now()
+                self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(3))
+                (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
+                unoccupied_shift.position[1] = trans[1]
+            except tf.ExtrapolationException:
+                print 'Error with transform lookup'
+                unoccupied_shift.position[1] = 0.
 
-        bth = m.degrees(headrest_th)
-        # bth = headrest_th
-        # print bth
-        # 0 degrees, 0 height
-        if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
-            human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
-            human_joint_state.position[1] = (bth/40)*(-.17-.4)+.4
-            human_joint_state.position[2] = (bth/40)*(-.76-(-.72))+(-.72)
-            human_joint_state.position[3] = -0.4
-            human_joint_state.position[4] = -0.4
-            human_joint_state.position[5] = 0.1
-            human_joint_state.position[6] = 0.1
-            human_joint_state.position[7] = (bth/40)*(-.05-.02)+.02
-            human_joint_state.position[8] = (bth/40)*(-.05-.02)+.0
-            human_joint_state.position[9] = (bth/40)*(-.06-(-.12))+(-.12)
-            human_joint_state.position[10] = (bth/40)*(-.06-(-.12))+(-.12)
-            human_joint_state.position[11] = (bth/40)*(.58-0.05)+.05
-            human_joint_state.position[12] = (bth/40)*(.58-0.05)+.05
-            human_joint_state.position[13] = -0.1
-            human_joint_state.position[14] = -0.1
-        elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
-            human_joint_state.position[0] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
-            human_joint_state.position[1] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
-            human_joint_state.position[2] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
-            human_joint_state.position[3] = -0.4
-            human_joint_state.position[4] = -0.4
-            human_joint_state.position[5] = 0.1
-            human_joint_state.position[6] = 0.1
-            human_joint_state.position[7] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            human_joint_state.position[8] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            human_joint_state.position[9] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            human_joint_state.position[10] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            human_joint_state.position[11] = ((bth-40)/40)*(.88-0.58)+.58
-            human_joint_state.position[12] = ((bth-40)/40)*(.88-0.58)+.58
-            human_joint_state.position[13] = -0.1
-            human_joint_state.position[14] = -0.1
-        else:
-            print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
-            print 'Instead it is: ', bth
-            print 'Raw value (rad): ', headrest_th
-        human_joint_state.position[15] = 0.
-        human_joint_state.position[16] = 0.
-        self.joint_pub.publish(human_joint_state)
-        unoccupied_shift = JointState()
-        unoccupied_shift.header.stamp = rospy.Time.now()
-        unoccupied_shift.name = [None]*(2)
-        unoccupied_shift.position = [None]*(2)
-        unoccupied_shift.name[0] = "autobed/head_bed_updown_joint"
-        unoccupied_shift.name[1] = "autobed/head_bed_leftright_joint"
-        if not occupied_state:
-            unoccupied_shift.position[0] = 15
-        else:
-            unoccupied_shift.position[0] = 0.
-        unoccupied_shift.position[1] = 0.
-        self.joint_pub.publish(unoccupied_shift)
-        # print 'done with human joints!'
+            self.joint_pub.publish(unoccupied_shift)
+            # print 'done with human joints!'
 
 
 if __name__ == "__main__":
