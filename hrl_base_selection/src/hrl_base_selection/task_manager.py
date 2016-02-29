@@ -38,6 +38,8 @@ class BaseSelectionManager(object):
         self.model = 'autobed'  # options are 'chair' and 'autobed'
         self.mode = mode
 
+        self.frame_lock = RLock()
+
         self.listener = TransformListener()
 
         self.send_task_count = 0
@@ -53,7 +55,7 @@ class BaseSelectionManager(object):
             self.autobed_move_status = False
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
-            self.autobed_move_status_sub = rospy.Subscriber('/abdstatus0', Bool, self.bed_move_status.cb)
+            self.autobed_move_status_sub = rospy.Subscriber('/abdstatus0', Bool, self.autobed_move_status_cb)
             # self.autobed_joint_sub = rospy.Subscriber('autobed/joint_states', JointState, self.bed_state_cb)
             rospy.wait_for_service('autobed_occ_status')
             try:
@@ -128,10 +130,10 @@ class BaseSelectionManager(object):
         self.start_task_input_sub = rospy.Subscriber("action_location_goal", String, self.start_task_ui_cb)
         self.move_base_input_sub = rospy.Subscriber("move_base_to_goal", String, self.move_base_ui_cb)
         self.move_arm_input_sub = rospy.Subscriber("move_arm_to_goal", String, self.move_arm_ui_cb)
-        self.reset_arm_input_sub = rospy.Subscriber("move_arm_to_goal", String, self.reset_arm_ui_cb)
+        self.reset_arm_input_sub = rospy.Subscriber("reset_arm_ui", String, self.reset_arm_ui_cb)
         # self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
-        self.frame_lock = RLock()
+
 
         print 'Task manager is ready!!'
 
@@ -543,9 +545,9 @@ class BaseSelectionManager(object):
             # self.bed_state_head_theta = data.data[0]
             self.bed_state_leg_theta = data.data[2]
 
-    def bed_move_status_cb(self, data):
+    def autobed_move_status_cb(self, data):
         with self.frame_lock:
-            self.bed_move_status = data.data
+            self.autobed_move_status = data.data
 
     def get_head_pose(self, head_frame="/user_head_link"):
         try:
