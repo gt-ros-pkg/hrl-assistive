@@ -57,18 +57,19 @@ def getData3(time_window, renew=False):
     local_range         = 1.25    
     nSet                = 1
     downSampleSize      = 200
+    nAugment            = 0
 
-    feature_list = ['unimodal_audioPower',\
-                    'unimodal_kinVel',\
-                    'unimodal_ftForce',\
-                    ##'unimodal_visionChange',\
-                    ##'unimodal_ppsForce',\
-                    ##'unimodal_fabricForce',\
-                    'crossmodal_targetEEDist', \
-                    'crossmodal_targetEEAng']
+    ## feature_list = ['unimodal_audioPower',\
+    ##                 'unimodal_kinVel',\
+    ##                 'unimodal_ftForce',\
+    ##                 ##'unimodal_visionChange',\
+    ##                 ##'unimodal_ppsForce',\
+    ##                 ##'unimodal_fabricForce',\
+    ##                 'crossmodal_targetEEDist', \
+    ##                 'crossmodal_targetEEAng']
     feature_list = ['relativePose_artag_EE', \
                     'relativePose_artag_artag', \
-                    'kinectAudio',\
+                    ## 'kinectAudio',\
                     'wristAudio', \
                     'ft', \
                     ## 'pps', \
@@ -84,7 +85,7 @@ def getData3(time_window, renew=False):
         # Time-sliding window
         new_trainingData2 = getTimeDelayData( new_trainingData, time_window )
         new_testData2     = getTimeDelayData( new_testData, time_window )
-        nSingleData       = len(new_testData)-time_window+1
+        nSingleData       = len(new_testData[0][0])-time_window+1
 
         return new_trainingData2.T, new_testData2.T, nSingleData
 
@@ -96,7 +97,7 @@ def getData3(time_window, renew=False):
                     nSet=nSet, \
                     downSampleSize=downSampleSize, \
                     scale=1.0,\
-                    ae_data=True, data_ext=False, \
+                    ae_data=True, data_ext=False, nAugment=nAugment, \
                     feature_list=feature_list, \
                     data_renew=renew)
 
@@ -141,8 +142,10 @@ def getData3(time_window, renew=False):
     new_trainingData = np.vstack([np.swapaxes(normalTrainingData, 0, 1), \
                                   np.swapaxes(abnormalTrainingData, 0, 1)])
 
-    new_testData = np.vstack([np.swapaxes(normalTestData, 0, 1),
-                              np.swapaxes(abnormalTestData, 0, 1)])
+    ## new_testData = np.vstack([np.swapaxes(normalTestData, 0, 1),
+    ##                           np.swapaxes(abnormalTestData, 0, 1)])
+    new_testData = np.swapaxes(normalTestData, 0, 1)
+
     
     ## new_trainingData = []
     ## for i in xrange(len(trainingData[0])):
@@ -180,7 +183,7 @@ def getData3(time_window, renew=False):
     # Time-sliding window
     new_trainingData2 = getTimeDelayData( new_trainingData, time_window )
     new_testData2     = getTimeDelayData( new_testData, time_window )
-    nSingleData       = len(new_testData)-time_window+1
+    nSingleData       = len(new_testData[0][0])-time_window+1
 
     return new_trainingData2.T, new_testData2.T, nSingleData
 
@@ -199,4 +202,4 @@ def getTimeDelayData(data, time_window):
 if __name__ == '__main__':
 
     
-    X_train, X_test, nSingleData = getData3(4, renew=False)
+    X_train, X_test, nSingleData = getData3(1, renew=True)

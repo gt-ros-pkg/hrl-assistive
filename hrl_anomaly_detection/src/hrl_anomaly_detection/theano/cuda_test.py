@@ -4,7 +4,7 @@ import numpy
 import time
 
 vlen = 10 * 30 * 768  # 10 x #cores x # threads per core
-iters = 1 #000
+iters = 1000
 
 rng = numpy.random.RandomState(22)
 x = shared(numpy.asarray(rng.rand(vlen), 'float32'))
