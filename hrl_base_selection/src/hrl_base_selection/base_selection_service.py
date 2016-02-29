@@ -258,8 +258,8 @@ class BaseSelector(object):
         elif self.mode == 'normal':
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/head_link', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_link', now)
+                self.listener.waitForTransform('/base_link', '/user_head_link', now, rospy.Duration(15))
+                (trans, rot) = self.listener.lookupTransform('/base_link', '/user_head_link', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
@@ -268,8 +268,8 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/autobed_base_link', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/autobed_base_link', now)
+                    self.listener.waitForTransform('/base_link', '/autobed/base_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_link', '/autobed/base_link', now)
                     self.pr2_B_model = createBMatrix(trans, rot)
 
                     # Here I do some manual conversion to covert between the coordinate frame of the bed, which should
@@ -296,7 +296,7 @@ class BaseSelector(object):
                     # self.ar_B_model = createBMatrix(trans, rot)
                 # Probably for the best to not try to do things from too far away. Also, if the AR tag is more than 4m
                 # away, it is likely that an error is occurring with its detection.
-                if np.linalg.norm(trans) > 4:
+                if np.linalg.norm(trans) > 5.:
                     rospy.loginfo('AR tag is too far away. Use the \'Testing\' button to move PR2 to 1 meter from AR '
                                   'tag. Or just move it closer via other means. Alternatively, the PR2 may have lost '
                                   'sight of the AR tag or it is having silly issues recognizing it. ')
@@ -304,6 +304,7 @@ class BaseSelector(object):
             except Exception as e:
                 rospy.loginfo("TF Exception. Could not get the AR_tag location, bed location, or "
                               "head location:\r\n%s" % e)
+                print 'Error!! In base selection'
                 return None, None
         # Demo mode is to use motion capture to get locations. In this case, some things simplify out.
         elif self.mode == 'demo':
@@ -510,7 +511,7 @@ class BaseSelector(object):
         # Published the wheelchair location to create a marker in rviz for visualization to compare where the service believes the wheelchair is to
         # where the person is (seen via kinect).
         pos_goal, ori_goal = Bmat_to_pos_quat(subject_location)
-        self.publish_subject_marker(pos_goal, ori_goal)
+        self.publish_sub_marker(pos_goal, ori_goal)
 
         # Visualize plot is a function to return a 2-D plot showing the best scores for each robot X-Y base location
         # after the updates to the score from above. Currently deprecated, so don't use it.
