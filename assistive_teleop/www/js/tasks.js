@@ -83,11 +83,13 @@ var initTaskInterface = function (tabDivId) {
                        '<tr>' +
                          '<td id="' + tabDivId + '_R1C0"></td>' +
                          '<td id="' + tabDivId + '_R1C1"></td>' +
-                         '<td id="' + tabDivId + '_R1C2"></td>' +
+                         '<td id="' + tabDivId + '_R1C2" colspan="2"></td>' +
+                         '<td id="' + tabDivId + '_R1C4" colspan="2"></td>' +
                        '</tr>' +
                        '<tr>' +
                          '<td id="' + tabDivId + '_R2C0" colspan="2"></td>' +
                          '<td id="' + tabDivId + '_R2C2" colspan="2"></td>' +
+                         '<td id="' + tabDivId + '_R2C4" colspan="2"></td>' +
                        '</tr>' +
                      '</table>');
     $(divRef+'_R1C0').append('<select id="task_action_select">' + 
