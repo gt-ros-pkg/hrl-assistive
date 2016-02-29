@@ -289,7 +289,7 @@ if __name__ == '__main__':
     p.add_option('--learning_rate', '--lr', action='store', dest='fLearningRate',
                  type="float", default=1e-5, help='Learning rate weight')
     p.add_option('--learning_rate_decay', '--lrd', action='store', dest='fLearningRateDecay',
-                 type="float", default=1e-7, help='Learning rate weight decay')
+                 type="float", default=1e-5, help='Learning rate weight decay')
     p.add_option('--momentum', '--m', action='store', dest='fMomentum',
                  type="float", default=1e-6, help='momentum')
     p.add_option('--dampening', '--d', action='store', dest='fDampening',
@@ -300,7 +300,7 @@ if __name__ == '__main__':
                  type="int", default=1024, help='Size of batches ....')
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
                  ## default="[3]", help='Size of layers ....')
-                 default="[64,32,16]", help='Size of layers ....')
+                 default="[256,128]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
                  type="int", default=100000, help='Max iteration ....')
     
