@@ -52,14 +52,14 @@ class arTagDetector:
         self.hist_size = 30
         self.pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
-        now = rospy.Time.now()
-        while not self.listener.canTransform('torso_lift_link', 'map', now):
+        #now = rospy.Time.now()
+        while not self.listener.canTransform('torso_lift_link', 'map', rospy.Time(0)):
             rospy.sleep(2)
             print self.mode, ' AR tag waiting for the map transform.'
             now = rospy.Time.now()
         # self.pose_pub = rospy.Publisher(''.join(['ar_tag_tracking/', self.mode, '_pose']), PoseStamped,
         #                                 queue_size=1, latch=True)
-        print self.mode, ' will now start publishing its location in tf!'
+        print self.mode, 'will now start publishing its location in tf!'
         # rospy.sleep(1)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
         rospy.sleep(2)

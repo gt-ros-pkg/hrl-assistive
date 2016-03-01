@@ -8,7 +8,7 @@
 	<arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" /> 
 	<!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> --> 
 	<!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
-	<arg name="output_frame" default="/torso_lift_link" />
+	<arg name="output_frame" default="map" />
 
 
 	<!-- Vision sensor -->
@@ -22,8 +22,8 @@
 	<node name="find_head" pkg="hrl_base_selection" type="find_ar_tags.py" respawn="false" output="screen" args="--mode head"/>
 
 	<!--Initialize the global transforms to localize the bed and head in the world.-->
-    <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
-    <node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>
+   <!-- <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
+    <node name="head_global_tf_broadcaster" pkg="hrl_base_selection" type="head_global_tf_broadcaster.py" output="screen"/>-->
 
 
 </launch>
