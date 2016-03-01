@@ -27,8 +27,8 @@ class HeadDetector:
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
+        self.head_center_2d = [0., 0., 0.]
         rospy.sleep(2)
-        rospy.init_node('head_pose_broadcaster', anonymous=True)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
         while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
@@ -63,8 +63,9 @@ class HeadDetector:
                          threshold=30,
                          overlap=0.1) 
         if blobs.any():
-            head_center_2d = blobs[0, :]
-        y, x, r = head_center
+            self.head_center_2d = blobs[0, :]
+        y, x, r = self.head_center_2d
+        print x, y
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, 0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
@@ -77,10 +78,10 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                                                   rospy.Time(0), rospy.Duration(1))
+                # self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
+                #                                    rospy.Time(0), rospy.Duration(1))
                 (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
-                                                                      'autobed/head_rest_link', now)
+                                                                      'autobed/head_rest_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
                 (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
@@ -98,6 +99,7 @@ class HeadDetector:
                 pass
 
 if __name__ == '__main__':
+    rospy.init_node('head_pose_broadcaster', anonymous=True)
     head_blob = HeadDetector()
     #head_blob.run()
 
