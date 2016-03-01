@@ -2,7 +2,7 @@
 
 import roslib
 roslib.load_manifest('hrl_base_selection')
-from threading import Lock
+from threading import RLock
 import copy
 import numpy as np
 import math as m
@@ -38,6 +38,8 @@ class BaseSelectionManager(object):
         self.model = 'autobed'  # options are 'chair' and 'autobed'
         self.mode = mode
 
+        self.frame_lock = RLock()
+
         self.listener = TransformListener()
 
         self.send_task_count = 0
@@ -50,18 +52,22 @@ class BaseSelectionManager(object):
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
-            # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            self.autobed_move_status = False
+            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
-            self.autobed_joint_sub = rospy.Subscriber('autobed/joint_states', JointState, self.bed_state_cb)
-            # rospy.wait_for_service('autobed_occ_status')
+            self.autobed_move_status_sub = rospy.Subscriber('/abdstatus0', Bool, self.autobed_move_status_cb)
+            # self.autobed_joint_sub = rospy.Subscriber('autobed/joint_states', JointState, self.bed_state_cb)
+            rospy.wait_for_service('autobed_occ_status')
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
 
-            # rospy.wait_for_service("/arm_reach_enable")
+            rospy.wait_for_service("/arm_reach_enable")
             self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
+            rospy.wait_for_service("select_base_position")
+            self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
             # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
@@ -87,9 +93,9 @@ class BaseSelectionManager(object):
             self.raw_head_pose = None
             self.raw_base_pose = None
             self.raw_object_pose = None
-            self.raw_head_sub = rospy.Subscriber('/head_frame', PoseStamped, self.head_frame_cb)
-            self.raw_base_sub = rospy.Subscriber('/robot_frame', PoseStamped, self.robot_frame_cb)
-            self.raw_object_sub = rospy.Subscriber('/reference', PoseStamped, self.reference_cb)
+            # self.raw_head_sub = rospy.Subscriber('/head_frame', PoseStamped, self.head_frame_cb)
+            # self.raw_base_sub = rospy.Subscriber('/robot_frame', PoseStamped, self.robot_frame_cb)
+            # self.raw_object_sub = rospy.Subscriber('/reference', PoseStamped, self.reference_cb)
             # self.head_pub = rospy.Publisher('/head_frame', PoseStamped, latch=True)
             # self.base_pub = rospy.Publisher('/robot_frame', PoseStamped, latch=True)
             # self.object_pub = rospy.Publisher('/reference', PoseStamped, latch=True)
@@ -122,10 +128,12 @@ class BaseSelectionManager(object):
         # print armReachActionLeft("leftKnee")
 
         self.start_task_input_sub = rospy.Subscriber("action_location_goal", String, self.start_task_ui_cb)
+        self.move_base_input_sub = rospy.Subscriber("move_base_to_goal", String, self.move_base_ui_cb)
         self.move_arm_input_sub = rospy.Subscriber("move_arm_to_goal", String, self.move_arm_ui_cb)
+        self.reset_arm_input_sub = rospy.Subscriber("reset_arm_ui", String, self.reset_arm_ui_cb)
         # self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
-        self.lock = Lock()
+
 
         print 'Task manager is ready!!'
 
@@ -140,6 +148,27 @@ class BaseSelectionManager(object):
     #
     # def ar_tag_head_cb(self, msg):
     #     self.head_pose = msg
+
+    def move_base_ui_cb(self, msg):
+        print 'Trying to move base. Received input to move base from user!'
+        if not self.autobed_move_status:
+            log_msg = 'Waiting for autobed to complete its configuration change before moving PR2 base!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            # rospy.sleep(2)
+        else:
+            log_msg = 'Moving PR2 base'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            self.nav_pub.publish(self.pr2_goal_pose)
+        return
+
+    def reset_arm_ui_cb(self, msg):
+        print 'Resetting arm configuration!'
+        # split_msg = msg.data.split()
+        # self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print self.armReachActionLeft('reach_initialization')
+        return
 
     def move_arm_ui_cb(self, msg):
         print 'Moving arm for task: ', msg.data
@@ -164,12 +193,12 @@ class BaseSelectionManager(object):
         # self.head_pose = self.world_B_head
         # self.head_pose =
 
-        if self.get_head_pose():
+        if not self.get_head_pose():
             log_msg = "Head not currently found. Please look at the head."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
             return
-        if self.get_bed_pose():
+        if not self.get_bed_pose():
             log_msg = "Bed not currently found. Please look at the AR tag by the bed."
             self.feedback_pub.publish(String(log_msg))
             rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
@@ -178,7 +207,7 @@ class BaseSelectionManager(object):
         if self.model == 'autobed':
 
             # self.autobed_occupied_status = autobed_occupied_status_client().state
-            if self.AutobedOcc().data:
+            if not self.AutobedOcc().data:
                 log_msg = "Bed is currently unoccupied. Can't do the task with nobody in the bed."
                 self.feedback_pub.publish(String(log_msg))
                 rospy.loginfo("[%s] %s" % (rospy.get_name(), log_msg))
@@ -267,48 +296,57 @@ class BaseSelectionManager(object):
         #     base_goals_list.append(copy.copy(psm))
         #     configuration_goals_list.append([configuration_goals[0+3*i], configuration_goals[1+3*i],
         #                                      configuration_goals[2+3*i]])
+
+
+        # Move autobed if we are dealing with autobed. If not autobed, don't move it. Temporarily fixed to True for
+        # testing
+        if self.model == 'autobed':
+            autobed_goal = FloatArrayBare()
+
+            # Hack to have PR2 avoid the poles and things under the autobed that are not included in its collision
+            # model.
+            if configuration_goals[1] > 1.:
+                configuration_goals[1] += 14
+                configuration_goals[0] += 0.14
+            autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9+14, self.bed_state_leg_theta]
+            self.autobed_pub.publish(autobed_goal)
+            print 'The autobed should be set to a height of: ', configuration_goals[1]+7
+            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
+
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         # msg.tag_goal_pose.header.frame_id
         torso_lift_msg = SingleJointPositionActionGoal()
         torso_lift_msg.goal.position = configuration_goals[0]
         self.torso_lift_pub.publish(torso_lift_msg)
 
-        # Move autobed if we are dealing with autobed. If not autobed, don't move it. Temporarily fixed to True for
-        # testing
-        if self.model == 'autobed':
-            # autobed_goal = FloatArrayBare()
-            # autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
-            # self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals[1]+7
-            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
-
 
         if self.mode == 'ar_tag':
-            pr2_goal_pose = PoseStamped()
-            pr2_goal_pose.header.stamp = rospy.Time.now()
-            pr2_goal_pose.header.frame_id = 'map'
+            self.pr2_goal_pose = PoseStamped()
+            self.pr2_goal_pose.header.stamp = rospy.Time.now()
+            self.pr2_goal_pose.header.frame_id = 'map'
 
-            pr2_B_goal = np.matrix([[m.cos(base_goals[2][i]), -m.sin(base_goals[2][i]), 0., base_goals[0][i]],
-                                    [m.sin(base_goals[2][i]),  m.cos(base_goals[2][i]), 0., base_goals[1][i]],
-                                    [0.,                                            0., 1.,               0.],
-                                    [0.,                                            0., 0.,               1.]])
+            pr2_B_goal = np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]), 0., base_goals[0]],
+                                    [m.sin(base_goals[2]),  m.cos(base_goals[2]), 0., base_goals[1]],
+                                    [0.,                   0.,                    1.,                0.],
+                                    [0.,                   0.,                    0.,                1.]])
             now = rospy.Time.now()
-            self.listener.waitForTransform('/map', '/base_link', now, rospy.Duration(15))
-            (trans, rot) = self.listener.lookupTransform('/map', '/base_link', now)
+            self.listener.waitForTransform('/map', '/base_footprint', now, rospy.Duration(15))
+            (trans, rot) = self.listener.lookupTransform('/map', '/base_footprint', now)
             map_B_pr2 = createBMatrix(trans, rot)
             map_B_goal = map_B_pr2*pr2_B_goal
 
             trans_out, rot_out = Bmat_to_pos_quat(map_B_goal)
 
-            pr2_goal_pose.pose.position.x = trans_out[0]
-            pr2_goal_pose.pose.position.y = trans_out[1]
-            pr2_goal_pose.pose.position.z = trans_out[2]
-            pr2_goal_pose.pose.orientation.x = rot_out[0]
-            pr2_goal_pose.pose.orientation.y = rot_out[1]
-            pr2_goal_pose.pose.orientation.z = rot_out[2]
-            pr2_goal_pose.pose.orientation.w = rot_out[3]
+            self.pr2_goal_pose.pose.position.x = trans_out[0]
+            self.pr2_goal_pose.pose.position.y = trans_out[1]
+            self.pr2_goal_pose.pose.position.z = trans_out[2]
+            self.pr2_goal_pose.pose.orientation.x = rot_out[0]
+            self.pr2_goal_pose.pose.orientation.y = rot_out[1]
+            self.pr2_goal_pose.pose.orientation.z = rot_out[2]
+            self.pr2_goal_pose.pose.orientation.w = rot_out[3]
 
-            self.nav_pub(pr2_goal_pose)
+            rospy.loginfo('Ready to move! Click to move PR2 base!')
+            print 'Ready to move! Click to move PR2 base!'
             # rospy.sleep(2)
             # self.base_selection_complete = True
         '''
@@ -505,16 +543,21 @@ class BaseSelectionManager(object):
         return resp.base_goal, resp.configuration_goal
 
     def bed_state_cb(self, data):
-        h = data
-        # self.bed_state_z = data.data[1]
-        # self.bed_state_head_theta = data.data[0]
-        # self.bed_state_leg_theta = data.data[2]
+        with self.frame_lock:
+            # h = data
+            # self.bed_state_z = data.data[1]
+            # self.bed_state_head_theta = data.data[0]
+            self.bed_state_leg_theta = data.data[2]
+
+    def autobed_move_status_cb(self, data):
+        with self.frame_lock:
+            self.autobed_move_status = data.data
 
     def get_head_pose(self, head_frame="/user_head_link"):
         try:
             now = rospy.Time.now()
             self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
-            pos, quat = self.tfl.lookupTransform("/base_link", head_frame, now)
+            pos, quat = self.listener.lookupTransform("/base_link", head_frame, now)
             return True
         except Exception as e:
             rospy.loginfo("TF Exception:\r\n%s" %e)
@@ -524,7 +567,7 @@ class BaseSelectionManager(object):
         try:
             now = rospy.Time.now()
             self.listener.waitForTransform("/base_link", bed_frame, now, rospy.Duration(5))
-            pos, quat = self.tfl.lookupTransform("/base_link", bed_frame, now)
+            pos, quat = self.listener.lookupTransform("/base_link", bed_frame, now)
             return True
         except Exception as e:
             rospy.loginfo("TF Exception:\r\n%s" %e)

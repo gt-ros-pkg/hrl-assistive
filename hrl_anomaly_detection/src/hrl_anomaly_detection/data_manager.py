@@ -86,6 +86,7 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
     
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                nSet=1, downSampleSize=200, scale=10.0, cutting=False, ae_data=False, data_ext=True, \
+               nAugment=1,\
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                feature_list=['crossmodal_targetEEDist'], data_renew=False):
@@ -149,7 +150,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             aug_failureData = []
         else:
             successData, failureData, aug_successData, aug_failureData, param_dict = \
-              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list))
+              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list),\
+                             nAugment=nAugment)
             allData = None #successData+failureData
                                                                     
         data_dict = {}
@@ -617,7 +619,7 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
     return scaled_features, param_dict
 
 
-def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, verbose=False):
+def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAugment=1, verbose=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     from hrl_lib import quaternion as qt
@@ -656,8 +658,8 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, ver
                 diffFrame  = endFrame*startFrame.Inverse()                                
                 relativePose.append( dh.KDLframe2List(diffFrame) )
 
-            relativePose = np.array(relativePose).T
-
+            relativePose = np.array(relativePose).T[:-1]
+            
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
             if idx == 0: dataDim.append(['relativePose_artag_EE', len(relativePose)])
@@ -681,7 +683,7 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, ver
                 diffFrame  = endFrame*startFrame.Inverse()                                
                 relativePose.append( dh.KDLframe2List(diffFrame) )
 
-            relativePose = np.array(relativePose).T
+            relativePose = np.array(relativePose).T[:-1]
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -812,7 +814,8 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, ver
     successDataList = dataList[0:nSuccess]
     failureDataList = dataList[nSuccess:]
     
-    successDataAugList, failureDataAugList = data_augmentation(successDataList, failureDataList)
+    successDataAugList, failureDataAugList = data_augmentation(successDataList, failureDataList, \
+                                                               nAugment=nAugment)
     allDataList = successDataAugList + failureDataAugList
 
     # Converting data structure & cutting unnecessary part ---------------
@@ -830,13 +833,24 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, ver
         param_dict['feature_std'] = [ np.std(np.array(feature).flatten()) for feature in features ]
         print "max: ", param_dict['feature_max']
         print "min: ", param_dict['feature_min']
+
+    if False:
+        success_features = normalization( success_features, param_dict['feature_mu'], param_dict['feature_std'] )
+        failure_features = normalization( failure_features, param_dict['feature_mu'], param_dict['feature_std'] )
+        success_aug_features = normalization( success_aug_features, param_dict['feature_mu'], \
+                                              param_dict['feature_std'] )
+        failure_aug_features = normalization( failure_aug_features, param_dict['feature_mu'], \
+                                              param_dict['feature_std'] )
+    else:
+        success_features = scale( success_features, param_dict['feature_min'], param_dict['feature_max'] )
+        failure_features = scale( failure_features, param_dict['feature_min'], param_dict['feature_max'] )
+        success_aug_features = scale( success_aug_features, param_dict['feature_min'], \
+                                              param_dict['feature_max'] )
+        failure_aug_features = scale( failure_aug_features, param_dict['feature_min'], \
+                                              param_dict['feature_max'] )
+
+
         
-    success_features = normalization( success_features, param_dict['feature_mu'], param_dict['feature_std'] )
-    failure_features = normalization( failure_features, param_dict['feature_mu'], param_dict['feature_std'] )
-    success_aug_features = normalization( success_aug_features, param_dict['feature_mu'], \
-                                          param_dict['feature_std'] )
-    failure_aug_features = normalization( failure_aug_features, param_dict['feature_mu'], \
-                                          param_dict['feature_std'] )
     param_dict['dataDim'] = dataDim
     
     ## scaled_features = []
@@ -858,7 +872,14 @@ def normalization(x, mu, std):
     for i in xrange(len(x)):
         new_x[i] = (x[i]-mu[i])/std[i]
     return new_x
-  
+
+def scale(x, x_min, x_max):
+    new_x = copy.copy(x)
+    for i in xrange(len(x)):
+        new_x[i] = (x[i]-x_min[i])/(x_max[i]-x_min[i])
+    return new_x
+    
+
 def changeDataStructure(dataList):
     '''
     From nSample x dim x length to dim x nSample x length
@@ -882,19 +903,20 @@ def changeDataStructure(dataList):
 
         features.append( feature )
 
-def data_augmentation(successes, failures):
+def data_augmentation(successes, failures, nAugment=1):
 
     '''
     nSamples x Dim x nLength
     '''
-    c_scale = [0.8, 1.2]
-    c_shift = [-10, 10]
-    c_noise = 5.0 # constant computing noise sgd, sample_std/constant
+    c_scale  = [0.8, 1.2]
+    c_shift  = [-10, 10]
+    c_noise  = 20.0 # constant computing noise sgd, sample_std/constant
     c_filter = []
 
-    nAugmnet = 1
     nDim     = len(successes[0])
     np.random.seed(1342)
+
+    if nAugment == 0: return successes, failures
 
     # for each sample
     for k in xrange(2):
@@ -904,21 +926,21 @@ def data_augmentation(successes, failures):
         for x in [successes, failures][k]:
             
             # x is numpy 2D array
-            for n in xrange(nAugmnet):
+            for n in xrange(nAugment):
 
                 # scaling (selective dim)
-                idx_list = np.random.randint(0, 2, size=nDim)
-                new_x = None
-                for i, flag in zip( range(nDim), idx_list ):
-                    if flag == 0: temp = x[i:i+1]
-                    else: temp = x[i:i+1] * np.random.uniform(c_scale[0], c_scale[1])
+                ## idx_list = np.random.randint(0, 2, size=nDim)
+                ## new_x = None
+                ## for i, flag in zip( range(nDim), idx_list ):
+                ##     if flag == 0: temp = x[i:i+1]
+                ##     else: temp = x[i:i+1] * np.random.uniform(c_scale[0], c_scale[1])
 
-                    if len(np.shape(temp)) == 1: temp = np.array([temp])
+                ##     if len(np.shape(temp)) == 1: temp = np.array([temp])
 
-                    if new_x is None: new_x = temp
-                    else: new_x = np.vstack([new_x, temp])
+                ##     if new_x is None: new_x = temp
+                ##     else: new_x = np.vstack([new_x, temp])
 
-                aug_data_list.append(new_x)
+                ## aug_data_list.append(new_x)
 
 
                 ## # shifting (selective dim)
