@@ -56,7 +56,7 @@ class arTagDetector:
         while not self.listener.canTransform('torso_lift_link', 'map', rospy.Time(0)):
             rospy.sleep(2)
             print self.mode, ' AR tag waiting for the map transform.'
-            now = rospy.Time.now()
+            #now = rospy.Time.now()
         # self.pose_pub = rospy.Publisher(''.join(['ar_tag_tracking/', self.mode, '_pose']), PoseStamped,
         #                                 queue_size=1, latch=True)
         print self.mode, 'will now start publishing its location in tf!'
@@ -68,10 +68,13 @@ class arTagDetector:
     def run(self):
         rate = rospy.Rate(50.0)
         while not rospy.is_shutdown():
-            self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
-                                              rospy.Time.now(),
-                                              self.out_frame,
-                                              'map')
+            print self.out_pos, self.out_quat
+            if not self.out_pos is None and not self.out_quat is None:
+                self.broadcaster.sendTransform(self.out_pos, self.out_quat,
+                                               rospy.Time(0),
+                                               self.out_frame,
+                                               'map')
+                print 'broadcast transform'
             rate.sleep()
 
     def config_head_AR_detector(self):
@@ -181,7 +184,7 @@ class arTagDetector:
                         quaternions = np.sort(quaternions, axis=0)
                         quat = quaternions[len(quaternions)/2]
 
-                    world_B_ar = createBMatrix(pos, quat)
+                    map_B_ar = createBMatrix(pos, quat)
 
                     if self.mode == 'autobed':
                         map_B_ar = self.shift_to_ground(map_B_ar)
