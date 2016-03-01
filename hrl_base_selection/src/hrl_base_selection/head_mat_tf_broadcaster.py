@@ -31,18 +31,15 @@ class HeadDetector:
         rospy.init_node('head_pose_broadcaster', anonymous=True)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('odom_combined', 'autobed/head_rest_link', rospy.Time(0))):
-            try:
-                print 'Waiting for head localization in world.'
-                rospy.sleep(1)
-            except:
-                print 'Head TF broadcaster crashed here!'
-                break
+        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+            print 'Waiting for head localization in world.'
+            rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
         self.head_rest_B_mat[0:3, 0:3] = np.array([[0, 0, 1], [-1, 0, 0], [0, 1, 0]])
         self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
         rospy.sleep(1)
+        self.run()
 
     def current_physical_pressure_map_callback(self, data):
         '''This callback accepts incoming pressure map from 
@@ -80,9 +77,9 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                self.tf_listener.waitForTransform('odom_combined', 'autobed/head_rest_link',\
-                                                   now, rospy.Duration(1))
-                (newtrans, newrot) = self.tf_listener.lookupTransform('odom_combined', \
+                self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
+                                                   rospy.Time(0), rospy.Duration(1))
+                (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', now)
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
@@ -90,9 +87,9 @@ class HeadDetector:
                 try:
                     self.tf_broadcaster.sendTransform(out_trans, 
                                                       out_rot,
-                                                      rospy.Time.now(),
+                                                      rospy.Time(0),
                                                       'user_head_link',
-                                                      'odom_combined')
+                                                      'map')
                     rate.sleep()
                 except:
                     print 'Head TF broadcaster crashed trying to broadcast!'
@@ -102,6 +99,6 @@ class HeadDetector:
 
 if __name__ == '__main__':
     head_blob = HeadDetector()
-    head_blob.run()
+    #head_blob.run()
 
 
