@@ -26,202 +26,145 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-import time
+import sys
 import random
+import numpy as np
+from util import getSubjectFiles
 from scipy.stats import randint as sp_randint
 from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
-from sklearn.base import BaseEstimator, ClassifierMixin
 from learning_hmm_multi_n import learning_hmm_multi_n
-from util import *
-import learning_util as util
 
-# catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
-# nohup rosrun hrl_anomaly_detection hmmParamSearch.py > optimization.log &
-# sed '/GHMM ghmm.py/d' optimization.log > optimizationClean.log
+def optimizeHMM(root_path, params, kfolds=3, gridSearch=True, iterations=50, verbose=False):
+    # List for all returned values of HMM optimization
+    results = []
 
-'''
-This HMM optimizer is meant to be used in conjunction with the scooping and feeding data used within the ICRA 2016 paper.
-'''
+    # Loading success and failure data
+    success_list, _ = getSubjectFiles(root_path)
+    featureIndices = list(xrange(len(success_list)))
+    random.shuffle(featureIndices)
+    if verbose:
+        print "--------------------------------------------"
+        print "# of Success files: ", len(success_list)
+        print "--------------------------------------------"
 
-paramSet = ''
-scores = []
+    hmm = learning_hmm_multi_n(check_method='progress', cluster_type='time', optimDataPath=root_path, folds=kfolds, resultsList=results)
 
-class HmmClassifier(BaseEstimator, ClassifierMixin):
+    if gridSearch:
+        if verbose:
+            print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
+            sys.stdout.flush()
 
-    def __init__(self, downSampleSize=200, scale=1.0, nState=20, cov_mult=1.0, isScooping=True):
-        self.downSampleSize = downSampleSize
-        self.scale = scale
-        self.nState = nState
-        self.cov_mult = cov_mult
-        # print 'Testing', downSampleSize, scale, nState, cov_mult
+        # Run grid search
+        gs = GridSearchCV(hmm, params, cv=kfolds)
+        gs.fit(X=featureIndices, y=[1]*len(featureIndices))
 
-        self.train_cutting_ratio = [0.0, 0.65]
-        self.anomaly_offset = 0.0
-        self.isScooping = isScooping
-        self.verbose = False
+        if verbose:
+            print 'Grid Search:'
+            print 'Best params:', gs.best_params_
+            print 'Best Score:', gs.best_score_
+            sys.stdout.flush()
+    else:
+        if verbose:
+            print '\n', '-'*50, '\nBeginning Randomized Search\n', '-'*50, '\n'
+            sys.stdout.flush()
 
-        self.isFitted = False
-        self.hmm = None
-        self.trainData = None
+        # Run randomized search
+        random_search = RandomizedSearchCV(hmm, param_distributions=params, n_iter=iterations, cv=kfolds)
+        random_search.fit(X=featureIndices, y=[1]*len(featureIndices))
 
-    def set_params(self, **parameters):
-        global paramSet, scores
-        params = ''
-        for parameter, value in parameters.items():
-            setattr(self, parameter, value)
-            params += '%s: %s, ' % (parameter, str(value))
-        if params != paramSet:
-            paramSet = params
-            if scores:
-                print 'Average score: %f\n' % (sum(scores) / float(len(scores)))
-                scores = []
-        print params
-        return self
+        if verbose:
+            print 'Randomized Search:'
+            print 'Best params:', random_search.best_params_
+            print 'Best Score:', random_search.best_score_
+            sys.stdout.flush()
 
-    def fit(self, X=None, y=None):
-        """
-        This should fit classifier. All the "work" should be done here.
-
-        Note: assert is not a good choice here and you should rather
-        use try/except blog with exceptions. This is just for short syntax.
-        """
-
-        t = time.time()
-        trainData, _ = loadData(None, isTrainingData=True, downSampleSize=self.downSampleSize, verbose=self.verbose, features=X)
-        print 'time 1:', time.time() - t
-        t = time.time()
-
-        # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
-        #print 'Number of modalities (dimensions):', len(trainData)
-        #print 'Lengths of data:', [len(trainData[i]) for i in xrange(len(trainData))]
-        #print 'Lengths of internal data:', [len(trainData[i][0]) for i in xrange(len(trainData))]
-
-        # minimum and maximum vales for scaling from Daehyung
-        minVals = []
-        maxVals = []
-        for modality in trainData:
-            minVals.append(np.min(modality))
-            maxVals.append(np.max(modality))
-
-        # Scale data
-        self.trainData = self.scaleData(trainData, minVals=minVals, maxVals=maxVals)
-
-        # hmm = learning_hmm_multi_4d(nState=nState, nEmissionDim=4, anomaly_offset=anomaly_offset, verbose=verbose)
-        self.hmm = learning_hmm_multi_n(nState=self.nState, nEmissionDim=4, check_method='progress', anomaly_offset=self.anomaly_offset, verbose=self.verbose)
-        print 'time 2:', time.time() - t
-        t = time.time()
-        ret = self.hmm.fit(xData=self.trainData, cov_mult=[self.cov_mult]*16)
-        print 'time 3:', time.time() - t
-
-        if ret == 'Failure':
-            print 'HMM return was a failure!'
-            return self
-
-        self.isFitted = True
-
-        return self
-
-    def score(self, X, y, sample_weight=None):
-        global scores
-        if not self.isFitted:
-            return 0
-
-        log_ll = []
-        t = time.time()
-        # exp_log_ll = []        
-        for i in xrange(len(self.trainData[0])):
-            log_ll.append([])
-            # exp_log_ll.append([])
-            # Compute likelihood values for data
-            for j in range(2, len(self.trainData[0][i])):
-                X = [x[i,:j] for x in np.array(self.trainData)]
-                # t1 = time.time()
-                exp_logp, logp = self.hmm.expLoglikelihood(X, self.hmm.l_ths_mult, bLoglikelihood=True)
-                # print 'time exp:', time.time() - t1
-                log_ll[i].append(logp)
-                # exp_log_ll[i].append(exp_logp)
-
-        print 'time 4:', time.time() - t
-        # Return average log-likelihood
-        logs = [x[-1] for x in log_ll]
-        score = sum(logs) / float(len(logs))
-        scores.append(score)
-        print 'expLoglikelihood() log_ll:', np.shape(log_ll), score
-        return score
-
-        # print 'expLoglikelihood() exp_log_ll:', np.shape(exp_log_ll), [x[-1] for x in exp_log_ll]
-
-        # print 'loglikelihood()', self.hmm.loglikelihood(self.trainData)
-        # print '-'*50
-        # likelihood, posterior = self.hmm.loglikelihoods(self.trainData, bPosterior=True)
-        # print 'loglikelihoods(), likelihood:', likelihood
-        # print 'loglikelihoods(), posterior:', posterior
-        # print '-'*50
-        # exp_logp, logp = self.hmm.expLoglikelihood(self.trainData, self.hmm.l_ths_mult, bLoglikelihood=True)
-        # print 'expLoglikelihood() exp_logp:', exp_logp
-        # print 'expLoglikelihood() logp:', logp
-
-        # return 0
-
-    def scaleData(self, dataList, minVals=None, maxVals=None):
-        nDimension = len(dataList)
-        dataList_scaled = []
-        for i in xrange(nDimension):
-            dataList_scaled.append([])
-
-        # Scale features
-        for i in xrange(nDimension):
-            for j in xrange(len(dataList[i])):
-                dataList_scaled[i].append(util.scaling(dataList[i][j], minVals[i], maxVals[i], self.scale))
-
-        return dataList_scaled
+    return results
 
 
-# subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11', 's12', 's13']
-subject_names = ['s2', 's3', 's4', 's7', 's8', 's9', 's10', 's11']
-# subject_names = ['s2']
-task_name = 'feeding'
+def autoOptimize(root_path, kfolds=3, verbose=False):
+    # Specify parameters and parameter values to search through
+    params = {'downSampleSize': [100, 300, 500], 'scale': [1, 2, 4, 6], 'nState': [5, 10, 15, 20], 'cov_mult': [10.0, 40.0, 100.0]}
 
-# Loading success and failure data
-root_path = '/home/mycroft/feeding'
-success_list, _ = getSubjectFileList(root_path, subject_names, task_name)
+    res = optimizeHMM(root_path, params, kfolds=kfolds, gridSearch=True, verbose=verbose)
 
-print "--------------------------------------------"
-print "# of Success files: ", len(success_list)
-print "--------------------------------------------"
+    notNaN = [x for x in res if x[1] != 'NaN' and x[2] != 0]
+    if not notNaN:
+        # No viable parameters found! Open up search space with random search
+        print 'Unable to find viable parameters using grid search. Increasing search space with random search.'
+        params = {'downSampleSize': sp_randint(100, 500), 'scale': sp_randint(1, 10), 'nState': sp_randint(5, 30), 'cov_mult': sp_randint(1, 200)}
+        res = optimizeHMM(root_path, params, kfolds=kfolds, gridSearch=True, verbose=verbose)
+        notNaN = [x for x in res if x[1] != 'NaN' and x[2] != 0]
+        if not notNaN:
+            print 'Unable to find any viable HMM parameters for this data. Please restructure and try again.'
+            return None
 
-features = loadFeatures(success_list, verbose=False)
-random.shuffle(features)
+    notNaN = sorted(notNaN, key=lambda x: x[-1], reverse=True)
+    bestParams, _, bestScore = notNaN[0]
 
-print '\n', '-'*50, '\nBeginning Grid Search\n', '-'*50, '\n'
+    if verbose:
+        print 'Displaying results for initial autonomous parameter search'
+        displayResults(res)
+
+    # Perform refined search near best parameter set
+    sampleSize = [bestParams['downSampleSize'] - 50, bestParams['downSampleSize'], bestParams['downSampleSize'] + 50]
+    scale = [bestParams['scale'] - 0.5, bestParams['scale'], bestParams['scale'] + 0.5]
+    nState = [bestParams['nState'] - 2, bestParams['nState'], bestParams['nState'] + 2]
+    cov_mult = [bestParams['cov_mult']]
+    params = {'downSampleSize': sampleSize, 'scale': scale, 'nState': nState, 'cov_mult': cov_mult}
+
+    res2 = optimizeHMM(root_path, params, kfolds=kfolds, gridSearch=True, verbose=verbose)
+
+    notNaN2 = [x for x in res2 if x[1] != 'NaN' and x[2] != 0]
+    if notNaN2:
+        notNaN2 = sorted(notNaN2, key=lambda x: x[-1], reverse=True)
+        if notNaN2[0][2] > bestScore:
+            bestParams, _, bestScore = notNaN2[0]
+            if verbose:
+                print 'Refined search found higher scoring parameters.'
+
+    if verbose:
+        print 'Displaying results for refined autonomous parameter search'
+        displayResults(res2)
+
+    return bestParams, bestScore
+
+def displayResults(results):
+    # Display Overview of results, with successful parameter sets then 'NaN' parameter sets
+    print '\n', '-'*15, 'Results', '-'*15
+    notNaN = [x for x in results if x[1] != 'NaN' and x[2] != 0]
+    notNaN = sorted(notNaN, key=lambda x: x[-1], reverse=True)
+    for x in notNaN:
+        # Convert parameter list to string
+        s = ', '.join(['%s: %s' % (p, str(v)) for p, v in x[0]])
+        print x[-1], '-', s, '-', x[1]
+
+    print '\n', '-'*15, 'NaNs', '-'*15
+    for x in results:
+        if x[1] == 'NaN':
+            # Convert parameter list to string
+            print ', '.join(['%s: %s' % (p, str(v)) for p, v in x[0]])
+
+
+kfolds = 3
+root_path = '/home/mycroft/gatsbii_scooping'
 
 # Specify parameters and possible parameter values
-# Try cov_mult between 8.0 and 12.0
-#tuned_params = {'downSampleSize': [400, 500, 600, 700], 'scale': [1], 'nState': [20, 30], 'cov_mult': [10.0]}
-tuned_params = {'downSampleSize': [100], 'scale': [1], 'nState': [20, 30], 'cov_mult': [10.0]}
+tuned_params = {'downSampleSize': [300], 'scale': [2.5], 'nState': [10, 15], 'cov_mult': [10.0, 50.0, 100.0, 200.0]}
 
-# Run grid search
-gs = GridSearchCV(HmmClassifier(), tuned_params)
-gs.fit(X=features, y=[1]*len(features))
+# # specify parameters and distributions to sample from
+# param_dist = {'downSampleSize': [300, 350, 400, 450, 500], #sp_randint(300, 400),
+#              'scale': [2.5],
+#              'nState': sp_randint(5, 20),
+#              'cov_mult': sp_randint(10, 200)}
+#
 
-print 'Grid Search:'
-print 'Best params:', gs.best_params_
-print 'Best Score:', gs.best_score_
-# print 'Grid scores:', gs.grid_scores_
+res = optimizeHMM(root_path, tuned_params, kfolds=kfolds, gridSearch=True, verbose=True)
 
-#print '\n', '-'*50, '\nBeginning Randomized Search\n', '-'*50, '\n'
+displayResults(res)
 
-# specify parameters and distributions to sample from
-#param_dist = {'downSampleSize': sp_randint(300, 400),
-#              'scale': sp_randint(1, 3),
-#              'nState': sp_randint(20, 30),
-#              'cov_mult': sp_randint(10, 15)}
+print '\n', '-'*50, '\nBeginning Auto Optimization\n', '-'*50, '\n'
 
-# Run randomized search
-#random_search = RandomizedSearchCV(HmmClassifier(), param_distributions=param_dist, n_iter=50)
-#random_search.fit(X=features, y=[1]*len(features))
+finalParams, finalScore = autoOptimize(root_path, kfolds=kfolds, verbose=True)
 
-#print 'Randomized Search:'
-#print 'Best params:', random_search.best_params_
-#print 'Best Score:', random_search.best_score_
-# print 'Grid scores:', random_search.grid_scores_
+print 'Final params:', finalParams
+print 'Final Score:', finalScore

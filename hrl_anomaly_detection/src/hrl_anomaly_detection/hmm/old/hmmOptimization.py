@@ -38,7 +38,6 @@ from learning_hmm_multi_n import learning_hmm_multi_n
 from util import getSubjectFiles
 #from .. import util as dataUtil
 from hrl_anomaly_detection import util as dataUtil
-import learning_util as util
 from hrl_anomaly_detection import data_manager as dataMng
 
 # catkin_make_isolated --only-pkg-with-deps hrl_anomaly_detection --merge
@@ -72,7 +71,6 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
         self.cov_mult = cov_mult
         self.params = None
 
-        self.train_cutting_ratio = [0.0, 0.65]
         self.anomaly_offset = 0.0
         self.isScooping = isScooping
         self.verbose = False
@@ -101,7 +99,7 @@ class HmmClassifier(BaseEstimator, ClassifierMixin):
 
         if iteration == 0:
             # Add new results list for parameter set
-            results.append([self.params, [], 0]);
+            results.append([self.params, [], 0])
 
         # Possible pass in trainData through X (thus utilizing the cross-validation in sklearn)
         #print 'Number of modalities (dimensions):', len(trainData), np.shape(trainData)
