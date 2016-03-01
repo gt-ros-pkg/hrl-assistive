@@ -69,7 +69,7 @@ class arTagDetector:
         rate = rospy.Rate(50.0)
         while not rospy.is_shutdown():
             print self.out_pos, self.out_quat
-            if not self.out_pos is None and not self.out_quat is None:
+            if self.out_pos is not None and self.out_quat is not None:
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time(0),
                                                self.out_frame,
