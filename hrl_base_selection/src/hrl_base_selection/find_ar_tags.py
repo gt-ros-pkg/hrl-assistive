@@ -68,13 +68,13 @@ class arTagDetector:
     def run(self):
         rate = rospy.Rate(50.0)
         while not rospy.is_shutdown():
-            print self.out_pos, self.out_quat
+            #print self.out_pos, self.out_quat
             if self.out_pos is not None and self.out_quat is not None:
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
-                                               rospy.Time(0),
+                                               rospy.Time.now(),
                                                self.out_frame,
                                                'map')
-                print 'broadcast transform'
+                #print 'broadcast transform'
             rate.sleep()
 
     def config_head_AR_detector(self):
