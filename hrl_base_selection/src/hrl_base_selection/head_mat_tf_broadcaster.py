@@ -32,7 +32,7 @@ class HeadDetector:
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('autobed/torso_lift_link', 'autobed/head_rest_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
         #Initialize some constant transforms
@@ -78,9 +78,9 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                self.tf_listener.waitForTransform('autobed/torso_lift_link', 'autobed/head_rest_link',\
+                self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
                                                    rospy.Time(0), rospy.Duration(1))
-                (newtrans, newrot) = self.tf_listener.lookupTransform('autobed/torso_lift_link', \
+                (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
