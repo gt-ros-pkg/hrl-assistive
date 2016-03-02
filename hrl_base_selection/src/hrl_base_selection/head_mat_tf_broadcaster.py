@@ -20,6 +20,7 @@ LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
+INTER_SENSOR_DISTANCE = 0.0286#metres
 
 class HeadDetector:
     '''Detects the head of a person sleeping on the autobed'''
@@ -31,7 +32,7 @@ class HeadDetector:
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('autobed/torso_lift_link', 'autobed/head_rest_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
         #Initialize some constant transforms
@@ -64,8 +65,7 @@ class HeadDetector:
                          overlap=0.1) 
         if blobs.any():
             self.head_center_2d = blobs[0, :]
-        y, x, r = self.head_center_2d
-        print x, y
+        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, 0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
@@ -78,9 +78,9 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                # self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                #                                    rospy.Time(0), rospy.Duration(1))
-                (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
+                self.tf_listener.waitForTransform('autobed/torso_lift_link', 'autobed/head_rest_link',\
+                                                   rospy.Time(0), rospy.Duration(1))
+                (newtrans, newrot) = self.tf_listener.lookupTransform('autobed/torso_lift_link', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
