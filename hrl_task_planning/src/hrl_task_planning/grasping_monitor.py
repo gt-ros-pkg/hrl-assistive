@@ -15,7 +15,7 @@ class GraspStateMonitor(object):
         self.domain = domain
         self.side = side
         self.grasped_item = None
-        self.state_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % domain, PDDLState, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % domain, PDDLState, queue_size=10, latch=True)
         self.grasp_state_sub = rospy.Subscriber('/grasping/%s_gripper' % side, Bool, self.grasp_state_cb)
         rospy.loginfo("[%s] %s Grasp State Monitor Ready.", rospy.get_name(), self.side.capitalize())
 

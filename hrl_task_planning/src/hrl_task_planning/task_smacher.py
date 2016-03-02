@@ -18,7 +18,7 @@ class TaskSmacher(object):
     def __init__(self):
         self._sm_threads = []
         self.last_running_set = set([])
-        self.active_domains_pub = rospy.Publisher('pddl_tasks/active_domains', DomainList, latch=True)
+        self.active_domains_pub = rospy.Publisher('pddl_tasks/active_domains', DomainList, queue_size=10, latch=True)
         self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.preempt_service_cb)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
         rospy.loginfo("[%s] Ready", rospy.get_name())
@@ -97,8 +97,8 @@ class PDDLTaskThread(Thread):
         self.result = None
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
-        self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, latch=True)
-        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, latch=True)
+        self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, queue_size=10, latch=True)
+        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         # TODO: Catch close signal, publish empty action before stopping...
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
         self.domain_smach_states = importlib.import_module("hrl_task_planning.%s_states" % self.domain)
@@ -208,7 +208,7 @@ class PDDLSmachState(smach.State):
         self.init_state = init_state
         self.goal_state = GoalState(goal_state.predicates)
         self.state_delta = self.init_state.difference(self.goal_state)
-        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, latch=True)
+        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         self.current_state = None
         self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
 
@@ -282,7 +282,7 @@ class StartNewTaskState(smach.State):
     def __init__(self, problem_msg, *args, **kwargs):
         super(StartNewTaskState, self).__init__(*args, **kwargs)
         self.request = problem_msg
-        self.problem_pub = rospy.Publisher("perform_task", PDDLProblem)
+        self.problem_pub = rospy.Publisher("perform_task", PDDLProblem, queue_size=10)
         rospy.sleep(1)  # make sure subscribers can connect...
 
     def execute(self, ud):
