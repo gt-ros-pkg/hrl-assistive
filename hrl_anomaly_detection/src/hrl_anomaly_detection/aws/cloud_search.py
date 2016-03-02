@@ -10,6 +10,7 @@ from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import ShuffleSplit 
 from starcluster.config import StarClusterConfig
 from starcluster.cluster import ClusterManager
+from starcluster import exception
 import time
 
 class CloudSearch():
@@ -30,17 +31,12 @@ class CloudSearch():
 				self.clust.start(create=False)
 			except Exception,e:
 				print str(e)
-		#connect directly to master to manually start client as it often fails to start IPcluster completely
-		#type
-		#yes(if it asks for y/n question)
-		#python
-		#from IPython.parallel import Client
-		#client = Client()
-		#quit()
-		#logout
-		#self.clust.ssh_to_master(user=self.user_name)
 
-		#connect to cluster to distribute work
+		#connect directly to master to start client 
+		#as it often fails to start IPcluster plugin
+		self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
+
+		#connect to cluster nodes to distribute work
 		self.client = Client(self.path_json, sshkey=self.path_key)
 		self.lb_view = self.client.load_balanced_view()
 
@@ -71,9 +67,10 @@ class CloudSearch():
 	#run model from data in cloud.
 	#each node grabs file from their local path and runs the model
 	#requires grab_data to be implemented correctly
+	#n_inst is to create a fold. the way it generates fold can be changed
 	def run_with_local_data(self, model, params, n_inst, cv, path_file):
 		from cross import cross_validate_local
-		from cross import grab_data
+		#from cross import grab_data
 		splited = self.split(n_inst, cv)
 		all_param = list(ParameterGrid(params))
 		for param in all_param:
@@ -83,7 +80,7 @@ class CloudSearch():
 		return self.all_tasks
 
 
-	#for debugging purposes if we are running out of memories
+	#for debugging purposes if we are running out of local memories
 	def get_engines_memory(self):
 	    """Gather the memory allocated by each engine in MB"""
 	    def memory_mb():
@@ -100,6 +97,7 @@ class CloudSearch():
 
 
 	#adds to all client a local path(s) for external libraries
+	#default location where local program is run is /home/user/ of the cluster
 	def set_up(self, path_libs):
 		import sys
 		sys.path[:] = sys.path[:] + path_libs

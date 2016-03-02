@@ -28,8 +28,21 @@
 
 
 import numpy as np
-import sys, os, copy
+import sys, os, math
 from scipy.stats import norm, entropy
+
+from sklearn.base import BaseEstimator, ClassifierMixin
+
+import ghmm
+from sklearn.metrics import r2_score
+from sklearn.cluster import KMeans
+from joblib import Parallel, delayed
+from util import getSubjectFiles
+from hrl_anomaly_detection import util as dataUtil
+from hrl_anomaly_detection import data_manager as dataMng
+
+import learning_util as util
+from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 # Util
 import roslib
@@ -41,22 +54,28 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib.collections as collections
 
-import ghmm
-from sklearn.metrics import r2_score
-from sklearn.cluster import KMeans
-from joblib import Parallel, delayed
-
-import learning_util as util
-from hrl_anomaly_detection.hmm.learning_base import learning_base
-
 os.system("taskset -p 0xff %d" % os.getpid())
 
-class learning_hmm_multi_n(learning_base):
-    def __init__(self, nState=10, nEmissionDim=4, check_method='none', anomaly_offset=0.0, \
-                 cluster_type='time', scale=1.0, verbose=False):
+# Optimization variables
+kfolds = None
+rootPath = None
+iteration = 0
+paramSet = ''
+# Current downSampleSize
+sampleSize = 0
+scores = []
+# Training Data is reloaded only when downSampleSize changes
+trainData = None
+results = None
+
+class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
+    def __init__(self, downSampleSize=200, scale=1.0, nState=20, cov_mult=1.0, nEmissionDim=4,
+                 check_method='none', anomaly_offset=0.0, cluster_type='time', verbose=False,
+                 optimDataPath=None, folds=3, resultsList=None):
         '''
         check_method and cluter_type will be deprecated
         '''
+        global kfolds, rootPath, results
                  
         # parent class
         learning_base.__init__(self)
@@ -65,16 +84,25 @@ class learning_hmm_multi_n(learning_base):
         self.verbose = verbose
 
         ## Tunable parameters
-        self.nState         = nState # the number of hidden states
-        self.nGaussian      = nState
-        self.nEmissionDim   = nEmissionDim
+        self.downSampleSize = downSampleSize
         self.scale          = scale
-        
+        self.nState         = nState # the number of hidden states
+        self.cov_mult       = cov_mult
+        self.nEmissionDim   = nEmissionDim
+
         ## Un-tunable parameters
         self.trans_type = 'left_right' # 'left_right' 'full'
         self.A  = None # transition matrix        
         self.B  = None # emission matrix
         self.pi = None # Initial probabilities per state
+
+        ## Optimization parameters
+        self.params = None
+        self.isFitted = False
+        if kfolds is None: kfolds = folds
+        if rootPath is None: rootPath = optimDataPath
+        if results is None: results = resultsList
+
 
         ####################################################################
         ## Uner this line, every parameter will be deprecated soon.
@@ -105,18 +133,48 @@ class learning_hmm_multi_n(learning_base):
 
     def set_hmm_object(self, A, B, pi):
 
-        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F),
                                        A, B, pi)
         return self.ml
 
+    def set_params(self, **parameters):
+        global sampleSize
+        # self.params = ''
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+            # self.params += '%s: %s, ' % (parameter, str(value))
+            # Check if downSampleSize has changed. If so, reload training data
+            if parameter == 'downSampleSize' and value != sampleSize:
+                print 'Loading new data with', parameter, value
+                self.loadData()
+                sampleSize = value
+                # Determine nEmission from new data
+                self.nEmissionDim = len(trainData)
+        self.params = parameters
+        print ', '.join(['%s: %s' % (p, str(v)) for p, v in self.params])
+        return self
 
-    def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False):
+    def fit(self, xData=None, A=None, B=None, pi=None, cov_mult=None,
+            ml_pkl=None, use_pkl=False, X=None, y=None):
         '''
         TODO: explanation of the shape and type of xData
         xData: dimension x sample x length  
         '''
-        
+        global trainData, results
+
+        if X is not None:
+            # We are currently optimizing. Begin set up for training HMM
+            if iteration == 0:
+                # Add new results list for parameter set
+                results.append([self.params, [], 0])
+
+            # Check if this parameter set has already caused one of the k-folds to return NaN as a result
+            if results[-1][1] == 'NaN':
+                return self
+
+            xData = trainData[:, X]
+            cov_mult = [self.cov_mult]*(self.nEmissionDim**2)
+
         # Daehyung: What is the shape and type of input data?
         X = [np.array(data)*self.scale for data in xData]
         
@@ -130,7 +188,7 @@ class learning_hmm_multi_n(learning_base):
             self.A  = param_dict['A']
             self.B  = param_dict['B']
             self.pi = param_dict['pi']                       
-            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F),
                                            self.A, self.B, self.pi)
 
         else:
@@ -186,7 +244,13 @@ class learning_hmm_multi_n(learning_base):
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
             ret = self.ml.baumWelch(final_seq, 10000)
             print 'Baum Welch return:', ret
-            if np.isnan(ret): return 'Failure'
+            if np.isnan(ret):
+                if X is not None:
+                    # Speed up optimization
+                    print 'HMM return was a failure!'
+                    results[-1][1] = 'NaN'
+                    self.isFitted = False
+                return 'Failure'
 
             [self.A, self.B, self.pi] = self.ml.asMatrices()
             self.A = np.array(self.A)
@@ -199,7 +263,6 @@ class learning_hmm_multi_n(learning_base):
         #--------------- learning for anomaly detection ----------------------------
         ## [A, B, pi] = self.ml.asMatrices()
         n, m = np.shape(X[0])
-        self.nGaussian = self.nState
 
         if self.check_method == 'change' or self.check_method == 'globalChange':
             # Get maximum change of loglikelihood over whole time
@@ -246,8 +309,8 @@ class learning_hmm_multi_n(learning_base):
             else:
 
                 # Estimate loglikelihoods and corresponding posteriors
-                r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, \
-                                                                   X_train[i], \
+                r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F,
+                                                                   X_train[i],
                                                                    self.nEmissionDim, self.nState,
                                                                    bPosterior=True, converted_X=True)
                                                                    for i in xrange(n))
@@ -265,16 +328,16 @@ class learning_hmm_multi_n(learning_base):
                 if self.cluster_type == 'time':                
                     if self.verbose: print 'Begining parallel job'
                     self.std_coff  = 1.0
-                    g_mu_list = np.linspace(0, m-1, self.nGaussian) #, dtype=np.dtype(np.int16))
-                    g_sig = float(m) / float(self.nGaussian) * self.std_coff
+                    g_mu_list = np.linspace(0, m-1, self.nState) #, dtype=np.dtype(np.int16))
+                    g_sig = float(m) / float(self.nState) * self.std_coff
                     ## r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, n, m, A, B, pi, self.F, X_train,
                     ##                                                        self.nEmissionDim, g_mu_list[i], \
                     ##                                                        g_sig, self.nState)
-                    ##                                                        for i in xrange(self.nGaussian))
-                    r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                           g_mu_list[i],\
+                    ##                                                        for i in xrange(self.nState))
+                    r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post,
+                                                                           g_mu_list[i],
                                                                            g_sig, self.nState)
-                                            for i in xrange(self.nGaussian))
+                                            for i in xrange(self.nState))
                     
                     if self.verbose: print 'Completed parallel job'
                     _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
@@ -296,7 +359,7 @@ class learning_hmm_multi_n(learning_base):
                     ##     learn_state_clustering(i, ll_idx, ll_logp, ll_post, self.nState)
                     ##     print '-------------- ', i , ' ---------------------------'
                                                 
-                    r = Parallel(n_jobs=-1)(delayed(learn_state_clustering)(i, ll_idx, ll_logp, ll_post, \
+                    r = Parallel(n_jobs=-1)(delayed(learn_state_clustering)(i, ll_idx, ll_logp, ll_post,
                                                                             self.nState)
                                             for i in xrange(self.nState))
                     if self.verbose: print 'Completed parallel job'
@@ -309,8 +372,100 @@ class learning_hmm_multi_n(learning_base):
 
         ## elif self.check_method == 'none':
         if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-        return
-                               
+        self.isFitted = True
+        sys.stdout.flush()
+        return self
+
+
+    def score(self, X, y, sample_weight=None):
+        global scores, trainData, results, iteration
+        score = 0
+
+        if self.isFitted and results[-1][1] != 'NaN':
+            trainingData = trainData[:, X]
+
+            log_ll = []
+            logp_ll = []
+            post_ll = []
+            for i in xrange(len(trainingData[0])):
+                log_ll.append([])
+                logp_ll.append([])
+                post_ll.append([])
+                # Compute likelihood values for data
+                for j in range(2, len(trainingData[0][i])):
+                    X = [x[i,:j] for x in trainingData]
+                    exp_logp, logp = self.expLoglikelihood(X, self.l_ths_mult, bLoglikelihood=True)
+                    log_ll[i].append(logp)
+                    l_logp, l_post = self.loglikelihoods(X, bPosterior=True, startIdx=4)
+                    logp_ll[i].append(l_logp)
+                    post_ll[i].append(l_post)
+
+            print 'expLoglikelihood'
+            print log_ll
+            print 'loglikelihoods'
+            print logp_ll
+            print 'post values'
+            print post_ll
+
+            # Return average log-likelihood
+            logs = [x[-1] for x in log_ll]
+            score = sum(logs) / float(len(logs))
+            if math.isnan(score):
+                results[-1][1] = 'NaN'
+            else:
+                results[-1][1].append(score)
+                scores.append(score)
+                print 'expLoglikelihood() log_ll:', np.shape(log_ll), score
+
+        iteration += 1
+        # Print the average score across all k-folds
+        if iteration == kfolds:
+            iteration = 0
+            if results[-1][1] != 'NaN':
+                print 'Average score: %f\n' % (sum(scores) / float(len(scores)))
+                results[-1][2] = sum(scores) / float(len(scores))
+                scores = []
+            else:
+                print 'Average score: NaN\n'
+
+        sys.stdout.flush()
+        return score
+
+    # Load training data similar to the approach taken in data_manager.py
+    def loadData(self, excludeStationary=True):
+        global trainData, rootPath
+        # Loading success and failure data
+        success_list, _ = getSubjectFiles(rootPath)
+
+        feature_list = ['unimodal_audioPower',
+                        # 'unimodal_audioWristRMS',
+                        'unimodal_kinVel',
+                        'unimodal_ftForce',
+                        'unimodal_ppsForce',
+                        # 'unimodal_visionChange',
+                        'unimodal_fabricForce',
+                        'crossmodal_targetEEDist',
+                        'crossmodal_targetEEAng',
+                        'crossmodal_artagEEDist']
+                        # 'crossmodal_artagEEAng']
+
+        # t = time.time()
+        rawDataDict, dataDict = dataUtil.loadData(success_list, isTrainingData=True, downSampleSize=self.downSampleSize, local_range=0.15, verbose=self.verbose)
+        trainData, _ = dataMng.extractFeature(dataDict, feature_list, scale=1.0)
+        trainData = np.array(trainData)
+
+        if excludeStationary:
+            # exclude stationary data
+            thres = 0.025
+            n,m,k = np.shape(trainData)
+            diff_all_data = trainData[:,:,1:] - trainData[:,:,:-1]
+            add_idx = []
+            for i in xrange(n):
+                std = np.max(np.max(diff_all_data[i], axis=1))
+                if std >= thres:
+                    add_idx.append(i)
+            trainData  = trainData[add_idx]
+
 
     def predict(self, X):
         X = np.squeeze(X)
@@ -488,7 +643,7 @@ class learning_hmm_multi_n(learning_base):
             sum_w = 0.
             sum_l = 0.
             l_dist = []
-            for i in xrange(self.nGaussian):
+            for i in xrange(self.nState):
                 if self.cluster_type == 'state':
                     dist = np.linalg.norm(post[n-1] - self.l_statePosterior[i])
                 else:
@@ -530,8 +685,11 @@ class learning_hmm_multi_n(learning_base):
                     return self.ll_mu[min_index] + ths_mult*self.ll_std[min_index]
 
 
+    '''
+    Deprecated. Please use classifier.py
+    '''
     def anomaly_check(self, X, ths_mult=None):
-
+        print 'anomaly_check() is deprecated. Please use classifier.py instead.'
         if self.nEmissionDim == 1: X_test = np.array([X[0]])
         else: X_test = util.convert_sequence(X, emission=False)
         X_test *= self.scale
@@ -685,7 +843,7 @@ class learning_hmm_multi_n(learning_base):
         n, m = np.shape(X[0])
 
         # Estimate loglikelihoods and corresponding posteriors
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i],
                                                            self.nEmissionDim, self.nState,
                                                            bPosterior=True, converted_X=True)
                                                            for i in xrange(n))
@@ -770,7 +928,7 @@ def learn_state_clustering(i, ll_idx, ll_logp, ll_post, nState):
     return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
 
 
-def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
+def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1,
                       bPosterior=False, converted_X=False):
     '''
     This function will be deprecated. Please, use computeLikelihoods.
@@ -813,7 +971,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
         return idx, l_idx, l_likelihood
 
 
-def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startIdx=2, \
+def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startIdx=2,
                        bPosterior=False, converted_X=False):
     '''
     Return

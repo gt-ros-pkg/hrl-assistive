@@ -7,6 +7,7 @@ import theano
 import theano.tensor as T
 
 import hrl_lib.util as ut
+from hrl_anomaly_detection import data_manager as dm
 
 def getData():
 
@@ -45,7 +46,6 @@ def getData2(dataset='./SDA/mnist.pkl.gz'):
 
 def getData3(time_window, renew=False):
 
-    from hrl_anomaly_detection import data_manager as dm
 
     subject_names       = ['gatsbii']
     task                = 'pushing'
@@ -57,7 +57,7 @@ def getData3(time_window, renew=False):
     local_range         = 1.25    
     nSet                = 1
     downSampleSize      = 200
-    nAugment            = 0
+    nAugment            = 4
 
     ## feature_list = ['unimodal_audioPower',\
     ##                 'unimodal_kinVel',\
@@ -81,14 +81,19 @@ def getData3(time_window, renew=False):
         d = ut.load_pickle(save_pkl)
         new_trainingData = d['trainingData']
         new_testData     = d['testData']
+        new_normalTestData   = d['normalTestData']   
+        new_abnormalTestData = d['abnormalTestData'] 
+        
 
         # Time-sliding window
-        new_trainingData2 = getTimeDelayData( new_trainingData, time_window )
-        new_testData2     = getTimeDelayData( new_testData, time_window )
+        new_trainingData2 = dm.getTimeDelayData( new_trainingData, time_window )
+        new_testData2     = dm.getTimeDelayData( new_testData, time_window )
+        new_normalTestData2   = dm.getTimeDelayData( new_normalTestData, time_window )
+        new_abnormalTestData2 = dm.getTimeDelayData( new_abnormalTestData, time_window )        
         nSingleData       = len(new_testData[0][0])-time_window+1
 
-        return new_trainingData2.T, new_testData2.T, nSingleData
-
+        return new_trainingData2.T, new_testData2.T, new_normalTestData2.T, new_abnormalTestData2.T, \
+          nSingleData
 
 
     successData, failureData, aug_successData, aug_failureData, param_dict = \
@@ -129,45 +134,15 @@ def getData3(time_window, renew=False):
     # scaling by the number of dimensions in each feature
     dataDim = param_dict['dataDim']
     index   = 0
-    ## for feature_name, nDim in dataDim:
-    ##     pre_index = index
-    ##     index    += nDim
 
-    ##     normalTrainingData[pre_index:index]   /= np.sqrt(nDim)
-    ##     abnormalTrainingData[pre_index:index] /= np.sqrt(nDim)
-    ##     normalTestData[pre_index:index]       /= np.sqrt(nDim)
-    ##     abnormalTestData[pre_index:index]     /= np.sqrt(nDim)
-        
-
-    new_trainingData = np.vstack([np.swapaxes(normalTrainingData, 0, 1), \
-                                  np.swapaxes(abnormalTrainingData, 0, 1)])
-
-    ## new_testData = np.vstack([np.swapaxes(normalTestData, 0, 1),
-    ##                           np.swapaxes(abnormalTestData, 0, 1)])
-    new_testData = np.swapaxes(normalTestData, 0, 1)
+    new_trainingData     = np.vstack([np.swapaxes(normalTrainingData, 0, 1), \
+                                      np.swapaxes(abnormalTrainingData, 0, 1)])
+    new_testData         = np.vstack([np.swapaxes(normalTestData, 0, 1),
+                                      np.swapaxes(abnormalTestData, 0, 1)])
+    new_normalTestData   = np.swapaxes(normalTestData, 0, 1)
+    new_abnormalTestData = np.swapaxes(abnormalTestData, 0, 1)
 
     
-    ## new_trainingData = []
-    ## for i in xrange(len(trainingData[0])):
-    ##     singleSample = []
-    ##     for j in xrange(len(trainingData)):
-    ##         singleSample.append(trainingData[j][i,:])            
-    ##     new_trainingData.append(singleSample)
-    
-    ## new_testData = []
-    ## for i in xrange(len(normalTestData[0])):
-    ##     singleSample = []
-    ##     for j in xrange(len(normalTestData)):
-    ##         singleSample.append(normalTestData[j][i,:])            
-    ##     new_testData.append(singleSample)
-
-    ## for i in xrange(len(abnormalTestData[0])):
-    ##     singleSample = []
-    ##     for j in xrange(len(abnormalTestData)):
-    ##         singleSample.append(abnormalTestData[j][i,:])            
-    ##     new_testData.append(singleSample)
-
-
     print "======================================"
     print "nSamples x Dim x nLength"
     print "--------------------------------------"
@@ -178,25 +153,19 @@ def getData3(time_window, renew=False):
     d = {}        
     d['trainingData'] = new_trainingData
     d['testData']     = new_testData
+    d['normalTestData']   = new_normalTestData
+    d['abnormalTestData'] = new_abnormalTestData
     ut.save_pickle(d, save_pkl)
 
     # Time-sliding window
-    new_trainingData2 = getTimeDelayData( new_trainingData, time_window )
-    new_testData2     = getTimeDelayData( new_testData, time_window )
+    new_trainingData2 = dm.getTimeDelayData( new_trainingData, time_window )
+    new_testData2     = dm.getTimeDelayData( new_testData, time_window )
+    new_normalTestData2   = dm.getTimeDelayData( new_normalTestData, time_window )
+    new_abnormalTestData2 = dm.getTimeDelayData( new_abnormalTestData, time_window )
     nSingleData       = len(new_testData[0][0])-time_window+1
 
-    return new_trainingData2.T, new_testData2.T, nSingleData
-
-
-def getTimeDelayData(data, time_window):
-
-    new_data = []
-    for i in xrange(len(data)):
-        for j in xrange(len(data[i][0])-time_window+1):
-            new_data.append( data[i][:,j:j+time_window].flatten() )
-
-    return np.array(new_data)
-    
+    return new_trainingData2.T, new_testData2.T, new_normalTestData2.T, new_abnormalTestData2.T, \
+      nSingleData
 
 
 if __name__ == '__main__':
