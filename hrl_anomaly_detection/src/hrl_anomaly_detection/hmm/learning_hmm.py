@@ -45,6 +45,7 @@ class learning_hmm(learning_base):
     def __init__(self, nState=10, nEmissionDim=4, verbose=False):
         '''
         This class follows the policy of sklearn as much as possible.
+        TODO: score function. NEED TO THINK WHAT WILL BE CRITERIA.
         '''
                  
         # parent class that provides sklearn related interfaces.
@@ -82,7 +83,7 @@ class learning_hmm(learning_base):
         '''
         
         # Daehyung: What is the shape and type of input data?
-        X = [np.array(data)*self.scale for data in xData]
+        X = [np.array(data) for data in xData]
         
         param_dict = {}
 
@@ -210,7 +211,7 @@ class learning_hmm(learning_base):
 
     def loglikelihood(self, X):
         X_test = util.convert_sequence(X, emission=False)
-        X_test = np.squeeze(X_test)*self.scale
+        X_test = np.squeeze(X_test)
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
 
         try:    
@@ -224,7 +225,7 @@ class learning_hmm(learning_base):
 
     def loglikelihoods(self, X, bPosterior=False, startIdx=1):
         X_test = util.convert_sequence(X, emission=False)
-        X_test = np.squeeze(X_test)*self.scale
+        X_test = np.squeeze(X_test)
 
         l_likelihood = []
         l_posterior   = []        
@@ -251,7 +252,7 @@ class learning_hmm(learning_base):
             
     def getPostLoglikelihoods(self, xData):
 
-        X = [np.array(data)*self.scale for data in xData]
+        X = [np.array(data) for data in xData]
         X_test = util.convert_sequence(X) # Training input
         X_test = X_test.tolist()
 
@@ -293,7 +294,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
     
     if converted_X is False:
         X_test = util.convert_sequence(X, emission=False)
-        X_test = np.squeeze(X_test)*ml.scale
+        X_test = np.squeeze(X_test)
         X_test = X_test.tolist()
     else:
         X_test = X
@@ -323,7 +324,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
         return idx, l_idx, l_likelihood
 
 
-def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startIdx=2, \
+def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
                        bPosterior=False, converted_X=False):
     '''
     Return
@@ -335,7 +336,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startId
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
 
     X_test = util.convert_sequence(X, emission=False)
-    X_test = np.squeeze(X_test)*scale
+    X_test = np.squeeze(X_test)
 
     l_idx        = []
     l_likelihood = []
