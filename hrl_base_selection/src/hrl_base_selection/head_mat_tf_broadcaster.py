@@ -28,7 +28,7 @@ class HeadDetector:
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
-        self.head_center_2d = [0., 0., 0.]
+        self.head_center_2d = np.array([0., 0., 0.])
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
