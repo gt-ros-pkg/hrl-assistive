@@ -30,6 +30,7 @@
 
 # system
 import os, sys, copy
+import random
 
 # util
 import numpy as np
@@ -989,3 +990,93 @@ def data_augmentation(successes, failures, nAugment=1):
     return success_aug_list, failure_aug_list
 
 
+def get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
+                         rf_center, local_range, downSampleSize, time_window, feature_list, \
+                         nAugment=4, renew=False):
+
+    if os.path.isfile(save_pkl) and renew is not True:
+        d = ut.load_pickle(save_pkl)
+        # Time-sliding window
+        new_normalTrainingData   = getTimeDelayData( d['normalTrainingData'], time_window )
+        new_abnormalTrainingData = getTimeDelayData( d['abnormalTrainingData'], time_window )        
+        new_normalTestData       = getTimeDelayData( d['normalTestData'], time_window )
+        new_abnormalTestData     = getTimeDelayData( d['abnormalTestData'], time_window )        
+        nSingleData              = len(d['normalTestData'][0][0])-time_window+1
+
+        return new_normalTrainingData.T, new_normalTrainingData.T, new_normalTestData.T, new_abnormalTestData.T, \
+          nSingleData
+
+
+    successData, failureData, aug_successData, aug_failureData, param_dict = \
+      getDataSet(subject_names, task, raw_data_path, \
+                 processed_data_path, rf_center, local_range,\
+                 nSet=1, \
+                 downSampleSize=downSampleSize, \
+                 scale=1.0,\
+                 ae_data=True, data_ext=False, nAugment=nAugment, \
+                 feature_list=feature_list, \
+                 data_renew=renew)
+
+    # index selection
+    success_idx  = range(len(aug_successData[0]))
+    failure_idx  = range(len(aug_failureData[0]))
+
+    s_train_idx  = random.sample(success_idx, int( 0.8*len(success_idx)) )
+    f_train_idx  = random.sample(failure_idx, int( 0.8*len(failure_idx)) )
+    
+    s_test_idx = [x for x in success_idx if not x in s_train_idx]
+    f_test_idx = [x for x in failure_idx if not x in f_train_idx]
+
+    # data structure: dim x sample x sequence
+    normalTrainingData   = aug_successData[:, s_train_idx, :]
+    abnormalTrainingData = aug_failureData[:, f_train_idx, :]
+    normalTestData       = aug_successData[:, s_test_idx, :]
+    abnormalTestData     = aug_failureData[:, f_test_idx, :]
+
+    print "======================================"
+    print "Dim x nSamples x nLength"
+    print "--------------------------------------"
+    print "Normal Train data: ",   np.shape(normalTrainingData)
+    print "Abnormal Train data: ", np.shape(abnormalTrainingData)
+    print "Normal test data: ",    np.shape(normalTestData)
+    print "Abnormal test data: ",  np.shape(abnormalTestData)
+    print "======================================"
+
+    # scaling by the number of dimensions in each feature
+    ## dataDim = param_dict['dataDim']
+    d = {}        
+    d['normalTrainingData']   = np.swapaxes(normalTrainingData, 0, 1)
+    d['abnormalTrainingData'] = np.swapaxes(abnormalTrainingData, 0, 1)
+    d['normalTestData']       = np.swapaxes(normalTestData, 0, 1)
+    d['abnormalTestData']     = np.swapaxes(abnormalTestData, 0, 1)
+    ut.save_pickle(d, save_pkl)
+
+    print "======================================"
+    print "Dim x nSamples x nLength"
+    print "--------------------------------------"
+    print "Normal Train data: ",   np.shape(d['normalTrainingData'])
+    print "Abnormal Train data: ", np.shape(d['abnormalTrainingData'])
+    print "Normal test data: ",    np.shape(d['normalTestData'])
+    print "Abnormal test data: ",  np.shape(d['abnormalTestData'])
+    print "======================================"
+
+    # Time-sliding window
+    new_normalTrainingData   = getTimeDelayData( d['normalTrainingData'], time_window )
+    new_abnormalTrainingData = getTimeDelayData( d['abnormalTrainingData'], time_window )
+    new_normalTestData       = getTimeDelayData( d['normalTestData'], time_window )
+    new_abnormalTestData     = getTimeDelayData( d['abnormalTestData'], time_window )
+    nSingleData       = len(d['normalTestData'][0][0])-time_window+1
+
+    return new_normalTrainingData.T, new_abnormalTrainingData.T, \
+      new_normalTestData.T, new_abnormalTestData.T, \
+      nSingleData
+
+
+def getTimeDelayData(data, time_window):
+
+    new_data = []
+    for i in xrange(len(data)):
+        for j in xrange(len(data[i][0])-time_window+1):
+            new_data.append( data[i][:,j:j+time_window].flatten() )
+
+    return np.array(new_data)

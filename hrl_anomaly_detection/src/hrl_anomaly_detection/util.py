@@ -1140,3 +1140,5 @@ def cross_1D_correlation(seq1, seq2, pad):
     # print "diff: ", x_diff
 
     return C, x_diff
+
+

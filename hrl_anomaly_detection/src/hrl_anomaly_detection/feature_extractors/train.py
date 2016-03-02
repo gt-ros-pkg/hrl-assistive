@@ -1,3 +1,35 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
+
+
+#theano
 import theano
 import theano.tensor as T
 import layer as l
@@ -6,31 +38,23 @@ from theano import function, config, shared, sandbox
 # system util
 import sys, os
 import numpy as np
-import matplotlib.pyplot as plt
-## import cPickle
-from six.moves import cPickle
 import random
+
+# graph
+import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import gridspec
 
 # util
 import hrl_lib.util as ut
-## from hrl_anomaly_detection.util import *
-## from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+import theano_util as util
 
-import data as dd
 import itertools
 colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
-def save_params(obj, filename):
-    f = file(filename, 'wb')
-    cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
-    f.close()
-
-def load_params(filename):
-    obj = ut.load_pickle(filename)
-    return obj
 
 def train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
           lambda_reg, batch_size, time_window, filename, nSingleData, \
@@ -169,16 +193,11 @@ def train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, da
             else:
                 fig.canvas.draw()
                 
-
-            
-
         if save and iteration%100 ==0:
             f = open(filename, 'wb')
             cPickle.dump(mlp_features, f, protocol=cPickle.HIGHEST_PROTOCOL)
             f.close()
-            
-
-       
+                   
         ## # Plot network output after this iteration
         ## plt.figure(figsize=(8, 8))
         ## plt.scatter(X_train[0, :], X_train[1, :], c='r',
@@ -189,6 +208,8 @@ def train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, da
         ## plt.title('Cost: {:.3f}'.format(float(current_cost)))
         ## plt.show()
         iteration += 1
+
+    return str(train_loss) + '_' + str(test_loss)
 
     
 def train_pca(X_train, X_test, time_window, nSingleData, outputDim=4, save_pdf=False):
@@ -236,33 +257,81 @@ def train_pca(X_train, X_test, time_window, nSingleData, outputDim=4, save_pdf=F
         plt.show()
 
 
-def test(X_test, filename, nSingleData, time_window, bReconstruct=False, save_pdf=False):
+def test(X_normalTest, X_abnormalTest, filename, nSingleData, time_window, \
+         bReconstruct=False, save_pdf=False):
 
-    mlp_features = load_params(filename)
+    mlp_features = util.load_params(filename)
     print "X_test: ", np.shape( X_test )
+
+    fig = plt.figure(1)
 
     feature_list = []
     count = 0
-    for i in xrange(0, len(X_test[0]), nSingleData):
+    for idx in xrange(0, len(X_normalTest[0]), nSingleData):
         count += 1
-        test_features = mlp_features( X_test[:,i:i+nSingleData].astype('float32') )
+        test_features = mlp_features( X_normalTest[:,idx:idx+nSingleData].astype('float32') )
         feature_list.append(test_features)
 
         print "Total samples : ", count
 
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
-        for i in xrange(len(feature_list)):
+        n_cols = 2
+        n_rows = int(len(test_features)/2)
+        if idx==0: gs = gridspec.GridSpec(n_rows, n_cols)
 
-            # get mean, var        
-            colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])        
-            for j in xrange(3):
-                color = colors.next()
-                ax.plot(feature_list[i][j,:], c=color)
 
-            ## if i==3:
-            ##     break
-        plt.show()
+        # get mean, var        
+        colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])        
+        for j in xrange(len(feature_list[0])):
+
+            n_col = int(j/n_rows)
+            n_row = j%n_rows
+            ## ax = fig.add_subplot(gs[n_row,n_col])
+            ax = fig.add_subplot(n_rows,n_cols,j+1)
+            color = colors.next()
+        
+            for i in xrange(len(feature_list)):                
+                ax.plot(feature_list[i][j,:], ':', c=color)
+
+            ax.set_ylim([0,1])
+
+        ## if idx > 10: break
+
+
+    feature_list = []
+    count = 0
+    for idx in xrange(0, len(X_abnormalTest[0]), nSingleData):
+        count += 1
+        test_features = mlp_features( X_abnormalTest[:,idx:idx+nSingleData].astype('float32') )
+        feature_list.append(test_features)
+
+        print "Total samples : ", count
+
+        n_cols = 2
+        n_rows = int(len(test_features)/2)
+        if idx==0: gs = gridspec.GridSpec(n_rows, n_cols)
+
+
+        # get mean, var        
+        colors = itertools.cycle(['g', 'b', 'm', 'c', 'k', 'y', 'r'])        
+        for j in xrange(len(feature_list[0])):
+
+            n_col = int(j/n_rows)
+            n_row = j%n_rows
+            ## ax = plt.subplot(gs[n_row,n_col])
+            ax = plt.subplot(n_rows,n_cols,j+1)
+            color = colors.next()
+        
+            for i in xrange(len(feature_list)):                
+                ax.plot(feature_list[i][j,:], '-', c=color)
+
+            ax.set_ylim([0,1])
+
+        if idx > 30: break
+
+
+    plt.show()
+
+    return str(0)
 
     
 if __name__ == '__main__':
@@ -319,20 +388,46 @@ if __name__ == '__main__':
     maxiteration  = opt.nMaxIter
     filename      = 'simple_model.pkl'
 
-    ## X, y = getData2()
-    ## X = X.get_value(True).T
-    ## X, y = getData()    
-    X_train, X_test, nSingleData = dd.getData3(time_window, renew=opt.bRenew, )
-    layer_sizes = [X_train.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
+
+    subject_names       = ['gatsbii']
+    task                = 'pushing'
+    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
+    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
+    rf_center           = 'kinEEPos'
+    local_range         = 1.25    
+    downSampleSize      = 200
+    nAugment            = 4
+
+    feature_list = ['relativePose_artag_EE', \
+                    'relativePose_artag_artag', \
+                    'wristAudio', \
+                    'ft', \
+                    ## 'kinectAudio',\
+                    ## 'pps', \
+                    ## 'visionChange', \
+                    ## 'fabricSkin', \
+                    ]
+                    
+    X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
+      = dm.get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
+                                rf_center, local_range, downSampleSize, time_window, feature_list, \
+                                nAugment, renew=opt.bRenew)
+    layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
     ## print "Max iteration : ", opt.nMaxIter
 
-    if opt.bTrain:        
+    if opt.bTrain:
+        X_train = np.vstack([X_normalTrain, X_abnormalTrain])
+        
         ## train_pca(X_train, X_test, time_window, nSingleData, \
         ##           outputDim=eval(opt.lLayerSize)[-1], save_pdf=opt.bSavePDF)
-        train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
-              lambda_reg, batch_size, time_window, filename, nSingleData, \
-              viz=opt.bViz, max_iteration=maxiteration, save=opt.bSave, rviz=opt.bReconstructViz)
+        ret = train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
+                    lambda_reg, batch_size, time_window, filename, nSingleData, \
+                    viz=opt.bViz, max_iteration=maxiteration, save=opt.bSave, rviz=opt.bReconstructViz)
     else:
-        test(X_test, filename, nSingleData, time_window, save_pdf=opt.bSavePDF)
+        ## ret = test(X_train, filename, nSingleData, time_window, save_pdf=opt.bSavePDF)
+        ret = test(X_normalTest, X_abnormalTest, filename, nSingleData, time_window, save_pdf=opt.bSavePDF)
         
+
+    exit('>'+ret)
