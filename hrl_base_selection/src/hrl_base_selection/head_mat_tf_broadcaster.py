@@ -65,7 +65,9 @@ class HeadDetector:
                          overlap=0.1) 
         if blobs.any():
             self.head_center_2d = blobs[0, :]
-        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d
+        print self.head_center_2d
+        y, x, r = (INTER_SENSOR_DISTANCE*self.head_center_2d)/2
+        print x, y
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, 0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
@@ -88,7 +90,7 @@ class HeadDetector:
                 try:
                     self.tf_broadcaster.sendTransform(out_trans, 
                                                       out_rot,
-                                                      rospy.Time(0),
+                                                      rospy.Time.now(),
                                                       'user_head_link',
                                                       'map')
                     rate.sleep()
