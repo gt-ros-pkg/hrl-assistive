@@ -38,7 +38,7 @@ class HeadDetector:
             rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
-        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, 1], [1, 0, 0]])
+        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
         self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
         rospy.sleep(1)
         self.run()
@@ -72,7 +72,7 @@ class HeadDetector:
             self.head_center_2d = blobs
         y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
-        mat_B_head[0:3, 3] = np.array([x, y, 0.05])
+        mat_B_head[0:3, 3] = np.array([x, y, -0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
         return head_rest_B_head
 
