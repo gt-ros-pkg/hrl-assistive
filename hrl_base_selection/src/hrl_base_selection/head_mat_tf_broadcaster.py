@@ -28,7 +28,7 @@ class HeadDetector:
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
-        self.head_center_2d = np.array([0., 0., 0.])
+        self.head_center_2d = [0., 0., 0.]
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
@@ -37,7 +37,7 @@ class HeadDetector:
             rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
-        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, 0, 1], [-1, 0, 0], [0, 1, 0]])
+        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, 1], [1, 0, 0]])
         self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
         rospy.sleep(1)
         self.run()
@@ -58,16 +58,17 @@ class HeadDetector:
         #plt.show()
         #Select top 20 pixels of pressure map
         p_map = self.pressure_map[:20,:]
-        blobs = blob_doh(p_map,
-                         min_sigma=1, 
-                         max_sigma=4, 
-                         threshold=30,
-                         overlap=0.1) 
+        try:
+            blobs = blob_doh(p_map,
+                             min_sigma=1, 
+                             max_sigma=4, 
+                             threshold=30,
+                             overlap=0.1) 
+        except:
+            print "Head Not On Mat!"
         if blobs.any():
             self.head_center_2d = blobs[0, :]
-        print self.head_center_2d
-        y, x, r = (INTER_SENSOR_DISTANCE*self.head_center_2d)/2
-        print x, y
+        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, 0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
@@ -90,7 +91,7 @@ class HeadDetector:
                 try:
                     self.tf_broadcaster.sendTransform(out_trans, 
                                                       out_rot,
-                                                      rospy.Time.now(),
+                                                      rospy.Time(0),
                                                       'user_head_link',
                                                       'map')
                     rate.sleep()
