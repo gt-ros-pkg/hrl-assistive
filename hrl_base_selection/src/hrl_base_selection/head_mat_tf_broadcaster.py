@@ -20,7 +20,7 @@ LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
-INTER_SENSOR_DISTANCE = 0.0286#metres
+INTER_SENSOR_DISTANCE = 0.0286
 
 class HeadDetector:
     '''Detects the head of a person sleeping on the autobed'''
@@ -32,14 +32,15 @@ class HeadDetector:
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
-        #while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
+        #while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
         self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
-        self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
+        self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -MAT_HALF_WIDTH])
+        self.zoom_factor = 2
         rospy.sleep(1)
         self.run()
 
@@ -48,7 +49,7 @@ class HeadDetector:
         the Vista Medical Pressure Mat and sends it out.'''
         p_array = data.data
         p_map_raw = np.reshape(p_array, self.mat_size)
-        p_map_hres=ndimage.zoom(p_map_raw, 2, order=1)
+        p_map_hres=ndimage.zoom(p_map_raw, self.zoom_factor, order=1)
         self.pressure_map=p_map_hres
         self.mat_sampled = True
 
@@ -70,14 +71,20 @@ class HeadDetector:
             print "Head Not On Mat!"
         if blobs.any():
             self.head_center_2d = blobs
-        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d[0, :]
+        #print "In discrete coordinates"
+        #print self.head_center_2d[0, :]
+        taxels_to_meters = np.array([MAT_HEIGHT/(NUMOFTAXELS_X*self.zoom_factor), 
+                                     MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
+                                     1])
+        #print "Taxels to meters: {}".format(taxels_to_meters)
+        y, x, r = taxels_to_meters*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
-        print "In Mat Coordinates:"
-        print x, y
+        #print "In Mat Coordinates:"
+        #print x, y
         head_rest_B_head = np.matrix(self.head_rest_B_mat)*np.matrix(mat_B_head)
-        print "In head_rest_link coordinates:"
-        print head_rest_B_head[0:3, 3]
+        #print "In head_rest_link coordinates:"
+        #print head_rest_B_head[0:3, 3]
         return head_rest_B_head
 
     def run(self):
@@ -87,14 +94,14 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                                                   rospy.Time(0), rospy.Duration(1))
-                (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
-                                                                      'autobed/head_rest_link', rospy.Time(0))
-                #self.tf_listener.waitForTransform('base_link', 'torso_lift_link',\
+                #self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
                 #                                   rospy.Time(0), rospy.Duration(1))
-                #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
-                #                                                      'torso_lift_link', rospy.Time(0))
+                #(newtrans, newrot) = self.tf_listener.lookupTransform('map', \
+                #                                                      'autobed/head_rest_link', rospy.Time(0))
+                self.tf_listener.waitForTransform('base_link', 'torso_lift_link',\
+                                                   rospy.Time(0), rospy.Duration(1))
+                (newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
+                                                                      'torso_lift_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
                 (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
@@ -103,8 +110,8 @@ class HeadDetector:
                                                       out_rot,
                                                       rospy.Time(0),
                                                       'user_head_link',
-                                                      'map')
-                                                      #'torso_lift_link')
+                                                      #'map')
+                                                      'torso_lift_link')
                     rate.sleep()
                 except:
                     print 'Head TF broadcaster crashed trying to broadcast!'
