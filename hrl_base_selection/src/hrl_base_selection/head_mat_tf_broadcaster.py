@@ -73,7 +73,11 @@ class HeadDetector:
         y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
+        print "In Mat Coordinates:"
+        print x, y
         head_rest_B_head = np.matrix(self.head_rest_B_mat)*np.matrix(mat_B_head)
+        print "In head_rest_link coordinates:"
+        print head_rest_B_head[0:3, 3]
         return head_rest_B_head
 
     def run(self):
@@ -91,7 +95,6 @@ class HeadDetector:
                 #                                   rospy.Time(0), rospy.Duration(1))
                 #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
                 #                                                      'torso_lift_link', rospy.Time(0))
-
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
                 (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
