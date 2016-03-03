@@ -33,6 +33,7 @@ class HeadDetector:
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
         while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        #while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
         #Initialize some constant transforms
@@ -68,8 +69,8 @@ class HeadDetector:
             blobs = np.copy(self.head_center_2d)
             print "Head Not On Mat!"
         if blobs.any():
-            self.head_center_2d = blobs[0, :]
-        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d
+            self.head_center_2d = blobs
+        y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, 0.05])
         head_rest_B_head = self.head_rest_B_mat*mat_B_head
@@ -86,6 +87,11 @@ class HeadDetector:
                                                    rospy.Time(0), rospy.Duration(1))
                 (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
+                #self.tf_listener.waitForTransform('base_link', 'torso_lift_link',\
+                #                                   rospy.Time(0), rospy.Duration(1))
+                #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
+                #                                                      'torso_lift_link', rospy.Time(0))
+
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
                 (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
@@ -95,6 +101,7 @@ class HeadDetector:
                                                       rospy.Time(0),
                                                       'user_head_link',
                                                       'map')
+                                                      #'torso_lift_link')
                     rate.sleep()
                 except:
                     print 'Head TF broadcaster crashed trying to broadcast!'
