@@ -445,7 +445,7 @@ var PR2ArmMPC = function (options) {
         msg.header.frame_id = frame_id;
         msg.pose.position = position;
         msg.pose.orientation = orientation;
-        console.log("Sending Goal:", msg);
+//        console.log("Sending Goal:", msg);
         self.goalPosePublisher.publish(msg);
     };
 

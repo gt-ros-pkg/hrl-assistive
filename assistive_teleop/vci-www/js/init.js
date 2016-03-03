@@ -94,9 +94,6 @@ var RFH = {
                                             fixedFrame : '/base_link' });
         RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
-        RFH.pixel23DClient = new RFH.Pixel23DClient({ros: RFH.ros,
-                                                     cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
-                                                     });
         initMjpegCanvas();
         initViewer('video-main');
         RFH.initTaskMenu('main-menu');

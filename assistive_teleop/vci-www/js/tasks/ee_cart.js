@@ -35,7 +35,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.pixel23d = new RFH.Pixel23DClient({
         ros: ros,
-        cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+        cameraInfoTopic: self.camera.infoTopic,
         serviceName: '/pixel_2_3d'
     });
 
