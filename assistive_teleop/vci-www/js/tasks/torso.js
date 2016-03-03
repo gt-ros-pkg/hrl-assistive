@@ -31,7 +31,7 @@ RFH.Torso = function (options) {
     };
 
     self.torsoStateDisplay = function (msg) {
-        if (!self.slider.find('a').hasClass('ui-state-active')) {
+        if (!self.slider.find('span').hasClass('ui-state-active')) {
             self.slider.slider('option', 'value', msg.actual.positions[0]);
         }
     };
