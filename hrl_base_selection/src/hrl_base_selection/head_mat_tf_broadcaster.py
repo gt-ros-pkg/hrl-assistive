@@ -65,6 +65,7 @@ class HeadDetector:
                              threshold=30,
                              overlap=0.1) 
         except:
+            blobs = np.copy(self.head_center_2d)
             print "Head Not On Mat!"
         if blobs.any():
             self.head_center_2d = blobs[0, :]
