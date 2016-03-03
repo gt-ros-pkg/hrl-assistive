@@ -37,7 +37,7 @@ class HeadDetector:
             rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
-        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, 0, 1], [-1, 0, 0], [0, 1, 0]])
+        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, 1], [1, 0, 0]])
         self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
         rospy.sleep(1)
         self.run()
@@ -58,11 +58,14 @@ class HeadDetector:
         #plt.show()
         #Select top 20 pixels of pressure map
         p_map = self.pressure_map[:20,:]
-        blobs = blob_doh(p_map,
-                         min_sigma=1, 
-                         max_sigma=4, 
-                         threshold=30,
-                         overlap=0.1) 
+        try:
+            blobs = blob_doh(p_map,
+                             min_sigma=1, 
+                             max_sigma=4, 
+                             threshold=30,
+                             overlap=0.1) 
+        except:
+            print "Head Not On Mat!"
         if blobs.any():
             self.head_center_2d = blobs[0, :]
         y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d
