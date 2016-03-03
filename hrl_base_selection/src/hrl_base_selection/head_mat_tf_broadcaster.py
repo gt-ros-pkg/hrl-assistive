@@ -73,7 +73,7 @@ class HeadDetector:
         y, x, r = INTER_SENSOR_DISTANCE*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
-        head_rest_B_head = self.head_rest_B_mat*mat_B_head
+        head_rest_B_head = np.matrix(self.head_rest_B_mat)*np.matrix(mat_B_head)
         return head_rest_B_head
 
     def run(self):
