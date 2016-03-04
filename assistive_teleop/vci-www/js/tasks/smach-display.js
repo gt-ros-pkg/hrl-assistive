@@ -3,7 +3,8 @@ RFH.Smach = function(options) {
     var ros = options.ros;
     self.$displayContainer = options.displayContainer || $('#scmah-display');
     self.display = new RFH.SmachDisplay({ros: ros,
-                                         container: self.$displayContainer});
+                                         container: self.$displayContainer,
+                                         cancelFn: self.cancelAction});
     self.smachTasks = []; // Array of data on tasks. Display only most recent (last index) for ordering of sub-tasks.
     self.activeState = null;
     self.currentActionSubscribers = {};
@@ -16,12 +17,18 @@ RFH.Smach = function(options) {
         type: 'hrl_task_planning/PDDLSolution'
     });
 
+    self.preemptTaskClient = new ROSLIB.Service({ros:ros,
+                                                 name:'preempt_pddl_task',
+                                                 serviceType: '/hrl_task_planning/PreemptTask'});
+
+
     self.planSolutionCB = function(msg) {
         self.display.empty(); // Out with the old
         var actions = self.parseActions(msg.actions);
 //        var interfaceTaskStarts = self.getInterfaceTaskStarts(msg.domain, actions);
         var taskLabels = self.getTaskLabels(msg.domain, actions);
-        self.display.displaySmachStates(taskLabels);
+        var cancelFn = function () {self.cancelAction(msg.problem)};
+        self.display.displaySmachStates(taskLabels, cancelFn);
         var taskData = {'domain': msg.domain,
                         'problem': msg.problem,
                         'labels': taskLabels,
@@ -41,9 +48,23 @@ RFH.Smach = function(options) {
         self.currentActionSubscribers[domain].subscribe(self.updateCurrentAction);
     };
 
+
+    self.cancelAction = function (action) {
+        var cancelResultCB = function (resp) {
+            if (resp.result) {
+                console.log("Cancelled task successfully");
+                self.display.empty();
+            } else {
+                RFH.log("Failed to cancel task");
+            }
+        };
+
+        var req = new ROSLIB.ServiceRequest({'problem_name':action});
+        self.preemptTaskClient.callService(req, cancelResultCB);
+    };
+
     self.updateCurrentAction = function (planStepMsg) {
         if (planStepMsg.action === '') {
-            self.display.empty(); 
             RFH.taskMenu.startTask('lookingTask');
             return;
         }
@@ -220,7 +241,7 @@ RFH.SmachDisplay = function(options) {
     };
 
     // Receives a list of label strings, creates a display of actions in sequence with highlighting for done/current/future actions
-    self.displaySmachStates = function(stringList) {
+    self.displaySmachStates = function(stringList, cancelFn) {
         for (var i = 0; i < stringList.length; i += 1) {
             self.$container.append($('<div>', {
                 class: "smach-state incomplete",
@@ -231,6 +252,9 @@ RFH.SmachDisplay = function(options) {
             }));
         }
         self.$container.find('.smach-state-separator').last().remove(); // Don't need extra connector bar hanging off the end.
+        var cancelButton = $('<div>', {class:"smach-state cancel", text:"Cancel"});
+        cancelButton.on('click.rfh', cancelFn);
+        self.$container.append(cancelButton);
     };
 
     self.setActive = function(idx) {

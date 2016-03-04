@@ -5,6 +5,7 @@
     left: 1%;
     width: auto;
     height: auto;
+    z-index:20
 }
 .smach-state {
     font-size: x-large;
@@ -45,4 +46,24 @@
     background-color: rgba(0, 0, 0, 0.75);
     height: 20px;
     width: 5px;
+}
+
+.smach-state.cancel {
+    background-color: rgba(75%, 3%, 2%, 0.85);
+    border-color: rgba(87%, 5%, 8%, 0.65);
+    color: hsla(0, 0%, 0%, 0.9);
+    margin-left:0.4em;
+    cursor: pointer;
+    transition:none;
+}
+
+.smach-state.cancel:hover {
+    background-color: rgba(95%, 3%, 2%, 0.95);
+    border-color: rgba(90%, 2%, 3%, 0.9);
+    font-weight:bold;
+}
+
+.smach-state.cancel:active {
+    background-color: rgba(72%, 9%, 12%, 0.8);
+    border-color: rgba(80%, 5%, 8%, 0.7);
 }
