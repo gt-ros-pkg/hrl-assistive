@@ -30,6 +30,7 @@ class HeadDetector:
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         self.head_center_2d = [0., 0., 0.]
+        self.zoom_factor = 2
         self.hist_size = 30
         self.head_pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         rospy.sleep(2)
@@ -42,8 +43,8 @@ class HeadDetector:
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
         self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
-        self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -MAT_HALF_WIDTH])
-        self.zoom_factor = 2
+        self.head_rest_B_mat[0:3, 3] = np.array([0.735-0.2286, 0, -MAT_HALF_WIDTH])
+        
         rospy.sleep(1)
         self.run()
 
@@ -80,33 +81,35 @@ class HeadDetector:
                                      MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
                                      1])
         #print "Taxels to meters: {}".format(taxels_to_meters)
-        #Median filter
-        self.head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
-        positions = self.head_pos_buf.get_array()
+
+        self._head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
+        positions = self.pos_buf.get_array()
+        print "Unsorted:"
         print positions
-        #pos = np.sort(a.view('i8,i8,i8'), order=['f1'], axis=0).view(np.int) 
-        pos= np.sort(positions, axis=0)
-        print pos
-        y, x, r = pos[pos.shape[0]/2]
-        #Convert to homogenous transformation matrix
+        positions = np.sort(positions, axis=0)
+        print "Sorted:"
+        print positions
+        y, x, r = taxels_to_meters*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
+        #mat_B_head[0:3, 3] = np.array([0,0,0])
         #print "In Mat Coordinates:"
         #print x, y
         head_rest_B_head = np.matrix(self.head_rest_B_mat)*np.matrix(mat_B_head)
         #print "In head_rest_link coordinates:"
         #print head_rest_B_head[0:3, 3]
+        
         return head_rest_B_head
 
     def run(self):
         '''Runs pose estimation''' 
-        rate = rospy.Rate(5.0)
+        rate = rospy.Rate(50.0)
         while not rospy.is_shutdown():
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                                                   rospy.Time(0), rospy.Duration(1))
+                #self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
+                #                                   rospy.Time(0), rospy.Duration(1))
                 (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
                 #self.tf_listener.waitForTransform('base_link', 'torso_lift_link',\
@@ -119,7 +122,7 @@ class HeadDetector:
                 try:
                     self.tf_broadcaster.sendTransform(out_trans, 
                                                       out_rot,
-                                                      rospy.Time(0),
+                                                      rospy.Time.now(),
                                                       'user_head_link',
                                                       'map')
                                                       #'torso_lift_link')
