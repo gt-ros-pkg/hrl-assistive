@@ -5,13 +5,14 @@ RFH.ParamLocation = function(options) {
     var paramName = options.paramName || 'id_location';
     self.name = options.name || 'paramLocationTask';
     self.container = options.container;
+    self.camera = options.camera;
     var positionOverride = null;
     var orientationOverride = null;
     var offset = {position:{x:0, y:0, z:0},
                    rotation:{x:0, y:0, z:0}};
     self.pixel23d = new RFH.Pixel23DClient({
         ros: ros,
-        cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
+        cameraInfoTopic: self.camera.infoTopic
     });
 //    self.buttonText = 'ID_Location';
 //    self.buttonClass = 'id-location-button';

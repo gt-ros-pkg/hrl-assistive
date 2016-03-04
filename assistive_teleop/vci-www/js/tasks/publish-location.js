@@ -4,12 +4,13 @@ RFH.PublishLocation = function(options) {
     self.ros = options.ros;
     self.name = options.name || 'idLocationTask';
     self.topic = options.topic || 'id_location';
+    self.camera = options.camera;
     self.container = options.container;
     var offset = {position:{x:0, y:0, z:0},
                    rotation:{x:0, y:0, z:0}};
     self.pixel23d = new RFH.Pixel23DClient({
         ros: self.ros,
-        cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info'
+        cameraInfoTopic: self.camera.infoTopic
     });
 //    self.buttonText = 'ID_Location';
  //   self.buttonClass = 'id-location-button';
