@@ -5,6 +5,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import cPickle as pkl
+import hrl_lib.circular_buffer as cb
 import tf
 from scipy import ndimage
 from skimage.feature import blob_doh
@@ -30,6 +31,8 @@ class HeadDetector:
         self.tf_listener = tf.TransformListener()
         self.head_center_2d = [0., 0., 0.]
         self.zoom_factor = 2
+        self.hist_size = 30
+        self.head_pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
@@ -78,6 +81,14 @@ class HeadDetector:
                                      MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
                                      1])
         #print "Taxels to meters: {}".format(taxels_to_meters)
+
+        self._head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
+        positions = self.pos_buf.get_array()
+        print "Unsorted:"
+        print positions
+        positions = np.sort(positions, axis=0)
+        print "Sorted:"
+        print positions
         y, x, r = taxels_to_meters*self.head_center_2d[0, :]
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
