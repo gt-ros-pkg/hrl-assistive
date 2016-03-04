@@ -80,16 +80,17 @@ class HeadDetector:
         taxels_to_meters = np.array([MAT_HEIGHT/(NUMOFTAXELS_X*self.zoom_factor), 
                                      MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
                                      1])
-        #print "Taxels to meters: {}".format(taxels_to_meters)
 
-        self._head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
-        positions = self.pos_buf.get_array()
-        print "Unsorted:"
-        print positions
-        positions = np.sort(positions, axis=0)
-        print "Sorted:"
-        print positions
-        y, x, r = taxels_to_meters*self.head_center_2d[0, :]
+
+        #No Filters
+        #y, x, r = taxels_to_meters*self.head_center_2d[0, :]
+
+        #Median Filter
+        self.head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
+        positions = self.head_pos_buf.get_array()
+        pos = positions[positions[:, 1].argsort()]
+        y, x, r = pos[pos.shape[0]/2]
+
         mat_B_head = np.eye(4)
         mat_B_head[0:3, 3] = np.array([x, y, -0.05])
         #mat_B_head[0:3, 3] = np.array([0,0,0])
@@ -108,12 +109,8 @@ class HeadDetector:
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                #self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                #                                   rospy.Time(0), rospy.Duration(1))
                 (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
-                #self.tf_listener.waitForTransform('base_link', 'torso_lift_link',\
-                #                                   rospy.Time(0), rospy.Duration(1))
                 #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
                 #                                                      'torso_lift_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
