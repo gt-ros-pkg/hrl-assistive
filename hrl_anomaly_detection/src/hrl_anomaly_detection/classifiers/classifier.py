@@ -49,9 +49,15 @@ from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 class classifier(learning_base):
     def __init__(self, ml, method='svm', nPosteriors=10, nLength=200, ths_mult=None,\
-                 class_weight={1.0: 1.0, -1.0: 5.1}, \
+                 class_weight=1.0, \
                  verbose=False):
         learning_base.__init__(self)
+        '''
+        class_weight : positive class weight for svm
+        nLength : only for progress-based classifier
+        ths_mult: only for progress-based classifier
+        '''
+       
         
         self.ml = ml
         self.method = method
@@ -72,7 +78,7 @@ class classifier(learning_base):
             ## ##               class_weight=self.class_weight)
             ## #self.dt = SVC(kernel=custom_kernel2, verbose=True)
         elif self.method == 'cssvm_standard' or self.method == 'cssvm':
-            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             self.class_weight = class_weight
         elif self.method == 'progress_time_cluster':
@@ -100,18 +106,20 @@ class classifier(learning_base):
             import svmutil as svm
             print svm.__file__
             if type(X) is not list: X=X.tolist()
+            print "--------------------------------------------------------------------"
+            print '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'
             self.dt = svm.svm_train(y, X, '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'  )
             ## self.dt.set_params(class_weight=self.class_weight)
             ## return self.dt.fit(X, y)
             return True
         elif self.method == 'cssvm_standard':
-            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
             self.dt = cssvm.svm_train(y, X, '-C 0 -c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 5.0' )
             return True
         elif self.method == 'cssvm':
-            sys.path.insert(0, '/home/dpark/git/cssvm/python')
+            sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
             self.dt = cssvm.svm_train(y, X, '-C 1 -c 4 -t 2 -g 0.03 -w1 2.0 -w-1 '+str(self.class_weight) )
@@ -154,7 +162,7 @@ class classifier(learning_base):
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
             else:
-                sys.path.insert(0, '/home/dpark/git/cssvm/python')
+                sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
                 import cssvmutil as svm
 
             print svm.__file__

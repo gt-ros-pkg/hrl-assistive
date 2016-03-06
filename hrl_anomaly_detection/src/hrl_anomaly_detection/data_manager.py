@@ -74,8 +74,8 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
             for abnormal_c_fold, abnormal_test_fold in abnormal_folds:
                 '''
                 Normal training data for model
-                Normal training data for classifier
-                Abnormal training data for classifier
+                Normal training data 
+                Abnormal training data 
                 Normal test data 
                 Abnormal test data 
                 '''
@@ -84,10 +84,35 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
                 kFold_list.append(index_list)
 
     return kFold_list
-    
+
+def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
+    '''
+    Output:
+    Normal training data 
+    Abnormal training data 
+    Normal test data 
+    Abnormal test data 
+    '''
+
+    normal_folds   = cross_validation.KFold(nNormal, n_folds=nNormalFold, shuffle=True)
+    abnormal_folds = cross_validation.KFold(nAbnormal, n_folds=nAbnormalFold, shuffle=True)
+
+    kFold_list = []
+
+    for normal_train_fold, normal_test_fold in normal_folds:
+
+        for abnormal_train_fold, abnormal_test_fold in abnormal_folds:
+            index_list = [normal_train_fold, abnormal_train_fold, \
+                          normal_test_fold, abnormal_test_fold]
+            kFold_list.append(index_list)
+
+    return kFold_list
+
+
+#-------------------------------------------------------------------------------------------------
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-               nSet=1, downSampleSize=200, scale=10.0, cutting=False, ae_data=False, data_ext=True, \
-               nAugment=1,\
+               downSampleSize=200, scale=10.0, ae_data=False, data_ext=True, \
+               nAugment=0,\
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                feature_list=['crossmodal_targetEEDist'], data_renew=False):
@@ -104,12 +129,15 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is not True :
+        print "--------------------------------------"
+        print "Load saved data"
+        print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         allData         = data_dict['allData']
         successData     = data_dict['trainingData'] 
         failureData     = data_dict['abnormalTestData']
-        aug_successData = data_dict['successData_augmented']
-        aug_failureData = data_dict['failureData_augmented']        
+        aug_successData = data_dict.get('successData_augmented', [])
+        aug_failureData = data_dict.get('failureData_augmented', [])
         failureNameList = data_dict['abnormalTestNameList']
         param_dict      = data_dict['param_dict']
     else:
@@ -156,24 +184,15 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             allData = None #successData+failureData
                                                                     
         data_dict = {}
-        data_dict['allData']              = np.array(allData)
-        data_dict['trainingData']         = np.array(successData)
-        data_dict['abnormalTestData']     = np.array(failureData)
+        data_dict['allData']              = allData = np.array(allData)
+        data_dict['trainingData']         = successData = np.array(successData)
+        data_dict['abnormalTestData']     = failureData = np.array(failureData)
         data_dict['abnormalTestNameList'] = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['successData_augmented'] = np.array(aug_successData)
-        data_dict['failureData_augmented'] = np.array(aug_failureData)
+        data_dict['successData_augmented'] = aug_successData = np.array(aug_successData)
+        data_dict['failureData_augmented'] = aug_failureData = np.array(aug_failureData)
         data_dict['param_dict'] = param_dict
         ut.save_pickle(data_dict, save_pkl)
 
-
-    ## # test
-    ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
-    ## _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-    ##                                 downSampleSize=downSampleSize,\
-    ##                                 local_range=local_range, rf_center=rf_center)
-    ## trainingData, _      = extractFeature(success_data_dict, feature_list, \
-    ##                                            param_dict=data_dict['param_dict'])
-    ## sys.exit()
     
     ## All data
     nPlot = None
@@ -195,8 +214,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             else: add_idx.append(i)
 
         allData          = allData[add_idx]
-        successData     = successData[add_idx]
-        failureData = failureData[add_idx]
+        successData      = successData[add_idx]
+        failureData      = failureData[add_idx]
         AddFeature_names    = feature_names[add_idx]
         RemoveFeature_names = feature_names[remove_idx]
 
@@ -251,8 +270,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             plt.show()
 
     print "---------------------------------------------------"
-    print np.shape(successData), np.shape(failureData)
-    print np.shape(aug_successData), np.shape(aug_failureData)
+    print "s/f data: ", np.shape(successData), np.shape(failureData)
+    print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
 
     if ae_data:
@@ -260,6 +279,85 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     else:
         return allData, successData, failureData, failureNameList, param_dict
 
+
+def getAEdataSet(idx, successData, failureData, \
+                 normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
+                 time_window, \
+                 AE_proc_data, \
+                 # data param
+                 processed_data_path, \
+                 # AE param
+                 layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
+                 momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
+                 max_iteration=20000, min_loss=1.0, cuda=False, verbose=False, renew=False ):
+
+    if os.path.isfile(AE_proc_data) and not renew:
+        d = ut.load_pickle(AE_proc_data)
+        return d['normTrainFeatures'], d['abnormTrainFeatures'], d['normTestFeatures'], d['abnormTestFeatures']
+
+    from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
+    AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
+
+    # dim x sample x length
+    normalTrainData   = successData[:, normalTrainIdx, :] 
+    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+    normalTestData    = successData[:, normalTestIdx, :] 
+    abnormalTestData  = failureData[:, abnormalTestIdx, :]
+
+    normalTrainData = np.swapaxes(normalTrainData, 0, 1)
+    abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
+    normalTestData = np.swapaxes(normalTestData, 0, 1)
+    abnormalTestData = np.swapaxes(abnormalTestData, 0, 1)
+
+
+    # sample x time_window_flatten_length
+    new_normalTrainData   = getTimeDelayData(normalTrainData, time_window)
+    new_abnormalTrainData = getTimeDelayData(abnormalTrainData, time_window)
+    new_normalTestData    = getTimeDelayData(normalTestData, time_window)
+    new_abnormalTestData  = getTimeDelayData(abnormalTestData, time_window)
+    nSingleData           = len(normalTrainData[0][0])-time_window+1
+    nDim                  = len(new_normalTrainData[1])
+
+    # sample x time_window_flatten_length
+    X_train  = np.vstack([new_normalTrainData, new_abnormalTrainData])
+    
+    # train ae
+    ml = ae.auto_encoder([nDim]+layer_sizes, \
+                         learning_rate, learning_rate_decay, momentum, dampening, \
+                         lambda_reg, time_window, \
+                         max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=verbose)
+
+    if os.path.isfile(AE_model):
+        ml.load_params(AE_model)
+    else:
+        ml.fit(X_train)
+        ml.save_params(AE_model)
+
+
+    def predictFeatures(clf, X, nSingleData):
+        # Generate training features
+        feature_list = []
+        for idx in xrange(0, len(X), nSingleData):
+            test_features = clf.predict_features( X[idx:idx+nSingleData,:].astype('float32') )
+            feature_list.append(test_features)
+        return feature_list
+
+    # test ae
+    # sample x time_window_flatten_length
+    d = {}
+    d['normTrainFeatures']   = predictFeatures(ml, new_normalTrainData, nSingleData)
+    d['abnormTrainFeatures'] = predictFeatures(ml, new_abnormalTrainData, nSingleData)
+    d['normTestFeatures']    = predictFeatures(ml, new_normalTestData, nSingleData)
+    d['abnormTestFeatures']  = predictFeatures(ml, new_abnormalTestData, nSingleData)
+    ut.save_pickle(d, AE_proc_data)
+
+    return d['normTrainFeatures'], d['abnormTrainFeatures'], d['normTestFeatures'], d['abnormTestFeatures']
+
+
+
+        
+    
+#-------------------------------------------------------------------------------------------------
 
 def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
 
@@ -333,7 +431,6 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
 
         timeList     = d['timesList'][idx]
         dataSample = None
-
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
@@ -574,32 +671,19 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
         dataList.append(dataSample)
 
 
-    # Converting data structure & cutting unnecessary part
+    # Convert data structure & cut unnecessary part
     # From nSample x dim x length
     # To dim x nSample x length
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
-    features     = []
-    for i in xrange(nEmissionDim):
-        feature  = []
-
-        for j in xrange(nSample):
-            try:
-                feature.append(dataList[j][i,:])
-            except:
-                ## print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
-                print np.shape(dataList), np.shape(dataList[j]), j, i
-                sys.exit()
-
-        features.append( feature )
-
+    features = np.swapaxes(dataList, 0, 1)    
 
     # Scaling ------------------------------------------------------------
     if isTrainingData:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
-        print "max: ", param_dict['feature_max']
-        print "min: ", param_dict['feature_min']
+        print "Before scaling, max is: ", param_dict['feature_max']
+        print "Before scaling, min is: ", param_dict['feature_min']
         
         
     scaled_features = []
@@ -611,12 +695,6 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
             scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
                                     /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
-    ## import matplotlib.pyplot as plt
-    ## plt.figure()
-    ## plt.plot(np.array(scaled_features[0]).T)
-    ## plt.show()
-    ## sys.exit()
-                                
     return scaled_features, param_dict
 
 
@@ -814,7 +892,7 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
     assert len(dataList) == nSuccess+nFailure
     successDataList = dataList[0:nSuccess]
     failureDataList = dataList[nSuccess:]
-    
+
     successDataAugList, failureDataAugList = data_augmentation(successDataList, failureDataList, \
                                                                nAugment=nAugment)
     allDataList = successDataAugList + failureDataAugList
@@ -867,6 +945,7 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
     
     return success_features, failure_features, success_aug_features, failure_aug_features, param_dict
 
+#-------------------------------------------------------------------------------------------------
 
 def normalization(x, mu, std):
     new_x = copy.copy(x)
@@ -875,34 +954,37 @@ def normalization(x, mu, std):
     return new_x
 
 def scale(x, x_min, x_max):
+    '''
+    scale data between 0 and 1
+    '''
     new_x = copy.copy(x)
     for i in xrange(len(x)):
         new_x[i] = (x[i]-x_min[i])/(x_max[i]-x_min[i])
     return new_x
     
 
-def changeDataStructure(dataList):
-    '''
-    From nSample x dim x length to dim x nSample x length
-    or
-    From dim x nSample x length to nSample x dim x length 
-    '''
+## def changeDataStructure(dataList):
+##     '''
+##     From nSample x dim x length to dim x nSample x length
+##     or
+##     From dim x nSample x length to nSample x dim x length 
+##     '''
     
-    n = len(dataList)
-    m = len(dataList[0])
-    features     = []
-    for i in xrange(m):
-        feature  = []
+##     n = len(dataList)
+##     m = len(dataList[0])
+##     features     = []
+##     for i in xrange(m):
+##         feature  = []
 
-        for j in xrange(n):
-            try:
-                feature.append(dataList[j][i,:])
-            except:
-                print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
-                print np.shape(dataList), np.shape(dataList[j]), j, i
-                sys.exit()
+##         for j in xrange(n):
+##             try:
+##                 feature.append(dataList[j][i,:])
+##             except:
+##                 print "Failed to cut data", j,i, np.shape(dataList[j]), dataList[j][i]
+##                 print np.shape(dataList), np.shape(dataList[j]), j, i
+##                 sys.exit()
 
-        features.append( feature )
+##         features.append( feature )
 
 def data_augmentation(successes, failures, nAugment=1):
 
@@ -1010,7 +1092,6 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     successData, failureData, aug_successData, aug_failureData, param_dict = \
       getDataSet(subject_names, task, raw_data_path, \
                  processed_data_path, rf_center, local_range,\
-                 nSet=1, \
                  downSampleSize=downSampleSize, \
                  scale=1.0,\
                  ae_data=True, data_ext=False, nAugment=nAugment, \
@@ -1052,7 +1133,7 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     ut.save_pickle(d, save_pkl)
 
     print "======================================"
-    print "Dim x nSamples x nLength"
+    print "nSamples x Dim x nLength"
     print "--------------------------------------"
     print "Normal Train data: ",   np.shape(d['normalTrainingData'])
     print "Abnormal Train data: ", np.shape(d['abnormalTrainingData'])
@@ -1073,6 +1154,10 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
 
 
 def getTimeDelayData(data, time_window):
+    '''
+    Input size is sample x dim x length.
+    Output size is sample x time_window_flatten_length.
+    '''
 
     new_data = []
     for i in xrange(len(data)):

@@ -44,7 +44,7 @@ os.system("taskset -p 0xff %d" % os.getpid())
 class learning_hmm(learning_base):
     def __init__(self, nState=10, nEmissionDim=4, verbose=False):
         '''
-        This class follows the policy of sklearn as much as possible.
+        This class follows the policy of sklearn as much as possible.        
         TODO: score function. NEED TO THINK WHAT WILL BE CRITERIA.
         '''
                  
@@ -78,8 +78,12 @@ class learning_hmm(learning_base):
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
             ml_pkl=None, use_pkl=False):
         '''
-        TODO: explanation of the shape and type of xData
-        xData: dimension x sample x length  
+        Input :
+        - xData: dimension x sample x length
+        Issues:
+        - If NaN is returned, the reason can be one of followings,
+        -- lower cov
+        -- small range of xData (you have to scale it up.)
         '''
         
         # Daehyung: What is the shape and type of input data?
@@ -118,14 +122,15 @@ class learning_hmm(learning_base):
                 mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
                 ## print np.shape(mus), np.shape(cov)
 
+                # cov: state x dim x dim
                 for i in xrange(self.nEmissionDim):
                     for j in xrange(self.nEmissionDim):
-                        cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
+                        cov[:, i, j] *= cov_mult[self.nEmissionDim*i + j]
 
                 if self.verbose:
                     for i, mu in enumerate(mus):
                         print 'mu%i' % i, mu
-                    print 'cov', cov
+                    ## print 'cov', cov
 
                 # Emission probability matrix
                 B = [0] * self.nState
@@ -161,6 +166,8 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
+        if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
+        return 
                                
 
     ## def predict(self, X):
@@ -327,7 +334,8 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
 def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
                        bPosterior=False, converted_X=False):
     '''
-    Return
+    Input:
+    - X: dimension x length
     '''
 
     if nEmissionDim >= 2:

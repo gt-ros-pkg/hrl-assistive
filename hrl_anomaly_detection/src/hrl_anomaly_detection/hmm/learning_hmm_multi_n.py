@@ -26,10 +26,14 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################
 
 import numpy as np
 import sys, os, math
 from scipy.stats import norm, entropy
+import warnings
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 
@@ -80,6 +84,8 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
         # parent class
         learning_base.__init__(self)
                  
+        warnings.simplefilter("always", DeprecationWarning)
+        
         self.ml = None
         self.verbose = verbose
 
@@ -860,6 +866,9 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
         return l_idx, l_logp, l_post
     
 
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################
     
 ####################################################################
 # functions for paralell computation
@@ -1009,6 +1018,9 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startId
     else:
         return idx, l_idx, l_likelihood
 
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################
 
 ## def learn_time_clustering(i, n, m, A, B, pi, F, X_train, nEmissionDim, g_mu, g_sig, nState):
     ## if nEmissionDim >= 2:
@@ -1067,4 +1079,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, scale, nState, startId
 
 ##     return g_post, g_lhood, g_lhood2, prop_sum
 
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################
 

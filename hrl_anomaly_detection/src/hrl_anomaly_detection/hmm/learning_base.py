@@ -161,7 +161,7 @@ class learning_base():
         print scores
         
         
-    def param_estimation(self, X, tuned_parameters, nFold, save_file=None):
+    def param_estimation(self, X, parameters, nFold, n_jobs=-1, save_file=None):
         '''
         '''
         # nFold: integer and less than the total number of samples.
@@ -174,12 +174,10 @@ class learning_base():
             sys.exit()
 
         # Split the dataset in two equal parts
-        X_train = X
-
-        print("Tuning hyper-parameters for %s :", X_train.shape)
+        print("Tuning hyper-parameters for %s :", X.shape)
         print()        
-        clf = GridSearchCV(self, tuned_parameters, cv=nFold, n_jobs=8)
-        clf.fit(X_train) # [n_samples, n_features] 
+        clf = GridSearchCV(self, parameters, cv=nFold, n_jobs=n_jobs)
+        clf.fit(X) # [n_samples, n_features] 
 
         print("Best parameters set found on development set:")
         print()

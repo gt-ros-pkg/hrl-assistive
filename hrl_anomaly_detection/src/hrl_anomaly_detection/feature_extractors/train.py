@@ -56,9 +56,10 @@ colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
 
-def train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
+
+def train(X_train, X_test, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
           lambda_reg, batch_size, time_window, filename, nSingleData, \
-          viz=False, rviz=False, max_iteration=100000, save=False, cuda=True, save_pdf=False):
+          viz=False, rviz=False, max_iteration=100000, min_loss=0.1, save=False, cuda=True, save_pdf=False):
 
     # Set initial parameter values
     W_init_en = []
@@ -193,7 +194,8 @@ def train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, da
             else:
                 fig.canvas.draw()
                 
-        if save and iteration%100 ==0:
+        ## if save and iteration%100 ==0:
+        if save and (train_loss < min_loss or iteration > max_iteration):
             f = open(filename, 'wb')
             cPickle.dump(mlp_features, f, protocol=cPickle.HIGHEST_PROTOCOL)
             f.close()
@@ -342,6 +344,8 @@ if __name__ == '__main__':
                  default=False, help='Train ....')
     p.add_option('--test', '--t', action='store_true', dest='bTest',
                  default=False, help='Test ....')
+    p.add_option('--train_kFold', '--trk', action='store_true', dest='bTrainKFold',
+                 default=False, help='Train AE with k-Fold data')
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize ....')
     p.add_option('--rviz', action='store_true', dest='bReconstructViz',
@@ -369,9 +373,9 @@ if __name__ == '__main__':
                  type="int", default=1024, help='Size of batches ....')
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
                  ## default="[3]", help='Size of layers ....')
-                 default="[256,64,16]", help='Size of layers ....')
+                 default="[256,128,16]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
-                 type="int", default=100000, help='Max iteration ....')
+                 type="int", default=10000, help='Max iteration ....')
     
     opt, args = p.parse_args()
 
@@ -392,12 +396,12 @@ if __name__ == '__main__':
     subject_names       = ['gatsbii']
     task                = 'pushing'
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
-    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
     save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
     rf_center           = 'kinEEPos'
     local_range         = 1.25    
     downSampleSize      = 200
-    nAugment            = 4
+    nAugment            = 1
 
     feature_list = ['relativePose_artag_EE', \
                     'relativePose_artag_artag', \
@@ -409,23 +413,53 @@ if __name__ == '__main__':
                     ## 'fabricSkin', \
                     ]
                     
-    X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
-      = dm.get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
-                                rf_center, local_range, downSampleSize, time_window, feature_list, \
-                                nAugment, renew=opt.bRenew)
-    layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
-    print layer_sizes
-    ## print "Max iteration : ", opt.nMaxIter
 
     if opt.bTrain:
-        X_train = np.vstack([X_normalTrain, X_abnormalTrain])
+        X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
+          = dm.get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
+                                    rf_center, local_range, downSampleSize, time_window, feature_list, \
+                                    nAugment, renew=opt.bRenew)
+        layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
+        print layer_sizes
+
+        print np.shape(X_normalTrain), np.shape(X_abnormalTrain)
+        X_train = np.hstack([X_normalTrain, X_abnormalTrain])
+        X_test  = np.hstack([X_normalTest, X_abnormalTest])
         
         ## train_pca(X_train, X_test, time_window, nSingleData, \
         ##           outputDim=eval(opt.lLayerSize)[-1], save_pdf=opt.bSavePDF)
-        ret = train(X_train, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
+        ret = train(X_train, X_test, layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
                     lambda_reg, batch_size, time_window, filename, nSingleData, \
                     viz=opt.bViz, max_iteration=maxiteration, save=opt.bSave, rviz=opt.bReconstructViz)
+
+    elif opt.bTrainKFold:
+
+        nAbnormalFold = 3
+        nNormalFold   = 3
+        max_iteration = 3000
+        min_loss      = 0.1
+
+        train_kFold_data(
+            # data param
+            subject_names, task, raw_data_path, processed_data_path, \
+            rf_center, local_range, downSampleSize, time_window, feature_list, \
+            nAugment=nAugment, data_renew=True,\
+            # k-fold
+            nAbnormalFold=nAbnormalFold, nNormalFold=nNormalFold,\
+            # AE param
+            layer_sizes=layer_sizes, learning_rate=learning_rate, learning_rate_decay=learning_rate_decay, \
+            momentum=momentum, dampening=dampening, lambda_reg=lambda_reg, \
+            max_iteration=max_iteration, min_loss=min_loss )
+            
     else:
+        X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
+          = dm.get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
+                                    rf_center, local_range, downSampleSize, time_window, feature_list, \
+                                    nAugment, renew=opt.bRenew)
+        layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
+        print layer_sizes
+    
+        X_train = np.vstack([X_normalTrain, X_abnormalTrain])
         ## ret = test(X_train, filename, nSingleData, time_window, save_pdf=opt.bSavePDF)
         ret = test(X_normalTest, X_abnormalTest, filename, nSingleData, time_window, save_pdf=opt.bSavePDF)
         
