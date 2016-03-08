@@ -141,7 +141,7 @@ class auto_encoder(learning_base):
         self.mlp_cost = theano.function([mlp_input, mlp_target], cost)
         
 
-    def fit(self, X, save_obs={'flag': False, 'filename': 'simple_model'}):
+    def fit(self, X, save_obs={'save': False, 'load': False, 'filename': 'simple_model'}):
         '''
         X: samples x dims
         '''
@@ -178,11 +178,11 @@ class auto_encoder(learning_base):
                 sys.exit()
             if self.verbose and iteration%20==0: print "iter ", iteration,"/", self.max_iteration, \
               " loss: ", train_loss
-            if iteration%500 and save_obs['flag']: self.save_params(save_obs['filename'])
+            if iteration%500 and save_obs['save']: self.save_params(save_obs['filename'])
 
             iteration += 1
 
-        if save_obs['flag']: self.save_params(save_obs['filename'])
+        if save_obs['save']: self.save_params(save_obs['filename'])
         return train_loss
 
 
@@ -272,6 +272,8 @@ if __name__ == '__main__':
                  default=False, help='Visualize reconstructed signal')
     p.add_option('--save', action='store_true', dest='bSave',
                  default=False, help='Save a model ....')
+    p.add_option('--load', action='store_true', dest='bLoadModel',
+                 default=False, help='Load a model ....')
     p.add_option('--save_pdf', '--sp', action='store_true', dest='bSavePDF',
                  default=False, help='Save the visualized result as a pdf')
     p.add_option('--data_renew', action='store_true', dest='bDataRenew',
@@ -301,7 +303,7 @@ if __name__ == '__main__':
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
                  type="int", default=30000, help='Set Max iteration ....')
     p.add_option('--minloss', '--ml', action='store', dest='fMinLoss',
-                 type="int", default=0.5, help='Set Min Loss')
+                 type="int", default=0.2, help='Set Min Loss')
     
     opt, args = p.parse_args()
 
@@ -363,7 +365,7 @@ if __name__ == '__main__':
                            lambda_reg, time_window, \
                            max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
-        save_obs={'flag': opt.bSave, 'filename': save_model_pkl}
+        save_obs={'save': opt.bSave, 'load': opt.bLoadModel, 'filename': save_model_pkl}
         clf.fit(X_train, save_obs)
 
     elif opt.bTest:
