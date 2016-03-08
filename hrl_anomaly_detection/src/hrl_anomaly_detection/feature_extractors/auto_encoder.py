@@ -178,6 +178,7 @@ class auto_encoder(learning_base):
                 sys.exit()
             if self.verbose and iteration%20==0: print "iter ", iteration,"/", self.max_iteration, \
               " loss: ", train_loss
+            if iteration%500 and save_obs['flag']: self.save_params(save_obs['filename'])
 
             iteration += 1
 
@@ -270,10 +271,10 @@ if __name__ == '__main__':
     p.add_option('--rviz', action='store_true', dest='bReconstructViz',
                  default=False, help='Visualize reconstructed signal')
     p.add_option('--save', action='store_true', dest='bSave',
-                 default=False, help='Visualize ....')
+                 default=False, help='Save a model ....')
     p.add_option('--save_pdf', '--sp', action='store_true', dest='bSavePDF',
                  default=False, help='Save the visualized result as a pdf')
-    p.add_option('--renew', action='store_true', dest='bRenew',
+    p.add_option('--data_renew', action='store_true', dest='bDataRenew',
                  default=False, help='Renew data ....')
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print msg ....')
@@ -343,7 +344,7 @@ if __name__ == '__main__':
     X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
       = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, save_pkl, \
                                 rf_center, local_range, downSampleSize, time_window, feature_list, \
-                                nAugment, renew=opt.bRenew)
+                                nAugment, renew=opt.bDataRenew)
     layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
 
@@ -362,8 +363,8 @@ if __name__ == '__main__':
                            lambda_reg, time_window, \
                            max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
-        clf.fit(X_train)
-        clf.save_params(save_model_pkl)
+        save_obs={'flag': opt.bSave, 'filename': save_model_pkl}
+        clf.fit(X_train, save_obs)
 
     elif opt.bTest:
 
