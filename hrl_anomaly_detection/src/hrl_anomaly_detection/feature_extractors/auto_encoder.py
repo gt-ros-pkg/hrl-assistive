@@ -187,14 +187,23 @@ class auto_encoder(learning_base):
 
 
     def predict(self, X):
+        '''
+        X: samples x dims
+        '''
         return self.mlp_output(X.T.astype('float32'))
 
 
     def predict_features(self, X):
+        '''
+        X: samples x dims
+        '''
         return self.mlp_features(X.T.astype('float32'))
 
 
     def score(self, X):
+        '''
+        X: samples x dims
+        '''
         test_batch_data = X.T.astype('float32')
         test_loss = self.mlp_cost(test_batch_data, test_batch_data)/np.float32(len(X[0]))
         test_loss /= np.float32(self.time_window)
@@ -228,25 +237,30 @@ class auto_encoder(learning_base):
         sample x dim
         '''
         import itertools
+        # graph
+        import matplotlib.pyplot as plt
+        import matplotlib
+        matplotlib.use('Agg')
+        ## from matplotlib import gridspec
 
         ## Normal training data
-        # features: sample x dim
+        # features: dim x sample 
         feature_list = []
         for idx in xrange(0, len(X1), nSingleData):
-            features = self.mlp_features( X1[idx:idx+nSingleData,:].astype('float32') )
+            features = self.predict_features( X1[idx:idx+nSingleData,:] )
             feature_list.append(features)
-            
+        
         assert self.nFeatures==len(feature_list[0])
 
-        # dim x samples
+        # dim x samples x length
         feature_list = np.swapaxes(feature_list, 0, 1)
 
-        n_cols = int(len(feature_list)/4)
-        n_rows = len(feature_list)-n_cols        
+        n_cols = int(len(feature_list)/8)
+        n_rows = len(feature_list)/n_cols        
         colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 
 
-        fig = plt.figure(figsize=(8, 8))
+        fig = plt.figure(figsize=(n_rows, n_cols*2))
 
         for i in xrange(self.nFeatures):
 
@@ -255,13 +269,17 @@ class auto_encoder(learning_base):
             ax    = fig.add_subplot(n_rows,n_cols,i+1)
             color = colors.next()
             
-            x     = range(len(feature_list[i]))
+            x     = range(len(feature_list[i][0]))
             means = np.mean(feature_list[i], axis=0)
             stds  = np.std(feature_list[i], axis=0)
 
+            print np.shape(x), np.shape(means)
+
             ax.plot(x, means, 'k-')
             ax.fill_between(x, means-stds, means+stds, facecolor='red', alpha=0.5)
+            ax.set_xlim([0,x[-1]])
             ax.set_ylim([0,1])
+            plt.yticks([0,1.0])
 
         plt.show()
 
