@@ -227,30 +227,42 @@ class auto_encoder(learning_base):
         '''
         sample x dim
         '''
+        import itertools
 
-        # features
+        ## Normal training data
+        # features: sample x dim
         feature_list = []
         for idx in xrange(0, len(X1), nSingleData):
             features = self.mlp_features( X1[idx:idx+nSingleData,:].astype('float32') )
             feature_list.append(features)
+            
+        assert self.nFeatures==len(feature_list[0])
 
-        # 
+        # dim x samples
         feature_list = np.swapaxes(feature_list, 0, 1)
 
+        n_cols = int(len(feature_list)/4)
+        n_rows = len(feature_list)-n_cols        
+        colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+
+
         fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(111)
 
-        assert self.nFeatures==len(feature_list)
         for i in xrange(self.nFeatures):
-        
-            mean_list = np.mean(feature_list[i])
-            std_list  = np.std(feature_list, axis=1)
 
+            n_col = int(i/n_rows)
+            n_row = i%n_rows
+            ax    = fig.add_subplot(n_rows,n_cols,i+1)
+            color = colors.next()
+            
+            x     = range(len(feature_list[i]))
+            means = np.mean(feature_list[i], axis=0)
+            stds  = np.std(feature_list[i], axis=0)
 
+            ax.plot(x, means, 'k-')
+            ax.fill_between(x, means-stds, means+stds, facecolor='red', alpha=0.5)
+            ax.set_ylim([0,1])
 
-        x = range(len(mean_list))
-        plt.plot(x, mean_list, 'k-')
-        plt.fill_between(x, mean_list-std_list, mean_list+std_list)
         plt.show()
 
         return 
@@ -368,7 +380,7 @@ if __name__ == '__main__':
         save_obs={'save': opt.bSave, 'load': opt.bLoadModel, 'filename': save_model_pkl}
         clf.fit(X_train, save_obs)
 
-    elif opt.bTest:
+    elif opt.bViz:
 
         clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
                            lambda_reg, time_window, \
