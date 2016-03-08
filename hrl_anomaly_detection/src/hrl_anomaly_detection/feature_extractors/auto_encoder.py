@@ -296,9 +296,11 @@ if __name__ == '__main__':
     ##              type="int", default=1024, help='Size of batches ....')
     p.add_option('--layer_size', '--ls', action='store', dest='lLayerSize',
                  ## default="[3]", help='Size of layers ....')
-                 default="[256,128,16]", help='Size of layers ....')
+                 default="[128,64,16]", help='Size of layers ....')
     p.add_option('--maxiter', '--mi', action='store', dest='nMaxIter',
-                 type="int", default=10000, help='Max iteration ....')
+                 type="int", default=30000, help='Set Max iteration ....')
+    p.add_option('--minloss', '--ml', action='store', dest='fMinLoss',
+                 type="int", default=0.5, help='Set Min Loss')
     
     opt, args = p.parse_args()
 
@@ -313,6 +315,7 @@ if __name__ == '__main__':
     lambda_reg    = opt.fLambda
     ## batch_size    = opt.nBatchSize
     maxiteration  = opt.nMaxIter
+    min_loss      = opt.fMinLoss
 
     
     subject_names       = ['gatsbii']
@@ -325,7 +328,6 @@ if __name__ == '__main__':
     local_range         = 1.25 
     downSampleSize      = 200
     nAugment            = 1
-    min_loss            = 0.5
 
     feature_list = ['relativePose_artag_EE', \
                     'relativePose_artag_artag', \
