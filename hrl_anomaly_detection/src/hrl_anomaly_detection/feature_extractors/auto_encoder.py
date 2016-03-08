@@ -397,7 +397,7 @@ if __name__ == '__main__':
         nFold     = 2
         n_jobs    = 1
         opt.bCuda = True
-        X = np.hstack([X_train, X_test])
+        X = np.vstack([X_train, X_test])
 
         maxiteration=10000
         parameters = {'learning_rate': [1e-5, 1e-6], 'momentum':[1e-6], 'dampening':[1e-6], \
@@ -407,7 +407,7 @@ if __name__ == '__main__':
                            lambda_reg, time_window, \
                            max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
-        clf.param_estimation(X.T, parameters, nFold, n_jobs=n_jobs)
+        clf.param_estimation(X, parameters, nFold, n_jobs=n_jobs)
 
 
         
