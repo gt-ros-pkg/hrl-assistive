@@ -289,11 +289,12 @@ def getAEdataSet(idx, successData, failureData, \
                  # AE param
                  layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
-                 max_iteration=20000, min_loss=1.0, cuda=False, verbose=False, renew=False ):
+                 max_iteration=20000, min_loss=1.0, cuda=False, \
+                 verbose=False, renew=False ):
 
     if os.path.isfile(AE_proc_data) and not renew:
         d = ut.load_pickle(AE_proc_data)
-        return d['normTrainFeatures'], d['abnormTrainFeatures'], d['normTestFeatures'], d['abnormTestFeatures']
+        return d
 
     from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
     AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
@@ -304,10 +305,10 @@ def getAEdataSet(idx, successData, failureData, \
     normalTestData    = successData[:, normalTestIdx, :] 
     abnormalTestData  = failureData[:, abnormalTestIdx, :]
 
-    normalTrainData = np.swapaxes(normalTrainData, 0, 1)
+    normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
     abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
-    normalTestData = np.swapaxes(normalTestData, 0, 1)
-    abnormalTestData = np.swapaxes(abnormalTestData, 0, 1)
+    normalTestData    = np.swapaxes(normalTestData, 0, 1)
+    abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
 
     # sample x time_window_flatten_length
@@ -343,18 +344,53 @@ def getAEdataSet(idx, successData, failureData, \
         return feature_list
 
     # test ae
-    # sample x time_window_flatten_length
+    # sample x dim => dim x sample
     d = {}
-    d['normTrainFeatures']   = predictFeatures(ml, new_normalTrainData, nSingleData)
-    d['abnormTrainFeatures'] = predictFeatures(ml, new_abnormalTrainData, nSingleData)
-    d['normTestFeatures']    = predictFeatures(ml, new_normalTestData, nSingleData)
-    d['abnormTestFeatures']  = predictFeatures(ml, new_abnormalTestData, nSingleData)
+    d['normTrainData']   = np.swapaxes(predictFeatures(ml, new_normalTrainData, nSingleData), 0,1)
+    d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, new_abnormalTrainData, nSingleData), 0,1) 
+    d['normTestData']    = np.swapaxes(predictFeatures(ml, new_normalTestData, nSingleData), 0,1)
+    d['abnormTestData']  = np.swapaxes(predictFeatures(ml, new_abnormalTestData, nSingleData), 0,1)
     ut.save_pickle(d, AE_proc_data)
 
-    return d['normTrainFeatures'], d['abnormTrainFeatures'], d['normTestFeatures'], d['abnormTestFeatures']
+    return d
 
 
+def variancePooling(X, param_dict):
+    '''
+    dim x samples
+    TODO: can we select final dimension?
+    '''
+    dim         = param_dict['dim']
+    min_all_std = param_dict['min_all_std']
+    max_avg_std = param_dict['max_avg_std']
 
+    if 'dim_idx' not in param_dict.keys():
+        dim_idx = []
+        new_X   = []
+
+        std_list = []
+        for i in xrange(len(X)):
+            # for each dimension
+            avg_std = np.mean( np.std(X[i], axis=0) )
+            std_avg = np.std( np.mean(X[i], axis=0) )
+            ## std_list.append(std_avg/avg_std)
+            std_list.append(std_avg)
+
+        indices = np.argsort(std_list)[::-1]
+
+        for idx in indices[:dim]:
+            new_X.append(X[idx])
+            dim_idx.append(idx)
+
+            ## if all_std > min_all_std and avg_ea_std < max_avg_std:
+            ##     new_X.append(X[i])
+            ##     dim_idx.append(i)
+
+        param_dict['dim_idx'] = dim_idx
+    else:
+        new_X = [ X[idx] for idx in param_dict['dim_idx'] ]
+
+    return np.array(new_X), param_dict
         
     
 #-------------------------------------------------------------------------------------------------
@@ -1074,7 +1110,7 @@ def data_augmentation(successes, failures, nAugment=1):
 
 def get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
                          rf_center, local_range, downSampleSize, time_window, feature_list, \
-                         nAugment=4, renew=False):
+                         nAugment=1, renew=False):
 
     if os.path.isfile(save_pkl) and renew is not True:
         d = ut.load_pickle(save_pkl)
@@ -1099,11 +1135,12 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
                  data_renew=renew)
 
     # index selection
+    ratio        = 0.8
     success_idx  = range(len(aug_successData[0]))
     failure_idx  = range(len(aug_failureData[0]))
 
-    s_train_idx  = random.sample(success_idx, int( 0.8*len(success_idx)) )
-    f_train_idx  = random.sample(failure_idx, int( 0.8*len(failure_idx)) )
+    s_train_idx  = random.sample(success_idx, int( ratio*len(success_idx)) )
+    f_train_idx  = random.sample(failure_idx, int( ratio*len(failure_idx)) )
     
     s_test_idx = [x for x in success_idx if not x in s_train_idx]
     f_test_idx = [x for x in failure_idx if not x in f_train_idx]
@@ -1114,17 +1151,8 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     normalTestData       = aug_successData[:, s_test_idx, :]
     abnormalTestData     = aug_failureData[:, f_test_idx, :]
 
-    print "======================================"
-    print "Dim x nSamples x nLength"
-    print "--------------------------------------"
-    print "Normal Train data: ",   np.shape(normalTrainingData)
-    print "Abnormal Train data: ", np.shape(abnormalTrainingData)
-    print "Normal test data: ",    np.shape(normalTestData)
-    print "Abnormal test data: ",  np.shape(abnormalTestData)
-    print "======================================"
-
     # scaling by the number of dimensions in each feature
-    ## dataDim = param_dict['dataDim']
+    # nSamples x Dim x nLength
     d = {}        
     d['normalTrainingData']   = np.swapaxes(normalTrainingData, 0, 1)
     d['abnormalTrainingData'] = np.swapaxes(abnormalTrainingData, 0, 1)
@@ -1148,9 +1176,9 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     new_abnormalTestData     = getTimeDelayData( d['abnormalTestData'], time_window )
     nSingleData       = len(d['normalTestData'][0][0])-time_window+1
 
-    return new_normalTrainingData.T, new_abnormalTrainingData.T, \
-      new_normalTestData.T, new_abnormalTestData.T, \
-      nSingleData
+    # sample x dim
+    return new_normalTrainingData, new_abnormalTrainingData, \
+      new_normalTestData, new_abnormalTestData, nSingleData
 
 
 def getTimeDelayData(data, time_window):

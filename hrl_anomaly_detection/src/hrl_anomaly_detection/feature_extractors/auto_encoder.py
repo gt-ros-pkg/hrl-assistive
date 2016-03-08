@@ -71,6 +71,8 @@ class auto_encoder(learning_base):
         self.cuda    = cuda
         self.verbose = verbose
 
+        self.nFeatures = layer_sizes[-1]
+
 
     def convert_vars(self):
         self.learning_rate       = np.float32(self.learning_rate)
@@ -220,6 +222,38 @@ class auto_encoder(learning_base):
         return
 
 
+    def viz_features(self, X1, X2, nSingleData, filtered=False, abnormal_disp=False):
+        '''
+        sample x dim
+        '''
+
+        # features
+        feature_list = []
+        for idx in xrange(0, len(X1), nSingleData):
+            features = self.mlp_features( X1[idx:idx+nSingleData,:].astype('float32') )
+            feature_list.append(features)
+
+        # 
+        feature_list = np.swapaxes(feature_list, 0, 1)
+
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+
+        assert self.nFeatures==len(feature_list)
+        for i in xrange(self.nFeatures):
+        
+            mean_list = np.mean(feature_list[i])
+            std_list  = np.std(feature_list, axis=1)
+
+
+
+        x = range(len(mean_list))
+        plt.plot(x, mean_list, 'k-')
+        plt.fill_between(x, mean_list-std_list, mean_list+std_list)
+        plt.show()
+
+        return 
+
 
 if __name__ == '__main__':
 
@@ -227,6 +261,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--train', '--tr', action='store_true', dest='bTrain',
                  default=False, help='Train ....')
+    p.add_option('--test', '--te', action='store_true', dest='bTest',
+                 default=False, help='Test ....')
     p.add_option('--param_est', '--pe', action='store_true', dest='bParamEstimation',
                  default=False, help='Parameter Estimation')
     p.add_option('--viz', action='store_true', dest='bViz',
@@ -277,16 +313,16 @@ if __name__ == '__main__':
     lambda_reg    = opt.fLambda
     ## batch_size    = opt.nBatchSize
     maxiteration  = opt.nMaxIter
-    filename      = 'simple_model.pkl'
 
-
+    
     subject_names       = ['gatsbii']
     task_name           = 'pushing'
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
-    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'
+    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE_test'
     save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
+    save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
     rf_center           = 'kinEEPos'
-    local_range         = 1.25    
+    local_range         = 1.25 
     downSampleSize      = 200
     nAugment            = 1
     min_loss            = 0.5
@@ -309,11 +345,15 @@ if __name__ == '__main__':
     layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
 
-    print np.shape(X_normalTrain), np.shape(X_abnormalTrain)
-    X_train = np.hstack([X_normalTrain, X_abnormalTrain])
-    X_test  = np.hstack([X_normalTest, X_abnormalTest])
+    # sample x dim 
+    X_train = np.vstack([X_normalTrain, X_abnormalTrain])
+    X_test  = np.vstack([X_normalTest, X_abnormalTest])
+    print np.shape(X_train), np.shape(X_test)
 
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
 
+    #----------------------------------------------------------------------------------------------------
     if opt.bTrain:
         
         clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
@@ -321,18 +361,30 @@ if __name__ == '__main__':
                            max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
         clf.fit(X_train)
+        clf.save_params(save_model_pkl)
+
+    elif opt.bTest:
+
+        clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
+                           lambda_reg, time_window, \
+                           max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
+
+        clf.load_params(save_model_pkl)
+        clf.viz_features(X_normalTest, X_abnormalTest, nSingleData, filtered=False)
+
 
     elif opt.bParamEstimation:
         '''
         You cannot use multiprocessing and cuda in the same time.
         '''
-        nFold = 2
-        n_jobs = 1
+        nFold     = 2
+        n_jobs    = 1
+        opt.bCuda = True
         X = np.hstack([X_train, X_test])
 
-        maxiteration=10000
-        parameters = {'learning_rate': [1e-6], 'momentum':[1e-6], 'dampening':[1e-6], \
-                      'layer_sizes': [ [X.shape[0], 256,128,16], [X.shape[0], 256,128,12], [X.shape[0], 256,128,8] ] }
+        maxiteration=5000
+        parameters = {'learning_rate': [1e-6, 1e-6], 'momentum':[1e-6], 'dampening':[1e-6], \
+                      'layer_sizes': [ [X.shape[0], 128,64,16], [X.shape[0], 64,32,16], [X.shape[0], 64,32,8] ] }
          
         clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
                            lambda_reg, time_window, \
@@ -340,3 +392,5 @@ if __name__ == '__main__':
 
         clf.param_estimation(X.T, parameters, nFold, n_jobs=n_jobs)
 
+
+        

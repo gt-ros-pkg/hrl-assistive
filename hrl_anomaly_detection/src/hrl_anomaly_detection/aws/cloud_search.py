@@ -108,6 +108,10 @@ class CloudSearch():
 	def get_all_tasks(self):
 		return self.all_tasks
 
+	#returns the number of tasks that has been assigned, including completed, working, and pending
+	def get_num_all_tasks(self):
+		return len(self.all_tasks)
+
 	#returns completed tasks. may include tasks that has caused errors
 	def get_tasks_completed(self):
 		completed_tasks = []
@@ -115,6 +119,10 @@ class CloudSearch():
 			if task.ready():
 				completed_tasks.append(task)
 		return completed_tasks
+
+	#returns the number of completed tasks. may include tasks that has caused errors
+	def get_num_tasks_completed(self):
+		return len(self.get_tasks_completed())
 
 	#returns completed tasks's result. Prints error if there was a remote error
 	def get_completed_results(self):

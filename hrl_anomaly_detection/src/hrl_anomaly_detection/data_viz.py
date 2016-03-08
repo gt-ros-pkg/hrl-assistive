@@ -72,6 +72,35 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
+def viz(X):
+    '''
+    dim x sample x length
+    '''
+    import itertools
+
+    n_cols = 2
+    n_rows = int(len(X)/2)        
+    colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+
+    fig = plt.figure()
+    for i in xrange(len(X)):
+        n_col = int(i/n_rows)
+        n_row = i%n_rows
+        ax = fig.add_subplot(n_rows,n_cols,i+1)
+        color = colors.next()
+
+        x     = range(len(X[0][0]))
+        means = np.mean(X[i], axis=0)
+        stds  = np.std(X[i], axis=0)
+
+        ax.plot(x, means, 'k-')
+        ax.fill_between(x, means-stds, means+stds, facecolor='red', alpha=0.5)
+        ## for j in xrange(len(X[i])):
+        ##     ax.plot(X[i][j,:], ':', c=color)
+
+        ax.set_ylim([0,1])
+    
+    plt.show()
 
 class data_viz:
     azimuth_max = 90.0

@@ -48,7 +48,7 @@ from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 class classifier(learning_base):
-    def __init__(self, ml, method='svm', nPosteriors=10, nLength=200, ths_mult=None,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=None,\
                  class_weight=1.0, \
                  verbose=False):
         learning_base.__init__(self)
@@ -56,10 +56,7 @@ class classifier(learning_base):
         class_weight : positive class weight for svm
         nLength : only for progress-based classifier
         ths_mult: only for progress-based classifier
-        '''
-       
-        
-        self.ml = ml
+        '''              
         self.method = method
         self.verbose = verbose
 
@@ -173,7 +170,7 @@ class classifier(learning_base):
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         elif self.method == 'progress_time_cluster':
-            self.ml.cluster_type = 'time'
+            ## self.ml.cluster_type = 'time'
             
             logp = X[0]
             post = X[1:]
