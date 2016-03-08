@@ -20,6 +20,9 @@ def cross_validate(train, test,  model, params):
     return score, params
 
 def cross_validate_local(train, test, path_file, model, params):
+    '''
+    
+    '''
 	from grab_data import grab_data
     data, target = grab_data(path_file, 11, 11, 4898)
     trainSet = (data[train], target[train])
