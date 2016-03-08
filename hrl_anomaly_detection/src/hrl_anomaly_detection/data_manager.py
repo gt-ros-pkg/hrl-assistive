@@ -1121,10 +1121,10 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
         new_abnormalTestData     = getTimeDelayData( d['abnormalTestData'], time_window )        
         nSingleData              = len(d['normalTestData'][0][0])-time_window+1
 
-        return new_normalTrainingData.T, new_normalTrainingData.T, new_normalTestData.T, new_abnormalTestData.T, \
+        return new_normalTrainingData, new_normalTrainingData, new_normalTestData, new_abnormalTestData, \
           nSingleData
 
-
+    # dim x sample x length
     successData, failureData, aug_successData, aug_failureData, param_dict = \
       getDataSet(subject_names, task, raw_data_path, \
                  processed_data_path, rf_center, local_range,\
@@ -1170,6 +1170,7 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     print "======================================"
 
     # Time-sliding window
+    # sample x time_window_flatten_length
     new_normalTrainingData   = getTimeDelayData( d['normalTrainingData'], time_window )
     new_abnormalTrainingData = getTimeDelayData( d['abnormalTrainingData'], time_window )
     new_normalTestData       = getTimeDelayData( d['normalTestData'], time_window )

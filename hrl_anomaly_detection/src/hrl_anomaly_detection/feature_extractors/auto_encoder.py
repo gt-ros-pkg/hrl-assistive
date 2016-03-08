@@ -345,7 +345,7 @@ if __name__ == '__main__':
       = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, save_pkl, \
                                 rf_center, local_range, downSampleSize, time_window, feature_list, \
                                 nAugment, renew=opt.bDataRenew)
-    layer_sizes = [X_normalTrain.shape[0]] + eval(opt.lLayerSize) #, 20, 10, 5]
+    layer_sizes = [X_normalTrain.shape[1]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
 
     # sample x dim 
