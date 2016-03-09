@@ -14,31 +14,31 @@ from starcluster import exception
 import time
 
 class CloudSearch():
-	def __init__(self, path_json, path_key, clust_name, user_name):
-		self.all_tasks = []
-		self.path_json = path_json
-		self.path_key = path_key
-		self.clust_name = clust_name
-		self.user_name = user_name
+    def __init__(self, path_json, path_key, clust_name, user_name):
+        self.all_tasks = []
+        self.path_json = path_json
+        self.path_key = path_key
+        self.clust_name = clust_name
+        self.user_name = user_name
 
-		#connect to aws and start cluster if it is not up already
-		self.cfg = StarClusterConfig()
-		self.cfg.load()
-		self.clust_manager = ClusterManager(self.cfg)
-		self.clust = self.clust_manager.get_cluster(self.clust_name)
-		if (not self.clust.is_cluster_up()):
-			try:
-				self.clust.start(create=False)
-			except Exception,e:
-				print str(e)
+        #connect to aws and start cluster if it is not up already
+        self.cfg = StarClusterConfig()
+        self.cfg.load()
+        self.clust_manager = ClusterManager(self.cfg)
+        self.clust = self.clust_manager.get_cluster(self.clust_name)
+        if (not self.clust.is_cluster_up()):
+            try:
+                self.clust.start(create=False)
+            except Exception,e:
+                print str(e)
 
-		#connect directly to master to start client 
-		#as it often fails to start IPcluster plugin
-		self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
+        #connect directly to master to start client 
+        #as it often fails to start IPcluster plugin
+        self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
 
-		#connect to cluster nodes to distribute work
-		self.client = Client(self.path_json, sshkey=self.path_key)
-		self.lb_view = self.client.load_balanced_view()
+        #connect to cluster nodes to distribute work
+        self.client = Client(self.path_json, sshkey=self.path_key)
+        self.lb_view = self.client.load_balanced_view()
 
 	#stops clusters. It doesn't save any results.
 	def stop(self):
