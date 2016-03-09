@@ -92,13 +92,13 @@ class CloudSearch():
 
 
     #for debugging purposes if we are running out of local memories
-    def get_engines_memory(self):
-        """Gather the memory allocated by each engine in MB"""
-        def memory_mb():
-            import os
-            import psutil
-            return psutil.Process(os.getpid()).memory_info().rss / 1e6    
-        return self.client[:].apply(memory_mb).get_dict()
+    ## def get_engines_memory(self):
+    ##     """Gather the memory allocated by each engine in MB"""
+    ##     def memory_mb():
+    ##         import os
+    ##         import psutil
+    ##         return psutil.Process(os.getpid()).memory_info().rss / 1e6    
+    ##     return self.client[:].apply(memory_mb).get_dict()
 
     #splits the data for cross validation
     def split(self, n_inst, iter_num):
