@@ -489,7 +489,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
                 
                 # From dim x sample x length
-                # To reduced_dim x sample 
+                # To reduced_dim x sample x length
                 d = dm.getAEdataSet(idx, aug_successData, aug_failureData, \
                                     normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
                                     AE_dict['time_window'], \
