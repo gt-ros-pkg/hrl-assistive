@@ -99,28 +99,29 @@ def cross_validate_local(idx, processed_data_path, model, params):
         if key is 'dim':
             dim = value
 
-    
-    # Load data
-    AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-    d = ut.load_pickle(AE_proc_data)
+    return 1
+            
+    ## # Load data
+    ## AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
+    ## d = ut.load_pickle(AE_proc_data)
 
-    pooling_param_dict  = {'dim': dim} # only for AE
+    ## pooling_param_dict  = {'dim': dim} # only for AE
 
-    # dim x sample x length
-    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
-                                                             pooling_param_dict)
-    abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-    normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
-    abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
+    ## # dim x sample x length
+    ## normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
+    ##                                                          pooling_param_dict)
+    ## abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
+    ## normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
+    ## abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
 
-    trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
+    ## trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
 
-    testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
-    testData_x = np.swapaxes(testData_x, 0, 1)
-    testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
-    testSet    = [testData_x, testData_y ]
+    ## testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
+    ## testData_x = np.swapaxes(testData_x, 0, 1)
+    ## testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
+    ## testSet    = [testData_x, testData_y ]
 
-    return cross_validate(trainSet, testSet, model, params)
+    ## return cross_validate(trainSet, testSet, model, params)
 
 
 
