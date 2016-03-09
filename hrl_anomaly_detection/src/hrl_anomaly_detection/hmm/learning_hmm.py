@@ -26,6 +26,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
+
 #system
 import numpy as np
 import sys, os, copy
@@ -281,8 +283,11 @@ class learning_hmm(learning_base):
             l_post += ll_post[i]
 
         return l_idx, l_logp, l_post
-    
 
+    
+    def score(self, X):
+
+        return self.loglikelihoods(X)
     
 ####################################################################
 # functions for paralell computation

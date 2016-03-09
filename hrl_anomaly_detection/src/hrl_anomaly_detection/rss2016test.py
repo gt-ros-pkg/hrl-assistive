@@ -468,7 +468,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ['cssvm', 'svm'] #'progress_time_cluster', 'cssvm', 'fixed', 'svm'] #'cssvm_standard', 
+    method_list = ['progress_time_cluster', 'fixed'] #, 'cssvm', 'svm'] #'cssvm_standard', 
     nPoints     = 10
     scale       = HMM_dict['scale']
 
@@ -656,7 +656,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys(): # or method=='svm' or method=='cssvm': # or  #or method=='cssvm_standard':# 
+        if method not in ROC_data.keys():# or method=='svm':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -736,7 +736,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
             for j in xrange(nPoints):
                 if method == 'svm':
-                    weights = np.logspace(-2, 0.1, nPoints)
+                    weights = np.logspace(-2, 0.8, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                     ## weights = np.linspace(0.5, 60.0, nPoints)
                     ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
@@ -2101,7 +2101,7 @@ if __name__ == '__main__':
                       'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True}
-    HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 1.0, 'scale': 8.0}
+    HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 1.0, 'scale': 2.0}
     SVM_param_dict = {'renew': False,}
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
