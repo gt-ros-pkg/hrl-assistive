@@ -236,52 +236,43 @@ class auto_encoder(learning_base):
         '''
         sample x dim
         '''
-        import itertools
-        # graph
-        import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use('Agg')
-        ## from matplotlib import gridspec
-
-        ## Normal training data
-        # features: dim x sample 
-        feature_list = []
+        ## Normal training data ----------------------------------
+        # sample x dim x length 
+        feature_list1 = []
         for idx in xrange(0, len(X1), nSingleData):
             features = self.predict_features( X1[idx:idx+nSingleData,:] )
-            feature_list.append(features)
-        
-        assert self.nFeatures==len(feature_list[0])
+            feature_list1.append(features)
 
-        # dim x samples x length
-        feature_list = np.swapaxes(feature_list, 0, 1)
+        assert self.nFeatures==len(feature_list1[0])
 
-        n_cols = int(len(feature_list)/8)
-        n_rows = len(feature_list)/n_cols        
-        colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+        # => dim x samples x length
+        feature_list1 = np.swapaxes(feature_list1, 0, 1)
+
+        ## Abnormal training data --------------------------------
+        # sample x dim x length
+        feature_list2 = []
+        for idx in xrange(0, len(X2), nSingleData):
+            features = self.predict_features( X2[idx:idx+nSingleData,:] )
+            feature_list2.append(features)
+
+        assert self.nFeatures==len(feature_list2[0])
+
+        # => dim x samples x length
+        feature_list2 = np.swapaxes(feature_list2, 0, 1)
 
 
-        fig = plt.figure(figsize=(n_rows, n_cols*2))
-
-        for i in xrange(self.nFeatures):
-
-            n_col = int(i/n_rows)
-            n_row = i%n_rows
-            ax    = fig.add_subplot(n_rows,n_cols,i+1)
-            color = colors.next()
+        if filtered:
+            from hrl_anomaly_detection import data_manager as dm
+            pooling_param_dict  = {'min_all_std': 0.2, 'max_avg_std': 0.2, 'dim': 4} # only for AE
+            feature_list1, pooling_param_dict = dm.variancePooling(feature_list1, pooling_param_dict)
+            feature_list2, _                  = dm.variancePooling(feature_list2, pooling_param_dict)
             
-            x     = range(len(feature_list[i][0]))
-            means = np.mean(feature_list[i], axis=0)
-            stds  = np.std(feature_list[i], axis=0)
 
-            print np.shape(x), np.shape(means)
+        from hrl_anomaly_detection import data_viz as dv
+        if abnormal_disp: dv.viz(feature_list1, feature_list2)
+        else: dv.viz(feature_list1)
+        
 
-            ax.plot(x, means, 'k-')
-            ax.fill_between(x, means-stds, means+stds, facecolor='red', alpha=0.5)
-            ax.set_xlim([0,x[-1]])
-            ax.set_ylim([0,1])
-            plt.yticks([0,1.0])
-
-        plt.show()
 
         return 
 
@@ -298,6 +289,8 @@ if __name__ == '__main__':
                  default=False, help='Parameter Estimation')
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize ....')
+    p.add_option('--viz_raw', '--vr', action='store_true', dest='bVizRaw',
+                 default=False, help='Visualize Raw data')
     p.add_option('--rviz', action='store_true', dest='bReconstructViz',
                  default=False, help='Visualize reconstructed signal')
     p.add_option('--save', action='store_true', dest='bSave',
@@ -405,8 +398,13 @@ if __name__ == '__main__':
                            max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
         clf.load_params(save_model_pkl)
-        clf.viz_features(X_normalTest, X_abnormalTest, nSingleData, filtered=False)
+        clf.viz_features(X_normalTest, X_abnormalTest, nSingleData, filtered=True, abnormal_disp=True)
 
+    elif opt.bVizRaw:
+        from hrl_anomaly_detection import data_viz as dv
+        d = ut.load_pickle(save_pkl)
+        normalTrainData = np.swapaxes(d['normalTrainingData'], 0, 1)
+        dv.viz(normalTrainData)
 
     elif opt.bParamEstimation:
         '''
