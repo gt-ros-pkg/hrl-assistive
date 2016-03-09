@@ -47,7 +47,7 @@ class CloudSearchForHMM(CloudSearch):
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, params, processed_data_path, nFiles):
         
-        model = hmm.learning_hmm(10, 10)
+        model = None #hmm.learning_hmm(10, 10)
 
         all_param = list(ParameterGrid(params))
         for param in all_param:
