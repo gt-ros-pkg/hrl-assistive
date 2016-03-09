@@ -416,9 +416,9 @@ if __name__ == '__main__':
         X = np.vstack([X_train, X_test])
 
         maxiteration=10000
-        parameters = {'learning_rate': [1e-4, 1e-5], 'momentum':[1e-6], 'dampening':[1e-6], \
-                      'lambda_reg': [1e-2, 1e-4, 1e-6]\
-                      'layer_sizes': [ [X.shape[1], 64,16], [X.shape[1], 64,8], [X.shape[1], 64,4], [X.shape[1], 16], [X.shape[1], 8], [X.shape[1], 4] ] }
+        parameters = {'learning_rate': [1e-3, 1e-4, 1e-5], 'momentum':[1e-6], 'dampening':[1e-6], \
+                      'lambda_reg': [1e-2, 1e-4, 1e-6], \
+                      'layer_sizes': [ [X.shape[1], 64,16], [X.shape[1], 64,8], [X.shape[1], 64,4], [X.shape[1], 16], [X.shape[1], 8], [X.shape[1], 4]  ]}
          
         clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
                            lambda_reg, time_window, \

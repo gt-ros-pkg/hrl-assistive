@@ -32,29 +32,29 @@
 import os, sys, copy
 import numpy as np
 
-from cloud_seaorch import CloudSearch
-from hrl_anomaly_detection.aws.CloudSearch import CloudSearch
-from hrl_anomaly_detection.feature_extractors.learning_hmm import learning_hmm as hmm
+from sklearn.grid_search import ParameterGrid
+import time
+from hrl_anomaly_detection.aws.cloud_search import CloudSearch
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 
 class CloudSearchForHMM(CloudSearch):
+    def __init__(self, path_json, path_key, clust_name, user_name):
+        CloudSearch.__init__(self, path_json, path_key, clust_name, user_name)
 
-    def __init__(self):
-        CloudSearch.__init__(self)
-
-	#run data in cloud.
+    #run data in cloud.
 	#each node grabs file from their local path and runs the model
 	#requires grab_data to be implemented correctly
 	#n_inst is to create a fold. the way it generates fold can be changed
-	def run_with_local_data(self, params, processed_data_path, nFiles):
-
-        model = hmm.learning_hmm(10, 10) 
+    def run_with_local_data(self, params, processed_data_path, nFiles):
         
-		all_param = list(ParameterGrid(params))
-		for param in all_param:
-			for idx in xrange(nFiles) :
+        model = hmm.learning_hmm(10, 10)
+
+        all_param = list(ParameterGrid(params))
+        for param in all_param:
+			for idx in xrange(nFiles):
 				task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
 				self.all_tasks.append(task)
-		return self.all_tasks
+        return self.all_tasks
 
 
 def cross_validate(train_data, test_data,  model, params):
@@ -75,7 +75,7 @@ def cross_validate(train_data, test_data,  model, params):
     for key, value in six.iteritems(params): 
         if key is 'cov':
             cov_mult = [value]*(nEmissionDim**2)
-        if key is 'scale'
+        if key is 'scale':
             scale = value
             
     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
@@ -120,12 +120,13 @@ def cross_validate_local(idx, processed_data_path, model, params):
 
 if __name__ == '__main__':
 
+    task = 'pushing'
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
     
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
 
-    cloud = CloudSearch('/root/.starcluster/ipcluster/SecurityGroup:@sc-freecluster-us-east-1.json', '~/HRL_ANOMALY.pem', 'dparkcluster', 'sgeadmin')
+    cloud = CloudSearchForHMM('/home/dpark/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/dpark/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
     cloud.run_with_local_data(parameters, save_data_path, 9 )
 
     # wait until finishing parameter search
