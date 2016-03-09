@@ -43,7 +43,18 @@ class CloudSearch():
 	#stops clusters. It doesn't save any results.
 	def stop(self):
 		self.flush()
-		self.clust.stop_cluster()
+		self.clust.stop_cluster(force=True)
+
+        def terminate(self):
+                self.flush()
+                self.clust.terminate_cluster(force=True)
+
+        #runs shell command for all nodes at specific location
+        def sync_run_shell(self, path_shell):
+                #self.clust.ssh_to_master(command=path_shell)
+                for node in self.clust.running_nodes:
+                    self.clust.ssh_to_node(node.id, command=path_shell)
+                    
 
 	#deletes all the function assigned
 	def flush(self):
