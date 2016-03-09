@@ -47,21 +47,19 @@ class CloudSearchForHMM(CloudSearch):
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, params, processed_data_path, nFiles):
 
-        from hrl_anomaly_detection.hmm.run_hmm_aws import cross_validate_local
+        ## from hrl_anomaly_detection.hmm.run_hmm_aws import cross_validate_local
         
         model = None #hmm.learning_hmm(10, 10)
 
         all_param = list(ParameterGrid(params))
         for param in all_param:
-			for idx in xrange(nFiles):
-				task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
-				self.all_tasks.append(task)
+            for idx in xrange(nFiles):
+                task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
+                print task
+                self.all_tasks.append(task)
         return self.all_tasks
 
     ## def wait(self):
-
-        
-        
 
 
 def cross_validate(train_data, test_data,  model, params):
