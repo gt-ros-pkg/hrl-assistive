@@ -12,6 +12,7 @@ from starcluster.config import StarClusterConfig
 from starcluster.cluster import ClusterManager
 from starcluster import exception
 import time
+import dill
 
 class CloudSearch():
     def __init__(self, path_json, path_key, clust_name, user_name):
@@ -38,6 +39,7 @@ class CloudSearch():
 
         #connect to cluster nodes to distribute work
         self.client = Client(self.path_json, sshkey=self.path_key)
+        self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
         pass
 
