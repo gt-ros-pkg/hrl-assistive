@@ -136,6 +136,6 @@ if __name__ == '__main__':
     
     print cloud.get_completed_results()
     ## os.system( get )
-    cloud.stop()
+    ## cloud.stop()
 
     print "Finished"
