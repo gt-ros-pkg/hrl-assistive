@@ -285,9 +285,18 @@ class learning_hmm(learning_base):
         return l_idx, l_logp, l_post
 
     
-    def score(self, X):
+    def score(self, X, y=None):
+        '''
+        If y exists, y can contains two kinds of labels, [-1, 1]
+        If an input is close to training data, its label should be 1.
+        If not, its label should be -1.
+        '''
 
-        return self.loglikelihoods(X)
+        if y is None:
+            return np.sum(self.loglikelihoods(X))
+        else:
+            return np.inner(self.loglikelihoods(X), y)
+
     
 ####################################################################
 # functions for paralell computation
