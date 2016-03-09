@@ -52,6 +52,7 @@ class CloudSearch():
 
     #runs shell command for all nodes at specific location
     def sync_run_shell(self, path_shell):
+
         #self.clust.ssh_to_master(command=path_shell)
         for node in self.clust.running_nodes:
             self.clust.ssh_to_node(node.id, command=path_shell)
