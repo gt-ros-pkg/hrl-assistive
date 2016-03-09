@@ -56,6 +56,11 @@ class CloudSearchForHMM(CloudSearch):
 				self.all_tasks.append(task)
         return self.all_tasks
 
+    ## def wait(self):
+
+        
+        
+
 
 def cross_validate(train_data, test_data,  model, params):
     '''
@@ -118,6 +123,8 @@ def cross_validate_local(idx, processed_data_path, model, params):
     return cross_validate(trainSet, testSet, model, params)
 
 
+
+
 if __name__ == '__main__':
 
     task = 'pushing'
@@ -128,6 +135,8 @@ if __name__ == '__main__':
 
     cloud = CloudSearchForHMM('/home/dpark/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/dpark/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
     cloud.run_with_local_data(parameters, save_data_path, 9 )
+
+    print cloud.get_completed_results()
 
     # wait until finishing parameter search
     while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
