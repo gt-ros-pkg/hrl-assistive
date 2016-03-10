@@ -47,8 +47,9 @@ class CloudSearchForHMM(CloudSearch):
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, model, params, processed_data_path, nFiles):
 
-        ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        path_shell = 'source ~/.bashrc'
+        path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
+        path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'+':$PATH'
+        ## path_shell = 'source ~/.bashrc'
         self.sync_run_shell(path_shell)
                 
         ## from cross import cross_validate_local
