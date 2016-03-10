@@ -29,12 +29,13 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import os, sys, copy
+import os
 import numpy as np
 
 from sklearn.grid_search import ParameterGrid
 import time
 from hrl_anomaly_detection.aws.cloud_search import CloudSearch
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 
 class CloudSearchForHMM(CloudSearch):
     def __init__(self, path_json, path_key, clust_name, user_name):
@@ -46,14 +47,13 @@ class CloudSearchForHMM(CloudSearch):
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, params, processed_data_path, nFiles):
 
-        path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'+':$PYTHONPATH'
-        ## path_shell = 'source ~/.bashrc'
-        self.sync_run_shell(path_shell)
+        ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
+        ## path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection:${PYTHONPATH}'
+        ## ## path_shell = 'source ~/.bashrc'
+        ## self.sync_run_shell(path_shell)
 
-        from hrl_anomaly_detection.hmm import learning_hmm as hmm
         ## from cross import cross_validate_local
-        model = hmm.learning_hmm(10, 10)
+        model = None #hmm.learning_hmm(10, 10)
         
         all_param = list(ParameterGrid(params))
         for param in all_param:
@@ -96,7 +96,16 @@ def cross_validate(train_data, test_data,  model, params):
 def cross_validate_local(idx, processed_data_path, model, params):
     '''
     
-    '''    
+    '''
+    import os, sys
+    from sklearn.externals import six
+    import numpy as np
+
+    os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
+    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
+    from hrl_anomaly_detection import data_manager as dm
+    import hrl_lib.util as ut
+    
     dim   = 4
     for key, value in six.iteritems(params): 
         if key is 'dim':
