@@ -64,6 +64,10 @@ class CloudSearch():
         all_tasks = []
         self.lb_view.spin()
         self.client[:].spin()
+
+    def stop_all_tasks(self):
+        for task in all_tasks:
+            task.abort()
 	
     #run model given data. The local computer sends the data to each node every time it is given
     def run_with_data(self, model, params, n_inst, cv, data, target):
@@ -112,11 +116,11 @@ class CloudSearch():
 
 	#adds to all client a local path(s) for external libraries
 	#default location where local program is run is /home/user/ of the cluster
-	def set_up(self, path_libs):
-		import sys
-		sys.path[:] = sys.path[:] + path_libs
-		tasks = self.client[:].apply(syncing, path_libs)
-		return tasks.get()
+    def set_up(self, path_libs):
+        import sys
+        sys.path[:] = sys.path[:] + path_libs
+        tasks = self.client[:].apply(syncing, path_libs)
+        return tasks.get()
 
     #returns tasks that has been assigned, including completed, working, and pending
     def get_all_tasks(self):
@@ -150,5 +154,14 @@ class CloudSearch():
                 print str(e)
         return results
 
+def syncing(path_libs):
+    import sys
+    if type(path_libs) is str:
+        sys.path[:] = sys.path[:] + [path_libs]
+    elif type(path_libs) is list:
+        sys.path[:] = sys.path[:] + path_libs
+    return sys.path[:]
 
-    
+def check_sys_path():
+    import sys
+    return sys.path
