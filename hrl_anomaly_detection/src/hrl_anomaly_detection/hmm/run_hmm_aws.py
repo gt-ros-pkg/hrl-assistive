@@ -48,7 +48,7 @@ class CloudSearchForHMM(CloudSearch):
     def run_with_local_data(self, model, params, processed_data_path, nFiles):
 
         path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'+':$PATH'
+        path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'+':$PYTHONPATH'
         ## path_shell = 'source ~/.bashrc'
         self.sync_run_shell(path_shell)
                 
