@@ -36,6 +36,7 @@ from sklearn.grid_search import ParameterGrid
 import time
 from hrl_anomaly_detection.aws.cloud_search import CloudSearch
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
+from hrl_anomaly_detection import data_manager as dm
 
 class CloudSearchForHMM(CloudSearch):
     def __init__(self, path_json, path_key, clust_name, user_name):
@@ -49,6 +50,7 @@ class CloudSearchForHMM(CloudSearch):
 
         ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
         ## path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection:${PYTHONPATH}'
+        ## path_shell = 'export PYTHONPATH=/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages'
         ## ## path_shell = 'source ~/.bashrc'
         ## self.sync_run_shell(path_shell)
 
@@ -59,8 +61,9 @@ class CloudSearchForHMM(CloudSearch):
         for param in all_param:
             for idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
-                print task.get()
                 self.all_tasks.append(task)
+                print task.get()
+                return self.all_tasks
         return self.all_tasks
 
     ## def wait(self):
@@ -97,41 +100,51 @@ def cross_validate_local(idx, processed_data_path, model, params):
     '''
     
     '''
+
     import os, sys
     from sklearn.externals import six
     import numpy as np
+    
+    ##     sys.path.remove('/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'  
+    ## sys.path.remove(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive')
+    ## sys.path.remove(os.path.expanduser('~')+'/catkin_ws/src/hrl_lib')
 
-    os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    from hrl_anomaly_detection import data_manager as dm
-    import hrl_lib.util as ut
+   
+    ## os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
+    os.environ['PYTHONPATH']='/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages:/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
+    import data_manager as dm
+    ## import util as ut
+    ## import hrl_lib.util as ut
     
     dim   = 4
     for key, value in six.iteritems(params): 
         if key is 'dim':
             dim = value
 
+    return os.environ['PYTHONPATH'].split(os.pathsep)
     # Load data
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
     d = ut.load_pickle(AE_proc_data)
 
-    pooling_param_dict  = {'dim': dim} # only for AE
+    
 
-    # dim x sample x length
-    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
-                                                             pooling_param_dict)
-    abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-    normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
-    abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
+    ## pooling_param_dict  = {'dim': dim} # only for AE
 
-    trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
+    ## # dim x sample x length
+    ## normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
+    ##                                                          pooling_param_dict)
+    ## abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
+    ## normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
+    ## abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
 
-    testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
-    testData_x = np.swapaxes(testData_x, 0, 1)
-    testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
-    testSet    = [testData_x, testData_y ]
+    ## trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
 
-    return cross_validate(trainSet, testSet, model, params)
+    ## testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
+    ## testData_x = np.swapaxes(testData_x, 0, 1)
+    ## testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
+    ## testSet    = [testData_x, testData_y ]
+
+    ## return cross_validate(trainSet, testSet, model, params)
 
 
 
