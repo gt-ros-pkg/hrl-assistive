@@ -45,7 +45,7 @@ class CloudSearchForHMM(CloudSearch):
 	#each node grabs file from their local path and runs the model
 	#requires grab_data to be implemented correctly
 	#n_inst is to create a fold. the way it generates fold can be changed
-    def run_with_local_data(self, params, processed_data_path, nFiles):
+    def run_with_local_data(self, model, params, processed_data_path, nFiles):
 
         ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
         path_shell = 'source ~/.bashrc'
@@ -53,8 +53,6 @@ class CloudSearchForHMM(CloudSearch):
                 
         ## from cross import cross_validate_local
         
-        model = hmm.learning_hmm(10, 10)
-
         all_param = list(ParameterGrid(params))
         for param in all_param:
             for idx in xrange(nFiles):
@@ -134,10 +132,11 @@ if __name__ == '__main__':
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
     
+    model = hmm.learning_hmm(10, 10)
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
 
     cloud = CloudSearchForHMM('/home/dpark/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/dpark/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
-    cloud.run_with_local_data(parameters, save_data_path, 9 )
+    cloud.run_with_local_data(model, parameters, save_data_path, 9 )
 
     print cloud.get_completed_results()
 
