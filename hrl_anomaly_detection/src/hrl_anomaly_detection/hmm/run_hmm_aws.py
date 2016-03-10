@@ -48,7 +48,8 @@ class CloudSearchForHMM(CloudSearch):
     def run_with_local_data(self, params, processed_data_path, nFiles):
 
         ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        ## self.sync_run_shell(path_shell)
+        path_shell = 'source ~/.bashrc'
+        self.sync_run_shell(path_shell)
                 
         ## from cross import cross_validate_local
         
@@ -95,8 +96,7 @@ def cross_validate(train_data, test_data,  model, params):
 def cross_validate_local(idx, processed_data_path, model, params):
     '''
     
-    '''
-    
+    '''    
     dim   = 4
     for key, value in six.iteritems(params): 
         if key is 'dim':
