@@ -114,7 +114,7 @@ def cross_validate_local(idx, processed_data_path, model, params):
     ## sys.path.append('/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages')
     ## sys.path.append('/opt/ros/indigo/lib/python2.7/dist-packages')
     ## ##                 ## ':/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
-    
+
     import hrl_lib.util as ut
 
     dim   = 4

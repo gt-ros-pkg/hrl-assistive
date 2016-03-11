@@ -38,18 +38,18 @@ class CloudSearch():
         self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
 
         #connect to cluster nodes to distribute work
-        self.client = Client(self.path_json, sshkey=self.path_key)
+        self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
         
         #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
 
-        tasks = self.client[:].apply(set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib']) 
-        time.sleep(3.0)
-        tasks = self.client[:].apply(set_env, 'PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages']) 
+        ## tasks = self.client[:].apply(cross.set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib'])
+        ## tasks = self.client[:].apply(cross.set_env, 'PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages']) 
 
-        time.sleep(3.0)
-        print type(tasks), len(tasks), tasks[0].get()
+        ## time.sleep(3.0)
+        ## for task in tasks:
+        ##     print task.get()
         pass
 
     #stops clusters. It doesn't save any results.
@@ -177,6 +177,12 @@ def check_sys_path():
 
 def set_env(var, paths):
     import os
-    for path in paths:
-        os.environ[var] += ':'+path
-    return os.environ[var]
+
+    print "aaaaaa"
+    ## return os.environ[var]
+    ## for path in paths:
+    ##     if var not in os.environ:
+    ##         os.environ[var] = path
+    ##     elif path not in os.environ.get(var):
+    ##         os.environ[var] += ':'+path            
+    ## return os.environ.get(var)
