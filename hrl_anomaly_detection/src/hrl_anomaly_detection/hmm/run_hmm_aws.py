@@ -123,7 +123,7 @@ def cross_validate_local(idx, processed_data_path, model, params):
             dim = value
 
     ## return os.environ['TESTTT']
-    #return os.environ['PYTHONPATH'].split(os.pathsep)
+    return os.environ['PATH'].split(os.pathsep)
 
     # Load data
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
