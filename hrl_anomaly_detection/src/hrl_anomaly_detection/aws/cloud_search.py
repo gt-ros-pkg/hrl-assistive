@@ -41,6 +41,8 @@ class CloudSearch():
         self.client = Client(self.path_json, sshkey=self.path_key)
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
+        self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
+        
         pass
 
     #stops clusters. It doesn't save any results.
@@ -110,13 +112,11 @@ class CloudSearch():
         return ShuffleSplit(n_inst, n_iter=iter_num)
 
 
-	#adds to all client a local path(s) for external libraries
-	#default location where local program is run is /home/user/ of the cluster
-	def set_up(self, path_libs):
-		import sys
-		sys.path[:] = sys.path[:] + path_libs
-		tasks = self.client[:].apply(syncing, path_libs)
-		return tasks.get()
+    #adds to all client a local path(s) for external libraries
+    #default location where local program is run is /home/user/ of the cluster
+    def set_up(self, path_libs):
+        tasks = self.client[:].apply(syncing, path_libs)
+        return tasks.get()
 
     #returns tasks that has been assigned, including completed, working, and pending
     def get_all_tasks(self):
@@ -151,4 +151,9 @@ class CloudSearch():
         return results
 
 
+
+def syncing(path_libs):
+    import sys
+    ## sys.path[:] = sys.path[:] + path_libs
+    sys.path.append(path_libs)
     
