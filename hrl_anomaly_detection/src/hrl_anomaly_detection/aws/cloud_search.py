@@ -41,7 +41,7 @@ class CloudSearch():
         self.client = Client(self.path_json, sshkey=self.path_key)
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
-        self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
+        ## self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
         
         pass
 
@@ -66,6 +66,10 @@ class CloudSearch():
         all_tasks = []
         self.lb_view.spin()
         self.client[:].spin()
+
+    def stop_all_tasks(self):
+        for task in all_tasks:
+            task.abort()
 	
     #run model given data. The local computer sends the data to each node every time it is given
     def run_with_data(self, model, params, n_inst, cv, data, target):
@@ -112,9 +116,11 @@ class CloudSearch():
         return ShuffleSplit(n_inst, n_iter=iter_num)
 
 
-    #adds to all client a local path(s) for external libraries
-    #default location where local program is run is /home/user/ of the cluster
+	#adds to all client a local path(s) for external libraries
+	#default location where local program is run is /home/user/ of the cluster
     def set_up(self, path_libs):
+        import sys
+        sys.path[:] = sys.path[:] + path_libs
         tasks = self.client[:].apply(syncing, path_libs)
         return tasks.get()
 
@@ -150,10 +156,14 @@ class CloudSearch():
                 print str(e)
         return results
 
-
-
 def syncing(path_libs):
     import sys
-    ## sys.path[:] = sys.path[:] + path_libs
-    sys.path.append(path_libs)
-    
+    if type(path_libs) is str:
+        sys.path[:] = sys.path[:] + [path_libs]
+    elif type(path_libs) is list:
+        sys.path[:] = sys.path[:] + path_libs
+    return sys.path[:]
+
+def check_sys_path():
+    import sys
+    return sys.path

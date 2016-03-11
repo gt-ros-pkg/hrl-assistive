@@ -107,16 +107,16 @@ def cross_validate_local(idx, processed_data_path, model, params):
     import cPickle as pk
 
 
-    return os.environ['SHELL']
-    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-lib/hrl_lib/src/hrl_lib')
+    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src')
+    sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-lib/hrl_lib/src')
 
-    import hrl_lib.util as ut
    
     ## os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    ## sys.path.append('/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages')
-    ## sys.path.append('/opt/ros/indigo/lib/python2.7/dist-packages')
+    sys.path.append('/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages')
+    sys.path.append('/opt/ros/indigo/lib/python2.7/dist-packages')
     ##                 ## ':/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
+    
+    import hrl_lib.util as ut
 
     dim   = 4
     for key, value in six.iteritems(params): 
@@ -130,9 +130,7 @@ def cross_validate_local(idx, processed_data_path, model, params):
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
     d = ut.load_pickle(AE_proc_data)
 
-    return sys.path
-
-    import data_manager as dm
+    from hrl_anomaly_detection import data_manager as dm
     ## pooling_param_dict  = {'dim': dim} # only for AE
 
     ## # dim x sample x length
