@@ -41,8 +41,15 @@ class CloudSearch():
         self.client = Client(self.path_json, sshkey=self.path_key)
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
-        ## self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
         
+        #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
+
+        tasks = self.client[:].apply(set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib']) 
+        time.sleep(3.0)
+        tasks = self.client[:].apply(set_env, 'PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages']) 
+
+        time.sleep(3.0)
+        print type(tasks), len(tasks), tasks[0].get()
         pass
 
     #stops clusters. It doesn't save any results.
@@ -167,3 +174,9 @@ def syncing(path_libs):
 def check_sys_path():
     import sys
     return sys.path
+
+def set_env(var, paths):
+    import os
+    for path in paths:
+        os.environ[var] += ':'+path
+    return os.environ[var]
