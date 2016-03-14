@@ -371,7 +371,7 @@ def variancePooling(X, param_dict):
         std_list = []
         for i in xrange(len(X)):
             # for each dimension
-            avg_std = np.mean( np.std(X[i], axis=0) )
+            ## avg_std = np.mean( np.std(X[i], axis=0) )
             std_avg = np.std( np.mean(X[i], axis=0) )
             ## std_list.append(std_avg/avg_std)
             std_list.append(std_avg)

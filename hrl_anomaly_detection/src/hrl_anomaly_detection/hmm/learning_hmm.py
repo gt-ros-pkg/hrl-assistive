@@ -26,6 +26,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
+
 #system
 import numpy as np
 import sys, os, copy
@@ -281,7 +283,19 @@ class learning_hmm(learning_base):
             l_post += ll_post[i]
 
         return l_idx, l_logp, l_post
+
     
+    def score(self, X, y=None):
+        '''
+        If y exists, y can contains two kinds of labels, [-1, 1]
+        If an input is close to training data, its label should be 1.
+        If not, its label should be -1.
+        '''
+
+        if y is None:
+            return np.sum(self.loglikelihoods(X))
+        else:
+            return np.inner(self.loglikelihoods(X), y)
 
     
 ####################################################################

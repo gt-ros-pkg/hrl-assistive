@@ -1,7 +1,7 @@
 def cross_validate(train, test,  model, params):
     '''
     train : (X, y)
-
+    
     '''
     
     #from grab_data import grab_data
@@ -10,8 +10,8 @@ def cross_validate(train, test,  model, params):
     #data, target = grab_data(path_file, 54, 0, 581012)
     #data, target = grab_data(path_file, 11, 11, 4898)
     train_data = train[0]
-	train_target = train[1]
-	test_data =test[0]
+    train_target = train[1]
+    test_data =test[0]
     test_target = test[1]
     model.set_params(**params)
 	#return psutil.Process(os.getpid()).memory_info().rss / 1e6  
@@ -23,7 +23,7 @@ def cross_validate_local(train, test, path_file, model, params):
     '''
     
     '''
-	from grab_data import grab_data
+    from grab_data import grab_data
     data, target = grab_data(path_file, 11, 11, 4898)
     trainSet = (data[train], target[train])
     testSet = (data[test], target[test])
@@ -48,3 +48,5 @@ def cross_validate_local(train, test, path_file, model, params):
                         else:
                                 target[i] = splitted[target_loc]
         return (data, target)"""
+
+

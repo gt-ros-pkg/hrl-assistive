@@ -46,7 +46,7 @@ class learning_base():
         self.ml = None
         pass
 
-    @classmethod                                                                                                  
+    @classmethod                                                                                                 
     def _get_param_names(cls):                                                                                    
         """Get parameter names for the estimator"""    
         # fetch the constructor or the original constructor before  
@@ -161,7 +161,7 @@ class learning_base():
         print scores
         
         
-    def param_estimation(self, X, parameters, nFold, n_jobs=-1, save_file=None):
+    def param_estimation(self, X, parameters, y=None, nFold=2, n_jobs=-1, save_file=None):
         '''
         '''
         # nFold: integer and less than the total number of samples.
