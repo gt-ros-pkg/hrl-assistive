@@ -139,7 +139,8 @@ class classifier(learning_base):
             ## for i in xrange(self.nPosteriors):            
             ##     learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i], g_sig, self.nPosteriors)
 
-            return self.l_statePosterior, self.ll_mu, self.ll_std
+            ## return self.l_statePosterior, self.ll_mu, self.ll_std
+            return True
 
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -151,6 +152,7 @@ class classifier(learning_base):
 
     def predict(self, X, y=None):
         '''
+        X is single sample
         return predicted values (not necessarily binaries)
         '''
 
@@ -177,12 +179,15 @@ class classifier(learning_base):
 
             # Find the best posterior distribution
             min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+            nState = len(post)
+            c_time = float(nState - (min_index+1) )/float(nState) + 1.0
+            
 
             if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                 type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp
+                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp
             else:
-                err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp
+                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp
             return err 
         elif self.method == 'fixed':
             logp = X[0]
@@ -295,7 +300,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
     min_index = 0
 
     for j in xrange(len(l_statePosterior)):
-        dist = entropy(post, l_statePosterior[j])
+        dist = symmetric_entropy(post, l_statePosterior[j])
         if min_dist > dist:
             min_index = j
             min_dist  = dist
