@@ -161,7 +161,7 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
-                               
+
 
     ## def predict(self, X):
     ##     '''
@@ -250,19 +250,28 @@ class learning_hmm(learning_base):
             return l_likelihood
             
             
-    def getPostLoglikelihoods(self, xData):
+    def getPostLoglikelihoods(self, xData, startIdx=4):
 
-        X = [np.array(data) for data in xData]
-        X_test = util.convert_sequence(X) # Training input
-        X_test = X_test.tolist()
+        # X = [np.array(data) for data in xData]
+        # X_test = util.convert_sequence(X) # Training input
+        # X_test = X_test.tolist()
 
-        n, m = np.shape(X[0])
+        # n, m = np.shape(X[0])
+
+        # r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i],
+        #                                                    self.nEmissionDim, self.nState,
+        #                                                    bPosterior=True, converted_X=True)
+        #                                                    for i in xrange(n))
+
+        print 'getPostLogLikelihoods() may be broken. Please ensure the returned values seem correct.'
 
         # Estimate loglikelihoods and corresponding posteriors
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
-                                                           self.nEmissionDim, self.nState,
-                                                           bPosterior=True, converted_X=True)
-                                                           for i in xrange(n))
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, self.A, self.B, self.pi, self.F,
+                                                                [xData[i][j] for j in xrange(self.nEmissionDim)],
+                                                                self.nEmissionDim, self.nState,
+                                                                startIdx=startIdx, bPosterior=True)
+                                                                for i in xrange(len(xData)))
+
         _, ll_idx, ll_logp, ll_post = zip(*r)
 
         l_idx  = []
