@@ -123,13 +123,14 @@ RFH.EERotation = function (options) {
         var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
         var baseMaterial = new THREE.MeshLambertMaterial();
         baseMaterial.transparent = true;
-        baseMaterial.opacity = 0.67;
+        baseMaterial.opacity = 0.50;
         self.rotArrows = {};
         var scaleX = 0.00075;
         var scaleY = 0.00075;
         var scaleZ = 0.00075;
         var edgeColor = new THREE.Color(0.1,0.1,0.1);
         var edgeMinAngle = 45;
+        var edgeOpacity = 0.6;
 
         //Create arrow meshes for each directional control
         var mesh, edges, pos, rot, mat, cbArgs;
@@ -137,12 +138,14 @@ RFH.EERotation = function (options) {
         baseMaterial.color.setRGB(2.75,0.1,0.1); //Something funny means RGB colors are rendered on a 0-3 scale...
         mesh = new THREE.Mesh(arrowGeom.clone(), baseMaterial.clone());
         mesh.userData.direction = 'xn';
-        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75,0.1,0.1);
+        mesh.userData.defaultColor = new THREE.Color().setRGB(2.75, 0.1, 0.1);
         mesh.userData.hoverColor = new THREE.Color().setRGB(3, 0.1, 0.1);
         mesh.userData.clickColor = new THREE.Color().setRGB(3, 1, 1);
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.1, 0.13, 0.13);
         rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
@@ -158,6 +161,8 @@ RFH.EERotation = function (options) {
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.1, -0.13, 0.13);
         rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
@@ -174,6 +179,8 @@ RFH.EERotation = function (options) {
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.13, -0.025, -0.13);
         rot = new THREE.Euler(0, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
@@ -189,6 +196,8 @@ RFH.EERotation = function (options) {
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.13, 0.025, 0.13);
         rot = new THREE.Euler(Math.PI,0,0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
@@ -205,6 +214,8 @@ RFH.EERotation = function (options) {
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.13, -0.13, 0.025);
         rot = new THREE.Euler(-Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
@@ -220,6 +231,8 @@ RFH.EERotation = function (options) {
         mesh.userData.side = self.side;
         mesh.scale.set(scaleX, scaleY, scaleZ);
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
+        edges.material.transparent = true;
+        edges.material.opacity = edgeOpacity;
         pos = new THREE.Vector3(-0.13, 0.13, -0.025);
         rot = new THREE.Euler(Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
