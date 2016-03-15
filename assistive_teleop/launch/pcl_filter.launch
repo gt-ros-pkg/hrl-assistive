@@ -1,0 +1,53 @@
+<launch>
+    <group ns="/pcl_filters">
+    <!-- PCL Manager -->
+    <node pkg="nodelet" type="nodelet" name="box_filter_pcl_manager" args="manager" output="screen"/>
+
+    <node pkg="nodelet" type="nodelet" name="vfx" args="load pcl/VoxelGrid box_filter_manager" output="screen">
+      <remap from="~input" to="/head_mount_kinect/depth_registered/points" />
+      <rosparam>
+        leaf_size: 0.01
+        filter_field_name: x
+        filter_limit_min: -0.3
+        filter_limit_max: 0.3 
+        input_frame: 'head_mount_kinect_rgb_optical_frame'
+        output_frame: 'head_mount_kinect_rgb_optical_frame'
+      </rosparam>
+    </node>
+
+    <!-- Run a passthrough filter to delimit in x direction -->
+    <node pkg="nodelet" type="nodelet" name="psx" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+      <remap from="~input" to="vfx/output" />
+      <rosparam>
+        filter_field_name: x
+        filter_limit_min: -0.3
+        filter_limit_max: 0.3 
+        input_frame: 'head_mount_kinect_rgb_optical_frame'
+        output_frame: 'head_mount_kinect_rgb_optical_frame'
+      </rosparam>
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="psy" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+      <remap from="~input" to="psx/output" />
+      <rosparam>
+        filter_field_name: y
+        filter_limit_min: -0.3
+        filter_limit_max: 0.3
+        input_frame: '/head_mount_kinect_rgb_optical_frame'
+        output_frame: '/head_mount_kinect_rgb_optical_frame'
+      </rosparam>
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="psz" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+      <remap from="~input" to="psy/output" />
+      <remap from="~output" to="filtered" />
+      <rosparam>
+        filter_field_name: z
+        filter_limit_min: .0
+        filter_limit_max: 10 
+        input_frame: '/head_mount_kinect_rgb_optical_frame'
+        output_frame: '/head_mount_kinect_rgb_optical_frame'
+      </rosparam>
+    </node>
+  </group>
+</launch>

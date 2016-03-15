@@ -23,6 +23,7 @@ class CloudSearch():
         self.user_name = user_name
 
         #connect to aws and start cluster if it is not up already
+        self.uses_profile=False
         self.cfg = StarClusterConfig()
         self.cfg.load()
         self.clust_manager = ClusterManager(self.cfg)
@@ -32,10 +33,13 @@ class CloudSearch():
                 self.clust.start(create=False)
             except Exception,e:
                 print str(e)
+                print 'hello'
 
         #connect directly to master to start client 
         #as it often fails to start IPcluster plugin
-        self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
+        self.use_profile(self.user_name)
+        self.restart_ipcluster()
+        self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython import Client; client = Client()'")
 
         #connect to cluster nodes to distribute work
         self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
@@ -54,10 +58,13 @@ class CloudSearch():
 
     #stops clusters. It doesn't save any results.
     def stop(self):
+        if self.uses_profile:
+            self.stop_profile(self.user_name)
         self.flush()
         self.clust.stop_cluster(force=True)
 
     def terminate(self):
+        self.stop()
         self.flush()
         self.clust.terminate_cluster(force=True)
 
@@ -77,6 +84,79 @@ class CloudSearch():
     def stop_all_tasks(self):
         for task in all_tasks:
             task.abort()
+
+    def use_profile(self, user=None):
+        self.uses_profile=True
+        if user and user is not 'root':
+            file_path= '/home/' + user + '/.bashrc'
+            self.copy_bashrc(file_path, self.clust.master_node)
+            """
+            self.clust.ssh_to_master(command='mv {0} {1}'.format(file_path, file_path +'_cp'))
+            file = self.clust.master_node.remote_file(file_path, 'w')
+            file2 = self.clust.master_node.remote_file(file_path, 'r')
+            line = file2.readline()
+            while line is not '':
+                if 'case $- in' in line:
+                    line = file2.readline()
+                    case_counter = 1
+                    while case_counter > 0:
+                        if 'case' in line:
+                            case_counter = case_counter + 1
+                        if 'esac' in line:
+                            case_counter = case_counter - 1
+                        line = file2.read_line()
+                if '[ -z "$PS1" ] && return' in line:
+                    line = file2.readline()
+                else:
+                    file.write(line)
+            """
+            for node in self.clust.running_nodes:
+                file_path = '/root/.bashrc'
+                self.copy_bashrc(file_path, node)
+        else:
+            self.use_profile(user=self.user_name)
+    
+    def copy_bashrc(self, file_path, node):
+            self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path, file_path +'_cp'))
+            file = node.ssh.remote_file(file_path, 'w')
+            file2 = node.ssh.remote_file(file_path + '_cp', 'r')
+            line = file2.readline()
+            while len(line) is not 0:
+                if 'case $- in' in line:
+                    line = file2.readline()
+                    case_counter = 1
+                    while case_counter > 0:
+                        if 'case' in line:
+                            case_counter = case_counter + 1
+                        if 'esac' in line:
+                            case_counter = case_counter - 1
+                        line = file2.readline()
+                if '[ -z "$PS1" ] && return' in line:
+                    line = file2.readline()
+                else:
+                    file.write(line)
+                    line = file2.readline()
+
+    def stop_profile(self, user=None):
+        if self.uses_profile:
+            self.uses_profile=False
+            if user and user is not 'root':
+                file_path= '/home/' + user + '/.bashrc'
+                try:
+                    self.clust.ssh_to_master(command='mv {0} {1}'.format(file_path+'_cp', file_path))
+                except Exception,e:
+                    print str(e)
+                file_path='/root/.bashrc'
+                for node in self.clust.running_nodes:
+                    self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path+'_cp', file_path))
+            else:
+                self.stop_profile(self.user_name)
+                
+    def restart_ipcluster(self):
+        plug = self.cfg.get_plugin('ipcluster')
+        self.clust.run_plugin(plugin=plug, method_name="on_shutdown")
+        self.clust.run_plugin(plugin=plug)
+            
 	
     #run model given data. The local computer sends the data to each node every time it is given
     def run_with_data(self, model, params, n_inst, cv, data, target):

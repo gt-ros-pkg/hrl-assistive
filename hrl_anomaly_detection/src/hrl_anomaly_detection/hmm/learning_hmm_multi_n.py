@@ -61,9 +61,7 @@ import matplotlib.collections as collections
 os.system("taskset -p 0xff %d" % os.getpid())
 
 # Optimization variables
-kfolds = None
 rootPath = None
-iteration = 0
 paramSet = ''
 # Current downSampleSize
 sampleSize = 0
@@ -79,7 +77,7 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
         '''
         check_method and cluter_type will be deprecated
         '''
-        global kfolds, rootPath, results
+        global rootPath, results
                  
         # parent class
         learning_base.__init__(self)
@@ -105,7 +103,6 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
         ## Optimization parameters
         self.params = None
         self.isFitted = False
-        if kfolds is None: kfolds = folds
         if rootPath is None: rootPath = optimDataPath
         if results is None: results = resultsList
 
@@ -144,7 +141,7 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
         return self.ml
 
     def set_params(self, **parameters):
-        global sampleSize
+        global sampleSize, results
         # self.params = ''
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
@@ -156,6 +153,10 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
                 sampleSize = value
                 # Determine nEmission from new data
                 self.nEmissionDim = len(trainData)
+        if parameters != self.params:
+            # Add new results list for parameter set
+            results.append([self.params, [], 0])
+
         self.params = parameters
         print ', '.join(['%s: %s' % (p, str(v)) for p, v in self.params])
         return self
@@ -170,10 +171,6 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
 
         if X is not None:
             # We are currently optimizing. Begin set up for training HMM
-            if iteration == 0:
-                # Add new results list for parameter set
-                results.append([self.params, [], 0])
-
             # Check if this parameter set has already caused one of the k-folds to return NaN as a result
             if results[-1][1] == 'NaN':
                 return self
@@ -384,34 +381,20 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
 
 
     def score(self, X, y, sample_weight=None):
-        global scores, trainData, results, iteration
+        global scores, trainData, results
         score = 0
 
         if self.isFitted and results[-1][1] != 'NaN':
             trainingData = trainData[:, X]
 
             log_ll = []
-            logp_ll = []
-            post_ll = []
             for i in xrange(len(trainingData[0])):
                 log_ll.append([])
-                logp_ll.append([])
-                post_ll.append([])
                 # Compute likelihood values for data
                 for j in range(2, len(trainingData[0][i])):
                     X = [x[i,:j] for x in trainingData]
-                    exp_logp, logp = self.expLoglikelihood(X, self.l_ths_mult, bLoglikelihood=True)
+                    logp = self.loglikelihood(X)
                     log_ll[i].append(logp)
-                    l_logp, l_post = self.loglikelihoods(X, bPosterior=True, startIdx=4)
-                    logp_ll[i].append(l_logp)
-                    post_ll[i].append(l_post)
-
-            print 'expLoglikelihood'
-            print log_ll
-            print 'loglikelihoods'
-            print logp_ll
-            print 'post values'
-            print post_ll
 
             # Return average log-likelihood
             logs = [x[-1] for x in log_ll]
@@ -421,18 +404,7 @@ class learning_hmm_multi_n(learning_base, BaseEstimator, ClassifierMixin):
             else:
                 results[-1][1].append(score)
                 scores.append(score)
-                print 'expLoglikelihood() log_ll:', np.shape(log_ll), score
-
-        iteration += 1
-        # Print the average score across all k-folds
-        if iteration == kfolds:
-            iteration = 0
-            if results[-1][1] != 'NaN':
-                print 'Average score: %f\n' % (sum(scores) / float(len(scores)))
-                results[-1][2] = sum(scores) / float(len(scores))
-                scores = []
-            else:
-                print 'Average score: NaN\n'
+                print 'loglikelihood() log_ll:', np.shape(log_ll), score
 
         sys.stdout.flush()
         return score
