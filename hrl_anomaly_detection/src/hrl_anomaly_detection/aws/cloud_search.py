@@ -41,6 +41,7 @@ class CloudSearch():
         #as it often fails to start IPcluster plugin
         self.use_profile(self.user_name)
         self.restart_ipcluster()
+        time.sleep(10)
         self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
 
         #connect to cluster nodes to distribute work
@@ -156,8 +157,8 @@ class CloudSearch():
                 
     
     def restart_ipcluster(self):
-        #plugs = self.cfg.get_plugin('ipcluster')
-        #plug = deathrow._load_config(plugs)[0]
+        #plugs = [self.cfg.get_plugin('ipcluster')]
+        #plug = deathrow._load_plugins(plugs)[0]
         #self.clust.run_plugin(plug, method_name="on_shutdown")
         #self.clust.run_plugin(plug)
         
