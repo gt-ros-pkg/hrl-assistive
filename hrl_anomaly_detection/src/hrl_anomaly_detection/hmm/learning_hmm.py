@@ -26,6 +26,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
+
 #system
 import numpy as np
 import sys, os, copy
@@ -44,7 +46,7 @@ os.system("taskset -p 0xff %d" % os.getpid())
 class learning_hmm(learning_base):
     def __init__(self, nState=10, nEmissionDim=4, verbose=False):
         '''
-        This class follows the policy of sklearn as much as possible.
+        This class follows the policy of sklearn as much as possible.        
         TODO: score function. NEED TO THINK WHAT WILL BE CRITERIA.
         '''
                  
@@ -78,8 +80,12 @@ class learning_hmm(learning_base):
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
             ml_pkl=None, use_pkl=False):
         '''
-        TODO: explanation of the shape and type of xData
-        xData: dimension x sample x length  
+        Input :
+        - xData: dimension x sample x length
+        Issues:
+        - If NaN is returned, the reason can be one of followings,
+        -- lower cov
+        -- small range of xData (you have to scale it up.)
         '''
         
         # Daehyung: What is the shape and type of input data?
@@ -118,14 +124,15 @@ class learning_hmm(learning_base):
                 mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
                 ## print np.shape(mus), np.shape(cov)
 
+                # cov: state x dim x dim
                 for i in xrange(self.nEmissionDim):
                     for j in xrange(self.nEmissionDim):
-                        cov[:, j, i] *= cov_mult[self.nEmissionDim*i + j]
+                        cov[:, i, j] *= cov_mult[self.nEmissionDim*i + j]
 
                 if self.verbose:
                     for i, mu in enumerate(mus):
                         print 'mu%i' % i, mu
-                    print 'cov', cov
+                    ## print 'cov', cov
 
                 # Emission probability matrix
                 B = [0] * self.nState
@@ -161,7 +168,9 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
-
+        if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
+        return 
+                               
 
     ## def predict(self, X):
     ##     '''
@@ -250,28 +259,19 @@ class learning_hmm(learning_base):
             return l_likelihood
             
             
-    def getPostLoglikelihoods(self, xData, startIdx=4):
+    def getPostLoglikelihoods(self, xData):
 
-        # X = [np.array(data) for data in xData]
-        # X_test = util.convert_sequence(X) # Training input
-        # X_test = X_test.tolist()
+        X = [np.array(data) for data in xData]
+        X_test = util.convert_sequence(X) # Training input
+        X_test = X_test.tolist()
 
-        # n, m = np.shape(X[0])
-
-        # r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i],
-        #                                                    self.nEmissionDim, self.nState,
-        #                                                    bPosterior=True, converted_X=True)
-        #                                                    for i in xrange(n))
-
-        print 'getPostLogLikelihoods() may be broken. Please ensure the returned values seem correct.'
+        n, m = np.shape(X[0])
 
         # Estimate loglikelihoods and corresponding posteriors
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, self.A, self.B, self.pi, self.F,
-                                                                [xData[i][j] for j in xrange(self.nEmissionDim)],
-                                                                self.nEmissionDim, self.nState,
-                                                                startIdx=startIdx, bPosterior=True)
-                                                                for i in xrange(len(xData)))
-
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
+                                                           self.nEmissionDim, self.nState,
+                                                           bPosterior=True, converted_X=True)
+                                                           for i in xrange(n))
         _, ll_idx, ll_logp, ll_post = zip(*r)
 
         l_idx  = []
@@ -283,7 +283,19 @@ class learning_hmm(learning_base):
             l_post += ll_post[i]
 
         return l_idx, l_logp, l_post
+
     
+    def score(self, X, y=None):
+        '''
+        If y exists, y can contains two kinds of labels, [-1, 1]
+        If an input is close to training data, its label should be 1.
+        If not, its label should be -1.
+        '''
+
+        if y is None:
+            return np.sum(self.loglikelihoods(X))
+        else:
+            return np.inner(self.loglikelihoods(X), y)
 
     
 ####################################################################
@@ -336,7 +348,8 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
 def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
                        bPosterior=False, converted_X=False):
     '''
-    Return
+    Input:
+    - X: dimension x length
     '''
 
     if nEmissionDim >= 2:

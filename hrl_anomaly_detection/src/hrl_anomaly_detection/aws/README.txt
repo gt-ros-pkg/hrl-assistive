@@ -1,5 +1,7 @@
 Cloud Searching using AWS service
 
+Install and setup starcluster following instructions on Setting Starcluster pdf
+
 following files need to be in all nodes:
 model		- whichever model library that it is going to run
 grab_data.py 	- function to get data and format it locally
@@ -12,27 +14,7 @@ which is local to each node
 following files need to be in master node:
 /home/user_name/start_cli.py	- starts client if something caused failure in starting ipcluster
 
-setup:
-install starcluster
-type into command line
-$ starcluster help
-selecting 2 will write default config template to ~/.starcluster
-change config to fit needs:
-	fill in AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY
-	fill in key location
-	change cluster template:
-		might want to change:
-			CLUSTER_SIZE / CLUSTER_USER / NODE_IMAGE_ID / NODE_INSTANCE_TYPE
-		PLUGINS = ipcluster
-	write following on plugin section:
-		[plugin ipcluster]
-		SETUP_CLASS = starcluster.plugins.ipcluster.IPCluster
 
-		[plugin machine-learn-installer]
-		SETUP_CLASS = starcluster.plugins.pypkginstaller.PyPkgInstaller
-		PACKAGES = scikit-learn #add more pkgs if you want to install
-
-$ starcluster start cluster-name -c cluster_template
 
 using CloudSearch class
 

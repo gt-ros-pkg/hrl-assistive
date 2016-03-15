@@ -25,14 +25,20 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-
-
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 import learning_util as util
+import warnings
+
+
+
+
 
 
 
 def path_disp(self, X):
+    warnings.simplefilter("always", DeprecationWarning)
+    
     X = [np.array(x) for x in X]
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -112,6 +118,8 @@ def path_disp(self, X):
 
 
 def likelihood_disp(self, X, X_true, Z, Z_true, axisTitles, ths_mult, figureSaveName=None):
+    warnings.simplefilter("always", DeprecationWarning)
+    
     n, m = np.shape(X[0])
     n2, m2 = np.shape(Z[0])
     if self.verbose: print "Input sequence X1: ", n, m

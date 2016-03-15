@@ -34,6 +34,11 @@ import cPickle as pickle
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from contextlib import contextmanager
+import warnings
+
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################
 
 def extrapolateData(data, maxsize):
     return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
@@ -108,6 +113,8 @@ This function is used for optimizing the HMM.
 The data returned can be passed directly into the loadData() function through the features parameter
 '''
 def loadFeatures(fileNames, verbose=False):
+    warnings.simplefilter("always", DeprecationWarning)
+    
     if verbose:
         print 'Number of files to process:', len(fileNames)
     features = []
@@ -123,6 +130,8 @@ def loadFeatures(fileNames, verbose=False):
     return features
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, verbose=False, features=None):
+    warnings.simplefilter("always", DeprecationWarning)
+    
     timesList = []
 
     forcesTrueList = []
@@ -206,12 +215,14 @@ def suppress_output():
             sys.stderr = old_stderr
 
 def getSubjectFiles(dirPath):
+    warnings.simplefilter("always", DeprecationWarning)
     fileList = os.listdir(dirPath)
     successList = [os.path.join(dirPath, f) for f in fileList if os.path.isfile(os.path.join(dirPath, f)) and 'success' in f]
     failureList = [os.path.join(dirPath, f) for f in fileList if os.path.isfile(os.path.join(dirPath, f)) and 'failure' in f]
     return successList, failureList
 
 def getSubjectFileList(root_path, subject_names, task_name, verbose=False):
+    warnings.simplefilter("always", DeprecationWarning)
     # List up recorded files
     folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
 
@@ -250,6 +261,7 @@ def getSubjectFileList(root_path, subject_names, task_name, verbose=False):
 
 def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_mult, save_pdf=False):
 
+    warnings.simplefilter("always", DeprecationWarning)
 
     fig = plt.figure()
 
@@ -344,6 +356,7 @@ def displayData(hmm, trainData, normalTestData, abnormalTestData, save_pdf=False
 
 def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pdf=False):
 
+    warnings.simplefilter("always", DeprecationWarning)
 
     fig = plt.figure()
 
@@ -421,6 +434,7 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
 
 
 def tuneSensitivityGain(hmm, dataSample, method='progress', verbose=False):
+    warnings.simplefilter("always", DeprecationWarning)
 
     minThresholds = 0
     if method == 'progress':    
@@ -456,3 +470,6 @@ def tuneSensitivityGain(hmm, dataSample, method='progress', verbose=False):
                     
     return minThresholds
 
+#################### WARNING ###################################
+# This file will be deprecated soon. Please, don't add anything. 
+################################################################

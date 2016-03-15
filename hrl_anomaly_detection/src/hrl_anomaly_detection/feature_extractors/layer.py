@@ -235,10 +235,10 @@ def gradient_updates_momentum(cost, params, learning_rate, learning_rate_decay, 
         param_update = theano.shared(param.get_value()*0., broadcastable=param.broadcastable)
         updates.append((param, param - learning_rate/(np.float32(1.0)+learning_rate_decay)\
                         *( momentum*param_update \
-                           +(np.float32(1.)-dampening)*(T.grad(cost, param) - lambda_reg*param))\
+                           +(np.float32(1.)-dampening)*(T.grad(cost, param) + lambda_reg*param))\
                            ))
         updates.append((param_update, momentum*param_update \
-                        +(np.float32(1.)-dampening)*(T.grad(cost, param) - lambda_reg*param)
+                        +(np.float32(1.)-dampening)*(T.grad(cost, param) + lambda_reg*param)
                         )) 
         
     return updates
