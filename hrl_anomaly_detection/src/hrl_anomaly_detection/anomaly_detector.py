@@ -31,6 +31,7 @@
 # system
 import rospy
 import roslib
+import random
 import os, sys, copy
 import threading
 
@@ -59,9 +60,8 @@ import matplotlib.pyplot as plt
 
 class anomaly_detector:
 
-    def __init__(self, subject_names, task_name, check_method, save_data_path, training_data_pkl, \
-                 verbose=False, \
-                 online_raw_viz=False):
+    def __init__(self, subject_names, task_name, check_method, save_data_path, training_data_pkl,
+                 verbose=False, online_raw_viz=False):
         rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
@@ -83,7 +83,22 @@ class anomaly_detector:
             ## pylab.hold(False)
             self.plot_data = {}
             self.plot_len = 22000
-        
+
+        # Params
+        self.rf_radius = None
+        self.rf_center = None
+        self.downSampleSize = None
+        self.feature_list = None
+        self.nState = None
+        self.cov_mult = None
+        self.threshold = None
+        self.nEmissionDim = None
+        self.ml = None
+
+        # Comms
+        self.action_interruption_pub = None
+        self.detection_service = None
+
         self.initParams()
         self.initComms()
         self.initDetector()
@@ -103,7 +118,6 @@ class anomaly_detector:
         self.cov_mult  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
 
         # Discriminative classifier
-        self.cov_mult  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
         self.threshold = -200.0
     
     def initComms(self):
@@ -122,22 +136,20 @@ class anomaly_detector:
 
     def initDetector(self):
 
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_exp.pkl')
+        modeling_pkl = os.path.join(self.save_data_path, 'hmm_'+task_name+'_exp.pkl')
         if os.path.isfile(modeling_pkl) is False:
-
-            _, success_data, failure_data, _ = dm.getDataSet(self.subject_names, self.task_name, \
-                                                             self.save_data_path, \
-                                                             self.save_data_path, self.rf_center, \
-                                                             self.rf_radius, \
-                                                             downSampleSize=self.downSampleSize, \
+            _, successData, failureData, _ = dm.getDataSet(self.subject_names, self.task_name,
+                                                             self.save_data_path, self.save_data_path,
+                                                             self.rf_center, self.rf_radius,
+                                                             downSampleSize=self.downSampleSize,
                                                              feature_list=self.feature_list)
 
             # index selection
             success_idx  = range(len(successData[0]))
             failure_idx  = range(len(failureData[0]))
 
-            nTrain       = int( 0.7*len(success_idx) )    
-            train_idx    = random.sample(success_idx, nTrain)
+            nTrain = int( 0.7*len(success_idx) )
+            train_idx = random.sample(success_idx, nTrain)
             success_test_idx = [x for x in success_idx if not x in train_idx]
             failure_test_idx = failure_idx
 
@@ -156,7 +168,7 @@ class anomaly_detector:
             self.nEmissionDim = len(trainingData)
             detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')        
             self.ml = hmm.learning_hmm_multi_n(self.nState, self.nEmissionDim, verbose=False)        
-            ret = self.ml.fit(self.success_data, cov_mult=[self.cov_mult]*self.nEmissionDim**2, \
+            ret = self.ml.fit(trainingData, cov_mult=[self.cov_mult]*self.nEmissionDim**2,
                               ml_pkl=detection_param_pkl, use_pkl=True)
 
             if ret == 'Failure': 
@@ -170,12 +182,12 @@ class anomaly_detector:
             #-----------------------------------------------------------------------------------------
             testDataX = []
             testDataY = []
-            for i in xrange(nEmissionDim):
-                temp = np.vstack([normalClassifierData[i], abnormalClassifierData[i]])
+            for i in xrange(self.nEmissionDim):
+                temp = np.vstack([normalTestData[i], abnormalTestData[i]])
                 testDataX.append( temp )
 
-            testDataY = np.hstack([ -np.ones(len(normalClassifierData[0])), \
-                                    np.ones(len(abnormalClassifierData[0])) ])
+            testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                    np.ones(len(abnormalTestData[0])) ])
 
             r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
@@ -295,7 +307,7 @@ class anomaly_detector:
 
 
         # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetEEDist' in feature_list:
+        if 'crossmodal_targetEEDist' in self.feature_list:
 
             crossmodal_targetEEDist = np.linalg.norm(np.array(self.kinematics_target_pos) - \
                                                            np.array(self.kinematics_ee_pos))
@@ -303,7 +315,7 @@ class anomaly_detector:
             dataSample.append( crossmodal_targetEEDist )
 
         # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetEEAng' in feature_list:                
+        if 'crossmodal_targetEEAng' in self.feature_list:
             
             diff_ang = qt.quat_angle(self.kinematics_ee_quat, self.kinematics_target_quat)
             crossmodal_targetEEAng = abs(diff_ang)
