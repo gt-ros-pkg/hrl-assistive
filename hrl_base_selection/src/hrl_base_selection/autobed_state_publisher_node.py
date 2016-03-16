@@ -55,7 +55,7 @@ class AutobedStatePublisherNode(object):
         init_centered.position = [None]*(1)
         init_centered.name[0] = "autobed/head_bed_leftright_joint"
         init_centered.position[0] = 0
-        self.joint_pub.publish(init_centered)
+        # self.joint_pub.publish(init_centered)
         self.bed_status = None
         rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
 
@@ -89,9 +89,7 @@ class AutobedStatePublisherNode(object):
         self.frame_lock = threading.RLock()
         print 'Autobed robot state publisher is ready and running!'
 
-
-
-    #callback for the pose messages from the autobed
+    # Callback for the pose messages from the autobed
     def bed_pose_cb(self, data): 
         poses=np.asarray(data.data);
         # print poses
@@ -141,7 +139,7 @@ class AutobedStatePublisherNode(object):
         return float(fl_as_str)
 
     def run(self):
-        rate = rospy.Rate(30) #30 Hz
+        # rate = rospy.Rate(30) #30 Hz
 
         joint_state = JointState()
 
@@ -158,7 +156,7 @@ class AutobedStatePublisherNode(object):
                               0,#self.leg_filt_data
                               0]# -(1+(4.0/9.0))*self.leg_filt_data
 
-        rate = rospy.Rate(10.0)
+        rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
             with self.frame_lock:
                 joint_state.header.stamp = rospy.Time.now()
@@ -187,7 +185,7 @@ class AutobedStatePublisherNode(object):
                     
                 self.joint_pub.publish(joint_state)
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
-                self.set_autobed_user_configuration(self.head_filt_data, True)
+                self.set_autobed_user_configuration(joint_state.position[1], True)
                 rate.sleep()
         return
 
@@ -220,6 +218,10 @@ class AutobedStatePublisherNode(object):
             # bth = headrest_th
             # print bth
             # 0 degrees, 0 height
+            if bth < 0.:
+                bth =0.
+            elif bth > 80.:
+                bth = 80.
             if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
                 human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
                 human_joint_state.position[1] = (bth/40)*(-.17-.4)+.4
@@ -269,14 +271,19 @@ class AutobedStatePublisherNode(object):
                 unoccupied_shift.position[0] = 15
             else:
                 unoccupied_shift.position[0] = 0.
-            try:
-                now = rospy.Time.now()
-                self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(3))
-                (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
+            # try:
+            if self.listener.canTransform('/autobed/base_link', '/user_head_link', rospy.Time(0)):
+            # now = rospy.Time.now()
+            #     self.listener.waitForTransform('/autobed/base_link', '/user_head_link', rospy.Time(0), rospy.Duration(3))
+                (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', rospy.Time(0))
                 unoccupied_shift.position[1] = trans[1]
-            except tf.ExtrapolationException:
-                print 'Error with transform lookup'
-                unoccupied_shift.position[1] = 0.
+            else:
+                # print 'Error with transform lookup'
+                    unoccupied_shift.position[1] = 0.
+            # except tf.ExtrapolationException:
+            #     print 'Error with transform lookup'
+            #     unoccupied_shift.position[1] = 0.
+            # print 'publishing joints'
 
             self.joint_pub.publish(unoccupied_shift)
             # print 'done with human joints!'

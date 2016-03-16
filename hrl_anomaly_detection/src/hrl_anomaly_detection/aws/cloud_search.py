@@ -6,11 +6,13 @@
 
 
 from IPython.parallel import Client
+from IPython.parallel import error
 from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import ShuffleSplit 
 from starcluster.config import StarClusterConfig
 from starcluster.cluster import ClusterManager
 from starcluster import exception
+from starcluster import deathrow
 import time
 import dill
 
@@ -39,7 +41,8 @@ class CloudSearch():
         #as it often fails to start IPcluster plugin
         self.use_profile(self.user_name)
         self.restart_ipcluster()
-        self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython import Client; client = Client()'")
+        time.sleep(10)
+        self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
 
         #connect to cluster nodes to distribute work
         self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
@@ -152,10 +155,22 @@ class CloudSearch():
             else:
                 self.stop_profile(self.user_name)
                 
+    
     def restart_ipcluster(self):
-        plug = self.cfg.get_plugin('ipcluster')
-        self.clust.run_plugin(plugin=plug, method_name="on_shutdown")
-        self.clust.run_plugin(plugin=plug)
+        #plugs = [self.cfg.get_plugin('ipcluster')]
+        #plug = deathrow._load_plugins(plugs)[0]
+        #self.clust.run_plugin(plug, method_name="on_shutdown")
+        #self.clust.run_plugin(plug)
+        self.clust.ssh_to_master(user=self.user_name, command="ipcluster stop")
+        time.sleep(10)
+        import os
+        os.system('starcluster runplugin ipcluster ' + self.clust_name)
+        #self.clust.run_plugin(plugin=plug)#, method_name="on_shutdown")
+        #set_command = 'bash /home/' + self.user_name + '/.profile;env;ipcluster start --daemon'
+        #self.clust.ssh_to_master(user=self.user_name, command=set_command)
+        #json_file= '/home/' + self.user_name + '/.ipython/profile_default/security/ipcontroller-client.json'
+        #print json_file
+        #self.clust.master_node.ssh.get(json_file, self.path_json)
             
 	
     #run model given data. The local computer sends the data to each node every time it is given
@@ -241,7 +256,21 @@ class CloudSearch():
             except Exception, e:
                 print "some kind of error occured while working on task"
                 print str(e)
+                if isinstance(e, error.RemoteError):
+                    e.print_traceback()
         return results
+
+    #get method with error catching showing trace back of remote error
+    #returns None if task is not assigned through CloudSearch class
+    def get_task_results(self, task):
+        if task in self.all_tasks:
+            try:
+                return task.get()
+            except Exception, e:
+                print str(e)
+                if isinstance(e, error.RemoteError):
+                    e.print_traceback()
+        return None
 
 def syncing(path_libs):
     import sys
