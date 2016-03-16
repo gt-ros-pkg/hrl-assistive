@@ -104,30 +104,32 @@ def cross_validate_local(idx, processed_data_path, model, params):
     import os, sys
     from sklearn.externals import six
     import numpy as np
-    
-    ##     sys.path.remove('/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'  
-    ## sys.path.remove(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive')
-    ## sys.path.remove(os.path.expanduser('~')+'/catkin_ws/src/hrl_lib')
+
+
+    ## sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src')
+    ## sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-lib/hrl_lib/src')
 
    
     ## os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    os.environ['PYTHONPATH']='/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages:/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
-    import data_manager as dm
-    ## import util as ut
-    ## import hrl_lib.util as ut
-    
+    ## sys.path.append('/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages')
+    ## sys.path.append('/opt/ros/indigo/lib/python2.7/dist-packages')
+    ## ##                 ## ':/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
+
+    import hrl_lib.util as ut
+
     dim   = 4
     for key, value in six.iteritems(params): 
         if key is 'dim':
             dim = value
 
-    return os.environ['PYTHONPATH'].split(os.pathsep)
+    ## return os.environ['TESTTT']
+    return os.environ['PATH'].split(os.pathsep)
+
     # Load data
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
     d = ut.load_pickle(AE_proc_data)
 
-    
-
+    from hrl_anomaly_detection import data_manager as dm
     ## pooling_param_dict  = {'dim': dim} # only for AE
 
     ## # dim x sample x length
@@ -153,8 +155,7 @@ def cross_validate_local(idx, processed_data_path, model, params):
 if __name__ == '__main__':
 
     task = 'pushing'
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+    save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
     
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
 

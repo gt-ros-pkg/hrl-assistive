@@ -162,7 +162,8 @@ class classifier(learning_base):
                 sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
                 import cssvmutil as svm
 
-            print svm.__file__
+            if self.verbose:
+                print svm.__file__
             if type(X) is not list: X=X.tolist()
             if y is not None:
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)

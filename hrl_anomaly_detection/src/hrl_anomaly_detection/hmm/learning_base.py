@@ -161,7 +161,7 @@ class learning_base():
         print scores
         
         
-    def param_estimation(self, X, parameters, nFold, n_jobs=-1, save_file=None):
+    def param_estimation(self, X, parameters, y=None, nFold=2, n_jobs=-1, save_file=None):
         '''
         '''
         # nFold: integer and less than the total number of samples.

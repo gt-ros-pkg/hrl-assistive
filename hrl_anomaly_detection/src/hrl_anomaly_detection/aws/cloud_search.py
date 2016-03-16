@@ -6,11 +6,13 @@
 
 
 from IPython.parallel import Client
+from IPython.parallel import error
 from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import ShuffleSplit 
 from starcluster.config import StarClusterConfig
 from starcluster.cluster import ClusterManager
 from starcluster import exception
+from starcluster import deathrow
 import time
 import dill
 
@@ -23,6 +25,7 @@ class CloudSearch():
         self.user_name = user_name
 
         #connect to aws and start cluster if it is not up already
+        self.uses_profile=False
         self.cfg = StarClusterConfig()
         self.cfg.load()
         self.clust_manager = ClusterManager(self.cfg)
@@ -32,23 +35,39 @@ class CloudSearch():
                 self.clust.start(create=False)
             except Exception,e:
                 print str(e)
+                print 'hello'
 
         #connect directly to master to start client 
         #as it often fails to start IPcluster plugin
-        self.clust.ssh_to_master(user=self.user_name, command="python start_cli.py")
+        self.use_profile(self.user_name)
+        self.restart_ipcluster()
+        time.sleep(10)
+        self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
 
         #connect to cluster nodes to distribute work
-        self.client = Client(self.path_json, sshkey=self.path_key)
+        self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
+        
+        #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
+
+        ## tasks = self.client[:].apply(cross.set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib'])
+        ## tasks = self.client[:].apply(cross.set_env, 'PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages']) 
+
+        ## time.sleep(3.0)
+        ## for task in tasks:
+        ##     print task.get()
         pass
 
     #stops clusters. It doesn't save any results.
     def stop(self):
+        if self.uses_profile:
+            self.stop_profile(self.user_name)
         self.flush()
         self.clust.stop_cluster(force=True)
 
     def terminate(self):
+        self.stop()
         self.flush()
         self.clust.terminate_cluster(force=True)
 
@@ -64,6 +83,95 @@ class CloudSearch():
         all_tasks = []
         self.lb_view.spin()
         self.client[:].spin()
+
+    def stop_all_tasks(self):
+        for task in all_tasks:
+            task.abort()
+
+    def use_profile(self, user=None):
+        self.uses_profile=True
+        if user and user is not 'root':
+            file_path= '/home/' + user + '/.bashrc'
+            self.copy_bashrc(file_path, self.clust.master_node)
+            """
+            self.clust.ssh_to_master(command='mv {0} {1}'.format(file_path, file_path +'_cp'))
+            file = self.clust.master_node.remote_file(file_path, 'w')
+            file2 = self.clust.master_node.remote_file(file_path, 'r')
+            line = file2.readline()
+            while line is not '':
+                if 'case $- in' in line:
+                    line = file2.readline()
+                    case_counter = 1
+                    while case_counter > 0:
+                        if 'case' in line:
+                            case_counter = case_counter + 1
+                        if 'esac' in line:
+                            case_counter = case_counter - 1
+                        line = file2.read_line()
+                if '[ -z "$PS1" ] && return' in line:
+                    line = file2.readline()
+                else:
+                    file.write(line)
+            """
+            for node in self.clust.running_nodes:
+                file_path = '/root/.bashrc'
+                self.copy_bashrc(file_path, node)
+        else:
+            self.use_profile(user=self.user_name)
+    
+    def copy_bashrc(self, file_path, node):
+            self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path, file_path +'_cp'))
+            file = node.ssh.remote_file(file_path, 'w')
+            file2 = node.ssh.remote_file(file_path + '_cp', 'r')
+            line = file2.readline()
+            while len(line) is not 0:
+                if 'case $- in' in line:
+                    line = file2.readline()
+                    case_counter = 1
+                    while case_counter > 0:
+                        if 'case' in line:
+                            case_counter = case_counter + 1
+                        if 'esac' in line:
+                            case_counter = case_counter - 1
+                        line = file2.readline()
+                if '[ -z "$PS1" ] && return' in line:
+                    line = file2.readline()
+                else:
+                    file.write(line)
+                    line = file2.readline()
+
+    def stop_profile(self, user=None):
+        if self.uses_profile:
+            self.uses_profile=False
+            if user and user is not 'root':
+                file_path= '/home/' + user + '/.bashrc'
+                try:
+                    self.clust.ssh_to_master(command='mv {0} {1}'.format(file_path+'_cp', file_path))
+                except Exception,e:
+                    print str(e)
+                file_path='/root/.bashrc'
+                for node in self.clust.running_nodes:
+                    self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path+'_cp', file_path))
+            else:
+                self.stop_profile(self.user_name)
+                
+    
+    def restart_ipcluster(self):
+        #plugs = [self.cfg.get_plugin('ipcluster')]
+        #plug = deathrow._load_plugins(plugs)[0]
+        #self.clust.run_plugin(plug, method_name="on_shutdown")
+        #self.clust.run_plugin(plug)
+        self.clust.ssh_to_master(user=self.user_name, command="ipcluster stop")
+        time.sleep(10)
+        import os
+        os.system('starcluster runplugin ipcluster ' + self.clust_name)
+        #self.clust.run_plugin(plugin=plug)#, method_name="on_shutdown")
+        #set_command = 'bash /home/' + self.user_name + '/.profile;env;ipcluster start --daemon'
+        #self.clust.ssh_to_master(user=self.user_name, command=set_command)
+        #json_file= '/home/' + self.user_name + '/.ipython/profile_default/security/ipcontroller-client.json'
+        #print json_file
+        #self.clust.master_node.ssh.get(json_file, self.path_json)
+            
 	
     #run model given data. The local computer sends the data to each node every time it is given
     def run_with_data(self, model, params, n_inst, cv, data, target):
@@ -112,11 +220,11 @@ class CloudSearch():
 
 	#adds to all client a local path(s) for external libraries
 	#default location where local program is run is /home/user/ of the cluster
-	def set_up(self, path_libs):
-		import sys
-		sys.path[:] = sys.path[:] + path_libs
-		tasks = self.client[:].apply(syncing, path_libs)
-		return tasks.get()
+    def set_up(self, path_libs):
+        import sys
+        sys.path[:] = sys.path[:] + path_libs
+        tasks = self.client[:].apply(syncing, path_libs)
+        return tasks.get()
 
     #returns tasks that has been assigned, including completed, working, and pending
     def get_all_tasks(self):
@@ -148,7 +256,42 @@ class CloudSearch():
             except Exception, e:
                 print "some kind of error occured while working on task"
                 print str(e)
+                if isinstance(e, error.RemoteError):
+                    e.print_traceback()
         return results
 
+    #get method with error catching showing trace back of remote error
+    #returns None if task is not assigned through CloudSearch class
+    def get_task_results(self, task):
+        if task in self.all_tasks:
+            try:
+                return task.get()
+            except Exception, e:
+                print str(e)
+                if isinstance(e, error.RemoteError):
+                    e.print_traceback()
+        return None
 
-    
+def syncing(path_libs):
+    import sys
+    if type(path_libs) is str:
+        sys.path[:] = sys.path[:] + [path_libs]
+    elif type(path_libs) is list:
+        sys.path[:] = sys.path[:] + path_libs
+    return sys.path[:]
+
+def check_sys_path():
+    import sys
+    return sys.path
+
+def set_env(var, paths):
+    import os
+
+    print "aaaaaa"
+    ## return os.environ[var]
+    ## for path in paths:
+    ##     if var not in os.environ:
+    ##         os.environ[var] = path
+    ##     elif path not in os.environ.get(var):
+    ##         os.environ[var] += ':'+path            
+    ## return os.environ.get(var)

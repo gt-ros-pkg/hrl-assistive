@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="usb_cam" type="usb_cam_node" name="thermal_cam" output="screen">
+        <!--<env name="ROS_NAMESPACE" value="/thermal"/>-->
+        <param name="video_device" value="/dev/ttyUSB0" />
+        <param name="image_width" value="320" />
+        <param name="image_height" value="168" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_frame_id" value="thermal_cam" />
+        <param name="io_method" value="mmap"/>
+    </node>
+    <!--<rosparam ns="/thermal/left_cam">-->
+      <!--video_device: /dev/video0-->
+      <!--invert: False -->
+      <!--camera_info_url: package://trac_thermal/left_calibration.yaml-->
+    <!--</rosparam>-->
+    <!--</node>-->
+    <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/thermal_cam/image_raw"/>
+        <param name="autosize" value="true" />
+    </node>
+</launch>
