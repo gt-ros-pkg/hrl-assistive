@@ -92,12 +92,13 @@ var initTaskInterface = function (tabDivId) {
                          '<td id="' + tabDivId + '_R2C4" colspan="2"></td>' +
                        '</tr>' +
                      '</table>');
-    $(divRef+'_R1C0').append('<select id="task_action_select">' + 
-                               '<option>scratching</option>' +
+    $(divRef+'_R1C0').append('<select id="task_action_select">' +
+                             '<option>scratching</option>' +
+                             '<option>wiping</option>' +
                              '</select>');
     $(divRef+'_R1C1').append('<select id="task_side_select">' +
-                               '<option>left</option>' +
-                               '<option>right</option>' +
+                             '<option>left</option>' +
+                             '<option>right</option>' +
                              '</select>');
     $(divRef+'_R1C2').append('<select id="task_area_select">' +
                                '<option>knee</option>' +
