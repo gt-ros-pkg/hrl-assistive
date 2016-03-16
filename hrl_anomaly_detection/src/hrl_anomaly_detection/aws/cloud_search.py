@@ -161,7 +161,8 @@ class CloudSearch():
         #plug = deathrow._load_plugins(plugs)[0]
         #self.clust.run_plugin(plug, method_name="on_shutdown")
         #self.clust.run_plugin(plug)
-        
+        self.clust.ssh_to_master(user=self.user_name, command="ipcluster stop")
+        time.sleep(10)
         import os
         os.system('starcluster runplugin ipcluster ' + self.clust_name)
         #self.clust.run_plugin(plugin=plug)#, method_name="on_shutdown")
@@ -258,6 +259,18 @@ class CloudSearch():
                 if isinstance(e, error.RemoteError):
                     e.print_traceback()
         return results
+
+    #get method with error catching showing trace back of remote error
+    #returns None if task is not assigned through CloudSearch class
+    def get_task_results(self, task):
+        if task in self.all_tasks:
+            try:
+                return task.get()
+            except Exception, e:
+                print str(e)
+                if isinstance(e, error.RemoteError):
+                    e.print_traceback()
+        return None
 
 def syncing(path_libs):
     import sys
