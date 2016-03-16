@@ -1,5 +1,6 @@
 <launch>
 	<!--arg name="marker_size" default="3.3" /-->
+	<arg name="task_name" default="feeding" />
 	<arg name="marker_size" default="6.8" />
 	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
@@ -20,6 +21,8 @@
 
         <!-- F/T sensor -->
         <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
-
+        
+        <!-- Audio (wrist) -->
+        <node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen" args="--t $(arg task_name)" />
 
 </launch>

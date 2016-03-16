@@ -149,8 +149,7 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping1']['left'] = \
           [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0]]
         self.motions['initScooping1']['right'] = \
-          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],             
-           ['PAUSE', 1.0]]
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0]]
           #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
 
@@ -172,8 +171,7 @@ class armReachAction(mpcBaseAction):
         self.motions['runScooping']['left'] = \
           [['MOVES', '[-0.05, 0.0,  0.06, 0, 0.5, 0]', 4, 'self.bowl_frame'],
            ['MOVES', '[ 0.03, 0.0,  0.06, 0, 1.3, 0]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame'],
-           ['PAUSE', 2.0] ]
+           ['MOVES', '[ 0.0,  0.0, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame']]
         self.motions['runScooping']['right'] = \
           []
         
@@ -182,8 +180,7 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = \
           [['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
-           ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0, 'self.default_frame'], 
-           ['PAUSE', 2.0] ]           
+           ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0]]           
         self.motions['initFeeding']['right'] = \
           [['MOVEJ', '[-1.0, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0],
            ]
@@ -191,14 +188,14 @@ class armReachAction(mpcBaseAction):
 
         self.motions['runFeeding1'] = {}
         self.motions['runFeeding1']['left'] = \
-          [['MOVES', '[0.0, 0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
-           ['PAUSE', 2.0] 
+          [['MOVES', '[0.0, 0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 1.0] 
            ]
 
         self.motions['runFeeding2'] = {}
         self.motions['runFeeding2']['left'] = \
           [['MOVES', '[0.0, 0.02, 0.02, 0., 0., 0.]', 5., 'self.mouth_frame'],
-           ['PAUSE', 2.0], 
+           ['PAUSE', 0.5], 
            ['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],                     
            ]
           
@@ -207,6 +204,8 @@ class armReachAction(mpcBaseAction):
     def serverCallback(self, req):
         task = req.data
         self.stop_motion = False
+
+        print req
 
         if task == "getBowlPos":
             if self.bowl_frame_kinect is not None:
@@ -292,17 +291,21 @@ class armReachAction(mpcBaseAction):
 
         print "Stopping Motion..."
         self.setStop() #Stops Current Motion
-        try:
-            self.setStopRight() #Sends message to service node
-        except:
-            rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
+        ## try:
+        ##     self.setStopRight() #Sends message to service node
+        ## except:
+        ##     rospy.loginfo("Couldn't stop "+self.arm_name+" arm! ")
 
         ## posStopL = Point()
         ## quatStopL = Quaternion()
+        ## rospy.sleep(2.0)
+        ## import hrl_lib.util as ut
+        ## ut.get_keystroke('Hit a key to proceed next')
 
         # TODO: location should be replaced into the last scooping or feeding starts.
-        print "Moving left arm to safe position "
-        self.parsingMovements(self.motions['initScooping1'][self.arm_name])
+        #print "Moving left arm to safe position "
+        ## self.parsingMovements(self.motions['initScooping1'][self.arm_name])
+        ## ut.get_keystroke('Hit a key to proceed next')
         
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])

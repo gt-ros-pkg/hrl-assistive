@@ -3,10 +3,10 @@ var ManipulationTask = function (ros) {
     var manTask = this;
     manTask.ros = ros;
     //Topic used in manTask
-    manTask.USER_INPUT_TOPIC = "user_input";
-    manTask.USER_FEEDBACK_TOPIC = "user_feedback";
-    manTask.EMERGENCY_TOPIC = "emergency";
-    manTask.STATUS_TOPIC = "status";
+    manTask.USER_INPUT_TOPIC = "manipulation_task/user_input";
+    manTask.USER_FEEDBACK_TOPIC = "manipulation_task/user_feedback";
+    manTask.EMERGENCY_TOPIC = "manipulation_task/emergency";
+    manTask.STATUS_TOPIC = "manipulation_task/status";
     //status_topic
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -98,6 +98,16 @@ var ManipulationTask = function (ros) {
         assistive_teleop.log('Failed run');
         console.log('Reporting the feedback message.');
     };
+
+
+    //part added.
+    manTask.feedbackSub = new manTask.ros.Topic({
+        name: 'manipulation_task/feedbackRequest',
+        messageType: 'std_msgs/String'});
+    manTask.feedbackSub.subscribe(function (msg) {
+        assistive_teleop.log(msg.data);
+    });
+
 
 };
 
