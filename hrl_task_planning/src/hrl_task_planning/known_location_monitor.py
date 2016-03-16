@@ -15,7 +15,7 @@ class ParameterMonitor(object):
         self.args = args
         self.params = ["/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg) for arg in self.args]
         self.state = []
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, latch=True)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=10, latch=True)
 
     def run(self, checkrate=4):
         rate = rospy.Rate(checkrate)

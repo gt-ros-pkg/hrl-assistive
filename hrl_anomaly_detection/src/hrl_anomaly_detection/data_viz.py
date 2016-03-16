@@ -72,6 +72,62 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
+def viz(X1, X2=None):
+    '''
+    dim x sample x length
+    '''
+    import itertools
+
+    n_cols = int(float(len(X1))/4.0)
+    n_rows = int(float(len(X1))/float(n_cols))        
+    colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+
+
+    fig = plt.figure(figsize=(n_rows, n_cols*2))
+
+    for i in xrange(len(X1)):
+
+        n_col = int(i/n_rows)
+        n_row = i%n_rows
+        ax    = fig.add_subplot(n_rows,n_cols,i+1)
+
+        x     = range(len(X1[i][0]))
+        means = np.mean(X1[i], axis=0)
+        stds  = np.std(X1[i], axis=0)
+
+        print np.shape(x), np.shape(means)
+
+        ax.plot(x, means, 'k-')
+        ax.fill_between(x, means-stds, means+stds, facecolor='blue', alpha=0.5)
+        ax.set_xlim([0,x[-1]])
+        ax.set_ylim([0,1])
+        plt.yticks([0,1.0])
+
+    if X2 is None:
+        plt.show()
+        return
+
+
+    for i in xrange(len(X2)):
+
+        n_col = int(i/n_rows)
+        n_row = i%n_rows
+        ax    = fig.add_subplot(n_rows,n_cols,i+1)
+        colors = itertools.cycle(['r', 'g', 'm', 'c'])
+
+        x     = range(len(X2[i][0]))
+        for j in xrange(len(X2[i])):
+            color = colors.next()
+            ax.plot(x, X2[i][j], c=color)
+            if j>3: break
+            
+        ax.set_xlim([0,x[-1]])
+        ax.set_ylim([0,1])
+        plt.yticks([0,1.0])
+
+    plt.show()
+    
+
 
 class data_viz:
     azimuth_max = 90.0

@@ -1,4 +1,4 @@
-from cloud_search import CloudSearch
+from cloud_seaorch import CloudSearch
 from sklearn.svm import SVC
 import time
 cloud = CloudSearch('/root/.starcluster/ipcluster/SecurityGroup:@sc-freecluster-us-east-1.json', '/root/.ssh/mykey.rsa', 'freecluster', 'sgeadmin')
@@ -7,3 +7,7 @@ cloud.run_with_local_data(model, {'C':[1.0, 0.1], 'gamma':[1.0, .1]}, 4898, 10, 
 print cloud.get_completed_results()
 time.sleep(20)
 print cloud.get_completed_results()
+
+os.system( get )
+
+cloud.stop()

@@ -17,7 +17,7 @@ class GripperSensorGraspMonitor(object):
         gsa_ns = '/' + self.side[0] + '_gripper_sensor_controller'
 
         self.grasping = None
-        self.grasp_state_pub = rospy.Publisher('/grasping/'+self.side+'_gripper', Bool, latch=True)
+        self.grasp_state_pub = rospy.Publisher('/grasping/'+self.side+'_gripper', Bool, queue_size=10, latch=True)
         self.fully_closed = False
         self.cannot_close = False
         self.both_contact = False
@@ -46,9 +46,9 @@ class GripperSensorGraspMonitor(object):
     def contact_state_cb(self, msg):
         left = msg.left_fingertip_pad_contact
         right = msg.right_fingertip_pad_contact
-        if (left and right):
+        if left and right:
             self.both_contact = True  # Contact on both pads likely means we're holding something, don't change for only 1 contact
-        elif (not left and not right):
+        elif not left and not right:
             self.both_contact = False  # No contacts, not grasping...
 
     def update_grasp_state(self):

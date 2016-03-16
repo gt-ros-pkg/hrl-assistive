@@ -4,7 +4,7 @@ RFH.GripperDisplay = function (options) {
     var gripper = options.gripper;
     var zeroOffset = options.zeroOffset || 0.0;
     var $div = $('#'+options.divId);
-    var $gripperSlider = $div.find('.gripper-slider');
+    var $gripperSlider = $div.find('.gripper-slider').css('zIndex', 10);
     var $grabButton = $div.find('.grab').button();
     var $releaseButton = $div.find('.release').button().hide();
     var $releaseLabel = $('label[for='+$releaseButton.prop('id')+']').hide();
@@ -58,8 +58,8 @@ RFH.GripperDisplay = function (options) {
                                                   "margin-left":"-"+(handleWidthPct/2).toString()+"%",
                                                   "background":"rgba(42,42,42,1)",
                                                   "border":"2px solid rgba(82,82,82,0.87)"});
-    $gripperSlider.find('a:first-of-type').css('border-right', 'none');
-    $gripperSlider.find('a:last-of-type').css('border-left', 'none');
+    $gripperSlider.find('span:first-of-type').css('border-right', 'none');
+    $gripperSlider.find('span:last-of-type').css('border-left', 'none');
     var min = $gripperSlider.slider("option", "min");
     var max = $gripperSlider.slider("option", "max");
     var range = max - min;
@@ -115,7 +115,7 @@ RFH.GripperDisplay = function (options) {
 
     // Update state display, add to gripper state CB list
     self.gripperStateDisplay = function (msg) {
-        if (!$gripperSlider.find('a').hasClass('ui-state-active')) {
+        if (!$gripperSlider.find('span').hasClass('ui-state-active')) {
             setSlidersFromAperture(msg.process_value-zeroOffset);
         }
     };

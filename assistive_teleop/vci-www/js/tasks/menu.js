@@ -110,10 +110,12 @@ RFH.initTaskMenu = function (divId) {
                                        head: RFH.pr2.head,
                                        base: RFH.pr2.base}));
 //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
-    RFH.taskMenu.addTask(new RFH.PublishLocation({ros:RFH.ros}));
+    RFH.taskMenu.addTask(new RFH.PublishLocation({ros:RFH.ros,
+                                                  camera: RFH.mjpeg.cameraModel}));
     RFH.taskMenu.addTask(new RFH.ParamLocation({ros:RFH.ros,
                                                 name:'paramLocationTask',
-                                                paramName:'location'}));
+                                                paramName:'location',
+                                                camera: RFH.mjpeg.cameraModel}));
     RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
                                                arm: RFH.pr2.r_arm_cart,
                                                gripper: RFH.pr2.r_gripper}));

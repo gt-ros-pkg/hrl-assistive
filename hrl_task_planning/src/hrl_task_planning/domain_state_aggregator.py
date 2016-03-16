@@ -20,7 +20,7 @@ class DomainStateAggregator(object):
             self.state = pddl.State(map(pddl.Predicate.from_string, self.constant_predicates))
         else:
             self.state = pddl.State()
-        self.state_pub = rospy.Publisher("/pddl_tasks/%s/state" % self.domain, PDDLState, latch=True)
+        self.state_pub = rospy.Publisher("/pddl_tasks/%s/state" % self.domain, PDDLState, queue_size=10, latch=True)
         self.update_sub = rospy.Subscriber("/pddl_tasks/%s/state_updates" % self.domain, PDDLState, self.update_cb)
         rospy.loginfo("[%s] Aggregator for %s domain is ready.", rospy.get_name(), self.domain)
         rospy.Timer(rospy.Duration(1.5), self.publish_state, oneshot=True)  # Send initial state to latched topic

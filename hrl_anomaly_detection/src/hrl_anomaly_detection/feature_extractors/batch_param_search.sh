@@ -1,14 +1,15 @@
 #!/bin/bash -x
 
 
-lr_list=(1e-3 1e-4 1e-5)
-lrdecay_list=(1e-5)
-momentum_list=(1e-6)
-dampening_list=(1e-6)
-lambda_list=(1e-6)
+lr_list=(1e-6)
+lrdecay_list=(1e-6)
+momentum_list=(1e-7)
+dampening_list=(1e-7)
+lambda_list=(1e-6 1e-7)
 timewindow_list=(4)
 batch_list=(1)
-layersize_list=('[256,128]')
+layersize_list=('[256,128,16]' '[256,128,8]')
+maxiter=10000
 
 for n in "${layersize_list[@]}"
 do
@@ -30,10 +31,19 @@ do
                             for m in "${batch_list[@]}"
                             do
 
-                                FILENAME=${FOLDER_NAME}/E_${i}_${ii}_M_${j}_${jj}_L_${k}_TW_${l}_b_${m}.log
+                                PARAMS=E_${i}_${ii}_M_${j}_${jj}_L_${k}_TW_${l}_b_${m}
+                                FILENAME=${FOLDER_NAME}/${PARAMS}.log
 
-                                THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python test.py --train --ls ${n} --lr ${i} --lrd ${ii} --m ${j} --d ${jj} --lambda ${k} --tw ${l} --batch_size ${m} --mi 3000 >> $FILENAME
+                                IN=$(THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python train.py --train --ls ${n} --lr ${i} --lrd ${ii} --m ${j} --d ${jj} --lambda ${k} --tw ${l} --batch_size ${m} --mi $maxiter 2>&1 > $FILENAME )
                                 #python test.py --train --ls ${n} --lr ${i} --m ${j} --lambda ${k} --tw ${l} --batch_size ${m} --mi 300 >> $FILENAME
+
+                                set -- "$IN" 
+                                IFS=">"; declare -a Array=($*) 
+                                echo "${Array[1]}" 
+
+
+                                NEWFILENAME=${FOLDER_NAME}/${Array[1]}_${PARAMS}.log
+                                mv $FILENAME $NEWFILENAME
 
                             done
                         done

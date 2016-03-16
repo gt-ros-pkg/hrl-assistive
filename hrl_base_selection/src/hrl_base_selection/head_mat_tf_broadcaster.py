@@ -5,6 +5,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import cPickle as pkl
+import hrl_lib.circular_buffer as cb
 import tf
 from scipy import ndimage
 from skimage.feature import blob_doh
@@ -20,6 +21,7 @@ LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
+INTER_SENSOR_DISTANCE = 0.0286
 
 class HeadDetector:
     '''Detects the head of a person sleeping on the autobed'''
@@ -27,16 +29,22 @@ class HeadDetector:
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
+        self.head_center_2d = [0., 0., 0.]
+        self.zoom_factor = 2
+        self.hist_size = 30
+        self.head_pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
         while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        #while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
-        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, 0, 1], [-1, 0, 0], [0, 1, 0]])
-        self.head_rest_B_mat[0:3, 3] = np.array([0.735, 0, -0.445])
+        self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+        self.head_rest_B_mat[0:3, 3] = np.array([0.735-0.2286, 0, -MAT_HALF_WIDTH])
+        
         rospy.sleep(1)
         self.run()
 
@@ -45,7 +53,7 @@ class HeadDetector:
         the Vista Medical Pressure Mat and sends it out.'''
         p_array = data.data
         p_map_raw = np.reshape(p_array, self.mat_size)
-        p_map_hres=ndimage.zoom(p_map_raw, 2, order=1)
+        p_map_hres=ndimage.zoom(p_map_raw, self.zoom_factor, order=1)
         self.pressure_map=p_map_hres
         self.mat_sampled = True
 
@@ -56,39 +64,65 @@ class HeadDetector:
         #plt.show()
         #Select top 20 pixels of pressure map
         p_map = self.pressure_map[:20,:]
-        blobs = blob_doh(p_map,
-                         min_sigma=1, 
-                         max_sigma=4, 
-                         threshold=30,
-                         overlap=0.1) 
+        try:
+            blobs = blob_doh(p_map,
+                             min_sigma=1, 
+                             max_sigma=4, 
+                             threshold=30,
+                             overlap=0.1) 
+        except:
+            blobs = np.copy(self.head_center_2d)
+            print "Head Not On Mat!"
         if blobs.any():
-            head_center_2d = blobs[0, :]
-        y, x, r = head_center
+            self.head_center_2d = blobs
+        #print "In discrete coordinates"
+        #print self.head_center_2d[0, :]
+        taxels_to_meters = np.array([MAT_HEIGHT/(NUMOFTAXELS_X*self.zoom_factor), 
+                                     MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
+                                     1])
+
+
+        #No Filters
+        #y, x, r = taxels_to_meters*self.head_center_2d[0, :]
+
+        #Median Filter
+        self.head_pos_buf.append(taxels_to_meters*self.head_center_2d[0, :])
+        positions = self.head_pos_buf.get_array()
+        pos = positions[positions[:, 1].argsort()]
+        y, x, r = pos[pos.shape[0]/2]
+
         mat_B_head = np.eye(4)
-        mat_B_head[0:3, 3] = np.array([x, y, 0.05])
-        head_rest_B_head = self.head_rest_B_mat*mat_B_head
+        mat_B_head[0:3, 3] = np.array([x, y, -0.05])
+        #mat_B_head[0:3, 3] = np.array([0,0,0])
+        #print "In Mat Coordinates:"
+        #print x, y
+        head_rest_B_head = np.matrix(self.head_rest_B_mat)*np.matrix(mat_B_head)
+        #print "In head_rest_link coordinates:"
+        #print head_rest_B_head[0:3, 3]
+        
         return head_rest_B_head
 
     def run(self):
         '''Runs pose estimation''' 
-        rate = rospy.Rate(5.0)
+        rate = rospy.Rate(50.0)
         while not rospy.is_shutdown():
             if self.mat_sampled:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
-                # self.tf_listener.waitForTransform('map', 'autobed/head_rest_link',\
-                #                                    rospy.Time(0), rospy.Duration(1))
                 (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
                                                                       'autobed/head_rest_link', rospy.Time(0))
+                #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
+                #                                                      'torso_lift_link', rospy.Time(0))
                 map_B_head_rest = createBMatrix(newtrans, newrot)
                 map_B_head = map_B_head_rest*head_rest_B_head
                 (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
                 try:
                     self.tf_broadcaster.sendTransform(out_trans, 
                                                       out_rot,
-                                                      rospy.Time(0),
+                                                      rospy.Time.now(),
                                                       'user_head_link',
                                                       'map')
+                                                      #'torso_lift_link')
                     rate.sleep()
                 except:
                     print 'Head TF broadcaster crashed trying to broadcast!'

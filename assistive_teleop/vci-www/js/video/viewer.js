@@ -9,8 +9,12 @@ var initViewer = function (divID) {
         height : height,
         antialias : true
     });
+
     RFH.viewer.renderer.context.canvas.id = "viewer-canvas";
+    RFH.viewer.renderer.setClearColor(0x000000,0); // Set transparent background
+    RFH.viewer.camera = new THREE.PerspectiveCamera(53.8, 1.5632, 0.2, 30); // Kinect2 Params
     RFH.viewer.camera.projectionMatrix.elements = [1.1129, 0,0,0,0,2.009,0,0,0,0,-1.001, -1, 0,0,-0.0400266,0];
+    RFH.viewer.camera.up = new THREE.Vector3(0,0,1);
 
     var updateCamera = function(transform) {
         RFH.viewer.camera.position.set(transform.translation.x,

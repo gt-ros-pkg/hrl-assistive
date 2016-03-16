@@ -26,7 +26,7 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table"; // "wall", "free"
     self.active = false;
     self.$viewer = $('#viewer-canvas').css('zIndex',1);
-   var goalMarkerGeom = new THREE.SphereGeometry(0.01,10,10);
+    var goalMarkerGeom = new THREE.SphereGeometry(0.01,10,10);
     var goalMarkerMat = new THREE.MeshBasicMaterial({color: 0xff8800});
     self.goalMarker = new THREE.Mesh(goalMarkerGeom, goalMarkerMat);
     self.goalMarker.transparent = true;
@@ -35,7 +35,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.pixel23d = new RFH.Pixel23DClient({
         ros: ros,
-        cameraInfoTopic: '/head_mount_kinect/rgb_lowres/camera_info',
+        cameraInfoTopic: self.camera.infoTopic,
         serviceName: '/pixel_2_3d'
     });
 
