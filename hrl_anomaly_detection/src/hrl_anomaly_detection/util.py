@@ -362,7 +362,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             # extract local feature
             data_set = [vision_time, vision_pos, vision_quat]
-            [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            ## [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            local_vision_pos = vision_pos
+            local_vision_quat = vision_quat
 
             raw_data_dict['visionArtagTimesList'].append(vision_time)
             raw_data_dict['visionArtagPosList'].append(local_vision_pos)

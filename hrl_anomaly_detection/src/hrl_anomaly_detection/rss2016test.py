@@ -1567,7 +1567,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -1576,7 +1576,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_failure_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -2035,69 +2035,74 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    
-    subject = 'gatsbii'
-    task    = 'scooping'    
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list = ['unimodal_audioPower',\
-                    'unimodal_kinVel',\
-                    'unimodal_ftForce',\
-                    ##'unimodal_visionChange',\
-                    'unimodal_ppsForce',\
-                    ##'unimodal_fabricForce',\
-                    'crossmodal_targetEEDist', \
-                    'crossmodal_targetEEAng']
-    rf_center     = 'kinEEPos'
-    modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-    nState       = 10
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    if False:
+        subjects = ['gatsbii']
+        task     = 'scooping'    
+        ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        feature_list = ['unimodal_audioPower',\
+                        'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        ##'unimodal_visionChange',\
+                        'unimodal_ppsForce',\
+                        ##'unimodal_fabricForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        rf_center     = 'kinEEPos'
+        modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+        nState       = 10
 
-    #---------------------------------------------------------------------------           
-    ## subject = 'gatsbii'
-    ## task    = 'feeding' 
-    ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-    ##                 'crossmodal_artagEEAng']
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+
+    #---------------------------------------------------------------------------
+    elif True:
+        
+        subjects = ['wonyoung']
+        task     = 'feeding' 
+        feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+                        'crossmodal_artagEEAng']
+        modality_list   = ['kinematics', 'audioWrist', 'ft', 'vision_artag']
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     #---------------------------------------------------------------------------           
     ## task    = 'touching'
     
     #---------------------------------------------------------------------------           
-    
-    subject = 'wonyoung'
-    task    = 'feeding'    
-    ## subject = 'gatsbii'
-    ## task    = 'pushing'    
-    ## task    = 'pushing_microwave_black'    
-    ## task    = 'pushing_microwave_white'    
-    ## task    = 'pushing_lab_cabinet'    
-    ## feature_list = ['unimodal_audioPower',\
-    ##                 'unimodal_kinVel',\
-    ##                 'unimodal_ftForce',\
-    ##                 ##'unimodal_visionChange',\
-    ##                 'unimodal_ppsForce',\
-    ##                 ##'unimodal_fabricForce',\
-    ##                 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list  = ['unimodal_ftForce',
-                     'crossmodal_targetEEDist',
-                     'crossmodal_targetEEAng']#, \
-                    # 'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
-    rf_center     = 'kinEEPos'
-    #modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
-    modality_list   = ['kinematics', 'audio', 'ft']
+    else:
+        subjects = ['gatsbii']
+        task     = 'pushing'    
+        ## task    = 'pushing_microwave_black'    
+        ## task    = 'pushing_microwave_white'    
+        ## task    = 'pushing_lab_cabinet'    
+        ## feature_list = ['unimodal_audioPower',\
+        ##                 'unimodal_kinVel',\
+        ##                 'unimodal_ftForce',\
+        ##                 ##'unimodal_visionChange',\
+        ##                 'unimodal_ppsForce',\
+        ##                 ##'unimodal_fabricForce',\
+        ##                 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        feature_list  = ['unimodal_ftForce',\
+                         'crossmodal_targetEEDist',\
+                         'crossmodal_targetEEAng',\
+                         'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
+        #modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
+        modality_list   = ['kinematics', 'audio', 'ft']
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+        
+    rf_center     = 'kinEEPos'        
     nState        = 10
     scale         = 1.0
     # Dectection TEST 
-    local_range    = 1.0    
+    local_range    = 10.0    
     downSampleSize = 200
 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
-    ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': downSampleSize, 'nNormalFold':3, 'nAbnormalFold':3,\
@@ -2123,7 +2128,7 @@ if __name__ == '__main__':
         successData = True
         failureData = False
         
-        data_plot([subject], task, raw_data_path, save_data_path,\
+        data_plot(subjects, task, raw_data_path, save_data_path,\
                   downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
@@ -2137,7 +2142,7 @@ if __name__ == '__main__':
         rf_center       = 'kinEEPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
 
-        data_selection([subject], task, raw_data_path, save_data_path,\
+        data_selection(subjects, task, raw_data_path, save_data_path,\
                        downSampleSize=downSampleSize, \
                        local_range=local_range, rf_center=rf_center, \
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
@@ -2147,7 +2152,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
 
-        dm.getDataSet([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        dm.getDataSet(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                       downSampleSize=downSampleSize, scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
                       save_pdf=opt.bSavePdf, solid_color=True,\
@@ -2160,7 +2165,7 @@ if __name__ == '__main__':
         cluster_type = 'time'
         cluster_type = 'state'
 
-        likelihoodOfSequences([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                               downSampleSize=downSampleSize, \
                               feature_list=feature_list, scale=scale, \
                               nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2176,7 +2181,7 @@ if __name__ == '__main__':
         cluster_type    = 'state'
         classifier_type = 'new'
         
-        stateLikelihoodPlot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        stateLikelihoodPlot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                             downSampleSize=downSampleSize, \
                             feature_list=feature_list, \
                             nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2195,7 +2200,7 @@ if __name__ == '__main__':
                         'ft', \
                         ]       
 
-        aeDataExtraction([subject], task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
+        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
 
     elif opt.bEvaluation:
@@ -2210,7 +2215,7 @@ if __name__ == '__main__':
         cluster_type    = 'none'
         classifier_type = 'cssvm'
         
-        evaluation([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        evaluation(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                    downSampleSize=downSampleSize, \
                    feature_list=feature_list, \
                    nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2223,7 +2228,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         
-        evaluation_all([subject], task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+        evaluation_all(subjects, task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose)
 
 
@@ -2249,7 +2254,7 @@ if __name__ == '__main__':
         cluster_type = 'none'
         classifier_type = 'new'
         
-        trainClassifierSVM([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        trainClassifierSVM(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                            downSampleSize=downSampleSize, \
                            feature_list=feature_list, \
                            nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2301,7 +2306,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
                         
-        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        pca_plot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                   downSampleSize=downSampleSize, \
                   success_viz=success_viz, failure_viz=failure_viz,\
                   save_pdf=opt.bSavePdf,
