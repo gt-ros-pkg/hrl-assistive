@@ -308,6 +308,9 @@ class BaseSelectionManager(object):
             if configuration_goals[1] > 1.:
                 configuration_goals[1] += 14
                 configuration_goals[0] += 0.14
+            elif configuration_goals[1] < 1.:
+                configuration_goals[1] += 2
+                configuration_goals[0] += 0.02
             autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9+14, self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
             print 'The autobed should be set to a height of: ', configuration_goals[1]+7

@@ -101,6 +101,8 @@ class BaseSelector(object):
         self.scores_dict['autobed', 'scratching_chest'] = None
         self.scores_dict['autobed', 'scratching_thigh_left'] = None
         self.scores_dict['autobed', 'scratching_thigh_right'] = None
+        self.scores_dict['autobed', 'scratching_knee_left'] = None
+        self.scores_dict['autobed', 'face_wiping'] = None
         self.scores_dict['autobed', 'scratching_forearm_left'] = None
         self.scores_dict['autobed', 'scratching_forearm_right'] = None
         self.scores_dict['autobed', 'scratching_upper_arm_left'] = None
@@ -125,6 +127,13 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model, 0)
                 self.scores_dict['autobed', 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model, 0)
                 self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
+        elif load == 'paper':
+            if model == 'autobed':
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'face_wiping'] = self.load_task('face_wiping', model, 0)
+            else:
+                print 'Paper work is only with Autobed. Error!'
+                return
         else:
             self.scores_dict[model, load] = self.load_task(load, model, 0)
 
@@ -455,7 +464,7 @@ class BaseSelector(object):
         alpha = 0.0001  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .0007  # Weight on distance to move to get to that goal location
+        zeta = .0007  #.0007  # Weight on distance to move to get to that goal location
 
         # For the optimization, we currently only care about x-y distance moved by the base and rotation of the base
         # This should be updated to have a normalized range of values and to saturate at some distance. If the robot
@@ -474,7 +483,7 @@ class BaseSelector(object):
                 des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
                 angle_change = m.acos(np.dot(current_x, des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
                 dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
-                dist_score += angle_change
+                dist_score += 1000*angle_change
                 # I should eventually use the following line instead, because it normalizes to 0-1 range. This way the
                 # weights can be compared better.
                 # dist_score += angle_change/(2*m.pi)
