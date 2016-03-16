@@ -124,6 +124,13 @@ class logger:
         Record data and publish raw data
         '''        
         self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+
+    def setTask(self, task):
+        self.task = task
+
+        if self.vision_artag is not None:
+            self.vision_artag  = artag_vision(self.task, False, viz=False) 
+
         
     def log_start(self):
         self.init_time = rospy.get_rostime().to_sec()

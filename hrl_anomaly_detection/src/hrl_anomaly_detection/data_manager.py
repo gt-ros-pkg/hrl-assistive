@@ -290,6 +290,7 @@ def getAEdataSet(idx, successData, failureData, \
                  layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
                  max_iteration=20000, min_loss=1.0, cuda=False, \
+                 filtering=True, filteringDim=4,\
                  verbose=False, renew=False ):
 
     if os.path.isfile(AE_proc_data) and not renew:
@@ -350,6 +351,15 @@ def getAEdataSet(idx, successData, failureData, \
     d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, new_abnormalTrainData, nSingleData), 0,1) 
     d['normTestData']    = np.swapaxes(predictFeatures(ml, new_normalTestData, nSingleData), 0,1)
     d['abnormTestData']  = np.swapaxes(predictFeatures(ml, new_abnormalTestData, nSingleData), 0,1)
+
+    if filtering:
+        pooling_param_dict  = {'dim': filteringDim} # only for AE        
+        d['normTrainDataFiltered'], pooling_param_dict = variancePooling(d['normTrainData'], \
+                                                                         pooling_param_dict)
+        d['abnormTrainDataFiltered'],_  = variancePooling(d['abnormTrainData'], pooling_param_dict)
+        d['normTestDataFiltered'],_     = variancePooling(d['normTestData'], pooling_param_dict)
+        d['abnormTestDataFiltered'],_   = variancePooling(d['abnormTestData'], pooling_param_dict)
+        
     ut.save_pickle(d, AE_proc_data)
 
     return d
@@ -361,8 +371,8 @@ def variancePooling(X, param_dict):
     TODO: can we select final dimension?
     '''
     dim         = param_dict['dim']
-    min_all_std = param_dict['min_all_std']
-    max_avg_std = param_dict['max_avg_std']
+    ## min_all_std = param_dict['min_all_std']
+    ## max_avg_std = param_dict['max_avg_std']
 
     if 'dim_idx' not in param_dict.keys():
         dim_idx = []

@@ -287,7 +287,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
     max_logp = 100.0
 
     # normal test data
-    _, l_logp_1, l_post_1 = ml.getPostLoglikelihoods(normalTestData)
+    _, l_logp_1, l_post_1 = ml.getLoglikelihoods(normalTestData, posterior=True)
 
     l_idx_1 = []
     for post in l_post_1:
@@ -298,7 +298,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
 
     
     # abnormal test data
-    _, l_logp_2, l_post_2 = ml.getPostLoglikelihoods(abnormalTestData)
+    _, l_logp_2, l_post_2 = ml.getLoglikelihoods(abnormalTestData, posterior=True)
     
     l_idx_2 = []
     for post in l_post_2:
@@ -335,50 +335,53 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
                     
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        d = ut.load_pickle(crossVal_pkl)
+    else:
+        successData, failureData, aug_successData, aug_failureData, _ \
+          = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
+                          data_dict['rf_center'], data_dict['local_range'],\
+                          downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                          ae_data=AE_dict['switch'], data_ext=False, \
+                          nAugment=data_dict['nAugment'], feature_list=feature_list, \
+                          data_renew=data_renew)
+        kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
+                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-    successData, failureData, aug_successData, aug_failureData, _ \
-      = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
-                      data_dict['rf_center'], data_dict['local_range'],\
-                      downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                      ae_data=AE_dict['switch'], data_ext=False, \
-                      nAugment=data_dict['nAugment'], feature_list=feature_list, \
-                      data_renew=data_renew)
-    kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
-                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-
-    d = {}
-    d['successData'] = successData
-    d['failureData'] = failureData
-    d['aug_successData'] = aug_successData
-    d['aug_failureData'] = aug_failureData
-    d['kFoldList']   = kFold_list                                             
-    ut.save_pickle(d, crossVal_pkl)
+        d = {}
+        d['successData'] = successData
+        d['failureData'] = failureData
+        d['aug_successData'] = aug_successData
+        d['aug_failureData'] = aug_failureData
+        d['kFoldList']   = kFold_list                                             
+        ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+      in enumerate( d['kFoldList'] ):
 
-        if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+        if verbose: print "Start "+str(idx)+"/"+str(len( d['kFoldList'] ))+"th iteration"
 
         AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
 
         # From dim x sample x length
         # To reduced_dim x sample
-        d = dm.getAEdataSet(idx, aug_successData, aug_failureData, \
-                            normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
-                            AE_dict['time_window'], \
-                            AE_proc_data, \
-                            # data param
-                            processed_data_path, \
-                            # AE param
-                            layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
-                            learning_rate_decay=AE_dict['learning_rate_decay'], \
-                            momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
-                            lambda_reg=AE_dict['lambda_reg'], \
-                            max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
-                            cuda=AE_dict['cuda'], \
-                            verbose=verbose, renew=True )
-
+        dm.getAEdataSet(idx, d['aug_successData'], d['aug_failureData'], \
+                        normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
+                        AE_dict['time_window'], \
+                        AE_proc_data, \
+                        # data param
+                        processed_data_path, \
+                        # AE param
+                        layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
+                        learning_rate_decay=AE_dict['learning_rate_decay'], \
+                        momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
+                        lambda_reg=AE_dict['lambda_reg'], \
+                        max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+                        cuda=AE_dict['cuda'], \
+                        filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                        verbose=verbose, renew=True )
+                        
         ## import data_viz as dv
         ## dv.viz(normalTrainData)
         ## continue
@@ -502,22 +505,19 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                     momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
                                     lambda_reg=AE_dict['lambda_reg'], \
                                     max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+                                    filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
                                     cuda=False, verbose=False)
 
                 if AE_dict['filter']:
                     # NOTE: pooling dimension should vary on each auto encoder.
                     # Filtering using variances
-                    pooling_param_dict  = {'min_all_std': 0.2, 'max_avg_std': 0.2, 'dim': 4} # only for AE
-                    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
-                                                                             pooling_param_dict)
-                    abnormalTrainData,_        = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-                    normalTestData,_           = dm.variancePooling(d['normTestData'], pooling_param_dict)
-                    abnormalTestData,_         = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
-
+                    normalTrainData   = d['normTrainDataFiltered']
+                    abnormalTrainData = d['abnormTrainDataFiltered']
+                    normalTestData    = d['normTestDataFiltered']
+                    abnormalTestData  = d['abnormTestDataFiltered']
                     ## import data_viz as dv
                     ## dv.viz(normalTrainData)
-                    ## continue
-                    
+                    ## continue                   
                 else:
                     normalTrainData   = d['normTrainData']
                     abnormalTrainData = d['abnormTrainData']
@@ -656,7 +656,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys():# or method=='svm':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
+        if method not in ROC_data.keys(): # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -1318,9 +1318,10 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
         ll_logp = []
         ll_label = []
 
-        # get hmm induced features
+        # get hmm induced features: 1 x dim x length
         testData = [ testDataX[j][idx] for j in xrange(nEmissionDim) ]
-        l_logp, l_post = ml.loglikelihoods(testData, bPosterior=True, startIdx=startIdx)
+        ls_logp, ls_post = ml.loglikelihoods(testData, bPosterior=True, startIdx=startIdx)
+        l_logp, l_post   = l_logp[0], l_post[0]
         
         # set feature vector
         for j in xrange(len(l_logp)):
@@ -1566,7 +1567,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -1575,7 +1576,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_failure_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -2034,65 +2035,74 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    
-    subject = 'gatsbii'
-    task    = 'scooping'    
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list = ['unimodal_audioPower',\
-                    'unimodal_kinVel',\
-                    'unimodal_ftForce',\
-                    ##'unimodal_visionChange',\
-                    'unimodal_ppsForce',\
-                    ##'unimodal_fabricForce',\
-                    'crossmodal_targetEEDist', \
-                    'crossmodal_targetEEAng']
-    rf_center     = 'kinEEPos'
-    modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-    nState       = 10
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    if False:
+        subjects = ['gatsbii']
+        task     = 'scooping'    
+        ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        feature_list = ['unimodal_audioPower',\
+                        'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        ##'unimodal_visionChange',\
+                        'unimodal_ppsForce',\
+                        ##'unimodal_fabricForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        rf_center     = 'kinEEPos'
+        modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+        nState       = 10
 
-    #---------------------------------------------------------------------------           
-    ## subject = 'gatsbii'
-    ## task    = 'feeding' 
-    ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-    ##                 'crossmodal_artagEEAng']
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+
+    #---------------------------------------------------------------------------
+    elif True:
+        
+        subjects = ['wonyoung']
+        task     = 'feeding' 
+        feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+                        'crossmodal_artagEEAng']
+        modality_list   = ['kinematics', 'audioWrist', 'ft', 'vision_artag']
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     #---------------------------------------------------------------------------           
     ## task    = 'touching'
     
     #---------------------------------------------------------------------------           
-    
-    subject = 'gatsbii'
-    task    = 'pushing'    
-    ## task    = 'pushing_microwave_black'    
-    ## task    = 'pushing_microwave_white'    
-    ## task    = 'pushing_lab_cabinet'    
-    ## feature_list = ['unimodal_audioPower',\
-    ##                 'unimodal_kinVel',\
-    ##                 'unimodal_ftForce',\
-    ##                 ##'unimodal_visionChange',\
-    ##                 'unimodal_ppsForce',\
-    ##                 ##'unimodal_fabricForce',\
-    ##                 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list  = ['unimodal_ftForce']#, \
-                    # 'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
-    rf_center     = 'kinEEPos'
-    modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
-    ## modality_list   = ['kinematics', 'audio', 'ft']
+    else:
+        subjects = ['gatsbii']
+        task     = 'pushing'    
+        ## task    = 'pushing_microwave_black'    
+        ## task    = 'pushing_microwave_white'    
+        ## task    = 'pushing_lab_cabinet'    
+        ## feature_list = ['unimodal_audioPower',\
+        ##                 'unimodal_kinVel',\
+        ##                 'unimodal_ftForce',\
+        ##                 ##'unimodal_visionChange',\
+        ##                 'unimodal_ppsForce',\
+        ##                 ##'unimodal_fabricForce',\
+        ##                 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        feature_list  = ['unimodal_ftForce',\
+                         'crossmodal_targetEEDist',\
+                         'crossmodal_targetEEAng',\
+                         'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
+        #modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
+        modality_list   = ['kinematics', 'audio', 'ft']
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+        
+    rf_center     = 'kinEEPos'        
     nState        = 10
     scale         = 1.0
     # Dectection TEST 
-    local_range    = 1.0    
+    local_range    = 10.0    
     downSampleSize = 200
 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
-    ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': downSampleSize, 'nNormalFold':3, 'nAbnormalFold':3,\
@@ -2100,8 +2110,8 @@ if __name__ == '__main__':
     AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
                       'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True}
-    HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 1.0, 'scale': 10.0}
+                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+    HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 4.0, 'scale': 7.0}
     SVM_param_dict = {'renew': False,}
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
@@ -2116,9 +2126,9 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         successData = True
-        failureData = True
+        failureData = False
         
-        data_plot([subject], task, raw_data_path, save_data_path,\
+        data_plot(subjects, task, raw_data_path, save_data_path,\
                   downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
@@ -2132,7 +2142,7 @@ if __name__ == '__main__':
         rf_center       = 'kinEEPos'
         modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
 
-        data_selection([subject], task, raw_data_path, save_data_path,\
+        data_selection(subjects, task, raw_data_path, save_data_path,\
                        downSampleSize=downSampleSize, \
                        local_range=local_range, rf_center=rf_center, \
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
@@ -2142,7 +2152,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
 
-        dm.getDataSet([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        dm.getDataSet(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                       downSampleSize=downSampleSize, scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
                       save_pdf=opt.bSavePdf, solid_color=True,\
@@ -2155,7 +2165,7 @@ if __name__ == '__main__':
         cluster_type = 'time'
         cluster_type = 'state'
 
-        likelihoodOfSequences([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                               downSampleSize=downSampleSize, \
                               feature_list=feature_list, scale=scale, \
                               nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2171,7 +2181,7 @@ if __name__ == '__main__':
         cluster_type    = 'state'
         classifier_type = 'new'
         
-        stateLikelihoodPlot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        stateLikelihoodPlot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                             downSampleSize=downSampleSize, \
                             feature_list=feature_list, \
                             nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2190,7 +2200,7 @@ if __name__ == '__main__':
                         'ft', \
                         ]       
 
-        aeDataExtraction([subject], task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
+        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
 
     elif opt.bEvaluation:
@@ -2205,7 +2215,7 @@ if __name__ == '__main__':
         cluster_type    = 'none'
         classifier_type = 'cssvm'
         
-        evaluation([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        evaluation(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                    downSampleSize=downSampleSize, \
                    feature_list=feature_list, \
                    nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2218,7 +2228,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         
-        evaluation_all([subject], task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+        evaluation_all(subjects, task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose)
 
 
@@ -2244,7 +2254,7 @@ if __name__ == '__main__':
         cluster_type = 'none'
         classifier_type = 'new'
         
-        trainClassifierSVM([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        trainClassifierSVM(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                            downSampleSize=downSampleSize, \
                            feature_list=feature_list, \
                            nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2296,7 +2306,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
                         
-        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        pca_plot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                   downSampleSize=downSampleSize, \
                   success_viz=success_viz, failure_viz=failure_viz,\
                   save_pdf=opt.bSavePdf,

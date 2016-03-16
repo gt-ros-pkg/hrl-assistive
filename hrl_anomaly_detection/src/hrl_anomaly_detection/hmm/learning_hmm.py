@@ -219,6 +219,10 @@ class learning_hmm(learning_base):
 
 
     def loglikelihood(self, X):
+        '''        
+        shape?
+        return: the likelihood of a sequence
+        '''
         X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
@@ -232,70 +236,107 @@ class learning_hmm(learning_base):
         return p
 
 
-    def loglikelihoods(self, X, bPosterior=False, startIdx=1):
+    def loglikelihoods(self, X, bPosterior=False, startIdx=1, n_jobs=1):
+        '''
+        X: dimension x sample x length
+        return: the likelihoods over time (in single data)
+        '''
+
+        # sample x some length
         X_test = util.convert_sequence(X, emission=False)
-        X_test = np.squeeze(X_test)
+        ## X_test = np.squeeze(X_test)
 
-        l_likelihood = []
-        l_posterior   = []        
-        
-        for i in xrange(startIdx, len(X[0])):
-            final_ts_obj = ghmm.EmissionSequence(self.F, X_test[:i*self.nEmissionDim].tolist())
 
-            try:
-                logp = self.ml.loglikelihood(final_ts_obj)
-                if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
-            except:
-                print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                ## return False, False # anomaly
-                continue
+        ll_likelihoods = []
+        ll_posteriors  = []        
 
-            l_likelihood.append( logp )
-            if bPosterior: l_posterior.append( post[i-1] )
+        for i in xrange(len(X)):
+            l_likelihood = []
+            l_posterior  = []        
+
+            for j in xrange(startIdx, len(X[i])):
+                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[i, :j*self.nEmissionDim].tolist())
+
+                try:
+                    logp = self.ml.loglikelihood(final_ts_obj)
+                    if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
+                except:
+                    print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                    ## return False, False # anomaly
+                    continue
+
+                l_likelihood.append( logp )
+                if bPosterior: l_posterior.append( post[j-1] )
+
+            ll_likelihoods.append(l_likelihood)
+            if bPosterior: ll_posteriors.append(l_posterior)
 
         if bPosterior:
-            return l_likelihood, l_posterior
+            return ll_likelihoods, ll_posteriors
         else:
-            return l_likelihood
+            return ll_likelihoods
             
             
-    def getPostLoglikelihoods(self, xData):
-
+    def getLoglikelihoods(self, xData, posterior=False, n_jobs=-1):
+        '''
+        shape?
+        '''
         X = [np.array(data) for data in xData]
         X_test = util.convert_sequence(X) # Training input
         X_test = X_test.tolist()
 
-        n, m = np.shape(X[0])
+        n, _ = np.shape(X[0])
 
         # Estimate loglikelihoods and corresponding posteriors
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
+        r = Parallel(n_jobs=n_jobs)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
                                                            self.nEmissionDim, self.nState,
-                                                           bPosterior=True, converted_X=True)
+                                                           bPosterior=posterior, converted_X=True)
                                                            for i in xrange(n))
-        _, ll_idx, ll_logp, ll_post = zip(*r)
+        if posterior:
+            _, ll_idx, ll_logp, ll_post = zip(*r)
+            return ll_idx, ll_logp, ll_post            
+        else:
+            _, ll_idx, ll_logp = zip(*r)
+            return ll_idx, ll_logp
+                
 
-        l_idx  = []
-        l_logp = []
-        l_post = []
-        for i in xrange(len(ll_logp)):
-            l_idx  += ll_idx[i]
-            l_logp += ll_logp[i]
-            l_post += ll_post[i]
+        ## ll_idx  = []
+        ## ll_logp = []
+        ## ll_post = []
+        ## for i in xrange(len(ll_logp)):
+        ##     l_idx.append( ll_idx[i] )
+        ##     l_logp.append( ll_logp[i] )
+        ##     if posterior: ll_post.append( ll_post[i] )
 
-        return l_idx, l_logp, l_post
 
     
-    def score(self, X, y=None):
+    def score(self, X, y=None, n_jobs=1):
         '''
+        X: dim x sample x length
+        
         If y exists, y can contains two kinds of labels, [-1, 1]
         If an input is close to training data, its label should be 1.
         If not, its label should be -1.
         '''
-
-        if y is None:
-            return np.sum(self.loglikelihoods(X))
+        if n_jobs==1:
+            ll_logp = self.loglikelihoods(X) 
         else:
-            return np.inner(self.loglikelihoods(X), y)
+            # sample,            
+            _, ll_logp = self.getLoglikelihoods(X, n_jobs=n_jobs)
+
+        v = 0.0
+        if y is not None:
+            for i, l_logp in enumerate(ll_logp):                
+                v += np.sum( np.array(l_logp) * y[i] )
+        else:
+            v += np.sum(ll_logp)
+
+        if self.verbose: print np.shape(ll_logp), " : score = ", v 
+
+        return v
+                
+            
+
 
     
 ####################################################################
