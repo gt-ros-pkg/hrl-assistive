@@ -819,12 +819,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                         if est_y > 0.0:
                             delay_idx = ll_classifier_test_idx[ii][jj]
-                            print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]                 
+                            print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                             break        
-
-                    print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_X[ii]), ii
-                    print np.shape(ll_classifier_test_Y), np.shape(ll_classifier_test_Y[ii]), ii
-                    print "--------------------"
                     
                     if ll_classifier_test_Y[ii][0] > 0.0:
                         if est_y > 0.0:
@@ -2132,7 +2128,7 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 10.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 7.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
