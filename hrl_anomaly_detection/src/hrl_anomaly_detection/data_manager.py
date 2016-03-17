@@ -112,7 +112,7 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 #-------------------------------------------------------------------------------------------------
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                downSampleSize=200, scale=10.0, ae_data=False, data_ext=True, \
-               nAugment=0,\
+               nAugment=0, cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                feature_list=['crossmodal_targetEEDist'], data_renew=False):
@@ -170,11 +170,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                                  local_range=local_range, rf_center=rf_center,\
                                                  renew=data_renew, save_pkl=failure_data_pkl)
             
-            allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale)
+            allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale,\
+                                                 cut_data=cut_data)
             successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
-                                                 param_dict=param_dict)
+                                                 param_dict=param_dict, cut_data=cut_data)
             failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
-                                                 param_dict=param_dict)
+                                                 param_dict=param_dict, cut_data=cut_data)
             aug_successData = []
             aug_failureData = []
         else:
@@ -407,7 +408,7 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
+def extractFeature(d, feature_list, scale=10.0, cut_data=None, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -727,7 +728,8 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
     features = np.swapaxes(dataList, 0, 1)    
 
     # cut unnecessary part #temp
-    features = features[:,:,0:120]
+    if cut_data is not None:
+        features = features[:,:,cut_data[0]:cut_data[1]]
 
     # Scaling ------------------------------------------------------------
     if isTrainingData:

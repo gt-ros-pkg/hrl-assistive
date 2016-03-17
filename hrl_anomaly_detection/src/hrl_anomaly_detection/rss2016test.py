@@ -95,6 +95,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                                                             downSampleSize=data_dict['downSampleSize'], \
                                                             scale=1.0, data_ext=data_dict['lowVarDataRemv'],\
                                                             feature_list=data_dict['feature_list'], \
+                                                            cut_data=data_dict['cut_data'],\
                                                             data_renew=data_dict['renew'])
 
 
@@ -359,6 +360,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                           ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
                           nAugment=data_dict['nAugment'], feature_list=feature_list, \
+                          cut_data=data_dict['cut_data'],
                           data_renew=data_renew)
         kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
@@ -454,7 +456,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                           ae_data=autoEncoder, data_ext=data_dict['lowVarDataRemv'], \
                           nAugment=data_dict['nAugment'], feature_list=feature_list, \
-                          data_renew=data_renew)
+                          cut_data=data_dict['cut_data'], data_renew=data_renew)
         if data_dict['nAugment']>0:
             kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]), \
                                               data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
@@ -2094,7 +2096,7 @@ if __name__ == '__main__':
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 150, 'nNormalFold':10, 'nAbnormalFold':10,\
+                          'downSampleSize': 150, 'cut_data': [10,100], 'nNormalFold':5, 'nAbnormalFold':5,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
@@ -2191,6 +2193,7 @@ if __name__ == '__main__':
                       downSampleSize=downSampleSize, scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
                       data_ext=data_param_dict['lowVarDataRemv'],\
+                      cut_data=data_param_dict['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\
                       feature_list=feature_list, data_renew=opt.bDataRenew)
 
