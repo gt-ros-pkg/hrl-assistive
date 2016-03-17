@@ -506,7 +506,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew']:
+        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew:
 
             if autoEncoder:
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
@@ -574,6 +574,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 print "-------------------------"
                 print "HMM returned failure!!   "
                 print "-------------------------"
+                sys.exit()
                 return (-1,-1,-1,-1)
             
             #-----------------------------------------------------------------------------------------
@@ -644,6 +645,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                 ll_classifier_test_X.append(l_X)
                 ll_classifier_test_Y.append(l_Y)
+
+                ## if len(l_Y) < 10:
+                ##     print ">> ", np.shape(ll_logp[i]), np.shape(ll_post[i])
+                ##     print i, np.shape(l_X), np.shape(l_Y)
 
             #-----------------------------------------------------------------------------------------
             d = {}
@@ -718,6 +723,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
         nLength      = d['nLength']
+
 
         #-----------------------------------------------------------------------------------------
         ## ## trainingData = successData[:, trainIdx, :]
@@ -797,6 +803,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 delay_idx = 0
 
                 for ii in xrange(len(ll_classifier_test_X)):
+
+                    if len(ll_classifier_test_Y[ii])==0: continue
+                    
                     for jj in xrange(len(ll_classifier_test_X[ii])):
                         if 'svm' in method:
                             X = scaler.transform([ll_classifier_test_X[ii][jj]])
@@ -813,6 +822,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                             print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]                 
                             break        
 
+                    print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_X[ii]), ii
+                    print np.shape(ll_classifier_test_Y), np.shape(ll_classifier_test_Y[ii]), ii
+                    print "--------------------"
+                    
                     if ll_classifier_test_Y[ii][0] > 0.0:
                         if est_y > 0.0:
                             tp_l.append(1)
@@ -1589,10 +1602,10 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
             if verbose: print "Load success data"
             data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
                                     '_'+str(local_range))
-            raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
+            raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=True,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
-                                                       global_data=global_data,\
+                                                       global_data=global_data, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
@@ -1618,6 +1631,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     for tl in time_list:
                         ## print tl[-1]
                         time_lim[-1] = max(time_lim[-1], tl[-1])
+            ## continue
 
         # for each file in success or failure set
         for fidx in xrange(len(file_list)):
@@ -1829,8 +1843,8 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
     ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
     
     # Success data
-    successData = True
-    failureData = False
+    successData = success_viz
+    failureData = failure_viz
 
     count = 0
     while True:
@@ -2062,12 +2076,14 @@ if __name__ == '__main__':
     local_range    = 10.0    
 
     if False:
-        subjects = ['gatsbii']
+        ## subjects = ['gatsbii']
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song']
         task     = 'scooping'    
         ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
         ##                 'crossmodal_targetEEAng']
-        feature_list = ['unimodal_audioPower',\
-                        'unimodal_kinVel',\
+        feature_list = ['unimodal_audioWristRMS',\
+                        ## 'unimodal_audioPower',\
+                        ## 'unimodal_kinVel',\
                         'unimodal_ftForce',\
                         ##'unimodal_visionChange',\
                         'unimodal_ppsForce',\
@@ -2075,21 +2091,9 @@ if __name__ == '__main__':
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
         rf_center     = 'kinEEPos'
-        modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-        nState       = 10
+        modality_list = ['kinematics', 'audioWrist', 'audio', 'fabric', 'ft', 'vision_artag', \
+                         'vision_change', 'pps']
         downSampleSize = 200
-
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-
-    #---------------------------------------------------------------------------
-    elif True:
-        
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song']
-        task     = 'feeding' 
-        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
-        modality_list   = ['kinematics', 'audioWrist', 'ft', 'vision_artag']
 
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
@@ -2106,7 +2110,33 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
 
+
+    #---------------------------------------------------------------------------
+    elif True:
+        
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        task     = 'feeding' 
+        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
+        modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
         downSampleSize = 200
+
+        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': downSampleSize, 'cut_data': [15,130], 'nNormalFold':2, \
+                          'nAbnormalFold':2,\
+                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 10.0}
+        SVM_param_dict = {'renew': False,}
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict}
+
 
     #---------------------------------------------------------------------------           
     ## task    = 'touching'
@@ -2177,10 +2207,13 @@ if __name__ == '__main__':
         '''
         ## modality_list   = ['kinematics', 'audioWrist','audio', 'fabric', 'ft', \
         ##                    'vision_artag', 'vision_change', 'pps']
+        success_viz = True
+        failure_viz = True
 
         data_selection(subjects, task, raw_data_path, save_data_path,\
                        downSampleSize=downSampleSize, \
                        local_range=local_range, rf_center=rf_center, \
+                       success_viz=success_viz, failure_viz=failure_viz,\
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
                        modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)        
 
