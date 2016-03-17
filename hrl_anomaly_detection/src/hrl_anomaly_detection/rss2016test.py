@@ -1835,10 +1835,10 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
     while True:
         
         ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)        
-
         ## print "-----------------------------------------------"
         ## print success_list[count]
         ## print "-----------------------------------------------"
+        
         data_plot(subject_names, task_name, raw_data_path, processed_data_path,\
                   downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
@@ -2084,7 +2084,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif True:
         
-        subjects = ['lin', 'Ashwin', 'Song']
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song']
         task     = 'feeding' 
         feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
                         'crossmodal_artagEEAng'] #'unimodal_audioPower'
@@ -2174,7 +2174,6 @@ if __name__ == '__main__':
         '''
         Manually select and filter bad data out
         '''
-        rf_center       = 'kinEEPos'
         ## modality_list   = ['kinematics', 'audioWrist','audio', 'fabric', 'ft', \
         ##                    'vision_artag', 'vision_change', 'pps']
 
