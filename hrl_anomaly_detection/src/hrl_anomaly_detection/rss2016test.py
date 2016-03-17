@@ -67,6 +67,8 @@ import itertools
 colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
    
 def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           threshold=-1.0, smooth=False, \
@@ -880,11 +882,16 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 
             # visualization
             color = colors.next()
-            ax1 = fig.add_subplot(121)
-            plt.plot(fpr_l, tpr_l, c=color, label=method)
-            x = range(len(delay_mean_l))
-            ax1 = fig.add_subplot(122)
-            plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=method, mec=color, ms=6, mew=2)
+            plt.ylabel('True positive rate (percentage)', fontsize=16)
+            plt.xlabel('False positive rate (percentage)', fontsize=16)
+            plt.legend(loc=4,prop={'size':16})
+            
+            ## x = range(len(delay_mean_l))
+            ## ax1 = fig.add_subplot(122)
+            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
         plt.legend(loc='lower right')
 
@@ -2071,9 +2078,9 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
-    if False:
+    if True:
         ## subjects = ['gatsbii']
-        subjects = [] #, 'lin', 'Ashwin', 'Song', 'Wonyoung', 'Tom']
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song']
         task     = 'scooping'    
         ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
         ##                 'crossmodal_targetEEAng']
