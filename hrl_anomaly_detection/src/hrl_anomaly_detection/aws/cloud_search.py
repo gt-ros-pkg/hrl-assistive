@@ -11,18 +11,22 @@ from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import ShuffleSplit 
 from starcluster.config import StarClusterConfig
 from starcluster.cluster import ClusterManager
+from starcluster.plugins import ipcluster as star_ip
 from starcluster import exception
+from starcluster import static
 from starcluster import deathrow
 import time
 import dill
+import inspect
 
 class CloudSearch():
-    def __init__(self, path_json, path_key, clust_name, user_name):
+    def __init__(self, path_json, path_key, clust_name, user_name, auth=False):
         self.all_tasks = []
         self.path_json = path_json
         self.path_key = path_key
         self.clust_name = clust_name
         self.user_name = user_name
+        self.auth=auth
 
         #connect to aws and start cluster if it is not up already
         self.uses_profile=False
@@ -37,17 +41,15 @@ class CloudSearch():
                 print str(e)
                 print 'hello'
 
+        self.client = None
+        self.lb_view= None
+
         #connect directly to master to start client 
         #as it often fails to start IPcluster plugin
         self.use_profile(self.user_name)
-        self.restart_ipcluster()
-        time.sleep(10)
-        self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
+        self.start_ipcluster()
 
-        #connect to cluster nodes to distribute work
-        self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
-        self.client[:].use_dill()
-        self.lb_view = self.client.load_balanced_view()
+
         
         #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
 
@@ -63,6 +65,7 @@ class CloudSearch():
     def stop(self):
         if self.uses_profile:
             self.stop_profile(self.user_name)
+        self._revoke_ipcluster()
         self.flush()
         self.clust.stop_cluster(force=True)
 
@@ -71,12 +74,12 @@ class CloudSearch():
         self.flush()
         self.clust.terminate_cluster(force=True)
 
-    #runs shell command for all nodes at specific location
+    #runs bash command for all nodes
     def sync_run_shell(self, path_shell):
 
         #self.clust.ssh_to_master(command=path_shell)
         for node in self.clust.running_nodes:
-            self.clust.ssh_to_node(node.id, command=path_shell)
+            node.ssh.execute(command=path_shell)
 
     #deletes all the function assigned
     def flush(self):
@@ -120,58 +123,104 @@ class CloudSearch():
             self.use_profile(user=self.user_name)
     
     def copy_bashrc(self, file_path, node):
-            self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path, file_path +'_cp'))
-            file = node.ssh.remote_file(file_path, 'w')
-            file2 = node.ssh.remote_file(file_path + '_cp', 'r')
-            line = file2.readline()
-            while len(line) is not 0:
-                if 'case $- in' in line:
-                    line = file2.readline()
-                    case_counter = 1
-                    while case_counter > 0:
-                        if 'case' in line:
-                            case_counter = case_counter + 1
-                        if 'esac' in line:
-                            case_counter = case_counter - 1
+        if not node.ssh.path_exists(file_path + '_cp'):
+            node.ssh.execute('mv {0} {1}'.format(file_path, file_path +'_cp'))
+        file = node.ssh.remote_file(file_path, 'w')
+        file2 = node.ssh.remote_file(file_path + '_cp', 'r')
+        line = file2.readline()
+        while len(line) is not 0:
+            if 'case $- in' in line:
+                line = file2.readline()
+                case_counter = 1
+                while case_counter > 0:
+                    if 'case' in line:
+                        case_counter = case_counter + 1
+                    if 'esac' in line:
+                        case_counter = case_counter - 1
                         line = file2.readline()
-                if '[ -z "$PS1" ] && return' in line:
-                    line = file2.readline()
-                else:
-                    file.write(line)
-                    line = file2.readline()
+            if '[ -z "$PS1" ] && return' in line:
+                line = file2.readline()
+            else:
+                file.write(line)
+                line = file2.readline()
 
     def stop_profile(self, user=None):
         if self.uses_profile:
-            self.uses_profile=False
             if user and user is not 'root':
                 file_path= '/home/' + user + '/.bashrc'
                 try:
-                    self.clust.ssh_to_master(command='mv {0} {1}'.format(file_path+'_cp', file_path))
+                    self.clust.master_node.ssh.execute('mv {0} {1}'.format(file_path+'_cp', file_path))
                 except Exception,e:
                     print str(e)
                 file_path='/root/.bashrc'
                 for node in self.clust.running_nodes:
-                    self.clust.ssh_to_node(node.id, command='mv {0} {1}'.format(file_path+'_cp', file_path))
+                    orig_user=node.ssh.get_current_user()
+                    node.ssh.switch_user('root')
+                    node.ssh.execute('mv {0} {1}'.format(file_path+'_cp', file_path))
+                    node.ssh.switch_user(orig_user)
             else:
                 self.stop_profile(self.user_name)
-                
+            self.uses_profile=False                
     
-    def restart_ipcluster(self):
-        #plugs = [self.cfg.get_plugin('ipcluster')]
-        #plug = deathrow._load_plugins(plugs)[0]
-        #self.clust.run_plugin(plug, method_name="on_shutdown")
-        #self.clust.run_plugin(plug)
-        self.clust.ssh_to_master(user=self.user_name, command="ipcluster stop")
+    def start_ipcluster(self):
+        master_ssh = self.clust.master_node.ssh
+        connection = self.clust.master_node.ec2.conn
+        orig_user= master_ssh.get_current_user()
+        plugs = [self.cfg.get_plugin('ipcluster')]
+        plug = deathrow._load_plugins(plugs)[0]
+        self.clust.run_plugin(plug, method_name="on_shutdown")
         time.sleep(10)
-        import os
-        os.system('starcluster runplugin ipcluster ' + self.clust_name)
+        try:
+            master_ssh.switch_user(self.user_name)
+            master_ssh.execute("ipcluster stop", silent=False)
+        except:
+            print "ipcluster wasn't stoped. It is likely it was not running"
+        time.sleep(10)
+        self._revoke_ipcluster()
+        time.sleep(10)
+        master_ssh.switch_user('root')
+        self.clust.run_plugin(plug)
+        time.sleep(10)
+        if not self.auth:
+            self.clust.ssh_to_master(user=self.user_name, command="echo 'hello world'")
+        master_ssh.switch_user(self.user_name)
+        print master_ssh.get_current_user()
+        master_ssh.execute("python -c 'from IPython.parallel import Client; client = Client()'", silent=False)
+        #connect to cluster nodes to distribute work
+        self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
+        self.client[:].use_dill()
+        self.lb_view = self.client.load_balanced_view()
+        master_ssh.switch_user(orig_user)
+        #self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
+        #import os
+        #os.system('starcluster runplugin ipcluster ' + self.clust_name)
         #self.clust.run_plugin(plugin=plug)#, method_name="on_shutdown")
         #set_command = 'bash /home/' + self.user_name + '/.profile;env;ipcluster start --daemon'
         #self.clust.ssh_to_master(user=self.user_name, command=set_command)
         #json_file= '/home/' + self.user_name + '/.ipython/profile_default/security/ipcontroller-client.json'
         #print json_file
         #self.clust.master_node.ssh.get(json_file, self.path_json)
-            
+    
+    def _revoke_ipcluster(self):
+        import os
+        if os.path.isdir(self.path_json):
+            connection_params = json.load(open(self.path_json, 'rb'))
+            for channel in star_ip.CHANNEL_NAMES:
+                port = connection_params.get(channel)
+                if port is not None:
+                    self._revoke_port(master, port, channel)
+                    channel_authorized = True
+
+    def _revoke_port(self, node, port, service_name, protocol='tcp'):
+        group = node.cluster_group[0]
+        world_cidr='0.0.0.0/0'
+        if isinstance(port, tuple):
+            port_min, port_max = port
+        else:
+            port_min, port_max = port, port
+        port_open = node.ec2.has_permission(group, protocol, port_min, port_max, world_cidr)
+        if port_open:
+            node.ec2.conn.revoke_security_group(group_id=group.id, ip_protocol=protocol, from_port=port_min, to_port=port_max, cidr_ip=world_cidr)
 	
     #run model given data. The local computer sends the data to each node every time it is given
     def run_with_data(self, model, params, n_inst, cv, data, target):
@@ -218,8 +267,8 @@ class CloudSearch():
         return ShuffleSplit(n_inst, n_iter=iter_num)
 
 
-	#adds to all client a local path(s) for external libraries
-	#default location where local program is run is /home/user/ of the cluster
+    #adds to all client a local path(s) for external libraries
+    #default location where local program is run is /home/user/ of the cluster
     def set_up(self, path_libs):
         import sys
         sys.path[:] = sys.path[:] + path_libs
