@@ -197,8 +197,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     ## All data
     nPlot = None
 
+    feature_names = np.array(param_dict['feature_names'])
     if data_ext:
-        feature_names = np.array(param_dict['feature_names'])
 
         # 1) exclude stationary data
         thres = 0.025
@@ -225,6 +225,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Remove features: ", RemoveFeature_names
         print "--------------------------------"
         ## sys.exit()
+    else:
+        AddFeature_names    = feature_names
 
 
     # -------------------- Display ---------------------
@@ -717,12 +719,15 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
         dataList.append(dataSample)
 
 
-    # Convert data structure & cut unnecessary part
+    # Convert data structure 
     # From nSample x dim x length
     # To dim x nSample x length
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
     features = np.swapaxes(dataList, 0, 1)    
+
+    # cut unnecessary part #temp
+    features = features[:,:,0:120]
 
     # Scaling ------------------------------------------------------------
     if isTrainingData:
