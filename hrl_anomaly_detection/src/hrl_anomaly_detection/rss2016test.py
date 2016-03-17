@@ -2071,7 +2071,7 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
-    if True:
+    if False:
         ## subjects = ['gatsbii']
         subjects = [] #, 'lin', 'Ashwin', 'Song', 'Wonyoung', 'Tom']
         task     = 'scooping'    
