@@ -2071,9 +2071,9 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
-    if False:
+    if True:
         ## subjects = ['gatsbii']
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song']
+        subjects = [] #, 'lin', 'Ashwin', 'Song', 'Wonyoung', 'Tom']
         task     = 'scooping'    
         ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
         ##                 'crossmodal_targetEEAng']
@@ -2087,7 +2087,9 @@ if __name__ == '__main__':
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
         rf_center     = 'kinEEPos'
-        modality_list = ['kinematics', 'audioWrist', 'audio', 'fabric', 'ft', 'vision_artag', \
+        ## modality_list = ['kinematics', 'audioWrist', 'audio', 'fabric', 'ft', 'vision_artag', \
+        ##                  'vision_change', 'pps']
+        modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
                          'vision_change', 'pps']
         downSampleSize = 200
 
@@ -2095,7 +2097,7 @@ if __name__ == '__main__':
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 200, 'cut_data': [15,130], 'nNormalFold':2, 'nAbnormalFold':2,\
+                          'downSampleSize': 200, 'cut_data': [15,150], 'nNormalFold':2, 'nAbnormalFold':2,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
@@ -2121,8 +2123,8 @@ if __name__ == '__main__':
         downSampleSize = 200
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [15,130], 'nNormalFold':2, \
-                          'nAbnormalFold':2,\
+                          'downSampleSize': downSampleSize, 'cut_data': [15,130], 'nNormalFold':5, \
+                          'nAbnormalFold':5,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
@@ -2215,7 +2217,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = True
+        failure_viz = False
 
         dm.getDataSet(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                       downSampleSize=downSampleSize, scale=scale, \

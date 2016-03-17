@@ -88,6 +88,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     # check data to get maximum time limit
     max_time = 0
     for idx, fileName in enumerate(fileNames):
+        print fileName
         if os.path.isdir(fileName):
             continue
         d = ut.load_pickle(fileName)        
