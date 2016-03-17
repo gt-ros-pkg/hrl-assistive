@@ -57,6 +57,13 @@
 
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
+  <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="l_cart/web_commands" />
+      <remap from="pose_out" to="/haptic_mpc/goal_pose" />
+      <param name="ee_frame" value="/l_wrist_roll_link" />
+    </node>
+
+
   <!-- Arms: Haptic MPC -->
   <!--<include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>
