@@ -111,7 +111,7 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
 #-------------------------------------------------------------------------------------------------
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-               downSampleSize=200, scale=10.0, ae_data=False, data_ext=True, \
+               downSampleSize=200, scale=1.0, ae_data=False, data_ext=True, \
                nAugment=0, cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
@@ -128,7 +128,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     else:
         save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is not True :
+    if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -176,8 +176,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                                  param_dict=param_dict, cut_data=cut_data)
             failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
                                                  param_dict=param_dict, cut_data=cut_data)
-            aug_successData = []
-            aug_failureData = []
+            aug_successData = successData
+            aug_failureData = failureData
         else:
             successData, failureData, aug_successData, aug_failureData, param_dict = \
               extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list),\
@@ -277,10 +277,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
 
-    if ae_data:
-        return successData, failureData, aug_successData, aug_failureData, param_dict
-    else:
-        return allData, successData, failureData, failureNameList, param_dict
+    return successData, failureData, aug_successData, aug_failureData, param_dict
+    ## if ae_data:
+    ## else:
+    ##     return allData, successData, failureData, failureNameList, param_dict
 
 
 def getAEdataSet(idx, successData, failureData, \
@@ -408,7 +408,7 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractFeature(d, feature_list, scale=10.0, cut_data=None, param_dict=None, verbose=False):
+def extractFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
