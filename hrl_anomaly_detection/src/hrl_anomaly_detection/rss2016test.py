@@ -868,9 +868,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             delay_std_l  = []
 
             for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i])) )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i])) )
-                fnr_l.append( 1.0 - tpr_l[-1] )
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
                 delay_mean_l.append( np.mean(delay_ll[i]) )
                 delay_std_l.append( np.std(delay_ll[i]) )
 
@@ -885,6 +885,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             shape = shapes.next()
             ax1 = fig.add_subplot(111)
             plt.plot(fpr_l, tpr_l, '-'+shape+color, label=method, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
             plt.ylabel('True positive rate (percentage)', fontsize=16)
             plt.xlabel('False positive rate (percentage)', fontsize=16)
             plt.legend(loc=4,prop={'size':16})
@@ -2104,7 +2106,7 @@ if __name__ == '__main__':
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 200, 'cut_data': [15,150], 'nNormalFold':2, 'nAbnormalFold':2,\
+                          'downSampleSize': 200, 'cut_data': [0,200], 'nNormalFold':2, 'nAbnormalFold':2,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
