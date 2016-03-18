@@ -496,7 +496,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ['progress_time_cluster', 'fixed', 'svm'] #, 'cssvm', 'svm'] #'cssvm_standard', 
+    method_list = ['progress_time_cluster', 'svm'] #,'fixed',  'cssvm', 'svm'] #'cssvm_standard', 
     nPoints     = 10
 
     #-----------------------------------------------------------------------------------------
@@ -684,7 +684,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys(): # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
+        if method not in ROC_data.keys(): # or method=='svm': # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -764,7 +764,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
             for j in xrange(nPoints):
                 if method == 'svm':
-                    weights = np.logspace(-2, 0.8, nPoints)
+                    weights = np.logspace(-4, 1.2, nPoints)
+                    ## weights = np.logspace(-2, 0.8, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                     ## weights = np.linspace(0.5, 60.0, nPoints)
                     ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
@@ -880,7 +881,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print fpr_l
             print "--------------------------------"
 
-            if method == 'svm': label='Support Vector Machine'
+            if method == 'svm': label='HMM-SVM'
             elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
             elif method == 'fixed': label='HMMs with a fixed threshold'
                 
