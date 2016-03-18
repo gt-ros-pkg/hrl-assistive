@@ -67,6 +67,8 @@ import itertools
 colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
    
 def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           threshold=-1.0, smooth=False, \
@@ -866,9 +868,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             delay_std_l  = []
 
             for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i])) )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i])) )
-                fnr_l.append( 1.0 - tpr_l[-1] )
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
                 delay_mean_l.append( np.mean(delay_ll[i]) )
                 delay_std_l.append( np.std(delay_ll[i]) )
 
@@ -877,14 +879,25 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print tpr_l
             print fpr_l
             print "--------------------------------"
+
+            if method == 'svm': label='Support Vector Machine'
+            elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+            elif method == 'fixed': label='HMMs with a fixed threshold'
                 
             # visualization
             color = colors.next()
-            ax1 = fig.add_subplot(121)
-            plt.plot(fpr_l, tpr_l, c=color, label=method)
-            x = range(len(delay_mean_l))
-            ax1 = fig.add_subplot(122)
-            plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
+            plt.ylabel('True positive rate (percentage)', fontsize=16)
+            plt.xlabel('False positive rate (percentage)', fontsize=16)
+            plt.legend(loc=4,prop={'size':16})
+            
+            ## x = range(len(delay_mean_l))
+            ## ax1 = fig.add_subplot(122)
+            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
         plt.legend(loc='lower right')
 
@@ -2071,9 +2084,9 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
-    if False:
+    if True:
         ## subjects = ['gatsbii']
-        subjects = [] #, 'lin', 'Ashwin', 'Song', 'Wonyoung', 'Tom']
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song']
         task     = 'scooping'    
         ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
         ##                 'crossmodal_targetEEAng']
@@ -2082,7 +2095,7 @@ if __name__ == '__main__':
                         ## 'unimodal_kinVel',\
                         'unimodal_ftForce',\
                         ##'unimodal_visionChange',\
-                        'unimodal_ppsForce',\
+                        ## 'unimodal_ppsForce',\
                         ##'unimodal_fabricForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
@@ -2097,13 +2110,13 @@ if __name__ == '__main__':
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 200, 'cut_data': [15,150], 'nNormalFold':2, 'nAbnormalFold':2,\
+                          'downSampleSize': 200, 'cut_data': [0,200], 'nNormalFold':2, 'nAbnormalFold':2,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 10.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 5.0, 'scale': 10.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
@@ -2190,7 +2203,7 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         successData = True
-        failureData = False
+        failureData = True
         
         data_plot(subjects, task, raw_data_path, save_data_path,\
                   downSampleSize=downSampleSize, \
@@ -2217,7 +2230,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = False
+        failure_viz = True
 
         dm.getDataSet(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                       downSampleSize=downSampleSize, scale=scale, \
