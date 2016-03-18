@@ -527,14 +527,14 @@ def extractFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, v
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
+                ## if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
+                ## else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
 
-                if 'ftForce_z' not in param_dict['feature_names']:
+                if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
                     ## param_dict['feature_names'].append('ftForce_x')
                     ## param_dict['feature_names'].append('ftForce_y')
-                    param_dict['feature_names'].append('ftForce_z')
+                    ## param_dict['feature_names'].append('ftForce_z')
             else:                
                 unimodal_ftForce_mag = ftForce
             
