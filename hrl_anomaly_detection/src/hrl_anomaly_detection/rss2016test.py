@@ -2120,17 +2120,17 @@ if __name__ == '__main__':
 
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 200
+        downSampleSize = 300
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [15,130], 'nNormalFold':5, \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,230], 'nNormalFold':5, \
                           'nAbnormalFold':5,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 7.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 15.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
