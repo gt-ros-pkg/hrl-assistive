@@ -879,12 +879,16 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print tpr_l
             print fpr_l
             print "--------------------------------"
+
+            if method == 'svm': label='Support Vector Machine'
+            elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+            elif method == 'fixed': label='HMMs with a fixed threshold'
                 
             # visualization
             color = colors.next()
             shape = shapes.next()
-            ax1 = fig.add_subplot(111)
-            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=method, mec=color, ms=6, mew=2)
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
             plt.xlim([-1, 101])
             plt.ylim([-1, 101])
             plt.ylabel('True positive rate (percentage)', fontsize=16)
@@ -2091,7 +2095,7 @@ if __name__ == '__main__':
                         ## 'unimodal_kinVel',\
                         'unimodal_ftForce',\
                         ##'unimodal_visionChange',\
-                        'unimodal_ppsForce',\
+                        ## 'unimodal_ppsForce',\
                         ##'unimodal_fabricForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
@@ -2112,7 +2116,7 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 10.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 5.0, 'scale': 10.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
@@ -2129,17 +2133,17 @@ if __name__ == '__main__':
 
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 200
+        downSampleSize = 300
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [15,130], 'nNormalFold':5, \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,230], 'nNormalFold':5, \
                           'nAbnormalFold':5,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 7.0, 'scale': 7.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 15.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
@@ -2199,7 +2203,7 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         successData = True
-        failureData = False
+        failureData = True
         
         data_plot(subjects, task, raw_data_path, save_data_path,\
                   downSampleSize=downSampleSize, \
@@ -2226,7 +2230,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = False
+        failure_viz = True
 
         dm.getDataSet(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                       downSampleSize=downSampleSize, scale=scale, \
