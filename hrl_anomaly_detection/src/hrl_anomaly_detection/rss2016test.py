@@ -496,7 +496,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ['progress_time_cluster', 'svm'] #,'fixed',  'cssvm', 'svm'] #'cssvm_standard', 
+    method_list = ['progress_time_cluster', 'svm','fixed'] #,  'cssvm', 'svm'] #'cssvm_standard', 
     nPoints     = 10
 
     #-----------------------------------------------------------------------------------------
@@ -892,15 +892,23 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
             plt.xlim([-1, 101])
             plt.ylim([-1, 101])
-            plt.ylabel('True positive rate (percentage)', fontsize=16)
-            plt.xlabel('False positive rate (percentage)', fontsize=16)
-            plt.legend(loc=4,prop={'size':16})
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+            ## font = {'family' : 'normal',
+            ##         'weight' : 'bold',
+            ##         'size'   : 22}
+            ## matplotlib.rc('font', **font)
+            ## plt.tick_params(axis='both', which='major', labelsize=12)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
             
             ## x = range(len(delay_mean_l))
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
-        plt.legend(loc='lower right')
+        plt.legend(loc='lower right', prop={'size':20})
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -2085,7 +2093,7 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
-    if True:
+    if False:
         ## subjects = ['gatsbii']
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry']
         task     = 'scooping'    
@@ -2134,17 +2142,17 @@ if __name__ == '__main__':
 
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 300
+        downSampleSize = 200
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,250], 'nNormalFold':2, \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,170], 'nNormalFold':2, \
                           'nAbnormalFold':2,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8.0, 'scale': 8.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.0}
         SVM_param_dict = {'renew': False,}
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
