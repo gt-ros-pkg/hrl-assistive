@@ -896,15 +896,23 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
             plt.xlim([-1, 101])
             plt.ylim([-1, 101])
-            plt.ylabel('True positive rate (percentage)', fontsize=16)
-            plt.xlabel('False positive rate (percentage)', fontsize=16)
-            plt.legend(loc=4,prop={'size':16})
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+            ## font = {'family' : 'normal',
+            ##         'weight' : 'bold',
+            ##         'size'   : 22}
+            ## matplotlib.rc('font', **font)
+            ## plt.tick_params(axis='both', which='major', labelsize=12)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
             
             ## x = range(len(delay_mean_l))
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
-        plt.legend(loc='lower right')
+        plt.legend(loc='lower right', prop={'size':20})
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -2125,7 +2133,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0.8, 6, nPoints)+2.0, \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
