@@ -194,11 +194,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict['param_dict'] = param_dict
         ut.save_pickle(data_dict, save_pkl)
 
-    
+
+
     ## All data
     nPlot = None
 
-    feature_names = np.array(param_dict['feature_names'])
+    feature_names = np.array(param_dict.get('feature_names', feature_list))
     if data_ext:
 
         # 1) exclude stationary data
@@ -233,7 +234,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     # -------------------- Display ---------------------
     fig = None
     if success_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
@@ -248,7 +249,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
         if nPlot is None:
@@ -262,7 +263,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
 
         if save_pdf:
@@ -981,9 +982,8 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
         failure_aug_features = scale( failure_aug_features, param_dict['feature_min'], \
                                               param_dict['feature_max'] )
 
-
-        
-    param_dict['dataDim'] = dataDim
+    param_dict['feature_names'] = raw_feature_list
+    param_dict['dataDim']       = dataDim
     
     ## scaled_features = []
     ## for i, feature in enumerate(features):

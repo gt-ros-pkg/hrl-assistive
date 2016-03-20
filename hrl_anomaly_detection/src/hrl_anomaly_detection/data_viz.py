@@ -75,6 +75,8 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
 def viz(X1, X2=None):
     '''
     dim x sample x length
+    X1: normal data
+    X2: abnormal data
     '''
     import itertools
 
