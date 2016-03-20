@@ -317,19 +317,20 @@ class learning_hmm(learning_base):
         If y exists, y can contains two kinds of labels, [-1, 1]
         If an input is close to training data, its label should be 1.
         If not, its label should be -1.
-        '''
+        '''        
         if n_jobs==1:
             ll_logp = self.loglikelihoods(X) 
         else:
             # sample,            
             _, ll_logp = self.getLoglikelihoods(X, n_jobs=n_jobs)
 
-        v = 0.0
-        if y is not None:
-            for i, l_logp in enumerate(ll_logp):                
-                v += np.sum( np.array(l_logp) * y[i] )
-        else:
-            v += np.sum(ll_logp)
+        v = np.mean( np.mean(ll_logp, axis=0) )
+        ## v = 0.0
+        ## if y is not None:
+        ##     for i, l_logp in enumerate(ll_logp):                
+        ##         v += np.sum( np.array(l_logp) * y[i] )
+        ## else:
+        ##     v += np.sum(ll_logp)
 
         if self.verbose: print np.shape(ll_logp), " : score = ", v 
 
