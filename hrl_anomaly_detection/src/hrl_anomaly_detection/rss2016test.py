@@ -2145,8 +2145,8 @@ if __name__ == '__main__':
         downSampleSize = 200
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,170], 'nNormalFold':2, \
-                          'nAbnormalFold':2,\
+                          'downSampleSize': downSampleSize, 'cut_data': [0,170], 'nNormalFold':4, \
+                          'nAbnormalFold':4,\
                           'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
