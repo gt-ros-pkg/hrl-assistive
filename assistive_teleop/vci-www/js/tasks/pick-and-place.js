@@ -111,6 +111,57 @@ RFH.PickAndPlace = function (options) {
         }
     };
 
+
+    self.getActionHelpText = function (action) {
+        switch (action.name){
+            case 'ID-LOCATION':
+                if (action.args[0].indexOf('PICK') >= 0) {
+                    loc = 'the item you wish to pick up';
+                } else if (action.args[0].indexOf('PLACE') >= 0) {
+                    loc = 'the spot where you want to place the item';
+                } else {
+                    loc = 'a clear spot on a surface';
+                }
+                return "Click on %loc. If not visible, click the gray edges to look around.".replace('%loc', loc);
+            case 'FORGET-LOCATION':
+                switch (action.args[0]) {
+                    case 'PICK_LOC':
+                        loc = 'the pickup';
+                        break;
+                    case 'PLACE_LOC':
+                        loc = 'the place';
+                        break;
+                    case 'HAND_START_LOC':
+                        loc = 'the original hand';
+                        break;
+                    case 'ELSEWHERE':
+                        loc = 'the extra';
+                        break;
+                }
+                return "Clears %loc location".replace('%loc', loc);
+            case 'MOVE-ARM':
+                switch (action.args[1]) {
+                    case 'PICK_LOC':
+                        loc = 'pickup';
+                        break;
+                    case 'PLACE_LOC':
+                        loc = 'place';
+                        break;
+                    case 'HAND_START_LOC':
+                        loc = 'original hand';
+                        break;
+                    case 'ELSEWHERE':
+                        loc = 'extra empty';
+                        break;
+                }
+                return "Use the arm controls to move the arm near the %loc location".replace('%loc', loc);
+            case "GRAB":
+                return "Use the arm and gripper controls to grasp the desired item.";
+            case 'RELEASE':
+                return "Use the arm and gripper controls to release the item.";
+        }
+    };
+
     self.setPoseToParam = function (ps_msg, location_name) {
         var poseParam = new ROSLIB.Param({
             ros: ros,
