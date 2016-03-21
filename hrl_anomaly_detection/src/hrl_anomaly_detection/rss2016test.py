@@ -67,40 +67,85 @@ import itertools
 colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
    
-def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-                          downSampleSize=200, \
-                          feature_list=['crossmodal_targetEEDist'], scale=1.0, \
-                          nState=10, threshold=-1.0, smooth=False, cluster_type='time', \
+def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          decision_boundary_viz=False, \
                           useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                          data_renew=False, hmm_renew=False, save_pdf=False):
+                          data_renew=False, hmm_renew=False, save_pdf=False, verbose=False):
 
-    _, trainingData, abnormalTestData, _, _ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                            processed_data_path, rf_center, local_range,\
-                                                            downSampleSize=downSampleSize, scale=1.0, \
-                                                            feature_list=feature_list, \
-                                                            data_renew=data_renew)
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    
+    #------------------------------------------
 
+    if AE_dict['switch']:
+        
+        AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_0.pkl')
+        d = ut.load_pickle(AE_proc_data)
+        if AE_dict['filter']:
+            successData = aug_successData = d['normTrainDataFiltered']
+            failureData = aug_failureData = d['abnormTrainDataFiltered']
+        else:
+            successData = aug_successData = d['normTrainData']
+            failureData = aug_failureData = d['abnormTrainData']
 
-    trainingData *= scale
-    abnormalTestData *= scale
+    else:
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], \
+                           data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], \
+                           scale=1.0,\
+                           ae_data=AE_dict['switch'],\
+                           data_ext=data_dict['lowVarDataRemv'],\
+                           nAugment=data_dict['nAugment'],\
+                           feature_list=data_dict['feature_list'], \
+                           cut_data=data_dict['cut_data'],\
+                           data_renew=data_dict['renew'])
+        if AE_dict['switch']:
+            successData = dd['aeSuccessData']
+            failureData = dd['aeFailureData']
+            aug_successData = dd['aeSuccessData_augmented']
+            aug_failureData = dd['aeFailureData_augmented']
+        else:
+            successData = dd['successData']
+            failureData = dd['failureData']
+            aug_successData = dd['successData_augmented']
+            aug_failureData = dd['failureData_augmented']
+                           
+
+    if data_dict['nAugment'] > 0:
+        successData = aug_successData * HMM_dict['scale']
+        failureData = aug_failureData * HMM_dict['scale']
+    else:
+        successData *= HMM_dict['scale']
+        failureData *= HMM_dict['scale']
 
     normalTestData = None                                    
     print "======================================"
-    print "Training data: ", np.shape(trainingData)
-    print "Normal test data: ", np.shape(normalTestData)
-    print "Abnormal test data: ", np.shape(abnormalTestData)
+    print "Success data: ", np.shape(successData)
+    ## print "Normal test data: ", np.shape(normalTestData)
+    print "Failure data: ", np.shape(failureData)
     print "======================================"
 
     # training hmm
-    nEmissionDim = len(trainingData)
+    nEmissionDim = len(successData)
     hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
-    cov_mult = [1]*(nEmissionDim**2)
+    cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=True)
-    ret = ml.fit(trainingData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+    ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
         
     if ret == 'Failure': 
@@ -109,9 +154,46 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    # discriminative classifier
-    ## dtc = cf.classifier( ml, method='progress_time_cluster', nPosteriors=nState, \
-    ##                      nLength=len(trainingData[0,0]) )        
+    if decision_boundary_viz:
+        startIdx = 4
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [successData[j][i] for j in \
+                                                                 xrange(nEmissionDim)], \
+                                                                ml.nEmissionDim, ml.nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(successData[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+        ll_classifier_train_X = []
+        ll_classifier_train_Y = []
+        for i in xrange(len(ll_logp)):
+            l_X = []
+            l_Y = []
+            for j in xrange(len(ll_logp[i])):        
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+                if testDataY[i] > 0.0: l_Y.append(1)
+                else: l_Y.append(-1)
+
+            ll_classifier_train_X.append(l_X)
+            ll_classifier_train_Y.append(l_Y)
+
+        # flatten the data
+        X_train_org = []
+        Y_train_org = []
+        idx_train_org = []
+        for i in xrange(len(ll_classifier_train_X)):
+            for j in xrange(len(ll_classifier_train_X[i])):
+                X_train_org.append(ll_classifier_train_X[i][j])
+                Y_train_org.append(ll_classifier_train_Y[i][j])
+                idx_train_org.append(ll_classifier_train_idx[i][j])
+
+        
+        # discriminative classifier
+        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
+                             nLength=len(successData[0,0]) )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
     
     fig = plt.figure()
@@ -122,19 +204,22 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if useTrain:
 
         log_ll = []
-        ## exp_log_ll = []        
-        for i in xrange(len(trainingData[0])):
+        exp_log_ll = []        
+        for i in xrange(len(successData[0])):
 
             log_ll.append([])
-            ## exp_log_ll.append([])
-            for j in range(2, len(trainingData[0][i])):
+            exp_log_ll.append([])
+            for j in range(2, len(successData[0][i])):
 
-                X = [x[i,:j] for x in trainingData]
-
-                ## exp_logp, logp = ml.expLoglikelihood(X, ths, smooth=smooth, bLoglikelihood=True)
+                X = [x[i,:j] for x in successData]
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
-                ## exp_log_ll[i].append(exp_logp)
+
+                if decision_boundary_viz:
+                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                    exp_logp = dtc.predict(l_X) + ll_logp[i][j]
+                    exp_log_ll[i].append(exp_logp)
+
 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
@@ -153,52 +238,53 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
             
-        plt.plot(log_ll[i], 'b-', lw=3.0)
-        ## plt.plot(exp_log_ll[i], 'm-')            
+        plt.plot(log_ll[i], 'k-', lw=3.0)
+        if decision_boundary_viz:
+            plt.plot(exp_log_ll[i], 'm-')            
                                              
     # normal test data
-    if useNormalTest and False:
+    ## if useNormalTest and False:
 
-        log_ll = []
-        ## exp_log_ll = []        
-        for i in xrange(len(normalTestData[0])):
+    ##     log_ll = []
+    ##     ## exp_log_ll = []        
+    ##     for i in xrange(len(normalTestData[0])):
 
-            log_ll.append([])
-            ## exp_log_ll.append([])
+    ##         log_ll.append([])
+    ##         ## exp_log_ll.append([])
 
-            for j in range(2, len(normalTestData[0][i])):
-                X = [x[i,:j] for x in normalTestData]                
+    ##         for j in range(2, len(normalTestData[0][i])):
+    ##             X = [x[i,:j] for x in normalTestData]                
 
-                logp = ml.loglikelihood(X)
-                log_ll[i].append(logp)
+    ##             logp = ml.loglikelihood(X)
+    ##             log_ll[i].append(logp)
 
-                ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
-                ## log_ll[i].append(logp)
-                ## exp_log_ll[i].append(exp_logp)
+    ##             ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
+    ##             ## log_ll[i].append(logp)
+    ##             ## exp_log_ll[i].append(exp_logp)
 
-            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+    ##         if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+    ##         if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
-            # disp 
-            if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
-            else: plt.plot(log_ll[i], 'g-')
+    ##         # disp 
+    ##         if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
+    ##         else: plt.plot(log_ll[i], 'g-')
 
-            ## plt.plot(exp_log_ll[i], 'r*-')
+    ##         ## plt.plot(exp_log_ll[i], 'r*-')
 
-        if useNormalTest_color: 
-            plt.legend(loc=3,prop={'size':16})
+    ##     if useNormalTest_color: 
+    ##         plt.legend(loc=3,prop={'size':16})
 
     # abnormal test data
-    if useAbnormalTest and False:
+    if useAbnormalTest:
         log_ll = []
         ## exp_log_ll = []        
-        for i in xrange(len(abnormalTestData[0])):
+        for i in xrange(len(failureData[0])):
 
             log_ll.append([])
             ## exp_log_ll.append([])
 
-            for j in range(2, len(abnormalTestData[0][i])):
-                X = [x[i,:j] for x in abnormalTestData]                
+            for j in range(2, len(failureData[0][i])):
+                X = [x[i,:j] for x in failureData]                
                 try:
                     logp = ml.loglikelihood(X)
                 except:
@@ -233,11 +319,15 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
                         useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                         hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                  processed_data_path, rf_center, local_range,\
-                                                  downSampleSize=downSampleSize, \
-                                                  feature_list=feature_list, \
-                                                  data_renew=data_renew)
+    dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                       processed_data_path, rf_center, local_range,\
+                       downSampleSize=downSampleSize, \
+                       feature_list=feature_list, \
+                       data_renew=data_renew)
+    successData = data_dict['successData']
+    failureData = data_dict['failureData']
+                       
+                       
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -264,7 +354,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
     detection_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')
     cov_mult = [10.0]*(nEmissionDim**2)
 
-    ml  = hmm.learning_hmm(nState, nEmissionDim, scale=10.0, cluster_type=cluster_type, verbose=False)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, scale=1.0, cluster_type=cluster_type, verbose=False)
     ret = ml.fit(trainingData, cov_mult=cov_mult, ml_pkl=detection_param_pkl, \
                  use_pkl=True) # not(renew))
     ths = [threshold]*nState
@@ -287,7 +377,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
     max_logp = 100.0
 
     # normal test data
-    _, l_logp_1, l_post_1 = ml.getPostLoglikelihoods(normalTestData)
+    _, l_logp_1, l_post_1 = ml.getLoglikelihoods(normalTestData, posterior=True)
 
     l_idx_1 = []
     for post in l_post_1:
@@ -298,7 +388,7 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
 
     
     # abnormal test data
-    _, l_logp_2, l_post_2 = ml.getPostLoglikelihoods(abnormalTestData)
+    _, l_logp_2, l_post_2 = ml.getLoglikelihoods(abnormalTestData, posterior=True)
     
     l_idx_2 = []
     for post in l_post_2:
@@ -322,7 +412,9 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
 
     
 def aeDataExtraction(subject_names, task_name, raw_data_path, \
-                    processed_data_path, param_dict, cuda=True, verbose=False):
+                    processed_data_path, param_dict,\
+                    success_viz=False, failure_viz=False,\
+                    cuda=True, verbose=False):
 
     ## Parameters
     # data
@@ -335,53 +427,76 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
                     
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        d = ut.load_pickle(crossVal_pkl)
+    else:
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
+                           data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
+                           nAugment=data_dict['nAugment'], feature_list=feature_list, \
+                           cut_data=data_dict['cut_data'],
+                           data_renew=data_renew)
+        successData = dd['aeSuccessData']
+        failureData = dd['aeFailureData']
+        aug_successData = dd['aeSuccessData_augmented']
+        aug_failureData = dd['aeFailureData_augmented']
+        
+        kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
+                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-    successData, failureData, aug_successData, aug_failureData, _ \
-      = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
-                      data_dict['rf_center'], data_dict['local_range'],\
-                      downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                      ae_data=AE_dict['switch'], data_ext=False, \
-                      nAugment=data_dict['nAugment'], feature_list=feature_list, \
-                      data_renew=data_renew)
-    kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
-                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-
-    d = {}
-    d['successData'] = successData
-    d['failureData'] = failureData
-    d['aug_successData'] = aug_successData
-    d['aug_failureData'] = aug_failureData
-    d['kFoldList']   = kFold_list                                             
-    ut.save_pickle(d, crossVal_pkl)
+        d = {}
+        d['successData'] = successData
+        d['failureData'] = failureData
+        d['aug_successData'] = aug_successData
+        d['aug_failureData'] = aug_failureData
+        
+        d['kFoldList']   = kFold_list                                             
+        ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+      in enumerate( d['kFoldList'] ):
 
-        if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+        if verbose: print "Start "+str(idx)+"/"+str(len( d['kFoldList'] ))+"th iteration"
 
         AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
 
         # From dim x sample x length
         # To reduced_dim x sample
-        d = dm.getAEdataSet(idx, aug_successData, aug_failureData, \
-                            normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
-                            AE_dict['time_window'], \
-                            AE_proc_data, \
-                            # data param
-                            processed_data_path, \
-                            # AE param
-                            layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
-                            learning_rate_decay=AE_dict['learning_rate_decay'], \
-                            momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
-                            lambda_reg=AE_dict['lambda_reg'], \
-                            max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
-                            cuda=AE_dict['cuda'], \
-                            verbose=verbose, renew=True )
+        dd = dm.getAEdataSet(idx, d['aug_successData'], d['aug_failureData'], \
+                             normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
+                             AE_dict['time_window'], \
+                             AE_proc_data, \
+                             # data param
+                             processed_data_path, \
+                             # AE param
+                             layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
+                             learning_rate_decay=AE_dict['learning_rate_decay'], \
+                             momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
+                             lambda_reg=AE_dict['lambda_reg'], \
+                             max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+                             cuda=AE_dict['cuda'], \
+                             filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                             verbose=verbose, renew=AE_dict['renew'] )
 
-        ## import data_viz as dv
-        ## dv.viz(normalTrainData)
-        ## continue
+        if AE_dict['filter']:
+            # NOTE: pooling dimension should vary on each auto encoder.
+            # Filtering using variances
+            normalTrainData   = dd['normTrainDataFiltered']
+            abnormalTrainData = dd['abnormTrainDataFiltered']
+            normalTestData    = dd['normTestDataFiltered']
+            abnormalTestData  = dd['abnormTestDataFiltered']
+        else:
+            normalTrainData   = dd['normTrainData']
+            abnormalTrainData = dd['abnormTrainData']
+            normalTestData    = dd['normTestData']
+            abnormalTestData  = dd['abnormTestData']
+
+        if success_viz or failure_viz:
+            import data_viz as dv
+            dv.viz(normalTrainData, abnormalTrainData)
+            continue
 
 
 
@@ -397,7 +512,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    feature_list = data_dict['feature_list']
     # AE
     AE_dict     = param_dict['AE']
     autoEncoder = AE_dict['switch']
@@ -406,6 +520,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
+
+    # ROC
+    ROC_dict = param_dict['ROC']
     
     #------------------------------------------
 
@@ -416,61 +533,75 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl):
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
         d = ut.load_pickle(crossVal_pkl)
-        successData = d['successData']
-        failureData = d['failureData']
-        aug_successData = d['aug_successData']
-        aug_failureData = d['aug_failureData']
-        kFold_list  = d['kFoldList']
+
+        print d.keys()
+
+        ## d['aeSuccessData'] = d['successData']
+        ## d['aeFailureData'] = d['failureData']
+        ## d['aeSuccessData_augmented'] = d['aug_successData']
+        ## d['aeFailureData_augmented'] = d['aug_failureData']
+        ## print d.keys()
+        ## d = ut.save_pickle(d, crossVal_pkl)
         
+        if AE_dict['switch']:
+            successData = d['aeSuccessData']
+            failureData = d['aeFailureData']
+            aug_successData = d['aeSuccessData_augmented']
+            aug_failureData = d['aeFailureData_augmented']
+        else:
+            successData = d['successData']
+            failureData = d['failureData']
+            aug_successData = d.get('successData_augmented', d['aug_successData'])
+            aug_failureData = d.get('failureData_augmented', d['aug_failureData'])
+        kFold_list  = d['kFoldList']
+
+
+
     else:
-
-        ## if autoEncoder:
         '''
-        Use augmented data?
+        Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
-        successData, failureData, aug_successData, aug_failureData, _ \
-          = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                          processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                          downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                          ae_data=autoEncoder, data_ext=False, \
-                          nAugment=data_dict['nAugment'], feature_list=feature_list, \
-                          data_renew=data_renew)
-        kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]), \
-                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           ae_data=autoEncoder,\
+                           data_ext=data_dict['lowVarDataRemv'], \
+                           nAugment=data_dict['nAugment'], \
+                           feature_list=data_dict['feature_list'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew)
+        if AE_dict['switch']:
+            successData     = d['aeSuccessData']
+            failureData     = d['aeFailureData']
+            aug_successData = d['aeSuccessData_augmented']
+            aug_failureData = d['aeFailureData_augmented']
+        else:
+            successData     = d['successData']
+            failureData     = d['failureData']
+            aug_successData = d['successData_augmented']
+            aug_failureData = d['failureData_augmented']
 
-        d = {}
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['aug_successData'] = aug_successData
-        d['aug_failureData'] = aug_failureData
-        d['kFoldList']   = kFold_list                                             
-                                                                    
-        ## else:
-        ##     _, successData, failureData,_, _ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-        ##                                                   processed_data_path, rf_center, local_range,\
-        ##                                                   downSampleSize=downSampleSize, \
-        ##                                                   scale=1.0,\
-        ##                                                   feature_list=feature_list, \
-        ##                                                   data_renew=data_renew)
+                          
+        if data_dict['nAugment']>0:
+            kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]), \
+                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        else:
+            kFold_list = dm.kFold_data_index2(len(successData[0]), len(failureData[0]), \
+                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        ##     kFold_list = dm.kFold_data_index(len(failureData[0]), len(successData[0]), \
-        ##                                      nAbnormalFold, nNormalFold )
+        d['kFoldList']   = kFold_list
 
-        ##     d = {}
-        ##     d['successData'] = successData
-        ##     d['failureData'] = failureData
-        ##     d['kFoldList']   = kFold_list
-
+        
         ut.save_pickle(d, crossVal_pkl)
+
 
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ['progress_time_cluster', 'fixed'] #, 'cssvm', 'svm'] #'cssvm_standard', 
-    nPoints     = 10
-    scale       = HMM_dict['scale']
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -481,7 +612,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew']:
+        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew:
 
             if autoEncoder:
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
@@ -502,22 +633,20 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                     momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
                                     lambda_reg=AE_dict['lambda_reg'], \
                                     max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+                                    filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                                    add_feature=AE_dict.get('add_feature', None),\
                                     cuda=False, verbose=False)
 
                 if AE_dict['filter']:
                     # NOTE: pooling dimension should vary on each auto encoder.
                     # Filtering using variances
-                    pooling_param_dict  = {'min_all_std': 0.2, 'max_avg_std': 0.2, 'dim': 4} # only for AE
-                    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
-                                                                             pooling_param_dict)
-                    abnormalTrainData,_        = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-                    normalTestData,_           = dm.variancePooling(d['normTestData'], pooling_param_dict)
-                    abnormalTestData,_         = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
-
+                    normalTrainData   = d['normTrainDataFiltered']
+                    abnormalTrainData = d['abnormTrainDataFiltered']
+                    normalTestData    = d['normTestDataFiltered']
+                    abnormalTestData  = d['abnormTestDataFiltered']
                     ## import data_viz as dv
                     ## dv.viz(normalTrainData)
-                    ## continue
-                    
+                    ## continue                   
                 else:
                     normalTrainData   = d['normTrainData']
                     abnormalTrainData = d['abnormTrainData']
@@ -534,10 +663,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
             # scaling
             if verbose: print "scaling data"
-            normalTrainData *= scale
-            abnormalTrainData *= scale
-            normalTestData *= scale
-            abnormalTestData *= scale
+            normalTrainData   *= HMM_dict['scale']
+            abnormalTrainData *= HMM_dict['scale']
+            normalTestData    *= HMM_dict['scale']
+            abnormalTestData  *= HMM_dict['scale']
 
             # training hmm
             if verbose: print "start to fit hmm"
@@ -545,13 +674,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             cov_mult     = [cov]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0])
 
-            ml  = hmm.learning_hmm(nState, nEmissionDim) 
-            ret = ml.fit(normalTrainData, cov_mult=cov_mult) 
+            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False) 
 
             if ret == 'Failure': 
                 print "-------------------------"
                 print "HMM returned failure!!   "
                 print "-------------------------"
+                sys.exit()
                 return (-1,-1,-1,-1)
             
             #-----------------------------------------------------------------------------------------
@@ -623,10 +753,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ll_classifier_test_X.append(l_X)
                 ll_classifier_test_Y.append(l_Y)
 
+                ## if len(l_Y) < 10:
+                ##     print ">> ", np.shape(ll_logp[i]), np.shape(ll_post[i])
+                ##     print i, np.shape(l_X), np.shape(l_Y)
+
             #-----------------------------------------------------------------------------------------
             d = {}
             d['nEmissionDim'] = ml.nEmissionDim
-            d['scale']        = scale        
             d['A']            = ml.A 
             d['B']            = ml.B 
             d['pi']           = ml.pi
@@ -656,7 +789,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     for i, method in enumerate(method_list):
         # temp
-        if method not in ROC_data.keys():# or method=='svm':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
+        if method not in ROC_data.keys() or method in ROC_dict['update_list']: # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = []
@@ -684,7 +817,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
         d            = ut.load_pickle(modeling_pkl)
         nEmissionDim = d['nEmissionDim']
-        scale        = d['scale']
         A            = d['A']
         B            = d['B']
         pi           = d['pi']
@@ -698,6 +830,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
         nLength      = d['nLength']
+
 
         #-----------------------------------------------------------------------------------------
         ## ## trainingData = successData[:, trainIdx, :]
@@ -736,7 +869,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
             for j in xrange(nPoints):
                 if method == 'svm':
-                    weights = np.logspace(-2, 0.8, nPoints)
+                    weights = ROC_dict['svm_param_range']
+                    ## weights = np.logspace(-2, 0.8, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                     ## weights = np.linspace(0.5, 60.0, nPoints)
                     ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
@@ -744,14 +878,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     weights = np.logspace(-2, 0.1, nPoints)
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'cssvm':
-                    weights = np.logspace(0.0, 2.0, nPoints)
+                    weights = ROC_dict['cssvm_param_range']
                     dtc.set_params( class_weight=weights[j] )
                 elif method == 'progress_time_cluster':
                     ## thresholds = -np.linspace(1., 50, nPoints)+2.0
-                    thresholds = -np.linspace(1., 4, nPoints)+2.0
+                    thresholds = ROC_dict['progress_param_range']
                     dtc.set_params( ths_mult = thresholds[j] )
                 elif method == 'fixed':
-                    thresholds = np.linspace(1., -3, nPoints)
+                    thresholds = ROC_dict['fixed_param_range']
+                    ## thresholds = np.linspace(0.1, -3.5, nPoints)
                     dtc.set_params( ths_mult = thresholds[j] )
 
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
@@ -777,6 +912,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 delay_idx = 0
 
                 for ii in xrange(len(ll_classifier_test_X)):
+
+                    if len(ll_classifier_test_Y[ii])==0: continue
+                    
                     for jj in xrange(len(ll_classifier_test_X[ii])):
                         if 'svm' in method:
                             X = scaler.transform([ll_classifier_test_X[ii][jj]])
@@ -790,9 +928,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                         if est_y > 0.0:
                             delay_idx = ll_classifier_test_idx[ii][jj]
-                            print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]                 
+                            print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                             break        
-
+                    
                     if ll_classifier_test_Y[ii][0] > 0.0:
                         if est_y > 0.0:
                             tp_l.append(1)
@@ -836,10 +974,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             delay_mean_l = []
             delay_std_l  = []
 
+            print np.shape(tp_ll), np.shape(fn_ll), nPoints
+
             for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i])) )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i])) )
-                fnr_l.append( 1.0 - tpr_l[-1] )
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
                 delay_mean_l.append( np.mean(delay_ll[i]) )
                 delay_std_l.append( np.std(delay_ll[i]) )
 
@@ -848,16 +988,35 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print tpr_l
             print fpr_l
             print "--------------------------------"
+
+            if method == 'svm': label='HMM-SVM'
+            elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+            elif method == 'fixed': label='HMMs with a fixed threshold'
                 
             # visualization
             color = colors.next()
-            ax1 = fig.add_subplot(121)
-            plt.plot(fpr_l, tpr_l, c=color, label=method)
-            x = range(len(delay_mean_l))
-            ax1 = fig.add_subplot(122)
-            plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
 
-        plt.legend(loc='lower right')
+            ## font = {'family' : 'normal',
+            ##         'weight' : 'bold',
+            ##         'size'   : 22}
+            ## matplotlib.rc('font', **font)
+            ## plt.tick_params(axis='both', which='major', labelsize=12)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+            
+            ## x = range(len(delay_mean_l))
+            ## ax1 = fig.add_subplot(122)
+            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+
+        plt.legend(loc='lower right', prop={'size':20})
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -904,11 +1063,11 @@ def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_
         
     else:
 
-        _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                      processed_data_path, rf_center, local_range,\
-                                                      downSampleSize=downSampleSize, \
-                                                      feature_list=feature_list, \
-                                                      data_renew=data_renew)
+        successData, failureData,_ ,_, _ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                         processed_data_path, rf_center, local_range,\
+                                                         downSampleSize=downSampleSize, \
+                                                         feature_list=feature_list, \
+                                                         data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -1225,11 +1384,11 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
         abnormalTestData = d['abnormalTestData']
     else:
 
-        _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                      processed_data_path, rf_center, local_range,\
-                                                      downSampleSize=downSampleSize, \
-                                                      feature_list=feature_list, \
-                                                      data_renew=data_renew)
+        successData, failureData,_,_,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                       processed_data_path, rf_center, local_range,\
+                                                       downSampleSize=downSampleSize, \
+                                                       feature_list=feature_list, \
+                                                       data_renew=data_renew)
 
         # index selection
         success_idx  = range(len(successData[0]))
@@ -1318,9 +1477,10 @@ def trainClassifierSVM(subject_names, task_name, raw_data_path, processed_data_p
         ll_logp = []
         ll_label = []
 
-        # get hmm induced features
+        # get hmm induced features: 1 x dim x length
         testData = [ testDataX[j][idx] for j in xrange(nEmissionDim) ]
-        l_logp, l_post = ml.loglikelihoods(testData, bPosterior=True, startIdx=startIdx)
+        ls_logp, ls_post = ml.loglikelihoods(testData, bPosterior=True, startIdx=startIdx)
+        l_logp, l_post   = l_logp[0], l_post[0]
         
         # set feature vector
         for j in xrange(len(l_logp)):
@@ -1394,11 +1554,11 @@ def trainClassifier(subject_names, task_name, raw_data_path, processed_data_path
                     useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                     hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    _, successData, failureData,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                  processed_data_path, rf_center, local_range,\
-                                                  downSampleSize=downSampleSize, \
-                                                  feature_list=feature_list, \
-                                                  data_renew=data_renew)
+    successData, failureData,_ ,_,_= dm.getDataSet(subject_names, task_name, raw_data_path, \
+                                                   processed_data_path, rf_center, local_range,\
+                                                   downSampleSize=downSampleSize, \
+                                                   feature_list=feature_list, \
+                                                   data_renew=data_renew)
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -1566,16 +1726,16 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_success_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
                                     '_'+str(local_range))
-            raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=False,
+            raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=True,
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
-                                                       global_data=global_data,\
+                                                       global_data=global_data, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, subject+'_'+task+'_failure_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task+'_failure_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -1597,6 +1757,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     for tl in time_list:
                         ## print tl[-1]
                         time_lim[-1] = max(time_lim[-1], tl[-1])
+            ## continue
 
         # for each file in success or failure set
         for fidx in xrange(len(file_list)):
@@ -1615,7 +1776,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 
                 elif 'kinematics' in modality:
                     time_list = target_dict['kinTimesList']
-                    data_list = target_dict['kinVelList']
+                    data_list = target_dict['kinPosList']
 
                     # distance
                     new_data_list = []
@@ -1808,17 +1969,17 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
     ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)
     
     # Success data
-    successData = True
-    failureData = False
+    successData = success_viz
+    failureData = failure_viz
 
     count = 0
     while True:
         
         ## success_list, failure_list = getSubjectFileList(raw_data_path, subject_names, task_name)        
-
         ## print "-----------------------------------------------"
         ## print success_list[count]
         ## print "-----------------------------------------------"
+        
         data_plot(subject_names, task_name, raw_data_path, processed_data_path,\
                   downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
@@ -1845,146 +2006,146 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 
     
 
-def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-             downSampleSize=200, success_viz=True, failure_viz=False, \
-             save_pdf=False, \
-             feature_list=['crossmodal_targetEEDist'], data_renew=False):
+## def pca_plot(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+##              downSampleSize=200, success_viz=True, failure_viz=False, \
+##              save_pdf=False, \
+##              feature_list=['crossmodal_targetEEDist'], data_renew=False):
 
 
-    allData, trainingData, abnormalTestData, abnormalTestNameList\
-      = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                      processed_data_path, rf_center, local_range,\
-                      downSampleSize=downSampleSize, \
-                      feature_list=feature_list, \
-                      data_renew=data_renew)
+##     allData, trainingData, abnormalTestData, abnormalTestNameList\
+##       = dm.getDataSet(subject_names, task_name, raw_data_path, \
+##                       processed_data_path, rf_center, local_range,\
+##                       downSampleSize=downSampleSize, \
+##                       feature_list=feature_list, \
+##                       data_renew=data_renew)
 
-    print "---------------------------------------------------"
-    print np.shape(trainingData), np.shape(abnormalTestData)
-    print "---------------------------------------------------"
+##     print "---------------------------------------------------"
+##     print np.shape(trainingData), np.shape(abnormalTestData)
+##     print "---------------------------------------------------"
     
-    m,n,k = np.shape(allData)
-    all_data_array = None
-    for i in xrange(n):
-        for j in xrange(k):
-            if all_data_array is None: all_data_array = allData[:,i,j]
-            else: all_data_array = np.vstack([all_data_array, allData[:,i,j]])
+##     m,n,k = np.shape(allData)
+##     all_data_array = None
+##     for i in xrange(n):
+##         for j in xrange(k):
+##             if all_data_array is None: all_data_array = allData[:,i,j]
+##             else: all_data_array = np.vstack([all_data_array, allData[:,i,j]])
                 
-    m,n,k = np.shape(trainingData)
-    success_data_array = None
-    for i in xrange(n):
-        for j in xrange(k):
-            if success_data_array is None: success_data_array = trainingData[:,i,j]
-            else: success_data_array = np.vstack([success_data_array, trainingData[:,i,j]])
+##     m,n,k = np.shape(trainingData)
+##     success_data_array = None
+##     for i in xrange(n):
+##         for j in xrange(k):
+##             if success_data_array is None: success_data_array = trainingData[:,i,j]
+##             else: success_data_array = np.vstack([success_data_array, trainingData[:,i,j]])
 
-    m,n,k = np.shape(abnormalTestData)
-    failure_data_array = None
-    for i in xrange(n):
-        for j in xrange(k):
-            if failure_data_array is None: failure_data_array = abnormalTestData[:,i,j]
-            else: failure_data_array = np.vstack([failure_data_array, abnormalTestData[:,i,j]])
+##     m,n,k = np.shape(abnormalTestData)
+##     failure_data_array = None
+##     for i in xrange(n):
+##         for j in xrange(k):
+##             if failure_data_array is None: failure_data_array = abnormalTestData[:,i,j]
+##             else: failure_data_array = np.vstack([failure_data_array, abnormalTestData[:,i,j]])
 
-    #--------------------- Parameters -------------------------------
-    fig = plt.figure()
-    # step size in the mesh
-    h = .01
+##     #--------------------- Parameters -------------------------------
+##     fig = plt.figure()
+##     # step size in the mesh
+##     h = .01
 
-    # ------------------- Visualization using different PCA? --------
-    dr = {}
-    from sklearn.manifold import Isomap
-    ## dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
-    ## dr['isomap5'] = Isomap(n_neighbors=5, n_components=2)
-    dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
-    dr['isomap7'] = Isomap(n_neighbors=7, n_components=2)
-    from sklearn.decomposition import KernelPCA # Too bad
-    dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="linear", gamma=5.0)
-    dr['kpca_gamma2'] = KernelPCA(n_components=2, kernel="rbf", gamma=2.0)
-    ## dr['kpca_gamma3'] = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.3)
-    ## dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="cosine", gamma=0.3)
-    from sklearn.manifold import LocallyLinearEmbedding # Too bad
-    ## dr['lle3'] = LocallyLinearEmbedding(n_neighbors=3, n_components=2, eigen_solver='dense')
-    ## dr['lle5'] = LocallyLinearEmbedding(n_neighbors=5, n_components=2, eigen_solver='dense')
-    ## dr['lle7'] = LocallyLinearEmbedding(n_neighbors=7, n_components=2, eigen_solver='dense')
+##     # ------------------- Visualization using different PCA? --------
+##     dr = {}
+##     from sklearn.manifold import Isomap
+##     ## dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
+##     ## dr['isomap5'] = Isomap(n_neighbors=5, n_components=2)
+##     dr['isomap4'] = Isomap(n_neighbors=4, n_components=2)
+##     dr['isomap7'] = Isomap(n_neighbors=7, n_components=2)
+##     from sklearn.decomposition import KernelPCA # Too bad
+##     dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="linear", gamma=5.0)
+##     dr['kpca_gamma2'] = KernelPCA(n_components=2, kernel="rbf", gamma=2.0)
+##     ## dr['kpca_gamma3'] = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.3)
+##     ## dr['kpca_gamma5'] = KernelPCA(n_components=2, kernel="cosine", gamma=0.3)
+##     from sklearn.manifold import LocallyLinearEmbedding # Too bad
+##     ## dr['lle3'] = LocallyLinearEmbedding(n_neighbors=3, n_components=2, eigen_solver='dense')
+##     ## dr['lle5'] = LocallyLinearEmbedding(n_neighbors=5, n_components=2, eigen_solver='dense')
+##     ## dr['lle7'] = LocallyLinearEmbedding(n_neighbors=7, n_components=2, eigen_solver='dense')
 
-    bv = {}
-    from sklearn import svm
-    bv['svm_gamma1'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=0.4)
-    bv['svm_gamma2'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=2.0)
-    bv['svm_gamma3'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=3.0)
-    bv['svm_gamma4'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=4.0)
+##     bv = {}
+##     from sklearn import svm
+##     bv['svm_gamma1'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=0.4)
+##     bv['svm_gamma2'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=2.0)
+##     bv['svm_gamma3'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=3.0)
+##     bv['svm_gamma4'] = svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=4.0)
 
 
-    # title for the plots
-    for idx, key in enumerate(dr.keys()):
-    ## for idx, key in enumerate(bv.keys()):
-        ml  = dr[key]
-        clf = bv['svm_gamma1'] #[key]
-        plt.subplot(2, 2, idx + 1)
+##     # title for the plots
+##     for idx, key in enumerate(dr.keys()):
+##     ## for idx, key in enumerate(bv.keys()):
+##         ml  = dr[key]
+##         clf = bv['svm_gamma1'] #[key]
+##         plt.subplot(2, 2, idx + 1)
 
-        # --------------- Dimension Reduction --------------------------
-        success_x = ml.fit_transform(success_data_array)
-        success_y = [1.0]*len(success_data_array)
+##         # --------------- Dimension Reduction --------------------------
+##         success_x = ml.fit_transform(success_data_array)
+##         success_y = [1.0]*len(success_data_array)
 
-        failure_x = ml.transform(failure_data_array)
-        failure_y = [0.0]*len(failure_data_array)
+##         failure_x = ml.transform(failure_data_array)
+##         failure_y = [0.0]*len(failure_data_array)
 
-        all_x = ml.transform(all_data_array)
+##         all_x = ml.transform(all_data_array)
 
-        # ---------------- Boundary Visualization ----------------------
-        clf.fit(success_x, success_y)
+##         # ---------------- Boundary Visualization ----------------------
+##         clf.fit(success_x, success_y)
 
-        # create a mesh to plot in
-        x_min, x_max = all_x[:, 0].min() - 0.2, all_x[:, 0].max() + 0.2
-        y_min, y_max = all_x[:, 1].min() - 0.2, all_x[:, 1].max() + 0.2
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
+##         # create a mesh to plot in
+##         x_min, x_max = all_x[:, 0].min() - 0.2, all_x[:, 0].max() + 0.2
+##         y_min, y_max = all_x[:, 1].min() - 0.2, all_x[:, 1].max() + 0.2
+##         xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+##                              np.arange(y_min, y_max, h))
         
-        Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
+##         Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
 
-        # Put the result into a color plot
-        Z = Z.reshape(xx.shape)
+##         # Put the result into a color plot
+##         Z = Z.reshape(xx.shape)
 
-        plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.Blues_r)
-        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors='orange')
-        plt.axis('off')
+##         plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.Blues_r)
+##         plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors='orange')
+##         plt.axis('off')
 
-        plt.title(key)
+##         plt.title(key)
 
-        # ---------------- Sample Visualization ------------------------
-        if success_viz:
-            plt.scatter(success_x[:,0], success_x[:,1], c='b', label=None)
+##         # ---------------- Sample Visualization ------------------------
+##         if success_viz:
+##             plt.scatter(success_x[:,0], success_x[:,1], c='b', label=None)
 
-        # Abnormal
-        if failure_viz:
-            legend_handles = []
-            m,n,k = np.shape(abnormalTestData)
-            for i in xrange(n):
-                data_array = None
-                for j in xrange(k):
-                    if data_array is None: data_array = abnormalTestData[:,i,j]
-                    else: data_array = np.vstack([data_array, abnormalTestData[:,i,j]])
+##         # Abnormal
+##         if failure_viz:
+##             legend_handles = []
+##             m,n,k = np.shape(abnormalTestData)
+##             for i in xrange(n):
+##                 data_array = None
+##                 for j in xrange(k):
+##                     if data_array is None: data_array = abnormalTestData[:,i,j]
+##                     else: data_array = np.vstack([data_array, abnormalTestData[:,i,j]])
 
-                res = ml.transform(data_array)
-                ## color = colors.next()
+##                 res = ml.transform(data_array)
+##                 ## color = colors.next()
 
-                cause = os.path.split(abnormalTestNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
-                if 'falling' in cause: color = 'k'
-                elif 'touching' == cause: color = 'r'
-                elif 'slip' in cause: color = 'm'
-                ## elif 'sound' in cause: color = 'g'
-                else: color = 'k'
+##                 cause = os.path.split(abnormalTestNameList[i])[-1].split('.pkl')[0].split('failure_')[-1]
+##                 if 'falling' in cause: color = 'k'
+##                 elif 'touching' == cause: color = 'r'
+##                 elif 'slip' in cause: color = 'm'
+##                 ## elif 'sound' in cause: color = 'g'
+##                 else: color = 'k'
                     
                 
-                plt.scatter(res[:,0], res[:,1], c=color, marker='x', label=cause)
-                ## legend_handles.append( h )
+##                 plt.scatter(res[:,0], res[:,1], c=color, marker='x', label=cause)
+##                 ## legend_handles.append( h )
 
-            ## plt.legend(loc='upper right') #handles=legend_handles) #loc='upper right', 
+##             ## plt.legend(loc='upper right') #handles=legend_handles) #loc='upper right', 
             
-    if save_pdf:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')        
-    else:
-        plt.show()
+##     if save_pdf:
+##         fig.savefig('test.pdf')
+##         fig.savefig('test.png')
+##         os.system('cp test.p* ~/Dropbox/HRL/')        
+##     else:
+##         plt.show()
 
 if __name__ == '__main__':
 
@@ -1994,6 +2155,9 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
+
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing',
+                 help='type the desired task name')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -2005,22 +2169,14 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
-    p.add_option('--statelikelihoodplot', '--slp', action='store_true', dest='bStateLikelihoodPlot',
-                 default=False, help='Plot the log likelihoods over states.')
+    
     p.add_option('--aeDataExtraction', '--ae', action='store_true', dest='bAEDataExtraction',
                  default=False, help='Extract auto-encoder data.')
-    p.add_option('--pca', action='store_true', dest='bPCAPlot',
-                 default=False, help='Plot pca result.')
+    p.add_option('--aeDataExtractionPlot', '--aep', action='store_true', dest='bAEDataExtractionPlot',
+                 default=False, help='Extract auto-encoder data and plot it.')
 
-    p.add_option('--evaluation', '--e', action='store_true', dest='bEvaluation',
-                 default=False, help='Evaluate a classifier.')
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
-    
-    p.add_option('--trainClassifier', '--tc', action='store_true', dest='bTrainClassifier',
-                 default=False, help='Train a cost sensitive classifier.')
-    p.add_option('--localization', '--ll', action='store_true', dest='bLocalization',
-                 default=False, help='Extract local feature.')
     
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
@@ -2029,83 +2185,175 @@ if __name__ == '__main__':
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out.')
 
+    # deprecated
+    p.add_option('--statelikelihoodplot', '--slp', action='store_true', dest='bStateLikelihoodPlot',
+                 default=False, help='Plot the log likelihoods over states.')
+    p.add_option('--evaluation', '--e', action='store_true', dest='bEvaluation',
+                 default=False, help='Evaluate a classifier.')
+    p.add_option('--trainClassifier', '--tc', action='store_true', dest='bTrainClassifier',
+                 default=False, help='Train a cost sensitive classifier.')
+    p.add_option('--localization', '--ll', action='store_true', dest='bLocalization',
+                 default=False, help='Extract local feature.')
+    
+    p.add_option('--pca', action='store_true', dest='bPCAPlot',
+                 default=False, help='Plot pca result.')
+
+
     opt, args = p.parse_args()
 
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    
-    subject = 'gatsbii'
-    task    = 'scooping'    
-    ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list = ['unimodal_audioPower',\
-                    'unimodal_kinVel',\
-                    'unimodal_ftForce',\
-                    ##'unimodal_visionChange',\
-                    'unimodal_ppsForce',\
-                    ##'unimodal_fabricForce',\
-                    'crossmodal_targetEEDist', \
-                    'crossmodal_targetEEAng']
-    rf_center     = 'kinEEPos'
-    modality_list = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
-    nState       = 10
-
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-
-    #---------------------------------------------------------------------------           
-    ## subject = 'gatsbii'
-    ## task    = 'feeding' 
-    ## feature_list = ['unimodal_audioPower', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-    ##                 'crossmodal_artagEEAng']
-
-    #---------------------------------------------------------------------------           
-    ## task    = 'touching'
-    
-    #---------------------------------------------------------------------------           
-    
-    subject = 'gatsbii'
-    task    = 'pushing'    
-    ## task    = 'pushing_microwave_black'    
-    ## task    = 'pushing_microwave_white'    
-    ## task    = 'pushing_lab_cabinet'    
-    ## feature_list = ['unimodal_audioPower',\
-    ##                 'unimodal_kinVel',\
-    ##                 'unimodal_ftForce',\
-    ##                 ##'unimodal_visionChange',\
-    ##                 'unimodal_ppsForce',\
-    ##                 ##'unimodal_fabricForce',\
-    ##                 'crossmodal_targetEEDist', \
-    ##                 'crossmodal_targetEEAng']
-    feature_list  = ['unimodal_ftForce']#, \
-                    # 'unimodal_audioWristRMS'] #'unimodal_audioPower', , 
-    rf_center     = 'kinEEPos'
-    modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
-    ## modality_list   = ['kinematics', 'audio', 'ft']
+    rf_center     = 'kinEEPos'        
     nState        = 10
     scale         = 1.0
     # Dectection TEST 
-    local_range    = 1.0    
-    downSampleSize = 200
+    local_range    = 10.0    
 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'+task+'_data'
-    ## raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/TRO2016/'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    if opt.task == 'scooping':
+        ## subjects = ['gatsbii']
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
+        task     = opt.task    
+        ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        feature_list = ['unimodal_audioWristRMS',\
+                        ## 'unimodal_audioPower',\
+                        ## 'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        ##'unimodal_visionChange',\
+                        ## 'unimodal_ppsForce',\
+                        ##'unimodal_fabricForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        ## modality_list = ['kinematics', 'audioWrist', 'audio', 'fabric', 'ft', 'vision_artag', \
+        ##                  'vision_change', 'pps']
+        modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
+                         'vision_change', 'pps']
+        downSampleSize = 200
 
-    data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'nNormalFold':3, 'nAbnormalFold':3,\
-                      'feature_list': feature_list, 'nAugment': 1 }
-    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
-                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True}
-    HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 1.0, 'scale': 10.0}
-    SVM_param_dict = {'renew': False,}
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                  'SVM': SVM_param_dict}
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
+        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
+                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
+        SVM_param_dict = {'renew': False,}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':-np.linspace(0.8, 6, nPoints)+2.0, \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+
+
+    #---------------------------------------------------------------------------
+    elif opt.task == 'feeding':
+        
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        task     = opt.task 
+        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
+        modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+        downSampleSize = 200
+
+        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': downSampleSize, 'cut_data': [0,170], \
+                          'nNormalFold':4, 'nAbnormalFold':4,\
+                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.5}
+        SVM_param_dict = {'renew': False,}
+        
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+            
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing':
+        subjects = ['gatsbii']
+        task     = opt.task    
+        ## task    = 'pushing_microwave_black'    
+        ## task    = 'pushing_microwave_white'    
+        ## task    = 'pushing_lab_cabinet'    
+        ## feature_list = ['unimodal_audioPower',\
+        ##                 'unimodal_kinVel',\
+        ##                 'unimodal_ftForce',\
+        ##                 ##'unimodal_visionChange',\
+        ##                 'unimodal_ppsForce',\
+        ##                 ##'unimodal_fabricForce',\
+        ##                 'crossmodal_targetEEDist', \
+        ##                 'crossmodal_targetEEAng']
+        ## feature_list  = ['unimodal_ftForce',\
+        ##                  'crossmodal_targetEEDist',\
+        ##                  'crossmodal_targetEEAng',\
+        ##                  'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        feature_list = ['relativePose_artag_EE', \
+                        'relativePose_artag_artag', \
+                        'wristAudio', \
+                        'ft', \
+                        ]       
+                         
+        #modality_list = ['ft'] #'audio', , 'audioWrist' # only for data plot
+        modality_list   = ['kinematics', 'audio', 'ft']
+
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+        downSampleSize = 200      
+
+        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                          'nNormalFold':3, 'nAbnormalFold':3,\
+                          'feature_list': feature_list, 'nAugment': 1, 'lowVarDataRemv': False }
+        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
+                          'add_option': 'featureToBottleneck', 'add_feature': feature_list}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 8.0}
+        SVM_param_dict = {'renew': False,}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+                          'update_list': ['progress_time_cluster'],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    #---------------------------------------------------------------------------           
+    #---------------------------------------------------------------------------           
+    #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     
@@ -2118,7 +2366,7 @@ if __name__ == '__main__':
         successData = True
         failureData = True
         
-        data_plot([subject], task, raw_data_path, save_data_path,\
+        data_plot(subjects, task, raw_data_path, save_data_path,\
                   downSampleSize=downSampleSize, \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
@@ -2129,36 +2377,49 @@ if __name__ == '__main__':
         '''
         Manually select and filter bad data out
         '''
-        rf_center       = 'kinEEPos'
-        modality_list   = ['kinematics', 'audio', 'fabric', 'ft', 'vision_artag', 'vision_change', 'pps']
+        ## modality_list   = ['kinematics', 'audioWrist','audio', 'fabric', 'ft', \
+        ##                    'vision_artag', 'vision_change', 'pps']
+        success_viz = True
+        failure_viz = True
 
-        data_selection([subject], task, raw_data_path, save_data_path,\
+        data_selection(subjects, task, raw_data_path, save_data_path,\
                        downSampleSize=downSampleSize, \
                        local_range=local_range, rf_center=rf_center, \
+                       success_viz=success_viz, failure_viz=failure_viz,\
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
                        modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)        
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = False
+        failure_viz = True
 
-        dm.getDataSet([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                      downSampleSize=downSampleSize, scale=scale, \
+        dm.getDataSet(subjects, task, raw_data_path, save_data_path,
+                      data_param_dict['rf_center'], data_param_dict['local_range'],\
+                      downSampleSize=data_param_dict['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
+                      ae_data=AE_param_dict['switch'],\
+                      data_ext=data_param_dict['lowVarDataRemv'],\
+                      cut_data=data_param_dict['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\
-                      feature_list=feature_list, data_renew=opt.bDataRenew)
+                      feature_list=data_param_dict['feature_list'], data_renew=opt.bDataRenew)
+
+    elif opt.bAEDataExtraction:
+        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
+
+    elif opt.bAEDataExtractionPlot:
+        success_viz = True
+        failure_viz = True
+        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict,\
+                         success_viz=success_viz, failure_viz=failure_viz,\
+                         verbose=opt.bVerbose)
+
 
     elif opt.bLikelihoodPlot:
-        scale        = 100.0
         threshold    = 0.0
         smooth       = False
-        cluster_type = 'time'
-        cluster_type = 'state'
 
-        likelihoodOfSequences([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                              downSampleSize=downSampleSize, \
-                              feature_list=feature_list, scale=scale, \
-                              nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
+        likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
+                              decision_boundary_viz=True, \
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
@@ -2171,7 +2432,7 @@ if __name__ == '__main__':
         cluster_type    = 'state'
         classifier_type = 'new'
         
-        stateLikelihoodPlot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        stateLikelihoodPlot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                             downSampleSize=downSampleSize, \
                             feature_list=feature_list, \
                             nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2180,48 +2441,15 @@ if __name__ == '__main__':
                             useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                             hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
 
-    elif opt.bAEDataExtraction:
-
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        feature_list = ['relativePose_artag_EE', \
-                        'relativePose_artag_artag', \
-                        'wristAudio', \
-                        'ft', \
-                        ]       
-
-        aeDataExtraction([subject], task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
 
-    elif opt.bEvaluation:
-        rf_center    = 'kinEEPos'
-        ## rf_center    = 'kinForearmPos'
-        local_range  = 0.15
 
-        threshold       = 0.0
-        smooth          = False #only related with expLoglikelihood
-        ## cluster_type = 'time'
-        ## cluster_type = 'state'
-        cluster_type    = 'none'
-        classifier_type = 'cssvm'
-        
-        evaluation([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
-                   downSampleSize=downSampleSize, \
-                   feature_list=feature_list, \
-                   nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
-                   classifier_type=classifier_type,\
-                   hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf, \
-                   verbose=opt.bVerbose)
-        
-    elif opt.bEvaluationAll:
-        
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        
-        evaluation_all([subject], task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+    elif opt.bEvaluationAll:                
+        evaluation_all(subjects, task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose)
 
 
+    #-------------------------------------------------------------------------------------------------
     elif opt.bTrainClassifier:
         rf_center    = 'kinEEPos'
         ## rf_center    = 'kinForearmPos'
@@ -2244,7 +2472,7 @@ if __name__ == '__main__':
         cluster_type = 'none'
         classifier_type = 'new'
         
-        trainClassifierSVM([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        trainClassifierSVM(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                            downSampleSize=downSampleSize, \
                            feature_list=feature_list, \
                            nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
@@ -2262,6 +2490,26 @@ if __name__ == '__main__':
         ##                 useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
         ##                 hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
 
+    elif opt.bEvaluation:
+        rf_center    = 'kinEEPos'
+        ## rf_center    = 'kinForearmPos'
+        local_range  = 0.15
+
+        threshold       = 0.0
+        smooth          = False #only related with expLoglikelihood
+        ## cluster_type = 'time'
+        ## cluster_type = 'state'
+        cluster_type    = 'none'
+        classifier_type = 'cssvm'
+        
+        evaluation(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
+                   downSampleSize=downSampleSize, \
+                   feature_list=feature_list, \
+                   nState=nState, threshold=threshold, smooth=smooth, cluster_type=cluster_type,\
+                   classifier_type=classifier_type,\
+                   hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf, \
+                   verbose=opt.bVerbose)
+        
         
     ## else:
     ##     nState         = 10
@@ -2296,7 +2544,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
                         
-        pca_plot([subject], task, raw_data_path, save_data_path, rf_center, local_range,\
+        pca_plot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                   downSampleSize=downSampleSize, \
                   success_viz=success_viz, failure_viz=failure_viz,\
                   save_pdf=opt.bSavePdf,

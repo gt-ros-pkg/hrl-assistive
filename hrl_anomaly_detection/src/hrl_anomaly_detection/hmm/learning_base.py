@@ -130,8 +130,9 @@ class learning_base():
             ## print valid_params
             ## print key
             if not key in valid_params:
-                raise ValueError('Invalid parameter %s ' 'for estimator %s'
-                                 % (key, self.__class__.__name__))                
+                continue
+                ## raise ValueError('Invalid parameter %s ' 'for estimator %s'
+                ##                  % (key, self.__class__.__name__))                
             setattr(self, key, value)
                        
         return self

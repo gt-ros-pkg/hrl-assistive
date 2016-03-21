@@ -173,14 +173,20 @@ class BaseSelectionManager(object):
     def move_arm_ui_cb(self, msg):
         print 'Moving arm for task: ', msg.data
         split_msg = msg.data.split()
-        self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        if 'face' in split_msg:
+            self.task = ''.join([split_msg[0], '_', split_msg[2]])
+        else:
+            self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
         print self.armReachActionLeft(self.task)
         return
 
     def start_task_ui_cb(self, msg):
         print 'My task is: ', msg.data
         split_msg = msg.data.split()
-        self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        if 'face' in split_msg:
+            self.task = ''.join([split_msg[0], '_', split_msg[2]])
+        else:
+            self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
         # if self.send_task_count > 1 and self.base_selection_complete:
         #     self.base_selection_complete = False
         #     self.send_task_count = 0
@@ -308,6 +314,9 @@ class BaseSelectionManager(object):
             if configuration_goals[1] > 1.:
                 configuration_goals[1] += 14
                 configuration_goals[0] += 0.14
+            elif configuration_goals[1] < 1.:
+                configuration_goals[1] += 2
+                configuration_goals[0] += 0.02
             autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9+14, self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
             print 'The autobed should be set to a height of: ', configuration_goals[1]+7

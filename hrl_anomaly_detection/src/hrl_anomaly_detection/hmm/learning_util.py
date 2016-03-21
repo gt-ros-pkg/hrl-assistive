@@ -103,13 +103,14 @@ def vectors_to_mean_cov(vecs, nState, nEmissionDim):
 def convert_sequence(data, emission=False):
     '''
     data: dimension x sample x length
+    
     TODO: need to replace entire code it looks too inefficient conversion.
     '''
 
-    # change into array from other types
+    # change into array from other types => dimension x sample x length
     X = [copy.copy(np.array(d)) if type(d) is not np.ndarray else copy.copy(d) for d in data]
 
-    # Change into 2-dimensional array
+    # Change into 2-dimensional array => dim x sample x length
     X = [np.reshape(x, (1, len(x))) if len(np.shape(x)) == 1 else x for x in X]
 
     n, m = np.shape(X[0])
@@ -117,14 +118,12 @@ def convert_sequence(data, emission=False):
     Seq = []
     for i in xrange(n):
         Xs = []
+        for j in xrange(m):
+            Xs.append([x[i, j] for x in X]) # dim x j
 
         if emission:
-            for j in xrange(m):
-                Xs.append([x[i, j] for x in X])
-            Seq.append(Xs)
+            Seq.append(Xs) # sample x dim x ... 
         else:
-            for j in xrange(m):
-                Xs.append([x[i, j] for x in X])
             Seq.append(np.array(Xs).flatten().tolist())
 
     return np.array(Seq)

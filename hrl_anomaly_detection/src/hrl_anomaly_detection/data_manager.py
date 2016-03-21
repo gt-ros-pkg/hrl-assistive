@@ -111,8 +111,8 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
 #-------------------------------------------------------------------------------------------------
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-               downSampleSize=200, scale=10.0, ae_data=False, data_ext=True, \
-               nAugment=0,\
+               downSampleSize=200, scale=1.0, ae_data=False, data_ext=True, \
+               nAugment=0, cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                feature_list=['crossmodal_targetEEDist'], data_renew=False):
@@ -128,18 +128,26 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     else:
         save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is not True :
+    if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
-        allData         = data_dict['allData']
-        successData     = data_dict['trainingData'] 
-        failureData     = data_dict['abnormalTestData']
-        aug_successData = data_dict.get('successData_augmented', [])
-        aug_failureData = data_dict.get('failureData_augmented', [])
-        failureNameList = data_dict['abnormalTestNameList']
-        param_dict      = data_dict['param_dict']
+        if ae_data:
+            successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
+            failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
+            aug_successData = data_dict.get('aeSuccessData_augmented', [])
+            aug_failureData = data_dict.get('aeFailureData_augmented', [])
+            failureNameList = None
+            param_dict      = data_dict['aeParamDict']
+        else:        
+            allData         = data_dict['allData']
+            successData     = data_dict.get('successData', data_dict['trainingData']) 
+            failureData     = data_dict.get('failureData', data_dict['abnormalTestData'])
+            aug_successData = data_dict.get('successData_augmented', [])
+            aug_failureData = data_dict.get('failureData_augmented', [])
+            failureNameList = None #data_dict['abnormalTestNameList']
+            param_dict      = data_dict['param_dict']
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -154,52 +162,57 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                          renew=data_renew, save_pkl=all_data_pkl)
 
         # data set
-        if ae_data is False:
+        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
+                                            '_'+str(local_range))
+        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=success_data_pkl)
 
-            success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-                                                '_'+str(local_range))
-            _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-                                                 downSampleSize=downSampleSize,\
-                                                 local_range=local_range, rf_center=rf_center,\
-                                                 renew=data_renew, save_pkl=success_data_pkl)
+        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
+                                            '_'+str(local_range))
+        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=failure_data_pkl)
 
-            failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-                                                '_'+str(local_range))
-            _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-                                                 downSampleSize=downSampleSize,\
-                                                 local_range=local_range, rf_center=rf_center,\
-                                                 renew=data_renew, save_pkl=failure_data_pkl)
-            
-            allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale)
-            successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
-                                                 param_dict=param_dict)
-            failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
-                                                 param_dict=param_dict)
-            aug_successData = []
-            aug_failureData = []
-        else:
-            successData, failureData, aug_successData, aug_failureData, param_dict = \
-              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list),\
-                             nAugment=nAugment)
-            allData = None #successData+failureData
-                                                                    
+        allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale,\
+                                             cut_data=cut_data)
+        successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
+                                             param_dict=param_dict, cut_data=cut_data)
+        failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
+                                             param_dict=param_dict, cut_data=cut_data)
+        aug_successData = successData
+        aug_failureData = failureData
+                                                                                
         data_dict = {}
-        data_dict['allData']              = allData = np.array(allData)
-        data_dict['trainingData']         = successData = np.array(successData)
-        data_dict['abnormalTestData']     = failureData = np.array(failureData)
-        data_dict['abnormalTestNameList'] = failureNameList = None #failure_data_dict['fileNameList']
+        data_dict['allData']      = allData = np.array(allData)
+        data_dict['successData']  = successData = np.array(successData)
+        data_dict['failureData']  = failureData = np.array(failureData)
+        data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['successData_augmented'] = aug_successData = np.array(aug_successData)
         data_dict['failureData_augmented'] = aug_failureData = np.array(aug_failureData)
         data_dict['param_dict'] = param_dict
+
+        if ae_data:
+            ae_successData, ae_failureData, ae_aug_successData, ae_aug_failureData, ae_param_dict = \
+              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list),\
+                             nAugment=nAugment)
+
+            data_dict['aeSuccessData'] = successData = np.array(ae_successData)
+            data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
+            data_dict['aeSuccessData_augmented'] = np.array(ae_aug_successData)
+            data_dict['aeFailureData_augmented'] = np.array(ae_aug_failureData)
+            data_dict['aeParamDict']   = ae_param_dict
+        
         ut.save_pickle(data_dict, save_pkl)
 
-    
+    #-----------------------------------------------------------------------------
     ## All data
     nPlot = None
 
+    feature_names = np.array(param_dict.get('feature_names', feature_list))
     if data_ext:
-        feature_names = np.array(param_dict['feature_names'])
-
         # 1) exclude stationary data
         thres = 0.025
         n,m,k = np.shape(successData)
@@ -225,12 +238,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Remove features: ", RemoveFeature_names
         print "--------------------------------"
         ## sys.exit()
+    else:
+        AddFeature_names    = feature_names
 
 
     # -------------------- Display ---------------------
     fig = None
     if success_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
@@ -245,7 +260,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
         if nPlot is None:
@@ -259,7 +274,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
-        feature_names = np.array(param_dict['feature_names'])
+        feature_names = np.array(param_dict.get('feature_names', feature_list))
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
 
         if save_pdf:
@@ -274,10 +289,11 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
 
-    if ae_data:
-        return successData, failureData, aug_successData, aug_failureData, param_dict
-    else:
-        return allData, successData, failureData, failureNameList, param_dict
+    return data_dict
+    ## return successData, failureData, aug_successData, aug_failureData, param_dict
+    ## if ae_data:
+    ## else:
+    ##     return allData, successData, failureData, failureNameList, param_dict
 
 
 def getAEdataSet(idx, successData, failureData, \
@@ -290,6 +306,7 @@ def getAEdataSet(idx, successData, failureData, \
                  layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
                  max_iteration=20000, min_loss=1.0, cuda=False, \
+                 filtering=True, filteringDim=4, add_feature=None, \
                  verbose=False, renew=False ):
 
     if os.path.isfile(AE_proc_data) and not renew:
@@ -350,6 +367,23 @@ def getAEdataSet(idx, successData, failureData, \
     d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, new_abnormalTrainData, nSingleData), 0,1) 
     d['normTestData']    = np.swapaxes(predictFeatures(ml, new_normalTestData, nSingleData), 0,1)
     d['abnormTestData']  = np.swapaxes(predictFeatures(ml, new_abnormalTestData, nSingleData), 0,1)
+
+    if filtering:
+        pooling_param_dict  = {'dim': filteringDim} # only for AE        
+        d['normTrainDataFiltered'], pooling_param_dict = variancePooling(d['normTrainData'], \
+                                                                         pooling_param_dict)
+        d['abnormTrainDataFiltered'],_  = variancePooling(d['abnormTrainData'], pooling_param_dict)
+        d['normTestDataFiltered'],_     = variancePooling(d['normTestData'], pooling_param_dict)
+        d['abnormTestDataFiltered'],_   = variancePooling(d['abnormTestData'], pooling_param_dict)
+
+    ## # add hand-crafted features
+    ## if add_feature is not None:
+    ##     # sample x dim x length
+    ##     normalTrainData   = 
+    ##     abnormalTrainData = 
+    ##     normalTestData    = 
+    ##     abnormalTestData  = 
+        
     ut.save_pickle(d, AE_proc_data)
 
     return d
@@ -361,8 +395,8 @@ def variancePooling(X, param_dict):
     TODO: can we select final dimension?
     '''
     dim         = param_dict['dim']
-    min_all_std = param_dict['min_all_std']
-    max_avg_std = param_dict['max_avg_std']
+    ## min_all_std = param_dict['min_all_std']
+    ## max_avg_std = param_dict['max_avg_std']
 
     if 'dim_idx' not in param_dict.keys():
         dim_idx = []
@@ -395,7 +429,7 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
+def extractFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -514,14 +548,14 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
+                ## if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
+                ## else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
 
-                if 'ftForce_z' not in param_dict['feature_names']:
+                if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
                     ## param_dict['feature_names'].append('ftForce_x')
                     ## param_dict['feature_names'].append('ftForce_y')
-                    param_dict['feature_names'].append('ftForce_z')
+                    ## param_dict['feature_names'].append('ftForce_z')
             else:                
                 unimodal_ftForce_mag = ftForce
             
@@ -707,12 +741,16 @@ def extractFeature(d, feature_list, scale=10.0, param_dict=None, verbose=False):
         dataList.append(dataSample)
 
 
-    # Convert data structure & cut unnecessary part
+    # Convert data structure 
     # From nSample x dim x length
     # To dim x nSample x length
     nSample      = len(dataList)
     nEmissionDim = len(dataList[0])
     features = np.swapaxes(dataList, 0, 1)    
+
+    # cut unnecessary part #temp
+    if cut_data is not None:
+        features = features[:,:,cut_data[0]:cut_data[1]]
 
     # Scaling ------------------------------------------------------------
     if isTrainingData:
@@ -964,9 +1002,8 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
         failure_aug_features = scale( failure_aug_features, param_dict['feature_min'], \
                                               param_dict['feature_max'] )
 
-
-        
-    param_dict['dataDim'] = dataDim
+    param_dict['feature_names'] = raw_feature_list
+    param_dict['dataDim']       = dataDim
     
     ## scaled_features = []
     ## for i, feature in enumerate(features):
@@ -1125,14 +1162,16 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
           nSingleData
 
     # dim x sample x length
-    successData, failureData, aug_successData, aug_failureData, param_dict = \
-      getDataSet(subject_names, task, raw_data_path, \
-                 processed_data_path, rf_center, local_range,\
-                 downSampleSize=downSampleSize, \
-                 scale=1.0,\
-                 ae_data=True, data_ext=False, nAugment=nAugment, \
-                 feature_list=feature_list, \
-                 data_renew=renew)
+    data_dict = getDataSet(subject_names, task, raw_data_path, \
+                           processed_data_path, rf_center, local_range,\
+                           downSampleSize=downSampleSize, \
+                           scale=1.0,\
+                           ae_data=True, data_ext=False, nAugment=nAugment, \
+                           feature_list=feature_list, \
+                           data_renew=renew)
+    aug_successData = data_dict['aeSuccessData_augmented']
+    aug_failureData = data_dict['aeFailureData_augmented']
+                           
 
     # index selection
     ratio        = 0.8

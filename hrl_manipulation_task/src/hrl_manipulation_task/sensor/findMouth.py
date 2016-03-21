@@ -259,7 +259,7 @@ if __name__ == '__main__':
     
     total_tags = 1
     tag_id = 10 #9
-    tag_side_length = 0.053 #0.033
+    tag_side_length = 0.068 #0.053 #0.033
     pos_thres = 0.2
     max_idx   = 18
 
