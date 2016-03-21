@@ -39,12 +39,22 @@ RFH.CartesianEEControl = function (options) {
         serviceName: '/pixel_2_3d'
     });
 
+    self.cameraSwing = function (event) {
+        var camera = RFH.viewer.camera;
+        var eePosInBase = new THREE.Vector3().copy(self.eeTF.translation);
+        var camPosInBase = new THREE.Vector3().copy(self.cameraTF.translation);
+        var camToEE = eePosInBase - camPosInBase;
+    };
+
+    self.pointCloud = RFH.kinectHeadPointCloud;
+
     $('#touchspot-toggle, #toward-button, #away-button').button();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
     $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set, #ee-mode-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
+    $('.camera-wingButton').button().on('click.rfh', self.cameraSwing);
 
 
     var displayGoalPose = function (ps_msg) {
