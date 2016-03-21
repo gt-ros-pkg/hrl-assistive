@@ -146,9 +146,6 @@ def cross_validate_local(idx, processed_data_path, model, params):
             cov_mult = [value]*(nEmissionDim**2)
         if key is 'scale':
             scale = value
-
-    return 0.0
-
             
     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
     if ret == 'Failure':
