@@ -324,7 +324,7 @@ class learning_hmm(learning_base):
             # sample,            
             _, ll_logp = self.getLoglikelihoods(X, n_jobs=n_jobs)
 
-        v = np.mean( np.mean(ll_logp, axis=0) )
+        v = np.mean( np.std(ll_logp, axis=0) )
         ## v = 0.0
         ## if y is not None:
         ##     for i, l_logp in enumerate(ll_logp):                

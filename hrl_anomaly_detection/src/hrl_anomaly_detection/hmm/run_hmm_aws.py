@@ -47,13 +47,7 @@ class CloudSearchForHMM(CloudSearch):
 	#requires grab_data to be implemented correctly
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, params, processed_data_path, nFiles):
-
-        ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        ## path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection:${PYTHONPATH}'
-        ## path_shell = 'export PYTHONPATH=/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages'
-        ## ## path_shell = 'source ~/.bashrc'
-        ## self.sync_run_shell(path_shell)
-
+        
         ## from cross import cross_validate_local
         model = hmm.learning_hmm(10, 10)
         
@@ -68,41 +62,39 @@ class CloudSearchForHMM(CloudSearch):
 
     ## def wait(self):
 
-def cross_validate(train_data, test_data,  model, params):
-    '''
-    train_data : [x,y]
-    '''
+## def cross_validate(train_data, test_data,  model, params):
+##     '''
+##     train_data : [x,y]
+##     '''
 
-    train_data_x = train_data[0]
-    train_data_y = train_data[1]
-    test_data_x  = test_data[0]
-    test_data_y  = test_data[1]
+##     train_data_x = train_data[0]
+##     train_data_y = train_data[1]
+##     test_data_x  = test_data[0]
+##     test_data_y  = test_data[1]
     
-    model.set_params(**params)
-    nEmissionDim = len(train_data_x)
+##     model.set_params(**params)
+##     nEmissionDim = len(train_data_x)
 
-    scale = 1.0
-    cov_mult = [1.0]*(nEmissionDim**2)
-    for key, value in six.iteritems(params): 
-        if key is 'cov':
-            cov_mult = [value]*(nEmissionDim**2)
-        if key is 'scale':
-            scale = value
+##     scale = 1.0
+##     cov_mult = [1.0]*(nEmissionDim**2)
+##     for key, value in six.iteritems(params): 
+##         if key is 'cov':
+##             cov_mult = [value]*(nEmissionDim**2)
+##         if key is 'scale':
+##             scale = value
             
-    ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
-    if ret == 'Failure':
-        return 0.0, params
-    else:
-        score = model.score(test_data_x*scale, test_data_y)    
-        return score, params
+##     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+##     if ret == 'Failure':
+##         return 0.0, params
+##     else:
+##         score = model.score(test_data_x*scale, test_data_y)    
+##         return score, params
 
 def cross_validate_local(idx, processed_data_path, model, params):
     '''
     
     '''
 
-    return processed_data_path
-    
     import os, sys
     from sklearn.externals import six
     import numpy as np
@@ -135,12 +127,35 @@ def cross_validate_local(idx, processed_data_path, model, params):
 
     testSet    = [testData_x, testData_y ]
 
-    return cross_validate(trainSet, testSet, model, params)
-
-
+    ## return cross_validate(trainSet, testSet, model, params)
     ## return os.environ['TESTTT']
     ## return os.environ['PATH'].split(os.pathsep)
 
+    train_data_x = trainSet[0]
+    train_data_y = trainSet[1]
+    test_data_x  = testSet[0]
+    test_data_y  = testSet[1]
+    
+    model.set_params(**params)
+    nEmissionDim = len(train_data_x)
+
+    scale = 1.0
+    cov_mult = [1.0]*(nEmissionDim**2)
+    for key, value in six.iteritems(params): 
+        if key is 'cov':
+            cov_mult = [value]*(nEmissionDim**2)
+        if key is 'scale':
+            scale = value
+
+    return 0.0
+
+            
+    ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+    if ret == 'Failure':
+        return 0.0, params
+    else:
+        score = model.score(test_data_x*scale, test_data_y)    
+        return score, params
 
 
 
