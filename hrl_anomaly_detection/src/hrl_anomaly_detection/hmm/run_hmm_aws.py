@@ -148,6 +148,7 @@ def cross_validate_local(idx, processed_data_path, model, params):
             scale = value
             
     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+    
     if ret == 'Failure':
         return 0.0, params
     else:

@@ -101,18 +101,28 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             failureData = aug_failureData = d['abnormTrainData']
 
     else:
-        successData, failureData, aug_successData, aug_failureData, _ \
-          = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                          processed_data_path, data_dict['rf_center'], \
-                          data_dict['local_range'],\
-                          downSampleSize=data_dict['downSampleSize'], \
-                          scale=1.0,\
-                          ae_data=AE_dict['switch'],\
-                          data_ext=data_dict['lowVarDataRemv'],\
-                          nAugment=data_dict['nAugment'],\
-                          feature_list=data_dict['feature_list'], \
-                          cut_data=data_dict['cut_data'],\
-                          data_renew=data_dict['renew'])
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], \
+                           data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], \
+                           scale=1.0,\
+                           ae_data=AE_dict['switch'],\
+                           data_ext=data_dict['lowVarDataRemv'],\
+                           nAugment=data_dict['nAugment'],\
+                           feature_list=data_dict['feature_list'], \
+                           cut_data=data_dict['cut_data'],\
+                           data_renew=data_dict['renew'])
+        if AE_dict['switch']:
+            successData = dd['aeSuccessData']
+            failureData = dd['aeFailureData']
+            aug_successData = dd['aeSuccessData_augmented']
+            aug_failureData = dd['aeFailureData_augmented']
+        else:
+            successData = dd['successData']
+            failureData = dd['failureData']
+            aug_successData = dd['successData_augmented']
+            aug_failureData = dd['failureData_augmented']
+                           
 
     if data_dict['nAugment'] > 0:
         successData = aug_successData * HMM_dict['scale']
@@ -268,11 +278,15 @@ def stateLikelihoodPlot(subject_names, task_name, raw_data_path, processed_data_
                         useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                         hmm_renew=False, data_renew=False, save_pdf=False, show_plot=True):
 
-    successData, failureData,_,_,_ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                                                   processed_data_path, rf_center, local_range,\
-                                                   downSampleSize=downSampleSize, \
-                                                   feature_list=feature_list, \
-                                                   data_renew=data_renew)
+    dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                       processed_data_path, rf_center, local_range,\
+                       downSampleSize=downSampleSize, \
+                       feature_list=feature_list, \
+                       data_renew=data_renew)
+    successData = data_dict['successData']
+    failureData = data_dict['failureData']
+                       
+                       
 
     # index selection
     success_idx  = range(len(successData[0]))
@@ -375,14 +389,18 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
     else:
-        successData, failureData, aug_successData, aug_failureData, _ \
-          = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
-                          data_dict['rf_center'], data_dict['local_range'],\
-                          downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                          ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
-                          nAugment=data_dict['nAugment'], feature_list=feature_list, \
-                          cut_data=data_dict['cut_data'],
-                          data_renew=data_renew)
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
+                           data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
+                           nAugment=data_dict['nAugment'], feature_list=feature_list, \
+                           cut_data=data_dict['cut_data'],
+                           data_renew=data_renew)
+        successData = dd['aeSuccessData']
+        failureData = dd['aeFailureData']
+        aug_successData = dd['aeSuccessData_augmented']
+        aug_failureData = dd['aeFailureData_augmented']
+        
         kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
@@ -391,6 +409,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
         d['failureData'] = failureData
         d['aug_successData'] = aug_successData
         d['aug_failureData'] = aug_failureData
+        
         d['kFoldList']   = kFold_list                                             
         ut.save_pickle(d, crossVal_pkl)
 
@@ -475,26 +494,46 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         d = ut.load_pickle(crossVal_pkl)
-        successData = d['successData']
-        failureData = d['failureData']
-        aug_successData = d['aug_successData']
-        aug_failureData = d['aug_failureData']
-        kFold_list  = d['kFoldList']
+
+        print d.keys()
         
+        if AE_dict['switch']:
+            successData = d['aeSuccessData']
+            failureData = d['aeFailureData']
+            aug_successData = d['aeSuccessData_augmented']
+            aug_failureData = d['aeFailureData_augmented']
+        else:
+            successData = d['successData']
+            failureData = d['failureData']
+            aug_successData = d.get('successData_augmented', d['aug_successData'])
+            aug_failureData = d.get('failureData_augmented', d['aug_failureData'])
+        kFold_list  = d['kFoldList']
+
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
-        successData, failureData, aug_successData, aug_failureData, _ \
-          = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                          processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                          downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                          ae_data=autoEncoder,\
-                          data_ext=data_dict['lowVarDataRemv'], \
-                          nAugment=data_dict['nAugment'], \
-                          feature_list=data_dict['feature_list'], \
-                          cut_data=data_dict['cut_data'], \
-                          data_renew=data_renew)
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           ae_data=autoEncoder,\
+                           data_ext=data_dict['lowVarDataRemv'], \
+                           nAugment=data_dict['nAugment'], \
+                           feature_list=data_dict['feature_list'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew)
+        if AE_dict['switch']:
+            successData     = d['aeSuccessData']
+            failureData     = d['aeFailureData']
+            aug_successData = d['aeSuccessData_augmented']
+            aug_failureData = d['aeFailureData_augmented']
+        else:
+            successData     = d['successData']
+            failureData     = d['failureData']
+            aug_successData = d['successData_augmented']
+            aug_failureData = d['failureData_augmented']
+
+                          
         if data_dict['nAugment']>0:
             kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]), \
                                               data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
@@ -502,29 +541,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             kFold_list = dm.kFold_data_index2(len(successData[0]), len(failureData[0]), \
                                               data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        d = {}
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['aug_successData'] = aug_successData
-        d['aug_failureData'] = aug_failureData
-        d['kFoldList']   = kFold_list                                             
-                                                                    
-        ## else:
-        ##     _, successData, failureData,_, _ = dm.getDataSet(subject_names, task_name, raw_data_path, \
-        ##                                                   processed_data_path, rf_center, local_range,\
-        ##                                                   downSampleSize=downSampleSize, \
-        ##                                                   scale=1.0,\
-        ##                                                   feature_list=feature_list, \
-        ##                                                   data_renew=data_renew)
+        d['kFoldList']   = kFold_list
 
-        ##     kFold_list = dm.kFold_data_index(len(failureData[0]), len(successData[0]), \
-        ##                                      nAbnormalFold, nNormalFold )
-
-        ##     d = {}
-        ##     d['successData'] = successData
-        ##     d['failureData'] = failureData
-        ##     d['kFoldList']   = kFold_list
-
+        
         ut.save_pickle(d, crossVal_pkl)
 
 
@@ -565,6 +584,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                     lambda_reg=AE_dict['lambda_reg'], \
                                     max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
                                     filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                                    add_feature=AE_dict.get('add_feature', None),\
                                     cuda=False, verbose=False)
 
                 if AE_dict['filter']:
@@ -2207,7 +2227,7 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.5}
         SVM_param_dict = {'renew': False,}
         
         nPoints        = 20
@@ -2220,11 +2240,7 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-        
-
-    #---------------------------------------------------------------------------           
-    ## task    = 'touching'
-    
+            
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
         subjects = ['gatsbii']
@@ -2266,8 +2282,9 @@ if __name__ == '__main__':
         AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 30, 'cov': 4.0, 'scale': 2.0}
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
+                          'add_option': 'featureToBottleneck', 'add_feature': feature_list}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 8.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20
