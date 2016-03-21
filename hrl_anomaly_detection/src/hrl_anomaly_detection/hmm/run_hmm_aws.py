@@ -56,39 +56,39 @@ class CloudSearchForHMM(CloudSearch):
             for idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
                 self.all_tasks.append(task)
-                print task.get()
+                print self.get_task_results(task)
                 return self.all_tasks
         return self.all_tasks
 
     ## def wait(self):
 
-## def cross_validate(train_data, test_data,  model, params):
-##     '''
-##     train_data : [x,y]
-##     '''
+def cross_validate(train_data, test_data,  model, params):
+    '''
+    train_data : [x,y]
+    '''
 
-##     train_data_x = train_data[0]
-##     train_data_y = train_data[1]
-##     test_data_x  = test_data[0]
-##     test_data_y  = test_data[1]
+    train_data_x = train_data[0]
+    train_data_y = train_data[1]
+    test_data_x  = test_data[0]
+    test_data_y  = test_data[1]
     
-##     model.set_params(**params)
-##     nEmissionDim = len(train_data_x)
+    model.set_params(**params)
+    nEmissionDim = len(train_data_x)
 
-##     scale = 1.0
-##     cov_mult = [1.0]*(nEmissionDim**2)
-##     for key, value in six.iteritems(params): 
-##         if key is 'cov':
-##             cov_mult = [value]*(nEmissionDim**2)
-##         if key is 'scale':
-##             scale = value
+    scale = 1.0
+    cov_mult = [1.0]*(nEmissionDim**2)
+    for key, value in six.iteritems(params): 
+        if key is 'cov':
+            cov_mult = [value]*(nEmissionDim**2)
+        if key is 'scale':
+            scale = value
             
-##     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
-##     if ret == 'Failure':
-##         return 0.0, params
-##     else:
-##         score = model.score(test_data_x*scale, test_data_y)    
-##         return score, params
+    ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+    if ret == 'Failure':
+        return 0.0, params
+    else:
+        score = model.score(test_data_x*scale, test_data_y)    
+        return score, params
 
 def cross_validate_local(idx, processed_data_path, model, params):
     '''
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
 
-    cloud = CloudSearchForHMM('/home/dpark/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/dpark/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
+    cloud = CloudSearchForHMM('/home/hkim/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/hkim/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
     cloud.run_with_local_data(parameters, save_data_path, 9 )
 
     print cloud.get_completed_results()
