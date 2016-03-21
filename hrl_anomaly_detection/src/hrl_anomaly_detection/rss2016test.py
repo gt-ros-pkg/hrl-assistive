@@ -505,8 +505,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             successData = d['successData']
             failureData = d['failureData']
-            aug_successData = d.get('successData_augmented', d['aug_successData'])
-            aug_failureData = d.get('failureData_augmented', d['aug_failureData'])
+            aug_successData = d['successData_augmented']
+            aug_failureData = d['failureData_augmented']
         kFold_list  = d['kFoldList']
 
     else:
@@ -2227,7 +2227,7 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.5}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
         
         nPoints        = 20
