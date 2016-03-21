@@ -61,6 +61,14 @@ class CloudSearch():
         ##     print task.get()
         pass
 
+    #in case you just want to stop ipcluster
+    def stop_ipcluster(self):
+        master_ssh = self.clust.master_node.ssh
+        orig_user = master_ssh.get_current_user()
+        master_ssh.switch_user(self.user_name)
+        self._revoke_ipcluster()
+        master_ssh.switch_user(orig_user)
+
     #stops clusters. It doesn't save any results.
     def stop(self):
         if self.uses_profile:
@@ -190,7 +198,10 @@ class CloudSearch():
         self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
-        master_ssh.switch_user(orig_user)
+        #try:
+        #    master_ssh.switch_user(orig_user)
+        #except:
+        #    print "failed to change back to original user"
         #self.clust.ssh_to_master(user=self.user_name, command="python -c 'from IPython.parallel import Client; client = Client()'")
         #import os
         #os.system('starcluster runplugin ipcluster ' + self.clust_name)

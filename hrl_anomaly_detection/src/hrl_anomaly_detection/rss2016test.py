@@ -71,7 +71,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
    
 def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                          threshold=-1.0, smooth=False, \
+                          decision_boundary_viz=False, \
                           useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           data_renew=False, hmm_renew=False, save_pdf=False, verbose=False):
@@ -154,9 +154,46 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    # discriminative classifier
-    ## dtc = cf.classifier( ml, method='progress_time_cluster', nPosteriors=nState, \
-    ##                      nLength=len(successData[0,0]) )        
+    if decision_boundary_viz:
+        startIdx = 4
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [successData[j][i] for j in \
+                                                                 xrange(nEmissionDim)], \
+                                                                ml.nEmissionDim, ml.nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(successData[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+        ll_classifier_train_X = []
+        ll_classifier_train_Y = []
+        for i in xrange(len(ll_logp)):
+            l_X = []
+            l_Y = []
+            for j in xrange(len(ll_logp[i])):        
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+                if testDataY[i] > 0.0: l_Y.append(1)
+                else: l_Y.append(-1)
+
+            ll_classifier_train_X.append(l_X)
+            ll_classifier_train_Y.append(l_Y)
+
+        # flatten the data
+        X_train_org = []
+        Y_train_org = []
+        idx_train_org = []
+        for i in xrange(len(ll_classifier_train_X)):
+            for j in xrange(len(ll_classifier_train_X[i])):
+                X_train_org.append(ll_classifier_train_X[i][j])
+                Y_train_org.append(ll_classifier_train_Y[i][j])
+                idx_train_org.append(ll_classifier_train_idx[i][j])
+
+        
+        # discriminative classifier
+        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
+                             nLength=len(successData[0,0]) )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
     
     fig = plt.figure()
@@ -167,19 +204,22 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if useTrain:
 
         log_ll = []
-        ## exp_log_ll = []        
+        exp_log_ll = []        
         for i in xrange(len(successData[0])):
 
             log_ll.append([])
-            ## exp_log_ll.append([])
+            exp_log_ll.append([])
             for j in range(2, len(successData[0][i])):
 
                 X = [x[i,:j] for x in successData]
-
-                ## exp_logp, logp = ml.expLoglikelihood(X, ths, smooth=smooth, bLoglikelihood=True)
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
-                ## exp_log_ll[i].append(exp_logp)
+
+                if decision_boundary_viz:
+                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                    exp_logp = dtc.predict(l_X) + ll_logp[i][j]
+                    exp_log_ll[i].append(exp_logp)
+
 
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
@@ -198,8 +238,9 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
             
-        plt.plot(log_ll[i], 'b-', lw=3.0)
-        ## plt.plot(exp_log_ll[i], 'm-')            
+        plt.plot(log_ll[i], 'k-', lw=3.0)
+        if decision_boundary_viz:
+            plt.plot(exp_log_ll[i], 'm-')            
                                              
     # normal test data
     ## if useNormalTest and False:
@@ -496,6 +537,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = ut.load_pickle(crossVal_pkl)
 
         print d.keys()
+
+        ## d['aeSuccessData'] = d['successData']
+        ## d['aeFailureData'] = d['failureData']
+        ## d['aeSuccessData_augmented'] = d['aug_successData']
+        ## d['aeFailureData_augmented'] = d['aug_failureData']
+        ## print d.keys()
+        ## d = ut.save_pickle(d, crossVal_pkl)
         
         if AE_dict['switch']:
             successData = d['aeSuccessData']
@@ -508,6 +556,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             aug_successData = d['successData_augmented']
             aug_failureData = d['failureData_augmented']
         kFold_list  = d['kFoldList']
+
+
 
     else:
         '''
@@ -2289,7 +2339,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2369,7 +2419,7 @@ if __name__ == '__main__':
         smooth       = False
 
         likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
-                              threshold=threshold, smooth=smooth, \
+                              decision_boundary_viz=True, \
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
