@@ -79,6 +79,9 @@ def tune_hmm(parameters, kFold_list, filtering=True):
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
             else:
+                scores.append(ret)
+                continue
+            
                 # evaluation:  dim x sample => sample x dim
                 testData_x = np.swapaxes( normalTestData, 0, 1)
                 ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),

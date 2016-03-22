@@ -147,6 +147,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
     ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
+    startIdx = 4
         
     if ret == 'Failure': 
         print "-------------------------"
@@ -155,14 +156,22 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        startIdx = 4
+        testDataX = []
+        testDataY = []
+        for i in xrange(nEmissionDim):
+            temp = np.vstack([successData[i], failureData[i]])
+            testDataX.append( temp )
+
+        testDataY = np.hstack([ -np.ones(len(successData[0])), \
+                                np.ones(len(failureData[0])) ])
+        
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [successData[j][i] for j in \
+                                                                [testDataX[j][i] for j in \
                                                                  xrange(nEmissionDim)], \
                                                                 ml.nEmissionDim, ml.nState,\
                                                                 startIdx=startIdx, \
                                                                 bPosterior=True)
-                                                                for i in xrange(len(successData[0])))
+                                                                for i in xrange(len(testDataX[0])))
         _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
         ll_classifier_train_X = []
@@ -192,7 +201,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         
         # discriminative classifier
         dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                             nLength=len(successData[0,0]) )
+                             nLength=len(successData[0,0]), ths_mult=-1.0 )
         dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
     
@@ -209,14 +218,16 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             log_ll.append([])
             exp_log_ll.append([])
-            for j in range(2, len(successData[0][i])):
+            for j in range(startIdx, len(successData[0][i])):
 
                 X = [x[i,:j] for x in successData]
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
 
                 if decision_boundary_viz:
+                    if j>=np.shape(ll_logp)[1]: continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                    
                     exp_logp = dtc.predict(l_X) + ll_logp[i][j]
                     exp_log_ll[i].append(exp_logp)
 
@@ -283,7 +294,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             log_ll.append([])
             ## exp_log_ll.append([])
 
-            for j in range(2, len(failureData[0][i])):
+            for j in range(startIdx, len(failureData[0][i])):
                 X = [x[i,:j] for x in failureData]                
                 try:
                     logp = ml.loglikelihood(X)
@@ -553,8 +564,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             successData = d['successData']
             failureData = d['failureData']
-            aug_successData = d.get('successData_augmented', d['aug_successData'])
-            aug_failureData = d.get('failureData_augmented', d['aug_failureData'])
+            aug_successData = d['successData_augmented']
+            aug_failureData = d['failureData_augmented']
         kFold_list  = d['kFoldList']
 
 
@@ -2277,7 +2288,7 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 3.5}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
         
         nPoints        = 20
@@ -2334,7 +2345,7 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
                           'add_option': 'featureToBottleneck', 'add_feature': feature_list}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 8.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20

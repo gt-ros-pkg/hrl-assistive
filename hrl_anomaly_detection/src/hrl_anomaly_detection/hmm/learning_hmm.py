@@ -169,7 +169,7 @@ class learning_hmm(learning_base):
             param_dict['pi'] = self.pi
 
         if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-        return 
+        return ret
                                
 
     ## def predict(self, X):

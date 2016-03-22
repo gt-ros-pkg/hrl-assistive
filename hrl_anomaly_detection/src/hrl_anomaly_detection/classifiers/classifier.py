@@ -182,8 +182,8 @@ class classifier(learning_base):
             min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
             nState = len(post)
             ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            c_time = np.logspace(0.8,0.5,nState)[min_index]
-            
+            ## c_time = np.logspace(0.8,0.5,nState)[min_index]
+            c_time = 1.0
 
             if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                 type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
