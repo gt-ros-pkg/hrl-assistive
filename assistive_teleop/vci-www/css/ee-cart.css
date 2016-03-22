@@ -1,3 +1,8 @@
+.camera-swing{
+    display:block;
+    margin:0% 10%;
+    padding: 0.25em;
+}
 .pick-and-place {
     display:block;
     margin:0% 10%;
