@@ -49,7 +49,7 @@ class CloudSearchForHMM(CloudSearch):
     def run_with_local_data(self, params, processed_data_path, nFiles):
         
         ## from cross import cross_validate_local
-        model = hmm.learning_hmm(10, 10)
+        model = hmm.learning_hmm(10, 10, verbose=True)
         
         all_param = list(ParameterGrid(params))
         for param in all_param:
@@ -106,30 +106,25 @@ def cross_validate_local(idx, processed_data_path, model, params):
         if key is 'dim':
             dim = value
 
-    # Load data
+    ## Load data
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
     d = ut.load_pickle(AE_proc_data)
     pooling_param_dict  = {'dim': dim} # only for AE
 
+    ## Filtering
     # dim x sample x length
     normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], pooling_param_dict)
     abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
     normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
     abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
 
-    trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
-
+    trainSet = [normalTrainData, [1.0]*len(normalTrainData[0]) ]
     testData_x = normalTestData
     testData_y = [1.0]*len(normalTestData[0])
     ## testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
     ## testData_x = np.swapaxes(testData_x, 0, 1)
     ## testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
-
     testSet    = [testData_x, testData_y ]
-
-    ## return cross_validate(trainSet, testSet, model, params)
-    ## return os.environ['TESTTT']
-    ## return os.environ['PATH'].split(os.pathsep)
 
     train_data_x = trainSet[0]
     train_data_y = trainSet[1]
@@ -146,7 +141,8 @@ def cross_validate_local(idx, processed_data_path, model, params):
             cov_mult = [value]*(nEmissionDim**2)
         if key is 'scale':
             scale = value
-            
+
+    model.nEmissionDim = nEmissionDim
     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
     
     if ret == 'Failure':
@@ -160,22 +156,23 @@ def cross_validate_local(idx, processed_data_path, model, params):
 if __name__ == '__main__':
 
     task = 'pushing'
-    save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+    save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+    nFiles = 9
     
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
+    
+    ## model = hmm.learning_hmm(20, 4, verbose=True)
+    ## cross_validate_local(0, save_data_path, model, params={})
 
-    cloud = CloudSearchForHMM('/home/hkim/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/hkim/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
-    cloud.run_with_local_data(parameters, save_data_path, 9 )
+    cloud = CloudSearchForHMM(os.path.expanduser('~')+'/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
+    cloud.run_with_local_data(parameters, save_data_path, nFiles )
 
-    print cloud.get_completed_results()
 
     # wait until finishing parameter search
     while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
-        print cloud.get_completed_results()
-        time.sleep(20)
+        print "In while loop, ", cloud.get_completed_results()
+        time.sleep(5)
     
-    print cloud.get_completed_results()
-    ## os.system( get )
+    print "After while loop, ", cloud.get_completed_results()
     ## cloud.stop()
-
     print "Finished"

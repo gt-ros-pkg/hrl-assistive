@@ -182,8 +182,8 @@ class classifier(learning_base):
             min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
             nState = len(post)
             ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            ## c_time = np.logspace(0.8,0.5,nState)[min_index]
-            c_time = 1.0
+            c_time = np.logspace(0,-0.9,nState)[min_index]
+            #c_time = 1.0
 
             if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                 type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
@@ -322,7 +322,8 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     g_post = np.zeros(nState)
     g_lhood = 0.0
     g_lhood2 = 0.0
-    prop_sum = 0.0
+    weight_sum  = 0.0
+    weight2_sum = 0.0
 
     for j in xrange(n):
 
@@ -330,14 +331,24 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         logp = ll_logp[j][0]
         post = ll_post[j]
 
-        k_prop    = norm(loc=g_mu, scale=g_sig).pdf(idx)
-        g_post   += post * k_prop
-        g_lhood  += logp * k_prop
-        g_lhood2 += logp * logp * k_prop
-        prop_sum += k_prop
+        weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+        g_post   += post * weight
+        g_lhood  += logp * weight
+        weight_sum += weight
+        weight2_sum += weight**2
 
-    l_statePosterior   = g_post / prop_sum 
-    l_likelihood_mean  = g_lhood / prop_sum 
-    l_likelihood_mean2 = g_lhood2 / prop_sum 
+    l_statePosterior   = g_post / weight_sum 
+    l_likelihood_mean  = g_lhood / weight_sum 
 
-    return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+    for j in xrange(n):
+
+        idx  = ll_idx[j]
+        logp = ll_logp[j][0]
+
+        weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
+        g_lhood2 += weight * ((logp - l_likelihood_mean )**2)
+        
+    l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
+
+    return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
+    ## return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
