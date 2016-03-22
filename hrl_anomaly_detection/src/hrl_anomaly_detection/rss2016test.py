@@ -225,8 +225,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                 log_ll[i].append(logp)
 
                 if decision_boundary_viz:
-                    if j==np.shape(ll_logp)[1]: continue
-                    print i, j, np.shape(ll_logp), np.shape(ll_post)
+                    if j>=np.shape(ll_logp)[1]: continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
                     
                     exp_logp = dtc.predict(l_X) + ll_logp[i][j]
@@ -2346,7 +2345,7 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
                           'add_option': 'featureToBottleneck', 'add_feature': feature_list}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 8.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 6.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20
