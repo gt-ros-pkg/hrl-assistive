@@ -38,7 +38,6 @@ import time
 
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from hrl_anomaly_detection import data_manager as dm
-import hrl_lib.util as ut
 
 # AWS
 from hrl_anomaly_detection.aws.cloud_search import CloudSearch
@@ -92,6 +91,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
     ROC_data[method]['delay_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
+
     tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict)
 
     for j in xrange(ROC_dict['nPoints']):
@@ -107,6 +107,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
 
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
+    import hrl_lib.util as ut
     from sklearn import preprocessing
 
     d            = ut.load_pickle(modeling_pkl)
@@ -330,9 +331,6 @@ if __name__ == '__main__':
 
     modality_list   = ['kinematics', 'audio', 'ft']
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
     downSampleSize = 200      
 
     data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
@@ -368,8 +366,12 @@ if __name__ == '__main__':
 
     # cpu version
     if False:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
     else:
+        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+          
         cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
                                          '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
                                          os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu')
