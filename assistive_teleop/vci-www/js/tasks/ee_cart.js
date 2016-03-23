@@ -48,6 +48,11 @@ RFH.CartesianEEControl = function (options) {
 
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
+        if (RFH.kinectHeadPointCloud.locked) {
+            return; 
+        } else {
+            RFH.kinectHeadPointCloud.locked = true;
+        }
         var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false
         $('#armCtrlContainer').hide();
         RFH.kinectHeadPointCloud.setVisible(true);
@@ -88,13 +93,14 @@ RFH.CartesianEEControl = function (options) {
             RFH.kinectHeadPointCloud.setVisible(false);
             $('#mjpeg-image').css('visibility','visible');
             if (restoreArmContainer) { $('#armCtrlContainer').show(); }
+            RFH.kinectHeadPointCloud.locked = false;
         }
 
         // All the points defined, move the camera and render views
         var camera = RFH.viewer.camera;
         var reverse = false;
-        var peakPauseMS = 1300;
-        var travelTimeMS = 600;
+        var peakPauseMS = 1500;
+        var travelTimeMS = 300;
         var delay = travelTimeMS / arcPoints.length;
         // Set camera position along path, adjust lookAt, render, and set next call after delay
         var renderCameraStep = function (step) {
