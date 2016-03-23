@@ -46,13 +46,12 @@ RFH.CartesianEEControl = function (options) {
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
 
-    var cameraSwingActiveLocked = false;
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
-        if (cameraSwingActiveLocked) {
+        if (RFH.kinectHeadPointCloud.locked) {
             return; 
         } else {
-            cameraSwingActiveLocked = true;
+            RFH.kinectHeadPointCloud.locked = true;
         }
         var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false
         $('#armCtrlContainer').hide();
@@ -94,7 +93,7 @@ RFH.CartesianEEControl = function (options) {
             RFH.kinectHeadPointCloud.setVisible(false);
             $('#mjpeg-image').css('visibility','visible');
             if (restoreArmContainer) { $('#armCtrlContainer').show(); }
-            cameraSwingActiveLocked = false;
+            RFH.kinectHeadPointCloud.locked = false;
         }
 
         // All the points defined, move the camera and render views
