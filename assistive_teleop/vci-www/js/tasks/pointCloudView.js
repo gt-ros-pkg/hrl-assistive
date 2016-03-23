@@ -6,7 +6,7 @@ RFH.PointCloudView = function(options){
     var tfClient = options.tfClient;
     var maxPoints = options.maxPoints || 500;
 
-    var material = new THREE.PointsMaterial({size: 10.0,
+    var material = new THREE.PointsMaterial({size: 15.0,
                                              vertexColors: THREE.VertexColors,
                                              opacity:0.87,
                                              depthTest:1,
@@ -18,11 +18,11 @@ RFH.PointCloudView = function(options){
 
     var positions = new Float32Array( maxPoints * 3 );
     var colors = new Float32Array( maxPoints * 3 );
+    var x = 0;
+    var y = 0;
+    var z = 0;
     var color = new THREE.Color();
     for (var i = 0; i<positions.length; i += 3) {
-        var x = 3.0*Math.random() - 1.5;
-        var y = 3.0*Math.random() - 1.5;
-        var z = 3.0*Math.random() - 1.5;
         positions[i] = x;
         positions[i+1] = y;
         positions[i+2] = z;
@@ -48,7 +48,6 @@ RFH.PointCloudView = function(options){
     };
 
     var updatePCFrame = function(tf) {
-        console.log("PC Frame Updated!");
         self.pointCloud.frameReceived = true;
         self.pointCloud.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
         self.pointCloud.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
