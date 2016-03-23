@@ -193,6 +193,40 @@ class classifier(learning_base):
             err = self.mu + self.ths_mult * self.std - logp
             return err
 
+    ## def predict_batch(self, X, y, idx):
+
+    ##     tp_l = []
+    ##     fp_l = []
+    ##     tn_l = []
+    ##     fn_l = []
+    ##     delay_l = []
+
+    ##     for ii in xrange(len(X)):
+
+    ##         if len(y[ii])==0: continue
+
+    ##         for jj in xrange(len(X[ii])):
+
+    ##             est_y = dtc.predict(X[ii][jj], y=y[ii][jj:jj+1])
+    ##             if type(est_y) == list: est_y = est_y[0]
+    ##             if type(est_y) == list: est_y = est_y[0]
+    ##             if est_y > 0.0:
+    ##                 delay_idx = idx[ii][jj]
+    ##                 print "Break ", ii, " ", jj, " in ", est_y, " = ", y[ii][jj]
+    ##                 break        
+
+    ##         if y[ii][0] > 0.0:
+    ##             if est_y > 0.0:
+    ##                 tp_l.append(1)
+    ##                 delay_l.append(delay_idx)
+    ##             else: fn_l.append(1)
+    ##         elif y[ii][0] <= 0.0:
+    ##             if est_y > 0.0: fp_l.append(1)
+    ##             else: tn_l.append(1)
+
+    ##     return tp_l, fp_l, tn_l, fn_l, delay_l
+
+
     def decision_function(self, X):
 
         ## return self.dt.decision_function(X)
