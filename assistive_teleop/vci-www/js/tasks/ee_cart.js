@@ -48,9 +48,11 @@ RFH.CartesianEEControl = function (options) {
 
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
-        RFH.viewer.renderer.setClearColor(0x333333,1);
+        var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false
+        $('#armCtrlContainer').hide();
         RFH.kinectHeadPointCloud.setVisible(true);
-        $('#mjpeg-image').css('visibility','hidden');
+        RFH.viewer.renderer.setClearColor(0x666666,0.5);
+        //$('#mjpeg-image').css('visibility','hidden');
         // Swing the camera to view pointcloud from the side
         var camTF = self.cameraTF.clone();
         var camQuat = new THREE.Quaternion().copy(camTF.rotation);
@@ -64,14 +66,15 @@ RFH.CartesianEEControl = function (options) {
 
         var arcRadius = new THREE.Vector3().subVectors(camPos,eePos).length();
         if (self.side == 'right') { // Swing the camera left with the right arm, and vice versa
-            var goalDir = new THREE.Vector3(-arcRadius,0,0);
-        } else {
             var goalDir = new THREE.Vector3(arcRadius,0,0);
+        } else {
+            var goalDir = new THREE.Vector3(-arcRadius,0,0);
         }
 
         var goalInCam = goalDir.applyMatrix4(camMat); // Get offset direction relative to camera in base frame
         var goalFromCam = goalInCam.sub(camPos); // Get vector from cameraPos to goalPos in cam frame
-        var goalVec = new THREE.Vector3().addVectors(eePos, goalFromCam); // Apply same offset at hand 
+        //var goalVec = new THREE.Vector3().addVectors(eePos, goalFromCam); // Apply same offset at hand 
+        var goalVec = new THREE.Vector3(0,0,eePos.z);
         var linearMidpoint = new THREE.Vector3().lerpVectors(goalVec, camPos, 0.5);
         var centerToMidpoint = new THREE.Vector3().subVectors(linearMidpoint, eePos);
         centerToMidpoint.setLength(0.707100678 * arcRadius);
@@ -81,16 +84,17 @@ RFH.CartesianEEControl = function (options) {
 
         // Clean up and get back to business as usual
         var cleanup3DView = function () {
-            RFH.viewer.renderer.setClearColor(0x333333,0);
+            RFH.viewer.renderer.setClearColor(0x000000,0);
             RFH.kinectHeadPointCloud.setVisible(false);
             $('#mjpeg-image').css('visibility','visible');
+            if (restoreArmContainer) { $('#armCtrlContainer').show(); }
         }
 
         // All the points defined, move the camera and render views
         var camera = RFH.viewer.camera;
         var reverse = false;
-        var peakPauseMS = 500;
-        var travelTimeMS = 1000;
+        var peakPauseMS = 1300;
+        var travelTimeMS = 600;
         var delay = travelTimeMS / arcPoints.length;
         // Set camera position along path, adjust lookAt, render, and set next call after delay
         var renderCameraStep = function (step) {
