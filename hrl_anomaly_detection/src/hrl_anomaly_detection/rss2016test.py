@@ -817,8 +817,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## ROC_data['progress_time_cluster']['complete'] = True
     
 
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+    for idx in xrange(len(kFold_list)):
 
         if verbose: print idx, " : training classifier and evaluate testing data"
 
@@ -2256,7 +2255,7 @@ if __name__ == '__main__':
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0.8, 6, nPoints), \
+                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -2292,7 +2291,7 @@ if __name__ == '__main__':
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(1., 4, nPoints), \
+                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
