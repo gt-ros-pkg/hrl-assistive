@@ -560,8 +560,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             successData = d['successData']
             failureData = d['failureData']
-            aug_successData = d['successData_augmented']
-            aug_failureData = d['failureData_augmented']
+            aug_successData = d.get('successData_augmented', d['successData'])
+            aug_failureData = d.get('failureData_augmented', d['failureData'])
         kFold_list  = d['kFoldList']
 
 
