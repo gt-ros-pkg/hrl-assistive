@@ -49,8 +49,6 @@ class CloudSearch():
         self.use_profile(self.user_name)
         self.start_ipcluster()
 
-
-        
         #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
 
         ## tasks = self.client[:].apply(cross.set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib'])

@@ -144,7 +144,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
     ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
     startIdx = 4
@@ -158,13 +158,16 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if decision_boundary_viz:
         testDataX = []
         testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([successData[i], failureData[i]])
-            testDataX.append( temp )
+        ## for i in xrange(nEmissionDim):
+        ##     temp = np.vstack([successData[i], failureData[i]])
+        ##     testDataX.append( temp )
 
-        testDataY = np.hstack([ -np.ones(len(successData[0])), \
-                                np.ones(len(failureData[0])) ])
-        
+        ## testDataY = np.hstack([ -np.ones(len(successData[0])), \
+        ##                         np.ones(len(failureData[0])) ])
+
+        testDataX = successData
+        testDataY = -np.ones(len(successData[0]))
+
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
                                                                  xrange(nEmissionDim)], \
@@ -198,7 +201,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                 Y_train_org.append(ll_classifier_train_Y[i][j])
                 idx_train_org.append(ll_classifier_train_idx[i][j])
 
-        
+               
         # discriminative classifier
         dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
                              nLength=len(successData[0,0]), ths_mult=-1.0 )
@@ -251,7 +254,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             
         plt.plot(log_ll[i], 'k-', lw=3.0)
         if decision_boundary_viz:
-            plt.plot(exp_log_ll[i], 'm-')            
+            plt.plot(exp_log_ll[i], 'm-', lw=3.0)            
                                              
     # normal test data
     ## if useNormalTest and False:
@@ -546,8 +549,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         d = ut.load_pickle(crossVal_pkl)
-
-        print d.keys()
 
         ## d['aeSuccessData'] = d['successData']
         ## d['aeFailureData'] = d['failureData']
@@ -2257,7 +2258,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0.8, 6, nPoints)+2.0, \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2345,7 +2346,7 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
                           'add_option': 'featureToBottleneck', 'add_feature': feature_list}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 3.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20
