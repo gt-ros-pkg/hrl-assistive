@@ -487,6 +487,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                              max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
                              cuda=AE_dict['cuda'], \
                              filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                             add_feature=AE_dict.get('add_feature', None),\
                              verbose=verbose, renew=AE_dict['renew'] )
 
         if AE_dict['filter']:
@@ -2253,7 +2254,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0.8, 6, nPoints)+2.0, \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2289,7 +2290,7 @@ if __name__ == '__main__':
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2348,7 +2349,7 @@ if __name__ == '__main__':
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
+                          'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
