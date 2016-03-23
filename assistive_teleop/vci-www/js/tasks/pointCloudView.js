@@ -84,7 +84,6 @@ RFH.PointCloudView = function(options){
         }
         positions.needsUpdate = true;
         colors.needsUpdate = true;
-        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 
     var pointCloudSub = new ROSLIB.Topic({
