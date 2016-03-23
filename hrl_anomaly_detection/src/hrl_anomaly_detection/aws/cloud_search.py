@@ -49,14 +49,6 @@ class CloudSearch():
         self.use_profile(self.user_name)
         self.start_ipcluster()
 
-        #self.lb_view.apply(syncing, ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages'])
-
-        ## tasks = self.client[:].apply(cross.set_env, 'LD_LIBRARY_PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib', '/home/ubuntu/catkin_ws/devel_isolated/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib/x86_64-linux-gnu', '/opt/ros/indigo/lib'])
-        ## tasks = self.client[:].apply(cross.set_env, 'PATH', ['/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages', '/opt/ros/indigo/lib/python2.7/dist-packages']) 
-
-        ## time.sleep(3.0)
-        ## for task in tasks:
-        ##     print task.get()
         pass
 
     #in case you just want to stop ipcluster
@@ -175,25 +167,29 @@ class CloudSearch():
         plugs = [self.cfg.get_plugin('ipcluster')]
         plug = deathrow._load_plugins(plugs)[0]
         self.clust.run_plugin(plug, method_name="on_shutdown")
-        time.sleep(10)
+        time.sleep(1)
         try:
             master_ssh.switch_user(self.user_name)
             master_ssh.execute("ipcluster stop", silent=False)
         except:
             print "ipcluster wasn't stoped. It is likely it was not running"
-        time.sleep(10)
+        time.sleep(1)
         self._revoke_ipcluster()
-        time.sleep(10)
+        time.sleep(1)
         master_ssh.switch_user('root')
-        self.clust.run_plugin(plug)
+        try:
+            self.clust.run_plugin(plug)
+        except:
+            print "run_plugin error, but ignored.."
         time.sleep(10)
+        
         if not self.auth:
             self.clust.ssh_to_master(user=self.user_name, command="echo 'hello world'")
         master_ssh.switch_user(self.user_name)
         print master_ssh.get_current_user()
         master_ssh.execute("python -c 'from IPython.parallel import Client; client = Client()'", silent=False)
         #connect to cluster nodes to distribute work
-        self.client = Client(self.path_json, sshkey=self.path_key) #, profile='starcluster')
+        self.client = Client(self.path_json, sshkey=self.path_key)
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
         #try:
