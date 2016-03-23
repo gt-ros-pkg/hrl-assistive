@@ -56,8 +56,6 @@ class CloudSearchForHMM(CloudSearch):
             for idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
                 self.all_tasks.append(task)
-                print self.get_task_results(task)
-                return self.all_tasks
         return self.all_tasks
 
     ## def wait(self):
@@ -144,6 +142,8 @@ def cross_validate_local(idx, processed_data_path, model, params):
 
     model.nEmissionDim = nEmissionDim
     ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+
+    return ret, params
     
     if ret == 'Failure':
         return 0.0, params
@@ -170,9 +170,18 @@ if __name__ == '__main__':
 
     # wait until finishing parameter search
     while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
-        print "In while loop, ", cloud.get_completed_results()
+        print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
         time.sleep(5)
-    
-    print "After while loop, ", cloud.get_completed_results()
+
+    results = cloud.get_completed_results()
+
+    # Get sorted results
+    from operator import itemgetter
+    results.sort(key=itemgetter(0), reverse=False)
+
+    for i in xrange(len(results)):
+        print results[i]
+
     ## cloud.stop()
+    cloud.flush()
     print "Finished"

@@ -124,8 +124,11 @@ class classifier(learning_base):
             
         elif self.method == 'progress_time_cluster':
             if type(X) == list: X = np.array(X)
-            ll_logp = X[:,0:1]
-            ll_post = X[:,1:]
+            ## ll_logp = X[:,0:1]
+            ## ll_post = X[:,1:]
+            ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
+            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
 
             g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
@@ -136,10 +139,6 @@ class classifier(learning_base):
                                                                    for i in xrange(self.nPosteriors))
             _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
-            ## for i in xrange(self.nPosteriors):            
-            ##     learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i], g_sig, self.nPosteriors)
-
-            ## return self.l_statePosterior, self.ll_mu, self.ll_std
             return True
 
         elif self.method == 'fixed':
@@ -173,8 +172,6 @@ class classifier(learning_base):
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         elif self.method == 'progress_time_cluster':
-            ## self.ml.cluster_type = 'time'
-            
             logp = X[0]
             post = X[1:]
 
@@ -182,8 +179,8 @@ class classifier(learning_base):
             min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
             nState = len(post)
             ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            c_time = np.logspace(0,-0.9,nState)[min_index]
-            #c_time = 1.0
+            ## c_time = np.logspace(0,-0.9,nState)[min_index]
+            c_time = 1.0
 
             if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                 type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
@@ -328,10 +325,12 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     for j in xrange(n):
 
         idx  = ll_idx[j]
-        logp = ll_logp[j][0]
+        logp = ll_logp[j]
         post = ll_post[j]
 
         weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+
+        if weight < 1e-3: continue
         g_post   += post * weight
         g_lhood  += logp * weight
         weight_sum += weight
@@ -343,9 +342,10 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     for j in xrange(n):
 
         idx  = ll_idx[j]
-        logp = ll_logp[j][0]
+        logp = ll_logp[j]
 
         weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
+        if weight < 1e-3: continue
         g_lhood2 += weight * ((logp - l_likelihood_mean )**2)
         
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))

@@ -144,7 +144,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
     ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
     startIdx = 4
@@ -156,15 +156,14 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([successData[i], failureData[i]])
-            testDataX.append( temp )
-
+        testDataX = np.vstack([np.swapaxes(successData, 0, 1), np.swapaxes(failureData, 0, 1)])
+        testDataX = np.swapaxes(testDataX, 0, 1)
         testDataY = np.hstack([ -np.ones(len(successData[0])), \
                                 np.ones(len(failureData[0])) ])
-        
+
+        ## testDataX = successData
+        ## testDataY = -np.ones(len(successData[0]))
+
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
                                                                  xrange(nEmissionDim)], \
@@ -198,7 +197,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                 Y_train_org.append(ll_classifier_train_Y[i][j])
                 idx_train_org.append(ll_classifier_train_idx[i][j])
 
-        
         # discriminative classifier
         dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
                              nLength=len(successData[0,0]), ths_mult=-1.0 )
@@ -251,7 +249,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             
         plt.plot(log_ll[i], 'k-', lw=3.0)
         if decision_boundary_viz:
-            plt.plot(exp_log_ll[i], 'm-')            
+            plt.plot(exp_log_ll[i], 'm-', lw=3.0)            
                                              
     # normal test data
     ## if useNormalTest and False:
@@ -489,6 +487,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                              max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
                              cuda=AE_dict['cuda'], \
                              filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                             add_feature=AE_dict.get('add_feature', None),\
                              verbose=verbose, renew=AE_dict['renew'] )
 
         if AE_dict['filter']:
@@ -547,8 +546,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         d = ut.load_pickle(crossVal_pkl)
 
-        print d.keys()
-
         ## d['aeSuccessData'] = d['successData']
         ## d['aeFailureData'] = d['failureData']
         ## d['aeSuccessData_augmented'] = d['aug_successData']
@@ -564,8 +561,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             successData = d['successData']
             failureData = d['failureData']
-            aug_successData = d['successData_augmented']
-            aug_failureData = d['failureData_augmented']
+            aug_successData = d.get('successData_augmented', d['successData'])
+            aug_failureData = d.get('failureData_augmented', d['failureData'])
         kFold_list  = d['kFoldList']
 
 
@@ -2257,9 +2254,9 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0.8, 6, nPoints)+2.0, \
+                          'progress_param_range':-np.linspace(0.8, 6, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -2293,9 +2290,9 @@ if __name__ == '__main__':
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
+                          'progress_param_range':-np.linspace(1., 4, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -2345,14 +2342,14 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
                           'add_option': 'featureToBottleneck', 'add_feature': feature_list}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 3.0}
+        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(1., 4, nPoints)+2.0, \
+                          'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
