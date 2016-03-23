@@ -126,6 +126,7 @@ class classifier(learning_base):
             if type(X) == list: X = np.array(X)
             ## ll_logp = X[:,0:1]
             ## ll_post = X[:,1:]
+            ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
 
@@ -138,10 +139,6 @@ class classifier(learning_base):
                                                                    for i in xrange(self.nPosteriors))
             _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
 
-            ## for i in xrange(self.nPosteriors):            
-            ##     learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i], g_sig, self.nPosteriors)
-
-            ## return self.l_statePosterior, self.ll_mu, self.ll_std
             return True
 
         elif self.method == 'fixed':
