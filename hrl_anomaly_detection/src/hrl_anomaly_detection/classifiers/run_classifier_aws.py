@@ -107,7 +107,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
     return ROC_data, param_idx, custom_params
 
-def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
+def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
 
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
