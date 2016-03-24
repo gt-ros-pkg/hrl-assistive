@@ -477,7 +477,7 @@ if __name__ == '__main__':
         SVM_param_dict = {'renew': False,}
 
         #temp
-        nPoints        = 4
+        nPoints        = 10
         ROC_param_dict = {'methods': ['cssvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -487,7 +487,7 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 2
+        nFiles = 9
 
     else:
         print "Selected task name is not available."
