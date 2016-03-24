@@ -93,7 +93,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
-    tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict)
+    tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, custom_params)
 
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
         return tp_ll, None, None
@@ -156,8 +156,6 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
     tn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     delay_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
-    return method, None, None, None, None
-
     # classifier
     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
     for j in xrange(ROC_dict['nPoints']):
@@ -189,14 +187,6 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
         fn_l = []
         delay_l = []
         delay_idx = 0
-
-        ## if 'svm' in method:
-        ##     XX = scaler.transform(ll_classifier_test_X)
-        ## elif method == 'progress_time_cluster' or self.method == 'fixed':
-        ##     XX = ll_classifier_test_X
-
-        ## tp_l, fp_l, fn_l, tn_l, delay_l = dtc.predict_batch(XX, ll_classifier_test_Y,\
-        ##                                                     ll_classifier_test_idx)
 
         for ii in xrange(len(ll_classifier_test_X)):
 
@@ -524,7 +514,8 @@ if __name__ == '__main__':
                     fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             except:
                 print tp_ll, fn_ll
-                cloud.stop()
+                ## cloud.stop()
+                cloud.flush()
 
             # get AUC
             score_list.append( [getAUC(fpr_l, tpr_l), param] )
@@ -533,6 +524,6 @@ if __name__ == '__main__':
             print("%0.3f (+/-%0.03f) for %r"
                   % (score_list[i][0], score_list[i][1]))
             
-        cloud.stop()
+        ## cloud.stop()
         cloud.flush()
         print "Finished"
