@@ -173,7 +173,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
             dtc.set_params( ths_mult = thresholds[j] )
         else:
             print "Not available method"
-            sys.exit()
+            return "Not available method"
 
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
 
