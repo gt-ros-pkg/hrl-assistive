@@ -180,6 +180,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
 
         dtc.set_params(**params)
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+        return ret, None, None, None, None
 
         # evaluate the classifier
         tp_l = []
@@ -190,7 +191,6 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
         delay_idx = 0
 
         for ii in xrange(len(ll_classifier_test_X)):
-
             if len(ll_classifier_test_Y[ii])==0: continue
 
             for jj in xrange(len(ll_classifier_test_X[ii])):
