@@ -178,6 +178,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
             print "Not available method"
             return "Not available method", None, None, None, None
 
+        dtc.set_params(params)
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
 
         # evaluate the classifier
@@ -443,12 +444,14 @@ if __name__ == '__main__':
     #--------------------------------------------------------------------------------------
 
     nFiles = 9
-    parameters = {'method': ['svm'], 'svm_type': [1], 'kernel_type': range(3,4), 'degree': [2], \
-                  'gamma': [0.03], 'w1': [1.0]}
-    ## parameters = {'method': ['cssvm'], 'svm_type': [1], 'kernel_type': range(4), 'degree': range(5), \
-    ##               'gamma': np.linspace(0.01, 0.4, 10), 'w1': [0.5, 1.0, 1.5, 2.0]}
-
-
+    parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': range(3,4), 'svn_degree': [2], \
+                  'svm_w_negative': [1.0]}
+    ## parameters = {'method': ['cssvm'], 'svm_type': [1], 'svm_kernel_type': range(4), \
+    ##               'svm_degree': range(1,5), \
+    ##               'svm_nu': [0.1, 0.3, 0.5, 0.7, 0.9], 'svm_w_negative': [0.5, 1.0, 1.5, 2.0]}
+    ## 'gamma': np.linspace(0.01, 0.4, 4)
+    ## 'gamma': [0.03]
+    
     # cpu version
     if False:
         save_data_path = os.path.expanduser('~')+\

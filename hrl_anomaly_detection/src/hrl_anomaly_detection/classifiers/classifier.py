@@ -64,16 +64,14 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
-            ## from sklearn.svm import SVC
-            ## self.class_weight = class_weight
-            ## ## self.dt = svm.OneClassSVM(nu=0.1, kernel=custom_kernel)
-            ## ## self.dt = SVC(nu=0.1, kernel='linear')
-            ## ## self.dt = SVC(kernel='linear', gamma=0.0001, kernel=symmetric_entropy, verbose=True)
-            ## self.dt = SVC(kernel='linear', gamma=0.01, verbose=True, \
-            ##               class_weight=self.class_weight)
-            ## ## self.dt = SVC(kernel=custom_kernel, gamma=0.01, verbose=True, \
-            ## ##               class_weight=self.class_weight)
-            ## #self.dt = SVC(kernel=custom_kernel2, verbose=True)
+            self.svm_type        = 1
+            self.svm_kernel_type = 2
+            self.svm_degree      = 3
+            #self.svm_gamma       =
+            self.svm_cost        = 4.0
+            self.svm_nu          = 0.5
+            self.svm_w_negative  = 7.0
+            
         elif self.method == 'cssvm_standard' or self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
@@ -103,11 +101,14 @@ class classifier(learning_base):
             import svmutil as svm
             print svm.__file__
             if type(X) is not list: X=X.tolist()
-            print "--------------------------------------------------------------------"
-            print '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'
-            self.dt = svm.svm_train(y, X, '-c 4.0 -t 2 -w1 '+str(self.class_weight)+' -w-1 7.0'  )
-            ## self.dt.set_params(class_weight=self.class_weight)
-            ## return self.dt.fit(X, y)
+            args = '-s '+str(self.svm_type)\
+              +' -t '+str(self.svm_kernel_type)\              
+              +' -d '+str(self.svm_degree)\              
+              +' -c '+str(self.svm_cost)\
+              +' -n '+str(self.svm_nu)\
+              +' -w1 '+str(self.class_weight)\
+              +' -w-1 '+str(self.svm_w_negative)
+            self.dt = svm.svm_train(y, X, args )
             return True
         elif self.method == 'cssvm_standard':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
