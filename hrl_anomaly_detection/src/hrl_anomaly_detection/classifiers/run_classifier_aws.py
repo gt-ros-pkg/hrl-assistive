@@ -183,11 +183,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
             return "Not available method", None, None #, None, None
         
         dtc.set_params(**custom_params)
-        try:
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-        except:
-            return 'fit_fail', None, None#, None, None            
-        return ret, None, None#, None, None
+        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
 
         # evaluate the classifier
         tp_l = []
@@ -213,7 +209,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
                 if est_y > 0.0:
                     delay_idx = ll_classifier_test_idx[ii][jj]
-                    print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+                    ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                     break        
 
             if ll_classifier_test_Y[ii][0] > 0.0:
@@ -447,7 +443,8 @@ if __name__ == '__main__':
         HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False,}
 
-        nPoints        = 20
+        #temp
+        nPoints        = 4
         ROC_param_dict = {'methods': ['cssvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -463,7 +460,7 @@ if __name__ == '__main__':
 
     #--------------------------------------------------------------------------------------
 
-    nFiles = 9
+    nFiles = 2
     parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': range(3,4), 'svn_degree': [2], \
                   'svm_w_negative': [1.0]}
     ## parameters = {'method': ['cssvm'], 'svm_type': [1], 'svm_kernel_type': range(4), \
@@ -476,7 +473,12 @@ if __name__ == '__main__':
     if False:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
+        ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
+        parameters = {'method': 'svm', 'svm_type': 1, 'svm_kernel_type': 3, \
+                      'svm_degree': 2, 'svm_nu': 0.3, 'svm_w_negative': 1.0}
+        
+        cross_validate_local(0, 1, save_data_path, task, param_dict, parameters)
+        
     else:
         save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
           
