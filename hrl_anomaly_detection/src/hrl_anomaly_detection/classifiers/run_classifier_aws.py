@@ -178,7 +178,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
             print "Not available method"
             return "Not available method", None, None, None, None
 
-        dtc.set_params(params)
+        dtc.set_params(**params)
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
 
         # evaluate the classifier
