@@ -153,6 +153,8 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
     tn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     delay_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
+    return method, None, None, None, None
+
     # classifier
     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
     for j in xrange(ROC_dict['nPoints']):
@@ -173,7 +175,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict):
             dtc.set_params( ths_mult = thresholds[j] )
         else:
             print "Not available method"
-            return "Not available method"
+            return "Not available method", None, None, None, None
 
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
 
