@@ -101,12 +101,8 @@ class classifier(learning_base):
             import svmutil as svm
             print svm.__file__
             if type(X) is not list: X=X.tolist()
-            args = '-s '+str(self.svm_type)\
-              +' -t '+str(self.svm_kernel_type)\              
-              +' -d '+str(self.svm_degree)\              
-              +' -c '+str(self.svm_cost)\
-              +' -n '+str(self.svm_nu)\
-              +' -w1 '+str(self.class_weight)\
+            args = '-s '+str(self.svm_type)+' -t '+str(self.svm_kernel_type)+' -d '+str(self.svm_degree)\
+              +' -c '+str(self.svm_cost)+' -n '+str(self.svm_nu)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.svm_w_negative)
             self.dt = svm.svm_train(y, X, args )
             return True
