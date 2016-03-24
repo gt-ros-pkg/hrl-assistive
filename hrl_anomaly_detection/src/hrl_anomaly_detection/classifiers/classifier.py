@@ -67,7 +67,7 @@ class classifier(learning_base):
             self.svm_type        = 1
             self.svm_kernel_type = 2
             self.svm_degree      = 3
-            #self.svm_gamma       =
+            self.svm_gamma       = 0.25
             self.svm_cost        = 4.0
             self.svm_nu          = 0.5
             self.svm_w_negative  = 7.0
@@ -107,7 +107,7 @@ class classifier(learning_base):
             try:
                 self.dt = svm.svm_train(y, X, args )
             except:
-                return args
+                return False
             return True
         elif self.method == 'cssvm_standard':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')

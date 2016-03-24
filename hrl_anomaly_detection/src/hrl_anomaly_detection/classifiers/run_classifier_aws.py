@@ -54,24 +54,20 @@ class CloudSearchForClassifier(CloudSearch):
         
         all_param = list(ParameterGrid(params))
 
-        count = 0
         for param_idx, param in enumerate(all_param):
-            for file_idx in xrange(nFiles):
-                task = self.lb_view.apply(cross_validate_local, param_idx, file_idx, \
-                                          processed_data_path, task_name, \
-                                          default_params=param_dict, custom_params=param)
-                self.all_tasks.append(task)
-                count += 1
-                print count
+            task = self.lb_view.apply(cross_validate_local, param_idx, nFiles, \
+                                      processed_data_path, task_name, \
+                                      default_params=param_dict, custom_params=param)
+            self.all_tasks.append(task)
         return self.all_tasks
 
 
-def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, default_params, custom_params):
+def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, default_params, custom_params, \
+                         n_jobs=2):
     '''
     
     '''
-    import os
-    from hrl_anomaly_detection.classifiers import run_classifier_aws as rca
+    from joblib import Parallel, delayed
     
     ## Default Parameters
     # data
@@ -84,7 +80,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
     ## Custom parameters
     method = custom_params['method']
-
+    
     #------------------------------------------
     ROC_data = {}
     ROC_data[method] = {}
@@ -93,11 +89,28 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
     ROC_data[method]['tn_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
     ROC_data[method]['fn_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
     ROC_data[method]['delay_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
+    
+    ## for file_idx in xrange(nFiles):
+    ##     run_classifier( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), \
+    ##                     method, HMM_dict, ROC_dict, custom_params)
+    ##     print "running fine"
+    ##     sys.exit()
 
-    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
-    ## tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, custom_params)
+    ## r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( file_idx, method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+    r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+    l_ROC_data, l_param_idx, l_custom_params = zip(*r)
 
+    for i in xrange(len(l_ROC_data)):
+        if l_param_idx[i]==-1: return ROC_data, -1, custom_params
+
+        for j in xrange(ROC_dict['nPoints']):
+            ROC_data[method]['tp_l'][j] += l_ROC_data[i][method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += l_ROC_data[i][method]['fp_l'][j]
+            ROC_data[method]['fn_l'][j] += l_ROC_data[i][method]['fn_l'][j]
+            ROC_data[method]['tn_l'][j] += l_ROC_data[i][method]['tn_l'][j]
+            ROC_data[method]['delay_l'][j] += l_ROC_data[i][method]['delay_l'][j]
+       
     ## if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
     ##     return tp_ll, None, None
 
@@ -108,16 +121,18 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
     ##     ROC_data[method]['tn_l'][j] += tn_ll[j]
     ##     ROC_data[method]['delay_l'][j] += delay_ll[j]
 
-    ## return ROC_data, param_idx, custom_params
+    return ROC_data, param_idx, custom_params
 
-## def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
+def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
 
-    # train a classifier and evaluate it using test data.
+    import os
+    ## from hrl_anomaly_detection.classifiers import run_classifier_aws as rca
     from hrl_anomaly_detection.classifiers import classifier as cb
     import hrl_lib.util as ut
-    from sklearn import preprocessing
     import numpy as np
+    from sklearn import preprocessing
 
+    # train a classifier and evaluate it using test data.
     d            = ut.load_pickle(modeling_pkl)
     nEmissionDim = d['nEmissionDim']
     A            = d['A']
@@ -180,10 +195,15 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
             dtc.set_params( ths_mult = thresholds[j] )
         else:
             print "Not available method"
-            return "Not available method", None, None #, None, None
-        
-        dtc.set_params(**custom_params)
-        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+            return "Not available method", -1, params
+
+        try:
+            dtc.set_params(**params)
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+        except:
+            print "Fitting failure : 1", 
+            return 'fit failed1', -1, params
+        if ret is False: return 'fit failed2', -1, params
 
         # evaluate the classifier
         tp_l = []
@@ -230,7 +250,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
     ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
 
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
-        return tp_ll, None, None
+        return tp_ll, -1, params
 
     for j in xrange(ROC_dict['nPoints']):
         ROC_data[method]['tp_l'][j] += tp_ll[j]
@@ -239,7 +259,10 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
         ROC_data[method]['tn_l'][j] += tn_ll[j]
         ROC_data[method]['delay_l'][j] += delay_ll[j]
 
-    return ROC_data, param_idx, custom_params
+    return ROC_data, param_idx, params
+
+
+
 
 
 def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, parameters):
@@ -322,8 +345,7 @@ def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, param
         score_list.append( getAUC(fpr_l, tpr_l) )
         
     for i, param in enumerate(param_list):
-        print("%0.3f (+/-%0.03f) for %r"
-              % (score_list[i], param))
+        print("%0.3f for %r" % (score_list[i], param))
 
 
 def getAUC(fpr_l, tpr_l):
@@ -370,7 +392,7 @@ if __name__ == '__main__':
         HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
 
-        nPoints        = 20
+        nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
@@ -381,6 +403,7 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
+        nFiles = 16
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
@@ -405,7 +428,7 @@ if __name__ == '__main__':
         HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
         
-        nPoints        = 20
+        nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
@@ -415,6 +438,8 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+
+        nFiles = 16
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
@@ -454,62 +479,77 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
+        nFiles = 2
+
     else:
         print "Selected task name is not available."
         sys.exit()
 
     #--------------------------------------------------------------------------------------
 
-    nFiles = 2
-    parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': range(3,4), 'svn_degree': [2], \
-                  'svm_w_negative': [1.0]}
-    ## parameters = {'method': ['cssvm'], 'svm_type': [1], 'svm_kernel_type': range(4), \
-    ##               'svm_degree': range(1,5), \
-    ##               'svm_nu': [0.1, 0.3, 0.5, 0.7, 0.9], 'svm_w_negative': [0.5, 1.0, 1.5, 2.0]}
+    ## parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': [1,2], 'svn_degree': [2], \
+    ##               'svm_w_negative': [1.0]}
+    parameters = {'method': ['svm'], 'svm_type': [1], 'svm_kernel_type': [1,2], \
+                  'svm_degree': range(1,4), 'svm_gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                  'svm_nu': [0.1, 0.3, 0.5, 0.7, 0.9], 'svm_w_negative': [0.5, 1.0, 1.5, 2.0]}
     ## 'gamma': np.linspace(0.01, 0.4, 4)
     ## 'gamma': [0.03]
     
     # cpu version
     if True:
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
-        parameters = {'method': 'svm', 'svm_type': 1, 'svm_kernel_type': 3, \
-                      'svm_degree': 2, 'svm_nu': 0.3, 'svm_w_negative': 1.0}
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         
-        cross_validate_local(0, 1, save_data_path, task, param_dict, parameters)
+        ## parameters = {'method': 'svm', 'svm_type': 1, 'svm_kernel_type': 3, \
+        ##               'svm_degree': 2, 'svm_nu': 0.3, 'svm_w_negative': 1.0}
+        
+        cross_validate_local(0, 16, save_data_path, task, param_dict, parameters, n_jobs=8)
         
     else:
-        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
-          
-        cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
-                                         '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
-                                         os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu')
-        cloud.run_with_local_data(parameters, save_data_path, task, nFiles, param_dict )
+
+        if os.path.isfile('./temp.pkl') is False:
+
+            cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
+                                             '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
+                                             os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu')
+            cloud.run_with_local_data(parameters, save_data_path, task, nFiles, param_dict )
 
 
-        # wait until finishing parameter search
-        while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
-            print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
-            time.sleep(5)
+            # wait until finishing parameter search
+            while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
+                print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
+                time.sleep(5)
 
-        results = cloud.get_completed_results()
-        print results
+            results = cloud.get_completed_results()
+            print "===================================="
+            print "Result"
+            print "===================================="
+            for result in results:        
+                print result
+            print "===================================="
+            import hrl_lib.util as ut
+            ut.save_pickle(results, './temp.pkl')            
+        else:
+            import hrl_lib.util as ut
+            results = ut.load_pickle('./temp.pkl')
+
 
         # Get combined results
         max_param_idx = len( list(ParameterGrid(parameters)) )
         method = parameters['method'][0]
         score_list = []
+
+        print "max_param_idx = ", max_param_idx
         
         for i in xrange(max_param_idx):
 
             ROC_data = {}
             ROC_data[method] = {}
-            ROC_data[method]['tp_l']    = [ [] for i in xrange(nPoints) ]
-            ROC_data[method]['fp_l']    = [ [] for i in xrange(nPoints) ]
-            ROC_data[method]['tn_l']    = [ [] for i in xrange(nPoints) ]
-            ROC_data[method]['fn_l']    = [ [] for i in xrange(nPoints) ]
-            ROC_data[method]['delay_l'] = [ [] for i in xrange(nPoints) ]
+            ROC_data[method]['tp_l']    = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l']    = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l']    = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l']    = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
             param = None
             for result in results:
@@ -534,21 +574,22 @@ if __name__ == '__main__':
             fpr_l = []
 
             try:
-                for i in xrange(nPoints):
-                    tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                for j in xrange(nPoints):
+                    tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
+                    fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
             except:
-                print tp_ll, fn_ll
+                print "failed to get TPR and FPR"
+                ## print tp_ll, fn_ll
                 ## cloud.stop()
-                cloud.flush()
+                #cloud.flush()
+                break
 
             # get AUC
             score_list.append( [getAUC(fpr_l, tpr_l), param] )
 
         for i in xrange(len(score_list)):
-            print("%0.3f (+/-%0.03f) for %r"
-                  % (score_list[i][0], score_list[i][1]))
+            print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
             
-        ## cloud.stop()
+        cloud.stop()
         cloud.flush()
         print "Finished"
