@@ -525,7 +525,7 @@ if __name__ == '__main__':
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                save_data_path, \
                                                                                task, param_dict, param, \
-                                                                               n_jobs=8)
+                                                                               n_jobs=-1)
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
 
             ut.save_pickle(results, './temp.pkl')
