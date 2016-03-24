@@ -368,6 +368,8 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
 
+    p.add_option('--user', action='store', dest='user', type='string', default='ubuntu',
+                 help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing',
                  help='type the desired task name')
 
@@ -385,7 +387,7 @@ if __name__ == '__main__':
                         'crossmodal_targetEEAng']
         modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
                          'vision_change', 'pps']
-        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         downSampleSize = 200
 
 
@@ -422,7 +424,7 @@ if __name__ == '__main__':
                         'crossmodal_artagEEAng'] #'unimodal_audioPower'
         modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
 
-        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         downSampleSize = 200
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
@@ -461,7 +463,7 @@ if __name__ == '__main__':
                         ]
 
         modality_list  = ['kinematics', 'audio', 'ft']
-        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
         downSampleSize = 200      
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
@@ -513,7 +515,7 @@ if __name__ == '__main__':
     # cpu version
     if True:
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
 
         ## nFiles = 2
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
@@ -560,12 +562,8 @@ if __name__ == '__main__':
             # get AUC
             score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
 
-
-
         for i in xrange(len(score_list)):
             print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
-
-
                                                                            
     else:
 
