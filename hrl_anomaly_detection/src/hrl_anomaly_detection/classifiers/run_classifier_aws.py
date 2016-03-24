@@ -95,6 +95,9 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
     tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict)
 
+    if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
+        return tp_ll, None, None
+
     for j in xrange(ROC_dict['nPoints']):
         ROC_data[method]['tp_l'][j] += tp_ll[j]
         ROC_data[method]['fp_l'][j] += fp_ll[j]
