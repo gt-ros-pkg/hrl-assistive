@@ -53,6 +53,7 @@ class CloudSearchForClassifier(CloudSearch):
     def run_with_local_data(self, params, processed_data_path, task_name, nFiles, param_dict):
         
         all_param = list(ParameterGrid(params))
+
         for param_idx, param in enumerate(all_param):
             for file_idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, param_idx, file_idx, \
@@ -79,7 +80,7 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
     #------------------------------------------
 
     ## Custom parameters
-    method = custom_params['method'][0]
+    method = custom_params['method']
 
     #------------------------------------------
     ROC_data = {}
@@ -322,46 +323,132 @@ def getAUC(fpr_l, tpr_l):
 
 if __name__ == '__main__':
 
-    subjects = ['gatsbii']
-    task     = 'pushing'
-    feature_list = ['relativePose_artag_EE', \
-                    'relativePose_artag_artag', \
-                    'wristAudio', \
-                    'ft', \
-                    ]
+    import optparse
+    p = optparse.OptionParser()
+
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing',
+                 help='type the desired task name')
+
+    opt, args = p.parse_args()
+
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
-    modality_list   = ['kinematics', 'audio', 'ft']
+    if opt.task == 'scooping':
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
+        task     = opt.task    
+        feature_list = ['unimodal_audioWristRMS',\
+                        'unimodal_ftForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
+                         'vision_change', 'pps']
+        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        downSampleSize = 200
 
-    downSampleSize = 200      
 
-    data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,200], \
-                      'nNormalFold':3, 'nAbnormalFold':3,\
-                      'feature_list': feature_list, 'nAugment': 1, 'lowVarDataRemv': False }
-    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
-                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
-                      'add_option': 'featureToBottleneck', 'add_feature': feature_list}
-    HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-    SVM_param_dict = {'renew': False,}
 
-    nPoints        = 20
-    ROC_param_dict = {'methods': ['cssvm'],\
-                      'nPoints': nPoints,\
-                      'progress_param_range':np.linspace(-1., -10., nPoints), \
-                      'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                      'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                      'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                  'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
+                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
+        SVM_param_dict = {'renew': False,}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+
+
+    #---------------------------------------------------------------------------
+    elif opt.task == 'feeding':
+        
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        task     = opt.task 
+        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
+                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
+        modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
+
+        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        downSampleSize = 200
+
+        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': downSampleSize, 'cut_data': [0,170], \
+                          'nNormalFold':4, 'nAbnormalFold':4,\
+                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
+        SVM_param_dict = {'renew': False,}
+        
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing':
+    
+        subjects = ['gatsbii']
+        task     = opt.task 
+        feature_list = ['relativePose_artag_EE', \
+                        'relativePose_artag_artag', \
+                        'wristAudio', \
+                        'ft', \
+                        ]
+
+        modality_list  = ['kinematics', 'audio', 'ft']
+        save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+        downSampleSize = 200      
+
+        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
+                          'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                          'nNormalFold':3, 'nAbnormalFold':3,\
+                          'feature_list': feature_list, 'nAugment': 1, 'lowVarDataRemv': False }
+        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
+                          'add_option': 'featureToBottleneck', 'add_feature': feature_list}
+        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+        SVM_param_dict = {'renew': False,}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['cssvm'],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-1., -10., nPoints), \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+
+    else:
+        print "Selected task name is not available."
+        sys.exit()
 
     #--------------------------------------------------------------------------------------
 
     nFiles = 9
-    parameters = {'method': ['cssvm'], 'svm_type': [1], 'kernel_type': range(3,4), 'degree': [2], \
+    parameters = {'method': ['svm'], 'svm_type': [1], 'kernel_type': range(3,4), 'degree': [2], \
                   'gamma': [0.03], 'w1': [1.0]}
     ## parameters = {'method': ['cssvm'], 'svm_type': [1], 'kernel_type': range(4), 'degree': range(5), \
     ##               'gamma': np.linspace(0.01, 0.4, 10), 'w1': [0.5, 1.0, 1.5, 2.0]}
@@ -426,19 +513,21 @@ if __name__ == '__main__':
             tpr_l = []
             fpr_l = []
 
-            print tp_ll, fn_ll
-            break
-            for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            try:
+                for i in xrange(nPoints):
+                    tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            except:
+                print tp_ll, fn_ll
+                cloud.stop()
 
             # get AUC
             score_list.append( [getAUC(fpr_l, tpr_l), param] )
 
-        ## cloud.stop()
-        cloud.flush()
-        print "Finished"
-
         for i in xrange(len(score_list)):
             print("%0.3f (+/-%0.03f) for %r"
                   % (score_list[i][0], score_list[i][1]))
+            
+        cloud.stop()
+        cloud.flush()
+        print "Finished"
