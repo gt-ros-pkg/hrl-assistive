@@ -97,10 +97,8 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##     print "running fine"
     ##     return 0, -1, custom_params
     
-    ## r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( file_idx, method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     l_ROC_data, l_param_idx = zip(*r)
-
 
     for i in xrange(len(l_ROC_data)):
         if l_param_idx[i]==-1: return ROC_data, -1, custom_params
@@ -112,16 +110,6 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
             ROC_data[method]['tn_l'][j] += l_ROC_data[i]['tn_l'][j]
             ROC_data[method]['delay_l'][j] += l_ROC_data[i]['delay_l'][j]
        
-    ## if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
-    ##     return tp_ll, None, None
-
-    ## for j in xrange(ROC_dict['nPoints']):
-    ##     ROC_data[method]['tp_l'][j] += tp_ll[j]
-    ##     ROC_data[method]['fp_l'][j] += fp_ll[j]
-    ##     ROC_data[method]['fn_l'][j] += fn_ll[j]
-    ##     ROC_data[method]['tn_l'][j] += tn_ll[j]
-    ##     ROC_data[method]['delay_l'][j] += delay_ll[j]
-
     return ROC_data, param_idx, custom_params
 
 def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
@@ -199,13 +187,9 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
             print "Not available method"
             return "Not available method", -1, params
 
-        try:
-            dtc.set_params(**params)
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-        except:
-            print "Fitting failure : 1", 
-            return 'fit failed1', -1
-        if ret is False: return 'fit failed2', -1
+        dtc.set_params(**params)
+        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+        if ret is False: return 'fit failed', -1
 
         # evaluate the classifier
         tp_l = []
@@ -368,7 +352,7 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
 
-    p.add_option('--user', action='store', dest='user', type='string', default='ubuntu',
+    p.add_option('--user', action='store', dest='user', type='string', default='dpark',
                  help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing',
                  help='type the desired task name')
@@ -499,9 +483,9 @@ if __name__ == '__main__':
 
     ## parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': [1,2], 'svn_degree': [2], \
     ##               'svm_w_negative': [1.0]}
-    parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [2], \
-                  'svm_degree': [3], 'svm_gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                  'svm_nu': [0.5], 'svm_w_negative': np.arange(1.0, 10.0) }
+    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                  'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                  'nu': [0.5], 'w_negative': np.arange(1.0, 10.0) }
     ## 'gamma': np.linspace(0.01, 0.4, 4)
     ## 'gamma': [0.03]
 

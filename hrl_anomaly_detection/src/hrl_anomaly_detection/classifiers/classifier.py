@@ -50,8 +50,15 @@ from hrl_anomaly_detection.hmm.learning_base import learning_base
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=None,\
                  class_weight=1.0, \
+                 # svm
+                 svm_type    = 0,\
+                 kernel_type = 2,\
+                 degree      = 3,\
+                 gamma       = 0.25,\
+                 cost        = 4.,\
+                 nu          = 0.5,\
+                 w_negative  = 7.0,\
                  verbose=False):
-        learning_base.__init__(self)
         '''
         class_weight : positive class weight for svm
         nLength : only for progress-based classifier
@@ -64,13 +71,13 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
-            self.svm_type        = 0
-            self.svm_kernel_type = 2
-            self.svm_degree      = 3
-            self.svm_gamma       = 0.25
-            self.svm_cost        = 4.0
-            self.svm_nu          = 0.5
-            self.svm_w_negative  = 7.0
+            self.svm_type    = svm_type
+            self.kernel_type = kernel_type
+            self.degree      = degree 
+            self.gamma       = gamma 
+            self.cost        = cost 
+            self.nu          = nu 
+            self.w_negative  = w_negative 
             
         elif self.method == 'cssvm_standard' or self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
@@ -88,8 +95,9 @@ class classifier(learning_base):
             self.std = 0.0
             self.ths_mult = ths_mult
             
+        learning_base.__init__(self)
 
-    def fit(self, X, y, ll_idx=None):
+    def fit(self, X, y, ll_idx=None, parallel=True):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
@@ -99,14 +107,14 @@ class classifier(learning_base):
         if self.method == 'svm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
-            print svm.__file__
+            ## print svm.__file__
             if type(X) is not list: X=X.tolist()
-            args = '-s '+str(self.svm_type)+' -t '+str(self.svm_kernel_type)+' -d '+str(self.svm_degree)\
-              +' -g '+str(self.svm_gamma)\
-              +' -c '+str(self.svm_cost)+' -n '+str(self.svm_nu)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.svm_w_negative)
+            commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
+              +' -g '+str(self.gamma)\
+              +' -c '+str(self.cost)+' -n '+str(self.nu)+' -w1 '+str(self.class_weight)\
+              +' -w-1 '+str(self.w_negative)
             try:
-                self.dt = svm.svm_train(y, X, args )
+                self.dt = svm.svm_train(y, X, commands )
             except:
                 return False
             return True
@@ -134,11 +142,22 @@ class classifier(learning_base):
             g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
-            r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                   g_mu_list[i],\
-                                                                   g_sig, self.nPosteriors)
-                                                                   for i in xrange(self.nPosteriors))
-            _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+            if parallel:
+                r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
+                                                                       g_mu_list[i],\
+                                                                       g_sig, self.nPosteriors)
+                                                                       for i in xrange(self.nPosteriors))
+                _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
+            else:
+                self.l_statePosterior = []
+                self.ll_mu            = []
+                self.ll_std           = []
+                for i in xrange(self.nPosteriors):
+                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i],\
+                                                  g_sig, self.nPosteriors)
+                    self.l_statePosterior.append(p)
+                    self.ll_mu.append(m)
+                    self.ll_std.append(s)
 
             return True
 

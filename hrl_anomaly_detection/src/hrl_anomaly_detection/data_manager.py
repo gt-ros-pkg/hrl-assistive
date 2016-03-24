@@ -134,13 +134,15 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         if ae_data:
+            # Task-oriented raw features
             successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
             failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
             aug_successData = data_dict.get('aeSuccessData_augmented', [])
             aug_failureData = data_dict.get('aeFailureData_augmented', [])
             failureNameList = None
-            param_dict      = data_dict['aeParamDict']
+            param_dict      = data_dict.get('aeParamDict', data_dict['param_dict'])
         else:        
+            # Task-oriented hand-crafted features
             allData         = data_dict['allData']
             successData     = data_dict.get('successData', data_dict['trainingData']) 
             failureData     = data_dict.get('failureData', data_dict['abnormalTestData'])
@@ -148,6 +150,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             aug_failureData = data_dict.get('failureData_augmented', [])
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
+
+            
+        ## data_dict['successData'] = data_dict['trainingData']
+        ## data_dict['failureData'] = data_dict['abnormalTestData']
+        ## ut.save_pickle(data_dict, save_pkl)
+            
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -176,6 +184,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                              local_range=local_range, rf_center=rf_center,\
                                              renew=data_renew, save_pkl=failure_data_pkl)
 
+        # Task-oriented hand-crafted features
         allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale,\
                                              cut_data=cut_data)
         successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
@@ -184,7 +193,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                              param_dict=param_dict, cut_data=cut_data)
         aug_successData = successData
         aug_failureData = failureData
-                                                                                
+
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
         data_dict['successData']  = successData = np.array(successData)
@@ -195,8 +204,11 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict['param_dict'] = param_dict
 
         if ae_data:
+            # Task-oriented raw features
+            # TODO: cut_data
             ae_successData, ae_failureData, ae_aug_successData, ae_aug_failureData, ae_param_dict = \
-              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), nFailure=len(failure_list),\
+              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), \
+                             nFailure=len(failure_list),\
                              nAugment=nAugment)
 
             data_dict['aeSuccessData'] = successData = np.array(ae_successData)
@@ -204,13 +216,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             data_dict['aeSuccessData_augmented'] = np.array(ae_aug_successData)
             data_dict['aeFailureData_augmented'] = np.array(ae_aug_failureData)
             data_dict['aeParamDict']   = ae_param_dict
-        
+                    
         ut.save_pickle(data_dict, save_pkl)
 
     #-----------------------------------------------------------------------------
     ## All data
     nPlot = None
 
+    # almost deprecated??
     feature_names = np.array(param_dict.get('feature_names', feature_list))
     if data_ext:
         # 1) exclude stationary data

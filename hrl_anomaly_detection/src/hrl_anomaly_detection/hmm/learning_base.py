@@ -58,13 +58,13 @@ class learning_base():
 
         # introspect the constructor arguments to find the model parameters 
         # to represent 
-        args, varargs, kw, default = inspect.getargspec(init)  
+        args, varargs, kw, default = inspect.getargspec(init)        
         if varargs is not None:                              
-                raise RuntimeError("scikit-learn estimators should always "
-                                   "specify their parameters in the signature" 
-                                   " of their __init__ (no varargs)."
-                                   " %s doesn't follow this convention." 
-                                   % (cls, )) 
+            raise RuntimeError("Estimators should always "
+                               "specify their parameters in the signature" 
+                               " of their __init__ (no varargs)."
+                               " %s doesn't follow this convention." 
+                               % (cls, )) 
 
         # Remove 'self'                                                                                           
         # XXX: This is going to fail if the init is a staticmethod, but
@@ -90,7 +90,6 @@ class learning_base():
     def get_params(self, deep=False):
         '''
         '''
-
         out = dict()
         for key in self._get_param_names():
             # We need deprecation warnings to always be on in order to
@@ -127,8 +126,6 @@ class learning_base():
         valid_params = self.get_params(deep=True)            
         for key, value in six.iteritems(params): 
             # simple objects case
-            ## print valid_params
-            ## print key
             if not key in valid_params:
                 continue
                 ## raise ValueError('Invalid parameter %s ' 'for estimator %s'

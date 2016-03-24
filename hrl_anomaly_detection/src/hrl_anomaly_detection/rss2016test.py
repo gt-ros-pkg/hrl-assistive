@@ -94,42 +94,60 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_0.pkl')
         d = ut.load_pickle(AE_proc_data)
         if AE_dict['filter']:
-            successData = aug_successData = d['normTrainDataFiltered']
-            failureData = aug_failureData = d['abnormTrainDataFiltered']
+            # Bottle features with variance filtering
+            successData = d['normTrainDataFiltered']
+            failureData = d['abnormTrainDataFiltered']
         else:
-            successData = aug_successData = d['normTrainData']
-            failureData = aug_failureData = d['abnormTrainData']
+            # Bottle features without filtering
+            successData = d['normTrainData']
+            failureData = d['abnormTrainData']
 
+        ## print np.shape(d['normTrainDataFiltered']), np.shape(d['normTrainData'])
+        ## print d.keys()
+
+        if AE_dict['add_option'] is 'featureToBottleneck':
+            print "add feature is not implemented..."
+            ##     dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+            ##                        processed_data_path, data_dict['rf_center'], \
+            ##                        data_dict['local_range'],\
+            ##                        downSampleSize=data_dict['downSampleSize'], \
+            ##                        scale=1.0,\
+            ##                        ae_data=AE_dict['switch'],\
+            ##                        data_ext=data_dict['lowVarDataRemv'],\
+            ##                        nAugment=data_dict['nAugment'],\
+            ##                        feature_list=data_dict['feature_list'], \
+            ##                        cut_data=data_dict['cut_data'],\
+            ##                        data_renew=data_dict['renew'])
+
+            ##     print dd.keys()
+
+            ##     org_successData = dd.get('successData', dd['trainingData'])
+            ##     org_failureData = dd.get('failureData', dd['abnormalTestData'])
+            ##     org_aug_successData = dd['successData_augmented']
+            ##     org_aug_failureData = dd['failureData_augmented']
+
+            ##     print np.shape(org_successData), np.shape(org_aug_successData)
+            ##     sys.exit()
+
+        successData *= HMM_dict['scale']
+        failureData *= HMM_dict['scale']
+        
     else:
         dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], \
                            data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], \
                            scale=1.0,\
-                           ae_data=AE_dict['switch'],\
+                           ae_data=False,\
                            data_ext=data_dict['lowVarDataRemv'],\
                            nAugment=data_dict['nAugment'],\
                            feature_list=data_dict['feature_list'], \
                            cut_data=data_dict['cut_data'],\
                            data_renew=data_dict['renew'])
-        if AE_dict['switch']:
-            successData = dd['aeSuccessData']
-            failureData = dd['aeFailureData']
-            aug_successData = dd['aeSuccessData_augmented']
-            aug_failureData = dd['aeFailureData_augmented']
-        else:
-            successData = dd['successData']
-            failureData = dd['failureData']
-            aug_successData = dd['successData_augmented']
-            aug_failureData = dd['failureData_augmented']
                            
-
-    if data_dict['nAugment'] > 0:
-        successData = aug_successData * HMM_dict['scale']
-        failureData = aug_failureData * HMM_dict['scale']
-    else:
-        successData *= HMM_dict['scale']
-        failureData *= HMM_dict['scale']
+        successData = dd['successData'] * HMM_dict['scale']
+        failureData = dd['failureData'] * HMM_dict['scale']
+                           
 
     normalTestData = None                                    
     print "======================================"
@@ -433,8 +451,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     # AE
     AE_dict     = param_dict['AE']
     #------------------------------------------
-
-                    
+    assert AE_dict['switch'] == True
+                   
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
@@ -446,6 +464,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            nAugment=data_dict['nAugment'], feature_list=feature_list, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
+
+        # Task-oriented raw features        
         successData = dd['aeSuccessData']
         failureData = dd['aeFailureData']
         aug_successData = dd['aeSuccessData_augmented']
@@ -785,9 +805,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     #-----------------------------------------------------------------------------------------
-    # train a classifier and evaluate it using test data.
-    from hrl_anomaly_detection.classifiers import classifier as cb
-    from sklearn import preprocessing
 
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
@@ -800,159 +817,28 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if method not in ROC_data.keys() or method in ROC_dict['update_list']: # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = []
-            ROC_data[method]['fp_l'] = []
-            ROC_data[method]['tn_l'] = []
-            ROC_data[method]['fn_l'] = []
-            ROC_data[method]['delay_l'] = []
-
-            for j in xrange(nPoints):
-                ROC_data[method]['tp_l'].append([])
-                ROC_data[method]['fp_l'].append([])
-                ROC_data[method]['tn_l'].append([])
-                ROC_data[method]['fn_l'].append([])
-                ROC_data[method]['delay_l'].append([])
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     ## ROC_data['svm']['complete']                   = True
     ## ROC_data['progress_time_cluster']['complete'] = True
     
+    # parallelization
+    r = Parallel(n_jobs=-1)(delayed(run_classifiers)( idx, processed_data_path, task_name, ROC_data, ROC_dict ) for idx in xrange(len(kFold_list)) )    
+    l_data = zip(*r)
 
-    for idx in xrange(len(kFold_list)):
-
-        if verbose: print idx, " : training classifier and evaluate testing data"
-
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        d            = ut.load_pickle(modeling_pkl)
-        nEmissionDim = d['nEmissionDim']
-        A            = d['A']
-        B            = d['B']
-        pi           = d['pi']
-        F            = d['F']
-        nState       = d['nState']        
-        ## startIdx = d['startIdx']
-        ll_classifier_train_X   = d['ll_classifier_train_X']
-        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-        ll_classifier_train_idx = d['ll_classifier_train_idx']
-        ll_classifier_test_X    = d['ll_classifier_test_X']  
-        ll_classifier_test_Y    = d['ll_classifier_test_Y']
-        ll_classifier_test_idx  = d['ll_classifier_test_idx']
-        nLength      = d['nLength']
-
-
-        #-----------------------------------------------------------------------------------------
-        ## ## trainingData = successData[:, trainIdx, :]
-        ## hmm_obs = hmm.learning_hmm(nState, nEmissionDim=nEmissionDim)
-        ## hmm_obs.set_hmm_object(A,B,pi)
-        ## ml = hmm_obs.ml
-
-        #-----------------------------------------------------------------------------------------
-        # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
-
-        # Generate parameter list for ROC curve
-        for i, method in enumerate(method_list):
-
-            # pass method if there is existing result
-            if ROC_data[method]['complete'] == True:
-                continue
-
-            # data preparation
-            if 'svm' in method:
-                scaler = preprocessing.StandardScaler()
-                ## scaler = preprocessing.scale()
-                X_scaled = scaler.fit_transform(X_train_org)
-            else:
-                X_scaled = X_train_org
-            print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
-
-            # classifier
-            dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
-            for j in xrange(nPoints):
-                if method == 'svm':
-                    weights = ROC_dict['svm_param_range']
-                    ## weights = np.logspace(-2, 0.8, nPoints)
-                    dtc.set_params( class_weight=weights[j] )
-                    ## weights = np.linspace(0.5, 60.0, nPoints)
-                    ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
-                elif method == 'cssvm_standard':
-                    weights = np.logspace(-2, 0.1, nPoints)
-                    dtc.set_params( class_weight=weights[j] )
-                elif method == 'cssvm':
-                    weights = ROC_dict['cssvm_param_range']
-                    dtc.set_params( class_weight=weights[j] )
-                elif method == 'progress_time_cluster':
-                    ## thresholds = -np.linspace(1., 50, nPoints)+2.0
-                    thresholds = ROC_dict['progress_param_range']
-                    dtc.set_params( ths_mult = thresholds[j] )
-                elif method == 'fixed':
-                    thresholds = ROC_dict['fixed_param_range']
-                    ## thresholds = np.linspace(0.1, -3.5, nPoints)
-                    dtc.set_params( ths_mult = thresholds[j] )
-
-                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-
-                ## X_scaled = scaler.transform(X_test_org)
-                ## est_y = dtc.predict(X_scaled, Y_test_org)
-                ## print est_y[:10]
-
-                ## for jj in xrange(len(ll_classifier_test_X[0])):
-                ##     X = scaler.transform([ll_classifier_test_X[0][jj]])
-                ##     est_y = dtc.predict(X, y=ll_classifier_test_Y[0][jj:jj+1])
-                ##     print est_y
-                ##     if jj>10: break
-                
-                ## sys.exit()
-
-                # evaluate the classifier
-                tp_l = []
-                fp_l = []
-                tn_l = []
-                fn_l = []
-                delay_l = []
-                delay_idx = 0
-
-                for ii in xrange(len(ll_classifier_test_X)):
-
-                    if len(ll_classifier_test_Y[ii])==0: continue
-                    
-                    for jj in xrange(len(ll_classifier_test_X[ii])):
-                        if 'svm' in method:
-                            X = scaler.transform([ll_classifier_test_X[ii][jj]])
-                        elif method == 'progress_time_cluster' or method == 'fixed':
-                            X = ll_classifier_test_X[ii][jj]
-
-                        est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii][jj:jj+1])
-                        if type(est_y) == list: est_y = est_y[0]
-                        if type(est_y) == list: est_y = est_y[0]
-                        ## X = X[0]
-
-                        if est_y > 0.0:
-                            delay_idx = ll_classifier_test_idx[ii][jj]
-                            print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-                            break        
-                    
-                    if ll_classifier_test_Y[ii][0] > 0.0:
-                        if est_y > 0.0:
-                            tp_l.append(1)
-                            delay_l.append(delay_idx)
-                        else: fn_l.append(1)
-                    elif ll_classifier_test_Y[ii][0] <= 0.0:
-                        if est_y > 0.0: fp_l.append(1)
-                        else: tn_l.append(1)
-
-                ROC_data[method]['tp_l'][j] += tp_l
-                ROC_data[method]['fp_l'][j] += fp_l
-                ROC_data[method]['fn_l'][j] += fn_l
-                ROC_data[method]['tn_l'][j] += tn_l
-                ROC_data[method]['delay_l'][j] += delay_l
-
+    for i in xrange(len(l_data)):
+        for j in xrange(nPoints):
+            for k, method in enumerate(method_list):
+                if ROC_data[method]['complete'] == True: continue
+                ROC_data[method]['tp_l'][j] += l_data[method]['tp_l'][j]
+                ROC_data[method]['fp_l'][j] += l_data[method]['fp_l'][j]
+                ROC_data[method]['tn_l'][j] += l_data[method]['tn_l'][j]
+                ROC_data[method]['fn_l'][j] += l_data[method]['fn_l'][j]
+                ROC_data[method]['delay_l'][j] += l_data[method]['delay_l'][j]
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
@@ -1032,6 +918,161 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             plt.show()
                    
+
+def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict ):
+
+    ## if verbose: print idx, " : training classifier and evaluate testing data"
+    # train a classifier and evaluate it using test data.
+    from hrl_anomaly_detection.classifiers import classifier as cb
+    from sklearn import preprocessing
+
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    d            = ut.load_pickle(modeling_pkl)
+    nEmissionDim = d['nEmissionDim']
+    A            = d['A']
+    B            = d['B']
+    pi           = d['pi']
+    F            = d['F']
+    nState       = d['nState']        
+    ## startIdx = d['startIdx']
+    ll_classifier_train_X   = d['ll_classifier_train_X']
+    ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+    ll_classifier_train_idx = d['ll_classifier_train_idx']
+    ll_classifier_test_X    = d['ll_classifier_test_X']  
+    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ll_classifier_test_idx  = d['ll_classifier_test_idx']
+    nLength      = d['nLength']
+
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    #-----------------------------------------------------------------------------------------
+    ## ## trainingData = successData[:, trainIdx, :]
+    ## hmm_obs = hmm.learning_hmm(nState, nEmissionDim=nEmissionDim)
+    ## hmm_obs.set_hmm_object(A,B,pi)
+    ## ml = hmm_obs.ml
+
+    #-----------------------------------------------------------------------------------------
+    # flatten the data
+    X_train_org = []
+    Y_train_org = []
+    idx_train_org = []
+    for i in xrange(len(ll_classifier_train_X)):
+        for j in xrange(len(ll_classifier_train_X[i])):
+            X_train_org.append(ll_classifier_train_X[i][j])
+            Y_train_org.append(ll_classifier_train_Y[i][j])
+            idx_train_org.append(ll_classifier_train_idx[i][j])
+
+    data = {}
+    for i, method in enumerate(method_list):    
+        # pass method if there is existing result
+        if ROC_data[method]['complete'] == True: continue        
+        data[method] = {}
+        data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+        data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+        data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+        data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+        data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+        
+
+    #-----------------------------------------------------------------------------------------
+    # Generate parameter list for ROC curve
+    for i, method in enumerate(method_list):
+
+        # pass method if there is existing result
+        if ROC_data[method]['complete'] == True: continue
+
+        # data preparation
+        if 'svm' in method:
+            scaler = preprocessing.StandardScaler()
+            ## scaler = preprocessing.scale()
+            X_scaled = scaler.fit_transform(X_train_org)
+        else:
+            X_scaled = X_train_org
+        print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+
+        # classifier
+        dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
+        for j in xrange(nPoints):
+            if method == 'svm':
+                weights = ROC_dict['svm_param_range']
+                ## weights = np.logspace(-2, 0.8, nPoints)
+                dtc.set_params( class_weight=weights[j] )
+                ## weights = np.linspace(0.5, 60.0, nPoints)
+                ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
+            elif method == 'cssvm_standard':
+                weights = np.logspace(-2, 0.1, nPoints)
+                dtc.set_params( class_weight=weights[j] )
+            elif method == 'cssvm':
+                weights = ROC_dict['cssvm_param_range']
+                dtc.set_params( class_weight=weights[j] )
+            elif method == 'progress_time_cluster':
+                ## thresholds = -np.linspace(1., 50, nPoints)+2.0
+                thresholds = ROC_dict['progress_param_range']
+                dtc.set_params( ths_mult = thresholds[j] )
+            elif method == 'fixed':
+                thresholds = ROC_dict['fixed_param_range']
+                ## thresholds = np.linspace(0.1, -3.5, nPoints)
+                dtc.set_params( ths_mult = thresholds[j] )
+
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+
+            ## X_scaled = scaler.transform(X_test_org)
+            ## est_y = dtc.predict(X_scaled, Y_test_org)
+            ## print est_y[:10]
+
+            ## for jj in xrange(len(ll_classifier_test_X[0])):
+            ##     X = scaler.transform([ll_classifier_test_X[0][jj]])
+            ##     est_y = dtc.predict(X, y=ll_classifier_test_Y[0][jj:jj+1])
+            ##     print est_y
+            ##     if jj>10: break
+
+            ## sys.exit()
+
+            # evaluate the classifier
+            tp_l = []
+            fp_l = []
+            tn_l = []
+            fn_l = []
+            delay_l = []
+            delay_idx = 0
+
+            for ii in xrange(len(ll_classifier_test_X)):
+
+                if len(ll_classifier_test_Y[ii])==0: continue
+
+                for jj in xrange(len(ll_classifier_test_X[ii])):
+                    if 'svm' in method:
+                        X = scaler.transform([ll_classifier_test_X[ii][jj]])
+                    elif method == 'progress_time_cluster' or method == 'fixed':
+                        X = ll_classifier_test_X[ii][jj]
+
+                    est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii][jj:jj+1])
+                    if type(est_y) == list: est_y = est_y[0]
+                    if type(est_y) == list: est_y = est_y[0]
+                    ## X = X[0]
+
+                    if est_y > 0.0:
+                        delay_idx = ll_classifier_test_idx[ii][jj]
+                        print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+                        break        
+
+                if ll_classifier_test_Y[ii][0] > 0.0:
+                    if est_y > 0.0:
+                        tp_l.append(1)
+                        delay_l.append(delay_idx)
+                    else: fn_l.append(1)
+                elif ll_classifier_test_Y[ii][0] <= 0.0:
+                    if est_y > 0.0: fp_l.append(1)
+                    else: tn_l.append(1)
+
+            data[method]['tp_l'][j] += tp_l
+            data[method]['fp_l'][j] += fp_l
+            data[method]['fn_l'][j] += fn_l
+            data[method]['tn_l'][j] += tn_l
+            data[method]['delay_l'][j] += delay_l
+
+    return data
 
 
 def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
@@ -2212,7 +2253,6 @@ if __name__ == '__main__':
     # Run evaluation
     #---------------------------------------------------------------------------           
     rf_center     = 'kinEEPos'        
-    nState        = 10
     scale         = 1.0
     # Dectection TEST 
     local_range    = 10.0    
@@ -2253,7 +2293,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2283,13 +2323,14 @@ if __name__ == '__main__':
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4,\
+                          'add_option': 'bottleneck', 'add_feature': feature_list} 
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False,}
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2340,13 +2381,13 @@ if __name__ == '__main__':
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
-                          'add_option': 'featureToBottleneck', 'add_feature': feature_list}
+                          'add_option': 'featureToBottleneck'}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False,}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -2438,6 +2479,7 @@ if __name__ == '__main__':
         ## cluster_type    = 'time'
         cluster_type    = 'state'
         classifier_type = 'new'
+        nState        = 10
         
         stateLikelihoodPlot(subjects, task, raw_data_path, save_data_path, rf_center, local_range,\
                             downSampleSize=downSampleSize, \
