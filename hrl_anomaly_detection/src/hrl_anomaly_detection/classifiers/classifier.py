@@ -64,7 +64,7 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
-            self.svm_type        = 1
+            self.svm_type        = 0
             self.svm_kernel_type = 2
             self.svm_degree      = 3
             self.svm_gamma       = 0.25
@@ -102,6 +102,7 @@ class classifier(learning_base):
             print svm.__file__
             if type(X) is not list: X=X.tolist()
             args = '-s '+str(self.svm_type)+' -t '+str(self.svm_kernel_type)+' -d '+str(self.svm_degree)\
+              +' -g '+str(self.svm_gamma)\
               +' -c '+str(self.svm_cost)+' -n '+str(self.svm_nu)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.svm_w_negative)
             try:

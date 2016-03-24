@@ -31,6 +31,7 @@
 # system
 import os, sys
 import numpy as np
+import hrl_lib.util as ut
 
 from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import KFold
@@ -94,22 +95,22 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##     run_classifier( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), \
     ##                     method, HMM_dict, ROC_dict, custom_params)
     ##     print "running fine"
-    ##     sys.exit()
-
-
+    ##     return 0, -1, custom_params
+    
     ## r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( file_idx, method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
-    l_ROC_data, l_param_idx, l_custom_params = zip(*r)
+    l_ROC_data, l_param_idx = zip(*r)
+
 
     for i in xrange(len(l_ROC_data)):
         if l_param_idx[i]==-1: return ROC_data, -1, custom_params
 
         for j in xrange(ROC_dict['nPoints']):
-            ROC_data[method]['tp_l'][j] += l_ROC_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_ROC_data[i][method]['fp_l'][j]
-            ROC_data[method]['fn_l'][j] += l_ROC_data[i][method]['fn_l'][j]
-            ROC_data[method]['tn_l'][j] += l_ROC_data[i][method]['tn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_ROC_data[i][method]['delay_l'][j]
+            ROC_data[method]['tp_l'][j] += l_ROC_data[i]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += l_ROC_data[i]['fp_l'][j]
+            ROC_data[method]['fn_l'][j] += l_ROC_data[i]['fn_l'][j]
+            ROC_data[method]['tn_l'][j] += l_ROC_data[i]['tn_l'][j]
+            ROC_data[method]['delay_l'][j] += l_ROC_data[i]['delay_l'][j]
        
     ## if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
     ##     return tp_ll, None, None
@@ -132,6 +133,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
     import numpy as np
     from sklearn import preprocessing
 
+    print modeling_pkl
     # train a classifier and evaluate it using test data.
     d            = ut.load_pickle(modeling_pkl)
     nEmissionDim = d['nEmissionDim']
@@ -167,7 +169,7 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
         X_scaled = scaler.fit_transform(X_train_org)
     else:
         X_scaled = X_train_org
-    print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+    ## print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
 
     tp_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     fp_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
@@ -202,8 +204,8 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         except:
             print "Fitting failure : 1", 
-            return 'fit failed1', -1, params
-        if ret is False: return 'fit failed2', -1, params
+            return 'fit failed1', -1
+        if ret is False: return 'fit failed2', -1
 
         # evaluate the classifier
         tp_l = []
@@ -250,16 +252,22 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
     ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
 
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
-        return tp_ll, -1, params
+        return tp_ll, -1
 
-    for j in xrange(ROC_dict['nPoints']):
-        ROC_data[method]['tp_l'][j] += tp_ll[j]
-        ROC_data[method]['fp_l'][j] += fp_ll[j]
-        ROC_data[method]['fn_l'][j] += fn_ll[j]
-        ROC_data[method]['tn_l'][j] += tn_ll[j]
-        ROC_data[method]['delay_l'][j] += delay_ll[j]
+    ## for j in xrange(ROC_dict['nPoints']):
+    ##     ROC_data[method]['tp_l'][j] += tp_ll[j]
+    ##     ROC_data[method]['fp_l'][j] += fp_ll[j]
+    ##     ROC_data[method]['fn_l'][j] += fn_ll[j]
+    ##     ROC_data[method]['tn_l'][j] += tn_ll[j]
+    ##     ROC_data[method]['delay_l'][j] += delay_ll[j]
+    ROC_data = {}
+    ROC_data['tp_l'] = tp_ll
+    ROC_data['fp_l'] = fp_ll
+    ROC_data['fn_l'] = fn_ll
+    ROC_data['tn_l'] = tn_ll
+    ROC_data['delay_l'] = delay_ll
 
-    return ROC_data, param_idx, params
+    return ROC_data, param_idx
 
 
 
@@ -489,22 +497,76 @@ if __name__ == '__main__':
 
     ## parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': [1,2], 'svn_degree': [2], \
     ##               'svm_w_negative': [1.0]}
-    parameters = {'method': ['svm'], 'svm_type': [1], 'svm_kernel_type': [1,2], \
-                  'svm_degree': range(1,4), 'svm_gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                  'svm_nu': [0.1, 0.3, 0.5, 0.7, 0.9], 'svm_w_negative': [0.5, 1.0, 1.5, 2.0]}
+    parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [2], \
+                  'svm_degree': [3], 'svm_gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                  'svm_nu': [0.5], 'svm_w_negative': np.arange(1.0, 10.0) }
     ## 'gamma': np.linspace(0.01, 0.4, 4)
     ## 'gamma': [0.03]
-    
+
+    # Get combined results
+    max_param_idx = len( list(ParameterGrid(parameters)) )
+    method = parameters['method'][0]
+    score_list = []
+    print "max_param_idx = ", max_param_idx
+
+    ##################################################################################################
     # cpu version
     if True:
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        
-        ## parameters = {'method': 'svm', 'svm_type': 1, 'svm_kernel_type': 3, \
-        ##               'svm_degree': 2, 'svm_nu': 0.3, 'svm_w_negative': 1.0}
-        
-        cross_validate_local(0, 16, save_data_path, task, param_dict, parameters, n_jobs=8)
-        
+
+        ## nFiles = 2
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
+        ##               'svm_degree': [3], 'svm_nu': [0.5], 'svm_w_negative': [7.0]}
+
+        if os.path.isfile('./temp.pkl') is False:
+            results = []
+            for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
+                ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
+                                                                               save_data_path, \
+                                                                               task, param_dict, param, \
+                                                                               n_jobs=8)
+                results.append([ret_ROC_data, ret_param_idx, ret_params])
+
+            ut.save_pickle(results, './temp.pkl')
+        else:
+            results = ut.load_pickle('./temp.pkl')
+
+        for result in results:
+            ret_ROC_data = result[0]
+            ret_param_idx = result[1]
+            ret_params = result[2]
+            
+            if ret_param_idx == -1:
+                score_list.append([0, ret_params])
+                continue
+            tp_ll = ret_ROC_data[method]['tp_l']
+            fp_ll = ret_ROC_data[method]['fp_l']
+            tn_ll = ret_ROC_data[method]['tn_l']
+            fn_ll = ret_ROC_data[method]['fn_l']
+            delay_ll = ret_ROC_data[method]['delay_l']
+
+            tpr_l = []
+            fpr_l = []
+            try:
+                for j in xrange(nPoints):
+                    tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
+                    fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
+            except:
+                print "failed to get TPR and FPR"
+                break
+            print fpr_l, tpr_l
+
+            # get AUC
+            score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
+
+
+
+        for i in xrange(len(score_list)):
+            print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
+
+
+                                                                           
     else:
 
         if os.path.isfile('./temp.pkl') is False:
@@ -533,13 +595,6 @@ if __name__ == '__main__':
             import hrl_lib.util as ut
             results = ut.load_pickle('./temp.pkl')
 
-
-        # Get combined results
-        max_param_idx = len( list(ParameterGrid(parameters)) )
-        method = parameters['method'][0]
-        score_list = []
-
-        print "max_param_idx = ", max_param_idx
         
         for i in xrange(max_param_idx):
 
