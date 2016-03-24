@@ -49,6 +49,10 @@ class CloudSearch():
         self.use_profile(self.user_name)
         self.start_ipcluster()
 
+        ## for node in self.clust.running_nodes:
+        ##     node.ssh.execute(command='apt-get install python-libsvm')
+
+
         pass
 
     #in case you just want to stop ipcluster

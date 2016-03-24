@@ -54,12 +54,15 @@ class CloudSearchForClassifier(CloudSearch):
         
         all_param = list(ParameterGrid(params))
 
+        count = 0
         for param_idx, param in enumerate(all_param):
             for file_idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, param_idx, file_idx, \
                                           processed_data_path, task_name, \
                                           default_params=param_dict, custom_params=param)
                 self.all_tasks.append(task)
+                count += 1
+                print count
         return self.all_tasks
 
 
@@ -93,26 +96,27 @@ def cross_validate_local(param_idx, file_idx, processed_data_path, task_name, de
 
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
-    tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, custom_params)
+    ## tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = rca.run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, custom_params)
 
-    if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
-        return tp_ll, None, None
+    ## if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
+    ##     return tp_ll, None, None
 
-    for j in xrange(ROC_dict['nPoints']):
-        ROC_data[method]['tp_l'][j] += tp_ll[j]
-        ROC_data[method]['fp_l'][j] += fp_ll[j]
-        ROC_data[method]['fn_l'][j] += fn_ll[j]
-        ROC_data[method]['tn_l'][j] += tn_ll[j]
-        ROC_data[method]['delay_l'][j] += delay_ll[j]
+    ## for j in xrange(ROC_dict['nPoints']):
+    ##     ROC_data[method]['tp_l'][j] += tp_ll[j]
+    ##     ROC_data[method]['fp_l'][j] += fp_ll[j]
+    ##     ROC_data[method]['fn_l'][j] += fn_ll[j]
+    ##     ROC_data[method]['tn_l'][j] += tn_ll[j]
+    ##     ROC_data[method]['delay_l'][j] += delay_ll[j]
 
-    return ROC_data, param_idx, custom_params
+    ## return ROC_data, param_idx, custom_params
 
-def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
+## def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
 
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
     import hrl_lib.util as ut
     from sklearn import preprocessing
+    import numpy as np
 
     d            = ut.load_pickle(modeling_pkl)
     nEmissionDim = d['nEmissionDim']
@@ -176,11 +180,14 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
             dtc.set_params( ths_mult = thresholds[j] )
         else:
             print "Not available method"
-            return "Not available method", None, None, None, None
-
-        dtc.set_params(**params)
-        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-        return ret, None, None, None, None
+            return "Not available method", None, None #, None, None
+        
+        dtc.set_params(**custom_params)
+        try:
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+        except:
+            return 'fit_fail', None, None#, None, None            
+        return ret, None, None#, None, None
 
         # evaluate the classifier
         tp_l = []
@@ -224,7 +231,20 @@ def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
         tn_ll[j] += tn_l
         delay_ll[j] += delay_l
 
-    return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
+    ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
+
+    if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
+        return tp_ll, None, None
+
+    for j in xrange(ROC_dict['nPoints']):
+        ROC_data[method]['tp_l'][j] += tp_ll[j]
+        ROC_data[method]['fp_l'][j] += fp_ll[j]
+        ROC_data[method]['fn_l'][j] += fn_ll[j]
+        ROC_data[method]['tn_l'][j] += tn_ll[j]
+        ROC_data[method]['delay_l'][j] += delay_ll[j]
+
+    return ROC_data, param_idx, custom_params
+
 
 def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, parameters):
 
