@@ -470,7 +470,7 @@ if __name__ == '__main__':
     ## 'gamma': [0.03]
     
     # cpu version
-    if False:
+    if True:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
