@@ -2291,7 +2291,7 @@ if __name__ == '__main__':
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
 
-        nPoints        = 10
+        nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
@@ -2328,7 +2328,7 @@ if __name__ == '__main__':
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
         
-        nPoints        = 10
+        nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\

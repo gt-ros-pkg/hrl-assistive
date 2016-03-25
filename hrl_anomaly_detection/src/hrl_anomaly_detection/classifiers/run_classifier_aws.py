@@ -43,6 +43,10 @@ from hrl_anomaly_detection import data_manager as dm
 # AWS
 from hrl_anomaly_detection.aws.cloud_search import CloudSearch
 
+import matplotlib
+#matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 class CloudSearchForClassifier(CloudSearch):
     def __init__(self, path_json, path_key, clust_name, user_name):
         CloudSearch.__init__(self, path_json, path_key, clust_name, user_name)
@@ -527,6 +531,7 @@ if __name__ == '__main__':
         else:
             results = ut.load_pickle('./temp.pkl')
 
+        plt.figure()
         for result in results:
             ret_ROC_data = result[0]
             ret_param_idx = result[1]
@@ -555,6 +560,9 @@ if __name__ == '__main__':
             # get AUC
             ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
 
+            plt.plot(fpr_l, tpr_l, '-')
+            
+
             # get max tp in fpr (0~20)
             max_tp = 0
             for i, fp in enumerate(fpr_l):
@@ -562,7 +570,7 @@ if __name__ == '__main__':
                     if tpr_l[i] > max_tp: max_tp = tpr_l[i]
             score_list.append( [max_tp, ret_params] )
 
-
+        plt.show()
         # Get sorted results
         from operator import itemgetter
         score_list.sort(key=itemgetter(0), reverse=False)
