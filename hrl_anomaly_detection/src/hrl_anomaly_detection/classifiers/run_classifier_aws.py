@@ -406,9 +406,9 @@ if __name__ == '__main__':
         ##               'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
         ##               'w_negative': np.arange(1.0, 10.0) }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.5, 2.0, 5),\
-                      'gamma': np.linspace(0.01, 0.3, 4), \
-                      'w_negative': np.linspace(1.0, 2.0,5 ) }
+                      'cost': np.linspace(0.5, 2.0, 5).tolist(),\
+                      'gamma': np.linspace(0.01, 0.3, 4).tolist(), \
+                      'w_negative': np.linspace(1.0, 2.0,5).tolist() }
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
