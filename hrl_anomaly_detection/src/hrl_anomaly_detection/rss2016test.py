@@ -1001,20 +1001,23 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
                 weights = ROC_dict['svm_param_range']
                 dtc.set_params( class_weight=weights[j] )
                 dtc.set_params( **SVM_dict )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'cssvm_standard':
                 weights = np.logspace(-2, 0.1, nPoints)
                 dtc.set_params( class_weight=weights[j] )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'cssvm':
                 weights = ROC_dict['cssvm_param_range']
                 dtc.set_params( class_weight=weights[j] )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'progress_time_cluster':
                 thresholds = ROC_dict['progress_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'fixed':
                 thresholds = ROC_dict['fixed_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
-
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
 
             ## X_scaled = scaler.transform(X_test_org)
             ## est_y = dtc.predict(X_scaled, Y_test_org)
