@@ -495,8 +495,6 @@ if __name__ == '__main__':
 
     ## parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': [1,2], 'svn_degree': [2], \
     ##               'svm_w_negative': [1.0]}
-    ## 'gamma': np.linspace(0.01, 0.4, 4)
-    ## 'gamma': [0.03]
 
     # Get combined results
     max_param_idx = len( list(ParameterGrid(parameters)) )
