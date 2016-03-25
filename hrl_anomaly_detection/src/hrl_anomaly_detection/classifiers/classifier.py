@@ -108,7 +108,7 @@ class classifier(learning_base):
             ## print svm.__file__
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
-              +' -g '+str(self.gamma)\
+              ## +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
             try:
