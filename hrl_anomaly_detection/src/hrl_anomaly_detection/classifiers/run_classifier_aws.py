@@ -398,6 +398,12 @@ if __name__ == '__main__':
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
         nFiles = 16
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                      'w_negative': np.arange(1.0, 10.0) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                      'w_negative': np.arange(1.0, 10.0) }
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
@@ -434,6 +440,9 @@ if __name__ == '__main__':
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
         nFiles = 16
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'gamma': np.linspace(0.001, 0.015, 4).tolist(), \
+                      'w_negative': np.linspace(0.01, 1.3, 5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
@@ -474,6 +483,9 @@ if __name__ == '__main__':
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
         nFiles = 9
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
+                      'w_negative': np.arange(1.0, 10.0) }
 
     else:
         print "Selected task name is not available."
@@ -483,9 +495,6 @@ if __name__ == '__main__':
 
     ## parameters = {'method': ['svm'], 'svm_type': [1], 'svn_kernel_type': [1,2], 'svn_degree': [2], \
     ##               'svm_w_negative': [1.0]}
-    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                  'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                  'nu': [0.5], 'w_negative': np.arange(1.0, 10.0) }
     ## 'gamma': np.linspace(0.01, 0.4, 4)
     ## 'gamma': [0.03]
 

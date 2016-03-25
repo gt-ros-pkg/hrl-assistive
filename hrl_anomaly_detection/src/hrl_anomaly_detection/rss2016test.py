@@ -550,6 +550,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
+    SVM_dict = param_dict['SVM']
 
     # ROC
     ROC_dict = param_dict['ROC']
@@ -827,7 +828,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## ROC_data['progress_time_cluster']['complete'] = True
     
     # parallelization
-    r = Parallel(n_jobs=-1)(delayed(run_classifiers)( idx, processed_data_path, task_name, ROC_data, ROC_dict ) for idx in xrange(len(kFold_list)) )    
+    r = Parallel(n_jobs=-1)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+                                                      ROC_data, ROC_dict, SVM_dict ) \
+                                                      for idx in xrange(len(kFold_list)) )    
     l_data = zip(*r)
 
     for i in xrange(len(l_data)):
@@ -919,7 +922,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             plt.show()
                    
 
-def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict ):
+def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM_dict ):
 
     ## if verbose: print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -996,10 +999,8 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict ):
         for j in xrange(nPoints):
             if method == 'svm':
                 weights = ROC_dict['svm_param_range']
-                ## weights = np.logspace(-2, 0.8, nPoints)
                 dtc.set_params( class_weight=weights[j] )
-                ## weights = np.linspace(0.5, 60.0, nPoints)
-                ## dtc.set_params( class_weight= {1: 1.0, -1: weights[j]} )
+                dtc.set_params( **SVM_dict )
             elif method == 'cssvm_standard':
                 weights = np.logspace(-2, 0.1, nPoints)
                 dtc.set_params( class_weight=weights[j] )
@@ -2289,11 +2290,11 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False,}
+        SVM_param_dict = {'renew': False, 'w_negative': 5.0, 'gamma': 0.173}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\

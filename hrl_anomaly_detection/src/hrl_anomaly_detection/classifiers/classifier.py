@@ -56,7 +56,6 @@ class classifier(learning_base):
                  degree      = 3,\
                  gamma       = 0.25,\
                  cost        = 4.,\
-                 nu          = 0.5,\
                  w_negative  = 7.0,\
                  verbose=False):
         '''
@@ -76,7 +75,6 @@ class classifier(learning_base):
             self.degree      = degree 
             self.gamma       = gamma 
             self.cost        = cost 
-            self.nu          = nu 
             self.w_negative  = w_negative 
             
         elif self.method == 'cssvm_standard' or self.method == 'cssvm':
@@ -111,7 +109,7 @@ class classifier(learning_base):
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
-              +' -c '+str(self.cost)+' -n '+str(self.nu)+' -w1 '+str(self.class_weight)\
+              +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
             try:
                 self.dt = svm.svm_train(y, X, commands )
