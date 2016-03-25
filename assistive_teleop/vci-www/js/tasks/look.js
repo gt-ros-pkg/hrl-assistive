@@ -3,6 +3,7 @@ RFH.Look = function (options) {
     var self = this;
     self.name = options.name || 'lookingTask';
     self.ros = options.ros;
+    self.showButton = true;
     self.buttonText = "Look";
     self.toolTipText = "Move the head to look around";
     var imageDivId = options.imageDivId || 'mjpeg-image';

@@ -4,6 +4,7 @@ RFH.Drive = function (options) {
     options = options || {};
     self.name = options.name || 'drivingTask';
     var divId = options.targetDiv || 'video-main'; 
+    self.showButton = true;
     var head = options.head;
     var camera = options.camera;
     var base = options.base;

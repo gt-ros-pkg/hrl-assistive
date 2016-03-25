@@ -4,7 +4,8 @@ RFH.CartesianEEControl = function (options) {
     self.arm = options.arm;
     self.side = self.arm.side;
     self.name = options.name || self.side[0]+'EECartTask';
-    var divId = options.div || 'video-main';
+    self.showButton = true;
+   var divId = options.div || 'video-main';
     self.buttonText = self.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.toolTipText = "Control the %side arm and hand".replace('%side', self.side);
     self.buttonClass = 'hand-button';

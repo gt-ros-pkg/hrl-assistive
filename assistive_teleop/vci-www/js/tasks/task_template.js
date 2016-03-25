@@ -4,6 +4,7 @@ RFH.Task = function(options) { // Rename 'Task' for your particular task (should
     var self = this;
     options = options || {}; // Initialize the options object as an empty object if none is given
     self.name = options.name || 'tasknameTask'; // Required: Task.name  (use name passed in, or default name here if not given)
+    self.showButton = true; // Required: used to decide to create clickable button in menu or only allow intirect access
     self.buttonText = 'Spine'; // Required: human-readable, descriptive task name
     self.buttonClass = 'spine-button'; // Required: class used for setting css rules 
 

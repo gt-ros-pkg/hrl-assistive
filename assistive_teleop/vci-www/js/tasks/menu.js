@@ -9,7 +9,7 @@ RFH.TaskMenu = function (options) {
 
     var statePublisher = new ROSLIB.Topic({
         ros: ros,
-        name: '/web_teleop/current_task',
+        name: '/web_teleop/current_mode',
         messageType: 'std_msgs/String',
         latch: true
     });
@@ -17,7 +17,8 @@ RFH.TaskMenu = function (options) {
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
-        if (taskObject.buttonText) {
+        if (taskObject.showButton) {
+       // if (taskObject.buttonText) {
             var checkbox = document.createElement('input');
             checkbox.type = "checkbox";
             checkbox.id = taskObject.buttonText;
