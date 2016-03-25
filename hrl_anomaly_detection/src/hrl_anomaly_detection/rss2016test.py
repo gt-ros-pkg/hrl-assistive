@@ -2293,7 +2293,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['svm'],\
+                          'update_list': ['fixed'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
