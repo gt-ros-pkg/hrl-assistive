@@ -2,6 +2,7 @@ RFH.Torso = function (options) {
     'use strict';
     var self = this;
     self.name = options.name || 'torsoTask';
+    self.showButton = true;
     self.containerDiv = options.containerDiv;
     self.sliderDiv = options.sliderDiv;
     self.torso = options.torso; 
