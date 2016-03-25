@@ -553,7 +553,19 @@ if __name__ == '__main__':
             print fpr_l, tpr_l
 
             # get AUC
-            score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
+            ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
+
+            # get max tp in fpr (0~20)
+            max_tp = 0
+            for i, fp in enumerate(fpr_l):
+                if fp < 20.0:
+                    if tpr_l[i] > max_tp: max_tp = tpr_l[i]
+            score_list.append( [max_tp, ret_params] )
+
+
+        # Get sorted results
+        from operator import itemgetter
+        score_list.sort(key=itemgetter(0), reverse=False)
 
         for i in xrange(len(score_list)):
             print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
