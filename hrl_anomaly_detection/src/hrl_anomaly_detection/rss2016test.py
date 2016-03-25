@@ -837,15 +837,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         for j in xrange(nPoints):
             for k, method in enumerate(method_list):
                 if ROC_data[method]['complete'] == True: continue
-                print l_data[i]
-                print type(l_data[i]), method
-                print l_data[i][0]
-                print l_data[i]['svm']
-                ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-                ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-                ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-                ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-                ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+                ROC_data[method]['tp_l'][j] += l_data[i][0][method]['tp_l'][j]
+                ROC_data[method]['fp_l'][j] += l_data[i][0][method]['fp_l'][j]
+                ROC_data[method]['tn_l'][j] += l_data[i][0][method]['tn_l'][j]
+                ROC_data[method]['fn_l'][j] += l_data[i][0][method]['fn_l'][j]
+                ROC_data[method]['delay_l'][j] += l_data[i][0][method]['delay_l'][j]
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
@@ -980,7 +976,6 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
         data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
         data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
         data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-        
 
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
@@ -1077,7 +1072,7 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
             data[method]['tn_l'][j] += tn_l
             data[method]['delay_l'][j] += delay_l
 
-    return data
+    return [data]
 
 
 def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
