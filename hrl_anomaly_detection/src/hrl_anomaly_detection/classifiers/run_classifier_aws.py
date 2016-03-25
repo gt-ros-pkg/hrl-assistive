@@ -392,7 +392,7 @@ if __name__ == '__main__':
 
         nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['fixed'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -531,7 +531,7 @@ if __name__ == '__main__':
         else:
             results = ut.load_pickle('./temp.pkl')
 
-        plt.figure()
+        ## plt.figure()
         for result in results:
             ret_ROC_data = result[0]
             ret_param_idx = result[1]
@@ -560,9 +560,7 @@ if __name__ == '__main__':
             # get AUC
             ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
 
-            plt.plot(fpr_l, tpr_l, '-')
-            
-
+            ## plt.plot(fpr_l, tpr_l, '-')            
             # get max tp in fpr (0~20)
             max_tp = 0
             for i, fp in enumerate(fpr_l):
@@ -570,7 +568,7 @@ if __name__ == '__main__':
                     if tpr_l[i] > max_tp: max_tp = tpr_l[i]
             score_list.append( [max_tp, ret_params] )
 
-        plt.show()
+        ## plt.show()
         # Get sorted results
         from operator import itemgetter
         score_list.sort(key=itemgetter(0), reverse=False)
