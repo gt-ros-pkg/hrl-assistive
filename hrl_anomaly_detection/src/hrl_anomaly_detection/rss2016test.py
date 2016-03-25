@@ -814,8 +814,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ROC_data = ut.load_pickle(roc_pkl)
         
     for i, method in enumerate(method_list):
-        # temp
-        if method not in ROC_data.keys() or method in ROC_dict['update_list']: # or method=='progress_time_cluster':# or method=='cssvm': # or  #or method=='cssvm_standard':# 
+        if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
@@ -824,14 +823,16 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    ## ROC_data['svm']['complete']                   = True
-    ## ROC_data['progress_time_cluster']['complete'] = True
-    
+    ## if os.path.isfile('temp.pkl'):
+    ##     r = ut.load_pickle('temp.pkl')
+    ## else:
     # parallelization
     r = Parallel(n_jobs=-1)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                       ROC_data, ROC_dict, SVM_dict ) \
-                                                      for idx in xrange(len(kFold_list)) )    
-    l_data = zip(*r)
+                                                      for idx in xrange(len(kFold_list)) )
+        ## ut.save_pickle(r, 'temp.pkl')                                                          
+    #l_data = zip(*r)
+    l_data = r
 
     for i in xrange(len(l_data)):
         for j in xrange(nPoints):
@@ -993,7 +994,7 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
             X_scaled = X_train_org
         print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
 
-        # classifier
+        # classifier # TODO: need to make it efficient!!
         dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
         for j in xrange(nPoints):
             if method == 'svm':
@@ -1007,12 +1008,10 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
                 weights = ROC_dict['cssvm_param_range']
                 dtc.set_params( class_weight=weights[j] )
             elif method == 'progress_time_cluster':
-                ## thresholds = -np.linspace(1., 50, nPoints)+2.0
                 thresholds = ROC_dict['progress_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
             elif method == 'fixed':
                 thresholds = ROC_dict['fixed_param_range']
-                ## thresholds = np.linspace(0.1, -3.5, nPoints)
                 dtc.set_params( ths_mult = thresholds[j] )
 
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
@@ -1026,8 +1025,6 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
             ##     est_y = dtc.predict(X, y=ll_classifier_test_Y[0][jj:jj+1])
             ##     print est_y
             ##     if jj>10: break
-
-            ## sys.exit()
 
             # evaluate the classifier
             tp_l = []
@@ -2293,7 +2290,7 @@ if __name__ == '__main__':
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['fixed','svm'],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\

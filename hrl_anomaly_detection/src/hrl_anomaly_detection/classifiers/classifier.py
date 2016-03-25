@@ -54,7 +54,7 @@ class classifier(learning_base):
                  svm_type    = 0,\
                  kernel_type = 2,\
                  degree      = 3,\
-                 gamma       = 0.25,\
+                 gamma       = 0.3,\
                  cost        = 4.,\
                  w_negative  = 7.0,\
                  verbose=False):
