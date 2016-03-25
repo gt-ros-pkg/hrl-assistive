@@ -837,11 +837,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         for j in xrange(nPoints):
             for k, method in enumerate(method_list):
                 if ROC_data[method]['complete'] == True: continue
-                ROC_data[method]['tp_l'][j] += l_data[method]['tp_l'][j]
-                ROC_data[method]['fp_l'][j] += l_data[method]['fp_l'][j]
-                ROC_data[method]['tn_l'][j] += l_data[method]['tn_l'][j]
-                ROC_data[method]['fn_l'][j] += l_data[method]['fn_l'][j]
-                ROC_data[method]['delay_l'][j] += l_data[method]['delay_l'][j]
+                ROC_data[method]['tp_l'][j] += l_data[i][0][method]['tp_l'][j]
+                ROC_data[method]['fp_l'][j] += l_data[i][0][method]['fp_l'][j]
+                ROC_data[method]['tn_l'][j] += l_data[i][0][method]['tn_l'][j]
+                ROC_data[method]['fn_l'][j] += l_data[i][0][method]['fn_l'][j]
+                ROC_data[method]['delay_l'][j] += l_data[i][0][method]['delay_l'][j]
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
@@ -976,7 +976,6 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
         data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
         data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
         data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-        
 
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
@@ -1073,7 +1072,7 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
             data[method]['tn_l'][j] += tn_l
             data[method]['delay_l'][j] += delay_l
 
-    return data
+    return [data]
 
 
 def evaluation(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
@@ -2327,11 +2326,11 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4,\
                           'add_option': 'bottleneck', 'add_feature': feature_list} 
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False,}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103}
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
