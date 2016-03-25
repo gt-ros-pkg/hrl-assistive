@@ -59,7 +59,6 @@ RFH.PointCloudView = function(options){
         if (!self.pointCloud.frameSubscribed) {
             tfClient.subscribe(message.header.frame_id, updatePCFrame);
             self.pointCloud.frameSubscribed = true;
-            console.log("Subscribed to PC Frame TF!");
         }
         var n = message.height*message.width;
         var buffer;
