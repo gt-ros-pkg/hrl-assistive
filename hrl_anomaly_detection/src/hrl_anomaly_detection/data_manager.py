@@ -117,16 +117,16 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                save_pdf=False, solid_color=True, \
                handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
     '''
-    ae_data: Auto-encoder data
+    If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    if ae_data:
-        save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
-    else:
-        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    ## if ae_data:
+    ##     save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
+    ## else:
+    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
@@ -135,12 +135,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict = ut.load_pickle(save_pkl)
         if ae_data:
             # Task-oriented raw features
-            successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
-            failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
+            successData     = data_dict.get('aeSuccessData', []) 
+            failureData     = data_dict.get('aeFailureData', [])
             aug_successData = data_dict.get('aeSuccessData_augmented', [])
             aug_failureData = data_dict.get('aeFailureData_augmented', [])
             failureNameList = None
-            param_dict      = data_dict.get('aeParamDict', data_dict['param_dict'])
+            param_dict      = data_dict.get('aeParamDict', [])
         else:        
             # Task-oriented hand-crafted features
             allData         = data_dict['allData']
