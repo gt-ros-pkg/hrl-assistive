@@ -456,6 +456,15 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
+
+        ## print np.shape(d['aug_successData']), np.shape(d['aug_aeSuccessData'])
+        ## sys.exit()
+        ## d['aug_aeSuccessData'] = d.pop('aeSuccessData_augmented')
+        ## d['aug_aeFailureData'] = d.pop('aeFailureData_augmented')
+        ## d['aug_successData'] = d.pop('successData_augmented')
+        ## d['aug_failureData'] = d.pop('failureData_augmented')
+        ## ut.save_pickle(d, crossVal_pkl)
+        ## print d.keys()
     else:
         dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
@@ -465,22 +474,24 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        # Task-oriented raw features        
-        successData = dd['aeSuccessData']
-        failureData = dd['aeFailureData']
-        aug_successData = dd['aeSuccessData_augmented']
-        aug_failureData = dd['aeFailureData_augmented']
-        
-        kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
+        kFold_list = dm.kFold_data_index2(len(dd['aeSuccessData_augmented'][0]),\
+                                          len(dd['aeFailureData_augmented'][0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
         d = {}
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['aug_successData'] = aug_successData
-        d['aug_failureData'] = aug_failureData
+        # Task-oriented hand-crafted features        
+        d['successData']     = dd['successData']
+        d['failureData']     = dd['failureData']
+        d['aug_successData'] = dd['successData_augmented']
+        d['aug_failureData'] = dd['failureData_augmented']
+
+        # Task-oriented raw features        
+        d['aeSuccessData']     = dd['aeSuccessData']
+        d['aeFailureData']     = dd['aeFailureData']
+        d['aug_aeSuccessData'] = dd['aeSuccessData_augmented']
+        d['aug_aeFailureData'] = dd['aeFailureData_augmented']
         
-        d['kFoldList']   = kFold_list                                             
+        d['kFoldList']         = kFold_list                                             
         ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
@@ -493,7 +504,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         # From dim x sample x length
         # To reduced_dim x sample
-        dd = dm.getAEdataSet(idx, d['aug_successData'], d['aug_failureData'], \
+        dd = dm.getAEdataSet(idx, d['aug_aeSuccessData'], d['aug_aeFailureData'], \
+                             d['aug_successData'], d['aug_failureData'],\
                              normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
                              AE_dict['time_window'], \
                              AE_proc_data, \
