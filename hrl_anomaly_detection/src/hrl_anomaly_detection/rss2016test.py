@@ -2342,15 +2342,17 @@ if __name__ == '__main__':
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['svm'],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-            
+
+        #-np.linspace(2., 13.0, nPoints), \
+        
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
         subjects = ['gatsbii']
