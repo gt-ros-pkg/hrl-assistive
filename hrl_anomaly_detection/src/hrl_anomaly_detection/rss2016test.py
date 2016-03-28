@@ -456,6 +456,15 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
+
+        ## print np.shape(d['aug_successData']), np.shape(d['aug_aeSuccessData'])
+        ## sys.exit()
+        ## d['aug_aeSuccessData'] = d.pop('aeSuccessData_augmented')
+        ## d['aug_aeFailureData'] = d.pop('aeFailureData_augmented')
+        ## d['aug_successData'] = d.pop('successData_augmented')
+        ## d['aug_failureData'] = d.pop('failureData_augmented')
+        ## ut.save_pickle(d, crossVal_pkl)
+        ## print d.keys()
     else:
         dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
@@ -465,22 +474,24 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        # Task-oriented raw features        
-        successData = dd['aeSuccessData']
-        failureData = dd['aeFailureData']
-        aug_successData = dd['aeSuccessData_augmented']
-        aug_failureData = dd['aeFailureData_augmented']
-        
-        kFold_list = dm.kFold_data_index2(len(aug_successData[0]), len(aug_failureData[0]),\
+        kFold_list = dm.kFold_data_index2(len(dd['aeSuccessData_augmented'][0]),\
+                                          len(dd['aeFailureData_augmented'][0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
         d = {}
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['aug_successData'] = aug_successData
-        d['aug_failureData'] = aug_failureData
+        # Task-oriented hand-crafted features        
+        d['successData']     = dd['successData']
+        d['failureData']     = dd['failureData']
+        d['aug_successData'] = dd['successData_augmented']
+        d['aug_failureData'] = dd['failureData_augmented']
+
+        # Task-oriented raw features        
+        d['aeSuccessData']     = dd['aeSuccessData']
+        d['aeFailureData']     = dd['aeFailureData']
+        d['aug_aeSuccessData'] = dd['aeSuccessData_augmented']
+        d['aug_aeFailureData'] = dd['aeFailureData_augmented']
         
-        d['kFoldList']   = kFold_list                                             
+        d['kFoldList']         = kFold_list                                             
         ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
@@ -493,7 +504,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         # From dim x sample x length
         # To reduced_dim x sample
-        dd = dm.getAEdataSet(idx, d['aug_successData'], d['aug_failureData'], \
+        dd = dm.getAEdataSet(idx, d['aug_aeSuccessData'], d['aug_aeFailureData'], \
+                             d['aug_successData'], d['aug_failureData'],\
                              normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
                              AE_dict['time_window'], \
                              AE_proc_data, \
@@ -1001,20 +1013,23 @@ def run_classifiers(idx, processed_data_path, task_name, ROC_data, ROC_dict, SVM
                 weights = ROC_dict['svm_param_range']
                 dtc.set_params( class_weight=weights[j] )
                 dtc.set_params( **SVM_dict )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'cssvm_standard':
                 weights = np.logspace(-2, 0.1, nPoints)
                 dtc.set_params( class_weight=weights[j] )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'cssvm':
                 weights = ROC_dict['cssvm_param_range']
                 dtc.set_params( class_weight=weights[j] )
+                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'progress_time_cluster':
                 thresholds = ROC_dict['progress_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
             elif method == 'fixed':
                 thresholds = ROC_dict['fixed_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
-
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
 
             ## X_scaled = scaler.transform(X_test_org)
             ## est_y = dtc.predict(X_scaled, Y_test_org)
@@ -2327,15 +2342,17 @@ if __name__ == '__main__':
         
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['svm'],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-            
+
+        #-np.linspace(2., 13.0, nPoints), \
+        
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
         subjects = ['gatsbii']
@@ -2380,11 +2397,11 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
                           'add_option': 'featureToBottleneck'}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-        SVM_param_dict = {'renew': False,}
+        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\

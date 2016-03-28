@@ -115,18 +115,18 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                nAugment=0, cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
-               feature_list=['crossmodal_targetEEDist'], data_renew=False):
+               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
     '''
-    ae_data: Auto-encoder data
+    If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    if ae_data:
-        save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
-    else:
-        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    ## if ae_data:
+    ##     save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
+    ## else:
+    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
@@ -135,12 +135,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict = ut.load_pickle(save_pkl)
         if ae_data:
             # Task-oriented raw features
-            successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
-            failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
+            successData     = data_dict.get('aeSuccessData', []) 
+            failureData     = data_dict.get('aeFailureData', [])
             aug_successData = data_dict.get('aeSuccessData_augmented', [])
             aug_failureData = data_dict.get('aeFailureData_augmented', [])
             failureNameList = None
-            param_dict      = data_dict.get('aeParamDict', data_dict['param_dict'])
+            param_dict      = data_dict.get('aeParamDict', [])
         else:        
             # Task-oriented hand-crafted features
             allData         = data_dict['allData']
@@ -151,7 +151,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
-            
         ## data_dict['successData'] = data_dict['trainingData']
         ## data_dict['failureData'] = data_dict['abnormalTestData']
         ## ut.save_pickle(data_dict, save_pkl)
@@ -185,31 +184,28 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                              renew=data_renew, save_pkl=failure_data_pkl)
 
         # Task-oriented hand-crafted features
-        allData, param_dict = extractFeature(all_data_dict, feature_list, scale=scale,\
-                                             cut_data=cut_data)
-        successData, _      = extractFeature(success_data_dict, feature_list, scale=scale, \
-                                             param_dict=param_dict, cut_data=cut_data)
-        failureData, _      = extractFeature(failure_data_dict, feature_list, scale=scale, \
-                                             param_dict=param_dict, cut_data=cut_data)
-        aug_successData = successData
-        aug_failureData = failureData
+        allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                                 cut_data=cut_data)
+        successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+                                                 param_dict=param_dict, cut_data=cut_data)
+        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+                                                 param_dict=param_dict, cut_data=cut_data)
 
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
         data_dict['successData']  = successData = np.array(successData)
         data_dict['failureData']  = failureData = np.array(failureData)
         data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['successData_augmented'] = aug_successData = np.array(aug_successData)
-        data_dict['failureData_augmented'] = aug_failureData = np.array(aug_failureData)
+        data_dict['successData_augmented'] = aug_successData = successData #TODO: no aug?
+        data_dict['failureData_augmented'] = aug_failureData = failureData
         data_dict['param_dict'] = param_dict
 
-        if ae_data:
+        if ae_data and rawFeatures is not None:
             # Task-oriented raw features
-            # TODO: cut_data
             ae_successData, ae_failureData, ae_aug_successData, ae_aug_failureData, ae_param_dict = \
-              extractRawData(all_data_dict, feature_list, nSuccess=len(success_list), \
+              extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
                              nFailure=len(failure_list),\
-                             nAugment=nAugment)
+                             nAugment=nAugment, cut_data=cut_data)
 
             data_dict['aeSuccessData'] = successData = np.array(ae_successData)
             data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
@@ -224,7 +220,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     nPlot = None
 
     # almost deprecated??
-    feature_names = np.array(param_dict.get('feature_names', feature_list))
+    feature_names = np.array(param_dict.get('feature_names', handFeatures))
     if data_ext:
         # 1) exclude stationary data
         thres = 0.025
@@ -309,7 +305,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     ##     return allData, successData, failureData, failureNameList, param_dict
 
 
-def getAEdataSet(idx, successData, failureData, \
+def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, \
                  normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
                  time_window, \
                  AE_proc_data, \
@@ -322,18 +318,18 @@ def getAEdataSet(idx, successData, failureData, \
                  filtering=True, filteringDim=4, add_feature=None, \
                  verbose=False, renew=False ):
 
-    if os.path.isfile(AE_proc_data) and not renew:
-        d = ut.load_pickle(AE_proc_data)
-        return d
+    ## if os.path.isfile(AE_proc_data) and not renew:
+    ##     d = ut.load_pickle(AE_proc_data)
+    ##     return d
 
     from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
     AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
 
     # dim x sample x length
-    normalTrainData   = successData[:, normalTrainIdx, :] 
-    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-    normalTestData    = successData[:, normalTestIdx, :] 
-    abnormalTestData  = failureData[:, abnormalTestIdx, :]
+    normalTrainData   = rawSuccessData[:, normalTrainIdx, :] 
+    abnormalTrainData = rawFailureData[:, abnormalTrainIdx, :] 
+    normalTestData    = rawSuccessData[:, normalTestIdx, :] 
+    abnormalTestData  = rawFailureData[:, abnormalTestIdx, :]
 
     normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
     abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
@@ -380,6 +376,12 @@ def getAEdataSet(idx, successData, failureData, \
     d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, new_abnormalTrainData, nSingleData), 0,1) 
     d['normTestData']    = np.swapaxes(predictFeatures(ml, new_normalTestData, nSingleData), 0,1)
     d['abnormTestData']  = np.swapaxes(predictFeatures(ml, new_abnormalTestData, nSingleData), 0,1)
+    
+    # dim x sample x length
+    d['handNormTrainData']   = handSuccessData[:, normalTrainIdx, time_window-1:]
+    d['handAbnormTrainData'] = handFailureData[:, abnormalTrainIdx, time_window-1:]
+    d['handNormTestData']    = handSuccessData[:, normalTestIdx, time_window-1:]
+    d['handAbnormTrainData'] = handFailureData[:, abnormalTestIdx, time_window-1:]
 
     if filtering:
         pooling_param_dict  = {'dim': filteringDim} # only for AE        
@@ -442,7 +444,7 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False):
+def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False):
 
     if param_dict is None:
         isTrainingData=True
@@ -785,7 +787,8 @@ def extractFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, v
     return scaled_features, param_dict
 
 
-def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAugment=1, verbose=False):
+def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAugment=1, \
+                      cut_data=None, verbose=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     from hrl_lib import quaternion as qt
@@ -990,6 +993,15 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
     failure_features = np.swapaxes(failureDataList, 0, 1)
     success_aug_features = np.swapaxes(successDataAugList, 0, 1)
     failure_aug_features = np.swapaxes(failureDataAugList, 0, 1)
+
+    ## Cut data
+    if cut_data is not None:
+        features         = features[:,:,cut_data[0]:cut_data[1]]
+        success_features = success_features[:,:,cut_data[0]:cut_data[1]]
+        failure_features = failure_features[:,:,cut_data[0]:cut_data[1]]
+        success_aug_features = success_aug_features[:,:,cut_data[0]:cut_data[1]]
+        failure_aug_features = failure_aug_features[:,:,cut_data[0]:cut_data[1]]
+
                
     # Scaling ------------------------------------------------------------
     if isTrainingData:
@@ -1017,7 +1029,7 @@ def extractRawData(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAu
 
     param_dict['feature_names'] = raw_feature_list
     param_dict['dataDim']       = dataDim
-    
+   
     ## scaled_features = []
     ## for i, feature in enumerate(features):
 
