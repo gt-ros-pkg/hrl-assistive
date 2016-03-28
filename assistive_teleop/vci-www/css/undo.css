@@ -5,8 +5,35 @@
     display: inline-block;
     top:1%;
     left:0%;
+    background: #FFA500;
 }
 
 #undo p {
     margin: 0.3em; 0em;
+}
+
+@keyframes previewShadow {
+    from {
+        box-shadow: 0px 0px 0px 1px orange;
+           }
+    to { 
+         box-shadow: 0px 0px 0px 5px orange;
+         }
+}
+
+.menu-item.preview-undo {
+    animation-name: previewShadow;
+    animation-duration: 0.8s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: linear;
+}
+
+#torsoSlider > span.preview-undo {
+    background: #FFa500;
+    animation-name: previewShadow;
+    animation-duration: 0.8s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: linear;
 }
