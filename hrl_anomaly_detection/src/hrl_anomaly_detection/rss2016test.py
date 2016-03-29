@@ -1451,7 +1451,7 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
