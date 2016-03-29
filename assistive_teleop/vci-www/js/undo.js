@@ -102,26 +102,45 @@ RFH.Undo = function (options) {
     };
     $undoButton.on('click.rfh', undoButtonCB); 
 
+    /*/////////////  START TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
+    /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
-    // Handle Task Goals
+    /*/////////////  START LEFT ARM UNDO FUNCTIONS ////////////////////*/
+    /*/////////////  END LEFT ARM UNDO FUNCTIONS ////////////////////*/
 
-    // rArm 
-    previewFunctions['rArm'] = function (goal){
-        // Display preview of goal 
+    /*/////////////  START RIGHT ARM UNDO FUNCTIONS ////////////////////*/
+    previewFunctions['rArm'] = {
+        start: function (undoEntry){
+            // Display preview of goal 
+        }, 
+        stop: function (undoEntry) {
+            // Stop Display
+        }
     };
 
-    // lArm
-    previewFunctions['lArm'] = function (goal){
-        // Display preview of goal 
+    sentUndoCommands['rArm'] = 0;
+    undoFunctions['rArm'] = function (undoEntry) {
+
+    };
+    /*/////////////  END RIGHT ARM UNDO FUNCTIONS ////////////////////*/
+
+    /*/////////////  START LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/
+    /*/////////////  END LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/
+
+    /*/////////////  RIGHT GRIPPER UNDO FUNCTIONS ////////////////////*/
+    previewFunctions['rGripper'] = {
+        start: function (undoEntry){
+            // Display preview of goal 
+        }, 
+        stop: function (undoEntry) {
+            // Stop Display
+        }
     };
 
+    sentUndoCommands['rGripper'] = 0;
+    undoFunctions['rGripper'] = function (undoEntry) {
 
-    // Handle Gripper Goals
-    //TODO: Add preview functions for undo mouseover
-    previewFunctions['rGripper'] = function (goal){
-        // Display preview of goal 
     };
-    ros.getMsgDetails('pr2_controllers_msgs/Pr2GripperCommandGoal');
 
     var gripperStateToGoal = function (state_msg) {
         // TODO: Fill out based on gripper-sensor-action interface/options
@@ -155,7 +174,9 @@ RFH.Undo = function (options) {
         eventQueue.pushUndoEntry(undoEntry);
     };
     rGripperCmdSub.subscribe(rGripperCmdCB);
+    //TODO: Get commands for gripper.grab() [calls complex grasping code] and gripper.open() [sets position]
 
+    /*//////////////////// END GRIPPER UNDO  //////////////////////////////////*/
     
     /*//////////////////// Handle Looking goals /////////////////////////*/
     previewFunctions['look'] = {
@@ -189,7 +210,6 @@ RFH.Undo = function (options) {
                        undoEntry.stateGoal.y,
                        undoEntry.stateGoal.z,
                        '/base_link');
-//        head.setPosition(undoEntry.stateGoal[0], undoEntry.stateGoal[1]);
     };
 
     var $previewEyes = $('<div/>', {id:"look-preview"})
