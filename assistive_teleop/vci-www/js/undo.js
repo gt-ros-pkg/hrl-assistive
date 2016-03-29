@@ -160,12 +160,25 @@ RFH.Undo = function (options) {
     /*//////////////////// Handle Looking goals /////////////////////////*/
     previewFunctions['look'] = {
         start: function (undoEntry) {
-            
-            // TODO: Start Preview
+            var px = RFH.mjpeg.cameraModel.projectPoint(undoEntry.stateGoal.x,
+                                                        undoEntry.stateGoal.y,
+                                                        undoEntry.stateGoal.z,
+                                                        'base_link');
+            var lrClass = 'center';
+            lrClass = px[0] < 0 ? "left" : lrClass;
+            lrClass = px[0] > 1 ? "right" : lrClass;
+            var udClass = "middle";
+            udClass = px[1] < 0 ? "top" : udClass;
+            udClass = px[1] > 1 ? "bottom" : udClass;
+            if (lrClass === "center" && udClass === "middle" ) {
+                $previewEyes.css({left:100*px[0]+'%', top:100*px[1]+'%'}).show();
+            } else {
+                $('.map-look.'+lrClass+'.'+udClass).addClass('preview-undo');
+            }
         },
         stop: function (undoEntry) {
-            //TODO: End Preview
-
+            $('.map-look.preview-undo').removeClass('preview-undo');
+            $previewEyes.hide();
         }
     };
 
@@ -178,6 +191,9 @@ RFH.Undo = function (options) {
                        '/base_link');
 //        head.setPosition(undoEntry.stateGoal[0], undoEntry.stateGoal[1]);
     };
+
+    var $previewEyes = $('<div/>', {id:"look-preview"})
+    $('#video-main').append($previewEyes);
 
     var headCmdSub = new ROSLIB.Topic({
         ros: ros,

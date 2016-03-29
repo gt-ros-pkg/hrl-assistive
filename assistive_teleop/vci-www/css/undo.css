@@ -5,7 +5,7 @@
     display: inline-block;
     top:1%;
     left:0%;
-    background: #FFA500;
+    background: #FF8500;
 }
 
 #undo p {
@@ -14,10 +14,10 @@
 
 @keyframes previewShadow {
     from {
-        box-shadow: 0px 0px 0px 1px orange;
+        box-shadow: 0px 0px 0px 1px #FF8500;
            }
     to { 
-         box-shadow: 0px 0px 0px 5px orange;
+         box-shadow: 0px 0px 0px 5px #FF8500;
          }
 }
 
@@ -36,4 +36,58 @@
     animation-iteration-count: infinite;
     animation-direction: alternate;
     animation-timing-function: linear;
+}
+
+.map-look.preview-undo {
+    opacity:0.7;
+    background-color: #FF8500;
+    background-repeat: no-repeat;
+    background-position: center;
+    animation-name: previewShadow;
+    animation-duration: 0.8s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: linear;
+}
+
+#look-preview{
+    opacity:70%;
+    background-color: #FF8500;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: url('cursors/eyes/eyes.png'); 
+    z-index: 1;
+    position: absolute;
+    height:44px;
+    width:70px;
+    border-radius:40%;
+    animation-name: previewShadow;
+    animation-duration: 0.8s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: linear;
+}
+.map-look.preview-undo.left.top{
+   background-image: url('cursors/eyes/eyes-up-left.png'); 
+}
+.map-look.preview-undo.left.middle{
+   background-image: url('cursors/eyes/eyes-left.png'); 
+}
+.map-look.preview-undo.left.bottom{
+   background-image: url('cursors/eyes/eyes-down-left.png'); 
+}
+.map-look.preview-undo.center.top{
+   background-image: url('cursors/eyes/eyes-up.png'); 
+}
+.map-look.preview-undo.center.bottom{
+   background-image: url('cursors/eyes/eyes-down.png'); 
+}
+.map-look.preview-undo.right.top{
+   background-image: url('cursors/eyes/eyes-up-right.png'); 
+}
+.map-look.preview-undo.right.middle{
+   background-image: url('cursors/eyes/eyes-right.png'); 
+}
+.map-look.preview-undo.right.bottom{
+   background-image: url('cursors/eyes/eyes-down-right.png'); 
 }
