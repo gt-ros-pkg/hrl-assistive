@@ -77,6 +77,8 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ## Default Parameters
     # data
     data_dict = default_params['data_param']
+    # AE
+    AE_dict = default_params['AE']
     # HMM
     HMM_dict = default_params['HMM']
     # ROC
@@ -100,8 +102,13 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##                     method, HMM_dict, ROC_dict, custom_params)
     ##     print "running fine"
     ##     return 0, -1, custom_params
-    
-    r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+
+    if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
+        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+    elif AE_dict['switch'] and AE_dict['add_option'] is None:
+        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+    else:
+        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     l_ROC_data, l_param_idx = zip(*r)
 
     for i in xrange(len(l_ROC_data)):
@@ -308,7 +315,13 @@ def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, param
         for idx in xrange(nFiles):
 
             if verbose: print idx, " : training classifier and evaluate testing data"
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+            if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(idx)+'.pkl')
+            elif AE_dict['switch'] and AE_dict['add_option'] is None:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
+            else:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = run_classifier(modeling_pkl, method, HMM_dict, ROC_dict)
 
             for j in xrange(ROC_dict['nPoints']):
@@ -455,11 +468,14 @@ if __name__ == '__main__':
     
         subjects = ['gatsbii']
         task     = opt.task 
-        feature_list = ['relativePose_artag_EE', \
-                        'relativePose_artag_artag', \
-                        'wristAudio', \
-                        'ft', \
-                        ]
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist',\
+                        'crossmodal_targetEEAng',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        rawFeatures = ['relativePose_artag_EE', \
+                       'relativePose_artag_artag', \
+                       'wristAudio', \
+                       'ft' ]       
 
         modality_list  = ['kinematics', 'audio', 'ft']
         save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
@@ -468,14 +484,18 @@ if __name__ == '__main__':
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
-                          'feature_list': feature_list, 'nAugment': 1, 'lowVarDataRemv': False }
+                          'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
+                          'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4, \
-                          'add_option': 'featureToBottleneck', 'add_feature': feature_list}
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
+                          'filter':True, 'filterDim':4, \
+                          'nAugment': 1, \
+                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-        SVM_param_dict = {'renew': False,}
+        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+
 
         #temp
         nPoints        = 10
