@@ -287,6 +287,7 @@ if __name__ == '__main__':
                  default=False, help='Test ....')
     p.add_option('--param_est', '--pe', action='store_true', dest='bParamEstimation',
                  default=False, help='Parameter Estimation')
+    
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize ....')
     p.add_option('--viz_raw', '--vr', action='store_true', dest='bVizRaw',
@@ -346,30 +347,33 @@ if __name__ == '__main__':
     
     subject_names       = ['gatsbii']
     task_name           = 'pushing'
-    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'    
-    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE_test'
+    raw_data_path       = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'   
+    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+\
+      task_name+'_data/AE_test'
     save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
     save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
     rf_center           = 'kinEEPos'
-    local_range         = 1.25 
+    local_range         = 10.0 
     downSampleSize      = 200
     nAugment            = 1
+    cut_data            = [0,200]
 
-    feature_list = ['relativePose_artag_EE', \
-                    'relativePose_artag_artag', \
-                    'wristAudio', \
-                    'ft', \
-                    ## 'kinectAudio',\
-                    ## 'pps', \
-                    ## 'visionChange', \
-                    ## 'fabricSkin', \
-                    ]
-                    
+    handFeatures = ['unimodal_ftForce',\
+                    'crossmodal_targetEEDist',\
+                    'crossmodal_targetEEAng',\
+                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    rawFeatures = ['relativePose_artag_EE', \
+                   'relativePose_artag_artag', \
+                   'wristAudio', \
+                   'ft' ]       
+
     from hrl_anomaly_detection import data_manager as dm
     X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
-      = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, save_pkl, \
-                                rf_center, local_range, downSampleSize, time_window, feature_list, \
-                                nAugment, renew=opt.bDataRenew)
+      = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, \
+                                save_pkl, \
+                                rf_center, local_range, downSampleSize, time_window, \
+                                handFeatures, rawFeatures, \
+                                cut_data, nAugment=nAugment, renew=opt.bDataRenew)
     layer_sizes = [X_normalTrain.shape[1]] + eval(opt.lLayerSize) #, 20, 10, 5]
     print layer_sizes
 
@@ -418,7 +422,9 @@ if __name__ == '__main__':
         maxiteration=10000
         parameters = {'learning_rate': [1e-3, 1e-4, 1e-5], 'momentum':[1e-6], 'dampening':[1e-6], \
                       'lambda_reg': [1e-2, 1e-4, 1e-6], \
-                      'layer_sizes': [ [X.shape[1], 64,16], [X.shape[1], 64,8], [X.shape[1], 64,4], [X.shape[1], 16], [X.shape[1], 8], [X.shape[1], 4]  ]}
+                      'layer_sizes': [ [X.shape[1], 128,16], [X.shape[1], 128,8], \
+                                       [X.shape[1], 64,4], [X.shape[1], 256, 16], [X.shape[1], 256, 8], \
+                                       [X.shape[1], 256, 4]  ]}
          
         clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
                            lambda_reg, time_window, \

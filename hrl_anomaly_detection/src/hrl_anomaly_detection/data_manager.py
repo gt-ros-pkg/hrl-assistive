@@ -112,7 +112,7 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 #-------------------------------------------------------------------------------------------------
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                downSampleSize=200, scale=1.0, ae_data=False, data_ext=True, \
-               nAugment=0, cut_data=None, \
+               cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
@@ -123,12 +123,9 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    if ae_data:
-        save_pkl = os.path.join(processed_data_path, 'ae_feature_extraction_'+rf_center+'_'+str(local_range) )
-    else:
-        save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is False :
+    if os.path.isfile(save_pkl) and data_renew is False and False:
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -137,8 +134,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             # Task-oriented raw features
             successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
             failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
-            aug_successData = data_dict.get('aeSuccessData_augmented', [])
-            aug_failureData = data_dict.get('aeFailureData_augmented', [])
             failureNameList = None
             param_dict      = data_dict.get('aeParamDict', data_dict['param_dict'])
         else:        
@@ -146,15 +141,12 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             allData         = data_dict['allData']
             successData     = data_dict.get('successData', data_dict['trainingData']) 
             failureData     = data_dict.get('failureData', data_dict['abnormalTestData'])
-            aug_successData = data_dict.get('successData_augmented', [])
-            aug_failureData = data_dict.get('failureData_augmented', [])
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
         ## data_dict['successData'] = data_dict['trainingData']
         ## data_dict['failureData'] = data_dict['abnormalTestData']
         ## ut.save_pickle(data_dict, save_pkl)
-            
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -196,21 +188,16 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict['successData']  = successData = np.array(successData)
         data_dict['failureData']  = failureData = np.array(failureData)
         data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['successData_augmented'] = aug_successData = successData #TODO: no aug?
-        data_dict['failureData_augmented'] = aug_failureData = failureData
         data_dict['param_dict'] = param_dict
 
         if ae_data and rawFeatures is not None:
             # Task-oriented raw features
-            ae_successData, ae_failureData, ae_aug_successData, ae_aug_failureData, ae_param_dict = \
+            ae_successData, ae_failureData, ae_param_dict = \
               extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
-                             nFailure=len(failure_list),\
-                             nAugment=nAugment, cut_data=cut_data)
+                             nFailure=len(failure_list), cut_data=cut_data)
 
             data_dict['aeSuccessData'] = successData = np.array(ae_successData)
             data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
-            data_dict['aeSuccessData_augmented'] = np.array(ae_aug_successData)
-            data_dict['aeFailureData_augmented'] = np.array(ae_aug_failureData)
             data_dict['aeParamDict']   = ae_param_dict
                     
         ut.save_pickle(data_dict, save_pkl)
@@ -295,7 +282,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     print "---------------------------------------------------"
     print "s/f data: ", np.shape(successData), np.shape(failureData)
-    print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
+    ## print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
 
     return data_dict
@@ -307,7 +294,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
 def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, \
                  normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
-                 time_window, \
+                 time_window, nAugment, \
                  AE_proc_data, \
                  # data param
                  processed_data_path, \
@@ -315,12 +302,12 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
                  max_iteration=20000, min_loss=1.0, cuda=False, \
-                 filtering=True, filteringDim=4, add_feature=None, \
+                 filtering=True, filteringDim=4, \
                  verbose=False, renew=False ):
 
-    ## if os.path.isfile(AE_proc_data) and not renew:
-    ##     d = ut.load_pickle(AE_proc_data)
-    ##     return d
+    if os.path.isfile(AE_proc_data) and not renew:
+        d = ut.load_pickle(AE_proc_data)
+        return d
 
     from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
     AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
@@ -331,22 +318,30 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
     normalTestData    = rawSuccessData[:, normalTestIdx, :] 
     abnormalTestData  = rawFailureData[:, abnormalTestIdx, :]
 
+    # sample x dim x length
     normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
     abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
     normalTestData    = np.swapaxes(normalTestData, 0, 1)
     abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
+    # data augmentation for auto encoder
+    if nAugment>0:
+        normalTrainDataAug, abnormalTrainDataAug = data_augmentation(normalTrainData, \
+                                                                     abnormalTrainData, nAugment)
+    else:
+        normalTrainDataAug   = normalTrainData
+        abnormalTrainDataAug = abnormalTrainData
 
     # sample x time_window_flatten_length
-    new_normalTrainData   = getTimeDelayData(normalTrainData, time_window)
-    new_abnormalTrainData = getTimeDelayData(abnormalTrainData, time_window)
-    new_normalTestData    = getTimeDelayData(normalTestData, time_window)
-    new_abnormalTestData  = getTimeDelayData(abnormalTestData, time_window)
-    nSingleData           = len(normalTrainData[0][0])-time_window+1
-    nDim                  = len(new_normalTrainData[1])
+    normalTrainDataConv   = getTimeDelayData(normalTrainDataAug, time_window)
+    abnormalTrainDataConv = getTimeDelayData(abnormalTrainDataAug, time_window)
+    normalTestDataConv    = getTimeDelayData(normalTestData, time_window)
+    abnormalTestDataConv  = getTimeDelayData(abnormalTestData, time_window)
+    nSingleData           = len(normalTrainDataAug[0][0])-time_window+1
+    nDim                  = len(normalTrainDataConv[1])
 
     # sample x time_window_flatten_length
-    X_train  = np.vstack([new_normalTrainData, new_abnormalTrainData])
+    X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
     
     # train ae
     ml = ae.auto_encoder([nDim]+layer_sizes, \
@@ -355,6 +350,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                          max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=verbose)
 
     if os.path.isfile(AE_model):
+        print "AE model exists: ", AE_model
         ml.load_params(AE_model)
     else:
         ml.fit(X_train)
@@ -372,16 +368,16 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
     # test ae
     # sample x dim => dim x sample
     d = {}
-    d['normTrainData']   = np.swapaxes(predictFeatures(ml, new_normalTrainData, nSingleData), 0,1)
-    d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, new_abnormalTrainData, nSingleData), 0,1) 
-    d['normTestData']    = np.swapaxes(predictFeatures(ml, new_normalTestData, nSingleData), 0,1)
-    d['abnormTestData']  = np.swapaxes(predictFeatures(ml, new_abnormalTestData, nSingleData), 0,1)
+    d['normTrainData']   = np.swapaxes(predictFeatures(ml, normalTrainDataConv, nSingleData), 0,1)
+    d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, abnormalTrainDataConv, nSingleData), 0,1) 
+    d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
+    d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
     
     # dim x sample x length
     d['handNormTrainData']   = handSuccessData[:, normalTrainIdx, time_window-1:]
     d['handAbnormTrainData'] = handFailureData[:, abnormalTrainIdx, time_window-1:]
     d['handNormTestData']    = handSuccessData[:, normalTestIdx, time_window-1:]
-    d['handAbnormTrainData'] = handFailureData[:, abnormalTestIdx, time_window-1:]
+    d['handAbnormTestData']  = handFailureData[:, abnormalTestIdx, time_window-1:]
 
     if filtering:
         pooling_param_dict  = {'dim': filteringDim} # only for AE        
@@ -391,16 +387,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         d['normTestDataFiltered'],_     = variancePooling(d['normTestData'], pooling_param_dict)
         d['abnormTestDataFiltered'],_   = variancePooling(d['abnormTestData'], pooling_param_dict)
 
-    ## # add hand-crafted features
-    ## if add_feature is not None:
-    ##     # sample x dim x length
-    ##     normalTrainData   = 
-    ##     abnormalTrainData = 
-    ##     normalTestData    = 
-    ##     abnormalTestData  = 
-        
     ut.save_pickle(d, AE_proc_data)
-
     return d
 
 
@@ -787,7 +774,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     return scaled_features, param_dict
 
 
-def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, nAugment=1, \
+def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, \
                       cut_data=None, verbose=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
@@ -972,7 +959,6 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         ##     if 'fabricForce' not in param_dict['feature_names']:
         ##         param_dict['feature_names'].append('fabricForce')
 
-
         # ----------------------------------------------------------------
         dataList.append(dataSample)
 
@@ -982,26 +968,18 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     assert len(dataList) == nSuccess+nFailure
     successDataList = dataList[0:nSuccess]
     failureDataList = dataList[nSuccess:]
-
-    successDataAugList, failureDataAugList = data_augmentation(successDataList, failureDataList, \
-                                                               nAugment=nAugment)
-    allDataList = successDataAugList + failureDataAugList
+    allDataList     = successDataList + failureDataList
 
     # Converting data structure & cutting unnecessary part ---------------
     features = np.swapaxes(allDataList, 0, 1)
     success_features = np.swapaxes(successDataList, 0, 1)
     failure_features = np.swapaxes(failureDataList, 0, 1)
-    success_aug_features = np.swapaxes(successDataAugList, 0, 1)
-    failure_aug_features = np.swapaxes(failureDataAugList, 0, 1)
 
     ## Cut data
     if cut_data is not None:
         features         = features[:,:,cut_data[0]:cut_data[1]]
         success_features = success_features[:,:,cut_data[0]:cut_data[1]]
         failure_features = failure_features[:,:,cut_data[0]:cut_data[1]]
-        success_aug_features = success_aug_features[:,:,cut_data[0]:cut_data[1]]
-        failure_aug_features = failure_aug_features[:,:,cut_data[0]:cut_data[1]]
-
                
     # Scaling ------------------------------------------------------------
     if isTrainingData:
@@ -1009,39 +987,20 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_mu']  = [ np.mean(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_std'] = [ np.std(np.array(feature).flatten()) for feature in features ]
-        print "max: ", param_dict['feature_max']
-        print "min: ", param_dict['feature_min']
+        ## print "max: ", param_dict['feature_max']
+        ## print "min: ", param_dict['feature_min']
 
     if False:
         success_features = normalization( success_features, param_dict['feature_mu'], param_dict['feature_std'] )
         failure_features = normalization( failure_features, param_dict['feature_mu'], param_dict['feature_std'] )
-        success_aug_features = normalization( success_aug_features, param_dict['feature_mu'], \
-                                              param_dict['feature_std'] )
-        failure_aug_features = normalization( failure_aug_features, param_dict['feature_mu'], \
-                                              param_dict['feature_std'] )
     else:
         success_features = scale( success_features, param_dict['feature_min'], param_dict['feature_max'] )
         failure_features = scale( failure_features, param_dict['feature_min'], param_dict['feature_max'] )
-        success_aug_features = scale( success_aug_features, param_dict['feature_min'], \
-                                              param_dict['feature_max'] )
-        failure_aug_features = scale( failure_aug_features, param_dict['feature_min'], \
-                                              param_dict['feature_max'] )
 
     param_dict['feature_names'] = raw_feature_list
     param_dict['dataDim']       = dataDim
    
-    ## scaled_features = []
-    ## for i, feature in enumerate(features):
-
-    ##     if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
-    ##         scaled_features.append( np.array(feature) )
-    ##     else:
-    ##         ## scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
-    ##         ##                         /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
-    ##         scaled_features.append( ( np.array(feature) - param_dict['feature_mu'][i] )\
-    ##                                 / param_dict['feature_std'][i] )
-    
-    return success_features, failure_features, success_aug_features, failure_aug_features, param_dict
+    return success_features, failure_features, param_dict
 
 #-------------------------------------------------------------------------------------------------
 
@@ -1160,19 +1119,24 @@ def data_augmentation(successes, failures, nAugment=1):
                 
 
                 # filtering
+                
+        if k==0:
+            if type(successes) == list: success_aug_list = successes + aug_data_list
+            else:  success_aug_list = successes.tolist() + aug_data_list
+        else:
+            if type(failures) == list: failure_aug_list = failures + aug_data_list
+            else: failure_aug_list = failures.tolist() + aug_data_list
 
-        if k==0: success_aug_list = successes + aug_data_list
-        else: failure_aug_list = failures + aug_data_list
-
-    print "data auuuuuuuuuuuugmentation"
-    print np.shape(success_aug_list), np.shape(failure_aug_list)
+    ## print "data auuuuuuuuuuuugmentation"
+    ## print "From : ", np.shape(successes), np.shape(failures)
+    ## print "To : ", np.shape(success_aug_list), np.shape(failure_aug_list)
     
-    return success_aug_list, failure_aug_list
+    return np.array(success_aug_list), np.array(failure_aug_list)
 
 
 def get_time_window_data(subject_names, task, raw_data_path, processed_data_path, save_pkl, \
-                         rf_center, local_range, downSampleSize, time_window, feature_list, \
-                         nAugment=1, renew=False):
+                         rf_center, local_range, downSampleSize, time_window, handFeatures, rawFeatures, \
+                         cut_data, nAugment=1, renew=False):
 
     if os.path.isfile(save_pkl) and renew is not True:
         d = ut.load_pickle(save_pkl)
@@ -1187,21 +1151,20 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
           nSingleData
 
     # dim x sample x length
-    data_dict = getDataSet(subject_names, task, raw_data_path, \
-                           processed_data_path, rf_center, local_range,\
-                           downSampleSize=downSampleSize, \
-                           scale=1.0,\
-                           ae_data=True, data_ext=False, nAugment=nAugment, \
-                           feature_list=feature_list, \
+    data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, rf_center, local_range,\
+                           downSampleSize=downSampleSize, scale=1.0,\
+                           ae_data=True, data_ext=False, \
+                           handFeatures=handFeatures, rawFeatures=rawFeatures, \
+                           cut_data=cut_data,\
                            data_renew=renew)
-    aug_successData = data_dict['aeSuccessData_augmented']
-    aug_failureData = data_dict['aeFailureData_augmented']
+    successData = data_dict['aeSuccessData']
+    failureData = data_dict['aeFailureData']
                            
 
     # index selection
     ratio        = 0.8
-    success_idx  = range(len(aug_successData[0]))
-    failure_idx  = range(len(aug_failureData[0]))
+    success_idx  = range(len(successData[0]))
+    failure_idx  = range(len(failureData[0]))
 
     s_train_idx  = random.sample(success_idx, int( ratio*len(success_idx)) )
     f_train_idx  = random.sample(failure_idx, int( ratio*len(failure_idx)) )
@@ -1210,10 +1173,10 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     f_test_idx = [x for x in failure_idx if not x in f_train_idx]
 
     # data structure: dim x sample x sequence
-    normalTrainingData   = aug_successData[:, s_train_idx, :]
-    abnormalTrainingData = aug_failureData[:, f_train_idx, :]
-    normalTestData       = aug_successData[:, s_test_idx, :]
-    abnormalTestData     = aug_failureData[:, f_test_idx, :]
+    normalTrainingData   = successData[:, s_train_idx, :]
+    abnormalTrainingData = failureData[:, f_train_idx, :]
+    normalTestData       = successData[:, s_test_idx, :]
+    abnormalTestData     = failureData[:, f_test_idx, :]
 
     # scaling by the number of dimensions in each feature
     # nSamples x Dim x nLength
@@ -1223,6 +1186,15 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     d['normalTestData']       = np.swapaxes(normalTestData, 0, 1)
     d['abnormalTestData']     = np.swapaxes(abnormalTestData, 0, 1)
     ut.save_pickle(d, save_pkl)
+
+    # data augmentation for auto encoder
+    if nAugment>0:
+        normalTrainDataAug, abnormalTrainDataAug = data_augmentation(d['normalTrainingData'], \
+                                                                     d['abnormalTrainingData'], nAugment)
+    else:
+        normalTrainDataAug   = d['normalTrainData']
+        abnormalTrainDataAug = d['abnormalTrainData']
+
 
     print "======================================"
     print "nSamples x Dim x nLength"
@@ -1251,7 +1223,6 @@ def getTimeDelayData(data, time_window):
     Input size is sample x dim x length.
     Output size is sample x time_window_flatten_length.
     '''
-
     new_data = []
     for i in xrange(len(data)):
         for j in xrange(len(data[i][0])-time_window+1):

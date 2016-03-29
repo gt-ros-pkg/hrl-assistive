@@ -1144,3 +1144,36 @@ def cross_1D_correlation(seq1, seq2, pad):
     return C, x_diff
 
 
+def stackSample(X1,X2,first_axis='dim'):
+    if first_axis == 'dim':
+        X = np.vstack([ np.swapaxes(X1,0,1), np.swapaxes(X2,0,1) ])
+        return np.swapaxes(X,0,1)
+    else:
+        return np.vstack([X1,X2])
+
+
+def combineData(X1,X2,first_axis='dim'):
+
+    if first_axis == 'dim':
+        newX1 = np.swapaxes(X1,0,1)
+        newX2 = np.swapaxes(X2,0,1)
+        
+        X = None
+        for i in xrange(len(newX1)):
+            if X is None:
+                X = np.array([ np.vstack([ newX1[i], newX2[i] ]) ])
+            else:
+                X = np.vstack([ X, np.array([ np.vstack([ newX1[i], newX2[i] ]) ]) ])
+
+        return np.swapaxes(X,0,1)
+    else:
+        print "not implemented combinedata"
+        sys.exit()
+        ## X = None
+        ## for i in xrange(len(X1)):
+        ##     if X is None:            
+        ##         X = np.vstack([ X1[i], X2[i] ])
+        ##     else:
+        ##         X = np.vstack([ X, np.vstack([ X1[i], X2[i] ]) ])
+        
+        ## return X
