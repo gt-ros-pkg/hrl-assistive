@@ -160,6 +160,7 @@ RFH.Undo = function (options) {
     /*//////////////////// Handle Looking goals /////////////////////////*/
     previewFunctions['look'] = {
         start: function (undoEntry) {
+            
             // TODO: Start Preview
         },
         stop: function (undoEntry) {
@@ -171,7 +172,11 @@ RFH.Undo = function (options) {
     sentUndoCommands['look'] = 0;
     undoFunctions['look'] = function (undoEntry) {
         sentUndoCommands['look'] += 1;
-        head.setPosition(undoEntry.stateGoal[0], undoEntry.stateGoal[1]);
+        head.pointHead(undoEntry.stateGoal.x,
+                       undoEntry.stateGoal.y,
+                       undoEntry.stateGoal.z,
+                       '/base_link');
+//        head.setPosition(undoEntry.stateGoal[0], undoEntry.stateGoal[1]);
     };
 
     var headCmdSub = new ROSLIB.Topic({
@@ -180,38 +185,34 @@ RFH.Undo = function (options) {
         messageType: "trajectory_msgs/JointTrajectory"
     });
     var headCmdCB = function (traj_msg) {
+        if (self.states.mode == 'rEECartTask' || 
+            self.states.mode == 'lEECartTask') {
+                return; 
+        };
         if (sentUndoCommands['look'] > 0 ) {
             sentUndoCommands['look'] -= 1;
             return;
         }
+        var camModel = RFH.mjpeg.cameraModel;
+        var pt3d = new THREE.Vector3(0, 0, 2);
+        var camQuat = new THREE.Quaternion(camModel.transform.rotation.x,
+                                           camModel.transform.rotation.y,
+                                           camModel.transform.rotation.z,
+                                           camModel.transform.rotation.w);
+        var camPos = new THREE.Vector3(camModel.transform.translation.x,
+                                       camModel.transform.translation.y,
+                                       camModel.transform.translation.z);
+        var camTF = new THREE.Matrix4().makeRotationFromQuaternion(camQuat);
+        camTF.setPosition(camPos);
+        pt3d.applyMatrix4(camTF);
         var undoEntry = new RFH.UndoEntry({
             type: 'look',
-            stateGoal: head.getState(),
+            stateGoal: pt3d,
             command: traj_msg
         });
         eventQueue.pushUndoEntry(undoEntry);
     };
     headCmdSub.subscribe(headCmdCB);
-
-    // Keep s short buffer with stamped head positions, since the state updates before we get commands
-    var headStateSub = new ROSLIB.Topic({
-        ros: ros,
-        name: "/head_traj_controller/state_throttled",
-        messageType: "pr2_controllers_msgs/JointTrajectoryControllerState"
-    });
-    var headStateBuffer = [];
-    var bufferSize = 100; // ~20 Hz state incoming 
-    var updateHeadStateBuffer = function (stamped_state) {
-        headStateBuffer.push(stamped_state); 
-        var cutIndex = Math.max(headStateBuffer.length - bufferSize, 0);
-        headStateBuffer.slice(0, cutIndex);
-    };
-    var headStateSubCB = function (jtcs_msg) {
-        updateHeadStateBuffer({time: jtcs_msg.header.stamp,
-                               state: jtcs_msg.actual.positions})
-    };
-    headStateSub.subscribe(headStateSubCB);
-
 
     /* //////////////////// END LOOKING UNDO /////////////////////// */
 
