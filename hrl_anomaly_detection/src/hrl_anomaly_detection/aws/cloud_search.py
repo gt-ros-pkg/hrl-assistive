@@ -318,6 +318,10 @@ class CloudSearch():
                     e.print_traceback()
         return results
 
+    def print_stdout(self):
+        for task in self.all_tasks:
+            self.print_task_stdout(task)
+
     #get method with error catching showing trace back of remote error
     #returns None if task is not assigned through CloudSearch class
     def get_task_results(self, task):
@@ -329,6 +333,11 @@ class CloudSearch():
                 if isinstance(e, error.RemoteError):
                     e.print_traceback()
         return None
+
+    def print_task_stdout(self, task):
+        if task in self.all_tasks:
+            if task.stdout is not '':
+                print task.stdout
 
 def syncing(path_libs):
     import sys

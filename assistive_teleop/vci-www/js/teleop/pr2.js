@@ -385,7 +385,7 @@ var PR2Torso = function (ros) {
     stateSub.subscribe(stateCB);
 
     self.setPosition = function (z) {
-        console.log('Commanding torso' + ' from z=' + state.toString() + ' to z=' + z.toString());
+        //console.log('Commanding torso' + ' from z=' + state.toString() + ' to z=' + z.toString());
         var goal_msg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         var traj_point = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         traj_point.positions = [z];

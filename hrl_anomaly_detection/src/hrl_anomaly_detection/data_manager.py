@@ -117,7 +117,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                save_pdf=False, solid_color=True, \
                handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
     '''
-    ae_data: Auto-encoder data
+    If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
 
     if os.path.isdir(processed_data_path) is False:
@@ -135,7 +135,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
             failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
             failureNameList = None
-            param_dict      = data_dict.get('aeParamDict', data_dict['param_dict'])
+            param_dict      = data_dict.get('aeParamDict', [])
         else:        
             # Task-oriented hand-crafted features
             allData         = data_dict['allData']
