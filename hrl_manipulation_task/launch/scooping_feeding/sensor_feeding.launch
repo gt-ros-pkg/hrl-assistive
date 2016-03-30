@@ -1,5 +1,4 @@
 <launch>
-	<arg name="task_name" default="feeding" />
 
 	<!--arg name="marker_size" default="3.3" /-->
 	<arg name="task_name" default="feeding" />

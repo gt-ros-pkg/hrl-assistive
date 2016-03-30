@@ -294,7 +294,7 @@ class logger:
         if status == 'success' or status == 'failure':
             if status == 'failure':
                 #failure_class = raw_input('Enter failure reason if there is: ')
-                failure_class = "GUI feedback."
+                failure_class = "GUI_feedback"
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 
             # get next file id

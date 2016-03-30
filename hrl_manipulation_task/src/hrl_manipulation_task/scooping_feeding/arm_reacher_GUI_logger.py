@@ -122,9 +122,9 @@ class armReacherGUI:
         self.actionStatus = data.data
         print "status received"
         if self.actionStatus == "Scooping":
-            log.task = 'scooping'
+            log.setTask('scooping')
         elif self.actionStatus == "Feeding":
-            log.task = 'feeding'
+            log.setTask('feeding')
 
         print "" + log.task
 
@@ -154,7 +154,7 @@ class armReacherGUI:
         while not self.emergencyStatus and not rospy.is_shutdown():
             #log.task = 'scooping'
             #log.initParams()
-            log.task = 'scooping'
+            log.setTask('scooping')
             log.initParams()
             self.FeedNumber = 0
             ## Scooping -----------------------------------    
@@ -206,7 +206,7 @@ class armReacherGUI:
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
-            log.task = 'feeding' 
+            log.setTask('feeding' )
             log.initParams()
 
             if self.FeedNumber < 1:
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=True, skin=False, \
-                 subject="Song", task='scooping', data_pub=opt.bDataPub, verbose=False)
+                 subject="Failure", task='scooping', data_pub=opt.bDataPub, verbose=False)
 
 #    log = None
 

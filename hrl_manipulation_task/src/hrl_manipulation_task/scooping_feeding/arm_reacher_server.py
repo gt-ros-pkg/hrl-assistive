@@ -147,7 +147,7 @@ class armReachAction(mpcBaseAction):
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame 
         self.motions['initScooping1'] = {}
         self.motions['initScooping1']['left'] = \
-          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0]]
+          [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 5.0]]
         self.motions['initScooping1']['right'] = \
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0]]
           #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
