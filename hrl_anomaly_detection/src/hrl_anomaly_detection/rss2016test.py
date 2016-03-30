@@ -585,7 +585,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             if verbose: print "start to fit hmm"
             nEmissionDim = len(normalTrainData)
             cov_mult     = [cov]*(nEmissionDim**2)
-            nLength      = len(normalTrainData[0][0])
+            nLength      = len(normalTrainData[0][0]) - startIdx
 
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False) 

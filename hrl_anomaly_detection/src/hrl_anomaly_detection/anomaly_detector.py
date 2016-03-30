@@ -97,26 +97,30 @@ class anomaly_detector:
             self.downSampleSize = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/downSampleSize')
             self.handFeatures = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/feature_list')
             self.data_ext = False
+            self.nNormalFold   = 2
+            self.nAbnormalFold = 2
 
             # Generative modeling
             self.nState = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/states')
             self.cov    = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
             self.scale  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/scale')
+
+            self.SVM_dict = None
         else:
             self.rf_radius = self.param_dict['data_param']['local_range']
             self.rf_center = self.param_dict['data_param']['rf_center']
             self.downSampleSize = self.param_dict['data_param']['downSampleSize']
             self.handFeatures = self.param_dict['data_param']['handFeatures']
-            self.data_ext = self.param_dict['data_param']['lowVarDataRemv']
-            self.cut_data = self.param_dict['data_param']['cut_data']
+            self.data_ext    = self.param_dict['data_param']['lowVarDataRemv']
+            self.cut_data    = self.param_dict['data_param']['cut_data']
+            self.nNormalFold   = self.param_dict['data_param']['nNormalFold']
+            self.nAbnormalFold = self.param_dict['data_param']['nAbnormalFold']
 
             self.nState = self.param_dict['HMM']['nState']
             self.cov    = self.param_dict['HMM']['cov']
             self.scale  = self.param_dict['HMM']['scale']
 
-            self.svm_w_neg = self.param_dict['SVM']['w_negative']
-            self.svm_gamma = self.param_dict['SVM']['gamma']
-            self.svm_cost  = self.param_dict['SVM']['cost']
+            self.SVM_dict  = self.param_dict['SVM']
 
 
         # Discriminative classifier
@@ -148,35 +152,23 @@ class anomaly_detector:
                            cut_data=self.cut_data,\
                            data_renew=False)
                            
-        successData = dd['successData'] * self.scale
-        failureData = dd['failureData'] * self.scale
+        # Task-oriented hand-crafted features        
+        kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
+                                              self.nNormalFold, self.nAbnormalFold )
+        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
 
-        # index selection
-        success_idx  = range(len(successData[0]))
-        failure_idx  = range(len(failureData[0]))
 
-        ## 0.5?
-        nTrain           = int( 0.5*len(success_idx) )
-        train_idx        = random.sample(success_idx, nTrain)
-        success_test_idx = [x for x in success_idx if not x in train_idx]
-        failure_test_idx = failure_idx
-
-        # data structure: dim x sample x sequence
-        trainingData           = successData[:, train_idx, :]
-        normalClassifierData   = successData[:, success_test_idx, :]
-        abnormalClassifierData = failureData[:, failure_test_idx, :]
-
-        print "======================================"
-        print "Training data: ", np.shape(trainingData)
-        print "Normal classifier training data: ", np.shape(normalClassifierData)
-        print "Abnormal classifier training data: ", np.shape(abnormalClassifierData)
-        print "======================================"
+        # dim x sample x length # TODO: what is the best selection?
+        normalTrainData   = successData[:, normalTrainIdx, :] * self.scale
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * self.scale # will not be used...?
+        normalTestData    = successData[:, normalTestIdx, :] * self.scale
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] * self.scale
 
         # training hmm
-        self.nEmissionDim   = len(trainingData)
+        self.nEmissionDim   = len(normalTrainData)
         detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
         self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
-        ret = self.ml.fit(trainingData, cov_mult=[self.cov_mult]*self.nEmissionDim**2,
+        ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
                           ml_pkl=detection_param_pkl, use_pkl=True)
 
         if ret == 'Failure':
@@ -186,62 +178,66 @@ class anomaly_detector:
             sys.exit()
 
         #-----------------------------------------------------------------------------------------
-        # Classifier training data
+        # Classifier test data
         #-----------------------------------------------------------------------------------------
         testDataX = []
-        for i in xrange(self.nEmissionDim):
-            temp = np.vstack([normalClassifierData[i], abnormalClassifierData[i]])
+        testDataY = []
+        for i in xrange(nEmissionDim):
+            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
             testDataX.append( temp )
 
-        testDataY = np.hstack([ -np.ones(len(normalClassifierData[0])),
-                                np.ones(len(abnormalClassifierData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                np.ones(len(abnormalTestData[0])) ])
 
         startIdx = 4
-        r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, self.ml.pi, self.ml.F,
-                                                                [ testDataX[j][i] for j in xrange(self.nEmissionDim) ],
+        r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, \
+                                                                         self.ml.pi, self.ml.F,
+                                                                         [ testDataX[j][i] for j in xrange(self.nEmissionDim) ],
                                                                 self.ml.nEmissionDim, self.ml.nState,
                                                                 startIdx=startIdx, bPosterior=True)
                                                                 for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
-        ll_classifier_train_X = []
-        ll_classifier_train_Y = []
+        # nSample x nLength
+        ll_classifier_test_X = []
+        ll_classifier_test_Y = []
         for i in xrange(len(ll_logp)):
             l_X = []
             l_Y = []
-            for j in xrange(len(ll_logp[i])):
+            for j in xrange(len(ll_logp[i])):        
                 l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                 if testDataY[i] > 0.0: l_Y.append(1)
                 else: l_Y.append(-1)
 
-            ll_classifier_train_X.append(l_X)
-            ll_classifier_train_Y.append(l_Y)
+            ll_classifier_test_X.append(l_X)
+            ll_classifier_test_Y.append(l_Y)
 
 
         # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
+        X_test_org = []
+        Y_test_org = []
+        idx_test_org = []
+        for i in xrange(len(ll_classifier_test_X)):
+            for j in xrange(len(ll_classifier_test_X[i])):
+                X_test_org.append(ll_classifier_test_X[i][j])
+                Y_test_org.append(ll_classifier_test_Y[i][j])
+                idx_test_org.append(ll_classifier_test_idx[i][j])
 
 
         # data preparation
         scaler = preprocessing.StandardScaler()
         if 'svm' in self.classifier_method:
-            X_scaled = scaler.fit_transform(X_train_org)
+            X_scaled = scaler.fit_transform(X_test_org)
         else:
-            X_scaled = X_train_org
-        print self.classifier_method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+            X_scaled = X_test_org
+        print self.classifier_method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_test_org)
 
         # Fit Classifier
-        self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, nLength=len(trainingData[0,0]))
-
-        self.classifier.fit(X_scaled, Y_train_org, idx_train_org)
+        self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
+                                        nLength=len(normalTrainData[0][0]) - startIdx )
+        self.classifier.set_params(**self.SVM_dict)
+        self.classifier.fit(X_scaled, Y_test_org, idx_test_org)
 
 
     def enablerCallback(self, msg):
@@ -434,12 +430,8 @@ if __name__ == '__main__':
         training_data_pkl = task_name+'_dataSet' #??
 
         handFeatures = ['unimodal_audioWristRMS',\
-                        ## 'unimodal_audioPower',\
                         ## 'unimodal_kinVel',\
                         'unimodal_ftForce',\
-                        ##'unimodal_visionChange',\
-                        ## 'unimodal_ppsForce',\
-                        ##'unimodal_fabricForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
 
@@ -451,7 +443,7 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
         HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, 'class_weight': }
 
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}

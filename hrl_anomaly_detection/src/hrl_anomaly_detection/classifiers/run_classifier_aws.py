@@ -533,6 +533,7 @@ if __name__ == '__main__':
     method = parameters['method'][0]
     score_list = []
     print "max_param_idx = ", max_param_idx
+    result_pkl = './result_'+task+'.pkl'
 
     ##################################################################################################
     # cpu version
@@ -543,8 +544,7 @@ if __name__ == '__main__':
         ## nFiles = 2
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
         ##               'svm_degree': [3], 'svm_nu': [0.5], 'svm_w_negative': [7.0]}
-
-        if os.path.isfile('./temp.pkl') is False:
+        if os.path.isfile(result.pkl) is False:
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
@@ -553,9 +553,9 @@ if __name__ == '__main__':
                                                                                n_jobs=-1)
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
 
-            ut.save_pickle(results, './temp.pkl')
+            ut.save_pickle(results, result.pkl)
         else:
-            results = ut.load_pickle('./temp.pkl')
+            results = ut.load_pickle(result.pkl)
 
         ## plt.figure()
         for result in results:
@@ -604,7 +604,7 @@ if __name__ == '__main__':
                                                                            
     else:
 
-        if os.path.isfile('./temp.pkl') is False:
+        if os.path.isfile(result_pkl) is False:
 
             cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
                                              '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
@@ -638,10 +638,10 @@ if __name__ == '__main__':
             #cloud.print_stdout()
             #print "===================================="
             import hrl_lib.util as ut
-            ut.save_pickle(results, './temp.pkl')            
+            ut.save_pickle(results, result_pkl)            
         else:
             import hrl_lib.util as ut
-            results = ut.load_pickle('./temp.pkl')
+            results = ut.load_pickle(result_pkl)
 
         
         for i in xrange(max_param_idx):
