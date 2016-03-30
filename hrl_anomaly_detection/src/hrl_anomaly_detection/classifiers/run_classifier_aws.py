@@ -544,7 +544,7 @@ if __name__ == '__main__':
         ## nFiles = 2
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
         ##               'svm_degree': [3], 'svm_nu': [0.5], 'svm_w_negative': [7.0]}
-        if os.path.isfile(result.pkl) is False:
+        if os.path.isfile(result_pkl) is False:
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
@@ -553,9 +553,9 @@ if __name__ == '__main__':
                                                                                n_jobs=-1)
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
 
-            ut.save_pickle(results, result.pkl)
+            ut.save_pickle(results, result_pkl)
         else:
-            results = ut.load_pickle(result.pkl)
+            results = ut.load_pickle(result_pkl)
 
         ## plt.figure()
         for result in results:
