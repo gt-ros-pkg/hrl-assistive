@@ -128,53 +128,81 @@ RFH.Undo = function (options) {
     /*/////////////  END LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  RIGHT GRIPPER UNDO FUNCTIONS ////////////////////*/
+    // Keep separate variable for grabbing/position. Initialize to position
+    
+    self.states.rGripper = rGripper.getState() > 0.01 ? rGripper.getState() : 'grab';
+
+    var $rGripperPreviewHandleLeft = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
+    var $rGripperPreviewHandleRight = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
+    var $rGripperSlider = $('#rGripperCtrlContainer > .gripper-slider');
+    $rGripperSlider.append([$rGripperPreviewHandleLeft, $rGripperPreviewHandleRight]);
+    var rGripperMin = $rGripperSlider.slider('option','min');
+    var rGripperMax = $rGripperSlider.slider('option','max');
+    var rGripperRange = rGripperMax - rGripperMin;
+    var rGripperMid = rGripperMin + rGripperRange/2;
+    var rGripperHandleWidthPct = 7;
+
+
     previewFunctions['rGripper'] = {
         start: function (undoEntry){
-            // Display preview of goal 
+            var aperture = undoEntry.stateGoal === 'grab' ? 0.0 : undoEntry.stateGoal;
+            var offset = rGripperMid + aperture/2 + (rGripperHandleWidthPct/200)*rGripperRange;
+            $rGripperPreviewHandleLeft.css('left', offset);
+            $rGripperPreviewHandleRight.css('right', offset);
         }, 
         stop: function (undoEntry) {
             // Stop Display
         }
     };
 
-    sentUndoCommands['rGripper'] = 0;
-    undoFunctions['rGripper'] = function (undoEntry) {
-
+    sentUndoCommands.rGripper = 0;
+    undoFunctions.rGripper = function (undoEntry) {
+        sentUndoCommands.rGripper += 1;
+        if (undoEntry.stateGoal === 'grab') {
+            rGripper.grab();
+        } else {
+            rGripper.setPosition(undoEntry.stateGoal);
+        }
     };
 
-    var gripperStateToGoal = function (state_msg) {
-        // TODO: Fill out based on gripper-sensor-action interface/options
-    }
-
-    self.setPosition = function (pos, effort) {
-        if (grabGoal !== null) { grabGoal.cancel(); }
-        var msg = ros.composeMsg('pr2_controllers_msgs/Pr2GripperCommandGoal');
-        msg.command.position = pos;
-        msg.command.max_effort = effort || -1;
-        var goal = new ROSLIB.Goal({
-            actionClient: positionActionClient,
-            goalMessage: msg
-        });
-        goal.send();
-    };
-         
-    var rGripperCmdSub = new ROSLIB.Topic({
-        ros: ros,
-        name: 'r_gripper_sensor_controller/gripper_action/goal',
-        messageType: "pr2_controllers_msgs/Pr2GripperCommandGoal"
-    });
-    var rGripperCmdCB = function (cmd_msg) {
-        var stateGoal = gripperStateToGoal(self.rGripper.getState());
-        undoEntry.command = cmd_msg;
-        undoEntry.stateGoal = {};// TODO FILL IN CORRECTLY
+    var rGripperGenerateUndoEntry = function (cmd_msg) {
+        if (sentUndoCommands.rGripper > 0) { 
+            sentUndoCommands.rGripper -= 1;
+            return;
+        }
         var undoEntry = new RFH.UndoEntry({type: 'rGripper',
                                            command: cmd_msg,
-                                           stateGoal: stateGoal
+                                           stateGoal: self.states.rGripper
                                            });
         eventQueue.pushUndoEntry(undoEntry);
     };
-    rGripperCmdSub.subscribe(rGripperCmdCB);
-    //TODO: Get commands for gripper.grab() [calls complex grasping code] and gripper.open() [sets position]
+
+    var rGripperPositionCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'r_gripper_sensor_controller/gripper_action/goal',
+        messageType: "pr2_controllers_msgs/Pr2GripperCommandActionGoal"
+    });
+    var rGripperPositionCmdCB = function (cmd_msg) {
+        rGripperGenerateUndoEntry(cmd_msg);
+        if (cmd_msg.goal_id.id.indexOf("grab") == -1) { // Grab action sends position command with '....grab...' in the id
+            self.states.rGripper = rGripper.getState();
+        } else {
+            self.states.rGripper = 'grab';
+        }
+    };
+    rGripperPositionCmdSub.subscribe(rGripperPositionCmdCB);
+         
+/*    var rGripperGrabCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'r_gripper_sensor_controller/grab/goal',
+        messageType: "pr2_gripper_sensor_msgs/PR2GripperGrabActionGoal"
+    });
+    var rGripperGrabCmdCB = function (cmd_msg) {
+        rGripperGenerateUndoEntry(cmd_msg);
+        self.states.rGripper = 'grab';
+    };
+    rGripperGrabCmdSub.subscribe(rGripperGrabCmdCB);
+*/
 
     /*//////////////////// END GRIPPER UNDO  //////////////////////////////////*/
     
@@ -212,7 +240,7 @@ RFH.Undo = function (options) {
                        '/base_link');
     };
 
-    var $previewEyes = $('<div/>', {id:"look-preview"})
+    var $previewEyes = $('<div/>', {id:"look-preview"}).hide();
     $('#video-main').append($previewEyes);
 
     var headCmdSub = new ROSLIB.Topic({
