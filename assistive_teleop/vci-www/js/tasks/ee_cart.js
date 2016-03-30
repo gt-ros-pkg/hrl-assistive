@@ -4,7 +4,8 @@ RFH.CartesianEEControl = function (options) {
     self.arm = options.arm;
     self.side = self.arm.side;
     self.name = options.name || self.side[0]+'EECartTask';
-    var divId = options.div || 'video-main';
+    self.showButton = true;
+   var divId = options.div || 'video-main';
     self.buttonText = self.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
     self.toolTipText = "Control the %side arm and hand".replace('%side', self.side);
     self.buttonClass = 'hand-button';
@@ -46,6 +47,82 @@ RFH.CartesianEEControl = function (options) {
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) { e.stopPropagation(); });
 
+    var cameraSwing = function (event) {
+        // Clear the canvas, turn on pointcloud visibility...
+        if (RFH.kinectHeadPointCloud.locked) {
+            return; 
+        } else {
+            RFH.kinectHeadPointCloud.locked = true;
+        }
+        var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false
+        $('#armCtrlContainer').hide();
+        RFH.kinectHeadPointCloud.setVisible(true);
+        RFH.viewer.renderer.setClearColor(0x666666,0.5);
+        //$('#mjpeg-image').css('visibility','hidden');
+        // Swing the camera to view pointcloud from the side
+        var camTF = self.cameraTF.clone();
+        var camQuat = new THREE.Quaternion().copy(camTF.rotation);
+        var camPos = new THREE.Vector3().copy(camTF.translation);
+        var camMat = new THREE.Matrix4().makeRotationFromQuaternion(camQuat).setPosition(camPos);
+
+        var eeTF = self.eeTF.clone();
+        var eeQuat = new THREE.Quaternion().copy(eeTF.rotation);
+        var eePos = new THREE.Vector3().copy(eeTF.translation);
+        var eeMat = new THREE.Matrix4().makeRotationFromQuaternion(eeQuat).setPosition(eePos); 
+
+        var arcRadius = new THREE.Vector3().subVectors(camPos,eePos).length();
+        if (self.side == 'right') { // Swing the camera left with the right arm, and vice versa
+            var goalDir = new THREE.Vector3(arcRadius,0,0);
+        } else {
+            var goalDir = new THREE.Vector3(-arcRadius,0,0);
+        }
+
+        var goalInCam = goalDir.applyMatrix4(camMat); // Get offset direction relative to camera in base frame
+        var goalFromCam = goalInCam.sub(camPos); // Get vector from cameraPos to goalPos in cam frame
+        //var goalVec = new THREE.Vector3().addVectors(eePos, goalFromCam); // Apply same offset at hand 
+        var goalVec = new THREE.Vector3(0,0,eePos.z);
+        var linearMidpoint = new THREE.Vector3().lerpVectors(goalVec, camPos, 0.5);
+        var centerToMidpoint = new THREE.Vector3().subVectors(linearMidpoint, eePos);
+        centerToMidpoint.setLength(0.707100678 * arcRadius);
+        var arcMidpoint = new THREE.Vector3().addVectors(eePos, centerToMidpoint);
+        var arcSpline = new THREE.CatmullRomCurve3([camPos, arcMidpoint, goalVec]);
+        var arcPoints = arcSpline.getPoints(60);
+
+        // Clean up and get back to business as usual
+        var cleanup3DView = function () {
+            RFH.viewer.renderer.setClearColor(0x000000,0);
+            RFH.kinectHeadPointCloud.setVisible(false);
+            $('#mjpeg-image').css('visibility','visible');
+            if (restoreArmContainer) { $('#armCtrlContainer').show(); }
+            RFH.kinectHeadPointCloud.locked = false;
+        }
+
+        // All the points defined, move the camera and render views
+        var camera = RFH.viewer.camera;
+        var reverse = false;
+        var peakPauseMS = 1500;
+        var travelTimeMS = 300;
+        var delay = travelTimeMS / arcPoints.length;
+        // Set camera position along path, adjust lookAt, render, and set next call after delay
+        var renderCameraStep = function (step) {
+            var pt = arcPoints[step];
+            camera.position.set(pt.x, pt.y, pt.z);
+            camera.lookAt(eePos);
+            RFH.viewer.renderer.render(RFH.viewer.scene, camera);
+            if (!reverse) { // Still going out to goal point
+                if (step < arcPoints.length-1) {
+                    setTimeout(renderCameraStep, delay, step+1);
+                } else {
+                    reverse = true;
+                    setTimeout(renderCameraStep, peakPauseMS, step-1); // Linger at the furthest point
+                }
+            } else { // Bringing view back to head perspective
+                step <= 1 ? cleanup3DView() : setTimeout(renderCameraStep, delay, step-1);  // Clean up once done
+            }
+        }
+        renderCameraStep(0); // Kick off with initial call
+    };
+    $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing);
 
     var displayGoalPose = function (ps_msg) {
         self.goalMarker.position.set(ps_msg.pose.position.x, ps_msg.pose.position.y, ps_msg.pose.position.z);

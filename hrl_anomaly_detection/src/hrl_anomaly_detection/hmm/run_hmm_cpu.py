@@ -79,11 +79,17 @@ def tune_hmm(parameters, kFold_list, filtering=True):
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
             else:
+                scores.append(ret)
+                continue
+            
                 # evaluation:  dim x sample => sample x dim
-                testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                                         np.swapaxes( abnormalTestData, 0, 1) ])                                     
+                testData_x = np.swapaxes( normalTestData, 0, 1)
+                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
+                                         ## np.swapaxes( abnormalTestData, 0, 1) ])
                 testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
-                testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
+                                         
+                testData_y = [1.0]*len( normalTestData[0] )
+                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
                 scores.append( model.score( testData_x, y=testData_y, n_jobs=-1 ) )
 
 
@@ -263,5 +269,5 @@ if __name__ == '__main__':
         sys.exit()
 
 
-    ## tune_hmm(parameters, kFold_list, filtering=filtering)
-    tune_hmm_progress(parameters, kFold_list, filtering=filtering)
+    tune_hmm(parameters, kFold_list, filtering=filtering)
+    #tune_hmm_progress(parameters, kFold_list, filtering=filtering)

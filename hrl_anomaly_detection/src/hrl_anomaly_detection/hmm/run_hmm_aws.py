@@ -47,23 +47,15 @@ class CloudSearchForHMM(CloudSearch):
 	#requires grab_data to be implemented correctly
 	#n_inst is to create a fold. the way it generates fold can be changed
     def run_with_local_data(self, params, processed_data_path, nFiles):
-
-        ## path_shell = 'export PATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection/hmm'+':$PATH'
-        ## path_shell = 'export PYTHONPATH='+os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection:${PYTHONPATH}'
-        ## path_shell = 'export PYTHONPATH=/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages'
-        ## ## path_shell = 'source ~/.bashrc'
-        ## self.sync_run_shell(path_shell)
-
+        
         ## from cross import cross_validate_local
-        model = None #hmm.learning_hmm(10, 10)
+        model = hmm.learning_hmm(10, 10, verbose=True)
         
         all_param = list(ParameterGrid(params))
         for param in all_param:
             for idx in xrange(nFiles):
                 task = self.lb_view.apply(cross_validate_local, idx, processed_data_path, model, param)
                 self.all_tasks.append(task)
-                print task.get()
-                return self.all_tasks
         return self.all_tasks
 
     ## def wait(self):
@@ -104,73 +96,92 @@ def cross_validate_local(idx, processed_data_path, model, params):
     import os, sys
     from sklearn.externals import six
     import numpy as np
-
-
-    ## sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src')
-    ## sys.path.append(os.path.expanduser('~')+'/catkin_ws/src/hrl-lib/hrl_lib/src')
-
-   
-    ## os.chdir(os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection')
-    ## sys.path.append('/home/ubuntu/catkin_ws/devel_isolated/lib/python2.7/dist-packages')
-    ## sys.path.append('/opt/ros/indigo/lib/python2.7/dist-packages')
-    ## ##                 ## ':/home/ubuntu/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/src/hrl_anomaly_detection'
-
     import hrl_lib.util as ut
+    from hrl_anomaly_detection import data_manager as dm
 
     dim   = 4
     for key, value in six.iteritems(params): 
         if key is 'dim':
             dim = value
 
-    ## return os.environ['TESTTT']
-    return os.environ['PATH'].split(os.pathsep)
-
-    # Load data
+    ## Load data
     AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
     d = ut.load_pickle(AE_proc_data)
+    pooling_param_dict  = {'dim': dim} # only for AE
 
-    from hrl_anomaly_detection import data_manager as dm
-    ## pooling_param_dict  = {'dim': dim} # only for AE
+    ## Filtering
+    # dim x sample x length
+    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], pooling_param_dict)
+    abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
+    normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
+    abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
 
-    ## # dim x sample x length
-    ## normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], \
-    ##                                                          pooling_param_dict)
-    ## abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-    ## normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
-    ## abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
-
-    ## trainSet = [normalTrainData, [1.0]*len(normalTrainData) ]
-
+    trainSet = [normalTrainData, [1.0]*len(normalTrainData[0]) ]
+    testData_x = normalTestData
+    testData_y = [1.0]*len(normalTestData[0])
     ## testData_x = np.vstack([ np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1) ])
     ## testData_x = np.swapaxes(testData_x, 0, 1)
     ## testData_y = [1.0]*len(normalTestData[0]) + [-1.0]*len(abnormalTestData[0])    
-    ## testSet    = [testData_x, testData_y ]
+    testSet    = [testData_x, testData_y ]
 
-    ## return cross_validate(trainSet, testSet, model, params)
+    train_data_x = trainSet[0]
+    train_data_y = trainSet[1]
+    test_data_x  = testSet[0]
+    test_data_y  = testSet[1]
+    
+    model.set_params(**params)
+    nEmissionDim = len(train_data_x)
 
+    scale = 1.0
+    cov_mult = [1.0]*(nEmissionDim**2)
+    for key, value in six.iteritems(params): 
+        if key is 'cov':
+            cov_mult = [value]*(nEmissionDim**2)
+        if key is 'scale':
+            scale = value
 
+    model.nEmissionDim = nEmissionDim
+    ret = model.fit(train_data_x*scale, cov_mult=cov_mult)
+
+    return ret, params
+    
+    if ret == 'Failure':
+        return 0.0, params
+    else:
+        score = model.score(test_data_x*scale, test_data_y)    
+        return score, params
 
 
 
 if __name__ == '__main__':
 
     task = 'pushing'
-    save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+    save_data_path = '/home/ubuntu/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+    nFiles = 9
     
     parameters = {'nState': [10, 15, 20, 25], 'scale':np.arange(1.0, 10.0, 1.0), 'cov': [1.0, 2.0] }
+    
+    ## model = hmm.learning_hmm(20, 4, verbose=True)
+    ## cross_validate_local(0, save_data_path, model, params={})
 
-    cloud = CloudSearchForHMM('/home/dpark/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', '/home/dpark/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
-    cloud.run_with_local_data(parameters, save_data_path, 9 )
+    cloud = CloudSearchForHMM(os.path.expanduser('~')+'/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu') # cluster name, user name in aws node
+    cloud.run_with_local_data(parameters, save_data_path, nFiles )
 
-    print cloud.get_completed_results()
 
     # wait until finishing parameter search
     while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
-        print cloud.get_completed_results()
-        time.sleep(20)
-    
-    print cloud.get_completed_results()
-    ## os.system( get )
-    ## cloud.stop()
+        print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
+        time.sleep(5)
 
+    results = cloud.get_completed_results()
+
+    # Get sorted results
+    from operator import itemgetter
+    results.sort(key=itemgetter(0), reverse=False)
+
+    for i in xrange(len(results)):
+        print results[i]
+
+    ## cloud.stop()
+    cloud.flush()
     print "Finished"

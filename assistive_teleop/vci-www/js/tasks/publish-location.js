@@ -3,6 +3,7 @@ RFH.PublishLocation = function(options) {
     var self = this;
     self.ros = options.ros;
     self.name = options.name || 'idLocationTask';
+    self.showButton = false;
     self.topic = options.topic || 'id_location';
     self.camera = options.camera;
     self.container = options.container;

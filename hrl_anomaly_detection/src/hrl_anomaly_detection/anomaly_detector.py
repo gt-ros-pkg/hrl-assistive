@@ -343,7 +343,7 @@ class anomaly_detector:
         if 'crossmodal_artagEEAng' in self.feature_list:
             self.data_dict['visionArtagQuatList'] = [self.vision_artag_quat]
 
-        data, param_dict = dm.extractFeature(self.data_dict, self.feature_list, scale=self.scale)
+        data, param_dict = dm.extractHandFeature(self.data_dict, self.feature_list, scale=self.scale)
 
         return data
 

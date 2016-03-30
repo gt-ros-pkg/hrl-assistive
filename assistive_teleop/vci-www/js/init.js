@@ -102,6 +102,10 @@ var RFH = {
                                  buttonDiv: 'undo'});
         RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                                    ros: RFH.ros});
+        RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
+                                                           topic: "/pcl_filters/vfx/output",
+                                                           maxPoints: 15000,
+                                                           tfClient: RFH.tfClient });
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');

@@ -17,6 +17,7 @@ var initViewer = function (divID) {
     RFH.viewer.camera.up = new THREE.Vector3(0,0,1);
 
     var updateCamera = function(transform) {
+        if (RFH.kinectHeadPointCloud.locked) { return }; // Don't interrupt a 3d Peek view
         RFH.viewer.camera.position.set(transform.translation.x,
                                        transform.translation.y,
                                        transform.translation.z);

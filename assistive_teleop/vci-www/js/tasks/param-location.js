@@ -4,6 +4,7 @@ RFH.ParamLocation = function(options) {
     var ros = options.ros;
     var paramName = options.paramName || 'id_location';
     self.name = options.name || 'paramLocationTask';
+    self.showButton = false;
     self.container = options.container;
     self.camera = options.camera;
     var positionOverride = null;

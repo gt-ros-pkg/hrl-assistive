@@ -277,21 +277,28 @@ var PR2Head = function (options) {
     };
 
     self.setPosition = function (pan, tilt) {
+        var state = self.getState();
         var dPan = Math.abs(pan - state[0]);
         var dTilt = Math.abs(tilt - state[1]);
+        var trajPointStartMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        trajPointStartMsg.positions = state;
+        trajPointStartMsg.velocities = [0.0, 0.0];
+//        trajPointStartMsg.time_from_start = 0.0;
         var trajPointMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
         var goalMsg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         goalMsg.joint_names = joints;
+        goalMsg.points.push(trajPointStartMsg);
         goalMsg.points.push(trajPointMsg);
         jointPub.publish(goalMsg);
     };
 
     self.delPosition = function (delPan, delTilt) {
-        var pan = state[0] += delPan;
-        var tilt = state[1] += delTilt;
+        var state = self.getState();
+        var pan = state[0] + delPan;
+        var tilt = state[1] + delTilt;
         self.setPosition(pan, tilt);
     };
 
@@ -309,7 +316,7 @@ var PR2Head = function (options) {
             z: z
         };
         headPointMsg.pointing_frame = self.pointingFrame;
-        headPointMsg.max_velocity = 0.25;
+        headPointMsg.max_velocity = 0.45;
         return headPointMsg;
     };
 
@@ -385,7 +392,7 @@ var PR2Torso = function (ros) {
     stateSub.subscribe(stateCB);
 
     self.setPosition = function (z) {
-        console.log('Commanding torso' + ' from z=' + state.toString() + ' to z=' + z.toString());
+        //console.log('Commanding torso' + ' from z=' + state.toString() + ' to z=' + z.toString());
         var goal_msg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         var traj_point = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         traj_point.positions = [z];

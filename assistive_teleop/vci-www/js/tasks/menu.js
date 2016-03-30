@@ -9,7 +9,7 @@ RFH.TaskMenu = function (options) {
 
     var statePublisher = new ROSLIB.Topic({
         ros: ros,
-        name: '/web_teleop/current_task',
+        name: '/web_teleop/current_mode',
         messageType: 'std_msgs/String',
         latch: true
     });
@@ -17,7 +17,8 @@ RFH.TaskMenu = function (options) {
 
     self.addTask = function (taskObject) {
         self.tasks[taskObject.name] = taskObject;
-        if (taskObject.buttonText) {
+        if (taskObject.showButton) {
+       // if (taskObject.buttonText) {
             var checkbox = document.createElement('input');
             checkbox.type = "checkbox";
             checkbox.id = taskObject.buttonText;
@@ -25,7 +26,7 @@ RFH.TaskMenu = function (options) {
             label.htmlFor = taskObject.buttonText;
             self.div.append(checkbox, label);
             $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
-            $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.buttonClass + ' menu-item').prop('title', taskObject.toolTipText);
+            $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.name + ' menu-item').prop('title', taskObject.toolTipText);
             $('#'+taskObject.buttonText).on('click.rfh', 
                                             function(event){
                                                 self.buttonCB(taskObject);
