@@ -125,15 +125,15 @@ class armReachAction(mpcBaseAction):
           [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
            ## ['MOVEL', '[0.7, 0.190, 0.14, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
            ['PAUSE', 1.0],
-           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
-           ['MOVEL', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
-           ['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame'],           
+           #['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
+           #['MOVEL', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
+           #['MOVEL', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame'],           
            ## ['PAUSE', 1.0],
            ## ['MOVEL', '[-0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
            ## ['MOVEL', '[0.7, 0.190, 0.04, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
-          ## ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
-          ## ['PAUSE', 1.0],
-          ## ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
+          ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
+          ['PAUSE', 1.0],
+          ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
           ] 
         ## 
            
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    controller = 'static'
+    controller = 'static' # quasistatic model predictive controller
     controller = 'actionlib'
     arm        = opt.arm
     tool_id    = 2

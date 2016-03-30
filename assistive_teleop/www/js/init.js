@@ -56,15 +56,15 @@ var assistive_teleop = {
         initPr2(); 
         initGripper('horizontal');
         initTorsoSlider('horizontal');
-        initTTS('tabTTS');
-        initARServoTab('tabServoing');
+        //initTTS('tabTTS');
+        //initARServoTab('tabServoing');
         initRunStop('runStopDiv');
         initTrajPlay();
         //initBodyRegistration('tabBodyReg');
-        initEllControl();
+        //initEllControl();
         initCartControl();
-        initTaskInterface('tabTasks');
-        initRYDSTab('tabRYDS');
+        //initTaskInterface('tabTasks');
+        //initRYDSTab('tabRYDS');
         initManTaskTab();
         if (window.location.hash.search('ft') !== -1) {
           initFTDisplay('FTDisplay', {});

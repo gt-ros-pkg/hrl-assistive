@@ -1,9 +1,10 @@
 <launch>
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <arg name="use_kinect" default="true" />
   <arg name="kinect_ns" default="head_mount_kinect" />
-  <arg name="kinect_points" default="/$(arg kinect_ns)/qhd/points" />
+  <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
   <!-- kinect_camera may need to be set to .../image_raw for simulated kinect -->
-  <arg name="kinect_camera" default="/$(arg kinect_ns)/qhd/image_color" />
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
 
@@ -48,9 +49,15 @@
     <!--<param name="voice" value="kal_diphone"/>-->
   <!--</node>-->
 
+  <!-- Launch Kinect (needed for pixel_2_3d -->
+  <include if="$(arg use_kinect)" file="$(find openni_launch)/launch/openni.launch" >
+    <arg name="camera" value="$(arg kinect_ns)" />
+    <arg name="publish_tf" value="false" />
+  </include>
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
-      <remap from="info_topic" to="$(arg kinect_ns)/qhd/camera_info" />
+      <remap from="info_topic" to="$(arg kinect_ns)/depth_lowres/camera_info" />
       <remap from="image" to="$(arg kinect_camera)" />
       <remap from="point_cloud" to="$(arg kinect_points)" />
       <!-- <param name="output_frame" type="string" value="/base_link" /> -->
@@ -59,21 +66,6 @@
   </node>
 
   <!-- Arms: Haptic MPC -->
-  <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
-    <arg name="arm" value="l"/>
-    <arg name="skin" value="fabric"/>
-    <arg name="namespace" value="left_arm"/>
-    <arg name="rviz_teleop" value="true"/>
-    <arg name="verbose" value="true"/>
-  </include>
-
-  <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
-    <arg name="arm" value="r"/>
-    <arg name="skin" value="none"/>
-    <arg name="namespace" value="right_arm"/>
-    <arg name="rviz_teleop" value="true"/>
-    <arg name="verbose" value="true"/>
-  </include>
 
 <!--
   <node name="l_clicked_pose_relay" pkg="assistive_teleop" type="clicked_pose_relay" 

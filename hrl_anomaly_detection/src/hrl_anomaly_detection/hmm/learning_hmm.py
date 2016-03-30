@@ -103,7 +103,7 @@ class learning_hmm(learning_base):
             self.pi = param_dict['pi']                       
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                            self.A, self.B, self.pi)
-
+            return True
         else:
            
             if ml_pkl is None:
@@ -168,8 +168,8 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
-        if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-        return ret
+            if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
+            return ret
                                
 
     ## def predict(self, X):

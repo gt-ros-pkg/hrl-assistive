@@ -77,7 +77,7 @@ class CloudSearch():
         self.clust.terminate_cluster(force=True)
 
     #runs bash command for all nodes
-    def sync_run_shell(self, path_shell):
+    def sync_run_shell(self, path_shell, user=None):
 
         #self.clust.ssh_to_master(command=path_shell)
         for node in self.clust.running_nodes:
@@ -175,6 +175,15 @@ class CloudSearch():
         try:
             master_ssh.switch_user(self.user_name)
             master_ssh.execute("ipcluster stop", silent=False)
+            master_ssh.execute("pkill -f ipcontrollerapp", ignore_exit_status=True)
+            for node in self.clust.running_nodes:
+                try:
+                    node_user = node.ssh.get_current_user()
+                    node.ssh.switch_user(self.user_name)
+                    node.ssh.execute("pkill -f ipengineapp", ignore_exit_status=True)
+                    node.ssh.switch_user(node_user)
+                except:
+                    print "closing engine on node failed"
         except:
             print "ipcluster wasn't stoped. It is likely it was not running"
         time.sleep(1)
@@ -337,7 +346,16 @@ class CloudSearch():
     def print_task_stdout(self, task):
         if task in self.all_tasks:
             if task.stdout is not '':
-                print task.stdout
+                stdout_list = task.stdout.split('\n')
+                for out in stdout_list:
+                    if len(out) >= 8:
+                        if out[0:8] == 'Accuracy':
+                            dunoubgstuff = 0
+                        else:
+                            #print out[0:8]
+                            print out
+                    else:
+                        print out
 
 def syncing(path_libs):
     import sys

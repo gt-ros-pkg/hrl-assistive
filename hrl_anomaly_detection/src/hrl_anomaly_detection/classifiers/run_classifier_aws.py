@@ -62,7 +62,7 @@ class CloudSearchForClassifier(CloudSearch):
         for param_idx, param in enumerate(all_param):
             task = self.lb_view.apply(cross_validate_local, param_idx, nFiles, \
                                       processed_data_path, task_name, \
-                                      default_params=param_dict, custom_params=param)
+                                      default_params=param_dict, custom_params=param, n_jobs=1)
             self.all_tasks.append(task)
         return self.all_tasks
 
@@ -72,8 +72,11 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     '''
     
     '''
+    print "in cross validate"
     from joblib import Parallel, delayed
-    
+    from hrl_anomaly_detection.classifiers.run_classifier_aws import run_classifier
+    import os
+    print "import success"
     ## Default Parameters
     # data
     data_dict = default_params['data_param']
@@ -104,7 +107,7 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##     return 0, -1, custom_params
 
     if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
-        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     else:
@@ -121,7 +124,7 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
             ROC_data[method]['tn_l'][j] += l_ROC_data[i]['tn_l'][j]
             ROC_data[method]['delay_l'][j] += l_ROC_data[i]['delay_l'][j]
        
-    return ROC_data, param_idx, custom_params
+    return ROC_data, l_param_idx, custom_params
 
 def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
 
@@ -373,7 +376,10 @@ if __name__ == '__main__':
                  help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing',
                  help='type the desired task name')
-
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
+                 help='Enable cpu mode')
     opt, args = p.parse_args()
 
     rf_center     = 'kinEEPos'        
@@ -382,7 +388,7 @@ if __name__ == '__main__':
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
         task     = opt.task    
-        feature_list = ['unimodal_audioWristRMS',\
+        handFeatures = ['unimodal_audioWristRMS',\
                         'unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
@@ -395,7 +401,7 @@ if __name__ == '__main__':
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
                           'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -499,7 +505,7 @@ if __name__ == '__main__':
 
         #temp
         nPoints        = 10
-        ROC_param_dict = {'methods': ['cssvm'],\
+        ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -511,7 +517,7 @@ if __name__ == '__main__':
         nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                      'w_negative': np.arange(1.0, 10.0) }
+                      'w_negative': np.linspace(0.5, 2.0, 5) }
 
     else:
         print "Selected task name is not available."
@@ -527,18 +533,18 @@ if __name__ == '__main__':
     method = parameters['method'][0]
     score_list = []
     print "max_param_idx = ", max_param_idx
+    result_pkl = './result_'+task+'.pkl'
 
     ##################################################################################################
     # cpu version
-    if True:
+    if opt.bCPU:
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
 
         ## nFiles = 2
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
         ##               'svm_degree': [3], 'svm_nu': [0.5], 'svm_w_negative': [7.0]}
-
-        if os.path.isfile('./temp.pkl') is False:
+        if os.path.isfile(result_pkl) is False:
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
@@ -547,9 +553,9 @@ if __name__ == '__main__':
                                                                                n_jobs=-1)
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
 
-            ut.save_pickle(results, './temp.pkl')
+            ut.save_pickle(results, result_pkl)
         else:
-            results = ut.load_pickle('./temp.pkl')
+            results = ut.load_pickle(result_pkl)
 
         ## plt.figure()
         for result in results:
@@ -598,31 +604,44 @@ if __name__ == '__main__':
                                                                            
     else:
 
-        if os.path.isfile('./temp.pkl') is False:
+        if os.path.isfile(result_pkl) is False:
 
             cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
                                              '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
                                              os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu')
             cloud.run_with_local_data(parameters, save_data_path, task, nFiles, param_dict )
+            print len(cloud.client)
 
 
             # wait until finishing parameter search
+            time1 = time.time()
             while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
                 print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
                 time.sleep(5)
-
+                print "Std out"
+                print "===================================="
+                cloud.print_stdout()
+                print "===================================="
             results = cloud.get_completed_results()
+            time2 = time.time()
             print "===================================="
             print "Result"
             print "===================================="
             for result in results:        
                 print result
             print "===================================="
+            print "time"
+            print time2-time1
+            print "===================================="
+            #print "Std out"
+            #print "===================================="
+            #cloud.print_stdout()
+            #print "===================================="
             import hrl_lib.util as ut
-            ut.save_pickle(results, './temp.pkl')            
+            ut.save_pickle(results, result_pkl)            
         else:
             import hrl_lib.util as ut
-            results = ut.load_pickle('./temp.pkl')
+            results = ut.load_pickle(result_pkl)
 
         
         for i in xrange(max_param_idx):
@@ -674,6 +693,6 @@ if __name__ == '__main__':
         for i in xrange(len(score_list)):
             print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
             
-        cloud.stop()
+        #cloud.stop()
         cloud.flush()
         print "Finished"

@@ -3,10 +3,10 @@ var ManipulationTask = function (ros) {
     var manTask = this;
     manTask.ros = ros;
     //Topic used in manTask
-    manTask.USER_INPUT_TOPIC = "user_input";
-    manTask.USER_FEEDBACK_TOPIC = "user_feedback";
-    manTask.EMERGENCY_TOPIC = "emergency";
-    manTask.STATUS_TOPIC = "status";
+    manTask.USER_INPUT_TOPIC = "manipulation_task/user_input";
+    manTask.USER_FEEDBACK_TOPIC = "manipulation_task/user_feedback";
+    manTask.EMERGENCY_TOPIC = "manipulation_task/emergency";
+    manTask.STATUS_TOPIC = "manipulation_task/status";
     //status_topic
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -17,6 +17,7 @@ var ManipulationTask = function (ros) {
         var msg = new manTask.ros.Message({
           data: 'Scooping'
         });
+        assistive_teleop.log('Please, follow the step 2 to select the action.');
         manTask.statusPub.publish(msg);
     };
 
@@ -24,6 +25,7 @@ var ManipulationTask = function (ros) {
         var msg = new manTask.ros.Message({
           data: 'Feeding'
         });
+        assistive_teleop.log('Please, follow the step 2 to select the action.');
         manTask.statusPub.publish(msg);
     };
 
@@ -31,6 +33,7 @@ var ManipulationTask = function (ros) {
         var msg = new manTask.ros.Message({
           data: 'Both'
         });
+        assistive_teleop.log('Please, follow the step 2 to select the action.');
         manTask.statusPub.publish(msg);
     };
 
@@ -60,6 +63,7 @@ var ManipulationTask = function (ros) {
         });
         manTask.userInputPub.publish(msg);
         assistive_teleop.log('Starting the manipulation task');
+        assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
         console.log('Publishing Start msg to manTask system.');
     };
 
@@ -69,6 +73,7 @@ var ManipulationTask = function (ros) {
         });
         manTask.emergencyPub.publish(msg);
         assistive_teleop.log('Stopping the manipulation task');
+        assistive_teleop.log('Please, press "Continue" to re-start the action. Or re-start from step 1.');
         console.log('Publishing Stop msg to manTask system.');
     };
 
@@ -78,6 +83,7 @@ var ManipulationTask = function (ros) {
         });
         manTask.userInputPub.publish(msg);
         assistive_teleop.log('Continuing the manipulation task');
+        assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
         console.log('Publishing Continue msg to manTask system.');
     };
     // Function to report the feedback
@@ -99,19 +105,121 @@ var ManipulationTask = function (ros) {
         console.log('Reporting the feedback message.');
     };
 
+
+    //part added.
+    manTask.feedbackSub = new manTask.ros.Topic({
+        name: 'manipulation_task/feedbackRequest',
+        messageType: 'std_msgs/String'});
+    manTask.feedbackSub.subscribe(function (msg) {
+        assistive_teleop.log(msg.data);
+        if(msg.data=="Requesting Feedback!") {
+        //assistive_teleop.log("worked?");
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","1.0");
+        $('#man_task_Fail').css("opacity","1.0");
+        $('#man_task_start').css("opacity","0.6");
+        }
+
+    });
+
+
 };
 
 var initManTaskTab = function() {
   assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
   assistive_teleop.log('initiating manipulation Task');
 
-    $('#man_task_Scooping').click(function(){assistive_teleop.manTask.scoop();});
-    $('#man_task_Feeding').click(function(){assistive_teleop.manTask.feed();});
-    $('#man_task_Both').click(function(){assistive_teleop.manTask.both();});
-    $('#man_task_start').click(function(){assistive_teleop.manTask.start();});
-    $('#man_task_stop').click(function(){assistive_teleop.manTask.stop();});
-    $('#man_task_Continue').click(function(){assistive_teleop.manTask.continue_();});
-    $('#man_task_success').click(function(){assistive_teleop.manTask.success();});
-    $('#man_task_Fail').click(function(){assistive_teleop.manTask.failure();});
+    $('#man_task_Scooping').click(function(){
+        assistive_teleop.manTask.scoop();
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_start').css("opacity","1.0");
+    });
+    $('#man_task_Feeding').click(function(){
+        assistive_teleop.manTask.feed();
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_start').css("opacity","1.0");
+    });
+    $('#man_task_Both').click(function(){
+        assistive_teleop.manTask.both();
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6"); 
+        $('#man_task_start').css("opacity","1.0");
+    });
+    $('#man_task_start').click(function(){
+        assistive_teleop.manTask.start();
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","1.0"); 
+    });
+    $('#man_task_stop').click(function(){
+        assistive_teleop.manTask.stop();
+        $('#man_task_Scooping').css("opacity","1.0");
+        $('#man_task_Feeding').css("opacity","1.0");
+        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_start').css("opacity","1.0");
+        $('#man_task_Continue').css("opacity","1.0");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6"); 
+    });
+    $('#man_task_Continue').click(function(){
+        assistive_teleop.manTask.continue_();
+        $('#man_task_Scooping').css("opacity","0.6");
+        $('#man_task_Feeding').css("opacity","0.6");
+        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","1.0"); 
+    });
+    $('#man_task_success').click(function(){
+        assistive_teleop.manTask.success();
+        $('#man_task_Scooping').css("opacity","1.0");
+        $('#man_task_Feeding').css("opacity","1.0");
+        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6"); 
+    });
+    $('#man_task_Fail').click(function(){
+        assistive_teleop.manTask.failure();
+        $('#man_task_Scooping').css("opacity","1.0");
+        $('#man_task_Feeding').css("opacity","1.0");
+        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");  
+    });
 
 }

@@ -56,6 +56,9 @@ from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
 
+##GUI
+from std_msgs.msg import String
+
 class logger:
     def __init__(self, ft=False, audio=False, audio_wrist=False, kinematics=False, vision_artag=False, \
                  vision_change=False, pps=False, skin=False, \
@@ -71,7 +74,14 @@ class logger:
         self.verbose  = verbose
         
         self.initParams()
-        
+        ##GUI implementation       
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
+        self.feedbackMSG = 0
+        self.feedbackStatus = 0        
+        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String)
+
+
+        self.audio_kinect  = kinect_audio() if audio else None
         self.audio_kinect  = kinect_audio() if audio else None
         self.audio_wrist   = wrist_audio() if audio_wrist else None
         self.kinematics    = robot_kinematics() if kinematics else None
@@ -88,7 +98,20 @@ class logger:
             t = threading.Thread(target=self.runDataPub)
             t.setDaemon(True)
             t.start()
-        
+ 
+
+    ##GUI implementation
+    def feedbackCallback(self, data):
+    #Just...log? idk where this one will go. I assume it is integrated with log....
+        self.feedbackMSG = data.data
+        print "Logger feedback received"
+        if self.feedbackMSG == "SUCCESS":
+            self.feedbackStatus = '1'
+        else:
+            self.feedbackStatus = '2'
+
+
+       
     def initParams(self):
         '''
         # load parameters
@@ -213,6 +236,93 @@ class logger:
         rospy.sleep(1.0)
 
 
+
+##GUI section
+    def close_log_file_GUI(self, bCont=False, last_status='skip'):
+
+        ## # logging by callback
+        ## # disable logging
+        ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
+        ## if self.kinematics is not None: self.kinematics.enable_log = False
+        ## if self.audio_wrist is not None: self.audio_wrist.cancelled = True
+        
+        ## # log into data
+        ## if self.audio_kinect is not None: 
+        ##     self.data['audio_time']    = self.audio_kinect.time_data            
+        ##     self.data['audio_azimuth'] = self.audio_kinect.audio_azimuth
+        ##     self.data['audio_power']   = self.audio_kinect.audio_power
+        
+        ## if self.kinematics is not None:
+        ##     self.data['kinematics_time']        = self.kinematics.time_data
+        ##     self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
+        ##     self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
+        ##     self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
+        ##     self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
+        ##     self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
+        ##     self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
+        ##     self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
+
+        # logging by thread 
+        self.enable_log_thread = False
+
+        ## # log thread data
+        ## if self.audio_wrist is not None: 
+        ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
+        ##     ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
+        ##     ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
+        ##     self.data['audio_wrist_rms']   = audio_wrist_rms
+        ##     self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
+
+        flag = 0
+        self.feedbackStatus = 0
+        self.consolePub.publish("Requesting Feedback!") 
+        if bCont:
+            status = last_status
+        else:
+            while flag == 0 and not rospy.is_shutdown():
+                flag = self.feedbackStatus
+                #print "Enter Feedback"
+                #print self.feedbackStatus
+            if flag == '1':   status = 'success'
+            elif flag == '2': status = 'failure'
+            elif flag == '3': status = 'skip'
+            else: status = flag
+            print flag
+            self.feedbackStatus=0
+            print status
+
+        if status == 'success' or status == 'failure':
+            if status == 'failure':
+                #failure_class = raw_input('Enter failure reason if there is: ')
+                failure_class = "GUI_feedback"
+            if not os.path.exists(self.folderName): os.makedirs(self.folderName)
+
+            # get next file id
+            if status == 'success':
+                fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[0]
+            else:
+                fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)[1]
+            test_id = -1
+            if len(fileList)>0:
+                for f in fileList:            
+                    if test_id < int((os.path.split(f)[1]).split('_')[1]):
+                        test_id = int((os.path.split(f)[1]).split('_')[1])
+
+            if status == 'failure':        
+                fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+            else:
+                fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
+
+            print 'Saving to', fileName
+            ut.save_pickle(self.data, fileName)
+
+        gc.collect()
+        rospy.sleep(1.0)
+
+
+
+
+
     def enableDetector(self, enableFlag):
         print "Wait anomaly detector service"
         rospy.wait_for_service('anomaly_detector_enable/'+self.task)
@@ -323,11 +433,11 @@ class logger:
                 msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
             # TODO
-            ## if self.audio_wrist is not None: 
-            ##     if len(self.audio_wrist.audio_data) <2: continue
-            ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
-            ##     msg.audio_wrist_rms       = audio_wrist_rms
-            ##     msg.audio_wrist_mfcc      = audio_wrist_mfcc
+            if self.audio_wrist is not None: 
+                ##     if len(self.audio_wrist.audio_data) <2: continue
+                ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
+                msg.audio_wrist_rms       = self.audio_wrist.audio_rms
+                msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
@@ -509,7 +619,8 @@ class logger:
 if __name__ == '__main__':
 
     subject = 'gatsbii'
-    task    = 'pushing_microwhite'
+    ## task    = 'pushing_microwhite'
+    task    = 'scooping'
     verbose = True
     data_pub= True
 
