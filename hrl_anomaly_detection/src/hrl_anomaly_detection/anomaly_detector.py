@@ -27,7 +27,6 @@
 
 # system
 import rospy
-import roslib
 import random
 import os, sys
 
@@ -66,7 +65,6 @@ class anomaly_detector:
         self.enable_detector = False
         self.soundHandle = SoundClient()
         self.dataList = []
-        self.data_dict = {}
 
         # Params
         self.param_dict = param_dict        
@@ -111,8 +109,8 @@ class anomaly_detector:
             self.rf_center = self.param_dict['data_param']['rf_center']
             self.downSampleSize = self.param_dict['data_param']['downSampleSize']
             self.handFeatures = self.param_dict['data_param']['handFeatures']
-            self.data_ext    = self.param_dict['data_param']['lowVarDataRemv']
-            self.cut_data    = self.param_dict['data_param']['cut_data']
+            self.data_ext     = self.param_dict['data_param']['lowVarDataRemv']
+            self.cut_data     = self.param_dict['data_param']['cut_data']
             self.nNormalFold   = self.param_dict['data_param']['nNormalFold']
             self.nAbnormalFold = self.param_dict['data_param']['nAbnormalFold']
 
@@ -122,9 +120,10 @@ class anomaly_detector:
 
             self.SVM_dict  = self.param_dict['SVM']
 
+        self.data_dict = {}
 
         # Discriminative classifier
-        self.threshold = -200.0
+        ## self.threshold = -200.0
 
     '''
     Subscribe raw data
@@ -159,10 +158,10 @@ class anomaly_detector:
 
 
         # dim x sample x length # TODO: what is the best selection?
-        normalTrainData   = successData[:, normalTrainIdx, :] * self.scale
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * self.scale # will not be used...?
-        normalTestData    = successData[:, normalTestIdx, :] * self.scale
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] * self.scale
+        normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
+        abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
+        normalTestData    = dd['successData'][:, normalTestIdx, :] * self.scale
+        abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :] * self.scale
 
         # training hmm
         self.nEmissionDim   = len(normalTrainData)
@@ -182,7 +181,7 @@ class anomaly_detector:
         #-----------------------------------------------------------------------------------------
         testDataX = []
         testDataY = []
-        for i in xrange(nEmissionDim):
+        for i in xrange(self.nEmissionDim):
             temp = np.vstack([normalTestData[i], abnormalTestData[i]])
             testDataX.append( temp )
 
@@ -294,7 +293,7 @@ class anomaly_detector:
 
     def extractLocalFeature(self):
         # Unimoda feature - Audio --------------------------------------------
-        if 'unimodal_audioPower' in self.feature_list:
+        if 'unimodal_audioPower' in self.handFeatures:
             ang_max, ang_min = util.getAngularSpatialRF(self.kinematics_ee_pos, self.rf_radius)
             if ang_min < self.audio_azimuth < ang_max:
                 self.data_dict['audioPowerList'] = [self.audio_power]
@@ -302,32 +301,33 @@ class anomaly_detector:
                 self.data_dict['audioPowerList'] = [0.0]
 
         # Unimodal feature - AudioWrist ---------------------------------------
-        if 'unimodal_audioWristRMS' in self.feature_list:
+        if 'unimodal_audioWristRMS' in self.handFeatures:
             self.data_dict['audioWristRMSList'] = [self.audio_wrist_rms]
+            ## self.data_dict['audioWristMFCCList'].append(audio_mfcc)
 
         # Unimodal feature - Kinematics --------------------------------------
-        if 'unimodal_kinVel' in self.feature_list:
+        if 'unimodal_kinVel' in self.handFeatures:
             print 'unimodal_kinVel not implemented'
 
         # Unimodal feature - Force -------------------------------------------
-        if 'unimodal_ftForce' in self.feature_list:
+        if 'unimodal_ftForce' in self.handFeatures:
             self.data_dict['ftForceList'].append(self.ft_force)
             self.data_dict['ftTorqueList'].append(self.ft_torque)
 
         # Unimodal feature - pps -------------------------------------------
-        if 'unimodal_ppsForce' in self.feature_list:
+        if 'unimodal_ppsForce' in self.handFeatures:
             self.data_dict['ppsLeftList'] = [self.pps_skin_left]
             self.data_dict['ppsRightList'] = [self.pps_skin_right]
             self.data_dict['kinTargetPosList'] = [self.kinematics_target_pos]
 
         # Unimodal feature - vision change ------------------------------------
-        if 'unimodal_visionChange' in self.feature_list:
+        if 'unimodal_visionChange' in self.handFeatures:
             vision_centers = np.array([self.vision_change_centers_x, self.vision_change_centers_y, self.vision_change_centers_z])
             self.data_dict['visionChangeMagList'] = [len(vision_centers[0])]
             print 'unimodal_visionChange may not be implemented properly'
 
         # Unimodal feature - fabric skin ------------------------------------
-        if 'unimodal_fabricForce' in self.feature_list:
+        if 'unimodal_fabricForce' in self.handFeatures:
             fabric_skin_values  = [self.fabric_skin_values_x, self.fabric_skin_values_y, self.fabric_skin_values_z]
             if not fabric_skin_values[0]:
                 self.data_dict['fabricMagList'] = [0]
@@ -335,23 +335,23 @@ class anomaly_detector:
                 self.data_dict['fabricMagList'] = [np.sum( np.linalg.norm(np.array(fabric_skin_values), axis=0) )]
 
         # Crossmodal feature - relative dist --------------------------
-        if 'crossmodal_targetEEDist' in self.feature_list:
+        if 'crossmodal_targetEEDist' in self.handFeatures:
             self.data_dict['kinEEPosList'] = [self.kinematics_ee_pos]
 
         # Crossmodal feature - relative angle --------------------------
-        if 'crossmodal_targetEEAng' in self.feature_list:
+        if 'crossmodal_targetEEAng' in self.handFeatures:
             self.data_dict['kinEEQuatList'] = [self.kinematics_ee_quat]
             self.data_dict['kinTargetQuatList'] = [self.kinematics_target_quat]
 
         # Crossmodal feature - vision relative dist with main(first) vision target----
-        if 'crossmodal_artagEEDist' in self.feature_list:
+        if 'crossmodal_artagEEDist' in self.handFeatures:
             self.data_dict['visionArtagPosList'] = [self.vision_artag_pos]
 
         # Crossmodal feature - vision relative angle --------------------------
-        if 'crossmodal_artagEEAng' in self.feature_list:
+        if 'crossmodal_artagEEAng' in self.handFeatures:
             self.data_dict['visionArtagQuatList'] = [self.vision_artag_quat]
 
-        data, param_dict = dm.extractHandFeature(self.data_dict, self.feature_list, scale=self.scale)
+        data, param_dict = dm.extractHandFeature(self.data_dict, self.handFeatures, scale=self.scale)
 
         return data
 
@@ -371,7 +371,7 @@ class anomaly_detector:
         while not rospy.is_shutdown():
             if self.enable_detector is False: continue
 
-            # extract feature
+            # extract feature ???????????????????????????????????????
             self.dataList.append( self.extractLocalFeature() )
 
             if len(np.shape(self.dataList)) == 1: continue
@@ -422,11 +422,11 @@ if __name__ == '__main__':
 
     if opt.task == 'scooping':
     
-        subject_names     = ['gatsbii']
+        subject_names     = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2']
         task_name         = opt.task
         check_method      = 'progress_time_cluster' # cssvm
         raw_data_path     = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_demo_data'
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/demo'
         training_data_pkl = task_name+'_dataSet' #??
 
         handFeatures = ['unimodal_audioWristRMS',\
@@ -443,7 +443,8 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
         HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, 'class_weight': }
+        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                          'class_weight': 1.4e-3}
 
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
