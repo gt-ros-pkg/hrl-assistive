@@ -376,7 +376,10 @@ if __name__ == '__main__':
                  help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing',
                  help='type the desired task name')
-
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
+                 help='Enable cpu mode')
     opt, args = p.parse_args()
 
     rf_center     = 'kinEEPos'        
@@ -385,7 +388,7 @@ if __name__ == '__main__':
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
         task     = opt.task    
-        feature_list = ['unimodal_audioWristRMS',\
+        handFeatures = ['unimodal_audioWristRMS',\
                         'unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
@@ -398,7 +401,7 @@ if __name__ == '__main__':
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
                           'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -502,7 +505,7 @@ if __name__ == '__main__':
 
         #temp
         nPoints        = 10
-        ROC_param_dict = {'methods': ['cssvm'],\
+        ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -514,7 +517,7 @@ if __name__ == '__main__':
         nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                      'w_negative': np.arange(1.0, 10.0) }
+                      'w_negative': np.linspace(0.5, 2.0, 5) }
 
     else:
         print "Selected task name is not available."
@@ -533,7 +536,7 @@ if __name__ == '__main__':
 
     ##################################################################################################
     # cpu version
-    if False:
+    if opt.bCPU:
         ## cross_validate_cpu(save_data_path, task, nFiles, param_dict, parameters)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
 

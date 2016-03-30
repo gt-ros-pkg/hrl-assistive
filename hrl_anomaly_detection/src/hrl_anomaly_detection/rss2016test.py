@@ -1339,7 +1339,7 @@ if __name__ == '__main__':
         task     = opt.task    
         ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
         ##                 'crossmodal_targetEEAng']
-        feature_list = ['unimodal_audioWristRMS',\
+        handFeatures = ['unimodal_audioWristRMS',\
                         ## 'unimodal_audioPower',\
                         ## 'unimodal_kinVel',\
                         'unimodal_ftForce',\
@@ -1359,7 +1359,7 @@ if __name__ == '__main__':
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
                           'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
+                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
         AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -1451,14 +1451,14 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
-                          'add_option': None, 'rawFeatures': rawFeatures}
+                          'add_option': True, 'rawFeatures': rawFeatures}
                           ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}

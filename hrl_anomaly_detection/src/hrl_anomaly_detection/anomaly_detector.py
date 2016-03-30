@@ -52,13 +52,13 @@ from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String
 
 class anomaly_detector:
-    def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path, training_data_pkl):
+    def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path, training_data_pkl,\
+                 param_dict):
         rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
         self.task_name         = task_name
-        self.check_method      = check_method
         self.raw_data_path     = raw_data_path
         self.save_data_path    = save_data_path
         self.training_data_pkl = os.path.join(save_data_path, training_data_pkl)
@@ -68,28 +68,10 @@ class anomaly_detector:
         self.dataList = []
         self.data_dict = {}
 
-        self.feature_list = ['unimodal_audioPower',
-                             # 'unimodal_audioWristRMS',
-                             # 'unimodal_kinVel',
-                             'unimodal_ftForce',
-                             'unimodal_ppsForce',
-                             # 'unimodal_visionChange',
-                             'unimodal_fabricForce',
-                             'crossmodal_targetEEDist',
-                             'crossmodal_targetEEAng',
-                             'crossmodal_artagEEDist']
-                             # 'crossmodal_artagEEAng']
-
         # Params
-        self.classifier_method = None
-        self.rf_radius = None
-        self.rf_center = None
-        self.downSampleSize = None
-        self.feature_list = None
-        self.nState = None
-        self.cov_mult = None
-        self.scale = None
-        self.threshold = None
+        self.param_dict = param_dict        
+        self.classifier_method = check_method
+        
         self.nEmissionDim = None
         self.ml = None
         self.classifier = None
@@ -107,15 +89,35 @@ class anomaly_detector:
     Load feature list
     '''
     def initParams(self):
-        self.rf_radius = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_radius')
-        self.rf_center = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_center')
-        self.downSampleSize = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/downSampleSize')
-        self.feature_list = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/feature_list')
 
-        # Generative modeling
-        self.nState    = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/states')
-        self.cov_mult  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
-        self.scale     = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/scale')
+        if False:
+            # data
+            self.rf_radius = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_radius')
+            self.rf_center = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/rf_center')
+            self.downSampleSize = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/downSampleSize')
+            self.handFeatures = rospy.get_param('hrl_manipulation_task/'+self.task_name+'/feature_list')
+            self.data_ext = False
+
+            # Generative modeling
+            self.nState = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/states')
+            self.cov    = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/cov_mult')
+            self.scale  = rospy.get_param('hrl_anomaly_detection/'+self.task_name+'/scale')
+        else:
+            self.rf_radius = self.param_dict['data_param']['local_range']
+            self.rf_center = self.param_dict['data_param']['rf_center']
+            self.downSampleSize = self.param_dict['data_param']['downSampleSize']
+            self.handFeatures = self.param_dict['data_param']['handFeatures']
+            self.data_ext = self.param_dict['data_param']['lowVarDataRemv']
+            self.cut_data = self.param_dict['data_param']['cut_data']
+
+            self.nState = self.param_dict['HMM']['nState']
+            self.cov    = self.param_dict['HMM']['cov']
+            self.scale  = self.param_dict['HMM']['scale']
+
+            self.svm_w_neg = self.param_dict['SVM']['w_negative']
+            self.svm_gamma = self.param_dict['SVM']['gamma']
+            self.svm_cost  = self.param_dict['SVM']['cost']
+
 
         # Discriminative classifier
         self.threshold = -200.0
@@ -134,24 +136,34 @@ class anomaly_detector:
         self.detection_service = rospy.Service('anomaly_detector_enable/' + self.task_name, Bool_None, self.enablerCallback)
 
     def initDetector(self):
-        _, successData, failureData, _ = dm.getDataSet(self.subject_names, self.task_name,
-                                                         self.raw_data_path, self.save_data_path,
-                                                         self.rf_center, self.rf_radius,
-                                                         downSampleSize=self.downSampleSize,
-                                                         scale=self.scale,
-                                                         feature_list=self.feature_list)
+
+        dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
+                           self.save_data_path, self.rf_center, \
+                           self.rf_radius,\
+                           downSampleSize=self.downSampleSize, \
+                           scale=1.0,\
+                           ae_data=False,\
+                           data_ext=self.data_ext,\
+                           handFeatures=self.handFeatures, \
+                           cut_data=self.cut_data,\
+                           data_renew=False)
+                           
+        successData = dd['successData'] * self.scale
+        failureData = dd['failureData'] * self.scale
+
         # index selection
         success_idx  = range(len(successData[0]))
         failure_idx  = range(len(failureData[0]))
 
-        nTrain = int( 0.5*len(success_idx) )
-        train_idx = random.sample(success_idx, nTrain)
+        ## 0.5?
+        nTrain           = int( 0.5*len(success_idx) )
+        train_idx        = random.sample(success_idx, nTrain)
         success_test_idx = [x for x in success_idx if not x in train_idx]
         failure_test_idx = failure_idx
 
         # data structure: dim x sample x sequence
-        trainingData = successData[:, train_idx, :]
-        normalClassifierData = successData[:, success_test_idx, :]
+        trainingData           = successData[:, train_idx, :]
+        normalClassifierData   = successData[:, success_test_idx, :]
         abnormalClassifierData = failureData[:, failure_test_idx, :]
 
         print "======================================"
@@ -161,8 +173,8 @@ class anomaly_detector:
         print "======================================"
 
         # training hmm
-        self.nEmissionDim = len(trainingData)
-        detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'.pkl')
+        self.nEmissionDim   = len(trainingData)
+        detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
         self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
         ret = self.ml.fit(trainingData, cov_mult=[self.cov_mult]*self.nEmissionDim**2,
                           ml_pkl=detection_param_pkl, use_pkl=True)
@@ -405,13 +417,49 @@ class anomaly_detector:
             rate.sleep()
 
 if __name__ == '__main__':
-    subject_names     = ['gatsbii']
-    task_name         = 'scooping'
-    check_method      = 'progress_time_cluster' # cssvm
-    raw_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-    save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data'
-    training_data_pkl = task_name+'_dataSet'
 
-    ad = anomaly_detector(subject_names, task_name, check_method, raw_data_path, save_data_path, training_data_pkl)
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--task', action='store', dest='task', type='string', default='scooping',
+                 help='type the desired task name')
+    opt, args = p.parse_args()
+
+    if opt.task == 'scooping':
+    
+        subject_names     = ['gatsbii']
+        task_name         = opt.task
+        check_method      = 'progress_time_cluster' # cssvm
+        raw_data_path     = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_demo_data'
+        training_data_pkl = task_name+'_dataSet' #??
+
+        handFeatures = ['unimodal_audioWristRMS',\
+                        ## 'unimodal_audioPower',\
+                        ## 'unimodal_kinVel',\
+                        'unimodal_ftForce',\
+                        ##'unimodal_visionChange',\
+                        ## 'unimodal_ppsForce',\
+                        ##'unimodal_fabricForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+
+        data_param_dict= {'renew': False, 'rf_center': 'kinEEPos', 'local_range': 10.,\
+                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
+                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
+        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
+                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
+        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
+
+        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                      'SVM': SVM_param_dict}
+    else:
+        sys.exit()
+
+
+    ad = anomaly_detector(subject_names, task_name, check_method, raw_data_path, save_data_path, \
+                          training_data_pkl, param_dict)
     ad.run()
 
