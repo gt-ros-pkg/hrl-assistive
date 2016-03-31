@@ -13,10 +13,20 @@
     left: 0%;
 }
 
+
 .gripper-ctrl-cont > .gripper-slider {
     width: 86%;
     height: 25%;
     margin-left: 7%;
+}
+
+.gripper-ctrl-cont  span.ui-slider-handle {
+    height: 160%;
+    width: 10%;
+    top: -30%;
+    margin-left: -5%; /* width/2 */
+    background: rgba(42,42,42,1);
+    border: 2px solid rgba(82,82,82,0.87);
 }
 
 .grab {
