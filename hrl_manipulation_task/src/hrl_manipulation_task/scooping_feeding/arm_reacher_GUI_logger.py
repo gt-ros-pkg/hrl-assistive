@@ -59,7 +59,7 @@ class armReacherGUI:
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/InterruptAction", String)
+        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)
         
 
         #variables
@@ -282,64 +282,24 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
+    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
+                 default=False, help='Enable anomaly detector.')
     opt, args = p.parse_args()
-
     rospy.init_node('arm_reach_client')
-
 
     ## rospy.sleep(2.0)    
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
     
-    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
-                 vision_change=False, \
-                 pps=True, skin=False, \
-                 subject="Failure", task='scooping', data_pub=opt.bDataPub, verbose=False)
-
-#    log = None
+    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
+                 vision_change=False, pps=True, skin=False, \
+                 subject="demo", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                 verbose=False)
 
     last_trial  = '4'
     last_detect = '2'
 
-    detection_flag = False
-
     gui = armReacherGUI()
-
     rospy.spin()
 
-                 
-##    while not rospy.is_shutdown():
-
-##        detection_flag = False
-        #GUI = armReacherGUI()
-##        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingNormalTrain, 5:scoopingAbnormalTrain, else: exit): ')
-  ##      if trial=='': trial=last_trial
-            
-    ##    if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
-      ##      detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
-        ##    if detect == '': detect=last_detect
-          ##  if detect == '1': detection_flag = True
-            
-            ##if trial == '1':
-#                scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
- #           elif trial == '4':
-  #              scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True)
-   #         elif trial == '5':
-    #            scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True, abnormal=True)
-     #       elif trial == '2':
-      #          feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
-       #     else:
-        #        scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
-         #       feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
-#        else:
- #           break
-#
-  #      last_trial  = trial
-   #     last_detect = detect
-    
-    ## t1 = datetime.datetime.now()
-    ## t2 = datetime.datetime.now()
-    ## t  = t2-t1
-    ## print "time delay: ", t.seconds
-    
 

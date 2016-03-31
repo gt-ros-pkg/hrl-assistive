@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy
 import os, sys, threading, copy
 import gc
 
@@ -64,12 +64,13 @@ class logger:
                  vision_change=False, pps=False, skin=False, \
                  subject=None, task=None, \
                  record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
-                 data_pub= False, verbose=False):
+                 data_pub= False, detector=False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
         self.task     = task
         self.data_pub = data_pub
+        self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
         
@@ -107,8 +108,10 @@ class logger:
         print "Logger feedback received"
         if self.feedbackMSG == "SUCCESS":
             self.feedbackStatus = '1'
-        else:
+        elif self.feedbackMSG == "FAIL":
             self.feedbackStatus = '2'
+        else:
+            self.feedbackStatus = '3'
 
 
        
@@ -123,14 +126,28 @@ class logger:
         '''
         Record data and publish raw data
         '''        
-        self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+        if self.data_pub:
+            self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+        if self.ad_flag:
+            print "Wait anomaly detector service"
+            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
+            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
 
+        
     def setTask(self, task):
+        '''
+        Set a current task
+        '''
         self.task = task
 
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
 
+        if self.ad_flag:
+            print "Wait anomaly detector service"
+            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
+            self.ad_srv   = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            
         
     def log_start(self):
         self.init_time = rospy.get_rostime().to_sec()
@@ -319,14 +336,8 @@ class logger:
         rospy.sleep(1.0)
 
 
-
-
-
     def enableDetector(self, enableFlag):
-        print "Wait anomaly detector service"
-        rospy.wait_for_service('anomaly_detector_enable/'+self.task)
-        s   = rospy.ServiceProxy('anomaly_detector_enable/'+self.task, Bool_None)
-        ret = s(enableFlag)
+        ret = self.ad_srv(enableFlag)
 
         
     def waitForReady(self):
@@ -622,12 +633,13 @@ if __name__ == '__main__':
     task    = 'scooping'
     verbose = True
     data_pub= True
+    detector= False
 
     rospy.init_node('record_data')
     log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
-                 data_pub=data_pub)
+                 data_pub=data_pub, detector=detector)
 
     rospy.sleep(1.0)
     log.run()

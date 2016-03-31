@@ -55,7 +55,7 @@ class armReacherGUI:
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/InterruptAction", String)
+        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)
         
 
         #variables

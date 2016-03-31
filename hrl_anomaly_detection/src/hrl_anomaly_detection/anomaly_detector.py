@@ -53,7 +53,7 @@ from std_msgs.msg import String
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict):
-        rospy.init_node(task_name)
+        ## rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
@@ -74,8 +74,6 @@ class anomaly_detector:
         self.classifier = None
 
         # Comms
-        self.action_interruption_pub = None
-        self.detection_service = None
         self.lock = threading.Lock()        
 
         self.initParams()
@@ -129,7 +127,8 @@ class anomaly_detector:
     '''
     def initComms(self):
         # Publisher
-        self.action_interruption_pub = rospy.Publisher('/InterruptAction', String)
+        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String)
+        self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String)
 
         # Subscriber
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
@@ -435,6 +434,7 @@ class anomaly_detector:
             if est_y > 0.0:
                 print '-'*15, 'Anomaly has occured!', '-'*15
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
+                self.task_interruption_pub.publish(self.task_name+'_anomaly')
                 self.soundHandle.play(2)
                 self.enable_detector = False
                 self.reset()

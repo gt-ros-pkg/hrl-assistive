@@ -90,7 +90,7 @@ class armReachAction(mpcBaseAction):
         self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped, latch=True)
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped, latch=True)
         
-        rospy.Subscriber('InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
         ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/ar_track_alvar/mouth_pose',
