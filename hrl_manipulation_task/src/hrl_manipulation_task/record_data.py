@@ -236,7 +236,6 @@ class logger:
         rospy.sleep(1.0)
 
 
-
 ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
 
@@ -433,11 +432,11 @@ class logger:
                 msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
             # TODO
-            ## if self.audio_wrist is not None: 
-            ##     if len(self.audio_wrist.audio_data) <2: continue
-            ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
-            ##     msg.audio_wrist_rms       = audio_wrist_rms
-            ##     msg.audio_wrist_mfcc      = audio_wrist_mfcc
+            if self.audio_wrist is not None: 
+                ##     if len(self.audio_wrist.audio_data) <2: continue
+                ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
+                msg.audio_wrist_rms       = self.audio_wrist.audio_rms
+                msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()

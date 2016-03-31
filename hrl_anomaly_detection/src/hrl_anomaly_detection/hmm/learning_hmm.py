@@ -103,7 +103,7 @@ class learning_hmm(learning_base):
             self.pi = param_dict['pi']                       
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                            self.A, self.B, self.pi)
-
+            return True
         else:
            
             if ml_pkl is None:
@@ -168,8 +168,8 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
-        if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-        return ret
+            if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
+            return ret
                                
 
     ## def predict(self, X):
@@ -236,32 +236,30 @@ class learning_hmm(learning_base):
         return p
 
 
-    def loglikelihoods(self, X, bPosterior=False, startIdx=1, n_jobs=1):
+    def loglikelihoods(self, X, bPosterior=False, startIdx=1):
         '''
         X: dimension x sample x length
         return: the likelihoods over time (in single data)
         '''
-
         # sample x some length
         X_test = util.convert_sequence(X, emission=False)
         ## X_test = np.squeeze(X_test)
 
-
         ll_likelihoods = []
         ll_posteriors  = []        
-
-        for i in xrange(len(X)):
+        for i in xrange(len(X[0])):
             l_likelihood = []
             l_posterior  = []        
 
-            for j in xrange(startIdx, len(X[i])):
-                final_ts_obj = ghmm.EmissionSequence(self.F, X_test[i, :j*self.nEmissionDim].tolist())
+            for j in xrange(startIdx, len(X[0][i])):
+                final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
 
                 try:
                     logp = self.ml.loglikelihood(final_ts_obj)
                     if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
                 except:
-                    print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                    if self.verbose: 
+                        print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                     ## return False, False # anomaly
                     continue
 

@@ -48,7 +48,7 @@ from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 class classifier(learning_base):
-    def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=None,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
                  class_weight=1.0, \
                  # svm
                  svm_type    = 0,\
