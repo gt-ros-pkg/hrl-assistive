@@ -125,33 +125,119 @@ RFH.Undo = function (options) {
     /*/////////////  END RIGHT ARM UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/
+    // Keep separate variable for grabbing/position.
+    self.states.lGripper = lGripper.getState() < 0.01 ? 'grab' : 'position';
+
+    var $lGripperPreviewHandleLeft = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
+    var $lGripperPreviewHandleRight = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
+    var $lGripperSlider = $('#lGripperCtrlContainer > .gripper-slider');
+    $lGripperSlider.append([$lGripperPreviewHandleLeft, $lGripperPreviewHandleRight]);
+    var lGripperMin = $lGripperSlider.slider('option','min');
+    var lGripperMax = $lGripperSlider.slider('option','max');
+    var lGripperRange = lGripperMax - lGripperMin;
+    var lGripperMid = lGripperMin + lGripperRange/2;
+    var lGripperHandleWidthPct = $lGripperPreviewHandleLeft.css('width').slice(0,-1);
+
+
+    previewFunctions['lGripper'] = {
+        start: function (undoEntry){
+            var halfOpenDist = undoEntry.stateGoal === 'grab' ? lGripperMin : undoEntry.stateGoal/2;
+            var halfWidthDist = lGripperRange * lGripperHandleWidthPct / 200;
+            var offsetL = ((lGripperMid - halfOpenDist - halfWidthDist)/lGripperRange)*100;
+            var offsetR = ((lGripperMid + halfOpenDist + halfWidthDist)/lGripperRange)*100;
+            $lGripperPreviewHandleLeft.css('left', offsetL+'%').show();
+            $lGripperPreviewHandleRight.css('left', offsetR+'%').show();
+        }, 
+        stop: function (undoEntry) {
+            $lGripperPreviewHandleLeft.hide();
+            $lGripperPreviewHandleRight.hide();
+        }
+    };
+
+    sentUndoCommands.lGripper = 0;
+    undoFunctions.lGripper = function (undoEntry) {
+        sentUndoCommands.lGripper += 1;
+        if (undoEntry.stateGoal === 'grab') {
+            lGripper.grab();
+        } else {
+            lGripper.setPosition(undoEntry.stateGoal);
+        }
+    };
+
+    var lGripperGenerateUndoEntry = function (cmd_msg) {
+        if (sentUndoCommands.lGripper > 0) { 
+            sentUndoCommands.lGripper -= 1;
+            return;
+        }
+        var state = self.states.lGripper === 'grab' ? 'grab' : lGripper.getState();
+        var undoEntry = new RFH.UndoEntry({type: 'lGripper',
+                                           command: cmd_msg,
+                                           stateGoal: state
+                                           });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    var lGripperPositionCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'l_gripper_sensor_controller/gripper_action/goal',
+        messageType: "pr2_controllers_msgs/Pr2GripperCommandActionGoal"
+    });
+    var lGripperPositionCmdCB = function (cmd_msg) {
+        lGripperGenerateUndoEntry(cmd_msg);
+        if (cmd_msg.goal_id.id.indexOf("grab") == -1) { // Grab action sends position command with '....grab...' in the id
+            self.states.lGripper = 'position';
+        } else {
+            self.states.lGripper = 'grab';
+        }
+    };
+    lGripperPositionCmdSub.subscribe(lGripperPositionCmdCB);
+         
     /*/////////////  END LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  RIGHT GRIPPER UNDO FUNCTIONS ////////////////////*/
-    // Keep separate variable for grabbing/position. Initialize to position
-    
-    self.states.rGripper = rGripper.getState() > 0.01 ? rGripper.getState() : 'grab';
+    // Keep separate variable for grabbing/position.
+    self.states.rGripper = 'position';
 
     var $rGripperPreviewHandleLeft = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
     var $rGripperPreviewHandleRight = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
     var $rGripperSlider = $('#rGripperCtrlContainer > .gripper-slider');
+    var rGripperHandles = $rGripperSlider.find('.ui-slider-handle');
     $rGripperSlider.append([$rGripperPreviewHandleLeft, $rGripperPreviewHandleRight]);
     var rGripperMin = $rGripperSlider.slider('option','min');
     var rGripperMax = $rGripperSlider.slider('option','max');
     var rGripperRange = rGripperMax - rGripperMin;
     var rGripperMid = rGripperMin + rGripperRange/2;
-    var rGripperHandleWidthPct = 7;
-
+    var rGripperHandleWidthPct = $rGripperPreviewHandleLeft.css('width').slice(0,-1);
+    var rGripperStopPreview = true;
 
     previewFunctions['rGripper'] = {
         start: function (undoEntry){
-            var aperture = undoEntry.stateGoal === 'grab' ? 0.0 : undoEntry.stateGoal;
-            var offset = rGripperMid + aperture/2 + (rGripperHandleWidthPct/200)*rGripperRange;
-            $rGripperPreviewHandleLeft.css('left', offset);
-            $rGripperPreviewHandleRight.css('right', offset);
+            var currentOffsets = [$(rGripperHandles[0]).css('left'), $(rGripperHandles[1]).css('left')];
+            var halfOpenDist = undoEntry.stateGoal === 'grab' ? rGripperMin : undoEntry.stateGoal/2;
+            var halfWidthDist = rGripperRange * rGripperHandleWidthPct / 200;
+            var offsetL = ((rGripperMid - halfOpenDist - halfWidthDist)/rGripperRange)*100;
+            var offsetR = ((rGripperMid + halfOpenDist + halfWidthDist)/rGripperRange)*100;
+//            $rGripperPreviewHandleLeft.css('left', offsetL+'%').show();
+ //           $rGripperPreviewHandleRight.css('left', offsetR+'%').show();
+            rGripperStopPreview = false;
+            var leftAnimation = function () {
+                if (rGripperStopPreview) {return};
+                $rGripperPreviewHandleLeft.css('left', currentOffsets[0]).show();
+                $rGripperPreviewHandleLeft.animate({'left': offsetL+'%'}, {duration:1400, easing: 'linear', done:leftAnimation});
+            };
+            var rightAnimation = function () {
+                if (rGripperStopPreview) {return};
+                $rGripperPreviewHandleRight.css('left', currentOffsets[1]).show();
+                $rGripperPreviewHandleRight.animate({'left': offsetR+'%'}, {duration:1400, easing: 'linear', done:rightAnimation});
+            };
+            leftAnimation();
+            rightAnimation();
         }, 
         stop: function (undoEntry) {
-            // Stop Display
+            rGripperStopPreview = true;
+            $rGripperPreviewHandleLeft.hide().stop();
+            $rGripperPreviewHandleRight.hide().stop();
+
         }
     };
 
@@ -170,9 +256,10 @@ RFH.Undo = function (options) {
             sentUndoCommands.rGripper -= 1;
             return;
         }
+        var state = self.states.rGripper === 'grab' ? 'grab' : rGripper.getState();
         var undoEntry = new RFH.UndoEntry({type: 'rGripper',
                                            command: cmd_msg,
-                                           stateGoal: self.states.rGripper
+                                           stateGoal: state
                                            });
         eventQueue.pushUndoEntry(undoEntry);
     };
@@ -185,25 +272,13 @@ RFH.Undo = function (options) {
     var rGripperPositionCmdCB = function (cmd_msg) {
         rGripperGenerateUndoEntry(cmd_msg);
         if (cmd_msg.goal_id.id.indexOf("grab") == -1) { // Grab action sends position command with '....grab...' in the id
-            self.states.rGripper = rGripper.getState();
+            self.states.rGripper = 'position';
         } else {
             self.states.rGripper = 'grab';
         }
     };
     rGripperPositionCmdSub.subscribe(rGripperPositionCmdCB);
          
-/*    var rGripperGrabCmdSub = new ROSLIB.Topic({
-        ros: ros,
-        name: 'r_gripper_sensor_controller/grab/goal',
-        messageType: "pr2_gripper_sensor_msgs/PR2GripperGrabActionGoal"
-    });
-    var rGripperGrabCmdCB = function (cmd_msg) {
-        rGripperGenerateUndoEntry(cmd_msg);
-        self.states.rGripper = 'grab';
-    };
-    rGripperGrabCmdSub.subscribe(rGripperGrabCmdCB);
-*/
-
     /*//////////////////// END GRIPPER UNDO  //////////////////////////////////*/
     
     /*//////////////////// Handle Looking goals /////////////////////////*/

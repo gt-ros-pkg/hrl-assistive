@@ -91,3 +91,7 @@
 .map-look.preview-undo.right.bottom{
    background-image: url('cursors/eyes/eyes-down-right.png'); 
 }
+
+.gripper-ctrl-cont  span.ui-slider-handle.preview-undo{
+    background: #FF8500;
+}

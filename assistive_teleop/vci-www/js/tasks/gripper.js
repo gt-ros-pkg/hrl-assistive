@@ -8,7 +8,7 @@ RFH.GripperDisplay = function (options) {
     var $grabButton = $div.find('.grab').button();
     var $releaseButton = $div.find('.release').button().hide();
     var $releaseLabel = $('label[for='+$releaseButton.prop('id')+']').hide();
-    var handleWidthPct = 7; // Width of the slider handles relative to the slider;
+    var handleWidthPct = 10; // Width of the slider handles relative to the slider;
     $gripperSlider.slider({
         range: true,
         min: 0.0,
@@ -18,9 +18,7 @@ RFH.GripperDisplay = function (options) {
 
     self.show = function () { $div.show(); };
     self.hide = function () { $div.hide(); };
-    self.hide(); // Hide on init
-//    $grabButton.on('click', function () { gripper.grab(); });
- //   $grabButton.prop('title', 'Carefully close the gripper to grasp and object');
+    self.hide(); // Initialize hidden
 
     var releaseOnContactCB = function (event) {
         if ($releaseButton.prop('checked')) {
@@ -45,19 +43,11 @@ RFH.GripperDisplay = function (options) {
     // Set up slider display
     $gripperSlider.css({"background":"rgba(50,50,50,0.72)" })
                   .prop('title', 'Open the gripper');
-//                  .on('click.release', function (event) { gripper.open(); } );
     $gripperSlider.find('.ui-slider-range').css({"background":"rgba(22,22,22,0.9)",
                                                  "text-align":"center"})
                                            .html("Gripper")
                                            .prop('title', 'Carefully close the gripper to grasp and object');
-                                        //   .on('click.grasp', function(event) { gripper.grab(); })
 
-    $gripperSlider.find('.ui-slider-handle').css({"height":"160%",
-                                                  "top":"-30%",
-                                                  "width":handleWidthPct.toString()+"%",
-                                                  "margin-left":"-"+(handleWidthPct/2).toString()+"%",
-                                                  "background":"rgba(42,42,42,1)",
-                                                  "border":"2px solid rgba(82,82,82,0.87)"});
     $gripperSlider.find('span:first-of-type').css('border-right', 'none');
     $gripperSlider.find('span:last-of-type').css('border-left', 'none');
     var min = $gripperSlider.slider("option", "min");
@@ -86,8 +76,6 @@ RFH.GripperDisplay = function (options) {
 
     // Make both sides of display open/close together
     var slideCB = function (event, ui) {
-        //var aperture = getApertureFromSliders(ui.value);
-        //setSlidersFromAperture(aperture);
         if (ui.values.indexOf(ui.value) === 0) {//left/low side
             var high = mid + (mid - ui.value) + (handleWidthPct/200)*range;
             $gripperSlider.slider("option", "values", [ui.value, high]);
