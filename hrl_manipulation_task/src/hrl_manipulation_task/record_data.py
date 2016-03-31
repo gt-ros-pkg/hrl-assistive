@@ -236,7 +236,6 @@ class logger:
         rospy.sleep(1.0)
 
 
-
 ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
 
@@ -403,16 +402,16 @@ class logger:
 
     def run(self):
 
-        self.log_start()
+        ## self.log_start()
 
         count = 0
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
             count += 1
-            if count > 800: break
+            ## if count > 800: break
             rate.sleep()
 
-        self.close_log_file()
+        ## self.close_log_file()
 
     def runDataPub(self):
         '''
@@ -618,14 +617,14 @@ class logger:
             
 if __name__ == '__main__':
 
-    subject = 'gatsbii'
+    subject = 'gatsbii_demo'
     ## task    = 'pushing_microwhite'
     task    = 'scooping'
     verbose = True
     data_pub= True
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
+    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
                  data_pub=data_pub)

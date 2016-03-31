@@ -657,6 +657,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
+            
             crossmodal_targetEEDist = []
             for time_idx in xrange(len(timeList)):
                 crossmodal_targetEEDist.append( dist[time_idx])
