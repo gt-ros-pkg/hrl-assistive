@@ -196,31 +196,48 @@ RFH.Undo = function (options) {
 
     /*/////////////  RIGHT GRIPPER UNDO FUNCTIONS ////////////////////*/
     // Keep separate variable for grabbing/position.
-    self.states.rGripper = rGripper.getState() < 0.01 ? 'grab' : 'position';
+    self.states.rGripper = 'position';
 
     var $rGripperPreviewHandleLeft = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
     var $rGripperPreviewHandleRight = $('<span>').addClass('preview-undo ui-corner-all ui-slider-handle ui-state-default').hide();
     var $rGripperSlider = $('#rGripperCtrlContainer > .gripper-slider');
+    var rGripperHandles = $rGripperSlider.find('.ui-slider-handle');
     $rGripperSlider.append([$rGripperPreviewHandleLeft, $rGripperPreviewHandleRight]);
     var rGripperMin = $rGripperSlider.slider('option','min');
     var rGripperMax = $rGripperSlider.slider('option','max');
     var rGripperRange = rGripperMax - rGripperMin;
     var rGripperMid = rGripperMin + rGripperRange/2;
     var rGripperHandleWidthPct = $rGripperPreviewHandleLeft.css('width').slice(0,-1);
-
+    var rGripperStopPreview = true;
 
     previewFunctions['rGripper'] = {
         start: function (undoEntry){
+            var currentOffsets = [$(rGripperHandles[0]).css('left'), $(rGripperHandles[1]).css('left')];
             var halfOpenDist = undoEntry.stateGoal === 'grab' ? rGripperMin : undoEntry.stateGoal/2;
             var halfWidthDist = rGripperRange * rGripperHandleWidthPct / 200;
             var offsetL = ((rGripperMid - halfOpenDist - halfWidthDist)/rGripperRange)*100;
             var offsetR = ((rGripperMid + halfOpenDist + halfWidthDist)/rGripperRange)*100;
-            $rGripperPreviewHandleLeft.css('left', offsetL+'%').show();
-            $rGripperPreviewHandleRight.css('left', offsetR+'%').show();
+//            $rGripperPreviewHandleLeft.css('left', offsetL+'%').show();
+ //           $rGripperPreviewHandleRight.css('left', offsetR+'%').show();
+            rGripperStopPreview = false;
+            var leftAnimation = function () {
+                if (rGripperStopPreview) {return};
+                $rGripperPreviewHandleLeft.css('left', currentOffsets[0]).show();
+                $rGripperPreviewHandleLeft.animate({'left': offsetL+'%'}, {duration:1400, easing: 'linear', done:leftAnimation});
+            };
+            var rightAnimation = function () {
+                if (rGripperStopPreview) {return};
+                $rGripperPreviewHandleRight.css('left', currentOffsets[1]).show();
+                $rGripperPreviewHandleRight.animate({'left': offsetR+'%'}, {duration:1400, easing: 'linear', done:rightAnimation});
+            };
+            leftAnimation();
+            rightAnimation();
         }, 
         stop: function (undoEntry) {
-            $rGripperPreviewHandleLeft.hide();
-            $rGripperPreviewHandleRight.hide();
+            rGripperStopPreview = true;
+            $rGripperPreviewHandleLeft.hide().stop();
+            $rGripperPreviewHandleRight.hide().stop();
+
         }
     };
 

@@ -13,11 +13,14 @@
     left: 0%;
 }
 
-
 .gripper-ctrl-cont > .gripper-slider {
     width: 86%;
     height: 25%;
     margin-left: 7%;
+}
+
+.gripper-slider div.ui-slider-range{
+    pointer-events: none;
 }
 
 .gripper-ctrl-cont  span.ui-slider-handle {
