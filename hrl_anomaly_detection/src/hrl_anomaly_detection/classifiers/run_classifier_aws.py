@@ -498,7 +498,8 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
-                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          'add_option': None, 'rawFeatures': rawFeatures}
+                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 
@@ -533,8 +534,13 @@ if __name__ == '__main__':
     method = parameters['method'][0]
     score_list = []
     print "max_param_idx = ", max_param_idx
-    result_pkl = './result_'+task+'.pkl'
-
+    if AE_param_dict['switch'] == True and AE_param_dict['add_option'] == 'featureToBottleneck':
+        result_pkl = os.path.join(save_data_path, 'result_'+task+'_rawftb.pkl')
+    elif AE_param_dict['switch'] == True:
+        result_pkl = os.path.join(save_data_path, 'result_'+task+'_raw.pkl')
+    else:
+        result_pkl = os.path.join(save_data_path, 'result_'+task+'.pkl')
+        
     ##################################################################################################
     # cpu version
     if opt.bCPU:
