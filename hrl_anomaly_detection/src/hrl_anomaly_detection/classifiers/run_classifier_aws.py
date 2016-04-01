@@ -107,11 +107,11 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##     return 0, -1, custom_params
 
     if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
-        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     else:
-        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)( os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
+        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
     l_ROC_data, l_param_idx = zip(*r)
 
     for i in xrange(len(l_ROC_data)):
@@ -126,7 +126,7 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
        
     return ROC_data, l_param_idx, custom_params
 
-def run_classifier(modeling_pkl, method, HMM_dict, ROC_dict, params):
+def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
 
     import os
     ## from hrl_anomaly_detection.classifiers import run_classifier_aws as rca
@@ -298,7 +298,7 @@ def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, param
     ROC_data = {}
     verbose = False
     
-    for param in param_list:
+    for param_idx, param in enumerate(param_list):
 
         ROC_data[method] = {}
         ROC_data[method]['complete'] = False 
@@ -325,7 +325,7 @@ def cross_validate_cpu(processed_data_path, task_name, nFiles, param_dict, param
                 modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
             else:
                 modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-            tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = run_classifier(modeling_pkl, method, HMM_dict, ROC_dict)
+            tp_ll, fp_ll, fn_ll, tn_ll, delay_ll = run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict)
 
             for j in xrange(ROC_dict['nPoints']):
                 ROC_data[method]['tp_l'][j] += tp_ll[j]
