@@ -132,6 +132,7 @@ class logger:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
             self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            print "Detected anomaly detector service"
 
         
     def setTask(self, task):
@@ -147,6 +148,7 @@ class logger:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
             self.ad_srv   = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            print "Detected anomaly detector service"
             
         
     def log_start(self):

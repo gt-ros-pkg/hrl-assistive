@@ -64,6 +64,7 @@ class classifier(learning_base):
         ths_mult: only for progress-based classifier
         '''              
         self.method = method
+        self.dt     = None
         self.verbose = verbose
 
         if self.method == 'svm':
@@ -267,7 +268,31 @@ class classifier(learning_base):
             print "Not implemented funciton Score"
             return 
 
+        
+    def save_model(fileName):
+        if self.dt is None: 
+            print "No trained classifier"
+            return
+        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            svm.svm_save_model(use_pkl, self.dt) 
+        else:
+            print "Not available method"
 
+            
+    def load_model(fileName):        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            self.dt = svm.svm_load_model(use_pkl) 
+        else:
+            print "Not available method"
+        
+            
+
+        
 ####################################################################
 # functions for distances
 ####################################################################

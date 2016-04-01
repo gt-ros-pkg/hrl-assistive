@@ -46,7 +46,7 @@ from hrl_manipulation_task.record_data import logger
 
 class armReacherGUI:
 
-    def __init__(self):
+    def __init__(self, detection_flag=False, log=None):
         '''Initialize GUI'''
         rospy.wait_for_service("/arm_reach_enable")
         self.armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
@@ -59,8 +59,8 @@ class armReacherGUI:
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)
-        
+        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
+        self.falselogPub = rospy.Publisher("/manipulation_task/feedbackRequest", String)
 
         #variables
         self.emergencyStatus = False
@@ -70,7 +70,8 @@ class armReacherGUI:
         self.feedbackMsg = None
         self.ScoopNumber = 0
         self.FeedNumber = 0
-
+        self.detection_flag = detection_flag
+        self.log = log
 ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.Continuous()
@@ -97,7 +98,7 @@ class armReacherGUI:
         rospy.wait_for_service("/arm_reach_enable")
         
         print "Aborting Sequence"
-        self.testing(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)
+        self.testing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
         #if self.FeedNumber<1:
         #    self.ScoopNumber = 0         
         #    print self.armReachActionLeft("initScooping1")
@@ -114,19 +115,22 @@ class armReacherGUI:
         #print "feedback received"
         if self.feedbackMsg == "SUCCESS":
             print '1'
-        else:
+        elif self.feedbackMsg == "FAIL":
             print '2'
+        else:
+            print '3'
 
     def statusCallback(self, data):
     #Change the status, depending on message.
         self.actionStatus = data.data
         print "status received"
-        if self.actionStatus == "Scooping":
-            log.setTask('scooping')
-        elif self.actionStatus == "Feeding":
-            log.setTask('feeding')
+        if self.log != None:
+            if self.actionStatus == "Scooping":
+                self.log.setTask('scooping')
+            elif self.actionStatus == "Feeding":
+                self.log.setTask('feeding')
 
-        print "" + log.task
+            print "" + self.log.task
 
     def Continuous(self):
         print "Continous function called"
@@ -134,17 +138,17 @@ class armReacherGUI:
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
                 print "Scooping Starting..."
-               # self.testing(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)
-                self.scooping(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)
+               # self.testing(self.armReachActionLeft, self.armReachActionRight, log, self.detection_flag)
+                self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
             elif self.inputStatus and self.actionStatus == 'Feeding':
                 self.inputStatus = False
                 print "Feeding Starting...."
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)
+                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
             elif self.inputStatus and self.actionStatus == 'Both':
                 self.inputStatus = False
                 print "Scoop and Feed starting..."
-                self.scooping(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, log, detection_flag)    
+                self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)    
         
 
 
@@ -154,8 +158,9 @@ class armReacherGUI:
         while not self.emergencyStatus and not rospy.is_shutdown():
             #log.task = 'scooping'
             #log.initParams()
-            log.setTask('scooping')
-            log.initParams()
+            if self.log != None:
+                self.log.setTask('scooping')
+                self.log.initParams()
             self.FeedNumber = 0
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
@@ -188,16 +193,22 @@ class armReacherGUI:
     
     
             print "Start to log!"    
-            log.log_start()
-            if detection_flag: log.enableDetector(True)
+            if self.log != None:
+                self.log.log_start()
+            if detection_flag: self.log.enableDetector(True)
         
             print "Running scooping!"
             print armReachActionLeft("runScooping")
             if self.emergencyStatus: break
+            print self.log
+            print self.log==None
+            if self.log == None:
+                self.falselogPub.publish("Requesting Feedback!")
     
-            if detection_flag: log.enableDetector(False)
+            if detection_flag: self.log.enableDetector(False)
             print "Finish to log!"    
-            log.close_log_file_GUI()
+            if self.log != None:
+                self.log.close_log_file_GUI()
     
             self.ScoopNumber = 0
             break
@@ -206,8 +217,9 @@ class armReacherGUI:
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
-            log.setTask('feeding' )
-            log.initParams()
+            if self.log != None:
+                self.log.setTask('feeding' )
+                self.log.initParams()
 
             if self.FeedNumber < 1:
                 #self.FeedNumber = 0.5
@@ -235,16 +247,22 @@ class armReacherGUI:
                 self.FeedNumber = 3
     
             print "Start to log!"    
-            log.log_start()
-            if detection_flag: log.enableDetector(True)
+            if self.log != None:
+                self.log.log_start()
+            if detection_flag: self.log.enableDetector(True)
         
             print "Running feeding2"    
             print armReachActionLeft("runFeeding2")
             if self.emergencyStatus: break
+            
+            if self.log == None:
+                self.falselogPub.publish("Requesting Feedback!")
+
     
-            if detection_flag: log.enableDetector(False)
+            if detection_flag: self.log.enableDetector(False)
             print "Finish to log!"    
-            log.close_log_file_GUI()
+            if self.log != None:
+                self.log.close_log_file_GUI()
     
             print armReachActionLeft("initScooping1")
             if self.emergencyStatus: break
@@ -284,6 +302,9 @@ if __name__ == '__main__':
                  default=False, help='Continuously publish data.')
     p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
                  default=False, help='Enable anomaly detector.')
+    p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
+                 default=False, help='Enable logger.')
+ 
     opt, args = p.parse_args()
     rospy.init_node('arm_reach_client')
 
@@ -291,15 +312,18 @@ if __name__ == '__main__':
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
     
-    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
-                 vision_change=False, pps=True, skin=False, \
-                 subject="demo", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
-                 verbose=False)
+    if opt.bLog:
+        log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
+                     vision_change=False, pps=True, skin=False, \
+                     subject="Demo", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     verbose=False)
+    else:
+        log = None
 
     last_trial  = '4'
     last_detect = '2'
 
-    gui = armReacherGUI()
+    gui = armReacherGUI(detection_flag=opt.bAD, log=log)
     rospy.spin()
 
 

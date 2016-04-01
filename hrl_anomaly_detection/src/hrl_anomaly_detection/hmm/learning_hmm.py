@@ -252,7 +252,12 @@ class learning_hmm(learning_base):
             l_posterior  = []        
 
             for j in xrange(startIdx, len(X[0][i])):
-                final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
+
+                try:
+                    final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
+                except:
+                    if self.verbose: print "failed to make sequence"
+                    continue
 
                 try:
                     logp = self.ml.loglikelihood(final_ts_obj)
