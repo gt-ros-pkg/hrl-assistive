@@ -381,13 +381,15 @@ class anomaly_detector:
 
         # Unimodal feature - vision change ------------------------------------
         if 'unimodal_visionChange' in self.handFeatures:
-            vision_centers = np.array([self.vision_change_centers_x, self.vision_change_centers_y, self.vision_change_centers_z])
+            vision_centers = np.array([self.vision_change_centers_x, self.vision_change_centers_y, \
+                                       self.vision_change_centers_z])
             data_dict['visionChangeMagList'] = [len(vision_centers[0])]
             print 'unimodal_visionChange may not be implemented properly'
 
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in self.handFeatures:
-            fabric_skin_values  = [self.fabric_skin_values_x, self.fabric_skin_values_y, self.fabric_skin_values_z]
+            fabric_skin_values  = [self.fabric_skin_values_x, self.fabric_skin_values_y, \
+                                   self.fabric_skin_values_z]
             if not fabric_skin_values[0]:
                 data_dict['fabricMagList'] = [0]
             else:

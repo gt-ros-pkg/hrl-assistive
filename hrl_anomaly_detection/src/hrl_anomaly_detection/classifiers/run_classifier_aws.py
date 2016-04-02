@@ -517,6 +517,7 @@ if __name__ == '__main__':
 
         nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': [1.0, 2.0, 4.0, 6.0],\
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
                       'w_negative': np.linspace(0.5, 2.0, 5) }
 

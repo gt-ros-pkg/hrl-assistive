@@ -1458,10 +1458,16 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
-                          'add_option': True, 'rawFeatures': rawFeatures}
-                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          ## 'add_option': True, 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+
+        if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
+            SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
+        if AE_param_dict['switch']:            
+            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        else:
+            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
