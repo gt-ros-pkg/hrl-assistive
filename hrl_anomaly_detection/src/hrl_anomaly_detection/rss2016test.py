@@ -114,13 +114,11 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             successData = combineData( successData, newHandSuccessData )
             failureData = combineData( failureData, newHandFailureData )
 
-            # reduce dimension by pooling
-            pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-            successData, pooling_param_dict = dm.variancePooling(successData, \
-                                                              pooling_param_dict)
-            failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
-            ## print pooling_param_dict
-            ## sys.exit()
+            ## # reduce dimension by pooling
+            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+            ## successData, pooling_param_dict = dm.variancePooling(successData, \
+            ##                                                   pooling_param_dict)
+            ## failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
             
             
         successData *= HMM_dict['scale']
@@ -583,13 +581,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
 
-                # reduce dimension by pooling
-                pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-                normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-                                                                         pooling_param_dict)
-                abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-                normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                ## # reduce dimension by pooling
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                ##                                                          pooling_param_dict)
+                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
                 
 
             # scaling
@@ -1572,7 +1570,7 @@ if __name__ == '__main__':
 
         likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
-                              useTrain=True, useNormalTest=False, useAbnormalTest=False,\
+                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               

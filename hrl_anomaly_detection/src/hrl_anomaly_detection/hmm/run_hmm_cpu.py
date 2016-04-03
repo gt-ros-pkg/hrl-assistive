@@ -117,12 +117,12 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
                 
-                pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-                normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-                                                                         pooling_param_dict)
-                abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-                normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                ##                                                          pooling_param_dict)
+                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
                 
 
             # scaling
