@@ -115,6 +115,14 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
                 abnormalTestData  = combineData( abnormalTestData, handFailTeData )
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
+                
+                pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                                                                         pooling_param_dict)
+                abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                
 
             # scaling
             if verbose: print "scaling data"
@@ -341,8 +349,8 @@ if __name__ == '__main__':
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
-                      'add_option': True, 'rawFeatures': rawFeatures}
-                      ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                      'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                      ##'add_option': True, 'rawFeatures': rawFeatures}
     HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 

@@ -583,6 +583,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
 
+                # reduce dimension by pooling
+                pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                                                                         pooling_param_dict)
+                abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                
+
             # scaling
             if verbose: print "scaling data"
             normalTrainData   *= HMM_dict['scale']
