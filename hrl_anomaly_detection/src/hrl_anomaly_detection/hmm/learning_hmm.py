@@ -280,7 +280,7 @@ class learning_hmm(learning_base):
             return ll_likelihoods
             
             
-    def getLoglikelihoods(self, xData, posterior=False, n_jobs=-1):
+    def getLoglikelihoods(self, xData, posterior=False, startIdx=1, n_jobs=-1):
         '''
         shape?
         '''
@@ -292,7 +292,8 @@ class learning_hmm(learning_base):
 
         # Estimate loglikelihoods and corresponding posteriors
         r = Parallel(n_jobs=n_jobs)(delayed(computeLikelihood)(i, self.A, self.B, self.pi, self.F, X_test[i], \
-                                                           self.nEmissionDim, self.nState,
+                                                           self.nEmissionDim, self.nState,\
+                                                           startIdx=startIdx,\
                                                            bPosterior=posterior, converted_X=True)
                                                            for i in xrange(n))
         if posterior:
@@ -320,14 +321,28 @@ class learning_hmm(learning_base):
         If y exists, y can contains two kinds of labels, [-1, 1]
         If an input is close to training data, its label should be 1.
         If not, its label should be -1.
-        '''        
+        '''
+        assert y[0]==1
+        nPos = 0
+        for i in xrange(len(y)):
+            if y[i] == -1:
+                nPos = i
+                break
+        posIdxList = [i for i in xrange(len(y)) if y[i]==1 ]
+        negIdxList = [i for i in xrange(len(y)) if y[i]==-1]
+        posX       = X[:,posIdxList,:]
+        negX       = X[:,negIdxList,:]
+                    
         if n_jobs==1:
-            ll_logp = self.loglikelihoods(X) 
+            ll_pos_logp = self.loglikelihoods(posX) 
+            ll_neg_logp = self.loglikelihoods(negX) 
         else:
             # sample,            
-            _, ll_logp = self.getLoglikelihoods(X, n_jobs=n_jobs)
+            _, ll_pos_logp = self.getLoglikelihoods(posX, startIdx=len(X[0][0]-1), n_jobs=n_jobs)
+            _, ll_neg_logp = self.getLoglikelihoods(negX, startIdx=len(X[0][0]-1), n_jobs=n_jobs)
 
-        v = np.mean( np.std(ll_logp, axis=0) )
+        v = np.linalg.norm( ll_neg_logp - np.mean(ll_pos_logp) )
+        ## v = np.mean( np.std(ll_logp, axis=0) )
         ## v = 0.0
         ## if y is not None:
         ##     for i, l_logp in enumerate(ll_logp):                
@@ -335,7 +350,7 @@ class learning_hmm(learning_base):
         ## else:
         ##     v += np.sum(ll_logp)
 
-        if self.verbose: print np.shape(ll_logp), " : score = ", v 
+        if self.verbose: print np.shape(ll_pos_logp), np.shape(ll_neg_logp)," : score = ", v 
 
         return v
                 

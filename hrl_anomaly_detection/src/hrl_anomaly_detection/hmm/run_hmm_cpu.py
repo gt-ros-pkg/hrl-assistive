@@ -100,7 +100,7 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
 
 
             if AE_dict['add_option'] is 'featureToBottleneck':
-                print "add feature is not implemented..."
+                print "add feature!!"
                 newHandSuccTrData = handSuccTrData = d['handNormTrainData']
                 newHandFailTrData = handFailTrData = d['handAbnormTrainData']
                 handSuccTeData = d['handNormTestData']
@@ -142,18 +142,15 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
             ret = model.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
-            else:
-                scores.append(ret)
-                continue
-            
+            else:           
                 # evaluation:  dim x sample => sample x dim
-                testData_x = np.swapaxes( normalTestData, 0, 1)
-                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                                         ## np.swapaxes( abnormalTestData, 0, 1) ])
+                ## testData_x = np.swapaxes( normalTestData, 0, 1)
+                testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
+                                         np.swapaxes( abnormalTestData, 0, 1) ])
                 testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
                                          
-                testData_y = [1.0]*len( normalTestData[0] )
-                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
+                ## testData_y = [1.0]*len( normalTestData[0] )
+                testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
                 scores.append( model.score( testData_x, y=testData_y, n_jobs=-1 ) )
 
 
