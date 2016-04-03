@@ -113,6 +113,15 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             successData = combineData( successData, newHandSuccessData )
             failureData = combineData( failureData, newHandFailureData )
+
+            # reduce dimension by pooling
+            pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+            successData, pooling_param_dict = dm.variancePooling(successData, \
+                                                              pooling_param_dict)
+            failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
+            ## print pooling_param_dict
+            ## sys.exit()
+            
             
         successData *= HMM_dict['scale']
         failureData *= HMM_dict['scale']
