@@ -231,7 +231,6 @@ var PR2Head = function (options) {
     var joints = options.joints || ['head_pan_joint', 'head_tilt_joint'];
     self.pointingFrame = options.pointingFrame || 'head_mount_kinect_rgb_optical_frame';
     var trackingInterval = null;
-    var undoSetActiveService = options.undoSetActiveService || 'undo/move_head/set_active';
     ros.getMsgDetails('trajectory_msgs/JointTrajectory');
     ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
     var jointPub = new ROSLIB.Topic({
@@ -329,16 +328,8 @@ var PR2Head = function (options) {
         actionGoal.send();
     };
 
-    var undoToggleService = new ROSLIB.Service({
-        ros: ros,
-        name: undoSetActiveService,
-        serviceType: 'hrl_undo/SetActive'
-    });
 
     self.trackPoint = function (x, y, z, frame) {
-        // Don't register head tracking the hand with undo...
-        var disableUndoReq = new ROSLIB.ServiceRequest({set_active:false});
-        undoToggleService.callService(disableUndoReq, function(){});
         self.pointHead(x, y, z, frame); // Start looking now
         trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
         console.log("Beginning Head tracking of ", frame);
@@ -347,9 +338,6 @@ var PR2Head = function (options) {
     self.stopTracking = function () {
         // Stop sending tracking messages
         clearInterval(trackingInterval);
-        // Re-enable undo recording of head movements
-        var enableUndoReq = new ROSLIB.ServiceRequest({set_active:true});
-        undoToggleService.callService(enableUndoReq, function(){});
         console.log("Ending Head tracking");
     };
 };
@@ -504,8 +492,7 @@ var PR2 = function (ros) {
     self.head = new PR2Head({ros: ros,
                             limits: [[-2.85, 2.85], [1.18, -0.38]],
                             joints: ['head_pan_joint', 'head_tilt_joint'],
-                            pointingFrame: 'head_mount_kinect_rgb_optical_frame',
-                            undoSetActiveService: 'undo/move_head/set_active'});
+                            pointingFrame: 'head_mount_kinect_rgb_optical_frame'});
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: ros,

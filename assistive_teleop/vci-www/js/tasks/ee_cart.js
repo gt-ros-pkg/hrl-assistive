@@ -124,6 +124,25 @@ RFH.CartesianEEControl = function (options) {
     };
     $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing);
 
+
+    /*////////////  Load Gripper Model ////////////*/
+    var colladaLoadProgress = function (data) {
+        console.log("Loading Collada Mesh: ", data.loaded/data.total);
+    };
+
+    var palmOnLoad = function (mesh) {
+    }
+    var fingerOnLoad = function (mesh) {
+    }
+    var fingerTipOnLoad = function (mesh) {
+    }
+
+    var gripperColladaLoader = new THREE.ColladaLoader();
+    gripperColladaLoader.load('./data/gripper_model/gripper_palm.dae', palmOnLoad, colladaLoadProgress);
+    gripperColladaLoader.load('./data/gripper_model/l_finger.dae', fingerOnLoad, colladaLoadProgress);
+    gripperColladaLoader.load('./data/gripper_model/l_finger_tip.dae', fingerTipOnLoad, colladaLoadProgress);
+    /*////////////  END Load Gripper Model ////////////*/
+
     var displayGoalPose = function (ps_msg) {
         self.goalMarker.position.set(ps_msg.pose.position.x, ps_msg.pose.position.y, ps_msg.pose.position.z);
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
