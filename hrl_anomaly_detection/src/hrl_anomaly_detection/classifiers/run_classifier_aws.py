@@ -178,8 +178,8 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
     tn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     delay_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
-    ## print "started to run a classifier"
-    ## start = time.time()        
+    print "started to run a classifier"
+    start = time.time()        
 
     # classifier
     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
@@ -245,9 +245,9 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
         tn_ll[j] += tn_l
         delay_ll[j] += delay_l
 
-    ## end = time.time()
-    ## print " Elapsed time to eval: ", end - start
-    ## sys.exit()
+    end = time.time()
+    print " Elapsed time to eval: ", end - start
+    sys.exit()
 
     ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
