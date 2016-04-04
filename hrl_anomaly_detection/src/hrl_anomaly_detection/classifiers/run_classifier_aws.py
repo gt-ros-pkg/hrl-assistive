@@ -106,14 +106,28 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
     ##     print "running fine"
     ##     return 0, -1, custom_params
 
-    if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
-    elif AE_dict['switch'] and AE_dict['add_option'] is None:
-        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
-    else:
-        r = Parallel(n_jobs=n_jobs)(delayed(run_classifier)(param_idx, os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), method, HMM_dict, ROC_dict, custom_params) for file_idx in xrange(nFiles))
-    l_ROC_data, l_param_idx = zip(*r)
+    l_ROC_data = []
+    l_param_idx = []
+    for file_idx in xrange(nFiles):    
+        if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
+            ret1, ret2 = run_classifier(param_idx, \
+                                        os.path.join(processed_data_path, \
+                                                     'hmm_'+task_name+'_rawftb_'+str(file_idx)+'.pkl'), \
+                                                     method, HMM_dict, ROC_dict, custom_params)
+        elif AE_dict['switch']:
+            ret1, ret2 = run_classifier(param_idx, \
+                                        os.path.join(processed_data_path, \
+                                                     'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl'), \
+                                                     method, HMM_dict, ROC_dict, custom_params)
+        else:
+            ret1, ret2 = run_classifier(param_idx, \
+                                        os.path.join(processed_data_path, \
+                                                     'hmm_'+task_name+'_'+str(file_idx)+'.pkl'), \
+                                                     method, HMM_dict, ROC_dict, custom_params)            
+        l_ROC_data.append(ret1)
+        l_param_idx.append(ret2)
 
+        
     for i in xrange(len(l_ROC_data)):
         if l_param_idx[i]==-1: return ROC_data, -1, custom_params
 
@@ -128,9 +142,9 @@ def cross_validate_local(param_idx, nFiles, processed_data_path, task_name, defa
 
 def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
 
+    from joblib import Parallel, delayed
     import os
     ## from hrl_anomaly_detection.classifiers import run_classifier_aws as rca
-    from hrl_anomaly_detection.classifiers import classifier as cb
     import hrl_lib.util as ut
     import numpy as np
     from sklearn import preprocessing
@@ -163,7 +177,7 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
             Y_train_org.append(ll_classifier_train_Y[i][j])
             idx_train_org.append(ll_classifier_train_idx[i][j])
 
-    # data preparation
+    # training data preparation
     if 'svm' in method:
         scaler = preprocessing.StandardScaler()
         ## scaler = preprocessing.scale()
@@ -172,82 +186,45 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
         X_scaled = X_train_org
     ## print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
 
+    # test data preparation
+    X_test = []
+    Y_test = ll_classifier_test_Y
+    idx_test = ll_classifier_test_idx
+    for ii in xrange(len(ll_classifier_test_X)):
+        if 'svm' in method:
+            X = scaler.transform(ll_classifier_test_X[ii])                                
+        elif method == 'progress_time_cluster' or method == 'fixed':
+            X = ll_classifier_test_X[ii]
+        X_test.append(X)
+        
+
     tp_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     fp_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     fn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     tn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     delay_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
-    print "started to run a classifier"
-    start = time.time()        
+    ## print "started to run a classifier"
+    ## start = time.time()        
 
-    # classifier
-    dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
-    for j in xrange(ROC_dict['nPoints']):
-        if method == 'svm':
-            weights = ROC_dict['svm_param_range']
-            dtc.set_params( class_weight=weights[j] )
-        elif method == 'cssvm_standard':
-            weights = np.logspace(-2, 0.1, nPoints)
-            dtc.set_params( class_weight=weights[j] )
-        elif method == 'cssvm':
-            weights = ROC_dict['cssvm_param_range']
-            dtc.set_params( class_weight=weights[j] )
-        elif method == 'progress_time_cluster':
-            thresholds = ROC_dict['progress_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-        elif method == 'fixed':
-            thresholds = ROC_dict['fixed_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-        else:
-            print "Not available method"
-            return "Not available method", -1, params
+    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_ROC_eval)(j, X_scaled, Y_train_org, idx_train_org, \
+                                                              X_test, Y_test, idx_test, method, ROC_dict, \
+                                                              HMM_dict, params, nLength) \
+                                                              for j in xrange(ROC_dict['nPoints']))    
 
-        dtc.set_params(**params)
-        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-        if ret is False: return 'fit failed', -1
+    l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
 
-        # evaluate the classifier
-        tp_l = []
-        fp_l = []
-        tn_l = []
-        fn_l = []
-        delay_l = []
-        delay_idx = 0
+    for i, j in enumerate(l_j):
+        
+        tp_ll[j] += l_tp_l[i]
+        fp_ll[j] += l_fp_l[i]
+        fn_ll[j] += l_fn_l[i]
+        tn_ll[j] += l_tn_l[i]
+        delay_ll[j] += l_delay_l[i]
 
-        for ii in xrange(len(ll_classifier_test_X)):
-            if len(ll_classifier_test_Y[ii])==0: continue
-
-            if 'svm' in method:
-                X = scaler.transform(ll_classifier_test_X[ii])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
-                X = ll_classifier_test_X[ii]
-                
-            est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii])
-            for jj in xrange(len(est_y)):
-                if est_y[jj] > 0.0:
-                    delay_idx = ll_classifier_test_idx[ii][jj]
-                    ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-                    break        
-
-            if ll_classifier_test_Y[ii][0] > 0.0:
-                if est_y[jj] > 0.0:
-                    tp_l.append(1)
-                    delay_l.append(delay_idx)
-                else: fn_l.append(1)
-            elif ll_classifier_test_Y[ii][0] <= 0.0:
-                if est_y[jj] > 0.0: fp_l.append(1)
-                else: tn_l.append(1)
-
-        tp_ll[j] += tp_l
-        fp_ll[j] += fp_l
-        fn_ll[j] += fn_l
-        tn_ll[j] += tn_l
-        delay_ll[j] += delay_l
-
-    end = time.time()
-    print " Elapsed time to eval: ", end - start
-    sys.exit()
+    ## end = time.time()
+    ## print " Elapsed time to eval: ", end - start
+    ## sys.exit()
 
     ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
@@ -263,6 +240,64 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
     return ROC_data, param_idx
 
 
+# classifier
+def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
+                 X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
+    from hrl_anomaly_detection.classifiers import classifier as cb
+
+    dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
+    if method == 'svm':
+        weights = ROC_dict['svm_param_range']
+        dtc.set_params( class_weight=weights[j] )
+    elif method == 'cssvm_standard':
+        weights = np.logspace(-2, 0.1, nPoints)
+        dtc.set_params( class_weight=weights[j] )
+    elif method == 'cssvm':
+        weights = ROC_dict['cssvm_param_range']
+        dtc.set_params( class_weight=weights[j] )
+    elif method == 'progress_time_cluster':
+        thresholds = ROC_dict['progress_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+    elif method == 'fixed':
+        thresholds = ROC_dict['fixed_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+    else:
+        print "Not available method"
+        return "Not available method", -1, params
+
+    dtc.set_params(**params)
+    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+    if ret is False: return 'fit failed', -1
+
+    # evaluate the classifier
+    tp_l = []
+    fp_l = []
+    tn_l = []
+    fn_l = []
+    delay_l = []
+    delay_idx = 0
+
+    for ii in xrange(len(X_test)):
+        if len(Y_test[ii])==0: continue
+        X = X_test[ii]                
+        est_y    = dtc.predict(X, y=Y_test[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:
+                delay_idx = idx_test[ii][jj]
+                ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+                break        
+
+        if Y_test[ii][0] > 0.0:
+            if est_y[jj] > 0.0:
+                tp_l.append(1)
+                delay_l.append(delay_idx)
+            else: fn_l.append(1)
+        elif Y_test[ii][0] <= 0.0:
+            if est_y[jj] > 0.0: fp_l.append(1)
+            else: tn_l.append(1)
+
+    return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
 
@@ -500,7 +535,7 @@ if __name__ == '__main__':
 
 
         #temp
-        nPoints        = 10
+        nPoints        = 8 #10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -510,7 +545,7 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 9
+        nFiles = 2
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0, 2.0, 4.0, 6.0],\
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
