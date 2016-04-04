@@ -50,6 +50,8 @@ from hrl_anomaly_detection.hmm.learning_base import learning_base
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
                  class_weight=1.0, \
+                 #progress
+                 logp_offset = 0.0,\
                  # svm
                  svm_type    = 0,\
                  kernel_type = 2,\
@@ -87,6 +89,7 @@ class classifier(learning_base):
             self.std_coff  = 1.0
             self.nPosteriors = nPosteriors
             self.ths_mult = ths_mult
+            self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors) 
         elif self.method == 'fixed':
@@ -203,9 +206,9 @@ class classifier(learning_base):
 
             if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                 type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp
+                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
             else:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp
+                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
             return err 
         elif self.method == 'fixed':
             logp = X[0]

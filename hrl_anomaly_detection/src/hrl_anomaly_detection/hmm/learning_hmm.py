@@ -218,7 +218,7 @@ class learning_hmm(learning_base):
     ##     return mu_l, cov_l
 
 
-    def loglikelihood(self, X):
+    def loglikelihood(self, X, bPosterior=False):
         '''        
         shape?
         return: the likelihood of a sequence
@@ -228,12 +228,15 @@ class learning_hmm(learning_base):
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
 
         try:    
-            p = self.ml.loglikelihood(final_ts_obj)
+            logp = self.ml.loglikelihood(final_ts_obj)
+            if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
         except:
             print 'Likelihood error!!!!'
-            sys.exit()
+            if bPosterior: return None, None
+            return None
 
-        return p
+        if bPosterior: return logp, post
+        return logp
 
 
     def loglikelihoods(self, X, bPosterior=False, startIdx=1):
@@ -265,8 +268,8 @@ class learning_hmm(learning_base):
                 except:
                     if self.verbose: 
                         print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                    ## return False, False # anomaly
-                    continue
+                    return False, False # anomaly
+                    #continue
 
                 l_likelihood.append( logp )
                 if bPosterior: l_posterior.append( post[j-1] )

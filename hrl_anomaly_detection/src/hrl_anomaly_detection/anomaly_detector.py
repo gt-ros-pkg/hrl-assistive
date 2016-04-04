@@ -266,7 +266,7 @@ class anomaly_detector:
             
         # Fit Classifier
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
-                                        nLength=nLength - startIdx )
+                                        nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
         self.classifier.fit(X_scaled, Y_test_org, idx_test_org)
         print "Finished to train SVM"
@@ -407,10 +407,12 @@ class anomaly_detector:
 
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_artagEEDist' in self.handFeatures:
+            data_dict['kinEEPosList']     = [np.array([self.kinematics_ee_pos]).T]
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
 
         # Crossmodal feature - vision relative angle --------------------------
         if 'crossmodal_artagEEAng' in self.handFeatures:
+            data_dict['kinEEQuatList'] = [np.array([self.kinematics_ee_quat]).T]
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
             data_dict['visionArtagQuatList'] = [np.array([self.vision_artag_quat]).T]
 
@@ -461,18 +463,25 @@ class anomaly_detector:
             if len(self.dataList) == 0 or len(self.dataList[0][0]) < 10: continue
             
             self.lock.acquire()
-            l_logp, l_post = self.ml.loglikelihoods(self.dataList, bPosterior=True, startIdx=4)
-            ## l_logp, l_post = self.ml.loglikelihoods(self.tempdata, bPosterior=True, startIdx=4)
+            cur_length     = len(self.dataList[0][0])
+            l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
             self.lock.release()            
-            l_logp = l_logp[0]
-            l_post = l_post[0]
-            if l_logp == []: 
-                rate.sleep()                
+            if l_logp == None: 
+                print "logp is None => anomaly"
+                self.action_interruption_pub.publish(self.task_name+'_anomaly')
+                self.task_interruption_pub.publish(self.task_name+'_anomaly')
+                self.soundHandle.play(2)
+                self.enable_detector = False
+                self.reset()
                 continue
 
             ## print np.amin(self.dataList, axis=0), np.amax(self.dataList, axis=0), self.handFeatureParams
-            print l_logp[-1], ' Shape of l_logp:', np.shape(l_logp), 'l_post:', np.shape(l_post)            
-            ll_classifier_test_X = [l_logp[-1]] + l_post[-1].tolist() 
+            print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1])
+            ## print l_post[-1]
+            ## print l_logp[-1], ' Shape of l_logp:', np.shape(l_logp), 'l_post:', np.shape(l_post)   
+            if np.argmax(l_post[cur_length-1])==0 and l_logp < 0.0: continue
+            
+            ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist() 
             ## print ll_classifier_test_X
 
             if 'svm' in self.classifier_method:
@@ -512,7 +521,7 @@ if __name__ == '__main__':
     
         subject_names     = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2']
         task_name         = opt.task
-        check_method      = 'svm' #'progress_time_cluster' # cssvm
+        check_method      = 'progress_time_cluster' # cssvm
         raw_data_path     = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
         save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/demo'
 
@@ -531,7 +540,7 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
         HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
-                          'class_weight': 1.4e-3}
+                          'class_weight': 1.4e-3, 'logp_offset': 100, 'ths_mult': -2.0}
                           ## 'class_weight': 1.4e-3}
 
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
@@ -558,7 +567,7 @@ if __name__ == '__main__':
                           'add_option': None} 
         HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
-                          'class_weight': 0.05}
+                          'class_weight': 1.05, 'logp_offset': 200, 'ths_mult': -2.5}
                                  
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict}
