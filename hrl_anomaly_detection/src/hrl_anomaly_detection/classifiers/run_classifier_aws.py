@@ -411,7 +411,7 @@ if __name__ == '__main__':
 
 
         #temp
-        nPoints        = 8 #10
+        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -421,7 +421,7 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 2 #9
+        nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0, 2.0, 4.0, 6.0],\
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
@@ -452,9 +452,9 @@ if __name__ == '__main__':
     # cpu version
     if opt.bCPU:
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        nFiles = 2
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.0, 3.], 'w_negative': [3.0]}
+        ## nFiles = 2
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [1.0, 3.], 'w_negative': [3.0]}
         
         if os.path.isfile(result_pkl) is False:
 
