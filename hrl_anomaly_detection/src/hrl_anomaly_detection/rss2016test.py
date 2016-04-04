@@ -707,6 +707,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
 
+
     if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_rawftb.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:

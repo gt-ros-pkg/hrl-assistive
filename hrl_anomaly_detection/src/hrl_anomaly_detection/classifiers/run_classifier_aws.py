@@ -135,7 +135,6 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
     import numpy as np
     from sklearn import preprocessing
 
-    print modeling_pkl
     # train a classifier and evaluate it using test data.
     d            = ut.load_pickle(modeling_pkl)
     nEmissionDim = d['nEmissionDim']
@@ -179,6 +178,9 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
     tn_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
     delay_ll = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
+    ## print "started to run a classifier"
+    ## start = time.time()        
+
     # classifier
     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
     for j in xrange(ROC_dict['nPoints']):
@@ -216,29 +218,25 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
         for ii in xrange(len(ll_classifier_test_X)):
             if len(ll_classifier_test_Y[ii])==0: continue
 
-            for jj in xrange(len(ll_classifier_test_X[ii])):
-                if 'svm' in method:
-                    X = scaler.transform([ll_classifier_test_X[ii][jj]])
-                elif method == 'progress_time_cluster' or method == 'fixed':
-                    X = ll_classifier_test_X[ii][jj]
-
-                est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii][jj:jj+1])
-                if type(est_y) == list: est_y = est_y[0]
-                if type(est_y) == list: est_y = est_y[0]
-                ## X = X[0]
-
-                if est_y > 0.0:
+            if 'svm' in method:
+                X = scaler.transform(ll_classifier_test_X[ii])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_test_X[ii]
+                
+            est_y    = dtc.predict(X, y=ll_classifier_test_Y[ii])
+            for jj in xrange(len(est_y)):
+                if est_y[jj] > 0.0:
                     delay_idx = ll_classifier_test_idx[ii][jj]
                     ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                     break        
 
             if ll_classifier_test_Y[ii][0] > 0.0:
-                if est_y > 0.0:
+                if est_y[jj] > 0.0:
                     tp_l.append(1)
                     delay_l.append(delay_idx)
                 else: fn_l.append(1)
             elif ll_classifier_test_Y[ii][0] <= 0.0:
-                if est_y > 0.0: fp_l.append(1)
+                if est_y[jj] > 0.0: fp_l.append(1)
                 else: tn_l.append(1)
 
         tp_ll[j] += tp_l
@@ -247,17 +245,14 @@ def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params):
         tn_ll[j] += tn_l
         delay_ll[j] += delay_l
 
-    ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
+    ## end = time.time()
+    ## print " Elapsed time to eval: ", end - start
+    ## sys.exit()
 
+    ## return tp_ll, fp_ll, fn_ll, tn_ll, delay_ll
     if tp_ll is None or fp_ll is None or fn_ll is None or tn_ll is None:
         return tp_ll, -1
 
-    ## for j in xrange(ROC_dict['nPoints']):
-    ##     ROC_data[method]['tp_l'][j] += tp_ll[j]
-    ##     ROC_data[method]['fp_l'][j] += fp_ll[j]
-    ##     ROC_data[method]['fn_l'][j] += fn_ll[j]
-    ##     ROC_data[method]['tn_l'][j] += tn_ll[j]
-    ##     ROC_data[method]['delay_l'][j] += delay_ll[j]
     ROC_data = {}
     ROC_data['tp_l'] = tp_ll
     ROC_data['fp_l'] = fp_ll
@@ -515,7 +510,7 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 2
+        nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0, 2.0, 4.0, 6.0],\
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
@@ -551,13 +546,18 @@ if __name__ == '__main__':
         ## nFiles = 2
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'svm_kernel_type': [1,2], \
         ##               'svm_degree': [3], 'svm_nu': [0.5], 'svm_w_negative': [7.0]}
+        
         if os.path.isfile(result_pkl) is False:
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
+                print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
+                start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                save_data_path, \
                                                                                task, param_dict, param, \
-                                                                               n_jobs=-1)
+                                                                               n_jobs=1)
+                end = time.time()
+                print param_idx, " Elapsed time: ", end - start
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
 
             ut.save_pickle(results, result_pkl)

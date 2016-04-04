@@ -193,27 +193,39 @@ class classifier(learning_base):
             else:
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
+        
         elif self.method == 'progress_time_cluster':
-            logp = X[0]
-            post = X[1:]
+            if len(np.shape(X))==1: X = [X]
 
-            # Find the best posterior distribution
-            min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-            nState = len(post)
-            ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            ## c_time = np.logspace(0,-0.9,nState)[min_index]
-            c_time = 1.0
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                post = X[i][1:]
 
-            if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
-                type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
-            else:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
-            return err 
+                # Find the best posterior distribution
+                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                nState = len(post)
+                ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
+                ## c_time = np.logspace(0,-0.9,nState)[min_index]
+                c_time = 1.0
+
+                if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
+                    type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
+                    err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                else:
+                    err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+                l_err.append(err)
+            return l_err
+        
         elif self.method == 'fixed':
-            logp = X[0]
-            err = self.mu + self.ths_mult * self.std - logp
-            return err
+            if len(np.shape(X))==1: X = [X]
+                
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                err = self.mu + self.ths_mult * self.std - logp
+                l_err.append(err)
+            return l_err 
 
     ## def predict_batch(self, X, y, idx):
 
