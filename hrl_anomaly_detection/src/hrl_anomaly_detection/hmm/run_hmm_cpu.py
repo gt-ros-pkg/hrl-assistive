@@ -116,8 +116,14 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
                 abnormalTestData  = combineData( abnormalTestData, handFailTeData )
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
+
                 
-                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
+                ## normalTrainData, abnormalTrainData,pooling_param_dict \
+                ##   = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
+                ## normalTestData, abnormalTestData, _ \
+                ##   = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
+                
                 ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
                 ##                                                          pooling_param_dict)
                 ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)

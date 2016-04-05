@@ -72,7 +72,7 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
-def viz(X1, X2=None):
+def viz(X1, X2=None, skip=False):
     '''
     dim x sample x length
     X1: normal data
@@ -106,6 +106,7 @@ def viz(X1, X2=None):
         plt.yticks([0,1.0])
 
     if X2 is None:
+        if skip is True: return
         plt.show()
         return
 
@@ -127,6 +128,7 @@ def viz(X1, X2=None):
         ax.set_ylim([0,1])
         plt.yticks([0,1.0])
 
+    if skip is True: return
     plt.show()
     
 

@@ -103,7 +103,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             failureData = d['abnormTrainData']
 
         if AE_dict['add_option'] is 'featureToBottleneck':
-            print "add feature is not implemented..."
+            print "add features"
             newHandSuccessData = handSuccessData = d['handNormTrainData']
             newHandFailureData = handFailureData = d['handAbnormTrainData']
             
@@ -407,7 +407,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         if success_viz or failure_viz:
             import data_viz as dv
-            dv.viz(normalTrainData, abnormalTrainData)
+            dv.viz(dd['normTrainData'], dd['abnormTrainData'], True)
+            dv.viz(dd['normTrainDataFiltered'], dd['abnormTrainDataFiltered'])
 
         if handFeature_viz:
             handNormalTrainData   = dd['handNormTrainData']
@@ -1460,15 +1461,15 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4,  \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':4, \
+                          'filter':True, 'filterDim':6, \
                           'nAugment': 1, \
-                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
-                          ## 'add_option': None, 'rawFeatures': rawFeatures}
+                          'add_option': None, 'rawFeatures': rawFeatures}
+                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
         if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
