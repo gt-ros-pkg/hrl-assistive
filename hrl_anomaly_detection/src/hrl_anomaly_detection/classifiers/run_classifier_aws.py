@@ -88,6 +88,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
     method = custom_params['method']
 
     # load data and preprocess it
+    print "Start to get data"
     data = {}
     for file_idx in xrange(nFiles):    
         if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
@@ -264,6 +265,54 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
     return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
+def disp_score(results, method, nPoints):
+
+    score_list = []
+    for result in results:
+        ret_ROC_data = result[0]
+        ret_param_idx = result[1]
+        ret_params = result[2]
+
+        if ret_param_idx == -1:
+            score_list.append([0, ret_params])
+            continue
+        tp_ll = ret_ROC_data[method]['tp_l']
+        fp_ll = ret_ROC_data[method]['fp_l']
+        tn_ll = ret_ROC_data[method]['tn_l']
+        fn_ll = ret_ROC_data[method]['fn_l']
+        delay_ll = ret_ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        try:
+            for j in xrange(nPoints):
+                tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
+        except:
+            print "failed to get TPR and FPR"
+            break
+        print fpr_l, tpr_l
+
+        # get AUC
+        ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
+
+        ## plt.plot(fpr_l, tpr_l, '-')            
+        # get max tp in fpr (0~20)
+        max_tp = 0
+        for i, fp in enumerate(fpr_l):
+            if fp < 20.0:
+                if tpr_l[i] > max_tp: max_tp = tpr_l[i]
+        score_list.append( [max_tp, ret_params] )
+
+    ## plt.show()
+    # Get sorted results
+    from operator import itemgetter
+    score_list.sort(key=itemgetter(0), reverse=False)
+
+    for i in xrange(len(score_list)):
+        print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
+
+    
 
 
 def getAUC(fpr_l, tpr_l):
@@ -421,11 +470,11 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 9
+        nFiles = 2
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0, 2.0, 4.0, 6.0],\
                       'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                      'w_negative': np.linspace(0.5, 2.0, 5) }
+                      'w_negative': np.linspace(0.5, 2.0, 4) }
 
     else:
         print "Selected task name is not available."
@@ -439,7 +488,6 @@ if __name__ == '__main__':
     # Get combined results
     max_param_idx = len( list(ParameterGrid(parameters)) )
     method = parameters['method'][0]
-    score_list = []
     print "max_param_idx = ", max_param_idx
     if AE_param_dict['switch'] == True and AE_param_dict['add_option'] == 'featureToBottleneck':
         result_pkl = os.path.join(save_data_path, 'result_'+task+'_rawftb.pkl')
@@ -468,8 +516,11 @@ if __name__ == '__main__':
                                                                                data, param_dict, param, \
                                                                                n_jobs=-1)
                 end = time.time()
+                print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start
+                print "-------------------------------------------------"
                 results.append([ret_ROC_data, ret_param_idx, ret_params])
+                disp_score(results, method, nPoints)
 
             ut.save_pickle(results, result_pkl)
         else:
@@ -489,10 +540,13 @@ if __name__ == '__main__':
             time1 = time.time()
             while cloud.get_num_all_tasks() != cloud.get_num_tasks_completed():
                 print "Processing tasks, ", cloud.get_num_tasks_completed(), ' / ', cloud.get_num_all_tasks()
-                time.sleep(5)
+                time.sleep(60*5)
                 print "Std out"
                 print "===================================="
                 cloud.print_stdout()
+                results = cloud.get_completed_results()
+                if len(results)>0:
+                    disp_score(results, method, nPoints)
                 print "===================================="
             results = cloud.get_completed_results()
             time2 = time.time()
@@ -521,51 +575,7 @@ if __name__ == '__main__':
 
 
     # 000000000000000000000000000000000000000000000000000000000000000000
-    ## plt.figure()
-    for result in results:
-        ret_ROC_data = result[0]
-        ret_param_idx = result[1]
-        ret_params = result[2]
-
-        if ret_param_idx == -1:
-            score_list.append([0, ret_params])
-            continue
-        tp_ll = ret_ROC_data[method]['tp_l']
-        fp_ll = ret_ROC_data[method]['fp_l']
-        tn_ll = ret_ROC_data[method]['tn_l']
-        fn_ll = ret_ROC_data[method]['fn_l']
-        delay_ll = ret_ROC_data[method]['delay_l']
-
-        tpr_l = []
-        fpr_l = []
-        try:
-            for j in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
-                fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
-        except:
-            print "failed to get TPR and FPR"
-            break
-        print fpr_l, tpr_l
-
-        # get AUC
-        ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
-
-        ## plt.plot(fpr_l, tpr_l, '-')            
-        # get max tp in fpr (0~20)
-        max_tp = 0
-        for i, fp in enumerate(fpr_l):
-            if fp < 20.0:
-                if tpr_l[i] > max_tp: max_tp = tpr_l[i]
-        score_list.append( [max_tp, ret_params] )
-
-    ## plt.show()
-    # Get sorted results
-    from operator import itemgetter
-    score_list.sort(key=itemgetter(0), reverse=False)
-
-    for i in xrange(len(score_list)):
-        print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
-
+    disp_score(results, method, nPoints)
 
 
 
