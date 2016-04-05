@@ -147,14 +147,24 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     print "Failure data: ", np.shape(failureData)
     print "======================================"
 
+    kFold_list = dm.kFold_data_index2(len(successData[0]),\
+                                      len(failureData[0]),\
+                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
+    normalTrainData   = successData[:, normalTrainIdx, :] 
+    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+    normalTestData    = successData[:, normalTestIdx, :] 
+    abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+    
+
     # training hmm
-    nEmissionDim = len(successData)
+    nEmissionDim = len(normalTrainData)
     hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
+    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
     startIdx = 4
         
@@ -165,10 +175,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        testDataX = np.vstack([np.swapaxes(successData, 0, 1), np.swapaxes(failureData, 0, 1)])
+        testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
-        testDataY = np.hstack([ -np.ones(len(successData[0])), \
-                                np.ones(len(failureData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                np.ones(len(abnormalTestData[0])) ])
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
@@ -206,7 +216,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                                 nLength=len(successData[0,0]), ths_mult=-1.0 )
+                                 nLength=len(normalTestData[0,0]), ths_mult=-1.0 )
             dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
 
@@ -221,13 +231,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
         log_ll = []
         exp_log_ll = []        
-        for i in xrange(len(successData[0])):
+        for i in xrange(len(normalTrainData[0])):
 
             log_ll.append([])
             exp_log_ll.append([])
-            for j in range(startIdx, len(successData[0][i])):
+            for j in range(startIdx, len(normalTrainData[0][i])):
 
-                X = [x[i,:j] for x in successData]
+                X = [x[i,:j] for x in normalTrainData]
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
 
@@ -296,13 +306,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if useAbnormalTest:
         log_ll = []
         ## exp_log_ll = []        
-        for i in xrange(len(failureData[0])):
+        for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
             ## exp_log_ll.append([])
 
-            for j in range(startIdx, len(failureData[0][i])):
-                X = [x[i,:j] for x in failureData]                
+            for j in range(startIdx, len(abnormalTestData[0][i])):
+                X = [x[i,:j] for x in abnormalTestData]                
                 try:
                     logp = ml.loglikelihood(X)
                 except:
@@ -1466,7 +1476,7 @@ if __name__ == '__main__':
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':6, \
+                          'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
                           'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                           ## 'add_option': None, 'rawFeatures': rawFeatures}
