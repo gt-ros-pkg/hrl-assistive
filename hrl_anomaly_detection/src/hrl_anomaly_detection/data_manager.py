@@ -381,9 +381,9 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
 
     if filtering:
         pooling_param_dict  = {'dim': filteringDim} # only for AE        
-        d['normTrainDataFiltered'], pooling_param_dict = variancePooling(d['normTrainData'], \
-                                                                         pooling_param_dict)
-        d['abnormTrainDataFiltered'],_  = variancePooling(d['abnormTrainData'], pooling_param_dict)
+        d['abnormTrainDataFiltered'],pooling_param_dict = variancePooling(d['abnormTrainData'], \
+                                                                          pooling_param_dict)
+        d['normTrainDataFiltered'], _ = variancePooling(d['normTrainData'], pooling_param_dict)
         d['normTestDataFiltered'],_     = variancePooling(d['normTestData'], pooling_param_dict)
         d['abnormTestDataFiltered'],_   = variancePooling(d['abnormTestData'], pooling_param_dict)
 
@@ -394,7 +394,10 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
 def variancePooling(X, param_dict):
     '''
     dim x samples
+    Select non-stationary data
+    
     TODO: can we select final dimension?
+    
     '''
     dim         = param_dict['dim']
     ## min_all_std = param_dict['min_all_std']
@@ -1152,7 +1155,8 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
           nSingleData
 
     # dim x sample x length
-    data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, rf_center, local_range,\
+    data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, \
+                           rf_center, local_range,\
                            downSampleSize=downSampleSize, scale=1.0,\
                            ae_data=True, data_ext=False, \
                            handFeatures=handFeatures, rawFeatures=rawFeatures, \

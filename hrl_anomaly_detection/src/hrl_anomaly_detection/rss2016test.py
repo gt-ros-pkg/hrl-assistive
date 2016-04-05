@@ -346,12 +346,11 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     assert AE_dict['switch'] == True
                    
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-    if os.path.isfile(crossVal_pkl) and False: #temp
+    if os.path.isfile(crossVal_pkl): 
         print "Loading cv data"
         d = ut.load_pickle(crossVal_pkl)
-        ## d['aug_aeSuccessData'] = d.pop('aeSuccessData_augmented')
     else:
-        dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
@@ -359,19 +358,12 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        kFold_list = dm.kFold_data_index2(len(dd['aeSuccessData'][0]),\
-                                          len(dd['aeFailureData'][0]),\
+        kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
+                                          len(d['aeFailureData'][0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        ## d = {}
-        ## # Task-oriented hand-crafted features        
-        ## d['successData']     = dd['successData']
-        ## d['failureData']     = dd['failureData']
-        ## # Task-oriented raw features        
-        ## d['aeSuccessData']   = dd['aeSuccessData']
-        ## d['aeFailureData']   = dd['aeFailureData']       
-        dd['kFoldList']       = kFold_list                                             
-        ut.save_pickle(dd, crossVal_pkl)
+        d['kFoldList']       = kFold_list                                             
+        ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
