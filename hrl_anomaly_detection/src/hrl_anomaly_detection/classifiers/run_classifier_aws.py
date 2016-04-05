@@ -470,11 +470,11 @@ if __name__ == '__main__':
         param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                       'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
-        nFiles = 2
+        nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.0, 2.0, 4.0, 6.0],\
-                      'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-                      'w_negative': np.linspace(0.5, 2.0, 4) }
+                      'cost': [4.0],\
+                      'gamma': np.linspace(0.01, 2.0, 4).tolist(), \
+                      'w_negative': [0.5,3.0,6.0,9.0]) }
 
     else:
         print "Selected task name is not available."
