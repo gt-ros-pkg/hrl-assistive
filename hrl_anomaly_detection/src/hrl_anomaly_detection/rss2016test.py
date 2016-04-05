@@ -1467,8 +1467,8 @@ if __name__ == '__main__':
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
-                          'add_option': None, 'rawFeatures': rawFeatures}
-                          ##'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          ## 'add_option': None, 'rawFeatures': rawFeatures}
         HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
         if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
