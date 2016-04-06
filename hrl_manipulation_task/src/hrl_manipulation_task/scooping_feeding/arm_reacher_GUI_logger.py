@@ -90,6 +90,7 @@ class armReacherGUI:
     def emergencyCallback(self, data):
     #Change the true/false.
         self.emergencyStatus = True
+        self.inputStatus = False
         #Publish to interruptAction in server?
         self.emergencyPub.publish("STOP")
         print "Emergency received"
@@ -279,7 +280,7 @@ class armReacherGUI:
         elif self.FeedNumber<2:
             print self.armReachActionLeft("initFeeding")
         else: 
-            print self.armReachActionLeft("runFeeding1")
+            #print self.armReachActionLeft("runFeeding1")
             print self.armReachActionLeft("initFeeding")
 
 
@@ -314,7 +315,7 @@ if __name__ == '__main__':
     
     if opt.bLog:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
-                     vision_change=False, pps=True, skin=False, \
+                     vision_change=False, pps=False, skin=False, \
                      subject="Demo", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      verbose=False)
     else:
