@@ -198,6 +198,7 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
     param_list = list(ParameterGrid(parameters))
     mean_list  = []
     std_list   = []
+    startIdx = 4
     
     for param in param_list:
 
