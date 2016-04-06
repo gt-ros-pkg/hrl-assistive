@@ -253,14 +253,14 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                 break        
 
-        if Y_test[ii][0] > 0.0:
-            if est_y[jj] > 0.0:
-                tp_l.append(1)
-                delay_l.append(delay_idx)
-            else: fn_l.append(1)
-        elif Y_test[ii][0] <= 0.0:
-            if est_y[jj] > 0.0: fp_l.append(1)
-            else: tn_l.append(1)
+            if Y_test[ii][0] > 0.0:
+                if est_y[jj] > 0.0:
+                    tp_l.append(1)
+                    delay_l.append(delay_idx)
+                else: fn_l.append(1)
+            elif Y_test[ii][0] <= 0.0:
+                if est_y[jj] > 0.0: fp_l.append(1)
+                else: tn_l.append(1)
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
