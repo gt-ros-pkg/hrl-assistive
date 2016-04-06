@@ -146,8 +146,8 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
             nLength      = len(normalTrainData[0][0])
 
             # scaling
-            model = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = model.fit( normalTrainData, cov_mult=cov_mult )
+            ml = hmm.learning_hmm( param['nState'], nEmissionDim )
+            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
             else:           
@@ -159,7 +159,7 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
                                          
                 ## testData_y = [1.0]*len( normalTestData[0] )
                 testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
-                scores.append( model.score( testData_x, y=testData_y, n_jobs=-1 ) )
+                scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
 
 
         mean_list.append( np.mean(scores) )
@@ -281,8 +281,8 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
             nLength      = len(normalTrainData[0][0])
 
             # scaling
-            model = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = model.fit( normalTrainData, cov_mult=cov_mult )
+            ml = hmm.learning_hmm( param['nState'], nEmissionDim )
+            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
                 continue
