@@ -174,7 +174,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    if decision_boundary_viz:
+    if decision_boundary_viz and False:
         testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
         testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
@@ -244,7 +244,8 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                 if decision_boundary_viz and i==target_idx:
                     if j>=len(ll_logp[i]): continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    
+
+                    print dtc.predict(l_X), type(dtc.predict(l_X)), ll_logp[i][j]
                     exp_logp = dtc.predict(l_X) + ll_logp[i][j]
                     exp_log_ll[i].append(exp_logp)
 
@@ -1310,6 +1311,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--AERenew', '--ar', action='store_true', dest='bAERenew',
+                 default=False, help='Renew AE data.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
 
@@ -1331,6 +1334,8 @@ if __name__ == '__main__':
                  default=False, help='Extract auto-encoder data.')
     p.add_option('--aeDataExtractionPlot', '--aep', action='store_true', dest='bAEDataExtractionPlot',
                  default=False, help='Extract auto-encoder data and plot it.')
+    p.add_option('--aeDataAddFeature', '--aea', action='store_true', dest='bAEDataAddFeature',
+                 default=False, help='Add hand-crafted data.')
 
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
@@ -1471,12 +1476,12 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4,  \
+        AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':4, \
+                          'filter':True, 'filterDim':8, \
                           'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
                           #'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
@@ -1486,7 +1491,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 7.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
@@ -1505,7 +1510,11 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    #---------------------------------------------------------------------------           
+    #---------------------------------------------------------------------------
+    if opt.bAEDataAddFeature:
+        param_dict['AE']['add_option'] = 'featureToBottleneck'
+        param_dict['AE']['switch']     = True
+    
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           

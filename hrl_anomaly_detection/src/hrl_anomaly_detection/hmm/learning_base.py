@@ -174,7 +174,7 @@ class learning_base():
         # Split the dataset in two equal parts
         print("Tuning hyper-parameters for %s :", X.shape)
         print()        
-        clf = GridSearchCV(self, parameters, cv=nFold, n_jobs=n_jobs)
+        clf = GridSearchCV(self, parameters, cv=nFold, n_jobs=n_jobs, verbose=50)
         clf.fit(X) # [n_samples, n_features] 
 
         print("Best parameters set found on development set:")

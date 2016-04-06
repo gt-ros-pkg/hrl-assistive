@@ -375,6 +375,17 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
             #   if normal, error is close to 0
             #   if abnormal, error is large
             for i in xrange(len(ll_classifier_test_X)):
+<<<<<<< HEAD
+=======
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    err = abs( dtc.predict(ll_classifier_test_X[i][j]) )
+                    y = ll_classifier_test_Y[i][j] * -1.0   
+                    score +=  -np.log(err) * y
+                    
+            scores.append( score )        
+        mean_list.append( np.mean(scores) )
+        std_list.append( np.std(scores) )
+>>>>>>> c0a11b72a6fd051ca4c985e8c9fad32e5bf9f81b
 
                 X     = ll_classifier_test_X[i]
                 est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
