@@ -174,7 +174,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    if decision_boundary_viz:
+    if decision_boundary_viz and False:
         testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
         testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
@@ -244,7 +244,8 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                 if decision_boundary_viz and i==target_idx:
                     if j>=len(ll_logp[i]): continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    
+
+                    print dtc.predict(l_X), type(dtc.predict(l_X)), ll_logp[i][j]
                     exp_logp = dtc.predict(l_X) + ll_logp[i][j]
                     exp_log_ll[i].append(exp_logp)
 
@@ -1490,7 +1491,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 7.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
