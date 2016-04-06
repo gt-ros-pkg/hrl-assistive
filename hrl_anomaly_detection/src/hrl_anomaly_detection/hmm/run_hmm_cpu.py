@@ -353,7 +353,8 @@ if __name__ == '__main__':
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
-                      'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                      'add_option': True, 'rawFeatures': rawFeatures}
+                      ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                       ##'add_option': True, 'rawFeatures': rawFeatures}
     HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
@@ -361,8 +362,10 @@ if __name__ == '__main__':
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
     
-    parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
-                  'cov': [1.0, 2.0, 4.0, 8.0] }
+    ## parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
+    ##               'cov': [1.0, 2.0, 4.0, 8.0] }
+    parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
+                  'cov': [4.0, 8.0] }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
