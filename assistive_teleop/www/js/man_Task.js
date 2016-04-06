@@ -105,6 +105,15 @@ var ManipulationTask = function (ros) {
         console.log('Reporting the feedback message.');
     };
 
+    manTask.skip = function () {
+        var msg = new manTask.ros.Message({
+          data: 'SKIP'
+        });
+        manTask.userFeedbackPub.publish(msg);
+        assistive_teleop.log('No report has been filed');
+        console.log('Reporting the feedback message.');
+    };
+
 
     //part added.
     manTask.feedbackSub = new manTask.ros.Topic({
@@ -122,6 +131,7 @@ var ManipulationTask = function (ros) {
         $('#man_task_success').css("opacity","1.0");
         $('#man_task_Fail').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Skip').css("opacity","1.0");
         // "pointer-events" "none" "auto"
 
         $('#man_task_Scooping').css("pointer-events","none");
@@ -152,6 +162,7 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_start').css("opacity","1.0");
+        $('#man_task_Skip').css("opacity","0.6");
     });
     $('#man_task_Feeding').click(function(){
         assistive_teleop.manTask.feed();
@@ -163,6 +174,7 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_start').css("opacity","1.0");
+        $('#man_task_Skip').css("opacity","0.6");
     });
     $('#man_task_Both').click(function(){
         assistive_teleop.manTask.both();
@@ -174,6 +186,7 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6"); 
         $('#man_task_start').css("opacity","1.0");
+        $('#man_task_Skip').css("opacity","0.6");
     });
     $('#man_task_start').click(function(){
         assistive_teleop.manTask.start();
@@ -185,17 +198,26 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_stop').css("opacity","1.0"); 
+        $('#man_task_Skip').css("opacity","0.6");
+
+        $('#man_task_Continue').css("pointer-events","none");
+        $('#man_task_start').css("pointer-events","none");
     });
     $('#man_task_stop').click(function(){
         assistive_teleop.manTask.stop();
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
         $('#man_task_Both').css("opacity","1.0");
-        $('#man_task_start').css("opacity","1.0");
+        $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","1.0");
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6"); 
+        $('#man_task_Skip').css("opacity","0.6");
+
+        $('#man_task_Continue').css("pointer-events","auto");
+        $('#man_task_start').css("pointer-events","auto");
+
     });
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
@@ -207,6 +229,10 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_stop').css("opacity","1.0"); 
+        $('#man_task_Skip').css("opacity","0.6");
+
+        $('#man_task_Continue').css("pointer-events","none");
+        $('#man_task_start').css("pointer-events","none");
     });
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();
@@ -218,6 +244,7 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6"); 
+        $('#man_task_Skip').css("opacity","0.6");
 
     //re-enable click
         $('#man_task_Scooping').css("pointer-events","auto");
@@ -238,6 +265,7 @@ var initManTaskTab = function() {
         $('#man_task_success').css("opacity","0.6");
         $('#man_task_Fail').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6");  
+        $('#man_task_Skip').css("opacity","0.6");
 
     //re-enable click
         $('#man_task_Scooping').css("pointer-events","auto");
@@ -248,5 +276,27 @@ var initManTaskTab = function() {
         $('#man_task_start').css("pointer-events","auto");
 
     });
+
+    $('#man_task_Skip').click(function(){
+        assistive_teleop.manTask.skip();
+        $('#man_task_Scooping').css("opacity","1.0");
+        $('#man_task_Feeding').css("opacity","1.0");
+        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_start').css("opacity","0.6");
+        $('#man_task_Continue').css("opacity","0.6");
+        $('#man_task_success').css("opacity","0.6");
+        $('#man_task_Fail').css("opacity","0.6");
+        $('#man_task_stop').css("opacity","0.6");  
+        $('#man_task_Skip').css("opacity","0.6");
+    //re-enable click
+        $('#man_task_Scooping').css("pointer-events","auto");
+        $('#man_task_Feeding').css("pointer-events","auto");
+        $('#man_task_Both').css("pointer-events","auto");
+        $('#man_task_stop').css("pointer-events","auto");
+        $('#man_task_Continue').css("pointer-events","auto");
+        $('#man_task_start').css("pointer-events","auto");
+
+    });
+
 
 }

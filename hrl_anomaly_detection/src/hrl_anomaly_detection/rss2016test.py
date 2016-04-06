@@ -103,7 +103,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             failureData = d['abnormTrainData']
 
         if AE_dict['add_option'] is 'featureToBottleneck':
-            print "add feature is not implemented..."
+            print "add features"
             newHandSuccessData = handSuccessData = d['handNormTrainData']
             newHandFailureData = handFailureData = d['handAbnormTrainData']
             
@@ -113,6 +113,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             successData = combineData( successData, newHandSuccessData )
             failureData = combineData( failureData, newHandFailureData )
+
+            ## # reduce dimension by pooling
+            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+            ## successData, pooling_param_dict = dm.variancePooling(successData, \
+            ##                                                   pooling_param_dict)
+            ## failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
+            
             
         successData *= HMM_dict['scale']
         failureData *= HMM_dict['scale']
@@ -140,14 +147,24 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     print "Failure data: ", np.shape(failureData)
     print "======================================"
 
+    kFold_list = dm.kFold_data_index2(len(successData[0]),\
+                                      len(failureData[0]),\
+                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
+    normalTrainData   = successData[:, normalTrainIdx, :] 
+    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+    normalTestData    = successData[:, normalTestIdx, :] 
+    abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+    
+
     # training hmm
-    nEmissionDim = len(successData)
+    nEmissionDim = len(normalTrainData)
     hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(successData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
+    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
     ## ths = threshold
     startIdx = 4
         
@@ -157,11 +174,11 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    if decision_boundary_viz:
-        testDataX = np.vstack([np.swapaxes(successData, 0, 1), np.swapaxes(failureData, 0, 1)])
+    if decision_boundary_viz and False:
+        testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
-        testDataY = np.hstack([ -np.ones(len(successData[0])), \
-                                np.ones(len(failureData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                np.ones(len(abnormalTestData[0])) ])
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
@@ -199,7 +216,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                                 nLength=len(successData[0,0]), ths_mult=-1.0 )
+                                 nLength=len(normalTestData[0,0]), ths_mult=-1.0 )
             dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
 
@@ -214,20 +231,21 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
         log_ll = []
         exp_log_ll = []        
-        for i in xrange(len(successData[0])):
+        for i in xrange(len(normalTrainData[0])):
 
             log_ll.append([])
             exp_log_ll.append([])
-            for j in range(startIdx, len(successData[0][i])):
+            for j in range(startIdx, len(normalTrainData[0][i])):
 
-                X = [x[i,:j] for x in successData]
+                X = [x[i,:j] for x in normalTrainData]
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
 
                 if decision_boundary_viz and i==target_idx:
                     if j>=len(ll_logp[i]): continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    
+
+                    print dtc.predict(l_X), type(dtc.predict(l_X)), ll_logp[i][j]
                     exp_logp = dtc.predict(l_X) + ll_logp[i][j]
                     exp_log_ll[i].append(exp_logp)
 
@@ -289,13 +307,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     if useAbnormalTest:
         log_ll = []
         ## exp_log_ll = []        
-        for i in xrange(len(failureData[0])):
+        for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
             ## exp_log_ll.append([])
 
-            for j in range(startIdx, len(failureData[0][i])):
-                X = [x[i,:j] for x in failureData]                
+            for j in range(startIdx, len(abnormalTestData[0][i])):
+                X = [x[i,:j] for x in abnormalTestData]                
                 try:
                     logp = ml.loglikelihood(X)
                 except:
@@ -339,12 +357,11 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     assert AE_dict['switch'] == True
                    
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-    if os.path.isfile(crossVal_pkl) and False: #temp
+    if os.path.isfile(crossVal_pkl): 
         print "Loading cv data"
         d = ut.load_pickle(crossVal_pkl)
-        ## d['aug_aeSuccessData'] = d.pop('aeSuccessData_augmented')
     else:
-        dd = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
@@ -352,19 +369,12 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        kFold_list = dm.kFold_data_index2(len(dd['aeSuccessData'][0]),\
-                                          len(dd['aeFailureData'][0]),\
+        kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
+                                          len(d['aeFailureData'][0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        ## d = {}
-        ## # Task-oriented hand-crafted features        
-        ## d['successData']     = dd['successData']
-        ## d['failureData']     = dd['failureData']
-        ## # Task-oriented raw features        
-        ## d['aeSuccessData']   = dd['aeSuccessData']
-        ## d['aeFailureData']   = dd['aeFailureData']       
-        dd['kFoldList']       = kFold_list                                             
-        ut.save_pickle(dd, crossVal_pkl)
+        d['kFoldList']       = kFold_list                                             
+        ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -408,7 +418,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         if success_viz or failure_viz:
             import data_viz as dv
-            dv.viz(normalTrainData, abnormalTrainData)
+            dv.viz(dd['normTrainData'], dd['abnormTrainData'], True)
+            dv.viz(dd['normTrainDataFiltered'], dd['abnormTrainDataFiltered'])
 
         if handFeature_viz:
             handNormalTrainData   = dd['handNormTrainData']
@@ -574,6 +585,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
 
+                ## # reduce dimension by pooling
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                ##                                                          pooling_param_dict)
+                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                
+
             # scaling
             if verbose: print "scaling data"
             normalTrainData   *= HMM_dict['scale']
@@ -690,6 +710,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     #-----------------------------------------------------------------------------------------
+
 
     if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_rawftb.pkl')
@@ -1290,6 +1311,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
                  default=False, help='Renew pickle files.')
+    p.add_option('--AERenew', '--ar', action='store_true', dest='bAERenew',
+                 default=False, help='Renew AE data.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
 
@@ -1311,6 +1334,8 @@ if __name__ == '__main__':
                  default=False, help='Extract auto-encoder data.')
     p.add_option('--aeDataExtractionPlot', '--aep', action='store_true', dest='bAEDataExtractionPlot',
                  default=False, help='Extract auto-encoder data and plot it.')
+    p.add_option('--aeDataAddFeature', '--aea', action='store_true', dest='bAEDataAddFeature',
+                 default=False, help='Add hand-crafted data.')
 
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
@@ -1441,7 +1466,7 @@ if __name__ == '__main__':
                          
         modality_list   = ['kinematics', 'audio', 'ft']
 
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
@@ -1451,17 +1476,25 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+        AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
                           'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':4, \
+                          'filter':True, 'filterDim':8, \
                           'nAugment': 1, \
-                          'add_option': True, 'rawFeatures': rawFeatures}
-                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+                          'add_option': None, 'rawFeatures': rawFeatures}
+                          #'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+
+        if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
+            SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
+        if AE_param_dict['switch']:            
+            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 7.0}
+        else:
+            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
@@ -1477,7 +1510,11 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    #---------------------------------------------------------------------------           
+    #---------------------------------------------------------------------------
+    if opt.bAEDataAddFeature:
+        param_dict['AE']['add_option'] = 'featureToBottleneck'
+        param_dict['AE']['switch']     = True
+    
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
@@ -1548,7 +1585,7 @@ if __name__ == '__main__':
 
         likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
-                              useTrain=True, useNormalTest=False, useAbnormalTest=False,\
+                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               

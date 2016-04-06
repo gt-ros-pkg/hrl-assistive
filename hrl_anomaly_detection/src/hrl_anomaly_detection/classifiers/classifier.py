@@ -50,6 +50,8 @@ from hrl_anomaly_detection.hmm.learning_base import learning_base
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
                  class_weight=1.0, \
+                 #progress
+                 logp_offset = 0.0,\
                  # svm
                  svm_type    = 0,\
                  kernel_type = 2,\
@@ -64,6 +66,7 @@ class classifier(learning_base):
         ths_mult: only for progress-based classifier
         '''              
         self.method = method
+        self.dt     = None
         self.verbose = verbose
 
         if self.method == 'svm':
@@ -86,6 +89,7 @@ class classifier(learning_base):
             self.std_coff  = 1.0
             self.nPosteriors = nPosteriors
             self.ths_mult = ths_mult
+            self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors) 
         elif self.method == 'fixed':
@@ -189,27 +193,39 @@ class classifier(learning_base):
             else:
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
+        
         elif self.method == 'progress_time_cluster':
-            logp = X[0]
-            post = X[1:]
+            if len(np.shape(X))==1: X = [X]
 
-            # Find the best posterior distribution
-            min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-            nState = len(post)
-            ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            ## c_time = np.logspace(0,-0.9,nState)[min_index]
-            c_time = 1.0
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                post = X[i][1:]
 
-            if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
-                type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp
-            else:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp
-            return err 
+                # Find the best posterior distribution
+                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                nState = len(post)
+                ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
+                ## c_time = np.logspace(0,-0.9,nState)[min_index]
+                c_time = 1.0
+
+                if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
+                    type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
+                    err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                else:
+                    err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+                l_err.append(err)
+            return l_err
+        
         elif self.method == 'fixed':
-            logp = X[0]
-            err = self.mu + self.ths_mult * self.std - logp
-            return err
+            if len(np.shape(X))==1: X = [X]
+                
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                err = self.mu + self.ths_mult * self.std - logp
+                l_err.append(err)
+            return l_err 
 
     ## def predict_batch(self, X, y, idx):
 
@@ -267,7 +283,31 @@ class classifier(learning_base):
             print "Not implemented funciton Score"
             return 
 
+        
+    def save_model(fileName):
+        if self.dt is None: 
+            print "No trained classifier"
+            return
+        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            svm.svm_save_model(use_pkl, self.dt) 
+        else:
+            print "Not available method"
 
+            
+    def load_model(fileName):        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            self.dt = svm.svm_load_model(use_pkl) 
+        else:
+            print "Not available method"
+        
+            
+
+        
 ####################################################################
 # functions for distances
 ####################################################################

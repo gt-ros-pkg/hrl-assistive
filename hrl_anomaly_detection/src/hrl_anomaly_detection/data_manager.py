@@ -309,6 +309,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         d = ut.load_pickle(AE_proc_data)
         return d
 
+    print "Loading ae_model data"
     from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
     AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
 
@@ -381,20 +382,77 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
 
     if filtering:
         pooling_param_dict  = {'dim': filteringDim} # only for AE        
-        d['normTrainDataFiltered'], pooling_param_dict = variancePooling(d['normTrainData'], \
-                                                                         pooling_param_dict)
-        d['abnormTrainDataFiltered'],_  = variancePooling(d['abnormTrainData'], pooling_param_dict)
-        d['normTestDataFiltered'],_     = variancePooling(d['normTestData'], pooling_param_dict)
-        d['abnormTestDataFiltered'],_   = variancePooling(d['abnormTestData'], pooling_param_dict)
+        d['normTrainDataFiltered'], d['abnormTrainDataFiltered'],pooling_param_dict \
+          = errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
+        d['normTestDataFiltered'], d['abnormTestDataFiltered'], _ \
+          = errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
 
     ut.save_pickle(d, AE_proc_data)
     return d
 
+def errorPooling(norX, abnorX, param_dict):
+    '''
+    dim x samples
+    Select non-stationary data
+    Assuption: norX and abnorX should have the same phase
+    '''
+    dim         = param_dict['dim']
+
+    if 'dim_idx' not in param_dict.keys():
+        dim_idx    = []
+        new_norX   = []
+        new_abnorX = []
+
+        err_list = []
+        for i in xrange(len(norX)):
+            # get mean curve
+            meanNorCurve   = np.mean(norX[i], axis=0)
+            meanAbnorCurve = np.mean(abnorX[i], axis=0)
+            stdNorCurve   = np.std(norX[i], axis=0)
+            stdAbnorCurve = np.std(abnorX[i], axis=0)
+            if np.std(meanNorCurve) < 0.02 and np.std(meanAbnorCurve) < 0.02 and\
+              np.mean(stdNorCurve) < 0.02 and np.mean(stdAbnorCurve) < 0.02:
+                err_list.append(1e-9)
+                continue
+                        
+            # get score
+            X = abnorX[i]-meanNorCurve
+            count = 0
+            for j in xrange(len(X)):
+                if abs(X[j][0]) > stdNorCurve[0]: count += 1
+            if count > len(stdNorCurve)/2:
+                err_list.append(1e-8)
+                continue
+                
+            max_div = np.max(abs(X)/stdNorCurve)
+            err_list.append(max_div)
+
+        indices = np.argsort(err_list)[::-1]
+
+        for idx in indices[:dim]:
+            new_norX.append(norX[idx])
+            new_abnorX.append(abnorX[idx])
+            dim_idx.append(idx)
+
+            ## if all_std > min_all_std and avg_ea_std < max_avg_std:
+            ##     new_X.append(X[i])
+            ##     dim_idx.append(i)
+
+        param_dict['dim_idx'] = dim_idx
+    else:
+        new_norX = [ norX[idx] for idx in param_dict['dim_idx'] ]
+        new_abnorX = [ abnorX[idx] for idx in param_dict['dim_idx'] ]
+
+    return np.array(new_norX), np.array(new_abnorX), param_dict
+        
 
 def variancePooling(X, param_dict):
     '''
     dim x samples
+    Select non-stationary data
+    
     TODO: can we select final dimension?
+    
     '''
     dim         = param_dict['dim']
     ## min_all_std = param_dict['min_all_std']
@@ -1152,7 +1210,8 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
           nSingleData
 
     # dim x sample x length
-    data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, rf_center, local_range,\
+    data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, \
+                           rf_center, local_range,\
                            downSampleSize=downSampleSize, scale=1.0,\
                            ae_data=True, data_ext=False, \
                            handFeatures=handFeatures, rawFeatures=rawFeatures, \

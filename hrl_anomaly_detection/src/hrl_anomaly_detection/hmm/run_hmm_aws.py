@@ -111,10 +111,15 @@ def cross_validate_local(idx, processed_data_path, model, params):
 
     ## Filtering
     # dim x sample x length
-    normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], pooling_param_dict)
-    abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
-    normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
-    abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
+    normalTrainData, abnormalTrainData,pooling_param_dict \
+      = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
+    normalTestData, abnormalTestData, _ \
+      = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
+    
+    ## normalTrainData, pooling_param_dict = dm.variancePooling(d['normTrainData'], pooling_param_dict)
+    ## abnormalTrainData,_                 = dm.variancePooling(d['abnormTrainData'], pooling_param_dict)
+    ## normalTestData,_                    = dm.variancePooling(d['normTestData'], pooling_param_dict)
+    ## abnormalTestData,_                  = dm.variancePooling(d['abnormTestData'], pooling_param_dict)
 
     trainSet = [normalTrainData, [1.0]*len(normalTrainData[0]) ]
     testData_x = normalTestData

@@ -85,7 +85,7 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers and subscribers
-        rospy.Subscriber('InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
         rospy.Subscriber('/ar_track_alvar/pose_0', PoseStamped, self.mainTagPoseCallback)
         
         # service

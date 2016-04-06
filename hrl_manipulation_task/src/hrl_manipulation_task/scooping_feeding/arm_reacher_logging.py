@@ -112,6 +112,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
+    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
+                 default=False, help='Enable anomaly detector.')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -120,14 +122,21 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+    ## if opt.bAD:
+    ##     print "Waiting anomaly detection service"
+    ##     rospy.wait_for_service("/scooping/anomaly_detector_enable")
+    ##     scooping_detector = rospy.ServiceProxy("/scooping/anomaly_detector_enable", Bool_None)
+    ##     rospy.wait_for_service("/feeding/anomaly_detector_enable")
+    ##     feeding_detector  = rospy.ServiceProxy("/feeding/anomaly_detector_enable", Bool_None)
+        
     ## rospy.sleep(2.0)    
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
     
     log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
                  pps=True, skin=True, \
-                 subject="gatsbii", task='scooping', data_pub=opt.bDataPub, verbose=False)
-
+                 subject="gatsbii", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
+                     
     last_trial  = '4'
     last_detect = '2'
                  

@@ -39,8 +39,25 @@ import time
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from hrl_anomaly_detection import data_manager as dm
 import hrl_lib.util as ut
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.classifiers import classifier as cb
 
-def tune_hmm(parameters, kFold_list, filtering=True):
+from joblib import Parallel, delayed
+
+def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    
+    #------------------------------------------
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -54,19 +71,75 @@ def tune_hmm(parameters, kFold_list, filtering=True):
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-            if os.path.isfile(AE_proc_data):
+
+            if AE_dict['switch']:
+                if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+
+                AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
                 d = ut.load_pickle(AE_proc_data)
-                if filtering:
-                    normalTrainData = d['normTrainDataFiltered'] * param['scale']
-                    abnormalTrainData = d['abnormTrainDataFiltered'] * param['scale']
-                    normalTestData  = d['normTestDataFiltered'] * param['scale']
-                    abnormalTestData  = d['abnormTestDataFiltered'] * param['scale']
+
+                if AE_dict['filter']:
+                    # NOTE: pooling dimension should vary on each auto encoder.
+                    # Filtering using variances
+                    normalTrainData   = d['normTrainDataFiltered']
+                    abnormalTrainData = d['abnormTrainDataFiltered']
+                    normalTestData    = d['normTestDataFiltered']
+                    abnormalTestData  = d['abnormTestDataFiltered']
+                    ## import data_viz as dv
+                    ## dv.viz(normalTrainData)
+                    ## continue                   
                 else:
-                    normalTrainData = d['normTrainData'] * param['scale']
-                    abnormalTrainData = d['abnormTrainData'] * param['scale']
-                    normalTestData  = d['normTestData'] * param['scale']
-                    abnormalTestData  = d['abnormTestData'] * param['scale']
+                    normalTrainData   = d['normTrainData']
+                    abnormalTrainData = d['abnormTrainData']
+                    normalTestData    = d['normTestData']
+                    abnormalTestData  = d['abnormTestData']
+                
+            else:
+                # dim x sample x length
+                normalTrainData   = successData[:, normalTrainIdx, :] 
+                abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+                normalTestData    = successData[:, normalTestIdx, :] 
+                abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+
+
+            if AE_dict['add_option'] is 'featureToBottleneck':
+                print "add feature!!"
+                newHandSuccTrData = handSuccTrData = d['handNormTrainData']
+                newHandFailTrData = handFailTrData = d['handAbnormTrainData']
+                handSuccTeData = d['handNormTestData']
+                handFailTeData = d['handAbnormTestData']
+
+                for i in xrange(AE_dict['nAugment']):
+                    newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
+                    newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
+
+                normalTrainData   = combineData( normalTrainData, newHandSuccTrData )
+                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData )
+                normalTestData   = combineData( normalTestData, handSuccTeData )
+                abnormalTestData  = combineData( abnormalTestData, handFailTeData )
+                ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
+                ## sys.exit()
+
+                
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
+                ## normalTrainData, abnormalTrainData,pooling_param_dict \
+                ##   = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
+                ## normalTestData, abnormalTestData, _ \
+                ##   = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
+                
+                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                ##                                                          pooling_param_dict)
+                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                
+
+            # scaling
+            if verbose: print "scaling data"
+            normalTrainData   *= HMM_dict['scale']
+            abnormalTrainData *= HMM_dict['scale']
+            normalTestData    *= HMM_dict['scale']
+            abnormalTestData  *= HMM_dict['scale']
 
             #
             nEmissionDim = len(normalTrainData)
@@ -74,23 +147,20 @@ def tune_hmm(parameters, kFold_list, filtering=True):
             nLength      = len(normalTrainData[0][0])
 
             # scaling
-            model = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = model.fit( normalTrainData, cov_mult=cov_mult )
+            ml = hmm.learning_hmm( param['nState'], nEmissionDim )
+            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
-            else:
-                scores.append(ret)
-                continue
-            
+            else:           
                 # evaluation:  dim x sample => sample x dim
-                testData_x = np.swapaxes( normalTestData, 0, 1)
-                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                                         ## np.swapaxes( abnormalTestData, 0, 1) ])
+                ## testData_x = np.swapaxes( normalTestData, 0, 1)
+                testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
+                                         np.swapaxes( abnormalTestData, 0, 1) ])
                 testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
                                          
-                testData_y = [1.0]*len( normalTestData[0] )
-                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
-                scores.append( model.score( testData_x, y=testData_y, n_jobs=-1 ) )
+                ## testData_y = [1.0]*len( normalTestData[0] )
+                testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
+                scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
 
 
         mean_list.append( np.mean(scores) )
@@ -102,11 +172,34 @@ def tune_hmm(parameters, kFold_list, filtering=True):
               % (mean_list[i], std_list[i], param))
 
 
-def tune_hmm_progress(parameters, kFold_list, filtering=True):
+    ## # Get sorted results
+    ## from operator import itemgetter
+    ## mean_list.sort(key=itemgetter(0), reverse=False)
+
+    ## for i in xrange(len(results)):
+    ##     print results[i]
+
+
+
+def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    
+    #------------------------------------------
 
     param_list = list(ParameterGrid(parameters))
     mean_list  = []
     std_list   = []
+    startIdx = 4
     
     for param in param_list:
 
@@ -115,20 +208,74 @@ def tune_hmm_progress(parameters, kFold_list, filtering=True):
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-            if os.path.isfile(AE_proc_data):
+            if AE_dict['switch']:
+                if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+
+                AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
                 d = ut.load_pickle(AE_proc_data)
-                # dim x sample x length
-                if filtering:
-                    normalTrainData = d['normTrainDataFiltered'] * param['scale']
-                    abnormalTrainData = d['abnormTrainDataFiltered'] * param['scale']
-                    normalTestData  = d['normTestDataFiltered'] * param['scale']
-                    abnormalTestData  = d['abnormTestDataFiltered'] * param['scale']
+
+                if AE_dict['filter']:
+                    # NOTE: pooling dimension should vary on each auto encoder.
+                    # Filtering using variances
+                    normalTrainData   = d['normTrainDataFiltered']
+                    abnormalTrainData = d['abnormTrainDataFiltered']
+                    normalTestData    = d['normTestDataFiltered']
+                    abnormalTestData  = d['abnormTestDataFiltered']
+                    ## import data_viz as dv
+                    ## dv.viz(normalTrainData)
+                    ## continue                   
                 else:
-                    normalTrainData = d['normTrainData'] * param['scale']
-                    abnormalTrainData = d['abnormTrainData'] * param['scale']
-                    normalTestData  = d['normTestData'] * param['scale']
-                    abnormalTestData  = d['abnormTestData'] * param['scale']
+                    normalTrainData   = d['normTrainData']
+                    abnormalTrainData = d['abnormTrainData']
+                    normalTestData    = d['normTestData']
+                    abnormalTestData  = d['abnormTestData']
+                
+            else:
+                # dim x sample x length
+                normalTrainData   = successData[:, normalTrainIdx, :] 
+                abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+                normalTestData    = successData[:, normalTestIdx, :] 
+                abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+
+
+            if AE_dict['add_option'] is 'featureToBottleneck':
+                print "add feature!!"
+                newHandSuccTrData = handSuccTrData = d['handNormTrainData']
+                newHandFailTrData = handFailTrData = d['handAbnormTrainData']
+                handSuccTeData = d['handNormTestData']
+                handFailTeData = d['handAbnormTestData']
+
+                for i in xrange(AE_dict['nAugment']):
+                    newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
+                    newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
+
+                normalTrainData   = combineData( normalTrainData, newHandSuccTrData )
+                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData )
+                normalTestData   = combineData( normalTestData, handSuccTeData )
+                abnormalTestData  = combineData( abnormalTestData, handFailTeData )
+                ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
+                ## sys.exit()
+
+                
+                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
+                ## normalTrainData, abnormalTrainData,pooling_param_dict \
+                ##   = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
+                ## normalTestData, abnormalTestData, _ \
+                ##   = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
+                
+                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+                ##                                                          pooling_param_dict)
+                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+                
+
+            # scaling
+            if verbose: print "scaling data"
+            normalTrainData   *= HMM_dict['scale']
+            abnormalTrainData *= HMM_dict['scale']
+            normalTestData    *= HMM_dict['scale']
+            abnormalTestData  *= HMM_dict['scale']
 
             #
             nEmissionDim = len(normalTrainData)
@@ -136,8 +283,8 @@ def tune_hmm_progress(parameters, kFold_list, filtering=True):
             nLength      = len(normalTrainData[0][0])
 
             # scaling
-            model = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = model.fit( normalTrainData, cov_mult=cov_mult )
+            ml = hmm.learning_hmm( param['nState'], nEmissionDim )
+            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
                 continue
@@ -227,7 +374,7 @@ def tune_hmm_progress(parameters, kFold_list, filtering=True):
             #   if abnormal, error is large
             score = 0.0
             for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[ii])):
+                for j in xrange(len(ll_classifier_test_X[i])):
                     err = abs( dtc.predict(ll_classifier_test_X[i][j]) )
                     y = ll_classifier_test_Y[i][j] * -1.0   
                     score +=  -np.log(err) * y
@@ -246,28 +393,59 @@ def tune_hmm_progress(parameters, kFold_list, filtering=True):
 
 
 if __name__ == '__main__':
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    # Dectection TEST 
+    local_range    = 10.0    
 
-    task_name           = 'pushing'
+    subjects  = ['gatsbii']
+    task_name = 'pushing'
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'\
       +task_name+'_data/AE'
-    filtering           = True
+
+    handFeatures = ['unimodal_ftForce',\
+                    'crossmodal_targetEEDist',\
+                    'crossmodal_targetEEAng',\
+                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    rawFeatures = ['relativePose_artag_EE', \
+                   'relativePose_artag_artag', \
+                   'wristAudio', \
+                   'ft' ]       
+    downSampleSize = 200      
+
+    data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
+                      'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False }
+    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
+                      'learning_rate_decay':1e-6, \
+                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
+                      'filter':True, 'filterDim':4, \
+                      'nAugment': 1, \
+                      'add_option': None, 'rawFeatures': rawFeatures}
+                      ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                      ##'add_option': True, 'rawFeatures': rawFeatures}
+    HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+
+    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                  'SVM': SVM_param_dict}
     
-    parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
-                  'cov': [1.0, 2.0, 4.0, 8.0] }
+    ## parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
+    ##               'cov': [1.0, 2.0, 4.0, 8.0] }
+    parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
+                  'cov': [4.0, 8.0] }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
-        successData = d['successData']
-        failureData = d['failureData']
-        aug_successData = d['aug_successData']
-        aug_failureData = d['aug_failureData']
         kFold_list  = d['kFoldList']
     else:
         print "no existing data file"
         sys.exit()
 
-
-    tune_hmm(parameters, kFold_list, filtering=filtering)
-    #tune_hmm_progress(parameters, kFold_list, filtering=filtering)
+    ## tune_hmm(parameters, kFold_list, param_dict, verbose=True)
+    tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True)
