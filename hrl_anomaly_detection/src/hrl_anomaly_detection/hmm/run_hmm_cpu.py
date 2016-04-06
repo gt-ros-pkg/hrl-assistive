@@ -374,7 +374,7 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
             #   if abnormal, error is large
             score = 0.0
             for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[ii])):
+                for j in xrange(len(ll_classifier_test_X[i])):
                     err = abs( dtc.predict(ll_classifier_test_X[i][j]) )
                     y = ll_classifier_test_Y[i][j] * -1.0   
                     score +=  -np.log(err) * y
