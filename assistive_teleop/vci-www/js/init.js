@@ -88,9 +88,9 @@ var RFH = {
 //                                                     div: 'battery-status'});
     // Setup a client to listen to TFs.
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
-                                            angularThres : 0.005,
+                                            angularThres : 0.001,
                                             transThres : 0.001,
-                                            rate : 20.0,
+                                            rate : 10.0,
                                             fixedFrame : '/base_link' });
         RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
