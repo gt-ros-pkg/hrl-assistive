@@ -349,7 +349,7 @@ if __name__ == '__main__':
     task_name           = 'pushing'
     raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'   
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+\
-      task_name+'_data/AE_test2'
+      task_name+'_data/AE_test'
     save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
     save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
     rf_center           = 'kinEEPos'
