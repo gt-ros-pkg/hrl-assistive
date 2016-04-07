@@ -1466,20 +1466,25 @@ if __name__ == '__main__':
                          
         modality_list   = ['kinematics', 'audio', 'ft']
 
+        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 150      
+        downSampleSize = 100
+        layers = [64,4]
+
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
+        ## downSampleSize = 150
+        ## layers = [64,8]
+
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
                           'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
-                          'layer_sizes':[64,8], 'learning_rate':1e-4, \
+                          'layer_sizes':layers, 'learning_rate':1e-4, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
