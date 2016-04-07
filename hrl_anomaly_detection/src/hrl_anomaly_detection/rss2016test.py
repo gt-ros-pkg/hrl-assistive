@@ -357,7 +357,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     assert AE_dict['switch'] == True
                    
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-    if os.path.isfile(crossVal_pkl): 
+    if os.path.isfile(crossVal_pkl) and data_renew is False: 
         print "Loading cv data"
         d = ut.load_pickle(crossVal_pkl)
     else:
@@ -401,7 +401,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                              max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
                              cuda=AE_dict['cuda'], \
                              filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
-                             verbose=verbose, renew=AE_dict['renew'] )
+                             verbose=verbose, renew=AE_dict['renew'], train_ae=False )
 
         if AE_dict['filter']:
             # NOTE: pooling dimension should vary on each auto encoder.
@@ -1470,18 +1470,18 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 200      
+        downSampleSize = 100      
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,100], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
+                          'layer_sizes':[64,4], 'learning_rate':1e-4, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':8, \
+                          'filter':False, 'filterDim':6, \
                           'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
                           #'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
@@ -1491,7 +1491,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 7.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 9.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
