@@ -1469,11 +1469,13 @@ if __name__ == '__main__':
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE1'        
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 100      
+        downSampleSize = 150      
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,100], \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,150], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
