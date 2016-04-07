@@ -375,20 +375,11 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
             #   if normal, error is close to 0
             #   if abnormal, error is large
             for i in xrange(len(ll_classifier_test_X)):
-<<<<<<< HEAD
-=======
-                for j in xrange(len(ll_classifier_test_X[i])):
-                    err = abs( dtc.predict(ll_classifier_test_X[i][j]) )
-                    y = ll_classifier_test_Y[i][j] * -1.0   
-                    score +=  -np.log(err) * y
-                    
-            scores.append( score )        
-        mean_list.append( np.mean(scores) )
-        std_list.append( np.std(scores) )
->>>>>>> c0a11b72a6fd051ca4c985e8c9fad32e5bf9f81b
-
                 X     = ll_classifier_test_X[i]
-                est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
+                try:
+                    est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
+                except:
+                    continue
 
                 for j in xrange(len(est_y)):
                     if est_y[j] > 0.0:
@@ -421,8 +412,6 @@ if __name__ == '__main__':
 
     subjects  = ['gatsbii']
     task_name = 'pushing'
-    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'\
-      +task_name+'_data/AE'
 
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_targetEEDist',\
@@ -432,18 +421,30 @@ if __name__ == '__main__':
                    'relativePose_artag_artag', \
                    'wristAudio', \
                    'ft' ]       
-    downSampleSize = 200      
+    ## downSampleSize = 200      
+    downSampleSize = 100      
+
+    ## processed_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
+    ## downSampleSize = 100
+    ## layers = [64,4]
+
+    processed_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE150'        
+    downSampleSize = 150
+    layers = [64,8]
+
 
     data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                      'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False }
     AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
-                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
+                      'layer_sizes':layers, 'learning_rate':1e-6, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':True, 'filterDim':4, \
+                      'filter':False, 'filterDim':4, \
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures}
                       ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
@@ -454,10 +455,10 @@ if __name__ == '__main__':
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
     
-    ## parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
-    ##               'cov': [1.0, 2.0, 4.0, 8.0] }
-    parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
-                  'cov': [4.0, 8.0] }
+    parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
+                  'cov': [1.0, 2.0, 4.0, 8.0] }
+    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
+    ##               'cov': [4.0, 8.0] }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
