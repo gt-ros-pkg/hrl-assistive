@@ -181,7 +181,7 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
 
 
 
-def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
+def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
     ## Parameters
     # data
@@ -197,13 +197,15 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
     #------------------------------------------
 
     param_list = list(ParameterGrid(parameters))
-    mean_list  = []
-    std_list   = []
-    startIdx = 4
+    startIdx   = 4
+    scores     = []
     
     for param in param_list:
 
-        scores = []
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []            
         # Training HMM, and getting classifier training and testing data
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
@@ -366,14 +368,15 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
                     idx_train.append(ll_classifier_train_idx[i][j])
 
 
-            dtc = cb.classifier( method='progress_time_cluster', nPosteriors=ml.nState, nLength=nLength )        
+            dtc = cb.classifier( method='svm', nPosteriors=ml.nState, nLength=nLength )        
             ret = dtc.fit(X_train, Y_train, idx_train)
 
             # We should maximize score,
             #   if normal, error is close to 0
             #   if abnormal, error is large
-            score = 0.0
             for i in xrange(len(ll_classifier_test_X)):
+<<<<<<< HEAD
+=======
                 for j in xrange(len(ll_classifier_test_X[i])):
                     err = abs( dtc.predict(ll_classifier_test_X[i][j]) )
                     y = ll_classifier_test_Y[i][j] * -1.0   
@@ -382,11 +385,29 @@ def tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True):
             scores.append( score )        
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
+>>>>>>> c0a11b72a6fd051ca4c985e8c9fad32e5bf9f81b
 
+                X     = ll_classifier_test_X[i]
+                est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
+
+                for j in xrange(len(est_y)):
+                    if est_y[j] > 0.0:
+                        break
+
+                if ll_classifier_test_Y[i][0] > 0.0:
+                    if est_y[j] > 0.0: tp_l.append(1)
+                    else: fn_l.append(1)
+                elif ll_classifier_test_Y[i][0] <= 0.0:
+                    if est_y[j] > 0.0: fp_l.append(1)
+                    else: tn_l.append(1)
+
+        tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0
+        print "true positive rate : ", tpr
+        scores.append( tpr )        
 
     for i, param in enumerate(param_list):
-        print("%0.3f (+/-%0.03f) for %r"
-              % (mean_list[i], std_list[i], param))
+        print("%0.3f for %r"
+              % (scores[i], param))
 
 
     
@@ -448,4 +469,4 @@ if __name__ == '__main__':
         sys.exit()
 
     ## tune_hmm(parameters, kFold_list, param_dict, verbose=True)
-    tune_hmm_progress(parameters, kFold_list, param_dict, verbose=True)
+    tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

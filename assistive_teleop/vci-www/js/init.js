@@ -84,13 +84,13 @@ var RFH = {
         log("Connected to " + RFH.ROBOT + ".");
         extendROSJS(RFH.ros);
 //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
-        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
-                                                     div: 'battery-status'});
+//        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
+//                                                     div: 'battery-status'});
     // Setup a client to listen to TFs.
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
-                                            angularThres : 0.005,
+                                            angularThres : 0.001,
                                             transThres : 0.001,
-                                            rate : 20.0,
+                                            rate : 10.0,
                                             fixedFrame : '/base_link' });
         RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
