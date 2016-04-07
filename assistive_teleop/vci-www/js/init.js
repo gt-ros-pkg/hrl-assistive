@@ -103,8 +103,8 @@ var RFH = {
         RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                                    ros: RFH.ros});
         RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
-                                                           topic: "/pcl_filters/vfx/output",
-                                                           maxPoints: 15000,
+                                                           topic: "/pcl_filters/peek_points",
+                                                           maxPoints: 8000,
                                                            tfClient: RFH.tfClient });
 //        initClickableActions();
 //        initPr2(); 

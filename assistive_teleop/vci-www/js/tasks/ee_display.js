@@ -8,17 +8,25 @@ RFH.EEDisplay = function (options) {
                                             angularThres: 0.001,
                                             transThres: 0.001,
                                             rate: 10.0,
-                                            fixedFrame: '/'+side'+gripper_palm_link' });
+                                            fixedFrame: '/'+side+'_gripper_palm_link' });
     localTFClient.actionClient.cancel();
 
     var qx_rot = new THREE.Quaternion(1,0,0,0);  // Quaternion of 180 deg x-axis rotation, used to flip right finger models
 
+    var currentGripper = new THREE.Object3D();
+    var previewGripper = new THREE.Object3D();
+    var goalGripper = new THREE.Object3D();
+    var allGrippers = [currentGripper, previewGripper, goalGripper];
+    RFH.viewer.scene.add(currentGripper, previewGripper, goalGripper);
+
     self.show = function () {
-        // TODO: Set all items as visible
+        currentGripper.visible = true;
     };
 
     self.hide = function () {
-        //TODO: set all items NOT visible
+        currentGripper.visible = false;
+        previewGripper.visible = false;
+        goalGripper.visible = false;
     };
     
     /*////////////  Load Gripper Model ////////////*/
@@ -28,88 +36,139 @@ RFH.EEDisplay = function (options) {
 
     var gripperMaterial = new THREE.MeshBasicMaterial();
     gripperMaterial.transparent = true;
-    gripperMaterial.opacity = 0.25;
-    gripperMaterial.depthTest = true;
-    gripperMaterial.depthWrite = true;
+    gripperMaterial.opacity = 0.35;
+//    gripperMaterial.depthTest = true;
+//    gripperMaterial.depthWrite = true;
     gripperMaterial.color.setRGB(1.6,1.6,1.6);
+    gripperMaterial.color.setRGB(2.6,0.6,0.6);
 
-    var updateGripperPalmTF = function (tf) {
-        palmMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
-        palmMesh.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
+    var previewMaterial = gripperMaterial.clone();
+    previewMaterial.color.setHex('#FF8500');
+
+    var goalMaterial = gripperMaterial.clone();
+    goalMaterial.color.setRGB(0.2, 3.0, 0.2);
+
+    var updateCurrentGripperTF = function (tf) {
+        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+        currentGripper.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 
-    var updateGripperFingerTF = function (side, tf) {
-        if (side === 'r') {
-            rFingerMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+    var updateRightFingerTF = function (tf) {
+        for (var i=0; i<allGrippers.length; i += 1){
+            var mesh = allGrippers[i].getObjectByName('rightFinger');
+            mesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
             var quat = new THREE.Quaternion(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
             quat = quat.multiplyQuaternions(quat, qx_rot);
-            rFingerMesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
-        } else {
-            lFingerMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
-            lFingerMesh.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-        };
+            mesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+        }
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 
-    var updateGripperFingerTipTF = function (side, tf) {
-        if (side === 'r') {
-            rFingerTipMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+    var updateLeftFingerTF = function (tf) {
+        for (var i=0; i<allGrippers.length; i += 1){
+            var mesh = allGrippers[i].getObjectByName('leftFinger');
+            mesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+            mesh.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
+        }
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+    };
+
+    var updateRightFingerTipTF = function (tf) {
+        for (var i=0; i<allGrippers.length; i += 1){
+            var mesh = allGrippers[i].getObjectByName('rightFingerTip');
+            mesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
             var quat = new THREE.Quaternion(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
             quat = quat.multiplyQuaternions(quat, qx_rot);
-            rFingerTipMesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
-        } else {
-            lFingerTipMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
-            lFingerTipMesh.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-        };
+            mesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+        }
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
-
     };
-        
-    var currentGrippger = new THREE.Object3D();
-    var goalGripper = new THREE.Object3D();
-    var undoGripper = new THREE.Object3D();
 
-    var palmMesh = new THREE.Mesh();
-    var lFingerMesh = new THREE.Mesh();
-    var rFingerMesh = new THREE.Mesh();
-    var lFingerTipMesh = new THREE.Mesh();
-    var rFingerTipMesh = new THREE.Mesh();
+    var updateLeftFingerTipTF = function (tf) {
+        for (var i=0; i<allGrippers.length; i += 1){
+            var mesh = allGrippers[i].getObjectByName('leftFingerTip');
+            mesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+            mesh.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
+        }
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+    };
 
     var palmOnLoad = function (collada) {
-        // Set transforms + callback update
+        // Create mesh with default values
+        var palmMesh = new THREE.Mesh();
+        palmMesh.name = 'palm';
         var palmGeom = collada.dae.geometries.palm3_M1000Shape.mesh.geometry3js;
         palmMesh.geometry = palmGeom;
-        palmMesh.material = gripperMaterial;
         palmMesh.scale.set(0.1, 0.1, 0.1);
-        RFH.viewer.scene.add(palmMesh);
-        tfClient.subscribe(side+'_gripper_palm_link', updateGripperPalmTF);
+        // Set values for current pose display, add to currentGripper group
+        palmMesh.material = gripperMaterial;
+        currentGripper.add(palmMesh.clone());
+        // Set values for undo preview pose display, add to previewGripper group
+        palmMesh.material = previewMaterial;
+        previewGripper.add(palmMesh.clone());
+        // Set values for goal pose display, add to goalGripper group
+        palmMesh.material = goalMaterial;
+        goalGripper.add(palmMesh.clone());
+
+        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
     }
+
     var fingerOnLoad = function (collada) {
-        // Set transforms + callback update
-        var fingerGeom = collada.dae.geometries.finger_M2K_modShape.mesh.geometry3js.clone();
-        lFingerMesh = new THREE.Mesh(fingerGeom, gripperMaterial);
+        var fingerGeom = collada.dae.geometries.finger_M2K_modShape.mesh.geometry3js;
+        var lFingerMesh = new THREE.Mesh();
+        lFingerMesh.name = 'leftFinger';
+        lFingerMesh.geometry = fingerGeom;
         lFingerMesh.scale.set(0.1, 0.1, 0.1);
-        rFingerMesh = new THREE.Mesh(fingerGeom, gripperMaterial);
+
+        var rFingerMesh = new THREE.Mesh();
+        rFingerMesh.name = 'rightFinger';
+        rFingerMesh.geometr = fingerGeom;
         rFingerMesh.scale.set(0.1, 0.1, 0.1);
-        RFH.viewer.scene.add(rFingerMesh);
-        RFH.viewer.scene.add(lFingerMesh);
-        locaLTFClient.subscribe(side+'_gripper_l_finger_link', function(tf){updateGripperFingerTF('l', tf)});
-        localTFClient.subscribe(side+'_gripper_r_finger_link', function(tf){updateGripperFingerTF('r', tf)});
-    }
+
+        lFingerMesh.material = gripperMaterial;
+        rFingerMesh.material = gripperMaterial;
+        currentGripper.add(lFingerMesh.clone(), rFingerMesh.clone());
+
+        lFingerMesh.material = previewMaterial;
+        rFingerMesh.material = previewMaterial;
+        previewGripper.add(lFingerMesh.clone(), rFingerMesh.clone());
+
+        lFingerMesh.material = goalMaterial;
+        rFingerMesh.material = goalMaterial;
+        goalGripper.add(lFingerMesh.clone(), rFingerMesh.clone());
+
+        localTFClient.subscribe(side+'_gripper_l_finger_link', updateLeftFingerTF);
+        localTFClient.subscribe(side+'_gripper_r_finger_link', updateRightFingerTF);
+    };
+
     var fingerTipOnLoad = function (collada) {
-        // Set transforms + callback update
         var fingerTipGeom =collada.dae.geometries.finger_tip_MShape.mesh.geometry3js.clone();
-        lFingerTipMesh = new THREE.Mesh(fingerTipGeom, gripperMaterial);
+        var lFingerTipMesh = new THREE.Mesh();
+        lFingerTipMesh.name = 'leftFingerTip';
+        lFingerTipMesh.geometry = fingerTipGeom;
         lFingerTipMesh.scale.set(0.1, 0.1, 0.1);
-        rFingerTipMesh = new THREE.Mesh(fingerTipGeom, gripperMaterial);
+
+        var rFingerTipMesh = new THREE.Mesh();
+        rFingerTipMesh.name = 'rightFingerTip';
+        rFingerTipMesh.geometry = fingerTipGeom;
         rFingerTipMesh.scale.set(0.1, 0.1, 0.1);
-        rFingerTipMesh.rotation.x = Math.PI;
-        RFH.viewer.scene.add(lFingerTipMesh);
-        RFH.viewer.scene.add(rFingerTipMesh);
-        localTFClient.subscribe(side+'_gripper_l_finger_tip_link', function (tf){updateGripperFingerTipTF('l', tf)});
-        localTFClient.subscribe(side+'_gripper_r_finger_tip_link', function (tf){updateGripperFingerTipTF('r', tf)});
-    }
+
+        lFingerTipMesh.material = gripperMaterial;
+        rFingerTipMesh.material = gripperMaterial;
+        currentGripper.add(lFingerTipMesh.clone(), rFingerTipMesh.clone());
+
+        lFingerTipMesh.material = previewMaterial;
+        rFingerTipMesh.material = previewMaterial;
+        previewGripper.add(lFingerTipMesh.clone(), rFingerTipMesh.clone());
+
+        lFingerTipMesh.material = goalMaterial;
+        rFingerTipMesh.material = goalMaterial;
+        goalGripper.add(lFingerTipMesh.clone(), rFingerTipMesh.clone());
+
+        localTFClient.subscribe(side+'_gripper_l_finger_tip_link', updateLeftFingerTipTF);
+        localTFClient.subscribe(side+'_gripper_r_finger_tip_link', updateRightFingerTipTF);
+    };
 
     var gripperColladaLoader = new THREE.ColladaLoader();
     gripperColladaLoader.load('./data/gripper_model/gripper_palm.dae', palmOnLoad, colladaLoadProgress);
@@ -117,15 +176,37 @@ RFH.EEDisplay = function (options) {
     gripperColladaLoader.load('./data/gripper_model/l_finger_tip.dae', fingerTipOnLoad, colladaLoadProgress);
     /*////////////  END Load Gripper Model ////////////*/
 
-    var displayGoalPose = function (ps_msg) {
-        // TODO: Display new goal pose with shadow gripper
+    var displayGoalPose = function (ps) {
+        goalGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);
+        goalGripper.quaternion.set(ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w);
+        goalGripper.translateX(-0.18);
+        goalGripper.visible = true;
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 
+    var fullSide = side === 'r' ? 'right' : 'left';
     var handGoalSubscriber = new ROSLIB.Topic({
         ros: ros,
-        name: side + '_arm/haptic_mpc/goal_pose', 
+        name: fullSide + '_arm/haptic_mpc/goal_pose', 
         messageType: 'geometry_msgs/PoseStamped'
     });
     handGoalSubscriber.subscribe(displayGoalPose);
+
+    var deadzoneCB = function (bool_msg) {
+        goalGripper.visible = !bool_msg.data;
+    };
+    var deadZoneSubscriber = new ROSLIB.Topic({
+        ros: ros,
+        name: fullSide+'_arm/haptic_mpc/in_deadzone',
+        messageType: 'std_msgs/Bool'
+    });
+    deadZoneSubscriber.subscribe(deadzoneCB);
+
+    var showPreviewGripper = function(pos, quat) {
+        previewGripper.position.set(pos.x, pos.y, pos.z);
+        previewGripper.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+        previewGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
+        previewGripper.show();
+    };
+
 }
