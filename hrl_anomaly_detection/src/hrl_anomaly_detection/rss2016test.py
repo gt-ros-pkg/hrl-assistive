@@ -1475,14 +1475,14 @@ if __name__ == '__main__':
         downSampleSize = 150      
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,150], \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
-                          'layer_sizes':[64,4], 'learning_rate':1e-4, \
+                          'layer_sizes':[64,8], 'learning_rate':1e-4, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
+                          'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
                           'filter':False, 'filterDim':6, \
                           'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
