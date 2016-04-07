@@ -196,13 +196,5 @@ class learning_base():
             std_list.append(scores.std())
         print()
 
-        # Save data
-        data = {}
-        data['mean'] = mean_list
-        data['std'] = std_list
-        data['params'] = params_list
-        if save_file is None:
-            save_file='tune_data.pkl'            
-        ut.save_pickle(data, save_file)
-        
-        
+        return params_list, mean_list, std_list
+

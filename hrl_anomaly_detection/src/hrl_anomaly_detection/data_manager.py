@@ -303,7 +303,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
                  max_iteration=20000, min_loss=1.0, cuda=False, \
                  filtering=True, filteringDim=4, \
-                 verbose=False, renew=False ):
+                 verbose=False, renew=False, train_ae=False ):
 
     if os.path.isfile(AE_proc_data) and not renew:
         d = ut.load_pickle(AE_proc_data)
@@ -348,9 +348,9 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
     ml = ae.auto_encoder([nDim]+layer_sizes, \
                          learning_rate, learning_rate_decay, momentum, dampening, \
                          lambda_reg, time_window, \
-                         max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=verbose)
+                         max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=True)
 
-    if os.path.isfile(AE_model):
+    if os.path.isfile(AE_model) and train_ae is False:
         print "AE model exists: ", AE_model
         ml.load_params(AE_model)
     else:

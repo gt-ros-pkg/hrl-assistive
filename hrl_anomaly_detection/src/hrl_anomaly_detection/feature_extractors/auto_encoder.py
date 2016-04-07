@@ -347,16 +347,16 @@ if __name__ == '__main__':
     
     subject_names       = ['gatsbii']
     task_name           = 'pushing'
-    raw_data_path       = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'   
+    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'   
     processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+\
       task_name+'_data/AE_test'
     save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
     save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
     rf_center           = 'kinEEPos'
     local_range         = 10.0 
-    downSampleSize      = 200
+    downSampleSize      = 100
     nAugment            = 1
-    cut_data            = [0,200]
+    cut_data            = [0,100]
 
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_targetEEDist',\
@@ -425,12 +425,30 @@ if __name__ == '__main__':
                       'layer_sizes': [ [X.shape[1], 128,16], [X.shape[1], 128,8], \
                                        [X.shape[1], 64,4], [X.shape[1], 256, 16], [X.shape[1], 256, 8], \
                                        [X.shape[1], 256, 4]  ]}
-         
-        clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
-                           lambda_reg, time_window, \
-                           max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, verbose=opt.bVerbose)
 
-        clf.param_estimation(X, parameters, nFold, n_jobs=n_jobs)
+        
+        save_file='tune_data.pkl'            
+        if os.path.isfile(save_file):
+            data = ut.load_pickle(save_file)
+            from operator import itemgetter
+            ## data['mean'].sort(key=itemgetter(0), reverse=False)
+            
+            for params, mean_score, std_score in zip(data['params'], data['mean'], data['std']):
+                print("%0.3f (+/-%0.03f) for %r"
+                      % (mean_score, std_score / 2, params))
+        else:
+            clf = auto_encoder(layer_sizes, learning_rate, learning_rate_decay, momentum, dampening, \
+                               lambda_reg, time_window, \
+                               max_iteration=maxiteration, min_loss=min_loss, cuda=opt.bCuda, \
+                               verbose=opt.bVerbose)
 
-
+            params_list, mean_list, std_list = clf.param_estimation(X, parameters, nFold, n_jobs=n_jobs)
+        
+            # Save data
+            data = {}
+            data['mean'] = mean_list
+            data['std'] = std_list
+            data['params'] = params_list
+            ut.save_pickle(data, save_file)
+        
         
