@@ -1,15 +1,31 @@
 RFH.EEDisplay = function (options) {
     'use strict'; 
     self = this;
-    var tfClient = options.tfClient;
+    var ros = options.ros;
     var side = options.side[0];
+    var tfClient = options.tfClient;
+    var localTFClient = new ROSLIB.TFClient({ros: ros,
+                                            angularThres: 0.001,
+                                            transThres: 0.001,
+                                            rate: 10.0,
+                                            fixedFrame: '/'+side'+gripper_palm_link' });
+    localTFClient.actionClient.cancel();
+
+    var qx_rot = new THREE.Quaternion(1,0,0,0);  // Quaternion of 180 deg x-axis rotation, used to flip right finger models
+
+    self.show = function () {
+        // TODO: Set all items as visible
+    };
+
+    self.hide = function () {
+        //TODO: set all items NOT visible
+    };
     
     /*////////////  Load Gripper Model ////////////*/
     var colladaLoadProgress = function (data) {
         console.log("Loading Collada Mesh: ", data.loaded/data.total);
     };
 
-//    var gripperMaterial = new THREE.MeshLambertMaterial();
     var gripperMaterial = new THREE.MeshBasicMaterial();
     gripperMaterial.transparent = true;
     gripperMaterial.opacity = 0.25;
@@ -27,7 +43,6 @@ RFH.EEDisplay = function (options) {
         if (side === 'r') {
             rFingerMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
             var quat = new THREE.Quaternion(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-            var qx_rot = new THREE.Quaternion(1,0,0,0);
             quat = quat.multiplyQuaternions(quat, qx_rot);
             rFingerMesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         } else {
@@ -41,7 +56,6 @@ RFH.EEDisplay = function (options) {
         if (side === 'r') {
             rFingerTipMesh.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
             var quat = new THREE.Quaternion(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-            var qx_rot = new THREE.Quaternion(1,0,0,0);
             quat = quat.multiplyQuaternions(quat, qx_rot);
             rFingerTipMesh.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         } else {
@@ -69,7 +83,7 @@ RFH.EEDisplay = function (options) {
         palmMesh.material = gripperMaterial;
         palmMesh.scale.set(0.1, 0.1, 0.1);
         RFH.viewer.scene.add(palmMesh);
-        tfClient.subscribe(self.side[0]+'_gripper_palm_link', updateGripperPalmTF);
+        tfClient.subscribe(side+'_gripper_palm_link', updateGripperPalmTF);
     }
     var fingerOnLoad = function (collada) {
         // Set transforms + callback update
@@ -80,8 +94,8 @@ RFH.EEDisplay = function (options) {
         rFingerMesh.scale.set(0.1, 0.1, 0.1);
         RFH.viewer.scene.add(rFingerMesh);
         RFH.viewer.scene.add(lFingerMesh);
-        tfClient.subscribe(self.side[0]+'_gripper_l_finger_link', function(tf){updateGripperFingerTF('l', tf)});
-        tfClient.subscribe(self.side[0]+'_gripper_r_finger_link', function(tf){updateGripperFingerTF('r', tf)});
+        locaLTFClient.subscribe(side+'_gripper_l_finger_link', function(tf){updateGripperFingerTF('l', tf)});
+        localTFClient.subscribe(side+'_gripper_r_finger_link', function(tf){updateGripperFingerTF('r', tf)});
     }
     var fingerTipOnLoad = function (collada) {
         // Set transforms + callback update
@@ -93,8 +107,8 @@ RFH.EEDisplay = function (options) {
         rFingerTipMesh.rotation.x = Math.PI;
         RFH.viewer.scene.add(lFingerTipMesh);
         RFH.viewer.scene.add(rFingerTipMesh);
-        tfClient.subscribe(self.side[0]+'_gripper_l_finger_tip_link', function (tf){updateGripperFingerTipTF('l', tf)});
-        tfClient.subscribe(self.side[0]+'_gripper_r_finger_tip_link', function (tf){updateGripperFingerTipTF('r', tf)});
+        localTFClient.subscribe(side+'_gripper_l_finger_tip_link', function (tf){updateGripperFingerTipTF('l', tf)});
+        localTFClient.subscribe(side+'_gripper_r_finger_tip_link', function (tf){updateGripperFingerTipTF('r', tf)});
     }
 
     var gripperColladaLoader = new THREE.ColladaLoader();
@@ -110,7 +124,7 @@ RFH.EEDisplay = function (options) {
 
     var handGoalSubscriber = new ROSLIB.Topic({
         ros: ros,
-        name: self.side + '_arm/haptic_mpc/goal_pose', 
+        name: side + '_arm/haptic_mpc/goal_pose', 
         messageType: 'geometry_msgs/PoseStamped'
     });
     handGoalSubscriber.subscribe(displayGoalPose);
