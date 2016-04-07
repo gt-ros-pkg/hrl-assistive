@@ -376,7 +376,10 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
             #   if abnormal, error is large
             for i in xrange(len(ll_classifier_test_X)):
                 X     = ll_classifier_test_X[i]
-                est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
+                try:
+                    est_y = dtc.predict(X, y=ll_classifier_test_Y[i])
+                except:
+                    continue
 
                 for j in xrange(len(est_y)):
                     if est_y[j] > 0.0:
