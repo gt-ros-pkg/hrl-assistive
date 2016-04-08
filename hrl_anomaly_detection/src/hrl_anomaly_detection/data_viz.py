@@ -72,7 +72,7 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
-def viz(X1, X2=None, skip=False):
+def viz(X1, normTest=None, abnormTest=None, skip=False):
     '''
     dim x sample x length
     X1: normal data
@@ -105,28 +105,36 @@ def viz(X1, X2=None, skip=False):
         ax.set_ylim([0,1])
         plt.yticks([0,1.0])
 
-    if X2 is None:
-        if skip is True: return
-        plt.show()
-        return
+    if normTest is not None:
+        for i in xrange(len(normTest)):
 
+            n_col = int(i/n_rows)
+            n_row = i%n_rows
+            ax    = fig.add_subplot(n_rows,n_cols,i+1)
+            x     = range(len(normTest[i][0]))
+            for j in xrange(len(normTest[i])):
+                ax.plot(x, normTest[i][j], c='b')
+                if j>3: break
 
-    for i in xrange(len(X2)):
+            ax.set_xlim([0,x[-1]])
+            ax.set_ylim([0,1])
+            plt.yticks([0,1.0])
 
-        n_col = int(i/n_rows)
-        n_row = i%n_rows
-        ax    = fig.add_subplot(n_rows,n_cols,i+1)
-        colors = itertools.cycle(['r', 'g', 'm', 'c'])
+    if abnormTest is not None:
+        for i in xrange(len(abnormTest)):
 
-        x     = range(len(X2[i][0]))
-        for j in xrange(len(X2[i])):
-            color = colors.next()
-            ax.plot(x, X2[i][j], c=color)
-            if j>3: break
-            
-        ax.set_xlim([0,x[-1]])
-        ax.set_ylim([0,1])
-        plt.yticks([0,1.0])
+            n_col = int(i/n_rows)
+            n_row = i%n_rows
+            ax    = fig.add_subplot(n_rows,n_cols,i+1)
+            x     = range(len(abnormTest[i][0]))
+            for j in xrange(len(abnormTest[i])):
+                ax.plot(x, abnormTest[i][j], c='r')
+                if j>3: break
+
+            ax.set_xlim([0,x[-1]])
+            ax.set_ylim([0,1])
+            plt.yticks([0,1.0])
+
 
     if skip is True: return
     plt.show()

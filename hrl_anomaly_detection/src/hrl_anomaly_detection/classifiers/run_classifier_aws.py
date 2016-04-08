@@ -439,15 +439,21 @@ if __name__ == '__main__':
                        'ft' ]       
 
         modality_list  = ['kinematics', 'audio', 'ft']
-        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
-        downSampleSize = 200      
+        ## save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
+        ## downSampleSize = 200
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
+        downSampleSize = 100
+        layers = [64,4]
+        
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,200], \
+                          'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
         AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, \
+                          'layer_sizes':layers, 'learning_rate':1e-6, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
@@ -455,7 +461,7 @@ if __name__ == '__main__':
                           'nAugment': 1, \
                           'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                           ## 'add_option': None, 'rawFeatures': rawFeatures}
-        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 8.0, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 
 

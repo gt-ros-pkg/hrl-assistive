@@ -241,7 +241,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     # -------------------- Display ---------------------
     fig = None
     if success_viz:
-        feature_names = np.array(param_dict.get('feature_names', feature_list))
+        feature_names = np.array(param_dict.get('feature_names', handFeatures))
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
@@ -256,7 +256,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
-        feature_names = np.array(param_dict.get('feature_names', feature_list))
+        feature_names = np.array(param_dict.get('feature_names', handFeatures))
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
         if nPlot is None:
@@ -270,7 +270,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
-        feature_names = np.array(param_dict.get('feature_names', feature_list))
+        feature_names = np.array(param_dict.get('feature_names', handFeatures))
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
 
         if save_pdf:
@@ -407,27 +407,31 @@ def errorPooling(norX, abnorX, param_dict):
         for i in xrange(len(norX)):
             # get mean curve
             meanNorCurve   = np.mean(norX[i], axis=0)
-            meanAbnorCurve = np.mean(abnorX[i], axis=0)
+            ## meanAbnorCurve = np.mean(abnorX[i], axis=0)
             stdNorCurve   = np.std(norX[i], axis=0)
-            stdAbnorCurve = np.std(abnorX[i], axis=0)
-            if np.std(meanNorCurve) < 0.02 and np.std(meanAbnorCurve) < 0.02 and\
-              np.mean(stdNorCurve) < 0.02 and np.mean(stdAbnorCurve) < 0.02:
-                err_list.append(1e-9)
-                continue
-                        
-            # get score
-            X = abnorX[i]-meanNorCurve
-            count = 0
-            for j in xrange(len(X)):
-                if abs(X[j][0]) > stdNorCurve[0]: count += 1
-            if count > len(stdNorCurve)/2:
-                err_list.append(1e-8)
-                continue
-                
-            max_div = np.max(abs(X)/stdNorCurve)
-            err_list.append(max_div)
+            ## stdAbnorCurve = np.std(abnorX[i], axis=0)
+            ## if np.std(meanNorCurve) < 0.02 and np.std(meanAbnorCurve) < 0.02 and\
+            ##   np.mean(stdNorCurve) < 0.02 and np.mean(stdAbnorCurve) < 0.02:
+            ##     err_list.append(1e-9)
+            ##     continue
 
-        indices = np.argsort(err_list)[::-1]
+            maxCurve = meanNorCurve+stdNorCurve
+            minCurve = meanNorCurve-stdNorCurve
+
+            # get error score
+            score = 0.0
+            for j in xrange(len(abnorX[i])):
+                for k in xrange(len(abnorX[i][j])):
+                    if abnorX[i][j][k] > maxCurve[k] or abnorX[i][j][k] < minCurve[k]:
+                       score += 1.0
+
+            # get mean range , mean std
+            score /= np.max(meanNorCurve)-np.min(meanNorCurve)
+            #score *= np.mean(stdNorCurve)
+                       
+            err_list.append(score)
+
+        indices = np.argsort(err_list)
 
         for idx in indices[:dim]:
             new_norX.append(norX[idx])
