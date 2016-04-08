@@ -207,13 +207,12 @@ class classifier(learning_base):
                 nState = len(post)
                 ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
                 ## c_time = np.logspace(0,-0.9,nState)[min_index]
-                c_time = 1.0
 
                 if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                     type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                    err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
                 else:
-                    err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+                    err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
                 l_err.append(err)
             return l_err
         
@@ -379,8 +378,7 @@ def symmetric_entropy(p,q):
     '''
     Return the sum of KL divergences
     '''
-
-    return min(entropy(p,q), entropy(q,p)) + 1e-6
+    return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6)) + 1e-6
 
 
 def findBestPosteriorDistribution(post, l_statePosterior):
@@ -390,6 +388,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
+            
         if min_dist > dist:
             min_index = j
             min_dist  = dist

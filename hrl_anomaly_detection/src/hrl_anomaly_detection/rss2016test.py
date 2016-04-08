@@ -174,7 +174,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         print "-------------------------"
         return (-1,-1,-1,-1)
 
-    if decision_boundary_viz and False:
+    if decision_boundary_viz:
         testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
         testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
@@ -216,16 +216,15 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                                 nLength=len(normalTestData[0,0]), ths_mult=-1.0 )
-            dtc.fit(X_train_org, Y_train_org, idx_train_org)
-
+                                 nLength=len(normalTestData[0,0]), ths_mult=0.0 )
+            dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
 
     print "----------------------------------------------------------------------------"
     fig = plt.figure()
     min_logp = 0.0
     max_logp = 0.0
-    target_idx = 0
-        
+    target_idx = 1
+
     # training data
     if useTrain:
 
@@ -245,8 +244,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                     if j>=len(ll_logp[i]): continue
                     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
 
-                    print dtc.predict(l_X), type(dtc.predict(l_X)), ll_logp[i][j]
-                    exp_logp = dtc.predict(l_X) + ll_logp[i][j]
+                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
                     exp_log_ll[i].append(exp_logp)
 
 
@@ -270,7 +268,8 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         plt.plot(log_ll[target_idx], 'k-', lw=3.0)
         if decision_boundary_viz:
             plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
-                                             
+
+            
     # normal test data
     ## if useNormalTest and False:
 
@@ -1501,7 +1500,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8.0, 'scale': 6.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 2.5}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
@@ -1590,9 +1589,6 @@ if __name__ == '__main__':
 
 
     elif opt.bLikelihoodPlot:
-        threshold    = 0.0
-        smooth       = False
-
         likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
