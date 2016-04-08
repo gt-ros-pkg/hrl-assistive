@@ -97,8 +97,8 @@ RFH.CartesianEEControl = function (options) {
         // All the points defined, move the camera and render views
         var camera = RFH.viewer.camera;
         var reverse = false;
-        var peakPauseMS = 1500;
-        var travelTimeMS = 300;
+        var peakPauseMS = 2800; // Default: 1500
+        var travelTimeMS = 400; // Default: 300
         var delay = travelTimeMS / arcPoints.length;
         // Set camera position along path, adjust lookAt, render, and set next call after delay
         var renderCameraStep = function (step) {

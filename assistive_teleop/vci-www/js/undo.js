@@ -124,6 +124,7 @@ RFH.Undo = function (options) {
 
     sentUndoCommands['rArm'] = 0;
     undoFunctions['rArm'] = function (undoEntry) {
+        sentUndoCommands['rArm'] += 1;
         var gp = undoEntry.stateGoal;
         rArm.sendPoseGoal({position: gp.pose.position,
                            orientation: gp.pose.orientation,
@@ -131,7 +132,21 @@ RFH.Undo = function (options) {
         });
     };
 
+    var rArmCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'right_arm/haptic_mpc/goal_pose',
+        messageType: 'geometry_msgs/PoseStamped'
+    });
+
     var rArmCmdCB = function (cmd_msg) {
+        if (sentUndoCommands['rArm'] > 0) {
+            sentUndoCommands['rArm'] -= 1;
+            return;
+        }
+        var armInTorso = rArm.getState(); // Received in torso_lift_link
+        armInTorso.header.frame_id = 'base_link'
+        armInTorso.pose.position.x -= 0.05
+        armInTorso.pose.position.z += (0.75 + torso.getState());
         var undoEntry = new RFH.UndoEntry({type: 'rArm',
                                            command: cmd_msg,
                                            stateGoal: rArm.getState()
@@ -139,11 +154,6 @@ RFH.Undo = function (options) {
         eventQueue.pushUndoEntry(undoEntry);
     };
 
-    var rArmCmdSub = new ROSLIB.Topic({
-        ros: ros,
-        name: '/right_arm/haptic_mpc/goal_pose',
-        messageType: 'gometry_msgs/PoseStamped'
-    });
     rArmCmdSub.subscribe(rArmCmdCB);
 
     /*/////////////  END RIGHT ARM UNDO FUNCTIONS ////////////////////*/

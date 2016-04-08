@@ -1,12 +1,12 @@
 <launch>
-    <arg name="x_filter_min" default="-0.3"/>
-    <arg name="x_filter_max" default="0.3"/>
-    <arg name="y_filter_min" default="-0.3"/>
-    <arg name="y_filter_max" default="0.3"/>
-    <arg name="z_filter_min" default="0.4"/>
-    <arg name="z_filter_max" default="2.0"/>
-    <arg name="voxel_leaf_size" default="0.005"/>
-    <arg name="bandwidth" default="200"/>
+    <arg name="x_filter_min" default="-0.2"/>
+    <arg name="x_filter_max" default="0.2"/>
+    <arg name="y_filter_min" default="-0.2"/>
+    <arg name="y_filter_max" default="0.2"/>
+    <arg name="z_filter_min" default="0.6"/>
+    <arg name="z_filter_max" default="1.8"/>
+    <arg name="voxel_leaf_size" default="0.0015"/>
+    <arg name="bandwidth" default="300"/>
 
     <group ns="/pcl_filters">
     <!-- PCL Manager -->
