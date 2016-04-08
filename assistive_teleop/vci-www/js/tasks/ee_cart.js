@@ -11,6 +11,8 @@ RFH.CartesianEEControl = function (options) {
     self.buttonClass = 'hand-button';
     self.$div = $('#'+divId);
     self.gripper = options.gripper;
+    self.eeDisplay = options.eeDisplay;
+    self.eeDisplay.hide();
     self.stepSizes = {'tiny': 0.025,
         'small': 0.05,
         'medium': 0.1,
@@ -34,10 +36,6 @@ RFH.CartesianEEControl = function (options) {
         serviceName: '/pixel_2_3d'
     });
 
-    self.eeDisplay = new RFH.EEDisplay({side: self.side,
-                                             ros: ros,
-                                             tfClient: self.tfClient});
-    self.eeDisplay.hide();
 
     $('#touchspot-toggle, #toward-button, #away-button').button();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();

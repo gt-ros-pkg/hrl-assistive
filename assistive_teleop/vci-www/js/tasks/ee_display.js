@@ -36,11 +36,10 @@ RFH.EEDisplay = function (options) {
 
     var gripperMaterial = new THREE.MeshBasicMaterial();
     gripperMaterial.transparent = true;
-    gripperMaterial.opacity = 0.35;
-//    gripperMaterial.depthTest = true;
-//    gripperMaterial.depthWrite = true;
+    gripperMaterial.opacity = 0.4;
+    gripperMaterial.depthTest = true;
+    gripperMaterial.depthWrite = true;
     gripperMaterial.color.setRGB(1.6,1.6,1.6);
-    gripperMaterial.color.setRGB(2.6,0.6,0.6);
 
     var previewMaterial = gripperMaterial.clone();
     previewMaterial.color.setHex('#FF8500');
@@ -96,9 +95,9 @@ RFH.EEDisplay = function (options) {
 
     var palmOnLoad = function (collada) {
         // Create mesh with default values
+        var palmGeom = collada.dae.geometries.palm3_M1000Shape.mesh.geometry3js;
         var palmMesh = new THREE.Mesh();
         palmMesh.name = 'palm';
-        var palmGeom = collada.dae.geometries.palm3_M1000Shape.mesh.geometry3js;
         palmMesh.geometry = palmGeom;
         palmMesh.scale.set(0.1, 0.1, 0.1);
         // Set values for current pose display, add to currentGripper group
@@ -123,7 +122,7 @@ RFH.EEDisplay = function (options) {
 
         var rFingerMesh = new THREE.Mesh();
         rFingerMesh.name = 'rightFinger';
-        rFingerMesh.geometr = fingerGeom;
+        rFingerMesh.geometry = fingerGeom;
         rFingerMesh.scale.set(0.1, 0.1, 0.1);
 
         lFingerMesh.material = gripperMaterial;
@@ -202,11 +201,15 @@ RFH.EEDisplay = function (options) {
     });
     deadZoneSubscriber.subscribe(deadzoneCB);
 
-    var showPreviewGripper = function(pos, quat) {
-        previewGripper.position.set(pos.x, pos.y, pos.z);
-        previewGripper.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+    var showPreviewGripper = function(ps) {
+        previewGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);
+        previewGripper.quaternion.set(ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w);
         previewGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
-        previewGripper.show();
+        previewGripper.visible = true;
+    };
+
+    var hidePreviewGripper = function () {
+        previewGripper.visible = false;
     };
 
 }

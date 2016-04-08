@@ -96,12 +96,20 @@ var RFH = {
         RFH.pr2 = new PR2(RFH.ros);
         initMjpegCanvas();
         initViewer('video-main');
+        RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
+                                             ros: RFH.ros,
+                                             tfClient: RFH.tfClient});
+        RFH.leftEEDisplay = new RFH.EEDisplay({side: 'l',
+                                             ros: RFH.ros,
+                                             tfClient: RFH.tfClient});
         RFH.initTaskMenu('main-menu');
-        RFH.undo = new RFH.Undo({ros: RFH.ros,
-                                 undoTopic: '/undo',
-                                 buttonDiv: 'undo'});
         RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                                    ros: RFH.ros});
+        RFH.undo = new RFH.Undo({ros: RFH.ros,
+                                 undoTopic: '/undo',
+                                 buttonDiv: 'undo',
+                                 rightEEDisplay: RFH.rightEEDisplay,
+                                 leftEEDisplay: RFH.leftEEDisplay});
         RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
                                                            topic: "/pcl_filters/peek_points",
                                                            maxPoints: 8000,
