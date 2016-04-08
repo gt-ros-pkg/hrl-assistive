@@ -418,14 +418,17 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         if success_viz or failure_viz:
             import data_viz as dv
-            dv.viz(dd['normTrainData'], dd['abnormTrainData'], True)
-            dv.viz(dd['normTrainDataFiltered'], dd['abnormTrainDataFiltered'])
+            print dd.keys()
+            dv.viz(dd['normTrainData'], normTest=dd['normTestData'], \
+                   abnormTest=dd['abnormTestData'],skip=True)
+            ## else: dv.viz(dd['normTrainData'], dd['abnormTrainData'])
+            dv.viz(dd['normTrainDataFiltered'], abnormTest=dd['abnormTrainDataFiltered'])
 
         if handFeature_viz:
             handNormalTrainData   = dd['handNormTrainData']
             handAbnormalTrainData = dd['handAbnormTrainData']
             import data_viz as dv
-            dv.viz(handNormalTrainData, handAbnormalTrainData)
+            dv.viz(handNormalTrainData, abnormTest=handAbnormalTrainData)
 
             ## normalTrainData   = stackSample(normalTrainData, handNormalTrainData)
             ## abnormalTrainData = stackSample(abnormalTrainData, handAbnormalTrainData)
@@ -1462,21 +1465,21 @@ if __name__ == '__main__':
         rawFeatures = ['relativePose_artag_EE', \
                        'relativePose_artag_artag', \
                        'wristAudio', \
-                       'ft' ]       
-                         
-        modality_list   = ['kinematics', 'audio', 'ft']
+                       'ft' ]                                
+        modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
 
         raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        downSampleSize = 100
-        layers = [64,4]
-
+        
         ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
-        ## downSampleSize = 150
-        ## layers = [64,8]
+        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
+        ## downSampleSize = 100
+        ## layers = [64,4]
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
+        downSampleSize = 150
+        layers = [64,8]
 
 
         data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
@@ -1488,7 +1491,7 @@ if __name__ == '__main__':
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':False, 'filterDim':6, \
+                          'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
                           #'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
@@ -1498,7 +1501,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 10.0, 'scale': 9.0}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8.0, 'scale': 6.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
@@ -1571,7 +1574,7 @@ if __name__ == '__main__':
                       data_ext=data_param_dict['lowVarDataRemv'],\
                       cut_data=data_param_dict['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\
-                      feature_list=data_param_dict['feature_list'], data_renew=opt.bDataRenew)
+                      handFeatures=data_param_dict['handFeatures'], data_renew=opt.bDataRenew)
 
     elif opt.bAEDataExtraction:
         aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
@@ -1579,7 +1582,7 @@ if __name__ == '__main__':
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
-        handFeature_viz = True
+        handFeature_viz = False
         aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\

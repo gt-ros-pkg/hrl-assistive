@@ -421,8 +421,6 @@ if __name__ == '__main__':
                    'relativePose_artag_artag', \
                    'wristAudio', \
                    'ft' ]       
-    ## downSampleSize = 200      
-    downSampleSize = 100      
 
     ## processed_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
