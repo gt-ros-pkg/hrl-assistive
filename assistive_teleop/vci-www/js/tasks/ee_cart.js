@@ -11,6 +11,8 @@ RFH.CartesianEEControl = function (options) {
     self.buttonClass = 'hand-button';
     self.$div = $('#'+divId);
     self.gripper = options.gripper;
+    self.eeDisplay = options.eeDisplay;
+    self.eeDisplay.hide();
     self.stepSizes = {'tiny': 0.025,
         'small': 0.05,
         'medium': 0.1,
@@ -34,9 +36,6 @@ RFH.CartesianEEControl = function (options) {
         serviceName: '/pixel_2_3d'
     });
 
-    self.gripperDisplay = new RFH.EEDisplay({side: self.side,
-                                             ros: ros,
-                                             tfClient: self.tfClient});
 
     $('#touchspot-toggle, #toward-button, #away-button').button();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
@@ -637,6 +636,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $('#speedOptions').show();
         self.gripperDisplay.show();
+        self.eeDisplay.show();
         $('#'+self.side[0]+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
@@ -655,6 +655,7 @@ RFH.CartesianEEControl = function (options) {
         self.$viewer.hide();
         $('#speedOptions').hide();
         self.gripperDisplay.hide();
+        self.eeDisplay.hide();
         if ($('#touchspot-toggle').prop('checked')) {
             $('#touchspot-toggle-label').click();
         }

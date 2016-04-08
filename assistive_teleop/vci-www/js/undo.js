@@ -13,6 +13,8 @@ RFH.Undo = function (options) {
     var self = this;
     options = options || {};
     var ros = options.ros;
+    var rEEDisplay = options.rightEEDisplay;
+    var lEEDisplay = options.leftEEDisplay;
     var torso = options.torso || new PR2Torso(ros);
     var rGripper = options.rGripper || new PR2GripperSensor({side:'right', ros:ros});
     var lGripper = options.lGripper || new PR2GripperSensor({side:'left', ros:ros});
@@ -112,16 +114,38 @@ RFH.Undo = function (options) {
     previewFunctions['rArm'] = {
         start: function (undoEntry){
             // Display preview of goal 
+            rEEDisplay.showPreviewGripper(undoEntry.stateGoal);
         }, 
         stop: function (undoEntry) {
             // Stop Display
+            rEEDisplay.hidePreviewGripper();
         }
     };
 
     sentUndoCommands['rArm'] = 0;
     undoFunctions['rArm'] = function (undoEntry) {
-
+        var gp = undoEntry.stateGoal;
+        rArm.sendPoseGoal({position: gp.pose.position,
+                           orientation: gp.pose.orientation,
+                           frame_id: gp.header.frame_id
+        });
     };
+
+    var rArmCmdCB = function (cmd_msg) {
+        var undoEntry = new RFH.UndoEntry({type: 'rArm',
+                                           command: cmd_msg,
+                                           stateGoal: rArm.getState()
+                                           });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    var rArmCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: '/right_arm/haptic_mpc/goal_pose',
+        messageType: 'gometry_msgs/PoseStamped'
+    });
+    rArmCmdSub.subscribe(rArmCmdCB);
+
     /*/////////////  END RIGHT ARM UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT GRIPPER UNDO FUNCTIONS ////////////////////*/

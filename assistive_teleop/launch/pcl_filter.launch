@@ -6,6 +6,7 @@
     <arg name="z_filter_min" default="0.4"/>
     <arg name="z_filter_max" default="2.0"/>
     <arg name="voxel_leaf_size" default="0.005"/>
+    <arg name="bandwidth" default="200"/>
 
     <group ns="/pcl_filters">
     <!-- PCL Manager -->
@@ -56,6 +57,8 @@
         filter_limit_max: $(arg x_filter_max)
       </rosparam>
     </node>
+
+    <node pkg="topic_tools" type="throttle" name="pc_filtered_throttle" args="bytes /pcl_filters/vfx/output $(arg bandwidth) 1.0 peek_points" />
 
   </group>
 </launch>
