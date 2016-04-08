@@ -7,7 +7,7 @@ RFH.PointCloudView = function(options){
     var maxPoints = options.maxPoints || 500;
     self.locked = false;
 
-    var material = new THREE.PointsMaterial({size: 15.0,
+    var material = new THREE.PointsMaterial({size: 6.0,
                                              vertexColors: THREE.VertexColors,
                                              opacity:0.87,
                                              depthTest:1,

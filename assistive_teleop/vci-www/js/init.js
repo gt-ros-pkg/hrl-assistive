@@ -112,7 +112,7 @@ var RFH = {
                                  leftEEDisplay: RFH.leftEEDisplay});
         RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
                                                            topic: "/pcl_filters/peek_points",
-                                                           maxPoints: 8000,
+                                                           maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
 //        initClickableActions();
 //        initPr2(); 

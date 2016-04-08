@@ -42,7 +42,7 @@ RFH.EEDisplay = function (options) {
     gripperMaterial.color.setRGB(1.6,1.6,1.6);
 
     var previewMaterial = gripperMaterial.clone();
-    previewMaterial.color.setHex('#FF8500');
+    previewMaterial.color.setRGB(1,0.5,0);
 
     var goalMaterial = gripperMaterial.clone();
     goalMaterial.color.setRGB(0.2, 3.0, 0.2);
@@ -201,14 +201,14 @@ RFH.EEDisplay = function (options) {
     });
     deadZoneSubscriber.subscribe(deadzoneCB);
 
-    var showPreviewGripper = function(ps) {
+    self.showPreviewGripper = function(ps) {
         previewGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);
         previewGripper.quaternion.set(ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w);
         previewGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
         previewGripper.visible = true;
     };
 
-    var hidePreviewGripper = function () {
+    self.hidePreviewGripper = function () {
         previewGripper.visible = false;
     };
 
