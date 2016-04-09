@@ -134,14 +134,17 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
 
         # test data preparation
         X_test = []
-        Y_test = ll_classifier_test_Y
+        Y_test = [] #ll_classifier_test_Y
         idx_test = ll_classifier_test_idx
         for ii in xrange(len(ll_classifier_test_X)):
+            if len(ll_classifier_test_X[ii]) == 0:
+                continue
             if 'svm' in method:
                 X = scaler.transform(ll_classifier_test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[ii]
             X_test.append(X)
+            Y_test.append(ll_classifier_test_Y[ii])
 
         data[file_idx]={}
         data[file_idx]['X_scaled']      = X_scaled
