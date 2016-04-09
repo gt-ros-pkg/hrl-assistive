@@ -274,17 +274,25 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
     r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
     idx_list, tp_list, fp_list, tn_list, fn_list = zip(*r)
 
-    for i in xrange(len(param_list))
+    for i in xrange(len(param_list)):
         tp_l = []
         fn_l = []
         for j, idx in enumerate(idx_list):
+            
+            if idx == -1:
+                print "Failed to fit HMM so ignore!!!"
+                break
+                
             if i==idx:
                 tp_l += tp_list[j]
                 fn_l += fn_list[j]
 
-        tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0
-        print "true positive rate : ", tpr
-        scores.append( tpr )        
+        if idx == -1:
+            score.append(-1.0*1e+10)
+        else:
+            tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0
+            print "true positive rate : ", tpr
+            scores.append( tpr )        
 
     for i, param in enumerate(param_list):
         print("%0.3f for %r"
@@ -293,7 +301,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
 
 
-def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1):
+def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1, verbose=True):
 
     normalTrainData   = data['normalTrainData']
     abnormalTrainData = data['abnormalTrainData']
@@ -301,7 +309,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1):
     abnormalTestData  = data['abnormalTestData']
 
     # scaling
-    if verbose: print "scaling data"
+    ## if verbose: print "scaling data"
     normalTrainData   *= HMM_dict['scale']
     abnormalTrainData *= HMM_dict['scale']
     normalTestData    *= HMM_dict['scale']
@@ -316,8 +324,10 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1):
     ml = hmm.learning_hmm( param['nState'], nEmissionDim )
     ret = ml.fit( normalTrainData, cov_mult=cov_mult )
     if ret == 'Failure':
-        scores.append(-1.0 * 1e+10)
-        continue
+        print 'failure with ', param
+        return -1, [],[],[],[]
+        ## scores.append(-1.0 * 1e+10)
+        ## continue
 
     #-----------------------------------------------------------------------------------------
     # Classifier training data (dim x sample x length)
