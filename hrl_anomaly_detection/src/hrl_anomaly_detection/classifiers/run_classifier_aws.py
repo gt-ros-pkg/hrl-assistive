@@ -119,7 +119,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         idx_train_org = []
 
         for i in xrange(len(ll_classifier_train_X)):
-            if np.nan in ll_classifier_train_X[i]:
+            if np.nan in ll_classifier_train_X[i] or np.nan in ll_classifier_train_X[i][0]:
                 continue
             for j in xrange(len(ll_classifier_train_X[i])):
                 
