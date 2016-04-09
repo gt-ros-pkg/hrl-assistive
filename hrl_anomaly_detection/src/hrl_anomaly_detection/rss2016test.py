@@ -1502,7 +1502,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 3.5, 'scale': 0.5}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 3.5, 'scale': 1.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
