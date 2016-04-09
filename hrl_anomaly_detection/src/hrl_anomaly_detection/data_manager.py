@@ -334,16 +334,21 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         abnormalTrainDataAug = abnormalTrainData
 
     # sample x time_window_flatten_length
-    normalTrainDataConv   = getTimeDelayData(normalTrainDataAug, time_window)
-    abnormalTrainDataConv = getTimeDelayData(abnormalTrainDataAug, time_window)
+    normalTrainDataAugConv   = getTimeDelayData(normalTrainDataAug, time_window)
+    abnormalTrainDataAugConv = getTimeDelayData(abnormalTrainDataAug, time_window)
+    normalTrainDataConv   = getTimeDelayData(normalTrainData, time_window)
+    abnormalTrainDataConv = getTimeDelayData(abnormalTrainData, time_window)
     normalTestDataConv    = getTimeDelayData(normalTestData, time_window)
     abnormalTestDataConv  = getTimeDelayData(abnormalTestData, time_window)
     nSingleData           = len(normalTrainDataAug[0][0])-time_window+1
     nDim                  = len(normalTrainDataConv[1])
 
     # sample x time_window_flatten_length
-    X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
-    
+    if nAugment>0:
+        X_train  = np.vstack([normalTrainDataAugConv, abnormalTrainDataAugConv])
+    else:
+        X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
+        
     # train ae
     ml = ae.auto_encoder([nDim]+layer_sizes, \
                          learning_rate, learning_rate_decay, momentum, dampening, \

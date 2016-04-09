@@ -519,7 +519,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew:
+        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew or True:
 
             if AE_dict['switch']:
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
@@ -560,7 +560,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     abnormalTrainData = d['abnormTrainData']
                     normalTestData    = d['normTestData']
                     abnormalTestData  = d['abnormTestData']
-                
+
             else:
                 # dim x sample x length
                 normalTrainData   = successData[:, normalTrainIdx, :] 
@@ -652,6 +652,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                 ll_classifier_train_X.append(l_X)
                 ll_classifier_train_Y.append(l_Y)
+
+
+            print np.shape(normalTrainData), np.shape(abnormalTrainData)
+            print np.shape(ll_classifier_train_X)
+            sys.exit()
+                    
 
             #-----------------------------------------------------------------------------------------
             # Classifier test data

@@ -117,11 +117,16 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         X_train_org = []
         Y_train_org = []
         idx_train_org = []
+
         for i in xrange(len(ll_classifier_train_X)):
+            if np.nan in ll_classifier_train_X[i]:
+                continue
             for j in xrange(len(ll_classifier_train_X[i])):
+                
                 X_train_org.append(ll_classifier_train_X[i][j])
                 Y_train_org.append(ll_classifier_train_Y[i][j])
                 idx_train_org.append(ll_classifier_train_idx[i][j])
+
 
         # training data preparation
         if 'svm' in method:
@@ -137,7 +142,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         Y_test = [] #ll_classifier_test_Y
         idx_test = ll_classifier_test_idx
         for ii in xrange(len(ll_classifier_test_X)):
-            if len(ll_classifier_test_X[ii]) == 0:
+            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0:
                 continue
             if 'svm' in method:
                 X = scaler.transform(ll_classifier_test_X[ii])                                
