@@ -495,7 +495,7 @@ if __name__ == '__main__':
                       ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                       ##'add_option': True, 'rawFeatures': rawFeatures}
     HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0, class_weight=0.001}
+    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0, 'class_weight':0.001}
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
