@@ -519,7 +519,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew or True:
+        if os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew:
 
             if AE_dict['switch']:
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
@@ -650,6 +650,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
 
+                if np.nan in l_X:
+                    print i,j
+                    print l_X
+                    sys.exit()
+
                 ll_classifier_train_X.append(l_X)
                 ll_classifier_train_Y.append(l_Y)
 
@@ -685,6 +690,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
+
+                    if np.isnan(ll_logp[i][j]):
+                        print "nan values in ", i, j
+                        print testDataX[0][i]
+                        print ll_logp[i][j], ll_post[i][j]
+                        sys.exit()
+                       
 
                 ll_classifier_test_X.append(l_X)
                 ll_classifier_test_Y.append(l_Y)
@@ -1495,14 +1507,13 @@ if __name__ == '__main__':
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
-                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
 
         if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
             SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 1.5, 'scale': 1.5}
+            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 2.0, 'scale': 2.0}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}

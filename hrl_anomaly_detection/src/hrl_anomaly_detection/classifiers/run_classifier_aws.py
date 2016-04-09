@@ -104,6 +104,8 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
+
+        # sample x length x feature vector
         ll_classifier_train_X   = d['ll_classifier_train_X']
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
         ll_classifier_train_idx = d['ll_classifier_train_idx']
@@ -119,14 +121,12 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         idx_train_org = []
 
         for i in xrange(len(ll_classifier_train_X)):
-            if np.nan in ll_classifier_train_X[i]:
+            if np.nan in ll_classifier_train_X[i] or np.isnan(np.sum(ll_classifier_train_X[i])):
                 continue
-            for j in xrange(len(ll_classifier_train_X[i])):
-                
+            for j in xrange(len(ll_classifier_train_X[i])):                
                 X_train_org.append(ll_classifier_train_X[i][j])
                 Y_train_org.append(ll_classifier_train_Y[i][j])
                 idx_train_org.append(ll_classifier_train_idx[i][j])
-
 
         # training data preparation
         if 'svm' in method:
@@ -142,8 +142,17 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         Y_test = [] #ll_classifier_test_Y
         idx_test = ll_classifier_test_idx
         for ii in xrange(len(ll_classifier_test_X)):
-            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0:
+            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
+              or np.nan in ll_classifier_test_X[ii][0]:
                 continue
+
+            ## flag = False
+            ## for X in ll_classifier_test_X[ii]:
+            ##     if np.nan in X:
+            ##         flag = True
+            ##         break
+            ## if flag is True: continue
+            
             if 'svm' in method:
                 X = scaler.transform(ll_classifier_test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
@@ -257,7 +266,11 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
 
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
-                delay_idx = idx_test[ii][jj]
+                try:
+                    delay_idx = idx_test[ii][jj]
+                except:
+                    print "Error!!!!!!!!!!!!!!!!!!"
+                    print np.shape(idx_test), ii, jj
                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                 break        
 
