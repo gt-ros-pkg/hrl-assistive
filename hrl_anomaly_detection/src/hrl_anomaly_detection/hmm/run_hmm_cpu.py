@@ -309,6 +309,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
 def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startIdx, n_jobs=-1, verbose=True):
 
+    print "Start to run classifier with single data "
     normalTrainData   = data['normalTrainData']
     abnormalTrainData = data['abnormalTrainData']
     normalTestData    = data['normalTestData']
@@ -412,6 +413,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
             idx_train.append(ll_classifier_train_idx[i][j])
 
 
+    print "Start fit the classifier"
     dtc = cb.classifier( method='svm', nPosteriors=ml.nState, nLength=nLength )        
     dtc.set_params( **SVM_dict )
     ret = dtc.fit(X_train, Y_train, idx_train)
@@ -443,7 +445,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
             if est_y[j] > 0.0: fp_l.append(1)
             else: tn_l.append(1)
 
-    print param_idx
+    print param_idx, param
     return param_idx, tp_l, fp_l, tn_l, fn_l
 
 
