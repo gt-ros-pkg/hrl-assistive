@@ -1486,7 +1486,7 @@ if __name__ == '__main__':
                           'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                           'nNormalFold':3, 'nAbnormalFold':3,\
                           'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': opt.bAERenew, 'switch': False, 'time_window': 4,  \
+        AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
                           'layer_sizes':layers, 'learning_rate':1e-4, \
                           'learning_rate_decay':1e-6, \
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -1507,7 +1507,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed'
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'fixed' ],\
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'fixed', 'svm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
