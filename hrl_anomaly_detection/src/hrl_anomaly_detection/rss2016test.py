@@ -654,11 +654,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ll_classifier_train_Y.append(l_Y)
 
 
-            print np.shape(normalTrainData), np.shape(abnormalTrainData)
-            print np.shape(ll_classifier_train_X)
-            sys.exit()
-                    
-
             #-----------------------------------------------------------------------------------------
             # Classifier test data
             #-----------------------------------------------------------------------------------------
