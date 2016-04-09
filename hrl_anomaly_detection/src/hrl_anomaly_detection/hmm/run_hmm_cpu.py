@@ -136,10 +136,10 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
 
             # scaling
             if verbose: print "scaling data"
-            normalTrainData   *= HMM_dict['scale']
-            abnormalTrainData *= HMM_dict['scale']
-            normalTestData    *= HMM_dict['scale']
-            abnormalTestData  *= HMM_dict['scale']
+            normalTrainData   *= param['scale']
+            abnormalTrainData *= param['scale']
+            normalTestData    *= param['scale']
+            abnormalTestData  *= param['scale']
 
             #
             nEmissionDim = len(normalTrainData)
@@ -152,16 +152,16 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
             else:           
-                # evaluation:  dim x sample => sample x dim
-                ## testData_x = np.swapaxes( normalTestData, 0, 1)
-                testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                                         np.swapaxes( abnormalTestData, 0, 1) ])
-                testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
+                ## # evaluation:  dim x sample => sample x dim
+                ## ## testData_x = np.swapaxes( normalTestData, 0, 1)
+                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
+                ##                          np.swapaxes( abnormalTestData, 0, 1) ])
+                ## testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
                                          
-                ## testData_y = [1.0]*len( normalTestData[0] )
-                testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
-                scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
-
+                ## ## testData_y = [1.0]*len( normalTestData[0] )
+                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
+                ## scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
+                scores.append(ret)
 
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
@@ -273,12 +273,23 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
     # Training HMM, and getting classifier training and testing data
     print "Start hmm - classifier"
 
-    ## for param_idx, param in enumerate(param_list):
-    ##     for idx in xrange(len(kFold_list)):
-    ##         run_single_hmm_classifier(param_idx, data[idx], param, HMM_dict, startIdx, n_jobs=-1)
+    idx_list = []
+    tp_list  = []
+    fp_list  = []
+    tn_list  = []
+    fn_list  = []
+    for param_idx, param in enumerate(param_list):
+        for idx in xrange(len(kFold_list)):
+            _, tp, fp, tn, fn = run_single_hmm_classifier(param_idx, data[idx], param, HMM_dict, SVM_dict, startIdx, n_jobs=-1)
+            idx_list.append(param_idx)
+            tp_list.append(tp)
+            fp_list.append(fp)
+            tn_list.append(tn)
+            fn_list.append(fn)
+            print "Finished ", param_idx*len(param_list)+idx, " / ", len(param_list)*len(kFold_list)
     
-    r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, SVM_dict, startIdx, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
-    idx_list, tp_list, fp_list, tn_list, fn_list = zip(*r)
+    ## r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, SVM_dict, startIdx, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
+    ## idx_list, tp_list, fp_list, tn_list, fn_list = zip(*r)
 
     for i in xrange(len(param_list)):
         tp_l = []
@@ -309,18 +320,11 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
 def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startIdx, n_jobs=-1, verbose=True):
 
-    print "Start to run classifier with single data "
-    normalTrainData   = data['normalTrainData']
-    abnormalTrainData = data['abnormalTrainData']
-    normalTestData    = data['normalTestData']
-    abnormalTestData  = data['abnormalTestData']
-
-    # scaling
-    ## if verbose: print "scaling data"
-    normalTrainData   *= HMM_dict['scale']
-    abnormalTrainData *= HMM_dict['scale']
-    normalTestData    *= HMM_dict['scale']
-    abnormalTestData  *= HMM_dict['scale']
+    print "Start to run classifier with single data ", param_idx
+    normalTrainData   = data['normalTrainData'] * param['scale']
+    abnormalTrainData = data['abnormalTrainData'] * param['scale']
+    normalTestData    = data['normalTestData'] * param['scale']
+    abnormalTestData  = data['abnormalTestData'] * param['scale']
 
     #
     nEmissionDim = len(normalTrainData)
@@ -486,7 +490,7 @@ if __name__ == '__main__':
                       'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False }
-    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, 'filter': True, \
+    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, \
                       'layer_sizes':layers, 'learning_rate':1e-6, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -496,19 +500,19 @@ if __name__ == '__main__':
                       'add_option': None, 'rawFeatures': rawFeatures}
                       ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                       ##'add_option': True, 'rawFeatures': rawFeatures}
-    HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+    HMM_param_dict = {'renew': True, 'nState': 20, 'cov': 1.05, 'scale': 2.5}
     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0, 'class_weight':0.001}
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
     
-    parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
-                  'cov': [2.0, 4.0, 8.0] }
+    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
+    ##               'cov': [2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
 
-    parameters = {'nState': [25], 'scale': [4.0, 8.0], \
-                  'cov': [4.0] }
+    parameters = {'nState': [17,20,25], 'scale': np.linspace(2.0,3.0,3), \
+                  'cov': np.linspace(0.1,2.0,3) }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
@@ -519,5 +523,5 @@ if __name__ == '__main__':
         print "no existing data file"
         sys.exit()
 
-    ## tune_hmm(parameters, kFold_list, param_dict, verbose=True)
-    tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
+    tune_hmm(parameters, kFold_list[:2], param_dict, verbose=True)
+    ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

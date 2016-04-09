@@ -442,10 +442,15 @@ if __name__ == '__main__':
         ## save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
         ## downSampleSize = 200
 
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
+        ## downSampleSize = 100
+        ## layers = [64,4]
+
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
-        downSampleSize = 100
-        layers = [64,4]
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
+        downSampleSize = 150
+        layers = [64,8]
         
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
@@ -458,10 +463,10 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
-                          'nAugment': 1, \
-                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
-                          ## 'add_option': None, 'rawFeatures': rawFeatures}
-        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 8.0, 'scale': 6.0}
+                          'nAugment': 1, \ 
+                          'add_option': None, 'rawFeatures': rawFeatures}
+                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 1.0, 'scale': 1.5}
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
 
 
