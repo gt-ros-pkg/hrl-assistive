@@ -119,8 +119,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         idx_train_org = []
 
         for i in xrange(len(ll_classifier_train_X)):
-            if np.nan in ll_classifier_train_X[i] or np.nan in ll_classifier_train_X[i][0]:
-                continue
             for j in xrange(len(ll_classifier_train_X[i])):
                 
                 X_train_org.append(ll_classifier_train_X[i][j])
@@ -479,7 +477,7 @@ if __name__ == '__main__':
             HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
         if AE_param_dict['switch']:            
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 1.5, 'scale': 1.5}
+            HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 2., 'scale': 2.}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
             HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
