@@ -193,6 +193,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
+    SVM_dict = param_dict['SVM']
     
     #------------------------------------------
 
@@ -271,7 +272,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
     # Training HMM, and getting classifier training and testing data
     print "Start hmm - classifier"
-    r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
+    r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, SVM_dict, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
     idx_list, tp_list, fp_list, tn_list, fn_list = zip(*r)
 
     for i in xrange(len(param_list))
@@ -293,7 +294,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
 
 
-def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1):
+def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, n_jobs=-1):
 
     normalTrainData   = data['normalTrainData']
     abnormalTrainData = data['abnormalTrainData']
@@ -397,6 +398,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1):
 
 
     dtc = cb.classifier( method='svm', nPosteriors=ml.nState, nLength=nLength )        
+    dtc.set_params( **SVM_dict )
     ret = dtc.fit(X_train, Y_train, idx_train)
 
 
@@ -478,7 +480,7 @@ if __name__ == '__main__':
                       ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
                       ##'add_option': True, 'rawFeatures': rawFeatures}
     HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0, class_weight=0.001}
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
