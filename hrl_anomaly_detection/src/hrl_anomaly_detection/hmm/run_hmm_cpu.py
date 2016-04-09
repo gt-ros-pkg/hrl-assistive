@@ -54,7 +54,7 @@ def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
     # HMM
     HMM_dict = param_dict['HMM']
     nState   = HMM_dict['nState']
-    cov      = HMM_dict['cov']
+    ## cov      = HMM_dict['cov']
     # SVM
     
     #------------------------------------------
@@ -190,8 +190,8 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
     AE_dict     = param_dict['AE']
     # HMM
     HMM_dict = param_dict['HMM']
-    nState   = HMM_dict['nState']
-    cov      = HMM_dict['cov']
+    ## nState   = HMM_dict['nState']
+    ## cov      = HMM_dict['cov']
     # SVM
     SVM_dict = param_dict['SVM']
     
@@ -218,7 +218,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
                 abnormalTrainData = d['abnormTrainDataFiltered']
                 normalTestData    = d['normTestDataFiltered']
                 abnormalTestData  = d['abnormTestDataFiltered']
-                ## import data_viz as dv
+#                ## import data_viz as dv
                 ## dv.viz(normalTrainData)
                 ## continue                   
             else:
