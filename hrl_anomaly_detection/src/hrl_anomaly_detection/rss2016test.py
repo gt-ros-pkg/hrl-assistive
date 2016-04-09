@@ -1492,8 +1492,8 @@ if __name__ == '__main__':
                           'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
                           'nAugment': 1, \
-                          'add_option': None, 'rawFeatures': rawFeatures}
-                          #'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
+                          ## 'add_option': None, 'rawFeatures': rawFeatures}
 
         if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
             SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}

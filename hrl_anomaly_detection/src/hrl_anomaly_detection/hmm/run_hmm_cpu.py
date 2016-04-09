@@ -453,7 +453,7 @@ if __name__ == '__main__':
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
     
-    parameters = {'nState': [10, 15, 20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
+    parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
                   'cov': [1.0, 2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
