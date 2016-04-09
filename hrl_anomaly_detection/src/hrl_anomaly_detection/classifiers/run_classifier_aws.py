@@ -463,7 +463,7 @@ if __name__ == '__main__':
                           'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                           'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                           'filter':True, 'filterDim':4, \
-                          'nAugment': 1, \ 
+                          'nAugment': 1, \
                           'add_option': None, 'rawFeatures': rawFeatures}
                           ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
         if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
