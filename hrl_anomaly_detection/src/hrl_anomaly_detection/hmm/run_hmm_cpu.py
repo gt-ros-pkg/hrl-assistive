@@ -271,7 +271,11 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
     # Training HMM, and getting classifier training and testing data
     print "Start hmm - classifier"
-    r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
+    ## for param_idx, param in enumerate(param_list):
+    ##     for idx in xrange(len(kFold_list)):
+    ##         run_single_hmm_classifier(param_idx, data[idx], param, HMM_dict, startIdx, n_jobs=-1)
+    
+    r = Parallel(n_jobs=-1)(delayed(run_single_hmm_classifier)(param_idx, data[idx], param, HMM_dict, startIdx, n_jobs=1) for idx in xrange(len(kFold_list)) for param_idx, param in enumerate(param_list) )
     idx_list, tp_list, fp_list, tn_list, fn_list = zip(*r)
 
     for i in xrange(len(param_list)):
@@ -301,7 +305,7 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
 
 
 
-def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1, verbose=True):
+def run_single_hmm_classifier(param_idx, data, param, HMM_dict, startIdx, n_jobs=-1, verbose=True):
 
     normalTrainData   = data['normalTrainData']
     abnormalTrainData = data['abnormalTrainData']
@@ -320,7 +324,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, n_jobs=-1, verbo
     cov_mult     = [param['cov']]*(nEmissionDim**2)
     nLength      = len(normalTrainData[0][0])
 
-    # scaling
+    print "start fit hmm"
     ml = hmm.learning_hmm( param['nState'], nEmissionDim )
     ret = ml.fit( normalTrainData, cov_mult=cov_mult )
     if ret == 'Failure':
@@ -493,10 +497,13 @@ if __name__ == '__main__':
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict}
     
-    parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 1.0), \
-                  'cov': [1.0, 2.0, 4.0, 8.0] }
+    parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
+                  'cov': [2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
+
+    parameters = {'nState': [25], 'scale': [4.0, 8.0], \
+                  'cov': [4.0] }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
