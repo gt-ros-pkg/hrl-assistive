@@ -445,7 +445,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
             if est_y[j] > 0.0: fp_l.append(1)
             else: tn_l.append(1)
 
-    print param_idx, param
+    print param_idx, param, len(tp_l), len(fn_l)
     return param_idx, tp_l, fp_l, tn_l, fn_l
 
 
@@ -491,7 +491,7 @@ if __name__ == '__main__':
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':False, 'filterDim':4, \
+                      'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures}
                       ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
