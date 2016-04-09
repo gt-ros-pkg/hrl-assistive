@@ -511,8 +511,8 @@ if __name__ == '__main__':
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
 
-    parameters = {'nState': [15,20,25], 'scale': np.linspace(1.0,6.0,4), \
-                  'cov': np.linspace(1.0,6.0,4) }
+    parameters = {'nState': [15,18,20,22,25], 'scale': np.linspace(0.5,5.0,10), \
+                  'cov': np.linspace(0.5,5.0,10) }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
