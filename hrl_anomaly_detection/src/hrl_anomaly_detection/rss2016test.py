@@ -765,8 +765,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
+    
     if True:
-        
+        print "Start to visualize ROC curves!!!"
         ROC_data = ut.load_pickle(roc_pkl)        
 
         fig = plt.figure()
