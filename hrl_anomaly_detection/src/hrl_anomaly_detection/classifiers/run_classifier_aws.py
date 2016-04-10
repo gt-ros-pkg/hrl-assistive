@@ -484,6 +484,7 @@ if __name__ == '__main__':
     max_param_idx = len( list(ParameterGrid(parameters)) )
     method = parameters['method'][0]
     print "max_param_idx = ", max_param_idx
+    AE_param_dict = param_dict['AE']
     if AE_param_dict['switch'] == True and AE_param_dict['add_option'] is not None:
         result_pkl = os.path.join(save_data_path, 'result_'+task+'_rawftb.pkl')
     elif AE_param_dict['switch'] == True:
