@@ -867,7 +867,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_dict, AE_dict, SVM_dict ):
 
-    print idx, " : training classifier and evaluate testing data"
+    ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
     from sklearn import preprocessing
@@ -930,10 +930,17 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     X_test = []
     Y_test = [] 
     for j in xrange(len(ll_classifier_test_X)):
-        if 'svm' in method:
-            X = scaler.transform(ll_classifier_test_X[j])                                
-        elif method == 'progress_time_cluster' or method == 'fixed':
-            X = ll_classifier_test_X[j]
+        if len(ll_classifier_test_X[j])==0: continue
+
+        try:
+            if 'svm' in method:
+                X = scaler.transform(ll_classifier_test_X[j])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_test_X[j]
+        except:
+            print ll_classifier_test_X[j]
+            continue
+            
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
 
@@ -941,8 +948,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     # classifier # TODO: need to make it efficient!!
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
     for j in xrange(nPoints):
-        print j+1,'/' ,nPoints, ' ', idx, method
-
         if method == 'svm':
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
@@ -1008,7 +1013,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         data[method]['tn_l'][j] += tn_l
         data[method]['delay_l'][j] += delay_l
 
-    print "finished ", idx, method, data
+    print "finished ", idx, method
     return data
 
 
