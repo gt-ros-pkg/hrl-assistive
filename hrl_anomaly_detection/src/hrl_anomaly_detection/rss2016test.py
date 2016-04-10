@@ -754,10 +754,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ##     r = ut.load_pickle('temp.pkl')
     ## else:
     # parallelization
-    r = Parallel(n_jobs=2, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict ) \
-                                                                 for idx in xrange(len(kFold_list[:2])) \
+                                                                 for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
 
     ## for method in method_list:
@@ -770,7 +770,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #l_data = zip(*r)
     l_data = r
     print "finished to run run_classifiers"
-    sys.exit()
 
     for i in xrange(len(l_data)):
         for j in xrange(nPoints):
