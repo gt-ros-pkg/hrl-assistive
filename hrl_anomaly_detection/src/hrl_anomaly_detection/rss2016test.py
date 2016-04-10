@@ -52,6 +52,7 @@ from hrl_anomaly_detection import data_manager as dm
 ## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 ## import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 ## import hrl_lib.circular_buffer as cb
+from hrl_anomaly_detection.params import *
 
 # learning
 ## from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
@@ -102,17 +103,18 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             successData = d['normTrainData']
             failureData = d['abnormTrainData']
 
-        if AE_dict['add_option'] is 'featureToBottleneck':
-            print "add features"
+        if AE_dict['add_option'] is not None:
             newHandSuccessData = handSuccessData = d['handNormTrainData']
             newHandFailureData = handFailureData = d['handAbnormTrainData']
             
-            for i in xrange(AE_dict['nAugment']):
-                newHandSuccessData = stackSample(newHandSuccessData, handSuccessData)
-                newHandFailureData = stackSample(newHandFailureData, handFailureData)
+            ## for i in xrange(AE_dict['nAugment']):
+            ##     newHandSuccessData = stackSample(newHandSuccessData, handSuccessData)
+            ##     newHandFailureData = stackSample(newHandFailureData, handFailureData)
 
-            successData = combineData( successData, newHandSuccessData )
-            failureData = combineData( failureData, newHandFailureData )
+            successData = combineData( successData, newHandSuccessData, \
+                                       AE_dict['add_option'], d['handFeatureNames'] )
+            failureData = combineData( failureData, newHandFailureData, \
+                                       AE_dict['add_option'], d['handFeatureNames'] )
 
             ## # reduce dimension by pooling
             ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
@@ -386,7 +388,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
         # From dim x sample x length
         # To reduced_dim x sample
         dd = dm.getAEdataSet(idx, d['aeSuccessData'], d['aeFailureData'], \
-                             d['successData'], d['failureData'],\
+                             d['successData'], d['failureData'], d['param_dict'], \
                              normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
                              AE_dict['time_window'], AE_dict['nAugment'], \
                              AE_proc_data, \
@@ -415,7 +417,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
             normalTestData    = dd['normTestData']
             abnormalTestData  = dd['abnormTestData']            
 
-        if success_viz or failure_viz:
+        if success_viz or failure_viz and False:
             import data_viz as dv
             print dd.keys()
             dv.viz(dd['normTrainData'], normTest=dd['normTestData'], \
@@ -424,8 +426,12 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
             dv.viz(dd['normTrainDataFiltered'], abnormTest=dd['abnormTrainDataFiltered'])
 
         if handFeature_viz:
-            handNormalTrainData   = dd['handNormTrainData']
-            handAbnormalTrainData = dd['handAbnormTrainData']
+            handNormalTrainData = combineData( normalTrainData, dd['handNormTrainData'],\
+                                               AE_dict['add_option'], dd['handFeatureNames'])
+            handAbnormalTrainData = combineData( abnormalTrainData, dd['handAbnormTrainData'],\
+                                                 AE_dict['add_option'], dd['handFeatureNames'])
+
+            
             import data_viz as dv
             dv.viz(handNormalTrainData, abnormTest=handAbnormalTrainData)
 
@@ -502,8 +508,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     successData = d['successData']
     failureData = d['failureData']
+    param_dict  = d['param_dict']
     aeSuccessData = d.get('aeSuccessData', None)
     aeFailureData = d.get('aeFailureData', None)
+    
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -512,7 +520,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
 
-        if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
+        if AE_dict['switch'] and AE_dict['add_option'] is not None:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(idx)+'.pkl')
         elif AE_dict['switch'] and AE_dict['add_option'] is None:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
@@ -525,11 +533,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
 
                 AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-
+            
                 # From dim x sample x length
                 # To reduced_dim x sample x length
                 d = dm.getAEdataSet(idx, aeSuccessData, aeFailureData, \
-                                    successData, failureData,\
+                                    successData, failureData, param_dict,\
                                     normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
                                     AE_dict['time_window'], AE_dict['nAugment'], \
                                     AE_proc_data, \
@@ -569,23 +577,25 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
 
-            if AE_dict['add_option'] is 'featureToBottleneck':
-                print "add feature is not implemented..."
+            if AE_dict['add_option'] is not None:
+                print "add feature.."
                 newHandSuccTrData = handSuccTrData = d['handNormTrainData']
                 newHandFailTrData = handFailTrData = d['handAbnormTrainData']
                 handSuccTeData = d['handNormTestData']
                 handFailTeData = d['handAbnormTestData']
 
-                for i in xrange(AE_dict['nAugment']):
-                    newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
-                    newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
+                ## for i in xrange(AE_dict['nAugment']):
+                ##     newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
+                ##     newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
 
-                normalTrainData   = combineData( normalTrainData, newHandSuccTrData )
-                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData )
-                normalTestData   = combineData( normalTestData, handSuccTeData )
-                abnormalTestData  = combineData( abnormalTestData, handFailTeData )
-                ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
-                ## sys.exit()
+                normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
+                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
+                normalTestData   = combineData( normalTestData, handSuccTeData,\
+                                                AE_dict['add_option'], d['handFeatureNames'])
+                abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
 
                 ## # reduce dimension by pooling
                 ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
@@ -727,7 +737,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
 
 
-    if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
+    if AE_dict['switch'] and AE_dict['add_option'] is not None:
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_rawftb.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw.pkl')
@@ -994,7 +1004,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
-                    delay_idx = ll_classifier_test_idx[ii][jj]
+                    try:
+                        delay_idx = ll_classifier_test_idx[ii][jj]
+                    except:
+                        print np.shape(ll_classifier_test_idx), ii, jj
                     #print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
                     break        
 
@@ -1469,81 +1482,19 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
         subjects = ['gatsbii']
-        task     = opt.task    
-        ## task    = 'pushing_microwave_black'    
-        ## feature_list = ['unimodal_audioPower',\
-        ##                 'unimodal_kinVel',\
-        ##                 'unimodal_ftForce',\
-        ##                 ##'unimodal_visionChange',\
-        ##                 'unimodal_ppsForce',\
-        ##                 ##'unimodal_fabricForce',\
-        ##                 'crossmodal_targetEEDist', \
-        ##                 'crossmodal_targetEEAng']
-        handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist',\
-                        'crossmodal_targetEEAng',\
-                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        rawFeatures = ['relativePose_artag_EE', \
-                       'relativePose_artag_artag', \
-                       'wristAudio', \
-                       'ft' ]                                
-        modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
-
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        task     = opt.task
+        raw_data_path, save_data_path, param_dict = getPushingMicrowave(opt.task, opt.bDataRenew, \
+                                                                        opt.bAERenew, opt.bHMMRenew,\
+                                                                        rf_center, local_range)
         
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'        
-        ## downSampleSize = 100
-        ## layers = [64,4]
-
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
-        downSampleSize = 150
-        layers = [64,8]
-
-
-        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
-                          'nNormalFold':3, 'nAbnormalFold':3,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': opt.bAERenew, 'switch': True, 'time_window': 4,  \
-                          'layer_sizes':layers, 'learning_rate':1e-4, \
-                          'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':4, \
-                          'nAugment': 1, \
-                          'add_option': None, 'rawFeatures': rawFeatures}
-
-        if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
-            SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
-        if AE_param_dict['switch']:            
-            SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 2.0, 'scale': 2.0}
-        else:
-            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm'
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'fixed', 'svm' ],\
-                          'update_list': [],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
     else:
         print "Selected task name is not available."
         sys.exit()
 
     #---------------------------------------------------------------------------
-    if opt.bAEDataAddFeature:
-        param_dict['AE']['add_option'] = 'featureToBottleneck'
-        param_dict['AE']['switch']     = True
+    ## if opt.bAEDataAddFeature:
+    ##     param_dict['AE']['add_option'] = ['wristAudio'] #'featureToBottleneck'
+    ##     param_dict['AE']['switch']     = True
     
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
@@ -1587,14 +1538,14 @@ if __name__ == '__main__':
         failure_viz = True
 
         dm.getDataSet(subjects, task, raw_data_path, save_data_path,
-                      data_param_dict['rf_center'], data_param_dict['local_range'],\
-                      downSampleSize=data_param_dict['downSampleSize'], scale=scale, \
+                      param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
+                      downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=AE_param_dict['switch'],\
-                      data_ext=data_param_dict['lowVarDataRemv'],\
-                      cut_data=data_param_dict['cut_data'],
+                      ae_data=param_dict['AE']['switch'],\
+                      data_ext=param_dict['data_param']['lowVarDataRemv'],\
+                      cut_data=param_dict['data_param']['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\
-                      handFeatures=data_param_dict['handFeatures'], data_renew=opt.bDataRenew)
+                      handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 
     elif opt.bAEDataExtraction:
         aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
@@ -1602,7 +1553,7 @@ if __name__ == '__main__':
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
-        handFeature_viz = False
+        handFeature_viz = True
         aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\

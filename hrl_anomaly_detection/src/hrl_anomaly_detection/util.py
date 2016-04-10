@@ -1152,12 +1152,19 @@ def stackSample(X1,X2,first_axis='dim'):
         return np.vstack([X1,X2])
 
 
-def combineData(X1,X2,first_axis='dim'):
+def combineData(X1,X2, target_features, all_features, first_axis='dim'):
+
+    idx_list = []
+    for feature in target_features:
+        idx = all_features.index(feature)
+        idx_list.append(idx)
 
     if first_axis == 'dim':
-        newX1 = np.swapaxes(X1,0,1)
-        newX2 = np.swapaxes(X2,0,1)
         
+        newX1 = np.swapaxes(X1,0,1)
+        newX2 = X2[idx_list,:,:]
+        newX2 = np.swapaxes(newX2,0,1)
+
         X = None
         for i in xrange(len(newX1)):
             if X is None:

@@ -125,7 +125,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is False and False:
+    if os.path.isfile(save_pkl) and data_renew is False:
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -208,40 +208,40 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     # almost deprecated??
     feature_names = np.array(param_dict.get('feature_names', handFeatures))
-    if data_ext:
-        # 1) exclude stationary data
-        thres = 0.025
-        n,m,k = np.shape(successData)
-        diff_all_data = successData[:,:,1:] - successData[:,:,:-1]
-        add_idx    = []
-        remove_idx = []
-        std_list = []
-        for i in xrange(n):
-            std = np.max(np.max(diff_all_data[i], axis=1))
-            std_list.append(std)
-            if  std < thres: remove_idx.append(i)
-            else: add_idx.append(i)
+    ## if data_ext:
+    ##     # 1) exclude stationary data
+    ##     thres = 0.025
+    ##     n,m,k = np.shape(successData)
+    ##     diff_all_data = successData[:,:,1:] - successData[:,:,:-1]
+    ##     add_idx    = []
+    ##     remove_idx = []
+    ##     std_list = []
+    ##     for i in xrange(n):
+    ##         std = np.max(np.max(diff_all_data[i], axis=1))
+    ##         std_list.append(std)
+    ##         if  std < thres: remove_idx.append(i)
+    ##         else: add_idx.append(i)
 
-        allData          = allData[add_idx]
-        successData      = successData[add_idx]
-        failureData      = failureData[add_idx]
-        AddFeature_names    = feature_names[add_idx]
-        RemoveFeature_names = feature_names[remove_idx]
+    ##     allData          = allData[add_idx]
+    ##     successData      = successData[add_idx]
+    ##     failureData      = failureData[add_idx]
+    ##     AddFeature_names    = feature_names[add_idx]
+    ##     RemoveFeature_names = feature_names[remove_idx]
 
-        print "--------------------------------"
-        print "STD list: ", std_list
-        print "Add features: ", AddFeature_names
-        print "Remove features: ", RemoveFeature_names
-        print "--------------------------------"
-        ## sys.exit()
-    else:
-        AddFeature_names    = feature_names
+    ##     print "--------------------------------"
+    ##     print "STD list: ", std_list
+    ##     print "Add features: ", AddFeature_names
+    ##     print "Remove features: ", RemoveFeature_names
+    ##     print "--------------------------------"
+    ##     ## sys.exit()
+    ## else:
+    AddFeature_names    = feature_names
 
 
     # -------------------- Display ---------------------
     fig = None
+    feature_names = np.array(param_dict.get('feature_names', handFeatures))
     if success_viz:
-        feature_names = np.array(param_dict.get('feature_names', handFeatures))
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
@@ -256,7 +256,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
-        feature_names = np.array(param_dict.get('feature_names', handFeatures))
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
         if nPlot is None:
@@ -270,7 +269,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
-        feature_names = np.array(param_dict.get('feature_names', handFeatures))
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
 
         if save_pdf:
@@ -292,7 +290,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     ##     return allData, successData, failureData, failureNameList, param_dict
 
 
-def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, \
+def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, handParam, \
                  normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,
                  time_window, nAugment, \
                  AE_proc_data, \
@@ -305,8 +303,10 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  filtering=True, filteringDim=4, \
                  verbose=False, renew=False, train_ae=False ):
 
-    if os.path.isfile(AE_proc_data) and not renew:
+    if os.path.isfile(AE_proc_data) and not renew:        
         d = ut.load_pickle(AE_proc_data)
+        ## d['handFeatureNames'] = handParam['feature_names']
+        ## ut.save_pickle(d, AE_proc_data)
         return d
 
     print "Loading ae_model data"
@@ -392,6 +392,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         d['normTestDataFiltered'], d['abnormTestDataFiltered'], _ \
           = errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
 
+    d['handFeatureNames'] = handParam['feature_names']
     ut.save_pickle(d, AE_proc_data)
     return d
 

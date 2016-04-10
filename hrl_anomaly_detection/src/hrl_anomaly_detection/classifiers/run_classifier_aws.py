@@ -39,6 +39,7 @@ import time
 
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection.params import *
 
 # AWS
 from hrl_anomaly_detection.aws.cloud_search import CloudSearch
@@ -449,55 +450,11 @@ if __name__ == '__main__':
     elif opt.task == 'pushing':
     
         subjects = ['gatsbii']
-        task     = opt.task 
-        handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist',\
-                        'crossmodal_targetEEAng',\
-                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        rawFeatures = ['relativePose_artag_EE', \
-                       'relativePose_artag_artag', \
-                       'wristAudio', \
-                       'ft' ]       
-
-        modality_list  = ['kinematics', 'audio', 'ft']
-        ## save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE'
-        ## downSampleSize = 200
-
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
-        ## downSampleSize = 100
-        ## layers = [64,4]
-
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
-        downSampleSize = 150
-        layers = [64,8]
+        task     = opt.task
+        raw_data_path, save_data_path, param_dict = getPushingMicrowave(opt.task, False, \
+                                                                        False, False,\
+                                                                        rf_center, local_range)
         
-
-        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
-                          'nNormalFold':3, 'nAbnormalFold':3,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False }
-        AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, \
-                          'layer_sizes':layers, 'learning_rate':1e-6, \
-                          'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                          'filter':True, 'filterDim':4, \
-                          'nAugment': 1, \
-                          'add_option': None, 'rawFeatures': rawFeatures}
-                          ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
-        if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
-            SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
-            HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
-        if AE_param_dict['switch']:            
-            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 2., 'scale': 2.}
-        else:
-            SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-            HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
-
-
         #temp
         nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
@@ -505,9 +462,8 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }        
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+        param_dict['ROC'] = ROC_param_dict
 
         nFiles = 9
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -528,7 +484,7 @@ if __name__ == '__main__':
     max_param_idx = len( list(ParameterGrid(parameters)) )
     method = parameters['method'][0]
     print "max_param_idx = ", max_param_idx
-    if AE_param_dict['switch'] == True and AE_param_dict['add_option'] == 'featureToBottleneck':
+    if AE_param_dict['switch'] == True and AE_param_dict['add_option'] is not None:
         result_pkl = os.path.join(save_data_path, 'result_'+task+'_rawftb.pkl')
     elif AE_param_dict['switch'] == True:
         result_pkl = os.path.join(save_data_path, 'result_'+task+'_raw.pkl')
