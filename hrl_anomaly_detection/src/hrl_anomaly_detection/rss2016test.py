@@ -521,7 +521,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
 
         if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(idx)+'.pkl')
+            tag = ''
+            for ft in AE_dict['add_option']:
+                tag += ft[:2]
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
         elif AE_dict['switch'] and AE_dict['add_option'] is None:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
         else:
@@ -738,7 +741,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     if AE_dict['switch'] and AE_dict['add_option'] is not None:
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_rawftb.pkl')
+        tag = ''
+        for ft in AE_dict['add_option']:
+            tag += ft[:2]
+        
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw_'+tag+'.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw.pkl')
     else:
@@ -882,8 +889,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     from hrl_anomaly_detection.classifiers import classifier as cb
     from sklearn import preprocessing
 
-    if AE_dict['switch'] and AE_dict['add_option'] == 'featureToBottleneck':
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rawftb_'+str(idx)+'.pkl')
+    if AE_dict['switch'] and AE_dict['add_option'] is not None:
+        tag = ''
+        for ft in AE_dict['add_option']:
+            tag += ft[:2]
+
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rab_'+tag+'_'+str(idx)+'.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
     else:
