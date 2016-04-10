@@ -354,6 +354,8 @@ if __name__ == '__main__':
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
                  help='Enable cpu mode')
+    p.add_option('--renew', action='store_true', dest='bRenew', default=True,
+                 help='Renew result')
     opt, args = p.parse_args()
 
     rf_center     = 'kinEEPos'        
@@ -541,7 +543,7 @@ if __name__ == '__main__':
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [1.0, 3.], 'w_negative': [3.0]}
         
-        if os.path.isfile(result_pkl) is False:
+        if os.path.isfile(result_pkl) is False and opt.bRenew is False:
 
             data = getData(nFiles, save_data_path, task, param_dict, parameters)
     
