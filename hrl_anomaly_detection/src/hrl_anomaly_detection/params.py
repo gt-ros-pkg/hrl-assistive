@@ -22,7 +22,7 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
     ## downSampleSize = 100
     ## layers = [64,4]
 
-    filterDim=3
+    filterDim=1
     if filterDim==3: 
         # filtered dim 3
         save_data_path = os.path.expanduser('~')+\
