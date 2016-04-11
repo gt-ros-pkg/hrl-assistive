@@ -110,6 +110,8 @@ def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=Fa
                 handSuccTeData = d['handNormTestData']
                 handFailTeData = d['handAbnormTestData']
 
+                print d['handFeatureNames']
+                ## sys.exit()
                 normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
                                                  AE_dict['add_option'], d['handFeatureNames'])
                 abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
