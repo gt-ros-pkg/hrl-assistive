@@ -105,9 +105,131 @@ RFH.Undo = function (options) {
     $undoButton.on('click.rfh', undoButtonCB); 
 
     /*/////////////  START TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
+
+    previewFunctions['task'] = {
+        start: function (undoEntry) {
+
+        },
+        stop: function(undoEntry) {
+
+        }
+    };
+
+    self.states['task'] = {};
+    var domainStateCB = function (state) {
+        self.states['task'][state.domain] = state.predicates;
+    }
+
+    var domainStateSubscriberFactory = function (domain) {
+        var subscriber = new ROSLIB.Topic({
+            ros: ros,
+            topic: 'pddl_tasks/'+domain+'/state',
+            messageType: 'hrl_task_planning/PDDLState'
+        });
+        subscriber.subscribe(domainStateCB);
+        return subscriber;
+    };
+
+    sentUndoCommands['task'] = {};
+    undoFunctions['task'] = function (undoEntry) {
+        var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
+        pddlCmd.domain = undoEntry.command.domain;
+        pddlCmd.name = undoEntry.command.name;
+        pddlCmd.objects = undoEntry.command.objects;
+        pddlCmd.goal = undoEntry.stateGoal;
+        sentUndoCommands['task'][undoEntry.command.domain] += 1;
+        taskCmdPub.publish(pddl_cmd);
+    };
+    
+//    ros.getMessageDetails('hrl_task_planning/PDDLProblem');
+    var taskCmdPub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'preform_task',
+        messageType: 'hrl_task_planning/PDDLProblem'
+    });
+
+    var taskActiveDomains = [];
+    var taskStateSubs = [];
+    var activeDomainsCB = function (domainList) {
+        var newDomains = [];
+        for (var i=0; i<newDomains.length; i+=1) {
+            taskStateSubs.push(domainStateSubscriberFactory(newDomains[i]));
+        }
+    };
+    var activeDomainsSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'pddl_tasks/active_domains',
+        messageType: 'hrl_task_planning/DomainList'
+    });
+    activeDomainsSub.subscribe(activeDomainsCB);
+
+    var taskCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'perform_task',
+        messageType: 'hrl_task_planning/PDDLProblem'
+    });
+
+    var taskCmdCB = function (problem_msg) {
+        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
+            sentUndoCommands['task'][problem_msg.domain] -= 1;
+            return;
+        };
+        var undoEntry = new RFH.UndoEntry({
+            type: 'task',
+            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
+            command: problem_msg
+        });
+       eventQueue.pushUndoEntry(undoEntry); 
+    };
+    taskCmdSub.subscribe(taskCmdCB);
+
     /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT ARM UNDO FUNCTIONS ////////////////////*/
+    previewFunctions['lArm'] = {
+        start: function (undoEntry){
+            // Display preview of goal 
+            lEEDisplay.showPreviewGripper(undoEntry.stateGoal);
+        }, 
+        stop: function (undoEntry) {
+            // Stop Display
+            lEEDisplay.hidePreviewGripper();
+        }
+    };
+
+    sentUndoCommands['lArm'] = 0;
+    undoFunctions['lArm'] = function (undoEntry) {
+        sentUndoCommands['lArm'] += 1;
+        var gp = undoEntry.stateGoal;
+        rArm.sendPoseGoal({position: gp.pose.position,
+                           orientation: gp.pose.orientation,
+                           frame_id: gp.header.frame_id
+        });
+    };
+
+    var lArmCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'left_arm/haptic_mpc/goal_pose',
+        messageType: 'geometry_msgs/PoseStamped'
+    });
+
+    var lArmCmdCB = function (cmd_msg) {
+        if (sentUndoCommands['lArm'] > 0) {
+            sentUndoCommands['lArm'] -= 1;
+            return;
+        }
+        var armInTorso = lArm.getState(); // Received in torso_lift_link
+        armInTorso.header.frame_id = 'base_link'
+        armInTorso.pose.position.x -= 0.05
+        armInTorso.pose.position.z += (0.75 + torso.getState());
+        var undoEntry = new RFH.UndoEntry({type: 'lArm',
+                                           command: cmd_msg,
+                                           stateGoal: lArm.getState()
+                                           });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    lArmCmdSub.subscribe(lArmCmdCB);
     /*/////////////  END LEFT ARM UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START RIGHT ARM UNDO FUNCTIONS ////////////////////*/
