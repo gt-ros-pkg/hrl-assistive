@@ -22,17 +22,21 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
     ## downSampleSize = 100
     ## layers = [64,4]
 
-    # filtered dim 4
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'        
-    downSampleSize = 150
-    layers = [64,8]
-
-    # filtered dim 3
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_3'        
-    downSampleSize = 150
-    layers = [64,8]
+    filterDim=4
+    if filterDim==3: 
+        # filtered dim 3
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_3'
+        downSampleSize = 150
+        layers = [64,8]
+        add_option = ['audioWristRMS']
+    else:
+        # filtered dim 4
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
+        downSampleSize = 150
+        layers = [64,8]
+        add_option = None
 
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
@@ -44,9 +48,9 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':True, 'filterDim':3, \
+                      'filter':True, 'filterDim':filterDim, \
                       'nAugment': 1, \
-                      'add_option': ['audioWristRMS'], 'rawFeatures': rawFeatures}
+                      'add_option': add_option , 'rawFeatures': rawFeatures}
                       ## 'add_option': ['targetEEDist'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
