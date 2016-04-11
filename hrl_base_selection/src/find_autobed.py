@@ -168,7 +168,7 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
 
         if opt.bVirtual:
-            atd.pubVirtualMouthPose()
+            atd.pubVirtualBedPose()
             continue
         
         rate.sleep()
