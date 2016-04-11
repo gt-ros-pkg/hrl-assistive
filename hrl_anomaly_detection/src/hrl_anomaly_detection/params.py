@@ -29,7 +29,9 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_3'
         downSampleSize = 150
         layers = [64,8]
-        add_option = ['audioWristRMS']
+        ## add_option = ['audioWristRMS']
+        add_option = ['ftForce_mag']
+        
     else:
         # filtered dim 4
         save_data_path = os.path.expanduser('~')+\
@@ -53,8 +55,6 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'add_option': add_option , 'rawFeatures': rawFeatures}
                       ## 'add_option': ['targetEEDist'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
-                      ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
-                      ## 'add_option': None, 'rawFeatures': rawFeatures}
 
     if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
@@ -76,8 +76,8 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
-    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' 'progress_time_cluster', 'fixed', 
-    ROC_param_dict = {'methods': [ 'svm' ],\
+    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
+    ROC_param_dict = {'methods': [ 'svm', 'progress_time_cluster', 'fixed' ],\
                       'update_list': [],\
                       'nPoints': nPoints,\
                       'progress_param_range':np.linspace(-1., -10., nPoints), \
