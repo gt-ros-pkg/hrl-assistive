@@ -122,16 +122,17 @@ RFH.Undo = function (options) {
     };
 
     var domainStepCB = function (step) {
-        var lastStepIdx;
-        for (var i=eventQueue.length; i>0; i-=1) {
-            if (eventQueue.type === 'task') {
-                if (eventQueue.command.problem === step.problem) {
-                   lastStepIdx = i; 
-                   continue;
+        var lastStepIdx = eventQueue.length - 1;
+        for (lastStepIdx; lastStepIdx>=0; lastStepIdx-=1) {
+            if (eventQueue[lastStepIdx].type === 'task') {
+                if (eventQueue[lastStepIdx].command.problem === step.problem) {
+                   break;
                 }
             }
         }
-        eventQueue.splice(lastStepIdx+1, eventQueue.length-lastStepIdx); // Remove from index forward
+        if (lastStepIdx >= 0){ // Otherwise, this is the first state, just add and leave everything before it in place
+            eventQueue.splice(lastStepIdx+1, eventQueue.length-lastStepIdx); // Remove from index forward
+        }
 
         var undoEntry = new RFH.UndoEntry({
             type: 'task',
@@ -155,7 +156,7 @@ RFH.Undo = function (options) {
         var stepSub = new ROSLIB.Topic({
             ros: ros,
             name: 'pddl_tasks/'+domain+'/current_action',
-            messageType: 'hrl_task_planning/PDDLStep'
+            messageType: 'hrl_task_planning/PDDLPlanStep'
         });
         stepSub.subscribe(domainStepCB);
         taskStepSubs[domain] = stepSub;
