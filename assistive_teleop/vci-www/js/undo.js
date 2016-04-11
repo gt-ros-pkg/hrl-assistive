@@ -44,6 +44,7 @@ RFH.Undo = function (options) {
     var eventQueue = [];
     eventQueue.pushUndoEntry = function (undoEntry) {
         $undoButton.show();
+        console.log(undoEntry.type);
         eventQueue.push(undoEntry);
     };
     eventQueue.popUndoEntry = function () {
@@ -108,26 +109,56 @@ RFH.Undo = function (options) {
 
     previewFunctions['task'] = {
         start: function (undoEntry) {
-
+            $('#smach-container').css('background-color','orange');
         },
         stop: function(undoEntry) {
-
+            $('#smach-container').css('background-color','inherit');
         }
     };
 
     self.states['task'] = {};
     var domainStateCB = function (state) {
         self.states['task'][state.domain] = state.predicates;
-    }
+    };
 
-    var domainStateSubscriberFactory = function (domain) {
-        var subscriber = new ROSLIB.Topic({
+    var domainStepCB = function (step) {
+        var lastStepIdx;
+        for (var i=eventQueue.length; i>0; i-=1) {
+            if (eventQueue.type === 'task') {
+                if (eventQueue.command.problem === step.problem) {
+                   lastStepIdx = i; 
+                   continue;
+                }
+            }
+        }
+        eventQueue.splice(lastStepIdx+1, eventQueue.length-lastStepIdx); // Remove from index forward
+
+        var undoEntry = new RFH.UndoEntry({
+            type: 'task',
+            stateGoal: self.states['task'][step.domain],
+            command: step
+        });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    var taskStateSubs = {};
+    var taskStepSubs = {};
+    var setupDomainSubs = function (domain) {
+        var stateSub = new ROSLIB.Topic({
             ros: ros,
-            topic: 'pddl_tasks/'+domain+'/state',
+            name: 'pddl_tasks/'+domain+'/state',
             messageType: 'hrl_task_planning/PDDLState'
         });
-        subscriber.subscribe(domainStateCB);
-        return subscriber;
+        stateSub.subscribe(domainStateCB);
+        taskStateSubs[domain] = stateSub;
+
+        var stepSub = new ROSLIB.Topic({
+            ros: ros,
+            name: 'pddl_tasks/'+domain+'/current_action',
+            messageType: 'hrl_task_planning/PDDLStep'
+        });
+        stepSub.subscribe(domainStepCB);
+        taskStepSubs[domain] = stepSub;
     };
 
     sentUndoCommands['task'] = {};
@@ -141,7 +172,6 @@ RFH.Undo = function (options) {
         taskCmdPub.publish(pddl_cmd);
     };
     
-//    ros.getMessageDetails('hrl_task_planning/PDDLProblem');
     var taskCmdPub = new ROSLIB.Topic({
         ros: ros,
         name: 'preform_task',
@@ -149,11 +179,16 @@ RFH.Undo = function (options) {
     });
 
     var taskActiveDomains = [];
-    var taskStateSubs = [];
-    var activeDomainsCB = function (domainList) {
+    var activeDomainsCB = function (domains_msg) {
+        var domains = domains_msg.domains;
         var newDomains = [];
-        for (var i=0; i<newDomains.length; i+=1) {
-            taskStateSubs.push(domainStateSubscriberFactory(newDomains[i]));
+        for (var i=0; i<domains.length; i+=1) {
+            if (taskActiveDomains.indexOf(domains[i]) < 0){
+                newDomains.push(domains[i]);
+            }
+        }
+        for (var j=0; j<newDomains.length; j+=1) {
+            setupDomainSubs(newDomains[j]);
         }
     };
     var activeDomainsSub = new ROSLIB.Topic({
@@ -163,25 +198,25 @@ RFH.Undo = function (options) {
     });
     activeDomainsSub.subscribe(activeDomainsCB);
 
-    var taskCmdSub = new ROSLIB.Topic({
-        ros: ros,
-        name: 'perform_task',
-        messageType: 'hrl_task_planning/PDDLProblem'
-    });
-
-    var taskCmdCB = function (problem_msg) {
-        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
-            sentUndoCommands['task'][problem_msg.domain] -= 1;
-            return;
-        };
-        var undoEntry = new RFH.UndoEntry({
-            type: 'task',
-            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
-            command: problem_msg
-        });
-       eventQueue.pushUndoEntry(undoEntry); 
-    };
-    taskCmdSub.subscribe(taskCmdCB);
+//    var taskCmdSub = new ROSLIB.Topic({
+//        ros: ros,
+//        name: 'perform_task',
+//        messageType: 'hrl_task_planning/PDDLProblem'
+//    });
+//
+//    var taskCmdCB = function (problem_msg) {
+//        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
+//            sentUndoCommands['task'][problem_msg.domain] -= 1;
+//            return;
+//        };
+//        var undoEntry = new RFH.UndoEntry({
+//            type: 'task',
+//            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
+//            command: problem_msg
+//        });
+//       eventQueue.pushUndoEntry(undoEntry); 
+//    };
+//    taskCmdSub.subscribe(taskCmdCB);
 
     /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
@@ -541,7 +576,10 @@ RFH.Undo = function (options) {
         if (sentUndoCommands['mode'] > 0) {  
             sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
             self.states.mode = state_msg.data; // Keep updated state for later reference
-            return
+            return;
+        }
+        if (self.states.mode === state_msg.data) { // Only record if the mode is actually changing
+            return;
         }
         // Handle standard case, recording command to undo later
         var undoEntry = new RFH.UndoEntry({
