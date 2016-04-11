@@ -426,6 +426,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
             dv.viz(dd['normTrainDataFiltered'], abnormTest=dd['abnormTrainDataFiltered'])
 
         if handFeature_viz:
+            print AE_dict['add_option'], dd['handFeatureNames']
             handNormalTrainData = combineData( normalTrainData, dd['handNormTrainData'],\
                                                AE_dict['add_option'], dd['handFeatureNames'])
             handAbnormalTrainData = combineData( abnormalTrainData, dd['handAbnormTrainData'],\

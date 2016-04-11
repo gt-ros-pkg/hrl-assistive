@@ -81,6 +81,7 @@ def viz(X1, normTest=None, abnormTest=None, skip=False):
     import itertools
 
     n_cols = int(float(len(X1))/4.0)
+    if n_cols == 0: n_cols = 1
     n_rows = int(float(len(X1))/float(n_cols))        
     colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 
