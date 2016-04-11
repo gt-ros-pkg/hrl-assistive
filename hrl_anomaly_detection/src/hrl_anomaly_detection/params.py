@@ -39,8 +39,8 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
-                      'add_option': ['audioWristRMS'], 'rawFeatures': rawFeatures}
-                      ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
+                      'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
+                      ## 'add_option': ['audioWristRMS'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['audioWristRMS', 'ftForce_mag'], 'rawFeatures': rawFeatures}
                       ## 'add_option': None, 'rawFeatures': rawFeatures}
 
