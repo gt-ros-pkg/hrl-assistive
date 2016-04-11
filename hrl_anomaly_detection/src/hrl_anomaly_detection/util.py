@@ -1171,7 +1171,8 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         
         newX1 = np.swapaxes(X1,0,1)
         if len(noise_idx_list) > 0:
-            X2[noise_idx_list,:,:] = X2[noise_idx_list,:,:] + np.random.normal(0.0, 0.1, np.shape(X2))
+            X2[noise_idx_list,:,:] = X2[noise_idx_list,:,:] + \
+              np.random.normal(0.0, 0.1, np.shape(X2[noise_idx_list,:,:]))
         newX2 = X2[idx_list,:,:]
         newX2 = np.swapaxes(newX2,0,1)
         
