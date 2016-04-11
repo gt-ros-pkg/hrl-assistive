@@ -78,8 +78,8 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
 
-    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-    ROC_param_dict = {'methods': [ 'svm', 'progress_time_cluster', 'fixed' ],\
+    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'progress_time_cluster', 'fixed'
+    ROC_param_dict = {'methods': [ 'svm' ],\
                       'update_list': [],\
                       'nPoints': nPoints,\
                       'progress_param_range':np.linspace(-1., -10., nPoints), \
