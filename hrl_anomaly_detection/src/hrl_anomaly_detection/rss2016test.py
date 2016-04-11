@@ -593,7 +593,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ##     newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
 
                 normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
+                                                 AE_dict['add_option'], d['handFeatureNames'] \
+                                                 add_noise_features=AE_dict['add_noise_option'] )
                 abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
                                                  AE_dict['add_option'], d['handFeatureNames'])
                 normalTestData   = combineData( normalTestData, handSuccTeData,\

@@ -22,7 +22,7 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
     ## downSampleSize = 100
     ## layers = [64,4]
 
-    filterDim=4
+    filterDim=3
     if filterDim==3: 
         # filtered dim 3
         save_data_path = os.path.expanduser('~')+\
@@ -31,6 +31,7 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
         layers = [64,8]
         ## add_option = ['audioWristRMS']
         add_option = ['ftForce_mag']
+        add_noise_option = ['ftForce_mag']
         
     else:
         # filtered dim 4
@@ -52,7 +53,8 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':filterDim, \
                       'nAugment': 1, \
-                      'add_option': add_option , 'rawFeatures': rawFeatures}
+                      'add_option': add_option , 'rawFeatures': rawFeatures,
+                      'add_noise_option': add_noise_option}
                       ## 'add_option': ['targetEEDist'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
 
