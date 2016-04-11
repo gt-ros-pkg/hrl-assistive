@@ -96,7 +96,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             tag = ''
             for ft in AE_dict['add_option']:
                 tag += ft[:2]
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(file_idx)+'.pkl')
         elif AE_dict['switch']:
             modeling_pkl = os.path.join(processed_data_path, \
                                         'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl')
