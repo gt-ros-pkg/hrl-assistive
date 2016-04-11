@@ -22,7 +22,7 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
     ## downSampleSize = 100
     ## layers = [64,4]
 
-    filterDim=3
+    filterDim=1
     if filterDim==3: 
         # filtered dim 3
         save_data_path = os.path.expanduser('~')+\
@@ -31,6 +31,15 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
         layers = [64,8]
         ## add_option = ['audioWristRMS']
         add_option = ['ftForce_mag']
+        add_noise_option = ['ftForce_mag']
+    elif filterDim==1: 
+        # filtered dim 1
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_1'
+        downSampleSize = 150
+        layers = [64,8]
+        ## add_option = ['audioWristRMS']
+        add_option = ['ftForce_mag','audioWristRMS','targetEEDist']
         add_noise_option = ['ftForce_mag']
         
     else:
