@@ -103,21 +103,21 @@ def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=Fa
                 abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
 
-            if AE_dict['add_option'] is 'featureToBottleneck':
+            if AE_dict['add_option'] is not None:
                 print "add feature!!"
                 newHandSuccTrData = handSuccTrData = d['handNormTrainData']
                 newHandFailTrData = handFailTrData = d['handAbnormTrainData']
                 handSuccTeData = d['handNormTestData']
                 handFailTeData = d['handAbnormTestData']
 
-                for i in xrange(AE_dict['nAugment']):
-                    newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
-                    newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
-
-                normalTrainData   = combineData( normalTrainData, newHandSuccTrData )
-                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData )
-                normalTestData   = combineData( normalTestData, handSuccTeData )
-                abnormalTestData  = combineData( abnormalTestData, handFailTeData )
+                normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
+                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
+                normalTestData   = combineData( normalTestData, handSuccTeData,\
+                                                AE_dict['add_option'], d['handFeatureNames'])
+                abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
                 ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
                 ## sys.exit()
 
@@ -236,23 +236,21 @@ def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
             abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
 
-        if AE_dict['add_option'] is 'featureToBottleneck':
+        if AE_dict['add_option'] is not None:
             print "add feature!!"
             newHandSuccTrData = handSuccTrData = d['handNormTrainData']
             newHandFailTrData = handFailTrData = d['handAbnormTrainData']
             handSuccTeData = d['handNormTestData']
             handFailTeData = d['handAbnormTestData']
 
-            for i in xrange(AE_dict['nAugment']):
-                newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
-                newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
-
-            normalTrainData   = combineData( normalTrainData, newHandSuccTrData )
-            abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData )
-            normalTestData   = combineData( normalTestData, handSuccTeData )
-            abnormalTestData  = combineData( abnormalTestData, handFailTeData )
-            ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
-            ## sys.exit()
+            normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
+                                             AE_dict['add_option'], d['handFeatureNames'])
+            abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
+                                             AE_dict['add_option'], d['handFeatureNames'])
+            normalTestData   = combineData( normalTestData, handSuccTeData,\
+                                            AE_dict['add_option'], d['handFeatureNames'])
+            abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
+                                             AE_dict['add_option'], d['handFeatureNames'])
 
 
             ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE

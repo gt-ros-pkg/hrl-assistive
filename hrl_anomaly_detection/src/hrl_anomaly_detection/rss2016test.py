@@ -161,12 +161,12 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
     # training hmm
     nEmissionDim = len(normalTrainData)
-    hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
+    ## hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=hmm_param_pkl, use_pkl=False) # not(renew))
+    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
     ## ths = threshold
     startIdx = 4
         
