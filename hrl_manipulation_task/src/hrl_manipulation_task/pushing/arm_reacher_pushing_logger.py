@@ -64,6 +64,28 @@ def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detect
     print "Finish to log!"    
     log.close_log_file(bCont, status)
 
+def pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                            train=False, abnormal=False, bCont=False, status='skip'):
+
+    log.task = 'pushing'
+    log.initParams()
+    
+    ## Scooping -----------------------------------    
+    print "Initializing left arm for scooping"
+    print armReachActionLeft("getMainTagPos")
+    print armReachActionLeft("initMicroBlack")
+    
+    print "Start to log!"    
+    log.log_start()
+    if detection_flag: log.enableDetector(True)
+    
+    print "Running scooping!"
+    print armReachActionLeft("runMicroBlack")
+
+    if detection_flag: log.enableDetector(False)
+    print "Finish to log!"    
+    log.close_log_file(bCont, status)
+
     
 if __name__ == '__main__':
     
@@ -84,9 +106,10 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
 
-    task_name = 'pushing_microwhite'
+    ## task_name = 'pushing_microwhite'
+    task_name = 'pushing_microblack'
     
-    log = logger(ft=True, audio=True, audio_wrist=True, kinematics=True, vision_artag=True, \
+    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
                  pps=False, skin=False, \
                  subject="gatsbii", task=task_name, data_pub=opt.bDataPub, verbose=False)
@@ -111,8 +134,12 @@ if __name__ == '__main__':
             else: detection_flag = False
             
             if trial == '1':
-                pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
-                                        bCont=opt.bCont, status=opt.bStatus)
+                if task_name == 'pushing_microwhite':
+                    pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                            bCont=opt.bCont, status=opt.bStatus)
+                else:
+                    pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                            bCont=opt.bCont, status=opt.bStatus)
         else:
             break
 
