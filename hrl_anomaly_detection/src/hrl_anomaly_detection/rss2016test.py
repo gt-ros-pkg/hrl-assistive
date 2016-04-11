@@ -894,13 +894,13 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         for ft in AE_dict['add_option']:
             tag += ft[:2]
 
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_rab_'+tag+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
     else:
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-    print "start to load hmm data"
+    print "start to load hmm data, ", modeling_pkl
     d            = ut.load_pickle(modeling_pkl)
     nState       = d['nState']        
     ll_classifier_train_X   = d['ll_classifier_train_X']

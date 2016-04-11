@@ -39,10 +39,10 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
-                      'add_option': ['audioWristRMS'], 'rawFeatures': rawFeatures}
+                      'add_option': ['audioWristRMS', 'ftForce_mag'], 'rawFeatures': rawFeatures}
                       ## 'add_option': None, 'rawFeatures': rawFeatures}
 
-    if AE_param_dict['switch'] and AE_param_dict['add_option']=='featureToBottleneck':            
+    if AE_param_dict['switch'] and AE_param_dict['add_option'] is not None:            
         SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 8.0}
     if AE_param_dict['switch']:            
