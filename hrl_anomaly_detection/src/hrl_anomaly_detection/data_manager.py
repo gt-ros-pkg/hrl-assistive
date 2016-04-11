@@ -613,7 +613,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             if len(np.shape(ftForce)) > 1:
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
-                unimodal_ftForce_ind = ftForce[2:3,:]                
+                ## unimodal_ftForce_ind = ftForce[2:3,:]                
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
