@@ -46,7 +46,7 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False }
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'time_window': 4,  \
                       'layer_sizes':layers, 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \

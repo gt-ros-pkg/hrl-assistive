@@ -581,8 +581,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
 
-            if AE_dict['add_option'] is not None:
+            if AE_dict['switch'] and AE_dict['add_option'] is not None:
                 print "add feature.."
+                print d.keys()
                 newHandSuccTrData = handSuccTrData = d['handNormTrainData']
                 newHandFailTrData = handFailTrData = d['handAbnormTrainData']
                 handSuccTeData = d['handNormTestData']
