@@ -472,7 +472,7 @@ if __name__ == '__main__':
     ##               'cov': [2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
-    parameters = {'nState': [15,18,20,22,25], 'scale': np.linspace(0.5,5.0,10), \
+    parameters = {'nState': [20], 'scale': np.linspace(0.5,5.0,10), \
                   'cov': np.linspace(0.5,5.0,10) }
 
     #--------------------------------------------------------------------------------------
