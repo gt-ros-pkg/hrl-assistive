@@ -41,10 +41,11 @@ from hrl_anomaly_detection import data_manager as dm
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.classifiers import classifier as cb
+from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, kFold_list, param_dict, verbose=False):
+def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=False):
 
     ## Parameters
     # data
@@ -459,63 +460,23 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
 
 if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
-    scale         = 1.0
-    # Dectection TEST 
     local_range    = 10.0    
 
     subjects  = ['gatsbii']
     task_name = 'pushing'
+    raw_data_path, save_data_path, param_dict = getPushingMicrowave(task_name, False, \
+                                                                    False, False,\
+                                                                    rf_center, local_range)
 
-    handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
-                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-    rawFeatures = ['relativePose_artag_EE', \
-                   'relativePose_artag_artag', \
-                   'wristAudio', \
-                   'ft' ]       
-
-    ## processed_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE'        
-    ## downSampleSize = 100
-    ## layers = [64,4]
-
-    processed_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/AE150'        
-    downSampleSize = 150
-    layers = [64,8]
-
-
-    data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,downSampleSize], \
-                      'nNormalFold':3, 'nAbnormalFold':3,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False }
-    AE_param_dict  = {'renew': False, 'switch': True, 'time_window': 4, \
-                      'layer_sizes':layers, 'learning_rate':1e-6, \
-                      'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':True, 'filterDim':4, \
-                      'nAugment': 1, \
-                      'add_option': None, 'rawFeatures': rawFeatures}
-                      ## 'add_option': 'featureToBottleneck', 'rawFeatures': rawFeatures}
-                      ##'add_option': True, 'rawFeatures': rawFeatures}
-    HMM_param_dict = {'renew': True, 'nState': 20, 'cov': 1.05, 'scale': 2.5}
-    SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0, 'class_weight':0.001}
-
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                  'SVM': SVM_param_dict}
-    
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
-
     parameters = {'nState': [15,18,20,22,25], 'scale': np.linspace(0.5,5.0,10), \
                   'cov': np.linspace(0.5,5.0,10) }
 
     #--------------------------------------------------------------------------------------
-    crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    crossVal_pkl        = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
         kFold_list  = d['kFoldList']
@@ -523,5 +484,5 @@ if __name__ == '__main__':
         print "no existing data file"
         sys.exit()
 
-    tune_hmm(parameters, kFold_list[:2], param_dict, verbose=True)
+    tune_hmm(parameters, kFold_list[:2], param_dict, save_data_path, verbose=True)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
