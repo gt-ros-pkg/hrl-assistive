@@ -20,7 +20,7 @@
     <depend package="tf"/>
     <depend package="tf_conversions"/>
 
-    <depend package="ar_track_alvar"/>
+    <!--<depend package="ar_track_alvar"/>-->
     <!--<depend package="pr2_controllers_msgs"/>-->
     <!--<depend package="hrl_haptic_manipulation_in_clutter_msgs"/>-->
     <depend package="hrl_lib"/>

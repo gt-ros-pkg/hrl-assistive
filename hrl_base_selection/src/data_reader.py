@@ -33,10 +33,10 @@ from matplotlib.cbook import flatten
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
-from sPickle import Pickler
+#from sPickle import Pickler
 import tf.transformations as tft
 from score_generator import ScoreGenerator
-import data_clustering as clust
+#import data_clustering as clust
 import joblib
 from joblib import Memory
 from tempfile import mkdtemp
@@ -191,7 +191,7 @@ class DataReader(object):
         self.raw_goal_data = np.array(self.raw_goal_data)
         print 'Minimum distance between center of head and goal location from raw data = ', np.min(np.array(self.distance))
         return self.raw_goal_data
-
+    '''
     def cluster_data(self):
         self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
         self.ori_clust = np.min([len(self.raw_goal_data), self.ori_clust])
@@ -259,6 +259,7 @@ class DataReader(object):
         #                self.goal_unique[num][1]=1.0/len(self.clustered_goal_data)+self.goal_unique[num][1]
         #self.goal_unique = np.array(self.goal_unique)
         #print 'final score unique is: ',self.goal_unique
+    '''
 
     def sample_raw_data(self, raw_data, num):
         sampled = []

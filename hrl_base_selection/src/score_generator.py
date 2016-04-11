@@ -79,6 +79,8 @@ class ScoreGenerator(object):
             far = self.autobed.GetLink('forearm_right_link')
             thl = self.autobed.GetLink('quad_left_link')
             thr = self.autobed.GetLink('quad_right_link')
+            calfl = self.autobed.GetLink('calf_left_link')
+            calfr = self.autobed.GetLink('calf_right_link')
             ch = self.autobed.GetLink('upper_body_link')
             pr2_B_ual = np.matrix(ual.GetTransform())
             pr2_B_uar = np.matrix(uar.GetTransform())
@@ -86,6 +88,8 @@ class ScoreGenerator(object):
             pr2_B_far = np.matrix(far.GetTransform())
             pr2_B_thl = np.matrix(thl.GetTransform())
             pr2_B_thr = np.matrix(thr.GetTransform())
+            pr2_B_calfl = np.matrix(calfl.GetTransform())
+            pr2_B_calfr = np.matrix(calfr.GetTransform())
             pr2_B_ch = np.matrix(ch.GetTransform())
         else:
             print 'I GOT A BAD MODEL. NOT SURE WHAT TO DO NOW!'
@@ -132,6 +136,10 @@ class ScoreGenerator(object):
                 self.pr2_B_reference.append(pr2_B_thl)
             elif y == 'thigh_right':
                 self.pr2_B_reference.append(pr2_B_thr)
+            elif y == 'knee_left':
+                self.pr2_B_reference.append(pr2_B_calfl)
+            elif y == 'knee_right':
+                self.pr2_B_reference.append(pr2_B_calfr)
             elif y == 'chest':
                 self.pr2_B_reference.append(pr2_B_ch)
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
@@ -497,7 +505,7 @@ class ScoreGenerator(object):
         if not there_is_a_good_location:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return [[[0], [0], [0], [0], [0], [0]], [0, 0, 0]]
-        max_base_locations = np.min([3, self.number_goals+1])
+        max_base_locations = np.min([2, self.number_goals+1])
         print 'Time to manage data sets and eliminate base configurations with zero reach score: %fs'%(time.time()-start_time)
         start_time = time.time()
         print 'Now starting to look at multiple base location combinations. Checking ', max_base_locations-1, ' max ' \
@@ -638,6 +646,8 @@ class ScoreGenerator(object):
             far = self.autobed.GetLink('forearm_right_link')
             thl = self.autobed.GetLink('quad_left_link')
             thr = self.autobed.GetLink('quad_right_link')
+            calfl = self.autobed.GetLink('calf_left_link')
+            calfr = self.autobed.GetLink('calf_right_link')
             ch = self.autobed.GetLink('upper_body_link')
             origin_B_head = np.matrix(headmodel.GetTransform())
             origin_B_ual = np.matrix(ual.GetTransform())
@@ -646,6 +656,8 @@ class ScoreGenerator(object):
             origin_B_far = np.matrix(far.GetTransform())
             origin_B_thl = np.matrix(thl.GetTransform())
             origin_B_thr = np.matrix(thr.GetTransform())
+            origin_B_calfl = np.matrix(calfl.GetTransform())
+            origin_B_calfr = np.matrix(calfr.GetTransform())
             origin_B_ch = np.matrix(ch.GetTransform())
             for thing in xrange(len(self.reference_names)):
                 if self.reference_names[thing] == 'head':
@@ -666,6 +678,10 @@ class ScoreGenerator(object):
                     self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thl
                 elif self.reference_names[thing] == 'thigh_right':
                     self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thr
+                elif self.reference_names[thing] == 'knee_left':
+                    self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfl
+                elif self.reference_names[thing] == 'knee_right':
+                    self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfr
                 elif self.reference_names[thing] == 'chest':
                     self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_ch
 
@@ -888,6 +904,8 @@ class ScoreGenerator(object):
                     far = self.autobed.GetLink('forearm_right_link')
                     thl = self.autobed.GetLink('quad_left_link')
                     thr = self.autobed.GetLink('quad_right_link')
+                    calfl = self.autobed.GetLink('calf_left_link')
+                    calfr = self.autobed.GetLink('calf_right_link')
                     ch = self.autobed.GetLink('upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
@@ -896,6 +914,8 @@ class ScoreGenerator(object):
                     origin_B_far = np.matrix(far.GetTransform())
                     origin_B_thl = np.matrix(thl.GetTransform())
                     origin_B_thr = np.matrix(thr.GetTransform())
+                    origin_B_calfl = np.matrix(calfl.GetTransform())
+                    origin_B_calfr = np.matrix(calfr.GetTransform())
                     origin_B_ch = np.matrix(ch.GetTransform())
                     for thing in xrange(len(self.reference_names)):
                         if self.reference_names[thing] == 'head':
@@ -916,6 +936,10 @@ class ScoreGenerator(object):
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thl
                         elif self.reference_names[thing] == 'thigh_right':
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thr
+                        elif self.reference_names[thing] == 'knee_left':
+                            self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfl
+                        elif self.reference_names[thing] == 'knee_right':
+                            self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfr
                         elif self.reference_names[thing] == 'chest':
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_ch
 
@@ -1089,6 +1113,8 @@ class ScoreGenerator(object):
                     far = self.autobed.GetLink('forearm_right_link')
                     thl = self.autobed.GetLink('quad_left_link')
                     thr = self.autobed.GetLink('quad_right_link')
+                    calfl = self.autobed.GetLink('calf_left_link')
+                    calfr = self.autobed.GetLink('calf_right_link')
                     ch = self.autobed.GetLink('upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
@@ -1097,6 +1123,8 @@ class ScoreGenerator(object):
                     origin_B_far = np.matrix(far.GetTransform())
                     origin_B_thl = np.matrix(thl.GetTransform())
                     origin_B_thr = np.matrix(thr.GetTransform())
+                    origin_B_calfl = np.matrix(calfl.GetTransform())
+                    origin_B_calfr = np.matrix(calfr.GetTransform())
                     origin_B_ch = np.matrix(ch.GetTransform())
                     for thing in xrange(len(self.reference_names)):
                         if self.reference_names[thing] == 'head':
@@ -1117,6 +1145,10 @@ class ScoreGenerator(object):
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thl
                         elif self.reference_names[thing] == 'thigh_right':
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_thr
+                        elif self.reference_names[thing] == 'knee_left':
+                            self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfl
+                        elif self.reference_names[thing] == 'knee_right':
+                            self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_calfr
                         elif self.reference_names[thing] == 'chest':
                             self.pr2_B_reference[thing] = origin_B_pr2.I*origin_B_ch
 
