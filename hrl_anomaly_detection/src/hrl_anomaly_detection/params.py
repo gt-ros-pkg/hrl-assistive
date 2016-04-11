@@ -44,7 +44,10 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
                       ## 'add_option': None, 'rawFeatures': rawFeatures}
 
-    if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS']:            
+    if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag']:            
+        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
+    elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
         ## SVM_param_dict = {'renew': False, 'w_negative': 0.5, 'gamma': 0.334, 'cost': 4.0}
