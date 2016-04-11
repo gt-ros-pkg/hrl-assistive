@@ -22,16 +22,17 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
     ## downSampleSize = 100
     ## layers = [64,4]
 
-    filterDim=1
+    filterDim=3
     if filterDim==3: 
         # filtered dim 3
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_3'
         downSampleSize = 150
         layers = [64,8]
-        ## add_option = ['audioWristRMS']
-        add_option = ['ftForce_mag']
-        add_noise_option = ['ftForce_mag']
+        add_option = ['audioWristRMS']
+        add_noise_option = []
+        ## add_option = ['ftForce_mag']
+        ## add_noise_option = ['ftForce_mag']
     elif filterDim==1: 
         # filtered dim 1
         save_data_path = os.path.expanduser('~')+\
@@ -67,7 +68,10 @@ def getPushingMicrowave(task, data_renew, AE_renew, HMM_renew, rf_center,local_r
                       ## 'add_option': ['targetEEDist'], 'rawFeatures': rawFeatures}
                       ## 'add_option': ['ftForce_mag'], 'rawFeatures': rawFeatures}
 
-    if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag']:            
+    if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag','targetEEDist']:            
+        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
+    elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
     elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS']:            

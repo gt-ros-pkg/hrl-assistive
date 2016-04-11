@@ -144,16 +144,32 @@ class armReachAction(mpcBaseAction):
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
           [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
-           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.main_tag_frame'],           
            ['PAUSE', 1.0]
             ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
-           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame']] 
+          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.main_tag_frame'],           
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.main_tag_frame']] 
         self.motions['runMicroWhite']['right'] = []
+
+        ## Pushing black microwave motoins --------------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initMicroBlack'] = {}
+        self.motions['initMicroBlack']['left'] = \
+          [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.main_tag_frame'],           
+           ['PAUSE', 1.0]
+            ] 
+        self.motions['initMicroBlack']['right'] = []
+
+        self.motions['runMicroBlack'] = {}
+        self.motions['runMicroBlack']['left'] = \
+          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.main_tag_frame'],           
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.main_tag_frame']] 
+        self.motions['runMicroBlack']['right'] = []
 
         ## Pushing cabinet motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -206,7 +222,7 @@ class armReachAction(mpcBaseAction):
         self.main_tag_frame = dh.pose2KDLframe(data.pose)
 
         M = PyKDL.Rotation.Quaternion(0,0,0,1)
-        self.microwave_white_frame = PyKDL.Frame(M, self.main_tag_frame.p)
+        self.main_tag_frame = PyKDL.Frame(M, self.main_tag_frame.p)
 
         
 

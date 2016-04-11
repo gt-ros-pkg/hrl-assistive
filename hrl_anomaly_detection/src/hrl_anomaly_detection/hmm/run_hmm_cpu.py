@@ -485,5 +485,5 @@ if __name__ == '__main__':
         print "no existing data file"
         sys.exit()
 
-    tune_hmm(parameters, kFold_list[:2], param_dict, save_data_path, verbose=True)
+    tune_hmm(parameters, kFold_list[:4], param_dict, save_data_path, verbose=True)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

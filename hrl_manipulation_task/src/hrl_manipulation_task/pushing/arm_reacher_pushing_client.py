@@ -65,7 +65,17 @@ if __name__ == '__main__':
     
     ## print "Running pushing!"    
     ## print armReachActionLeft("runMicroWhite")
-        
+
+    ## Pushing Microwave Black------------------------
+    print armReachActionLeft("getMainTagPos")
+    print armReachActionLeft("initMicroBlack")
+
+    ut.get_keystroke('Hit a key to proceed next')        
+    
+    print "Running pushing!"    
+    print armReachActionLeft("runMicroBlack")
+
+    
     ## Pushing -----------------------------------
     ## print "Initializing right arm for pushing"
     ## print armReachActionRight("initCabinet")
