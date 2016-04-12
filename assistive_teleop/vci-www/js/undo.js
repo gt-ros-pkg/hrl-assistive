@@ -44,6 +44,7 @@ RFH.Undo = function (options) {
     var eventQueue = [];
     eventQueue.pushUndoEntry = function (undoEntry) {
         $undoButton.show();
+        console.log(undoEntry.type);
         eventQueue.push(undoEntry);
     };
     eventQueue.popUndoEntry = function () {
@@ -105,9 +106,170 @@ RFH.Undo = function (options) {
     $undoButton.on('click.rfh', undoButtonCB); 
 
     /*/////////////  START TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
+
+    previewFunctions['task'] = {
+        start: function (undoEntry) {
+            $('#smach-container').css('background-color','orange');
+        },
+        stop: function(undoEntry) {
+            $('#smach-container').css('background-color','inherit');
+        }
+    };
+
+    self.states['task'] = {};
+    var domainStateCB = function (state) {
+        self.states['task'][state.domain] = state.predicates;
+    };
+
+    var domainStepCB = function (step) {
+        if (sentUndoCommands['task'][step.domain] > 0) {
+            sentUndoCommands['task'][step.domain] -= 1;
+            return;
+        };
+        var lastStepIdx = eventQueue.length - 1;
+        for (lastStepIdx; lastStepIdx>=0; lastStepIdx-=1) {
+            if (eventQueue[lastStepIdx].type === 'task') {
+                if (eventQueue[lastStepIdx].command.problem === step.problem) {
+                   break;
+                }
+            }
+        }
+        if (lastStepIdx >= 0){ // Otherwise, this is the first state, just add and leave everything before it in place
+            eventQueue.splice(lastStepIdx+1, eventQueue.length-lastStepIdx); // Remove from index forward
+        }
+
+        var undoEntry = new RFH.UndoEntry({
+            type: 'task',
+            stateGoal: self.states['task'][step.domain],
+            command: step
+        });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    var taskStateSubs = {};
+    var taskStepSubs = {};
+    var setupDomainSubs = function (domain) {
+        var stateSub = new ROSLIB.Topic({
+            ros: ros,
+            name: 'pddl_tasks/'+domain+'/state',
+            messageType: 'hrl_task_planning/PDDLState'
+        });
+        stateSub.subscribe(domainStateCB);
+        taskStateSubs[domain] = stateSub;
+
+        var stepSub = new ROSLIB.Topic({
+            ros: ros,
+            name: 'pddl_tasks/'+domain+'/current_action',
+            messageType: 'hrl_task_planning/PDDLPlanStep'
+        });
+        stepSub.subscribe(domainStepCB);
+        taskStepSubs[domain] = stepSub;
+    };
+
+    sentUndoCommands['task'] = {};
+    undoFunctions['task'] = function (undoEntry) {
+        var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
+        pddlCmd.domain = undoEntry.command.domain;
+        pddlCmd.name = undoEntry.command.name;
+        pddlCmd.objects = undoEntry.command.objects;
+        pddlCmd.goal = undoEntry.stateGoal;
+        sentUndoCommands['task'][undoEntry.command.domain] += 1;
+        taskCmdPub.publish(pddlCmd);
+    };
+    
+    var taskCmdPub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'perform_task',
+        messageType: 'hrl_task_planning/PDDLProblem'
+    });
+
+    var taskActiveDomains = [];
+    var activeDomainsCB = function (domains_msg) {
+        var domains = domains_msg.domains;
+        var newDomains = [];
+        for (var i=0; i<domains.length; i+=1) {
+            if (taskActiveDomains.indexOf(domains[i]) < 0){
+                newDomains.push(domains[i]);
+            }
+        }
+        for (var j=0; j<newDomains.length; j+=1) {
+            setupDomainSubs(newDomains[j]);
+        }
+    };
+    var activeDomainsSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'pddl_tasks/active_domains',
+        messageType: 'hrl_task_planning/DomainList'
+    });
+    activeDomainsSub.subscribe(activeDomainsCB);
+
+//    var taskCmdSub = new ROSLIB.Topic({
+//        ros: ros,
+//        name: 'perform_task',
+//        messageType: 'hrl_task_planning/PDDLProblem'
+//    });
+//
+//    var taskCmdCB = function (problem_msg) {
+//        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
+//            sentUndoCommands['task'][problem_msg.domain] -= 1;
+//            return;
+//        };
+//        var undoEntry = new RFH.UndoEntry({
+//            type: 'task',
+//            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
+//            command: problem_msg
+//        });
+//       eventQueue.pushUndoEntry(undoEntry); 
+//    };
+//    taskCmdSub.subscribe(taskCmdCB);
+
     /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT ARM UNDO FUNCTIONS ////////////////////*/
+    previewFunctions['lArm'] = {
+        start: function (undoEntry){
+            // Display preview of goal 
+            lEEDisplay.showPreviewGripper(undoEntry.stateGoal);
+        }, 
+        stop: function (undoEntry) {
+            // Stop Display
+            lEEDisplay.hidePreviewGripper();
+        }
+    };
+
+    sentUndoCommands['lArm'] = 0;
+    undoFunctions['lArm'] = function (undoEntry) {
+        sentUndoCommands['lArm'] += 1;
+        var gp = undoEntry.stateGoal;
+        rArm.sendPoseGoal({position: gp.pose.position,
+                           orientation: gp.pose.orientation,
+                           frame_id: gp.header.frame_id
+        });
+    };
+
+    var lArmCmdSub = new ROSLIB.Topic({
+        ros: ros,
+        name: 'left_arm/haptic_mpc/goal_pose',
+        messageType: 'geometry_msgs/PoseStamped'
+    });
+
+    var lArmCmdCB = function (cmd_msg) {
+        if (sentUndoCommands['lArm'] > 0) {
+            sentUndoCommands['lArm'] -= 1;
+            return;
+        }
+        var armInTorso = lArm.getState(); // Received in torso_lift_link
+        armInTorso.header.frame_id = 'base_link'
+        armInTorso.pose.position.x -= 0.05
+        armInTorso.pose.position.z += (0.75 + torso.getState());
+        var undoEntry = new RFH.UndoEntry({type: 'lArm',
+                                           command: cmd_msg,
+                                           stateGoal: lArm.getState()
+                                           });
+        eventQueue.pushUndoEntry(undoEntry);
+    };
+
+    lArmCmdSub.subscribe(lArmCmdCB);
     /*/////////////  END LEFT ARM UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START RIGHT ARM UNDO FUNCTIONS ////////////////////*/
@@ -419,7 +581,10 @@ RFH.Undo = function (options) {
         if (sentUndoCommands['mode'] > 0) {  
             sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
             self.states.mode = state_msg.data; // Keep updated state for later reference
-            return
+            return;
+        }
+        if (self.states.mode === state_msg.data) { // Only record if the mode is actually changing
+            return;
         }
         // Handle standard case, recording command to undo later
         var undoEntry = new RFH.UndoEntry({

@@ -332,13 +332,13 @@ var PR2Head = function (options) {
     self.trackPoint = function (x, y, z, frame) {
         self.pointHead(x, y, z, frame); // Start looking now
         trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
-        console.log("Beginning Head tracking of ", frame);
+//        console.log("Beginning Head tracking of ", frame);
     };
 
     self.stopTracking = function () {
         // Stop sending tracking messages
         clearInterval(trackingInterval);
-        console.log("Ending Head tracking");
+//        console.log("Ending Head tracking");
     };
 };
 
