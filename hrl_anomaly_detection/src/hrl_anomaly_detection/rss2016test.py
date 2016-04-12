@@ -1411,94 +1411,28 @@ if __name__ == '__main__':
     if opt.task == 'scooping':
         ## subjects = ['gatsbii']
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        task     = opt.task    
-        ## feature_list = ['unimodal_ftForce', 'crossmodal_targetEEDist', \
-        ##                 'crossmodal_targetEEAng']
-        handFeatures = ['unimodal_audioWristRMS',\
-                        ## 'unimodal_audioPower',\
-                        ## 'unimodal_kinVel',\
-                        'unimodal_ftForce',\
-                        ##'unimodal_visionChange',\
-                        ## 'unimodal_ppsForce',\
-                        ##'unimodal_fabricForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng']
-        ## modality_list = ['kinematics', 'audioWrist', 'audio', 'fabric', 'ft', 'vision_artag', \
-        ##                  'vision_change', 'pps']
-        modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
-                         'vision_change', 'pps']
-        downSampleSize = 200
+        task     = opt.task
 
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-
-        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
-
-        nPoints        = 20
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['svm'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-
-
+        raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
+                                                                opt.bAERenew, opt.bHMMRenew,\
+                                                                rf_center, local_range)
+        
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
         task     = opt.task 
-        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
-        modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
-
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        downSampleSize = 200
-
-        data_param_dict= {'renew': opt.bDataRenew, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,170], \
-                          'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4,\
-                          'add_option': None, 'add_feature': feature_list} 
-        HMM_param_dict = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
-        
-        nPoints        = 20
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                          'update_list': ['progress_time_cluster'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
-                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-
-        #-np.linspace(2., 13.0, nPoints), \
+        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
+                                                               opt.bAERenew, opt.bHMMRenew,\
+                                                               rf_center, local_range)
         
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing':
         subjects = ['gatsbii']
         task     = opt.task
-        raw_data_path, save_data_path, param_dict = getPushingMicrowave(opt.task, opt.bDataRenew, \
-                                                                        opt.bAERenew, opt.bHMMRenew,\
-                                                                        rf_center, local_range)
+        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
+                                                                         opt.bAERenew, opt.bHMMRenew,\
+                                                                         rf_center, local_range)
         
     else:
         print "Selected task name is not available."

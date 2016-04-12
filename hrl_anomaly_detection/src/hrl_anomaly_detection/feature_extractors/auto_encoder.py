@@ -99,10 +99,12 @@ class auto_encoder(learning_base):
             W_init_en.append(np.random.randn(n_output, n_input).astype('float32'))
             b_init_en.append(np.ones(n_output).astype('float32'))
 
-            # We'll use sigmoid activation for all layers
-            # Note that this doesn't make a ton of sense when using squared distance
-            # because the sigmoid function is bounded on [0, 1].
-            activations_en.append( T.nnet.sigmoid ) #T.tanh ) 
+            ## # We'll use sigmoid activation for all layers
+            ## # Note that this doesn't make a ton of sense when using squared distance
+            ## # because the sigmoid function is bounded on [0, 1].
+            ## activations_en.append( T.nnet.sigmoid ) #T.tanh ) 
+
+            activations_en.append( T.nnet.relu ) 
 
 
         # Decoder layers
@@ -281,6 +283,8 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
+    p.add_option('--pretrain', '--ptr', action='store_true', dest='bPreTrain',
+                 default=False, help='Pre-Train ....')
     p.add_option('--train', '--tr', action='store_true', dest='bTrain',
                  default=False, help='Train ....')
     p.add_option('--test', '--te', action='store_true', dest='bTest',
@@ -305,7 +309,7 @@ if __name__ == '__main__':
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print msg ....')
     p.add_option('--cuda', '--c', action='store_true', dest='bCuda',
-                 default=False, help='Enable CUDA')
+                 default=True, help='Enable CUDA')
     
     p.add_option('--time_window', '--tw', action='store', dest='nTimeWindow',
                  type="int", default=4, help='Size of time window')
@@ -346,41 +350,60 @@ if __name__ == '__main__':
 
     
     subject_names       = ['gatsbii']
-    task_name           = 'pushing'
-    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'   
-    processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+\
-      task_name+'_data/AE_test'
-    save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
-    save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
+    task_name           = 'pushing_microwhite'
     rf_center           = 'kinEEPos'
     local_range         = 10.0 
-    downSampleSize      = 100
-    nAugment            = 1
-    cut_data            = [0,100]
+    raw_data_path       = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'   
 
-    handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
-                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-    rawFeatures = ['relativePose_artag_EE', \
-                   'relativePose_artag_artag', \
-                   'wristAudio', \
-                   'ft' ]       
 
-    from hrl_anomaly_detection import data_manager as dm
-    X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
-      = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, \
-                                save_pkl, \
-                                rf_center, local_range, downSampleSize, time_window, \
-                                handFeatures, rawFeatures, \
-                                cut_data, nAugment=nAugment, renew=opt.bDataRenew)
-    layer_sizes = [X_normalTrain.shape[1]] + eval(opt.lLayerSize) #, 20, 10, 5]
-    print layer_sizes
+    if task_name == 'pushing_microwhite':
+        from hrl_anomaly_detection.params import *
+        _, _, param_dict = getPushingMicroWhite(task_name, opt.bDataRenew, False, False, \
+                                                rf_center, local_range, pre_train=opt.bPreTrain )
+    else:
+        print "not available task"
+        sys.exit()
 
-    # sample x dim 
-    X_train = np.vstack([X_normalTrain, X_abnormalTrain])
-    X_test  = np.vstack([X_normalTest, X_abnormalTest])
-    print np.shape(X_train), np.shape(X_test)
+
+    if opt.bPreTrain:
+        processed_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data'        
+        save_pkl       = os.path.join(processed_data_path, task_name+'_pretrain_data')
+        d = ut.load_pickle(save_pkl)
+        X_train = d['allDataConv']
+        layer_sizes = [X_train.shape[1]] + eval(opt.lLayerSize) #, 20, 10, 5]        
+    else:       
+        processed_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+\
+          task_name+'_data/AE_test'
+        save_pkl            = os.path.join(processed_data_path, 'ae_data.pkl')
+        save_model_pkl      = os.path.join(processed_data_path, 'ae_model.pkl')
+        downSampleSize      = 100
+        nAugment            = 1
+        cut_data            = [0,100]
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist',\
+                        'crossmodal_targetEEAng',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        rawFeatures = ['relativePose_artag_EE', \
+                       'relativePose_artag_artag', \
+                       'wristAudio', \
+                       'ft' ]       
+
+        from hrl_anomaly_detection import data_manager as dm
+        X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest, nSingleData \
+          = dm.get_time_window_data(subject_names, task_name, raw_data_path, processed_data_path, \
+                                    save_pkl, \
+                                    rf_center, local_range, downSampleSize, time_window, \
+                                    handFeatures, rawFeatures, \
+                                    cut_data, nAugment=nAugment, renew=opt.bDataRenew)
+        layer_sizes = [X_normalTrain.shape[1]] + eval(opt.lLayerSize) #, 20, 10, 5]
+        print layer_sizes
+
+        # sample x dim 
+        X_train = np.vstack([X_normalTrain, X_abnormalTrain])
+        X_test  = np.vstack([X_normalTest, X_abnormalTest])
+        print np.shape(X_train), np.shape(X_test)
+        
+        
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
@@ -414,19 +437,22 @@ if __name__ == '__main__':
         '''
         You cannot use multiprocessing and cuda in the same time.
         '''
-        nFold     = 2
         n_jobs    = 1
         opt.bCuda = True
-        X = np.vstack([X_train, X_test])
+        if opt.bPreTrain is False: 
+            nFold = 2
+            X = np.vstack([X_train, X_test])
+        else:
+            nFold = 1
+            X     = X_train
 
-        maxiteration=10000
+        maxiteration=4000
         parameters = {'learning_rate': [1e-3, 1e-4, 1e-5], 'momentum':[1e-6], 'dampening':[1e-6], \
                       'lambda_reg': [1e-2, 1e-4, 1e-6], \
                       'layer_sizes': [ [X.shape[1], 128,16], [X.shape[1], 128,8], \
                                        [X.shape[1], 64,4], [X.shape[1], 256, 16], [X.shape[1], 256, 8], \
                                        [X.shape[1], 256, 4]  ]}
 
-        
         save_file='tune_data.pkl'            
         if os.path.isfile(save_file):
             data = ut.load_pickle(save_file)

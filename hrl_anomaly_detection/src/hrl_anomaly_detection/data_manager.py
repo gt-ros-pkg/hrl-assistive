@@ -844,7 +844,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
 
 def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, \
-                      cut_data=None, verbose=False):
+                      cut_data=None, verbose=False, scaling=True):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     from hrl_lib import quaternion as qt
@@ -855,7 +855,6 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     else:
         isTrainingData=False
             
-
     # -------------------------------------------------------------        
     # extract modality data
     dataList = []
@@ -865,6 +864,31 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
         timeList     = d['timesList'][idx]
         dataSample = None
+
+        # rightEE-leftEE - vision relative dist with main(first) vision target----
+        if 'relativePose_target_EE' in raw_feature_list:
+            kinEEPos      = d['kinEEPosList'][idx]
+            kinEEQuat     = d['kinEEQuatList'][idx]
+            kinTargetPos  = d['kinTargetPosList'][idx]
+            kinTargetQuat = d['kinTargetQuatList'][idx]
+
+            # pos and quat?
+            relativePose = []
+            for time_idx in xrange(len(timeList)):
+                startFrame = dh.array2KDLframe( kinTargetPos[:,time_idx].tolist() +\
+                                                kinTargetQuat[:,time_idx].tolist() )
+                endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
+                                                kinEEQuat[:,time_idx].tolist() )
+                diffFrame  = endFrame*startFrame.Inverse()                                
+                relativePose.append( dh.KDLframe2List(diffFrame) )
+
+            relativePose = np.array(relativePose).T[:-1]
+            
+            if dataSample is None: dataSample = relativePose
+            else: dataSample = np.vstack([dataSample, relativePose])
+            if idx == 0: dataDim.append(['relativePos_target_EE', 3])
+            if idx == 0: dataDim.append(['relativeAng_target_EE', 4])
+                
 
         # main-artag EE - vision relative dist with main(first) vision target----
         if 'relativePose_artag_EE' in raw_feature_list:
@@ -887,7 +911,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim.append(['relativePose_artag_EE', len(relativePose)])
+            if idx == 0: dataDim.append(['relativePos_artag_EE', 3])
+            if idx == 0: dataDim.append(['relativeAng_artag_EE', 4])
                 
 
         # main-artag sub-artag - vision relative dist with main(first) vision target----
@@ -912,8 +937,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim.append(['relativePose_artag_artag', len(relativePose)])
-
+            if idx == 0: dataDim.append(['relativePos_artag_artag', 3])
+            if idx == 0: dataDim.append(['relativeAng_artag_artag', 4])
 
         # Audio --------------------------------------------
         if 'kinectAudio' in raw_feature_list:
@@ -924,14 +949,15 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
-            audioWristRMS  = d['audioWristRMSList'][idx]
+            ## audioWristRMS  = d['audioWristRMSList'][idx]
             audioWristMFCC = d['audioWristMFCCList'][idx]            
 
-            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
-            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+            ## if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
+            ## else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
 
             dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            if idx == 0: dataDim.append(['wristAudio', len(audioWristRMS)+len(audioWristMFCC)])                
+            ## if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
+            if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:
@@ -943,7 +969,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
             if dataSample is None: dataSample = np.array(ftTorque)
             else: dataSample = np.vstack([dataSample, ftTorque])
-            if idx == 0: dataDim.append(['ft', len(ftForce)+len(ftTorque)])
+            if idx == 0: dataDim.append(['ft_force', len(ftForce)])
+            if idx == 0: dataDim.append(['ft_torque', len(ftTorque)])
 
         # pps -------------------------------------------
         if 'pps' in raw_feature_list:
@@ -1031,7 +1058,6 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         # ----------------------------------------------------------------
         dataList.append(dataSample)
 
-
     # Augmentation -------------------------------------------------------
     # assuming there is no currupted file    
     assert len(dataList) == nSuccess+nFailure
@@ -1040,7 +1066,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     allDataList     = successDataList + failureDataList
 
     # Converting data structure & cutting unnecessary part ---------------
-    features = np.swapaxes(allDataList, 0, 1)
+    features         = np.swapaxes(allDataList, 0, 1)
     success_features = np.swapaxes(successDataList, 0, 1)
     failure_features = np.swapaxes(failureDataList, 0, 1)
 
@@ -1059,12 +1085,13 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         ## print "max: ", param_dict['feature_max']
         ## print "min: ", param_dict['feature_min']
 
-    if False:
-        success_features = normalization( success_features, param_dict['feature_mu'], param_dict['feature_std'] )
-        failure_features = normalization( failure_features, param_dict['feature_mu'], param_dict['feature_std'] )
-    else:
+    if scaling is True: 
         success_features = scale( success_features, param_dict['feature_min'], param_dict['feature_max'] )
         failure_features = scale( failure_features, param_dict['feature_min'], param_dict['feature_max'] )
+        ## success_features = normalization( success_features, param_dict['feature_mu'], \
+        ## param_dict['feature_std'] )
+        ## failure_features = normalization( failure_features, param_dict['feature_mu'], \
+        ## param_dict['feature_std'] )
 
     param_dict['feature_names'] = raw_feature_list
     param_dict['dataDim']       = dataDim
