@@ -56,6 +56,7 @@ class MoveArmState(PDDLSmachState):
         except KeyError:
             rospy.loginfo("[%s] Move Arm Cannot find location %s on parameter server", rospy.get_name(), self.location)
             return 'aborted'
+        goal_pose.header.stamp = rospy.Time.now()
         self.mpc_pub.publish(goal_pose)
 
 

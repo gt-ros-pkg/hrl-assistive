@@ -132,7 +132,7 @@ class PDDLTaskThread(Thread):
 
             # Get solution from planner
             try:
-                print self.problem_msg
+                #print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
@@ -141,7 +141,7 @@ class PDDLTaskThread(Thread):
                 sol_msg.actions = solution.steps
                 sol_msg.states = solution.states
                 self.solution_pub.publish(sol_msg)
-                print "Solution:\n", solution
+                print "Solution:\n", solution.steps
                 if solution.solved:
                     if not solution.steps:  # Already solved, no action retquired
                         rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)

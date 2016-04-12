@@ -73,7 +73,7 @@ var RFH = {
 
     this.ros = new ROSLIB.Ros({url: 'ws://'+ this.ROBOT + ':'+ this.PORT});
     this.ros.on('close', function(e) {
-        log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
+        console.log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
       }
     );
     this.ros.on('error', function(e) {
@@ -81,7 +81,7 @@ var RFH = {
       }
     );
     this.ros.on('connection', function(e) {
-        log("Connected to " + RFH.ROBOT + ".");
+        console.log("Connected to " + RFH.ROBOT + ".");
         extendROSJS(RFH.ros);
 //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
 //        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,

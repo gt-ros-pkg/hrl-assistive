@@ -122,6 +122,10 @@ RFH.Undo = function (options) {
     };
 
     var domainStepCB = function (step) {
+        if (sentUndoCommands['task'][step.domain] > 0) {
+            sentUndoCommands['task'][step.domain] -= 1;
+            return;
+        };
         var lastStepIdx = eventQueue.length - 1;
         for (lastStepIdx; lastStepIdx>=0; lastStepIdx-=1) {
             if (eventQueue[lastStepIdx].type === 'task') {
@@ -170,12 +174,12 @@ RFH.Undo = function (options) {
         pddlCmd.objects = undoEntry.command.objects;
         pddlCmd.goal = undoEntry.stateGoal;
         sentUndoCommands['task'][undoEntry.command.domain] += 1;
-        taskCmdPub.publish(pddl_cmd);
+        taskCmdPub.publish(pddlCmd);
     };
     
     var taskCmdPub = new ROSLIB.Topic({
         ros: ros,
-        name: 'preform_task',
+        name: 'perform_task',
         messageType: 'hrl_task_planning/PDDLProblem'
     });
 
