@@ -45,7 +45,7 @@ from hrl_manipulation_task.record_data import logger
 def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
                             train=False, abnormal=False, bCont=False, status='skip'):
 
-    log.task = 'pushing'
+    log.task = 'pushing_microwhite'
     log.initParams()
     
     ## Scooping -----------------------------------    
@@ -67,7 +67,7 @@ def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detect
 def pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
                             train=False, abnormal=False, bCont=False, status='skip'):
 
-    log.task = 'pushing'
+    log.task = 'pushing_microblack'
     log.initParams()
     
     ## Scooping -----------------------------------    
@@ -79,7 +79,7 @@ def pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detect
     log.log_start()
     if detection_flag: log.enableDetector(True)
     
-    print "Running scooping!"
+    print "Running pushing!"
     print armReachActionLeft("runMicroBlack")
 
     if detection_flag: log.enableDetector(False)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     p.add_option('--continue', '--c', action='store_true', dest='bCont',
                  default=False, help='Continuously run program.')
     p.add_option('--status', '--s', action='store', dest='bStatus',
-                 default=False, help='continous data collection status [sucesss, failure, skip(default)]')
+                 default='success', help='continous data collection status [sucesss, failure, skip(default)]')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -115,14 +115,14 @@ if __name__ == '__main__':
                  subject="gatsbii", task=task_name, data_pub=opt.bDataPub, verbose=False)
 
     # need to be removed somehow
-    last_trial  = '1'
+    last_trial  = '2'
     last_detect = '2'
     
     while not rospy.is_shutdown():
 
         if opt.bCont: trial = last_trial
         else:
-            trial  = raw_input('Enter trial\'s status (e.g. 1:MicroWhite, else: exit): ')
+            trial  = raw_input('Enter trial\'s status (e.g. 1:MW, 2: MB else: exit): ')
             if trial=='': trial=last_trial
         
         if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
@@ -137,7 +137,8 @@ if __name__ == '__main__':
                 if task_name == 'pushing_microwhite':
                     pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
                                             bCont=opt.bCont, status=opt.bStatus)
-                else:
+            if trial == '2':
+                if task_name == 'pushing_microblack':
                     pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
                                             bCont=opt.bCont, status=opt.bStatus)
         else:

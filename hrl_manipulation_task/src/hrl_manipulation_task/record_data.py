@@ -73,14 +73,12 @@ class logger:
         self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
-        
-        self.initParams()
-        ##GUI implementation       
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
+
+        # GUI
         self.feedbackMSG = 0
         self.feedbackStatus = 0        
-        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String)
-
+        
+        self.initParams()
 
         self.audio_kinect  = kinect_audio() if audio else None
         self.audio_kinect  = kinect_audio() if audio else None
@@ -100,6 +98,28 @@ class logger:
             t.setDaemon(True)
             t.start()
  
+    def initParams(self):
+        '''
+        # load parameters
+        '''        
+        # File saving
+        self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
+        
+    def initComms(self):
+        '''
+        Record data and publish raw data
+        '''        
+        ##GUI implementation       
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
+        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String)
+        
+        if self.data_pub:
+            self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+        if self.ad_flag:
+            print "Wait anomaly detector service"
+            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
+            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            print "Detected anomaly detector service"
 
     ##GUI implementation
     def feedbackCallback(self, data):
@@ -112,28 +132,7 @@ class logger:
             self.feedbackStatus = '2'
         else:
             self.feedbackStatus = '3'
-
-
-       
-    def initParams(self):
-        '''
-        # load parameters
-        '''        
-        # File saving
-        self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
-        
-    def initComms(self):
-        '''
-        Record data and publish raw data
-        '''        
-        if self.data_pub:
-            self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
-        if self.ad_flag:
-            print "Wait anomaly detector service"
-            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            print "Detected anomaly detector service"
-
+            
         
     def setTask(self, task):
         '''
@@ -227,8 +226,9 @@ class logger:
             else: status = flag
 
         if status == 'success' or status == 'failure':
-            if status == 'failure':
-                failure_class = raw_input('Enter failure reason if there is: ')
+            ## if status == 'failure':
+            ##     failure_class = raw_input('Enter failure reason if there is: ')
+            failure_class=''
 
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 

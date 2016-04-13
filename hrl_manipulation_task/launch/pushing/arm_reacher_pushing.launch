@@ -3,6 +3,7 @@
   <arg name="arm1" default="l"/>
 
   <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection_pushing.yaml" />    
+  <arg name="robot_config" default="$(find hrl_manipulation_task)/params/pr2_config_params_l.yaml" />
   <rosparam command="load" file="$(arg ad_param)" />
 
   <node name="arm_reacher_server_left" pkg="hrl_manipulation_task" type="arm_reacher_pushing_server.py" args="-a $(arg arm1)" output="screen"/>

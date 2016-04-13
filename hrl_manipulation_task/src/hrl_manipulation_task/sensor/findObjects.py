@@ -102,7 +102,6 @@ class arTagDetector:
                         tag_frame.p[1] = p[1]
                         tag_frame.p[2] = p[2]                    
                         tag_frame.M = PyKDL.Rotation.Quaternion(q[0], q[1], q[2], q[3])
-
                         self.pubTagPose(j, tag_frame)
 
 
@@ -167,10 +166,9 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # 25Hz, nominally.    
     while not rospy.is_shutdown():
 
-        if opt.bVirtual:
-            atd.pubVirtualTagPose()
-            continue
-        
+        ## if opt.bVirtual:
+        ##     atd.pubVirtualTagPose()
+        ##     continue        
         rate.sleep()
 
 

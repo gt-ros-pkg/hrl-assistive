@@ -78,6 +78,9 @@ class armReacherGUI:
 
     def inputCallback(self, data):
     #Check status, change true/false While not will be useful then. Right? emergecny stop, then initiate it.
+
+
+        rospy.wait_for_service("/arm_reach_enable")
         self.inputMSG = data.data
         self.inputStatus = True
 	#Maybe had to add if statement.
@@ -166,7 +169,10 @@ class armReacherGUI:
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
                 print "Initializing left arm for scooping"
-                print armReachActionLeft("initScooping1")
+                try:
+                    armReachActionLeft("initScooping1")
+                except rospy.ServiceException, e:
+                    print "================ Service call failed: %s ==============="%e     
                 if self.emergencyStatus: break
                 print armReachActionRight("initScooping1")
                 if self.emergencyStatus: break
@@ -226,7 +232,10 @@ class armReacherGUI:
                 #self.FeedNumber = 0.5
                 ## Feeding -----------------------------------
                 print "Initializing left arm for feeding"
-                print armReachActionLeft("initFeeding")
+                try:
+                    armReachActionLeft("initFeeding")
+                except:
+                    print "service call error !!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 if self.emergencyStatus: break
                 ##print armReachActionRight("initFeeding") 
                 self.FeedNumber = 1
@@ -271,17 +280,25 @@ class armReacherGUI:
             break
 
         
-         
+    ## def ServiceCallLeft(self, cmd):
+    ##     if self.left_mtx is not True:
+    ##         self.left_mtx = True
+    ##         self.armReachActionLeft(cmd)            
+    ##         self.left_mtx = False
+    ##     else:
+    ##         print "Ignore last command...."
+        
+            
     def testing(self, armReachActionLeft, armReachActionRight, log, detection_flag):
         if self.FeedNumber<1:
             self.ScoopNumber = 0         
-            print self.armReachActionLeft("initScooping1")
-            print self.armReachActionRight("initScooping1")
+            self.armReachActionLeft("initScooping1")
+            self.armReachActionRight("initScooping1")
         elif self.FeedNumber<2:
-            print self.armReachActionLeft("initFeeding")
+            self.armReachActionLeft("initFeeding")
         else: 
             #print self.armReachActionLeft("runFeeding1")
-            print self.armReachActionLeft("initFeeding")
+            self.armReachActionLeft("initFeeding")
 
 
 
@@ -316,7 +333,7 @@ if __name__ == '__main__':
     if opt.bLog:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                      vision_change=False, pps=False, skin=False, \
-                     subject="Demo", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     subject="GUI_Testing", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      verbose=False)
     else:
         log = None

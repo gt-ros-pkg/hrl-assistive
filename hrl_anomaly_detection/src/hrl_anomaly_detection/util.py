@@ -539,19 +539,23 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name):
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=False):
     # List up recorded files
-    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
-
+    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
     failure_list = []
     for d in folder_list:
 
         name_flag = False
         for name in subject_names:
-            if d.find(name) >= 0: name_flag = True
+            if d.find(name) >= 0: 
+                if exact_name:
+                    if d.split(name+'_')[1] == task_name: name_flag = True
+                else:
+                    name_flag = True                    
                                     
-        if name_flag and d.find(task_name) >= 0:
+        if name_flag and ((d.find(task_name) >= 0 and exact_name is False) or \
+                          (d==subject_names[0]+'_'+task_name and exact_name) ):
             files = os.listdir(os.path.join(root_path,d))
 
             for f in files:
