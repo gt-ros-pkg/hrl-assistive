@@ -465,9 +465,9 @@ if __name__ == '__main__':
 
     subjects  = ['gatsbii']
     task_name = 'pushing'
-    raw_data_path, save_data_path, param_dict = getPushingMicrowave(task_name, False, \
-                                                                    False, False,\
-                                                                    rf_center, local_range)
+    raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task_name, False, \
+                                                                     False, False,\
+                                                                     rf_center, local_range)
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }

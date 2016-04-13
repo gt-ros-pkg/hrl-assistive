@@ -21,6 +21,7 @@ class TaskSmacher(object):
         self.active_domains_pub = rospy.Publisher('pddl_tasks/active_domains', DomainList, queue_size=10, latch=True)
         self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.preempt_service_cb)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
+        self.active_domains_pub.publish(DomainList([]))  # Initialize to empty list
         rospy.loginfo("[%s] Ready", rospy.get_name())
 
     def req_cb(self, req):
@@ -131,7 +132,7 @@ class PDDLTaskThread(Thread):
 
             # Get solution from planner
             try:
-                print self.problem_msg
+                #print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
@@ -140,7 +141,7 @@ class PDDLTaskThread(Thread):
                 sol_msg.actions = solution.steps
                 sol_msg.states = solution.states
                 self.solution_pub.publish(sol_msg)
-                print "Solution:\n", solution
+                print "Solution:\n", solution.steps
                 if solution.solved:
                     if not solution.steps:  # Already solved, no action retquired
                         rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)
@@ -229,13 +230,13 @@ class PDDLSmachState(smach.State):
         self.action_pub.publish(plan_step_msg)
         self.on_execute(ud)
         rate = rospy.Rate(20)
-        #print "Starting PDDLSmachState: %s" % self.action
-        #print "Initial State: ", str(self.init_state)
-        #print "Goal State: ", str(self.goal_state)
+        # print "Starting PDDLSmachState: %s" % self.action
+        # print "Initial State: ", str(self.init_state)
+        # print "Goal State: ", str(self.goal_state)
         while self.current_state is None:
             rospy.loginfo("State %s waiting for current state", self.action)
             rospy.sleep(1)
-        #print "Current State: ", str(self.current_state)
+        # print "Current State: ", str(self.current_state)
         while not rospy.is_shutdown():
             if self.preempt_requested():
                 rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))

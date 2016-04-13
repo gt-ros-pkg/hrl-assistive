@@ -18,7 +18,8 @@ body {
 }
 #left-col {
     float: left;
-    height: calc(100% - 36px);
+    /*height: calc(100% - 36px);*/
+    height: 100%;
     width: 256px;
 }
 #main-menu {

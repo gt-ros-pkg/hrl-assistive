@@ -78,12 +78,17 @@ class classifier(learning_base):
             self.degree      = degree 
             self.gamma       = gamma 
             self.cost        = cost 
-            self.w_negative  = w_negative 
-            
+            self.w_negative  = w_negative             
         elif self.method == 'cssvm_standard' or self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             self.class_weight = class_weight
+            self.svm_type    = svm_type
+            self.kernel_type = kernel_type
+            self.degree      = degree 
+            self.gamma       = gamma 
+            self.cost        = cost 
+            self.w_negative  = w_negative 
         elif self.method == 'progress_time_cluster':
             self.nLength   = nLength
             self.std_coff  = 1.0
@@ -116,10 +121,8 @@ class classifier(learning_base):
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative) \
               +' -m 200'
-            try:
-                self.dt = svm.svm_train(y, X, commands )
-            except:
-                return False
+            try: self.dt = svm.svm_train(y, X, commands )
+            except: return False
             return True
         elif self.method == 'cssvm_standard':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
@@ -131,7 +134,13 @@ class classifier(learning_base):
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
-            self.dt = cssvm.svm_train(y, X, '-C 1 -c 4 -t 2 -g 0.03 -w1 2.0 -w-1 '+str(self.class_weight) )
+            commands = '-q -C 1 -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
+              +' -g '+str(self.gamma)\
+              +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
+              +' -w-1 '+str(self.w_negative) \
+              +' -m 200'
+            try: self.dt = cssvm.svm_train(y, X, commands )
+            except: return False
             return True
             
         elif self.method == 'progress_time_cluster':
