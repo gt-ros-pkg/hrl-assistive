@@ -342,9 +342,8 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     
 def aeDataExtraction(subject_names, task_name, raw_data_path, \
                     processed_data_path, param_dict,\
-                    handFeature_viz=False,\
-                    success_viz=False, failure_viz=False,\
-                    cuda=True, verbose=False):
+                    handFeature_viz=False, success_viz=False, failure_viz=False,\
+                    verbose=False):
 
     ## Parameters
     # data
@@ -383,8 +382,11 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
         if verbose: print "Start "+str(idx)+"/"+str(len( d['kFoldList'] ))+"th iteration"
 
-        AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-
+        if AE_dict['method'] == 'ae':
+            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
+        else:
+            AE_proc_data = os.path.join(processed_data_path, 'pca_processed_data_'+str(idx)+'.pkl')
+            
         # From dim x sample x length
         # To reduced_dim x sample
         dd = dm.getAEdataSet(idx, d['aeSuccessData'], d['aeFailureData'], \
@@ -402,7 +404,11 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                              max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
                              cuda=AE_dict['cuda'], \
                              filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
-                             verbose=verbose, renew=AE_dict['renew'], train_ae=False )
+                             method=AE_dict['method'],\
+                             # PCA param
+                             pca_gamma=AE_dict['pca_gamma'],\
+                             verbose=verbose, renew=AE_dict['renew'], \
+                             preTrainModel=AE_dict['preTrainModel'])
 
         if AE_dict['filter']:
             # NOTE: pooling dimension should vary on each auto encoder.
@@ -422,8 +428,9 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
             print dd.keys()
             dv.viz(dd['normTrainData'], normTest=dd['normTestData'], \
                    abnormTest=dd['abnormTestData'],skip=True)
-            ## else: dv.viz(dd['normTrainData'], dd['abnormTrainData'])
-            dv.viz(dd['normTrainDataFiltered'], abnormTest=dd['abnormTrainDataFiltered'])
+            if AE_dict['filter']:
+                dv.viz(dd['normTrainDataFiltered'], abnormTest=dd['abnormTrainDataFiltered'])
+            else: dv.viz(dd['normTrainData'], dd['abnormTrainData'])
 
         if handFeature_viz:
             print AE_dict['add_option'], dd['handFeatureNames']
@@ -1366,7 +1373,7 @@ if __name__ == '__main__':
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
 
-    p.add_option('--task', action='store', dest='task', type='string', default='pushing',
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
@@ -1427,7 +1434,7 @@ if __name__ == '__main__':
                                                                rf_center, local_range)
         
     #---------------------------------------------------------------------------           
-    elif opt.task == 'pushing':
+    elif opt.task == 'pushing_microwhite':
         subjects = ['gatsbii']
         task     = opt.task
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
@@ -1500,7 +1507,7 @@ if __name__ == '__main__':
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
-        handFeature_viz = True
+        handFeature_viz = False
         aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\

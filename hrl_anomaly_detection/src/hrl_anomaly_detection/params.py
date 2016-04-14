@@ -28,7 +28,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
                       'filter':True, 'filterDim':4, \
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures,\
-                      'add_noise_option': []}
+                      'add_noise_option': [], 'preTrainModel': None}
     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
     SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
 
@@ -70,7 +70,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4,\
                       'add_option': None, 'rawFeatures': rawFeatures,\
-                      'add_noise_option': []}                      
+                      'add_noise_option': [], 'preTrainModel': None}                      
     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
     SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
 
@@ -99,22 +99,30 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'time_window': 4,  \
-                      'layer_sizes':[], 'learning_rate':1e-5, \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
+                      'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':100000, 'min_loss':0.1, 'cuda':True, \
+                      'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
+                      'pca_gamma': 5.0,\
                       'filter':False, 'filterDim':4, \
                       'nAugment': 1, \
-                      'add_option': None, 'rawFeatures': rawFeatures,
-                      'add_noise_option': []}
+                      'add_option': None, 'rawFeatures': rawFeatures,\
+                      'add_noise_option': [], 'preTrainModel': None}
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False }
 
-    if pre_train is False:
+    if AE_param_dict['method']=='pca':
+        # filtered dim 4
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
+        data_param_dict['downSampleSize'] = 150
+        AE_param_dict['layer_sizes']      = [64,4]
+        
+    elif AE_param_dict['method']=='ae' and pre_train is False:
         filterDim=4
         if filterDim==3: 
             # filtered dim 3
@@ -136,13 +144,15 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             AE_param_dict['add_option'] = ['ftForce_mag','audioWristRMS','targetEEDist', 'targetEEAng']
             AE_param_dict['add_noise_option'] = ['ftForce_mag']
 
-        else:
+        elif filterDim==4:
             # filtered dim 4
             save_data_path = os.path.expanduser('~')+\
               '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
             data_param_dict['downSampleSize'] = 150
-            AE_param_dict['layer_sizes']      = [64,8]
+            AE_param_dict['layer_sizes']      = [64,4]
             AE_param_dict['add_option']       = None
+            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
+            AE_param_dict['learning_rate'] = 1e-6
             
     else:
         # filtered dim 4
@@ -151,6 +161,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         data_param_dict['downSampleSize'] = 150
         AE_param_dict['layer_sizes'] = [64,4]
         AE_param_dict['add_option']  = None
+        AE_param_dict['learning_rate'] = 1e-6
         
 
 
@@ -176,7 +187,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.5, 'scale': 1.0}
     elif AE_param_dict['switch']:            
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.0, 'scale': 2.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
     else:
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
@@ -210,7 +221,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                    ## 'relativePose_artag_artag', \
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
 
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
 
     ## save_data_path = os.path.expanduser('~')+\
@@ -260,7 +271,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'filter':True, 'filterDim':filterDim, \
                       'nAugment': 1, \
                       'add_option': add_option , 'rawFeatures': rawFeatures,
-                      'add_noise_option': add_noise_option}
+                      'add_noise_option': add_noise_option, 'preTrainModel': None}
 
     if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag','targetEEDist','targetEEAng']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}

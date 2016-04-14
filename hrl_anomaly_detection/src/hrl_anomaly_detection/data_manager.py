@@ -44,6 +44,7 @@ from mvpa2.generators.partition import NFoldPartitioner
 from mvpa2.generators import splitters
 
 from sklearn import cross_validation
+from sklearn.externals import joblib
 
 import matplotlib.pyplot as plt
 
@@ -131,6 +132,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         if ae_data:
+            print data_dict.keys()
             # Task-oriented raw features
             successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
             failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
@@ -199,7 +201,11 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             data_dict['aeSuccessData'] = successData = np.array(ae_successData)
             data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
             data_dict['aeParamDict']   = ae_param_dict
-                    
+
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print data_dict.keys()
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            
         ut.save_pickle(data_dict, save_pkl)
 
     #-----------------------------------------------------------------------------
@@ -300,18 +306,16 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  layer_sizes=[256,128,16], learning_rate=1e-6, learning_rate_decay=1e-6, \
                  momentum=1e-6, dampening=1e-6, lambda_reg=1e-6, \
                  max_iteration=20000, min_loss=1.0, cuda=False, \
-                 filtering=True, filteringDim=4, \
-                 verbose=False, renew=False, train_ae=False ):
+                 filtering=True, filteringDim=4, method='ae',\
+                 # PCA param
+                 pca_gamma=5.0,\
+                 verbose=False, renew=False, preTrainModel=None ):
 
     if os.path.isfile(AE_proc_data) and not renew:        
         d = ut.load_pickle(AE_proc_data)
         ## d['handFeatureNames'] = handParam['feature_names']
         ## ut.save_pickle(d, AE_proc_data)
         return d
-
-    print "Loading ae_model data"
-    from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
-    AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
 
     # dim x sample x length
     normalTrainData   = rawSuccessData[:, normalTrainIdx, :] 
@@ -350,34 +354,71 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
         
     # train ae
-    ml = ae.auto_encoder([nDim]+layer_sizes, \
-                         learning_rate, learning_rate_decay, momentum, dampening, \
-                         lambda_reg, time_window, \
-                         max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=True)
+    if method == 'ae':
+        print "Loading ae_model data"
+        from hrl_anomaly_detection.feature_extractors import auto_encoder as ae
+        ml = ae.auto_encoder([nDim]+layer_sizes, \
+                             learning_rate, learning_rate_decay, momentum, dampening, \
+                             lambda_reg, time_window, \
+                             max_iteration=max_iteration, min_loss=min_loss, cuda=cuda, verbose=True)
 
-    if os.path.isfile(AE_model) and train_ae is False:
-        print "AE model exists: ", AE_model
-        ml.load_params(AE_model)
+        AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
+        if os.path.isfile(AE_model):
+            print "AE model exists: ", AE_model
+            ml.load_params(AE_model)
+        else:
+            if preTrainModel is not None:
+                ml.fit(X_train, save_obs={'save': False, 'load': True, 'filename': preTrainModel})
+            else:
+                ml.fit(X_train)
+            ml.save_params(AE_model)
+
+        def predictFeatures(clf, X, nSingleData):
+            # Generate training features
+            feature_list = []
+            for idx in xrange(0, len(X), nSingleData):
+                test_features = clf.predict_features( X[idx:idx+nSingleData,:].astype('float32') )
+                feature_list.append(test_features)
+            return feature_list
+
+        # test ae
+        # sample x dim => dim x sample
+        d = {}
+        d['normTrainData']   = np.swapaxes(predictFeatures(ml, normalTrainDataConv, nSingleData), 0,1)
+        d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, abnormalTrainDataConv, nSingleData), 0,1) 
+        d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
+        d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
+            
     else:
-        ml.fit(X_train)
-        ml.save_params(AE_model)
+        print "Loading pca model data"
+        from sklearn.decomposition import KernelPCA
+        ml = KernelPCA(n_components=layer_sizes[-1], kernel="rbf", fit_inverse_transform=False, \
+                       gamma=pca_gamma)
 
+        pca_model = os.path.join(processed_data_path, 'pca_model_'+str(idx)+'.pkl')
+        if os.path.isfile(AE_model):
+            print "PCA model exists: ", AE_model
+            ml = joblib.load(pca_model)
+        else:
+            ml.fit(X_train)
+            joblib.dump(ml, pca_model)
 
-    def predictFeatures(clf, X, nSingleData):
-        # Generate training features
-        feature_list = []
-        for idx in xrange(0, len(X), nSingleData):
-            test_features = clf.predict_features( X[idx:idx+nSingleData,:].astype('float32') )
-            feature_list.append(test_features)
-        return feature_list
+        def predictFeatures(clf, X, nSingleData):
+            # Generate training features
+            feature_list = []
+            for idx in xrange(0, len(X), nSingleData):
+                test_features = clf.transform( X[idx:idx+nSingleData,:] )
+                feature_list.append(test_features)
+            return feature_list
 
-    # test ae
-    # sample x dim => dim x sample
-    d = {}
-    d['normTrainData']   = np.swapaxes(predictFeatures(ml, normalTrainDataConv, nSingleData), 0,1)
-    d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, abnormalTrainDataConv, nSingleData), 0,1) 
-    d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
-    d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
+        # test ae
+        # sample x dim => dim x sample
+        d = {}
+        d['normTrainData']   = np.swapaxes(predictFeatures(ml, normalTrainDataConv, nSingleData), 0,1)
+        d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, abnormalTrainDataConv, nSingleData), 0,1) 
+        d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
+        d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
+            
     
     # dim x sample x length
     d['handNormTrainData']   = handSuccessData[:, normalTrainIdx, time_window-1:]

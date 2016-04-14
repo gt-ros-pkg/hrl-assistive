@@ -82,7 +82,7 @@ class auto_encoder(learning_base):
         self.lambda_reg          = np.float32(self.lambda_reg)
         
 
-    def create_layers(self):
+    def create_layers(self, load=False, filename=None):
 
         self.convert_vars()
 
@@ -102,9 +102,7 @@ class auto_encoder(learning_base):
             ## # We'll use sigmoid activation for all layers
             ## # Note that this doesn't make a ton of sense when using squared distance
             ## # because the sigmoid function is bounded on [0, 1].
-            ## activations_en.append( T.nnet.sigmoid ) #T.tanh ) 
-
-            activations_en.append( T.nnet.relu ) 
+            activations_en.append( T.nnet.sigmoid ) #T.tanh ) 
 
 
         # Decoder layers
@@ -117,18 +115,21 @@ class auto_encoder(learning_base):
         ## activations_de[-1] = None
 
         # Create an instance of the MLP class
-        mlp = l.AD(W_init_en, b_init_en, activations_en,
+        self.mlp = l.AD(W_init_en, b_init_en, activations_en,
                    W_init_de, b_init_de, activations_de, nEncoderLayers=len(self.layer_sizes)-1)
+        
+        if load: self.load_params(filename)
+
 
         # Create Theano variables for the MLP input
         mlp_input = T.fmatrix('mlp_input')
         mlp_target = T.fmatrix('mlp_target')
-        cost = mlp.squared_error(mlp_input, mlp_target)
+        cost = self.mlp.squared_error(mlp_input, mlp_target)
         ## cost = mlp.L1_error(mlp_input, mlp_target)
 
         if self.verbose: print 'Creating a theano function for training the network'
         self.train = theano.function([mlp_input, mlp_target], cost,
-                                     updates=l.gradient_updates_momentum(cost, mlp.params, \
+                                     updates=l.gradient_updates_momentum(cost, self.mlp.params, \
                                                                          self.learning_rate, \
                                                                          self.learning_rate_decay, \
                                                                          self.momentum, \
@@ -136,9 +137,9 @@ class auto_encoder(learning_base):
                                                                          self.lambda_reg))
 
         if self.verbose: print 'Creating a theano function for computing the MLP\'s output given some input'
-        self.mlp_output = theano.function([mlp_input], mlp.output(mlp_input))
+        self.mlp_output = theano.function([mlp_input], self.mlp.output(mlp_input))
         if self.verbose: print 'Creating a theano function for computing the MLP\'s output given some input'
-        self.mlp_features = theano.function([mlp_input], mlp.get_features(mlp_input))
+        self.mlp_features = theano.function([mlp_input], self.mlp.get_features(mlp_input))
 
         self.mlp_cost = theano.function([mlp_input, mlp_target], cost)
         
@@ -151,7 +152,7 @@ class auto_encoder(learning_base):
         X = X.T
 
         # create mlp layers
-        self.create_layers()
+        self.create_layers(save_obs['load'], save_obs['filename'])
 
         if self.verbose: print 'Optimising'
         # Keep track of the number of training iterations performed
@@ -180,7 +181,7 @@ class auto_encoder(learning_base):
                 sys.exit()
             if self.verbose and iteration%20==0: print "iter ", iteration,"/", self.max_iteration, \
               " loss: ", train_loss
-            if iteration%500 and save_obs['save']: self.save_params(save_obs['filename'])
+            if iteration>0 and iteration%1000==0 and save_obs['save']: self.save_params(save_obs['filename'])
 
             iteration += 1
 
@@ -217,9 +218,17 @@ class auto_encoder(learning_base):
 
 
     def save_params(self, filename):
-        f = file(filename, 'wb')
-        cPickle.dump(self.mlp_features, f, protocol=cPickle.HIGHEST_PROTOCOL)
-        f.close()
+        print "Save model"
+        d = {}
+        d['params']       = self.mlp.get_params()
+        ## d['mlp_features'] = self.mlp_features
+        ## d['train']        = self.train
+        ## d['mlp_output']   = self.mlp_output
+        ## d['mlp_cost']     = self.mlp_cost
+        ut.save_pickle(d, filename)        
+        ## f = file(filename, 'wb')
+        ## cPickle.dump(self.mlp_features, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        ## f.close()
         return
 
 
@@ -228,9 +237,16 @@ class auto_encoder(learning_base):
             print "Not existing file!!!!"
             return False
 
-        f = open(filename, 'rb')
-        self.mlp_features = cPickle.load(f)
-        f.close()
+        print "load model"
+        d = ut.load_pickle(filename)
+        self.mlp.set_params(d['params'])
+        ## self.mlp_features = d['mlp_features']
+        ## self.train        = d['train']
+        ## self.mlp_output   = d['mlp_output']
+        ## self.mlp_cost     = d['mlp_cost']
+        ## f = open(filename, 'rb')
+        ## self.mlp_features = cPickle.load(f)
+        ## f.close()
         return
 
 
