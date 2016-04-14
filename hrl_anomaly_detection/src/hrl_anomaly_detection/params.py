@@ -115,7 +115,14 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False }
 
-    if pre_train is False:
+    if AE_param_dict['method']=='pca':
+        # filtered dim 4
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
+        data_param_dict['downSampleSize'] = 150
+        AE_param_dict['layer_sizes']      = [64,4]
+        
+    elif AE_param_dict['method']=='ae' and pre_train is False:
         filterDim=4
         if filterDim==3: 
             # filtered dim 3
@@ -137,7 +144,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             AE_param_dict['add_option'] = ['ftForce_mag','audioWristRMS','targetEEDist', 'targetEEAng']
             AE_param_dict['add_noise_option'] = ['ftForce_mag']
 
-        else:
+        elif filterDim==4:
             # filtered dim 4
             save_data_path = os.path.expanduser('~')+\
               '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
@@ -180,7 +187,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.5, 'scale': 1.0}
     elif AE_param_dict['switch']:            
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.0, 'scale': 2.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
     else:
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
