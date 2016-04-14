@@ -464,7 +464,7 @@ if __name__ == '__main__':
     local_range    = 10.0    
 
     subjects  = ['gatsbii']
-    task_name = 'pushing'
+    task_name = 'pushing_microwhite'
     raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task_name, False, \
                                                                      False, False,\
                                                                      rf_center, local_range)
