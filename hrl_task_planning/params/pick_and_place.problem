@@ -1,0 +1,10 @@
+(DEFINE
+(PROBLEM test_problem)
+(:DOMAIN pick_and_place)
+(:OBJECTS RIGHT_HAND - GRIPPER)
+(:INIT (KNOWN HAND_START_LOC)
+        (AT RIGHT_HAND HAND_START_LOC)
+        (AT TARGET PICK_LOC)
+        )
+(:GOAL (AND (AT target place_loc)))
+)

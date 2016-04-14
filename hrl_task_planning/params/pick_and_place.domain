@@ -1,14 +1,15 @@
-(define (domain pick_and_place_left)
+(define (domain pick_and_place)
  (:requirements :typing :conditional-effects)
  (:types 
   gripper item - physob
   location
  )
 
- (:constants hand - gripper
+ (:constants right_hand - gripper
              target - item
              pick_loc - location
              place_loc - location
+             hand_start_loc - location
              elsewhere - location
  )
 
