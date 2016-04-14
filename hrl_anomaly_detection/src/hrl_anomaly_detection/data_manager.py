@@ -340,18 +340,18 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
     # sample x time_window_flatten_length
     normalTrainDataAugConv   = getTimeDelayData(normalTrainDataAug, time_window)
     abnormalTrainDataAugConv = getTimeDelayData(abnormalTrainDataAug, time_window)
-    normalTrainDataConv   = getTimeDelayData(normalTrainData, time_window)
-    abnormalTrainDataConv = getTimeDelayData(abnormalTrainData, time_window)
-    normalTestDataConv    = getTimeDelayData(normalTestData, time_window)
-    abnormalTestDataConv  = getTimeDelayData(abnormalTestData, time_window)
-    nSingleData           = len(normalTrainDataAug[0][0])-time_window+1
-    nDim                  = len(normalTrainDataConv[1])
+    normalTrainDataConv      = getTimeDelayData(normalTrainData, time_window)
+    abnormalTrainDataConv    = getTimeDelayData(abnormalTrainData, time_window)
+    normalTestDataConv       = getTimeDelayData(normalTestData, time_window)
+    abnormalTestDataConv     = getTimeDelayData(abnormalTestData, time_window)
+    nSingleData              = len(normalTrainDataAug[0][0])-time_window+1
+    nDim                     = len(normalTrainDataConv[1])
 
     # sample x time_window_flatten_length
     if nAugment>0:
         X_train  = np.vstack([normalTrainDataAugConv, abnormalTrainDataAugConv])
     else:
-        X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
+        X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])        
 
     # train ae
     if method == 'ae':
@@ -395,12 +395,17 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         ml = KernelPCA(n_components=layer_sizes[-1], kernel="rbf", fit_inverse_transform=False, \
                        gamma=pca_gamma)
 
+        print np.shape(normalTrainData), np.shape(abnormalTrainData)
+        print np.shape(normalTrainDataConv), np.shape(abnormalTrainDataConv)
+        print np.shape(X_train)
+        sys.exit()
+
         pca_model = os.path.join(processed_data_path, 'pca_model_'+str(idx)+'.pkl')
         if os.path.isfile(pca_model):
             print "PCA model exists: ", pca_model
             ml = joblib.load(pca_model)
         else:
-            ml.fit(X_train)
+            ml.fit(np.array(X_train))
             joblib.dump(ml, pca_model)
 
         def predictFeatures(clf, X, nSingleData):
@@ -409,6 +414,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
             for idx in xrange(0, len(X), nSingleData):
                 test_features = clf.transform( X[idx:idx+nSingleData,:] )
                 feature_list.append(test_features)
+                print np.shape(X[idx:idx+nSingleData,:]), np.shape(test_features)
             return feature_list
 
         # test ae
@@ -419,6 +425,8 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
         d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
 
+        print np.shape(predictFeatures(ml, normalTrainDataConv, nSingleData))
+        sys.exit()
     
     # dim x sample x length
     d['handNormTrainData']   = handSuccessData[:, normalTrainIdx, time_window-1:]
