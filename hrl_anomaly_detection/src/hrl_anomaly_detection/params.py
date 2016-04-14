@@ -221,7 +221,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                    ## 'relativePose_artag_artag', \
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
 
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
 
     ## save_data_path = os.path.expanduser('~')+\
