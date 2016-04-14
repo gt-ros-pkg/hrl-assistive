@@ -104,6 +104,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             modeling_pkl = os.path.join(processed_data_path, \
                                         'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
+        print modeling_pkl
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
