@@ -68,12 +68,14 @@ class armReacherGUI:
         self.actionStatus = 'Both'
         self.inputMsg = None
         self.feedbackMsg = None
+        self.emergencyMsg = None
         self.ScoopNumber = 0
         self.FeedNumber = 0
         self.detection_flag = detection_flag
         self.log = log
         self.left_mtx = False
         self.right_mtx = False
+        self.recordStatus = False
 ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.Continuous()
@@ -94,14 +96,21 @@ class armReacherGUI:
         #Emergency status button.
         self.emergencyStatus = True
         self.inputStatus = False
-        self.emergencyPub.publish("STOP")
+        self.emergencyMsg = data.data
+        if self.emergencyMsg == 'STOP':
+            self.emergencyPub.publish("STOP")
         print "Emergency received"
+        if self.recordStatus:    
+            self.log.close_log_file_GUI()
+            self.recordStatus = False
         rospy.sleep(3.0)
 
         rospy.wait_for_service("/arm_reach_enable")
         
         print "Aborting Sequence"
         self.testing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+
+
 
     def feedbackCallback(self, data):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
@@ -182,21 +191,22 @@ class armReacherGUI:
             print "Start to log!"    
             if self.log != None:
                 self.log.log_start()
+                self.recordStatus = True
             if detection_flag: self.log.enableDetector(True)
         
             print "Running scooping!"
             self.ServiceCallLeft("runScooping")
             if self.emergencyStatus: break
-            print self.log
-            print self.log==None
+            #print self.log
+            #print self.log==None
             if self.log == None:
                 self.falselogPub.publish("Requesting Feedback!")
     
             if detection_flag: self.log.enableDetector(False)
             print "Finish to log!"    
-            if self.log != None:
+            if self.log != None and self.recordStatus:
                 self.log.close_log_file_GUI()
-    
+                self.recordStatus = False 
             self.ScoopNumber = 0
             break
 
@@ -238,6 +248,7 @@ class armReacherGUI:
             print "Start to log!"    
             if self.log != None:
                 self.log.log_start()
+                self.recordStatus = True
             if detection_flag: self.log.enableDetector(True)
         
             print "Running feeding2"    
@@ -250,9 +261,9 @@ class armReacherGUI:
     
             if detection_flag: self.log.enableDetector(False)
             print "Finish to log!"    
-            if self.log != None:
+            if self.log != None and self.recordStatus:
                 self.log.close_log_file_GUI()
-    
+                self.recordStatus = False
             self.ServiceCallLeft("initScooping1")
             if self.emergencyStatus: break
             self.FeedNumber = 0
