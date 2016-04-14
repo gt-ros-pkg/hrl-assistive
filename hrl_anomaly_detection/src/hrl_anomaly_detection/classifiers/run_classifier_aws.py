@@ -459,7 +459,7 @@ if __name__ == '__main__':
         
         #temp
         nPoints        = 10
-        ROC_param_dict = {'methods': ['cssvm'],\
+        ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -468,10 +468,10 @@ if __name__ == '__main__':
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 9
-        parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0,2.0,4.0,8.0],\
                       'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
-                      'w_negative': [0.5,3.0,6.0,9.0] }
+                      'w_negative': [0.5,3.0,6.0] }
 
     else:
         print "Selected task name is not available."
