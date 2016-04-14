@@ -351,7 +351,7 @@ if __name__ == '__main__':
 
     p.add_option('--user', action='store', dest='user', type='string', default='dpark',
                  help='type the user name')
-    p.add_option('--task', action='store', dest='task', type='string', default='pushing',
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -449,7 +449,7 @@ if __name__ == '__main__':
                       'w_negative': np.linspace(0.01, 1.3, 5) }
 
     #---------------------------------------------------------------------------           
-    elif opt.task == 'pushing':
+    elif opt.task == 'pushing_microwhite':
     
         subjects = ['gatsbii']
         task     = opt.task
