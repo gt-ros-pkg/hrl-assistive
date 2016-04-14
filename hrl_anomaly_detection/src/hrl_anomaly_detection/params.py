@@ -104,7 +104,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
-                      'pca_gamma': 5.0,\
+                      'pca_gamma': 1.0,\
                       'filter':False, 'filterDim':4, \
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures,\
@@ -185,7 +185,10 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['targetEEDist']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.5, 'scale': 1.0}
-    elif AE_param_dict['switch']:            
+    elif AE_param_dict['switch'] and AE_param_dict['method']=='pca':            
+        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
+    elif AE_param_dict['switch'] and AE_param_dict['method']=='ae':            
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
     else:

@@ -104,7 +104,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             modeling_pkl = os.path.join(processed_data_path, \
                                         'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
-        print modeling_pkl
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
@@ -469,9 +468,13 @@ if __name__ == '__main__':
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 9
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [1.0,2.0,4.0,8.0],\
+        ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
+        ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.0,2.0,4.0,8.0],\
-                      'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
+                      'cost': [4.0],\
+                      'gamma': np.linspace(1.0, 10.0, 4).tolist(), \
                       'w_negative': [0.5,3.0,6.0] }
 
     else:

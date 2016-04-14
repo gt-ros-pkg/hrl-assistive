@@ -311,11 +311,11 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  pca_gamma=5.0,\
                  verbose=False, renew=False, preTrainModel=None ):
 
-    if os.path.isfile(AE_proc_data) and not renew:        
-        d = ut.load_pickle(AE_proc_data)
-        ## d['handFeatureNames'] = handParam['feature_names']
-        ## ut.save_pickle(d, AE_proc_data)
-        return d
+    ## if os.path.isfile(AE_proc_data) and not renew:        
+    ##     d = ut.load_pickle(AE_proc_data)
+    ##     ## d['handFeatureNames'] = handParam['feature_names']
+    ##     ## ut.save_pickle(d, AE_proc_data)
+    ##     return d
 
     # dim x sample x length
     normalTrainData   = rawSuccessData[:, normalTrainIdx, :] 
@@ -352,7 +352,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         X_train  = np.vstack([normalTrainDataAugConv, abnormalTrainDataAugConv])
     else:
         X_train  = np.vstack([normalTrainDataConv, abnormalTrainDataConv])
-        
+
     # train ae
     if method == 'ae':
         print "Loading ae_model data"
@@ -396,8 +396,8 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                        gamma=pca_gamma)
 
         pca_model = os.path.join(processed_data_path, 'pca_model_'+str(idx)+'.pkl')
-        if os.path.isfile(AE_model):
-            print "PCA model exists: ", AE_model
+        if os.path.isfile(pca_model):
+            print "PCA model exists: ", pca_model
             ml = joblib.load(pca_model)
         else:
             ml.fit(X_train)
@@ -418,7 +418,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         d['abnormTrainData'] = np.swapaxes(predictFeatures(ml, abnormalTrainDataConv, nSingleData), 0,1) 
         d['normTestData']    = np.swapaxes(predictFeatures(ml, normalTestDataConv, nSingleData), 0,1)
         d['abnormTestData']  = np.swapaxes(predictFeatures(ml, abnormalTestDataConv, nSingleData), 0,1)
-            
+
     
     # dim x sample x length
     d['handNormTrainData']   = handSuccessData[:, normalTrainIdx, time_window-1:]

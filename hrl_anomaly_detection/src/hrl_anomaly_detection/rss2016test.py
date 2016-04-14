@@ -423,6 +423,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
             normalTestData    = dd['normTestData']
             abnormalTestData  = dd['abnormTestData']            
 
+            
         if success_viz or failure_viz and False:
             import data_viz as dv
             print dd.keys()
