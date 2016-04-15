@@ -119,13 +119,15 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             ## print svm.__file__
+
+            X[:,0] *= 2.0            
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
               ## +' -t 4'
-            X[:,0] *= 2.0
+              
               
             ## try: self.dt = svm.svm_train(y, [list(row) for row in K_train], commands )
             try: self.dt = svm.svm_train(y, X, commands )
