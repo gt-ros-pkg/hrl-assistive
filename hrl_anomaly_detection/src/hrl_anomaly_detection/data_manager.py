@@ -162,37 +162,35 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                          ##global_data=True,\
                                          renew=data_renew, save_pkl=all_data_pkl)
 
-        ## # data set
-        ## success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-        ##                                     '_'+str(local_range))
-        ## _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-        ##                                      downSampleSize=downSampleSize,\
-        ##                                      local_range=local_range, rf_center=rf_center,\
-        ##                                      renew=data_renew, save_pkl=success_data_pkl)
+        # data set
+        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
+                                            '_'+str(local_range))
+        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=success_data_pkl)
 
-        ## failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-        ##                                     '_'+str(local_range))
-        ## _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-        ##                                      downSampleSize=downSampleSize,\
-        ##                                      local_range=local_range, rf_center=rf_center,\
-        ##                                      renew=data_renew, save_pkl=failure_data_pkl)
+        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
+                                            '_'+str(local_range))
+        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                             downSampleSize=downSampleSize,\
+                                             local_range=local_range, rf_center=rf_center,\
+                                             renew=data_renew, save_pkl=failure_data_pkl)
 
-        ## # Task-oriented hand-crafted features
-        ## allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-        ##                                          cut_data=cut_data)
-        ## successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
-        ##                                          param_dict=param_dict, cut_data=cut_data)
-        ## failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
-        ##                                          param_dict=param_dict, cut_data=cut_data)
+        # Task-oriented hand-crafted features
+        allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                                 cut_data=cut_data)
+        successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+                                                 param_dict=param_dict, cut_data=cut_data)
+        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+                                                 param_dict=param_dict, cut_data=cut_data)
 
-        ## data_dict = {}
-        ## data_dict['allData']      = allData = np.array(allData)
-        ## data_dict['successData']  = successData = np.array(successData)
-        ## data_dict['failureData']  = failureData = np.array(failureData)
-        ## data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
-        ## data_dict['param_dict'] = param_dict
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        print rawFeatures
+        data_dict = {}
+        data_dict['allData']      = allData = np.array(allData)
+        data_dict['successData']  = successData = np.array(successData)
+        data_dict['failureData']  = failureData = np.array(failureData)
+        data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
+        data_dict['param_dict'] = param_dict
         
         if rawFeatures is not None: #ae_data and 
             # Task-oriented raw features
