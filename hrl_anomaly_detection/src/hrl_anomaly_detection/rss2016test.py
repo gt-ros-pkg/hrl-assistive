@@ -764,7 +764,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         tag = ''
         for ft in AE_dict['add_option']:
             tag += ft[:2]
-        
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw_'+tag+'.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw.pkl')
