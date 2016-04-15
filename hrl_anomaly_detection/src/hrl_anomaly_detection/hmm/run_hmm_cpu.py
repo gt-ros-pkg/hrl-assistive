@@ -160,6 +160,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ret = ml.fit( normalTrainData, cov_mult=cov_mult )
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
+                break
             else:           
                 ## # evaluation:  dim x sample => sample x dim
                 ## ## testData_x = np.swapaxes( normalTestData, 0, 1)
@@ -496,7 +497,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
                                                                        rf_center, local_range)
-        parameters = {'nState': [10, 15, 20], 'scale': np.linspace(0.5,5.0,5), \
+        parameters = {'nState': [20], 'scale': np.linspace(0.5,5.0,5), \
                       'cov': np.linspace(0.5,5.0,5) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
