@@ -477,6 +477,34 @@ if __name__ == '__main__':
                       'gamma': [2.0], \
                       'w_negative': [0.1, 0.5, 1.0] }
 
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing_toolcase':
+    
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
+                                                                       False, False,\
+                                                                       rf_center, local_range)
+        
+        #temp
+        nPoints        = 10
+        ROC_param_dict = {'methods': ['svm'],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-1., -10., nPoints), \
+                          'svm_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
+        param_dict['ROC'] = ROC_param_dict
+
+        nFiles = 3
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [1.0,2.0,4.0,8.0],\
+        ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
+        ##               'w_negative': [0.5,3.0,6.0] }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': [1.],\
+                      'gamma': [2.0], \
+                      'w_negative': [0.1, 0.5, 1.0] }
+
     else:
         print "Selected task name is not available."
         sys.exit()
@@ -492,11 +520,11 @@ if __name__ == '__main__':
     print "max_param_idx = ", max_param_idx
     AE_param_dict = param_dict['AE']
     if AE_param_dict['switch'] == True and AE_param_dict['add_option'] is not None:
-        result_pkl = os.path.join(save_data_path, 'result_'+task+'_rawftb.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_rawftb.pkl')
     elif AE_param_dict['switch'] == True:
-        result_pkl = os.path.join(save_data_path, 'result_'+task+'_raw.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw.pkl')
     else:
-        result_pkl = os.path.join(save_data_path, 'result_'+task+'.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'.pkl')
         
     ##################################################################################################
     # cpu version
@@ -508,7 +536,7 @@ if __name__ == '__main__':
         
         if os.path.isfile(result_pkl) is False or opt.bRenew is True:
 
-            data = getData(nFiles, save_data_path, task, param_dict, parameters)
+            data = getData(nFiles, save_data_path, opt.task, param_dict, parameters)
     
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
@@ -535,7 +563,7 @@ if __name__ == '__main__':
             cloud = CloudSearchForClassifier(os.path.expanduser('~')+\
                                              '/.starcluster/ipcluster/SecurityGroup:@sc-testdpark-us-east-1.json', \
                                              os.path.expanduser('~')+'/.ssh/HRL_ANOMALY.pem', 'testdpark', 'ubuntu')
-            cloud.run_with_local_data(parameters, save_data_path, task, nFiles, param_dict )
+            cloud.run_with_local_data(parameters, save_data_path, opt.task, nFiles, param_dict )
             print len(cloud.client)
 
             # wait until finishing parameter search
