@@ -2,10 +2,11 @@ RFH.PickAndPlace = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
-    self.arm = options.arm;
-    self.gripper = options.gripper;
-    self.side = self.gripper.side;
-    self.name = options.name || 'pick_and_place_'+self.side;
+    self.arms = {'right': options.r_arm,
+                 'left': options.l_arm};
+    self.grippers = {'right': options.r_gripper,
+                     'left': options.l_gripper};
+    self.name = options.name || 'pick_and_place';
     self.domain = 'pick_and_place'
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
@@ -50,13 +51,13 @@ RFH.PickAndPlace = function (options) {
                 RFH.taskMenu.startTask('LookingTask');
                 break;
             case 'MOVE-ARM':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
-                break;
             case 'GRAB':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
-                break;
             case 'RELEASE':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
+                if (planStepMsg.args[0] === 'RIGHT_HAND') {
+                    RFH.taskMenu.startTask('rEECartTask');
+                } else if (planStepMsg.args[0] === 'LEFT_HAND') {
+                    RFH.taskMenu.startTask('lEECartTask');
+                };
                 break;
         }
     };
@@ -182,17 +183,29 @@ RFH.PickAndPlace = function (options) {
         }
     };
 
-    self.sendTaskGoal = function () {
+    self.setDefaultGoal = function (goal_pred_list) {
+        var goalParam = new ROSLIB.Param({
+            ros: ros,
+            name: '/pddl_tasks/'+self.domain+'/default_goal'
+        });
+        goalParam.set(goal_pred_list);
+    };
+
+    self.sendTaskGoal = function (side) {
         self.clearLocationParams(['HAND_START_LOC', 'PICK_LOC', 'PLACE_LOC', 'ELSEWHERE']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'pick_and_place'+'-'+ new Date().getTime().toString();
+        msg.name = 'pick_and_place' + '-' + new Date().getTime().toString();
         msg.domain = 'pick_and_place';
-        var hand = self.side.toUpperCase()+'_HAND';
-        msg.objects = [hand +' - GRIPPER'];
-        self.setPoseToParam(self.arm.getState(), 'HAND_START_LOC');
-        self.updatePDDLState(['(NOT (AT TARGET PLACE_LOC))', '(AT TARGET PICK_LOC)']);
-        if (!self.gripper.getGrasping()) {
-            msg.init.push('(AT TARGET PICK_LOC)');
+        var hand = side.toUpperCase()+'_HAND';
+        var otherHand = hand === 'LEFT_HAND' ? 'RIGHT_HAND' : 'LEFT_HAND'
+        var object = hand + '_OBJECT';
+        self.setDefaultGoal(['(AT '+object+' PLACE_LOC)']);
+        self.updatePDDLState(['(NOT (AT '+object+' PLACE_LOC))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))']);
+        self.setPoseToParam(self.arms[side].getState(), 'HAND_START_LOC');
+        if (!self.grippers[side].getGrasping()) {
+            self.updatePDDLState(['(AT '+object+' PICK_LOC)']);
+        } else {
+            self.updatePDDLState(['(GRASPING '+hand+' '+object+')']);
         }
         msg.goal = [];  // Empty goal will use default for task
         self.taskPublisher.publish(msg);

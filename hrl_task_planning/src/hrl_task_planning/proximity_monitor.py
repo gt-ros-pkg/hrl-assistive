@@ -70,10 +70,8 @@ class ProximityMonitor(object):
                     else:
                         print "Already have pose for KNOWN %s" % loc
             if pred.name == 'GRASPING':
-                print "self object: ", self.object_name
                 print "Grasping State:", str(pred)
                 if str(pred.args[0]) == self.object_name:
-                    print "match"
                     obj_name = str(pred.args[1])
                     current_grasped_items.append(obj_name)
                     if obj_name not in self.grasping:

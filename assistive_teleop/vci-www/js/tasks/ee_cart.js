@@ -138,7 +138,7 @@ RFH.CartesianEEControl = function (options) {
     self.gripper.graspingCBList.push(updatePickPlaceButton);
 
     var pickPlaceButtonCB = function (event) {
-        RFH.taskMenu.tasks['pick_and_place_'+self.side].sendTaskGoal();
+        RFH.taskMenu.tasks['pick_and_place'].sendTaskGoal(self.side);
     };
     self.$pickAndPlaceButton.on('click.pickandplace', pickPlaceButtonCB);
 

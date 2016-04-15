@@ -877,10 +877,12 @@ class FF(object):
                 domain.to_file(domain_file.name)
                 try:
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
+                    print "FF Output:\n", soln_txt
                     if "problem proven unsolvable." in soln_txt:
                         # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
                         raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (problem.name, domain.name))
                 except CalledProcessError as cpe:
+                    print "FF Output:\n", cpe.output
                     if "goal can be simplified to TRUE." in cpe.output:
                         return []
                     else:

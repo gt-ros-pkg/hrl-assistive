@@ -98,6 +98,7 @@ class PDDLTaskThread(Thread):
         self.result = None
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
+#        print "Default goal from /pddl_tasks/%s/default_goal: %s " %(self.domain, self.default_goal);
         self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, queue_size=10, latch=True)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         # TODO: Catch close signal, publish empty action before stopping...
