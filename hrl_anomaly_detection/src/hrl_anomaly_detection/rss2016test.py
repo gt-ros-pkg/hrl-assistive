@@ -952,7 +952,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
     # data preparation
     if method.find('svm')>=0:
-        scaler = preprocessing.StandardScaler(with_std=False)
+        scaler = preprocessing.StandardScaler()
         ## scaler = preprocessing.scale()
         X_scaled = scaler.fit_transform(X_train_org)
     else:
