@@ -572,9 +572,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     abnormalTrainData = d['abnormTrainDataFiltered']
                     normalTestData    = d['normTestDataFiltered']
                     abnormalTestData  = d['abnormTestDataFiltered']
-                    ## import data_viz as dv
-                    ## dv.viz(normalTrainData)
-                    ## continue                   
                 else:
                     normalTrainData   = d['normTrainData']
                     abnormalTrainData = d['abnormTrainData']
@@ -777,22 +774,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    ## if os.path.isfile('temp.pkl'):
-    ##     r = ut.load_pickle('temp.pkl')
-    ## else:
     # parallelization
     r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict ) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
-
-    ## for method in method_list:
-    ##     for idx in xrange(len(kFold_list[:2])):
-    ##         print method, idx, len(kFold_list[:2])
-    ##         r = run_classifiers( idx, processed_data_path, task_name, \
-    ##                              method, ROC_data, ROC_dict, AE_dict, \
-    ##                              SVM_dict )            
                                                                   
     #l_data = zip(*r)
     l_data = r
@@ -951,7 +938,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     # pass method if there is existing result
 
     # data preparation
-    if 'svm' in method:
+    if method.find('svm')>=0:
         scaler = preprocessing.StandardScaler()
         ## scaler = preprocessing.scale()
         X_scaled = scaler.fit_transform(X_train_org)
@@ -965,7 +952,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if 'svm' in method:
+            if method.find('svm')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
@@ -1108,7 +1095,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # check only training data to get time limit (TEMP)
         if idx == 0:
             for key in interp_data_dict.keys():
-                if 'timesList' in key:
+                if key.find('timesList')>=0:
                     time_list = interp_data_dict[key]
                     if len(time_list)==0: continue
                     for tl in time_list:

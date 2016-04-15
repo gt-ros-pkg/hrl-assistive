@@ -437,6 +437,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         weight_sum += weight
         weight2_sum += weight**2
 
+    if abs(weight_sum)<1e-3: weight_sum=1e-3
     l_statePosterior   = g_post / weight_sum 
     l_likelihood_mean  = g_lhood / weight_sum 
 
