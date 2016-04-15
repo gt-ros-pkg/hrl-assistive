@@ -45,7 +45,7 @@ from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=False):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False):
 
     ## Parameters
     # data
@@ -59,6 +59,8 @@ def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=Fa
     # SVM
     
     #------------------------------------------
+    kFold_list = cv_dict['kFold_list']
+    kFold_list = kFold_list[:4]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -97,10 +99,10 @@ def tune_hmm(parameters, kFold_list, param_dict, processed_data_path, verbose=Fa
                 
             else:
                 # dim x sample x length
-                normalTrainData   = successData[:, normalTrainIdx, :] 
-                abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-                normalTestData    = successData[:, normalTestIdx, :] 
-                abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+                normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] 
+                abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] 
+                normalTestData    = cv_dict['successData'][:, normalTestIdx, :] 
+                abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] 
 
 
             if AE_dict['add_option'] is not None:
@@ -485,5 +487,5 @@ if __name__ == '__main__':
         print "no existing data file"
         sys.exit()
 
-    tune_hmm(parameters, kFold_list[:4], param_dict, save_data_path, verbose=True)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
