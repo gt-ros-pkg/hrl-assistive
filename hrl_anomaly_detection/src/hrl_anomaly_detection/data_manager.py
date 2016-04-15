@@ -637,8 +637,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         # Unimoda feature - AudioWrist ---------------------------------------
         if 'unimodal_audioWristRMS' in feature_list:
             audioWristRMS = d['audioWristRMSList'][idx]            
-            unimodal_audioWristRMS = audioWristRMS
-            
+            unimodal_audioWristRMS = audioWristRMS - np.mean(audioWristRMS[:4])
+
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
             if 'audioWristRMS' not in param_dict['feature_names']:
@@ -664,7 +664,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             if len(np.shape(ftForce)) > 1:
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
-                ## unimodal_ftForce_ind = ftForce[2:3,:]                
+                ## unimodal_ftForce_ind = ftForce[2:3,:]
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:4])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])

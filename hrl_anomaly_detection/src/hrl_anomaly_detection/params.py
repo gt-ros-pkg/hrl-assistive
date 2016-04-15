@@ -99,7 +99,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -149,7 +149,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         elif filterDim==4:
             # filtered dim 4
             save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
+              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_new'
             data_param_dict['downSampleSize'] = 150
             AE_param_dict['layer_sizes']      = [64,4]
             AE_param_dict['add_option']       = None
@@ -190,7 +190,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
     elif AE_param_dict['switch'] and AE_param_dict['method']=='ae':            
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 1.5}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 2.0}
     else:
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 2.0}
@@ -319,7 +319,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False }
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': True}
 
     if AE_param_dict['method']=='pca':
         # filtered dim 4

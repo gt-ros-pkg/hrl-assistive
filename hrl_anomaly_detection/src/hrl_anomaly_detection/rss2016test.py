@@ -218,7 +218,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                                 nLength=len(normalTestData[0,0]), ths_mult=0.0 )
+                                 nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
             dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
 
     print "----------------------------------------------------------------------------"
@@ -267,7 +267,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
             
-        plt.plot(log_ll[target_idx], 'k-', lw=3.0)
+        ## plt.plot(log_ll[target_idx], 'k-', lw=3.0)
         if decision_boundary_viz:
             plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
 
@@ -307,11 +307,11 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     # abnormal test data
     if useAbnormalTest:
         log_ll = []
-        ## exp_log_ll = []        
+        exp_log_ll = []        
         for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
-            ## exp_log_ll.append([])
+            exp_log_ll.append([])
 
             for j in range(startIdx, len(abnormalTestData[0][i])):
                 X = [x[i,:j] for x in abnormalTestData]                
@@ -323,9 +323,17 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
                 log_ll[i].append(logp)
 
-            # disp 
+                if decision_boundary_viz and i==target_idx:
+                    if j>=len(ll_logp[i]): continue
+                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
+                    exp_log_ll[i].append(exp_logp)
+
+
+            # disp
             plt.plot(log_ll[i], 'r-')
-            ## plt.plot(exp_log_ll[i], 'r*-')
+            plt.plot(exp_log_ll[i], 'r*-')
+        plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
 
 
     plt.ylim([min_logp, max_logp])

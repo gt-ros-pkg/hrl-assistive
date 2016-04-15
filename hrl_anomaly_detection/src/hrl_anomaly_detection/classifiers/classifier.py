@@ -119,8 +119,7 @@ class classifier(learning_base):
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.w_negative) \
-              +' -m 200'
+              +' -w-1 '+str(self.w_negative)
             try: self.dt = svm.svm_train(y, X, commands )
             except: return False
             return True
