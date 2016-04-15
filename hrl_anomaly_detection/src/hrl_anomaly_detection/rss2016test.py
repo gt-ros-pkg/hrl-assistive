@@ -1433,6 +1433,13 @@ if __name__ == '__main__':
                                                                          opt.bAERenew, opt.bHMMRenew,\
                                                                          rf_center, local_range)
         
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing_toolcase':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, opt.bDataRenew, \
+                                                                       opt.bAERenew, opt.bHMMRenew,\
+                                                                       rf_center, local_range)
+        
     else:
         print "Selected task name is not available."
         sys.exit()
