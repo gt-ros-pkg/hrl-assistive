@@ -1,12 +1,14 @@
 (define (domain pick_and_place)
  (:requirements :typing :conditional-effects)
- (:types 
-  gripper item - physob
+ (:types
+  item gripper - physobj
   location
  )
 
  (:constants right_hand - gripper
-             target - item
+             left_hand - gripper
+             right_hand_object - item
+             left_hand_object - item
              pick_loc - location
              place_loc - location
              hand_start_loc - location
@@ -16,7 +18,8 @@
  (:predicates
   (known ?l - location)
   (grasping ?g - gripper ?o - item)
-  (at ?o - physob ?l - location)
+  (at ?o - physobj ?l - location)
+  (can-grasp ?g - gripper)
  )
 
  (:action move-arm
@@ -30,6 +33,7 @@
  (:action grab
   :parameters (?g - gripper ?o - item ?l - location)
   :precondition (and (known ?l)
+                     (can-grasp ?g)
                      (at ?o ?l)
                      (at ?g ?l)
                      (forall (?obj - item) (not (grasping ?g ?obj)))

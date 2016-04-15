@@ -47,9 +47,9 @@ class MoveArmState(PDDLSmachState):
         self.location = location
         self.domain = domain
         self.tfl = tf.TransformListener()
-        if 'r' in hand:
+        if hand == 'RIGHT_HAND':
             self.mpc_pub = rospy.Publisher("/right_arm/haptic_mpc/goal_pose", PoseStamped)
-        else:
+        elif hand == 'LEFT_HAND':
             self.mpc_pub = rospy.Publisher("/left_arm/haptic_mpc/goal_pose", PoseStamped)
 
     def on_execute(self, ud):

@@ -120,11 +120,10 @@ RFH.initTaskMenu = function (divId) {
                                                 paramName:'location',
                                                 camera: RFH.mjpeg.cameraModel}));
     RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
-                                               arm: RFH.pr2.r_arm_cart,
-                                               gripper: RFH.pr2.r_gripper}));
-    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
-                                               arm: RFH.pr2.l_arm_cart,
-                                               gripper: RFH.pr2.l_gripper}));
+                                               r_arm: RFH.pr2.r_arm_cart,
+                                               r_gripper: RFH.pr2.r_gripper,
+                                               l_arm: RFH.pr2.l_arm_cart,
+                                               l_gripper: RFH.pr2.l_gripper}));
                                     
     // Start looking task by default
     $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();
