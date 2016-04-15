@@ -366,14 +366,13 @@ if __name__ == '__main__':
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        task     = opt.task    
         handFeatures = ['unimodal_audioWristRMS',\
                         'unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
         modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
                          'vision_change', 'pps']
-        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data'
         downSampleSize = 200
 
 
@@ -412,12 +411,11 @@ if __name__ == '__main__':
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        task     = opt.task 
         feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
                         'crossmodal_artagEEAng'] #'unimodal_audioPower'
         modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
 
-        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data'
         downSampleSize = 200
 
         data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
@@ -452,7 +450,6 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microwhite':
     
         subjects = ['gatsbii']
-        task     = opt.task
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range)
