@@ -120,7 +120,7 @@ class classifier(learning_base):
             import svmutil as svm
             ## print svm.__file__
 
-            ## X[:,0] *= 2.0            
+            X[:,0] *= 4.0            
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
@@ -209,10 +209,10 @@ class classifier(learning_base):
             if self.verbose:
                 print svm.__file__
 
-            ## if np.shape(X)==2:
-            ##     X[:,0] *= 2.0
-            ## else:
-            ##     X[0] *= 2.0
+            if np.shape(X)==2:
+                X[:,0] *= 4.0
+            else:
+                X[0] *= 4.0
 
             if type(X) is not list: X=X.tolist()
             if y is not None:
