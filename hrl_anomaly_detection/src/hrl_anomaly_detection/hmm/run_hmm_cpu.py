@@ -462,14 +462,27 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
 
 
 if __name__ == '__main__':
+
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
+                 help='type the desired task name')
+    opt, args = p.parse_args()
+    
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
-    subjects  = ['gatsbii']
-    task_name = 'pushing_microwhite'
-    raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task_name, False, \
-                                                                     False, False,\
-                                                                     rf_center, local_range)
+    if opt.task == 'pushing_microwhite':
+        subjects  = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
+                                                                         False, False,\
+                                                                         rf_center, local_range)
+    elif opt.task == 'pushing_microblack':
+    
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
+                                                                         False, False,\
+                                                                         rf_center, local_range)
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }
@@ -479,7 +492,7 @@ if __name__ == '__main__':
                   'cov': np.linspace(0.5,5.0,10) }
 
     #--------------------------------------------------------------------------------------
-    crossVal_pkl        = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
+    crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
         kFold_list  = d['kFoldList']

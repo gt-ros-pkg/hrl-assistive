@@ -134,8 +134,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print data_dict.keys()
         if ae_data:
             # Task-oriented raw features
-            successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
-            failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
+            successData     = data_dict['aeSuccessData'] 
+            failureData     = data_dict['aeFailureData']
             failureNameList = None
             param_dict      = data_dict.get('aeParamDict', [])
         else:        

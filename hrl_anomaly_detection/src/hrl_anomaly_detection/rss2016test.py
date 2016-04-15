@@ -1407,8 +1407,6 @@ if __name__ == '__main__':
     if opt.task == 'scooping':
         ## subjects = ['gatsbii']
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        task     = opt.task
-
         raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
                                                                 opt.bAERenew, opt.bHMMRenew,\
                                                                 rf_center, local_range)
@@ -1417,7 +1415,6 @@ if __name__ == '__main__':
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        task     = opt.task 
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
                                                                opt.bAERenew, opt.bHMMRenew,\
                                                                rf_center, local_range)
@@ -1425,8 +1422,14 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
         subjects = ['gatsbii']
-        task     = opt.task
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
+                                                                         opt.bAERenew, opt.bHMMRenew,\
+                                                                         rf_center, local_range)
+                                                                         
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing_microblack':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, opt.bDataRenew, \
                                                                          opt.bAERenew, opt.bHMMRenew,\
                                                                          rf_center, local_range)
         
@@ -1453,8 +1456,8 @@ if __name__ == '__main__':
         successData = True
         failureData = True
         
-        data_plot(subjects, task, raw_data_path, save_data_path,\
-                  downSampleSize=downSampleSize, \
+        data_plot(subjects, opt.task, raw_data_path, save_data_path,\
+                  downSampleSize=param_dict['data_param']['downSampleSize'], \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
                   successData=successData, failureData=failureData,\
@@ -1469,7 +1472,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
 
-        data_selection(subjects, task, raw_data_path, save_data_path,\
+        data_selection(subjects, opt.task, raw_data_path, save_data_path,\
                        downSampleSize=downSampleSize, \
                        local_range=local_range, rf_center=rf_center, \
                        success_viz=success_viz, failure_viz=failure_viz,\
@@ -1480,7 +1483,7 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
 
-        dm.getDataSet(subjects, task, raw_data_path, save_data_path,
+        dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
@@ -1491,27 +1494,27 @@ if __name__ == '__main__':
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 
     elif opt.bAEDataExtraction:
-        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
+        aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
         handFeature_viz = False
-        aeDataExtraction(subjects, task, raw_data_path, save_data_path, param_dict,\
+        aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\
                          verbose=opt.bVerbose)
 
 
     elif opt.bLikelihoodPlot:
-        likelihoodOfSequences(subjects, task, raw_data_path, save_data_path, param_dict,\
+        likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
                               useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               
     elif opt.bEvaluationAll:                
-        evaluation_all(subjects, task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose)
 
 
