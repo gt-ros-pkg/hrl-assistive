@@ -614,7 +614,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
                 ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
                 ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
-                
+
+
+            # add noise
+            if data_dict['handFeatures_noise']:
+                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"

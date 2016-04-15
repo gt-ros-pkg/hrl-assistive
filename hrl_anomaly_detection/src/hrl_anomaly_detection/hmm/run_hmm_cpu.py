@@ -139,6 +139,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
                 ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
                 
+            # add noise
+            if data_dict['handFeatures_noise']:
+                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
