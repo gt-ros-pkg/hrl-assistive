@@ -511,7 +511,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
     # parameters
-    startIdx    = 4
+    startIdx    = 20
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -858,6 +858,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             if method == 'svm': label='HMM-SVM'
             elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
             elif method == 'fixed': label='HMMs with a fixed threshold'
+            elif method == 'cssvm': label='HMM-CSSVM'
                 
             # visualization
             color = colors.next()

@@ -365,7 +365,8 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         AE_model = os.path.join(processed_data_path, 'ae_model_'+str(idx)+'.pkl')
         if os.path.isfile(AE_model):
             print "AE model exists: ", AE_model
-            ml.load_params(AE_model)
+            ## ml.load_params(AE_model)
+            ml.create_layers(load=True, filename=AE_model)
         else:
             if preTrainModel is not None:
                 ml.fit(X_train, save_obs={'save': False, 'load': True, 'filename': preTrainModel})
@@ -398,6 +399,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
         print np.shape(normalTrainData), np.shape(abnormalTrainData)
         print np.shape(normalTrainDataConv), np.shape(abnormalTrainDataConv)
         print np.shape(X_train)
+        print "Exit in pca data extraction"
         sys.exit()
 
         pca_model = os.path.join(processed_data_path, 'pca_model_'+str(idx)+'.pkl')

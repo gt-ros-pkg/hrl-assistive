@@ -72,7 +72,7 @@ class auto_encoder(learning_base):
         self.verbose = verbose
 
         self.nFeatures = layer_sizes[-1]
-
+        self.mlp = None
 
     def convert_vars(self):
         self.learning_rate       = np.float32(self.learning_rate)
