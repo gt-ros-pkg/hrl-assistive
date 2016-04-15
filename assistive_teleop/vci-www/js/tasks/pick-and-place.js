@@ -6,6 +6,7 @@ RFH.PickAndPlace = function (options) {
     self.gripper = options.gripper;
     self.side = self.gripper.side;
     self.name = options.name || 'pick_and_place_'+self.side;
+    self.domain = 'pick_and_place'
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -17,14 +18,14 @@ RFH.PickAndPlace = function (options) {
     ros.getMsgDetails('hrl_task_planning/PDDLState');
     self.pddlStateUpdatePub = new ROSLIB.Topic({
         ros: ros,
-        name: '/pddl_tasks/pick_and_place_'+self.side+'/state_updates',
+        name: '/pddl_tasks/pick_and_place/state_updates',
         messageType: '/hrl_task_planning/PDDLState'
     });
     self.pddlStateUpdatePub.advertise();
     
     self.updatePDDLState = function(pred_array){
         var msg = ros.composeMsg('hrl_task_planning/PDDLState');
-        msg.domain = self.name;
+        msg.domain = self.domain;
         msg.predicates = pred_array;
         self.pddlStateUpdatePub.publish(msg);
     };
@@ -42,7 +43,7 @@ RFH.PickAndPlace = function (options) {
                     RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
                 }
-                RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.name+'/KNOWN/'+planStepMsg.args[0]);
+                RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+planStepMsg.args[0]);
                 RFH.taskMenu.startTask('paramLocationTask');
                 break;
             case 'FORGET-LOCATION':
@@ -165,7 +166,7 @@ RFH.PickAndPlace = function (options) {
     self.setPoseToParam = function (ps_msg, location_name) {
         var poseParam = new ROSLIB.Param({
             ros: ros,
-            name: '/pddl_tasks/'+self.name+'/KNOWN/'+location_name
+            name: '/pddl_tasks/'+self.domain+'/KNOWN/'+location_name
         });
         console.log("Setting " + location_name + " pose as:", ps_msg);
         poseParam.set(ps_msg);
@@ -175,7 +176,7 @@ RFH.PickAndPlace = function (options) {
         for (var i=0; i<loc_list.length; i+=1) {
             var param = new ROSLIB.Param({
                 ros: ros,
-                name: '/pddl_tasks/'+self.name+'/KNOWN/'+loc_list[i]
+                name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
             });
             param.delete();
         }
@@ -184,10 +185,12 @@ RFH.PickAndPlace = function (options) {
     self.sendTaskGoal = function () {
         self.clearLocationParams(['HAND_START_LOC', 'PICK_LOC', 'PLACE_LOC', 'ELSEWHERE']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'pick_and_place_'+self.side+'-'+ new Date().getTime().toString();
-        msg.domain = 'pick_and_place_'+self.side;
+        msg.name = 'pick_and_place'+'-'+ new Date().getTime().toString();
+        msg.domain = 'pick_and_place';
+        var hand = self.side.toUpperCase()+'_HAND';
+        msg.objects = [hand +' - GRIPPER'];
         self.setPoseToParam(self.arm.getState(), 'HAND_START_LOC');
-        self.updatePDDLState(['(NOT (AT TARGET PLACE_LOC))','(AT TARGET PICK_LOC)']);
+        self.updatePDDLState(['(NOT (AT TARGET PLACE_LOC))', '(AT TARGET PICK_LOC)']);
         if (!self.gripper.getGrasping()) {
             msg.init.push('(AT TARGET PICK_LOC)');
         }

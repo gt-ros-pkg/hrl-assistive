@@ -16,6 +16,9 @@ class ParameterMonitor(object):
         self.params = ["/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg) for arg in self.args]
         self.state = []
         self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=10, latch=True)
+        rospy.loginfo("[%s] Parameter monitor for %s ready.", rospy.get_name(), self.domain)
+        for param in self.params:
+            rospy.loginfo("Monitoring %s", param)
 
     def run(self, checkrate=4):
         rate = rospy.Rate(checkrate)
@@ -30,11 +33,13 @@ class ParameterMonitor(object):
             param = "/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg)
             if rospy.has_param(param):
                 if pred not in self.state:
+                    # print "Found param %s, adding pred %s" % (param, pred)
                     self.state.append(pred)
                     pub = True
             else:
                 try:
                     self.state.remove(pred)
+                    # print "Lost param %s, removing pred %s" % (param, pred)
                     pred.negate()
                     self.state.append(pred)
                     pub = True
