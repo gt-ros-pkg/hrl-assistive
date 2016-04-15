@@ -108,9 +108,14 @@ class classifier(learning_base):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
-
         # saved file check.
 
+        if 'svm' in self.method:
+            # normalize and save param
+            self.x_max = np.amax(X, axis=0)
+            self.x_min = np.amin(X, axis=0)
+            X = (X-self.x_min)/(self.x_max-self.x_min)
+            
         if self.method == 'svm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
@@ -196,6 +201,8 @@ class classifier(learning_base):
 
             if self.verbose:
                 print svm.__file__
+
+            X = (X-self.x_min)/(self.x_max-self.x_min)
             if type(X) is not list: X=X.tolist()
             if y is not None:
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)

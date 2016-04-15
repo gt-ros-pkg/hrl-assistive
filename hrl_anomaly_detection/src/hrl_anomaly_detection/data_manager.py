@@ -789,6 +789,29 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 param_dict['feature_names'].append('targetEEDist')
 
 
+        # Crossmodal feature - relative Velocity --------------------------
+        if 'crossmodal_targetEEVel' in feature_list:
+            kinEEPos     = d['kinEEPosList'][idx]
+            kinTargetPos  = d['kinTargetPosList'][idx]
+
+            dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
+            dist = dist - np.mean(dist[:4])
+
+            print np.shape(dist)
+            vel = dist[1:]-dist[:-1]
+            ## vel =
+            sys.exit()
+            
+            crossmodal_targetEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_targetEEDist.append( dist[time_idx])
+
+            if dataSample is None: dataSample = np.array(crossmodal_targetEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_targetEEDist])
+            if 'targetEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetEEDist')
+
+
         # Crossmodal feature - relative angle --------------------------
         if 'crossmodal_targetEEAng' in feature_list:                
             kinEEQuat    = d['kinEEQuatList'][idx]
@@ -966,7 +989,9 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
             
             relativePose = np.array(relativePose).T[:-1]
-            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
+            print np.shape(relativePose)
+            print np.shape(np.mean(relativePose[:,:startOffsetSize], axis=1))
+            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
