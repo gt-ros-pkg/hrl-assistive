@@ -59,7 +59,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     # SVM
     
     #------------------------------------------
-    kFold_list = cv_dict['kFold_list']
+    kFold_list = cv_dict['kFoldList']
     kFold_list = kFold_list[:4]
 
     # sample x dim x length
