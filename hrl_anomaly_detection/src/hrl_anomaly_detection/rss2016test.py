@@ -787,7 +787,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization
+    # parallelization 
     r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict ) \
@@ -952,7 +952,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
     # data preparation
     if method.find('svm')>=0:
-        scaler = preprocessing.StandardScaler()
+        scaler = preprocessing.StandardScaler(with_std=False)
         ## scaler = preprocessing.scale()
         X_scaled = scaler.fit_transform(X_train_org)
     else:
