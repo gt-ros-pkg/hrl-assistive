@@ -162,37 +162,39 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                          ##global_data=True,\
                                          renew=data_renew, save_pkl=all_data_pkl)
 
-        # data set
-        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-                                            '_'+str(local_range))
-        _, success_data_dict = util.loadData(success_list, isTrainingData=True,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=success_data_pkl)
+        ## # data set
+        ## success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
+        ##                                     '_'+str(local_range))
+        ## _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+        ##                                      downSampleSize=downSampleSize,\
+        ##                                      local_range=local_range, rf_center=rf_center,\
+        ##                                      renew=data_renew, save_pkl=success_data_pkl)
 
-        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-                                            '_'+str(local_range))
-        _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
-                                             downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=failure_data_pkl)
+        ## failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
+        ##                                     '_'+str(local_range))
+        ## _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+        ##                                      downSampleSize=downSampleSize,\
+        ##                                      local_range=local_range, rf_center=rf_center,\
+        ##                                      renew=data_renew, save_pkl=failure_data_pkl)
 
-        # Task-oriented hand-crafted features
-        allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                                 cut_data=cut_data)
-        successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
-        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
+        ## # Task-oriented hand-crafted features
+        ## allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+        ##                                          cut_data=cut_data)
+        ## successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+        ##                                          param_dict=param_dict, cut_data=cut_data)
+        ## failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+        ##                                          param_dict=param_dict, cut_data=cut_data)
 
-        data_dict = {}
-        data_dict['allData']      = allData = np.array(allData)
-        data_dict['successData']  = successData = np.array(successData)
-        data_dict['failureData']  = failureData = np.array(failureData)
-        data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['param_dict'] = param_dict
-
-        if ae_data and rawFeatures is not None:
+        ## data_dict = {}
+        ## data_dict['allData']      = allData = np.array(allData)
+        ## data_dict['successData']  = successData = np.array(successData)
+        ## data_dict['failureData']  = failureData = np.array(failureData)
+        ## data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
+        ## data_dict['param_dict'] = param_dict
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print rawFeatures
+        
+        if rawFeatures is not None: #ae_data and 
             # Task-oriented raw features
             ae_successData, ae_failureData, ae_param_dict = \
               extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
@@ -916,6 +918,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     dataList = []
     dataDim  = []
     nSample  = len(d['timesList'])
+    startOffsetSize = 4
     for idx in xrange(nSample): # each sample
 
         timeList     = d['timesList'][idx]
@@ -939,6 +942,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
 
             relativePose = np.array(relativePose).T[:-1]
+            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -962,8 +966,9 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                                                 kinEEQuat[:,time_idx].tolist() )
                 diffFrame  = endFrame*startFrame.Inverse()                                
                 relativePose.append( dh.KDLframe2List(diffFrame) )
-
+            
             relativePose = np.array(relativePose).T[:-1]
+            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -990,6 +995,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
 
             relativePose = np.array(relativePose).T[:-1]
+            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
 
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -1020,6 +1026,9 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             ftForce  = d['ftForceList'][idx]
             ftTorque = d['ftTorqueList'][idx]
 
+            ftForce  -= np.mean(ftForce[:startOffsetSize,:], axis=1)
+            ftTorque -= np.mean(ftTorque[:startOffsetSize,:], axis=1)
+
             if dataSample is None: dataSample = np.array(ftForce)
             else: dataSample = np.vstack([dataSample, ftForce])
 
@@ -1032,6 +1041,9 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         if 'pps' in raw_feature_list:
             ppsLeft  = d['ppsLeftList'][idx]
             ppsRight = d['ppsRightList'][idx]
+
+            ppsLeft  -= np.mean(ppsLeft[:startOffsetSize,:], axis=1)
+            ppsRight -= np.mean(ppsRight[:startOffsetSize,:], axis=1)
 
             if dataSample is None: dataSample = ppsLeft
             else: dataSample = np.vstack([dataSample, ppsLeft])

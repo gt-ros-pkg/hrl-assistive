@@ -503,6 +503,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            ae_data=AE_dict['switch'],\
                            data_ext=data_dict['lowVarDataRemv'], \
                            handFeatures=data_dict['handFeatures'], \
+                           rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew)
                            

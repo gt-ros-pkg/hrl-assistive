@@ -170,6 +170,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ## ## testData_y = [1.0]*len( normalTestData[0] )
                 ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
                 ## scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
+                print ret, param
                 scores.append(ret)
 
         mean_list.append( np.mean(scores) )
