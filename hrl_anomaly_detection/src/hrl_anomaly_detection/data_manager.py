@@ -776,6 +776,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
+            dist = dist - np.mean(dist[:4])
             
             crossmodal_targetEEDist = []
             for time_idx in xrange(len(timeList)):
@@ -804,6 +805,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_targetEEAng.append( abs(diff_ang) )
+
+            crossmodal_targetEEAng = np.array(crossmodal_targetEEAng)
+            crossmodal_targetEEAng -= np.mean(crossmodal_targetEEAng[:4])
 
             ## fig = plt.figure()
             ## ## plt.plot(crossmodal_targetEEAng)

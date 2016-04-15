@@ -473,8 +473,8 @@ if __name__ == '__main__':
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [8.5],\
-                      'gamma': np.linspace(0.1, 8.0, 2).tolist(), \
+                      'cost': [1.,2.,3.,4.,5.],\
+                      'gamma': [2.0], \
                       'w_negative': [6.0] }
 
     else:
