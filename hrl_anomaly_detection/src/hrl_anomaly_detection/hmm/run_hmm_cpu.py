@@ -477,19 +477,28 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range)
+        parameters = {'nState': [25], 'scale': np.linspace(0.5,5.0,10), \
+                      'cov': np.linspace(0.5,5.0,10) }
+                                                                         
     elif opt.task == 'pushing_microblack':
-    
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range)
+        parameters = {'nState': [25], 'scale': np.linspace(0.5,5.0,10), \
+                      'cov': np.linspace(0.5,5.0,10) }
+    elif opt.task == 'pushing_toolcase':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
+                                                                       False, False,\
+                                                                       rf_center, local_range)
+        parameters = {'nState': [10, 15, 20], 'scale': np.linspace(0.5,5.0,5), \
+                      'cov': np.linspace(0.5,5.0,5) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
     ##               'cov': [4.0, 8.0] }
-    parameters = {'nState': [25], 'scale': np.linspace(0.5,5.0,10), \
-                  'cov': np.linspace(0.5,5.0,10) }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')

@@ -295,8 +295,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
 
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+                    ## 'crossmodal_targetEEAng',\
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
                    'ft' ]                                
