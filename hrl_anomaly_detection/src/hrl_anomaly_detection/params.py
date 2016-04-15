@@ -99,7 +99,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \

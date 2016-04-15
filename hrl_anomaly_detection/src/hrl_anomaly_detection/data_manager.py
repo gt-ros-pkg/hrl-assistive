@@ -131,8 +131,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
+        print data_dict.keys()
         if ae_data:
-            print data_dict.keys()
             # Task-oriented raw features
             successData     = data_dict.get('aeSuccessData', data_dict['trainingData']) 
             failureData     = data_dict.get('aeFailureData', data_dict['abnormalTestData'])
@@ -141,8 +141,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         else:        
             # Task-oriented hand-crafted features
             allData         = data_dict['allData']
-            successData     = data_dict.get('successData', data_dict['trainingData']) 
-            failureData     = data_dict.get('failureData', data_dict['abnormalTestData'])
+            successData     = data_dict['successData'] 
+            failureData     = data_dict['failureData']
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
