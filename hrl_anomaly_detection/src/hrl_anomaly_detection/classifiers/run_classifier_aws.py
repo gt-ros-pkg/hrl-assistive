@@ -107,7 +107,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         if os.path.isfile(modeling_pkl) is False:
             print "Please run evaluation all first to get hmm files."
             sys.exit()
-            
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
@@ -466,7 +465,7 @@ if __name__ == '__main__':
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-2, 0., nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
