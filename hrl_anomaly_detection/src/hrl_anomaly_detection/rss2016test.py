@@ -1501,12 +1501,12 @@ if __name__ == '__main__':
     elif opt.bFeaturePlot:
         success_viz = True
         failure_viz = True
-
+        
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=param_dict['AE']['switch'],\
+                      ae_data=False,\
                       data_ext=param_dict['data_param']['lowVarDataRemv'],\
                       cut_data=param_dict['data_param']['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\

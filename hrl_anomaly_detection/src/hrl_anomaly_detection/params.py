@@ -90,8 +90,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
 def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
 
     handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
+                    'crossmodal_artagEEDist',\
+                    'crossmodal_artagEEAng',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
@@ -203,7 +203,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'progress_param_range':np.linspace(-1., -10., nPoints), \
                       'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                       'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                      'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
+                      'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
+                      'svm1_param_range': np.logspace(-4, 1.2, nPoints)}        
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
@@ -215,8 +216,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
 
     handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
+                    'crossmodal_artagEEDist',\
+                    'crossmodal_artagEEAng',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
@@ -296,8 +297,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
 
     handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_targetEEDist',\
-                    'crossmodal_targetEEAng',\
+                    'crossmodal_artagEEDist',\
+                    'crossmodal_artagEEAng',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
