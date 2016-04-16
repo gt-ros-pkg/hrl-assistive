@@ -520,7 +520,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
     # parameters
-    startIdx    = 20
+    startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 

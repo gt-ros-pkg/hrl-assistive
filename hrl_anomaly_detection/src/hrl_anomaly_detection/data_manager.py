@@ -989,9 +989,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
             
             relativePose = np.array(relativePose).T[:-1]
-            print np.shape(relativePose)
-            print np.shape(np.mean(relativePose[:,:startOffsetSize], axis=1))
-            relativePose[:3,:] -= np.array(np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]).T
+            relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -1049,8 +1047,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             ftForce  = d['ftForceList'][idx]
             ftTorque = d['ftTorqueList'][idx]
 
-            ftForce  -= np.mean(ftForce[:startOffsetSize,:], axis=1)
-            ftTorque -= np.mean(ftTorque[:startOffsetSize,:], axis=1)
+            ftForce  -= np.array([np.mean(ftForce[:startOffsetSize,:], axis=1)]).T
+            ftTorque -= np.array([np.mean(ftTorque[:startOffsetSize,:], axis=1)]).T
 
             if dataSample is None: dataSample = np.array(ftForce)
             else: dataSample = np.vstack([dataSample, ftForce])
@@ -1065,8 +1063,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             ppsLeft  = d['ppsLeftList'][idx]
             ppsRight = d['ppsRightList'][idx]
 
-            ppsLeft  -= np.mean(ppsLeft[:startOffsetSize,:], axis=1)
-            ppsRight -= np.mean(ppsRight[:startOffsetSize,:], axis=1)
+            ppsLeft  -= np.array([np.mean(ppsLeft[:startOffsetSize,:], axis=1)]).T
+            ppsRight -= np.array([np.mean(ppsRight[:startOffsetSize,:], axis=1)]).T
 
             if dataSample is None: dataSample = ppsLeft
             else: dataSample = np.vstack([dataSample, ppsLeft])
