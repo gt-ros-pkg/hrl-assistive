@@ -493,6 +493,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
     opt, args = p.parse_args()
     
     rf_center     = 'kinEEPos'        
@@ -502,7 +504,7 @@ if __name__ == '__main__':
         subjects  = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range, dim=opt.dim)
         parameters = {'nState': [20, 25], 'scale': np.linspace(0.5,5.0,5), \
                       'cov': np.linspace(0.5,5.0,5) }
                                                                          
@@ -510,14 +512,14 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range, dim=opt.dim)
         parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,10), \
                       'cov': np.linspace(1.0,5.0,10) }
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range)
+                                                                       rf_center, local_range, dim=opt.dim)
         parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.01,10.0,5), \
                       'cov': np.linspace(0.5,3.0,3) }
 

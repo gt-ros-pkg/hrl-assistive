@@ -87,13 +87,28 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
 
     return raw_data_path, save_data_path, param_dict
 
-def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
+def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, dim=3):
 
-    handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_artagEEDist',\
-                    'crossmodal_artagEEAng',\
-                    'crossmodal_subArtagEEDist',\
-                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    dim = 2
+    if dim == 5:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'crossmodal_artagEEAng',\
+                        'crossmodal_subArtagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 4:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'crossmodal_subArtagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 3:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 2:
+        handFeatures = ['unimodal_ftForce',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+                        
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
                    'ft' ]                                
@@ -124,41 +139,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         data_param_dict['downSampleSize'] = 150
         AE_param_dict['layer_sizes']      = [64,4]
         AE_param_dict['nAugment']         = 0
-        
-    elif AE_param_dict['method']=='ae' and pre_train is False:
-        filterDim=5
-        if filterDim==5: 
-            # filtered dim 5
-            save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_5'
-            data_param_dict['downSampleSize'] = 200
-            AE_param_dict['layer_sizes'] = [64,5]
-            AE_param_dict['add_option'] = None
-            AE_param_dict['add_noise_option'] = []
-            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
-            AE_param_dict['learning_rate'] = 1e-6
-            
-        elif filterDim==1: 
-            # filtered dim 1
-            save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_1'
-            data_param_dict['downSampleSize'] = 150
-            AE_param_dict['layer_sizes'] = [64,8]
-            ## add_option = ['audioWristRMS']
-            AE_param_dict['add_option'] = ['ftForce_mag','audioWristRMS','targetEEDist', 'targetEEAng']
-            AE_param_dict['add_noise_option'] = ['ftForce_mag']
 
-        elif filterDim==4:
-            # filtered dim 4
-            save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_new'
-            data_param_dict['downSampleSize'] = 150
-            AE_param_dict['layer_sizes']      = [64,4]
-            AE_param_dict['add_option']       = None
-            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
-            AE_param_dict['learning_rate'] = 1e-6
-            
-    else:
+    elif AE_param_dict['method']=='ae' and pre_train:
         # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
@@ -167,6 +149,25 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         AE_param_dict['add_option']  = None
         AE_param_dict['learning_rate'] = 1e-6
         
+    else:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_'+str(dim)
+        data_param_dict['downSampleSize'] = 200
+        AE_param_dict['layer_sizes'] = [64,dim]
+        AE_param_dict['add_option'] = None
+        AE_param_dict['add_noise_option'] = []
+        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
+        AE_param_dict['learning_rate'] = 1e-6
+            
+            ## # filtered dim 1
+            ## save_data_path = os.path.expanduser('~')+\
+            ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_1'
+            ## data_param_dict['downSampleSize'] = 150
+            ## AE_param_dict['layer_sizes'] = [64,8]
+            ## ## add_option = ['audioWristRMS']
+            ## AE_param_dict['add_option'] = ['ftForce_mag','audioWristRMS','targetEEDist', 'targetEEAng']
+            ## AE_param_dict['add_noise_option'] = ['ftForce_mag']
+            
 
     if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag','targetEEDist','targetEEAng']:            
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
@@ -296,13 +297,29 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     return raw_data_path, save_data_path, param_dict
 
 
-def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
+def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, dim=3):
 
-    handFeatures = ['unimodal_ftForce',\
-                    'crossmodal_artagEEDist',\
-                    'crossmodal_artagEEAng',\
-                    'crossmodal_subArtagEEDist',\
-                    'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    
+    if dim == 5:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'crossmodal_artagEEAng',\
+                        'crossmodal_subArtagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 4:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'crossmodal_subArtagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 3:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_artagEEDist',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+    elif dim == 2:
+        handFeatures = ['unimodal_ftForce',\
+                        'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        
+                        
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
                    'ft' ]                                
@@ -334,23 +351,23 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         AE_param_dict['layer_sizes']      = [64,4]
         AE_param_dict['nAugment']         = 0
         
-    elif AE_param_dict['method']=='ae' and pre_train is False:
-        # filtered dim 5
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
-        data_param_dict['downSampleSize'] = 150
-        AE_param_dict['layer_sizes']      = [64,4]
-        AE_param_dict['add_option']       = None
-        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
-        AE_param_dict['learning_rate'] = 1e-6            
-    else:
+    elif AE_param_dict['method']=='ae' and pre_train:
         # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes'] = [64,5]
         AE_param_dict['add_option']  = None
-        AE_param_dict['learning_rate'] = 1e-6
+        AE_param_dict['learning_rate'] = 1e-6        
+    else:
+        # filtered dim 5
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
+        data_param_dict['downSampleSize'] = 200
+        AE_param_dict['layer_sizes']      = [64,dim]
+        AE_param_dict['add_option']       = None
+        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
+        AE_param_dict['learning_rate'] = 1e-6            
         
 
     if AE_param_dict['switch'] and AE_param_dict['method']=='pca':            
@@ -361,7 +378,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 1.5}
     else:
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.625, 'scale': 2.75}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 2.5}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.625, 'scale': 8.5}
 
 
