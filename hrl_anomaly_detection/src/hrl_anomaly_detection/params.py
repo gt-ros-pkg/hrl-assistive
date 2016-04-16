@@ -367,7 +367,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
 
     nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'progress_time_cluster', 'fixed', 'cssvm'
     ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
-                      'update_list': ['progress_time_cluster', 'fixed'],\
+                      'update_list': [],\
                       'nPoints': nPoints,\
                       'progress_param_range':np.linspace(4., 0., nPoints), \
                       'svm_param_range': np.logspace(-4, 0.2, nPoints),\
