@@ -454,7 +454,7 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range,dim=opt.dim)
         
         #temp
         nPoints        = 10

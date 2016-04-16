@@ -104,7 +104,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 2.75}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.875, 'scale': 3.875}
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
@@ -313,7 +313,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 7.5}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 10.}
     elif dim == 4:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
