@@ -498,9 +498,9 @@ if __name__ == '__main__':
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1., 2., 4.],\
-                      'gamma': [0.0001, 0.001, 0.01], \
-                      'w_negative': [8.0] }
+                      'cost': [4.],\
+                      'gamma': [0.005, 0.01, 0.015], \
+                      'w_negative': [8.0, 12., 16.] }
 
     else:
         print "Selected task name is not available."
