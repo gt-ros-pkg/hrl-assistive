@@ -353,6 +353,8 @@ if __name__ == '__main__':
                  help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
@@ -480,7 +482,7 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range)
+                                                                       rf_center, local_range,dim=opt.dim)
         
         #temp
         nPoints        = 10
@@ -499,8 +501,8 @@ if __name__ == '__main__':
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.0, 2.0, 4., 6.0, 8.0],\
-                      'gamma': [0.015], \
-                      'w_negative': [8.0] }
+                      'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
+                      'w_negative': [2.0, 4.0, 8.0] }
 
     else:
         print "Selected task name is not available."
