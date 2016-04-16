@@ -92,6 +92,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_artagEEDist',\
                     'crossmodal_artagEEAng',\
+                    'crossmodal_subArtagEEDist',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
@@ -99,7 +100,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -114,7 +115,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': False}
+                      'handFeatures_noise': True}
 
     if AE_param_dict['method']=='pca':
         # filtered dim 4
@@ -125,17 +126,18 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train is False:
-        filterDim=4
-        if filterDim==3: 
-            # filtered dim 3
+        filterDim=5
+        if filterDim==5: 
+            # filtered dim 5
             save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_3'
-            data_param_dict['downSampleSize'] = 150
-            AE_param_dict['layer_sizes'] = [64,8]
-            AE_param_dict['add_option'] = ['audioWristRMS']
+              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_5'
+            data_param_dict['downSampleSize'] = 200
+            AE_param_dict['layer_sizes'] = [64,5]
+            AE_param_dict['add_option'] = None
             AE_param_dict['add_noise_option'] = []
-            ## add_option = ['ftForce_mag']
-            ## add_noise_option = ['ftForce_mag']
+            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
+            AE_param_dict['learning_rate'] = 1e-6
+            
         elif filterDim==1: 
             # filtered dim 1
             save_data_path = os.path.expanduser('~')+\

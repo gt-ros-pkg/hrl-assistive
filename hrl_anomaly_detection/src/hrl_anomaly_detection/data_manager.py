@@ -851,6 +851,46 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             if 'artagEEAng' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('artagEEAng')
 
+
+        # Crossmodal feature - vision relative dist with sub vision target----
+        if 'crossmodal_subArtagEEDist' in feature_list:
+            kinEEPos  = d['kinEEPosList'][idx]
+            visionArtagPos = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
+
+            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
+            dist = dist - np.mean(dist[:startOffsetSize])
+            
+            crossmodal_artagEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_artagEEDist.append(dist[time_idx])
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEDist])
+            if 'subArtagEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('subArtagEEDist')
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_subArtagEEAng' in feature_list:                
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            visionArtagQuat = d['visionArtagQuatList'][idx][4:8]
+
+            crossmodal_artagEEAng = []
+            for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = visionArtagQuat[:,time_idx]
+
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_artagEEAng.append( abs(diff_ang) )
+
+            crossmodal_artagEEAng = np.array(crossmodal_artagEEAng)
+            crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
+            if 'subArtagEEAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('subArtagEEAng')
+
         # ----------------------------------------------------------------
         dataList.append(dataSample)
 
