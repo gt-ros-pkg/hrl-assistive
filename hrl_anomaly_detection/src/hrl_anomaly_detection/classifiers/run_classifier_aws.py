@@ -499,8 +499,8 @@ if __name__ == '__main__':
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [1.],\
-                      'gamma': [1.0, 2.0, 4.0, 8.0], \
-                      'w_negative': [1.0] }
+                      'gamma': [0.1, 0.4, 1.0], \
+                      'w_negative': [0.5, 1.0, 2.0] }
 
     else:
         print "Selected task name is not available."
