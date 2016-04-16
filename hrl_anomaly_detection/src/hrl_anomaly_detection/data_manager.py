@@ -991,7 +991,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             relativePose = np.array(relativePose).T[:-1]
             print np.shape(relativePose)
             print np.shape(np.mean(relativePose[:,:startOffsetSize], axis=1))
-            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]
+            relativePose[:3,:] -= np.array(np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]).T
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])

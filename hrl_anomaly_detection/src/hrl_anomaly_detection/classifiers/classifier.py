@@ -397,7 +397,8 @@ def symmetric_entropy(p,q):
     '''
     Return the sum of KL divergences
     '''
-    return entropy(p,np.array(q)+1e-6) + entropy(q,np.array(p)+1e-6)
+    ## return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
+    return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
 
 
 def findBestPosteriorDistribution(post, l_statePosterior):

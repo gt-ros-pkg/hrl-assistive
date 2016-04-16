@@ -198,7 +198,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
     nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'progress_time_cluster', 'fixed', 'cssvm'
     ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm' ],\
-                      'update_list': ['svm'],\
+                      'update_list': [],\
                       'nPoints': nPoints,\
                       'progress_param_range':np.linspace(-1., -10., nPoints), \
                       'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -358,15 +358,16 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     else:
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.625, 'scale': 0.5}
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.625, 'scale': 8.5}
 
 
     nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'progress_time_cluster', 'fixed', 'cssvm'
-    ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm' ],\
-                      'update_list': [],\
+    ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
+                      'update_list': ['progress_time_cluster', 'fixed'],\
                       'nPoints': nPoints,\
-                      'progress_param_range':np.linspace(0., -10., nPoints), \
+                      'progress_param_range':np.linspace(10., -30., nPoints), \
                       'svm_param_range': np.logspace(-4, 0.2, nPoints),\
-                      'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                      'fixed_param_range': np.linspace(10.0, -30.0, nPoints),\
                       'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
