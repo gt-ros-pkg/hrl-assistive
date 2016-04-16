@@ -1082,7 +1082,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=True,
                                                        downSampleSize=downSampleSize,\
@@ -1091,7 +1091,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, task+'_failure_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -1474,6 +1474,7 @@ if __name__ == '__main__':
         '''
         successData = True
         failureData = True
+        modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
         
         data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \

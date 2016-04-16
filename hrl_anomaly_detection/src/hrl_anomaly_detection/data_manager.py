@@ -146,9 +146,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
-        ## data_dict['successData'] = data_dict['trainingData']
-        ## data_dict['failureData'] = data_dict['abnormalTestData']
-        ## ut.save_pickle(data_dict, save_pkl)
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -198,14 +195,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
               extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
                              nFailure=len(failure_list), cut_data=cut_data)
 
-            data_dict['aeSuccessData'] = successData = np.array(ae_successData)
-            data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
+            data_dict['aeSuccessData'] = np.array(ae_successData)
+            data_dict['aeFailureData'] = np.array(ae_failureData)
             data_dict['aeParamDict']   = ae_param_dict
 
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        print data_dict.keys()
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            
         ut.save_pickle(data_dict, save_pkl)
 
     #-----------------------------------------------------------------------------
@@ -214,39 +207,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     # almost deprecated??
     feature_names = np.array(param_dict.get('feature_names', handFeatures))
-    ## if data_ext:
-    ##     # 1) exclude stationary data
-    ##     thres = 0.025
-    ##     n,m,k = np.shape(successData)
-    ##     diff_all_data = successData[:,:,1:] - successData[:,:,:-1]
-    ##     add_idx    = []
-    ##     remove_idx = []
-    ##     std_list = []
-    ##     for i in xrange(n):
-    ##         std = np.max(np.max(diff_all_data[i], axis=1))
-    ##         std_list.append(std)
-    ##         if  std < thres: remove_idx.append(i)
-    ##         else: add_idx.append(i)
-
-    ##     allData          = allData[add_idx]
-    ##     successData      = successData[add_idx]
-    ##     failureData      = failureData[add_idx]
-    ##     AddFeature_names    = feature_names[add_idx]
-    ##     RemoveFeature_names = feature_names[remove_idx]
-
-    ##     print "--------------------------------"
-    ##     print "STD list: ", std_list
-    ##     print "Add features: ", AddFeature_names
-    ##     print "Remove features: ", RemoveFeature_names
-    ##     print "--------------------------------"
-    ##     ## sys.exit()
-    ## else:
     AddFeature_names    = feature_names
-
 
     # -------------------- Display ---------------------
     fig = None
-    feature_names = np.array(param_dict.get('feature_names', handFeatures))
     if success_viz:
 
         fig = plt.figure()
@@ -286,14 +250,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     print "---------------------------------------------------"
     print "s/f data: ", np.shape(successData), np.shape(failureData)
-    ## print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
-
     return data_dict
-    ## return successData, failureData, aug_successData, aug_failureData, param_dict
-    ## if ae_data:
-    ## else:
-    ##     return allData, successData, failureData, failureNameList, param_dict
 
 
 def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, handParam, \
@@ -872,9 +830,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinEEQuat    = d['kinEEQuatList'][idx]
             visionArtagQuat = d['visionArtagQuatList'][idx][:4]
 
-            kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx][:3]
-            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
+            ## kinEEPos  = d['kinEEPosList'][idx]
+            ## visionArtagPos = d['visionArtagPosList'][idx][:3]
+            ## dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
             
             crossmodal_artagEEAng = []
             for time_idx in xrange(len(timeList)):
