@@ -518,7 +518,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
                                                                        rf_center, local_range)
-        parameters = {'nState': [20], 'scale': np.linspace(0.5,5.0,5), \
+        parameters = {'nState': [20], 'scale': np.linspace(0.01,10.0,20), \
                       'cov': np.linspace(0.5,5.0,5) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
