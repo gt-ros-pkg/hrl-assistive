@@ -145,15 +145,14 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
         data_param_dict['downSampleSize'] = 150
-        AE_param_dict['layer_sizes']      = [64,4]
+        AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
 
     elif AE_param_dict['method']=='ae' and pre_train:
-        # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
         data_param_dict['downSampleSize'] = 200
-        AE_param_dict['layer_sizes'] = [64,5]
+        AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
         AE_param_dict['learning_rate'] = 1e-6
         
