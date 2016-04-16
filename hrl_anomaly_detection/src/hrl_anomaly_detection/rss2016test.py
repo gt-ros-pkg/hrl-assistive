@@ -158,6 +158,9 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     normalTestData    = successData[:, normalTestIdx, :] 
     abnormalTestData  = failureData[:, abnormalTestIdx, :] 
     
+    # add noise
+    if data_dict['handFeatures_noise']:
+        normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
     # training hmm
     nEmissionDim = len(normalTrainData)
@@ -177,10 +180,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
+        testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                np.ones(len(abnormalTrainData[0])) ])
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
@@ -228,7 +231,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     target_idx = 1
 
     # training data
-    if useTrain:
+    if useTrain and False:
 
         log_ll = []
         exp_log_ll = []        
@@ -273,36 +276,34 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             
     # normal test data
-    ## if useNormalTest and False:
+    if useNormalTest:
 
-    ##     log_ll = []
-    ##     ## exp_log_ll = []        
-    ##     for i in xrange(len(normalTestData[0])):
+        log_ll = []
+        ## exp_log_ll = []        
+        for i in xrange(len(normalTestData[0])):
 
-    ##         log_ll.append([])
-    ##         ## exp_log_ll.append([])
+            log_ll.append([])
+            ## exp_log_ll.append([])
+            for j in range(startIdx, len(normalTestData[0][i])):
+                X = [x[i,:j] for x in normalTestData]                
+                logp = ml.loglikelihood(X)
+                log_ll[i].append(logp)
 
-    ##         for j in range(2, len(normalTestData[0][i])):
-    ##             X = [x[i,:j] for x in normalTestData]                
+                ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
+                ## log_ll[i].append(logp)
+                ## exp_log_ll[i].append(exp_logp)
 
-    ##             logp = ml.loglikelihood(X)
-    ##             log_ll[i].append(logp)
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
-    ##             ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
-    ##             ## log_ll[i].append(logp)
-    ##             ## exp_log_ll[i].append(exp_logp)
+            # disp 
+            if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
+            else: plt.plot(log_ll[i], 'b-')
 
-    ##         if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-    ##         if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+            ## plt.plot(exp_log_ll[i], 'r*-')
 
-    ##         # disp 
-    ##         if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
-    ##         else: plt.plot(log_ll[i], 'g-')
-
-    ##         ## plt.plot(exp_log_ll[i], 'r*-')
-
-    ##     if useNormalTest_color: 
-    ##         plt.legend(loc=3,prop={'size':16})
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
 
     # abnormal test data
     if useAbnormalTest:
@@ -627,7 +628,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
             # add noise
             if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
+                normalTrainData += np.random.normal(0.0, 0.05, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
@@ -838,8 +839,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             fnr_l = []
             delay_mean_l = []
             delay_std_l  = []
-
-            print np.shape(tp_ll), np.shape(fn_ll), nPoints
 
             for i in xrange(nPoints):
                 tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
@@ -1531,7 +1530,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
-                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               

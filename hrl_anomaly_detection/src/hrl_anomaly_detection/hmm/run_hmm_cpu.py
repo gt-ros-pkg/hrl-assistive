@@ -80,7 +80,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
                 d = ut.load_pickle(AE_proc_data)
-
+                
                 if AE_dict['filter']:
                     # NOTE: pooling dimension should vary on each auto encoder.
                     # Filtering using variances
@@ -141,7 +141,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 
             # add noise
             if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
+                normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
@@ -490,8 +490,8 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range)
-        parameters = {'nState': [25], 'scale': np.linspace(0.5,5.0,10), \
-                      'cov': np.linspace(0.5,5.0,10) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,10), \
+                      'cov': np.linspace(1.0,5.0,10) }
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
