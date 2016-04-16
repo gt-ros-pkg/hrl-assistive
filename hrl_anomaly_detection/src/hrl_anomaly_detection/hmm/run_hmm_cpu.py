@@ -161,17 +161,38 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
                 break
-            else:           
-                ## # evaluation:  dim x sample => sample x dim
-                ## ## testData_x = np.swapaxes( normalTestData, 0, 1)
-                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                ##                          np.swapaxes( abnormalTestData, 0, 1) ])
-                ## testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
-                                         
-                ## ## testData_y = [1.0]*len( normalTestData[0] )
-                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
-                ## scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
-                scores.append(ret)
+
+
+            #-----------------------------------------------------------------------------------------
+            # Classifier test data
+            #-----------------------------------------------------------------------------------------
+            testDataX = []
+            testDataY = []
+            for i in xrange(nEmissionDim):
+                temp = np.vstack([normalTestData[i], abnormalTestData[i]])
+                testDataX.append( temp )
+
+            testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                    np.ones(len(abnormalTestData[0])) ])
+
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                    [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                    ml.nEmissionDim, ml.nState,\
+                                                                    startIdx=nLength-3, \
+                                                                    bPosterior=False)
+                                                                    for i in xrange(len(testDataX[0])))
+            _, ll_classifier_test_idx, ll_logp = zip(*r)
+
+            norm_logp=[]
+            abnorm_logp=[]
+            for i in xrange(len(ll_logp)):
+
+                if np.nan in ll_logp[i]: continue                
+                if testDataY[i] > 0.0: abnorm_logp += ll_logp[i]
+                else:  norm_logp += ll_logp[i]
+                if np.isnan(np.mean(abnorm_logp)): continue
+
+                scores.append( abs(np.mean(norm_logp)-np.mean(abnorm_logp)) )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
