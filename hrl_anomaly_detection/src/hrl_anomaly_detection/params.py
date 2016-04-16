@@ -301,6 +301,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_artagEEDist',\
                     'crossmodal_artagEEAng',\
+                    'crossmodal_subArtagEEDist',\
                     'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
     rawFeatures = ['relativePose_artag_EE', \
                    'wristAudio', \
@@ -323,10 +324,10 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': False}
 
     if AE_param_dict['method']=='pca':
-        # filtered dim 4
+        # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
         data_param_dict['downSampleSize'] = 150
@@ -334,7 +335,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train is False:
-        # filtered dim 4
+        # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
         data_param_dict['downSampleSize'] = 150
@@ -343,11 +344,11 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
         AE_param_dict['learning_rate'] = 1e-6            
     else:
-        # filtered dim 4
+        # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
-        data_param_dict['downSampleSize'] = 150
-        AE_param_dict['layer_sizes'] = [64,4]
+        data_param_dict['downSampleSize'] = 200
+        AE_param_dict['layer_sizes'] = [64,5]
         AE_param_dict['add_option']  = None
         AE_param_dict['learning_rate'] = 1e-6
         

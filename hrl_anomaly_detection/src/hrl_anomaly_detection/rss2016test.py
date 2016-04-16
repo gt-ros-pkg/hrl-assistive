@@ -1514,12 +1514,14 @@ if __name__ == '__main__':
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 
     elif opt.bAEDataExtraction:
+        param_dict['AE']['switch']     = True
         aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
         handFeature_viz = False
+        param_dict['AE']['switch']     = True        
         aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\
