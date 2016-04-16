@@ -628,7 +628,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
             # add noise
             if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.05, np.shape(normalTrainData) ) 
+                normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
