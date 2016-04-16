@@ -89,7 +89,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
 
 def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, dim=3):
 
-    dim = 2
     if dim == 5:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
