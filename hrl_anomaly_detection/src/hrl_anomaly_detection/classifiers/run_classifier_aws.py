@@ -104,10 +104,15 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             modeling_pkl = os.path.join(processed_data_path, \
                                         'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
+        if os.path.isfile(modeling_pkl) is False:
+            print "Please run evaluation all first to get hmm files."
+            sys.exit()
+            
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
 
+        
         # sample x length x feature vector
         ll_classifier_train_X   = d['ll_classifier_train_X']
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
@@ -519,11 +524,11 @@ if __name__ == '__main__':
     print "max_param_idx = ", max_param_idx
     AE_param_dict = param_dict['AE']
     if AE_param_dict['switch'] == True and AE_param_dict['add_option'] is not None:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_rawftb.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_rawftb_'+str(opt.dim)+'.pkl')
     elif AE_param_dict['switch'] == True:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw_'+str(opt.dim)+'.pkl')
     else:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'.pkl')
         
     ##################################################################################################
     # cpu version
