@@ -181,7 +181,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True}
 
-    if AE_param_dict['method']=='pca':
+    if AE_param_dict['method']=='pca':      
         # filtered dim 4
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
@@ -364,7 +364,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 3.0, 'scale': 0.01}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 4.0, 'scale': 1.12}
         
                         
     rawFeatures = ['relativePose_artag_EE', \
@@ -395,7 +395,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
         data_param_dict['downSampleSize'] = 150
-        AE_param_dict['layer_sizes']      = [64,4]
+        AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train:
@@ -403,7 +403,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
         data_param_dict['downSampleSize'] = 200
-        AE_param_dict['layer_sizes'] = [64,5]
+        AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
         AE_param_dict['learning_rate'] = 1e-6        
     else:
