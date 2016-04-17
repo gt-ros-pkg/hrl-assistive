@@ -475,10 +475,10 @@ if __name__ == '__main__':
         ##               'cost': [1.0,2.0,4.0,8.0],\
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1., 4., 8.0],\
-                      'gamma': [1.0, 2.0, 8.0], \
-                      'w_negative': [0.1, 1.0, 2.0, 8.0] }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0,1,2], \
+                      'cost': [4., 8.0],\
+                      'gamma': [1.0, 2.0, 4.0], \
+                      'w_negative': [0.1, 1.0, 2.0, 4.0] }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
