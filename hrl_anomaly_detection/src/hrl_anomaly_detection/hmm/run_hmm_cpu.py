@@ -188,11 +188,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             for i in xrange(len(ll_logp)):
 
                 if np.nan in ll_logp[i]: continue                
+                if np.inf in ll_logp[i]: continue
+                if np.isnan(np.mean(ll_logp[i])): continue
+                
                 if testDataY[i] > 0.0: abnorm_logp += ll_logp[i]
                 else:  norm_logp += ll_logp[i]
-                if np.isnan(np.mean(abnorm_logp)): continue
-
-                # 
 
             abnorm_logp = np.sort(abnorm_logp)[::-1]
             scores.append( abs(np.mean(norm_logp)-np.mean(abnorm_logp[:len(abnorm_logp)/2])) )
@@ -508,8 +508,8 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range, dim=opt.dim)
-        parameters = {'nState': [20, 25], 'scale': np.linspace(0.5,5.0,5), \
-                      'cov': np.linspace(0.5,5.0,5) }
+        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(0.5,5.0,4), \
+                      'cov': np.linspace(0.5,5.0,4) }
                                                                          
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
