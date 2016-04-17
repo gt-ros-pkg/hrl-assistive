@@ -371,6 +371,9 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     if os.path.isfile(crossVal_pkl) and data_renew is False: 
         print "Loading cv data"
         d = ut.load_pickle(crossVal_pkl)
+        if 'aeSuccessData' not in d.keys():
+            print "Reload data!!"
+            sys.exit()
     else:
         d = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
@@ -380,11 +383,15 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
-                                          len(d['aeFailureData'][0]),\
-                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        if os.path.isfile(crossVal_pkl):
+            dd = ut.load_pickle(crossVal_pkl)
+            d['kFoldList'] = dd['kFoldList'] 
+        else:
+            kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
+                                              len(d['aeFailureData'][0]),\
+                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        d['kFoldList']       = kFold_list                                             
+            d['kFoldList']       = kFold_list                                             
         ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
