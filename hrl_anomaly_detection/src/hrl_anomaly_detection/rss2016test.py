@@ -158,10 +158,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     normalTestData    = successData[:, normalTestIdx, :] 
     abnormalTestData  = failureData[:, abnormalTestIdx, :] 
     
-    # add noise
-    if data_dict['handFeatures_noise']:
-        normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
-
     # training hmm
     nEmissionDim = len(normalTrainData)
     ## hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
@@ -169,7 +165,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    if data_dict['handFeatures_noise']:
+        ret = ml.fit(normalTrainData+\
+                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                     cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    else:
+        ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+        
     ## ths = threshold
     startIdx = 4
         
@@ -626,9 +628,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
 
 
-            # add noise
-            if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
+            ## # add noise
+            ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
@@ -644,7 +645,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             nLength      = len(normalTrainData[0][0]) - startIdx
 
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False) 
+            if data_dict['handFeatures_noise']:
+                ret = ml.fit(normalTrainData+\
+                             np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                             cov_mult=cov_mult, use_pkl=False)
+            else:
+                ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
             if ret == 'Failure': 
                 print "-------------------------"
@@ -738,6 +744,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## if len(l_Y) < 10:
                 ##     print ">> ", np.shape(ll_logp[i]), np.shape(ll_post[i])
                 ##     print i, np.shape(l_X), np.shape(l_Y)
+
 
             #-----------------------------------------------------------------------------------------
             d = {}

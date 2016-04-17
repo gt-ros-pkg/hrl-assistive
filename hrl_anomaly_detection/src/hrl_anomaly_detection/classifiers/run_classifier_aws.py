@@ -165,9 +165,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             Y_test.append(ll_classifier_test_Y[ii])
 
 
-        print np.shape(X_test)
-        print np.array(X_test)[:,0]
-
         data[file_idx]={}
         data[file_idx]['X_scaled']      = X_scaled
         data[file_idx]['Y_train_org']   = Y_train_org
@@ -258,12 +255,22 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
     dtc.set_params(**params)
 
     #temp 
-    dtc.set_params( cost=40.0 )
-    dtc.set_params( gamma=40.0 )
+    dtc.set_params( cost=1.0 )
+    dtc.set_params( gamma=1.0 )
     dtc.set_params( class_weight=1.0 )
-    dtc.set_params( w_negative=1008.0 )
+    dtc.set_params( w_negative=1.0 )
     print np.shape(X_scaled)
-    print X_scaled[0]
+    data = []
+    for count in xrange(len(X_scaled)/196):
+        data.append(X_scaled[count*196:count*196+196,0])
+
+    print np.shape(X_test)
+    print np.shape(data)
+    ## plt.figure()
+    ## plt.plot(np.array(data).T, 'b')
+    ## plt.plot(np.array(X_test)[:,:,0].T, 'r')
+    ## plt.show()
+    
     
     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
     if ret is False: return 'fit failed', -1
@@ -488,7 +495,7 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 3
+        nFiles = 9
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [1.0,2.0,4.0,8.0],\
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \

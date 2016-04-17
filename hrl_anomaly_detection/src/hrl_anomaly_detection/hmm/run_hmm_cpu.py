@@ -137,11 +137,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ##                                                          pooling_param_dict)
                 ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
                 ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
-                
-            # add noise
-            if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)                
 
             # scaling
             if verbose: print "scaling data"
@@ -157,7 +153,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             # scaling
             ml = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
+            if data_dict['handFeatures_noise']:
+                ret = ml.fit( normalTrainData+\
+                              np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                              cov_mult=cov_mult )
+            else:
+                ret = ml.fit( normalTrainData, cov_mult=cov_mult )
+                
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
                 break
