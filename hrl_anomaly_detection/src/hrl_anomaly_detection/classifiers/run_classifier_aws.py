@@ -342,7 +342,8 @@ def disp_score(results, method, nPoints):
         except:
             print "failed to get TPR and FPR"
             break
-        print fpr_l, tpr_l
+        print "tpr: ", tpr_l
+        print "fpr: ", fpr_l
 
         # get AUC
         ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
@@ -490,7 +491,7 @@ if __name__ == '__main__':
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.linspace(0.1, 1.0, nPoints),\
+                          'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
