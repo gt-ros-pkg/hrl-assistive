@@ -255,17 +255,17 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
     dtc.set_params(**params)
 
     #temp 
-    dtc.set_params( cost=1.0 )
-    dtc.set_params( gamma=1.0 )
-    dtc.set_params( class_weight=1.0 )
-    dtc.set_params( w_negative=1.0 )
-    print np.shape(X_scaled)
-    data = []
-    for count in xrange(len(X_scaled)/196):
-        data.append(X_scaled[count*196:count*196+196,0])
+    ## dtc.set_params( cost=1.0 )
+    ## dtc.set_params( gamma=1.0 )
+    ## dtc.set_params( class_weight=1.0 )
+    ## dtc.set_params( w_negative=1.0 )
+    ## print np.shape(X_scaled)
+    ## data = []
+    ## for count in xrange(len(X_scaled)/196):
+    ##     data.append(X_scaled[count*196:count*196+196,0])
 
-    print np.shape(X_test)
-    print np.shape(data)
+    ## print np.shape(X_test)
+    ## print np.shape(data)
     ## plt.figure()
     ## plt.plot(np.array(data).T, 'b')
     ## plt.plot(np.array(X_test)[:,:,0].T, 'r')
@@ -288,10 +288,10 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         X = X_test[ii]                
         est_y    = dtc.predict(X, y=Y_test[ii])
 
-        # temp
-        if Y_test[ii][0] < 1.0:
-            print est_y
-            sys.exit()
+        ## # temp
+        ## if Y_test[ii][0] < 1.0:
+        ##     print est_y
+        ##     sys.exit()
             
 
         for jj in xrange(len(est_y)):
