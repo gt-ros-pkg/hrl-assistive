@@ -110,7 +110,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
-
         
         # sample x length x feature vector
         ll_classifier_train_X   = d['ll_classifier_train_X']
@@ -164,6 +163,10 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
                 X = ll_classifier_test_X[ii]
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[ii])
+
+
+        print np.shape(X_test)
+        print np.array(X_test)[:,0]
 
         data[file_idx]={}
         data[file_idx]['X_scaled']      = X_scaled
@@ -253,6 +256,15 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         return "Not available method", -1, params
 
     dtc.set_params(**params)
+
+    #temp 
+    dtc.set_params( cost=40.0 )
+    dtc.set_params( gamma=40.0 )
+    dtc.set_params( class_weight=1.0 )
+    dtc.set_params( w_negative=1008.0 )
+    print np.shape(X_scaled)
+    print X_scaled[0]
+    
     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
     if ret is False: return 'fit failed', -1
 
@@ -269,8 +281,14 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         X = X_test[ii]                
         est_y    = dtc.predict(X, y=Y_test[ii])
 
+        # temp
+        if Y_test[ii][0] < 1.0:
+            print est_y
+            sys.exit()
+            
+
         for jj in xrange(len(est_y)):
-            if est_y[jj] > 0.0:
+            if est_y[jj] > 0.0:                
                 try:
                     delay_idx = idx_test[ii][jj]
                 except:
@@ -476,9 +494,9 @@ if __name__ == '__main__':
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [4.],\
+                      'cost': [1.],\
                       'gamma': [1.0], \
-                      'w_negative': [8.0] }
+                      'w_negative': [1.0] }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
@@ -547,7 +565,7 @@ if __name__ == '__main__':
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                data, param_dict, param, \
-                                                                               n_jobs=-1)
+                                                                               n_jobs=1)
                 end = time.time()
                 print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start
