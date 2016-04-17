@@ -496,14 +496,14 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 3
+        nFiles = 4
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [2.,3.,4.],\
         ##               'gamma': [1.5, 2.0], \
         ##               'w_negative': [1.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [4.,6.],\
-                      'gamma': [2.0, 3.0], \
+                      'cost': [3.,4.,5.],\
+                      'gamma': [1.5,2.0,2.5], \
                       'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
