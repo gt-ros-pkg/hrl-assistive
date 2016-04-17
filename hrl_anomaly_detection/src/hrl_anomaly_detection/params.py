@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
+def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, dim=4):
     
     handFeatures = ['unimodal_audioWristRMS',\
                     'unimodal_ftForce',\
@@ -22,7 +22,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
                       'downSampleSize': downSampleSize, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False}
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
-                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                      'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4, \
@@ -46,7 +46,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
+def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, dim=4):
     handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                     'crossmodal_artagEEDist', 'crossmodal_artagEEAng'] 
     rawFeatures = ['relativePose_target_EE', \
@@ -65,7 +65,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range):
                       'nNormalFold':4, 'nAbnormalFold':4,\
                       'feature_list': handFeatures, 'lowVarDataRemv': False}
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
-                      'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+                      'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
                       'filter':True, 'filterDim':4,\
@@ -205,10 +205,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         AE_param_dict['add_option'] = None
         AE_param_dict['add_noise_option'] = []
         AE_param_dict['learning_rate'] = 1e-6
-
-
-        if dim == 4:
-            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
+        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model_'+str(dim)+'.pkl')
             
         
             ## # filtered dim 1
