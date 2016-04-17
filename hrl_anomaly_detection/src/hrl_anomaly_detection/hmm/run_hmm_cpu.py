@@ -199,7 +199,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             abnorm_logp /= max_logp
 
             abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            scores.append( np.mean(-abnorm_logp + np.mean(norm_logp))
+            scores.append( np.mean(-abnorm_logp + np.mean(norm_logp)) )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
