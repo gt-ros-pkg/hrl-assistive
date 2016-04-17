@@ -192,7 +192,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 else:  norm_logp += ll_logp[i]
                 if np.isnan(np.mean(abnorm_logp)): continue
 
-                scores.append( abs(np.mean(norm_logp)-np.mean(abnorm_logp)) )
+                # 
+
+            abnorm_logp = np.sort(abnorm_logp)[::-1]
+            scores.append( abs(np.mean(norm_logp)-np.mean(abnorm_logp[:len(abnorm_logp)/2])) )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
