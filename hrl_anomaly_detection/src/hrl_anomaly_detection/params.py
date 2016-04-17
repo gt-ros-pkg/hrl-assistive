@@ -364,7 +364,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 7.5}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 3.0, 'scale': 0.01}
         
                         
     rawFeatures = ['relativePose_artag_EE', \

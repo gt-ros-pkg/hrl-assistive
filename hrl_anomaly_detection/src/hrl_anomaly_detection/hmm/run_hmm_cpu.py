@@ -530,7 +530,7 @@ if __name__ == '__main__':
                                                                        False, False,\
                                                                        rf_center, local_range, dim=opt.dim)
         parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.01,10.0,5), \
-                      'cov': np.linspace(0.5,3.0,3) }
+                      'cov': np.linspace(0.5,4.0,3) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }
