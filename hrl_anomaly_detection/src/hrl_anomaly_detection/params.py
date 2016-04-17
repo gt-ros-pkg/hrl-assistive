@@ -95,7 +95,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -103,7 +103,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8., nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.linspace(0.1, 1.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'svm1_param_range': np.logspace(-4, 1.2, nPoints)}        
@@ -113,7 +113,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 7.75}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -121,7 +121,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0, -8., nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.linspace(0.1, 1.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'svm1_param_range': np.logspace(-4, 1.2, nPoints)}        
@@ -130,7 +130,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 1.36, 'scale': 10.0}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -138,14 +138,14 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.linspace(0.1, 1.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'svm1_param_range': np.logspace(-4, 1.2, nPoints)}        
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 0.73, 'scale': 10.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -153,7 +153,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.linspace(0.1, 1.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'svm1_param_range': np.logspace(-4, 1.2, nPoints)}        
