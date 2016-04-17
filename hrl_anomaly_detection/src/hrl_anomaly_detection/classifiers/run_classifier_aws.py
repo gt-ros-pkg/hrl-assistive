@@ -478,7 +478,7 @@ if __name__ == '__main__':
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [4.],\
                       'gamma': [2.0], \
-                      'w_negative': [2.0] }
+                      'w_negative': [2.0, 8.0, 16.0] }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
