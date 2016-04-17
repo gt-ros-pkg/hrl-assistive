@@ -512,8 +512,8 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(0.5,5.0,4), \
-                      'cov': np.linspace(0.5,5.0,4) }
+        parameters = {'nState': [35], 'scale': np.linspace(1.0,10.0,5), \
+                      'cov': np.linspace(0.1,2.0,4) }
                                                                          
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
