@@ -504,7 +504,7 @@ if __name__ == '__main__':
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': [4.],\
                       'gamma': [2.0], \
-                      'w_negative': [0.5, 0.8, 1.0, 1.2] }
+                      'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
