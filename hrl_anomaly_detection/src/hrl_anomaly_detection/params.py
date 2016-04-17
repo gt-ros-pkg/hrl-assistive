@@ -164,7 +164,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -204,9 +204,13 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option'] = None
         AE_param_dict['add_noise_option'] = []
-        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
         AE_param_dict['learning_rate'] = 1e-6
+
+
+        if dim == 4:
+            AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model.pkl')
             
+        
             ## # filtered dim 1
             ## save_data_path = os.path.expanduser('~')+\
             ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_1'
@@ -253,7 +257,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     return raw_data_path, save_data_path, param_dict
 
 
-def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False):
+def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
+                         dim=3):
 
     handFeatures = ['unimodal_ftForce',\
                     'crossmodal_artagEEDist',\
