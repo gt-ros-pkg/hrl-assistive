@@ -150,6 +150,15 @@ def genPreTrainData(task_name, target_param_dict, raw_data_path, save_data_path,
     scaled_data = np.swapaxes(scaled_data, 0,1) 
     allDataConv = dm.getTimeDelayData(scaled_data, time_window)
 
+    # filtering? #temp
+    ## from sklearn.decomposition import KernelPCA
+    ## ml = KernelPCA(n_components=len(allDataConv[0]), kernel="rbf", fit_inverse_transform=True)
+    ## ml.fit(allDataConv)
+    ## ml.get_
+    
+    
+
+
     d = {}
     d['feature_info'] = dataDim
     d['feature_max'] = feature_max
@@ -184,7 +193,7 @@ if __name__ == '__main__':
                                             rf_center, local_range, pre_train=True, dim=opt.dim )
 
 
-    save_pkl     = os.path.join(save_data_path, opt.task+'_pretrain_data_'+str(opt.dim) )   
+    save_pkl     = os.path.join(save_data_path, opt.task+'_pretrain_data_'+str(opt.dim)+'_tw_'+str(time_window) )   
     d = genPreTrainData(opt.task, param_dict, raw_data_path, save_data_path, task_list, opt.bDataRenew, \
                     rf_center, local_range,\
                     time_window, save_pkl, dim=opt.dim)
