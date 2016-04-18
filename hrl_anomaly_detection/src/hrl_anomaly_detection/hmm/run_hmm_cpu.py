@@ -215,9 +215,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         std_list.append( np.std(scores) )
 
 
-    for i, param in enumerate(param_list):
+    idx_list = np.argsort(mean_list)
+
+    for i in enumerate(idx_list):
         print("%0.3f (+/-%0.03f) for %r"
-              % (mean_list[i], std_list[i], param))
+              % (mean_list[i], std_list[i], param_list[i]))
 
 
     ## # Get sorted results
