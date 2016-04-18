@@ -166,16 +166,16 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
             #-----------------------------------------------------------------------------------------
-            # Classifier test data
+            # Classifier train data
             #-----------------------------------------------------------------------------------------
             testDataX = []
             testDataY = []
             for i in xrange(nEmissionDim):
-                temp = np.vstack([normalTestData[i], abnormalTestData[i]])
+                temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
                 testDataX.append( temp )
 
-            testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                    np.ones(len(abnormalTestData[0])) ])
+            testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                    np.ones(len(abnormalTrainData[0])) ])
 
             r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
@@ -205,7 +205,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             for v in diff_vals:
                 if v is np.nan or v is np.inf: continue
                 diff_list.append(v)
-                
+
+            if len(diff_list)==0: continue
             ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
             scores.append( np.median(diff_list) )
 

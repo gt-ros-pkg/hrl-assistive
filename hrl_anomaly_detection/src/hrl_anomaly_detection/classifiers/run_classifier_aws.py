@@ -115,22 +115,35 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
         ll_classifier_train_X   = d['ll_classifier_train_X']
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
         ll_classifier_train_idx = d['ll_classifier_train_idx']
-        ll_classifier_test_X    = d['ll_classifier_test_X']  
-        ll_classifier_test_Y    = d['ll_classifier_test_Y']
-        ll_classifier_test_idx  = d['ll_classifier_test_idx']
+        ## ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
         nLength      = d['nLength']
         nPoints      = ROC_dict['nPoints']
+
+
+        # divide into training and param estimation set
+        train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
+        test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx] 
+
+        train_X = ll_classifier_train_X[train_idx]
+        train_Y = ll_classifier_train_Y[train_idx]
+        train_idx = ll_classifier_train_idx[train_idx]
+        test_X  = ll_classifier_test_X[test_idx]
+        test_Y  = ll_classifier_test_Y[test_idx]
+        test_idx = ll_classifier_test_idx[test_idx]
+
 
         # flatten the data
         X_train_org = []
         Y_train_org = []
         idx_train_org = []
 
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):                
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
+        for i in xrange(len(train_X)):
+            for j in xrange(len(train_X[i])):                
+                X_train_org.append(train_X[i][j])
+                Y_train_org.append(train_Y[i][j])
+                idx_train_org.append(train_idx[i][j])
 
         # training data preparation
         if 'svm' in method:
@@ -143,26 +156,19 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
 
         # test data preparation
         X_test = []
-        Y_test = [] #ll_classifier_test_Y
-        idx_test = ll_classifier_test_idx
-        for ii in xrange(len(ll_classifier_test_X)):
-            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
-              or np.nan in ll_classifier_test_X[ii][0]:
+        Y_test = []
+        idx_test = test_idx
+        for ii in xrange(len(test_X)):
+            if np.nan in test_X[ii] or len(test_X[ii]) == 0 \
+              or np.nan in test_X[ii][0]:
                 continue
 
-            ## flag = False
-            ## for X in ll_classifier_test_X[ii]:
-            ##     if np.nan in X:
-            ##         flag = True
-            ##         break
-            ## if flag is True: continue
-            
             if 'svm' in method:
-                X = scaler.transform(ll_classifier_test_X[ii])                                
+                X = scaler.transform(test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
-                X = ll_classifier_test_X[ii]
+                X = test_X[ii]
             X_test.append(X)
-            Y_test.append(ll_classifier_test_Y[ii])
+            Y_test.append(test_Y[ii])
 
 
         data[file_idx]={}
