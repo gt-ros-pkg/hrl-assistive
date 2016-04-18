@@ -118,7 +118,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 2.0, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 1.36, 'scale': 7.75}
         else:
-            SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 2.0, 'cost': 4.0}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 5.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -150,7 +150,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 2.0, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2.0, 'cost': 5.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 1.36, 'scale': 7.75}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
