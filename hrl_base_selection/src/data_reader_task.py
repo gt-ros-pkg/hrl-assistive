@@ -12,7 +12,7 @@ import rospy
 from geometry_msgs.msg import PoseArray, PoseStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
-from data_reader import DataReader
+from data_reader_cma import DataReader
 
 
 class DataReader_Task(object):
@@ -306,7 +306,7 @@ if __name__ == "__main__":
         print 'Visualizing the goals for the task', task, ' only.'
         rospy.spin()
     else:
-        for task in ['face_wiping']:
+        for task in ['shaving']:
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()

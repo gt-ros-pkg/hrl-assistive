@@ -235,6 +235,11 @@ class ConfigVisualize(object):
             v = self.robot[config_num].GetActiveDOFValues()
             v[self.robot[config_num].GetJoint('l_shoulder_pan_joint').GetDOFIndex()] = 3.14/2
             v[self.robot[config_num].GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
+            v[self.robot[config_num].GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = -0.52
+            v[self.robot[config_num].GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
+            v[self.robot[config_num].GetJoint('r_forearm_roll_joint').GetDOFIndex()] = 0
+            v[self.robot[config_num].GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0
+            v[self.robot[config_num].GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0
             v[self.robot[config_num].GetJoint('l_gripper_l_finger_joint').GetDOFIndex()] = .54
             v[self.robot[config_num].GetJoint('torso_lift_joint').GetDOFIndex()] = .3
             self.robot[config_num].SetActiveDOFValues(v)
