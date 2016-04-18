@@ -385,6 +385,9 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
+
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,

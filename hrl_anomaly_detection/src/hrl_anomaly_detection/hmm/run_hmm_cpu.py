@@ -200,8 +200,14 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             norm_logp /= max_logp
             abnorm_logp /= max_logp
 
-            abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            scores.append( np.mean(-abnorm_logp + np.mean(norm_logp)) )
+            diff_vals = -abnorm_logp + np.mean(norm_logp)
+            diff_list = []
+            for v in diff_vals:
+                if v is np.nan or v is np.inf: continue
+                diff_list.append(v)
+                
+            ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
+            scores.append( np.median(diff_list) )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
@@ -504,6 +510,8 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
     opt, args = p.parse_args()
     
     rf_center     = 'kinEEPos'        
@@ -513,7 +521,8 @@ if __name__ == '__main__':
         subjects  = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range, dim=opt.dim)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.AESwitch, dim=opt.dim)
         parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
                       'cov': np.linspace(0.1,2.0,4) }
                                                                          
@@ -521,15 +530,17 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range, dim=opt.dim)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.AESwitch, dim=opt.dim)
         parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,10), \
                       'cov': np.linspace(1.0,5.0,10) }
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range, dim=opt.dim)
-        parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.01,10.0,10), \
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=opt.AESwitch, dim=opt.dim)
+        parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.5,10.0,10), \
                       'cov': np.linspace(0.5,4.0,4) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
