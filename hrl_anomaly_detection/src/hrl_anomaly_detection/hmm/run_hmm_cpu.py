@@ -196,7 +196,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 if testDataY[i] > 0.0: abnorm_logp += ll_logp[i]
                 else:  norm_logp += ll_logp[i]
 
-            max_logp = np.amax(ll_logp)
+            max_logp = np.amex(np.amax(norm_logp), np.amax(abnorm_logp)) 
             norm_logp /= max_logp
             abnorm_logp /= max_logp
 
