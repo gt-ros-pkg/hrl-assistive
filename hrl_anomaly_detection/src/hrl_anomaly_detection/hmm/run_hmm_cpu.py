@@ -153,7 +153,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             # scaling
             ml = hmm.learning_hmm( param['nState'], nEmissionDim )
-            if (data_dict['handFeatures_noise'] and AE_dict['switch']):
+            if (data_dict['handFeatures_noise'] and AE_dict['switch'] is False):
                 ret = ml.fit( normalTrainData+\
                               np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                               cov_mult=cov_mult )
