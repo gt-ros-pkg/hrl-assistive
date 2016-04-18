@@ -130,12 +130,12 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2.0, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.7, 'gamma': 1.5, 'cost': 3.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 1.36, 'scale': 10.0}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
@@ -164,7 +164,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': AE_renew, 'switch': True, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -364,7 +364,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 4.0, 'scale': 1.12}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.67, 'scale': 0.01}
         
                         
     rawFeatures = ['relativePose_artag_EE', \
@@ -407,7 +407,6 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         AE_param_dict['add_option']  = None
         AE_param_dict['learning_rate'] = 1e-6        
     else:
-        # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
@@ -435,7 +434,5 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                       'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-
-
 
     return raw_data_path, save_data_path, param_dict
