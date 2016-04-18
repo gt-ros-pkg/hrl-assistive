@@ -522,7 +522,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range, \
-                                                                         ae_swtch=opt.AESwitch, dim=opt.dim)
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
                       'cov': np.linspace(0.1,2.0,4) }
                                                                          
@@ -531,7 +531,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range, \
-                                                                         ae_swtch=opt.AESwitch, dim=opt.dim)
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,10), \
                       'cov': np.linspace(1.0,5.0,10) }
     elif opt.task == 'pushing_toolcase':
@@ -539,7 +539,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
                                                                        rf_center, local_range, \
-                                                                       ae_swtch=opt.AESwitch, dim=opt.dim)
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.5,10.0,10), \
                       'cov': np.linspace(0.5,4.0,4) }
 
