@@ -123,15 +123,16 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
 
 
         # divide into training and param estimation set
+        import random
         train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
         test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx] 
 
-        train_X = ll_classifier_train_X[train_idx]
-        train_Y = ll_classifier_train_Y[train_idx]
-        train_idx = ll_classifier_train_idx[train_idx]
-        test_X  = ll_classifier_test_X[test_idx]
-        test_Y  = ll_classifier_test_Y[test_idx]
-        test_idx = ll_classifier_test_idx[test_idx]
+        train_X = np.array(ll_classifier_train_X)[train_idx]
+        train_Y = np.array(ll_classifier_train_Y)[train_idx]
+        train_idx = np.array(ll_classifier_train_idx)[train_idx]
+        test_X  = np.array(ll_classifier_train_X)[test_idx]
+        test_Y  = np.array(ll_classifier_train_Y)[test_idx]
+        test_idx = np.array(ll_classifier_train_idx)[test_idx]
 
 
         # flatten the data
@@ -584,7 +585,7 @@ if __name__ == '__main__':
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                data, param_dict, param, \
-                                                                               n_jobs=1)
+                                                                               n_jobs=-1)
                 end = time.time()
                 print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start
