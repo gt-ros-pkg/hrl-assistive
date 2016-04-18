@@ -487,7 +487,8 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range,dim=opt.dim)
+                                                                         rf_center, local_range,\
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
         nPoints        = 10
@@ -515,7 +516,8 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range,dim=opt.dim)
+                                                                       rf_center, local_range,\
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
         nPoints        = 10
