@@ -1391,6 +1391,8 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -1451,21 +1453,24 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
                                                                          opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, dim=opt.dim)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
                                                                          
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, opt.bDataRenew, \
                                                                          opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, dim=opt.dim)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, opt.bDataRenew, \
                                                                        opt.bAERenew, opt.bHMMRenew,\
-                                                                       rf_center, local_range, dim=opt.dim)
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     else:
         print "Selected task name is not available."
