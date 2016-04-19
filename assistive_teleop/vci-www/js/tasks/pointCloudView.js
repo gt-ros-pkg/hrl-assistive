@@ -37,6 +37,7 @@ RFH.PointCloudView = function(options){
     self.pcGeom.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     self.pointCloud = new THREE.Points(self.pcGeom, material);
+    self.pointCloud.userData.interactive = false;
     self.pointCloud.frameSubscribed = false;
     self.pointCloud.frameReceived = false;
     self.pointCloud.matrixAutoUpdate = false;
