@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="mount_loc" default="top"/>
+  <arg name="arm" default="r" />
+
+  <include file='$(find hrl_realsense_camera)/launch/$(mount_loc)_mount_frame.launch' />
+  <!--include file='$(find hrl_realsense_camera)/launch/$(mount_loc)_mount_frame.launch' /-->
+
+
+</launch>
