@@ -7,8 +7,8 @@
         </group>
     </group>
     <node name='known_loc_monitor' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place KNOWN -a HAND_START_LOC PICK_LOC PLACE_LOC ELSEWHERE"/>
-    <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place RIGHT_HAND r_gripper_tool_frame -d 0.1"/>
-    <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place LEFT_HAND l_gripper_tool_frame -d 0.1"/>
+    <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place RIGHT_HAND r_gripper_tool_frame -d 0.2"/>
+    <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen" args="pick_and_place LEFT_HAND l_gripper_tool_frame -d 0.2"/>
     <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s right"/>
     <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s left"/>
 

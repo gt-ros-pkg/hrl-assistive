@@ -14,8 +14,11 @@ RFH.EEDisplay = function (options) {
     var qx_rot = new THREE.Quaternion(1,0,0,0);  // Quaternion of 180 deg x-axis rotation, used to flip right finger models
 
     var currentGripper = new THREE.Object3D();
+    currentGripper.userData.interactive = false;
     var previewGripper = new THREE.Object3D();
+    previewGripper.userData.interactive = false;
     var goalGripper = new THREE.Object3D();
+    goalGripper.userData.interactive = false;
     var allGrippers = [currentGripper, previewGripper, goalGripper];
     RFH.viewer.scene.add(currentGripper, previewGripper, goalGripper);
 
