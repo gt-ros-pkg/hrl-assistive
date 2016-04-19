@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import os, sys, copy
+import os, sys, copy, time
 
 # visualization
 import matplotlib
@@ -46,6 +46,7 @@ import hrl_lib.util as ut
 from scipy.stats import norm, entropy
 from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
+from sklearn import metrics
 
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
@@ -108,23 +109,27 @@ class classifier(learning_base):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
-        # saved file check.
+        # get custom precomputed kernel for svms
+        ## if 'svm' in self.method:
+        ##     self.X_train=X
+        ##     ## y_train=y
+        ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
-        if 'svm' in self.method:
-            # normalize and save param
-            self.x_max = np.amax(X, axis=0)
-            self.x_min = np.amin(X, axis=0)
-            X = (X-self.x_min)/(self.x_max-self.x_min)
-            
         if self.method == 'svm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             ## print svm.__file__
+
+            ## X[:,0] *= 1.5            
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
+              ## +' -t 4'
+              
+              
+            ## try: self.dt = svm.svm_train(y, [list(row) for row in K_train], commands )
             try: self.dt = svm.svm_train(y, X, commands )
             except: return False
             return True
@@ -192,6 +197,8 @@ class classifier(learning_base):
         '''
 
         if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm':
+            ## K_test = custom_kernel(X, self.X_train, gamma=self.gamma)
+            
             if self.method == 'svm':
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
@@ -202,11 +209,17 @@ class classifier(learning_base):
             if self.verbose:
                 print svm.__file__
 
-            X = (X-self.x_min)/(self.x_max-self.x_min)
+            ## if np.shape(X)==2:
+            ##     X[:,0] *= 1.5
+            ## else:
+            ##     X[0] *= 1.5
+
             if type(X) is not list: X=X.tolist()
             if y is not None:
+                ## p_labels, _, p_vals = svm.svm_predict(y, [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
+                ## p_labels, _, p_vals = svm.svm_predict([0]*len(X), [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         
@@ -327,7 +340,7 @@ class classifier(learning_base):
 # functions for distances
 ####################################################################
 
-def custom_kernel(x1,x2):
+def custom_kernel(x1,x2, gamma=1.0):
     '''
     Similarity estimation between (loglikelihood, state distribution) feature vector.
     kernel must take as arguments two matrices of shape (n_samples_1, n_features), (n_samples_2, n_features)
@@ -336,35 +349,22 @@ def custom_kernel(x1,x2):
 
     if len(np.shape(x1)) == 2: 
 
-        kernel_mat = np.zeros((len(x1), len(x2)))
-
-        r = Parallel(n_jobs=4)(delayed(customDist)(i, j, x1[i,1:], x2[j,1:]) for i in xrange(len(x1)) for j in xrange(len(x2)))
-        
-        ## l_i, l_j, l_dist = zip(*r)
-        for i,j,dist in zip(r):
-            kernel_mat[i,j] = dist
-
-        
-        ## for i in xrange(len(x1)):
-        ##     for j in xrange(len(x2)):
-
-                ## kernel_mat[i,j] += (x1[i,0]-x2[j,0])**2            
-                ## kernel_mat[i,j] += 1.0/symmetric_entropy(x1[i,1:], x2[j,1:])
-
-                ## if np.isnan(kernel_mat[i,j]): print "wrong kernel result ", x1, x2
-
-        # normalization?? How do we know bounds?
-
-        return kernel_mat
-
+        kernel_mat       = np.zeros((len(x1), len(x2)+1))
+        kernel_mat[:,:1] = np.arange(len(x1))[:,np.newaxis]+1
+        kernel_mat[:,1:] = metrics.pairwise.pairwise_distances(x1[:,0],x2[:,0], metric='l1') 
+        kernel_mat[:,1:] += gamma*metrics.pairwise.euclidean_distances(x1[:,1:],x2[:,1:])*\
+          (metrics.pairwise.pairwise_distances(np.argmax(x1[:,1:],axis=1),\
+                                               np.argmax(x2[:,1:],axis=1),
+                                               metric='l1') + 1.0)
+        return np.exp(-kernel_mat)
     else:
+        d1 = abs(x1[0] - x2[0]) 
+        d2 = np.linalg.norm(x1[1:]-x2[1:])*( abs(np.argmax(x1[1:])-np.argmax(x2[1:])) + 1.0)
+        return np.exp(-(d1 + gamma*d2))
 
-        d1 = (x1[0] - x2[0])**2
-        d2 = 1.0/symmetric_entropy(x1[1:], x2[1:])
-        return d1+d2
+def customDist(i,j, x1, x2, gamma):
+    return i,j,(x1-x2)**2 + gamma*1.0/symmetric_entropy(x1,x2)
 
-def customDist(i,j, x1, x2):
-    return i,j,(x1-x2)**2 + 1.0/symmetric_entropy(x1,x2)
 
 def custom_kernel2(x1,x2):
     '''
@@ -390,11 +390,18 @@ def custom_kernel2(x1,x2):
         ## return 1.0/symmetric_entropy(x1, x2)
         return np.linalg.norm(x1[i]-x2[j])
 
+def KLS(p,q, gamma=3.0):
+    return np.exp(-gamma*( entropy(p,np.array(q)+1e-6) + entropy(q,np.array(p)+1e-6) ) )
+
 def symmetric_entropy(p,q):
     '''
     Return the sum of KL divergences
     '''
-    return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6)) + 1e-6
+    pp = np.array(p)+1e-6
+    qq = np.array(q)+1e-6
+    
+    ## return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
+    return min(entropy(pp,qq), entropy(qq,pp))
 
 
 def findBestPosteriorDistribution(post, l_statePosterior):

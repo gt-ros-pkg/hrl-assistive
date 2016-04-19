@@ -104,30 +104,47 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
             modeling_pkl = os.path.join(processed_data_path, \
                                         'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
 
+        if os.path.isfile(modeling_pkl) is False:
+            print "Please run evaluation all first to get hmm files."
+            sys.exit()
         # train a classifier and evaluate it using test data.
         d            = ut.load_pickle(modeling_pkl)
         ## startIdx = d['startIdx']
-
+        
         # sample x length x feature vector
         ll_classifier_train_X   = d['ll_classifier_train_X']
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
         ll_classifier_train_idx = d['ll_classifier_train_idx']
-        ll_classifier_test_X    = d['ll_classifier_test_X']  
-        ll_classifier_test_Y    = d['ll_classifier_test_Y']
-        ll_classifier_test_idx  = d['ll_classifier_test_idx']
+        ## ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
         nLength      = d['nLength']
         nPoints      = ROC_dict['nPoints']
+
+
+        # divide into training and param estimation set
+        import random
+        train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
+        test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx] 
+
+        train_X = np.array(ll_classifier_train_X)[train_idx]
+        train_Y = np.array(ll_classifier_train_Y)[train_idx]
+        train_idx = np.array(ll_classifier_train_idx)[train_idx]
+        test_X  = np.array(ll_classifier_train_X)[test_idx]
+        test_Y  = np.array(ll_classifier_train_Y)[test_idx]
+        test_idx = np.array(ll_classifier_train_idx)[test_idx]
+
 
         # flatten the data
         X_train_org = []
         Y_train_org = []
         idx_train_org = []
 
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):                
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
+        for i in xrange(len(train_X)):
+            for j in xrange(len(train_X[i])):                
+                X_train_org.append(train_X[i][j])
+                Y_train_org.append(train_Y[i][j])
+                idx_train_org.append(train_idx[i][j])
 
         # training data preparation
         if 'svm' in method:
@@ -140,26 +157,20 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
 
         # test data preparation
         X_test = []
-        Y_test = [] #ll_classifier_test_Y
-        idx_test = ll_classifier_test_idx
-        for ii in xrange(len(ll_classifier_test_X)):
-            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
-              or np.nan in ll_classifier_test_X[ii][0]:
+        Y_test = []
+        idx_test = test_idx
+        for ii in xrange(len(test_X)):
+            if np.nan in test_X[ii] or len(test_X[ii]) == 0 \
+              or np.nan in test_X[ii][0]:
                 continue
 
-            ## flag = False
-            ## for X in ll_classifier_test_X[ii]:
-            ##     if np.nan in X:
-            ##         flag = True
-            ##         break
-            ## if flag is True: continue
-            
             if 'svm' in method:
-                X = scaler.transform(ll_classifier_test_X[ii])                                
+                X = scaler.transform(test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
-                X = ll_classifier_test_X[ii]
+                X = test_X[ii]
             X_test.append(X)
-            Y_test.append(ll_classifier_test_Y[ii])
+            Y_test.append(test_Y[ii])
+
 
         data[file_idx]={}
         data[file_idx]['X_scaled']      = X_scaled
@@ -249,6 +260,25 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         return "Not available method", -1, params
 
     dtc.set_params(**params)
+
+    #temp 
+    ## dtc.set_params( cost=1.0 )
+    ## dtc.set_params( gamma=1.0 )
+    ## dtc.set_params( class_weight=1.0 )
+    ## dtc.set_params( w_negative=1.0 )
+    ## print np.shape(X_scaled)
+    ## data = []
+    ## for count in xrange(len(X_scaled)/196):
+    ##     data.append(X_scaled[count*196:count*196+196,0])
+
+    ## print np.shape(X_test)
+    ## print np.shape(data)
+    ## plt.figure()
+    ## plt.plot(np.array(data).T, 'b')
+    ## plt.plot(np.array(X_test)[:,:,0].T, 'r')
+    ## plt.show()
+    
+    
     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
     if ret is False: return 'fit failed', -1
 
@@ -265,8 +295,14 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         X = X_test[ii]                
         est_y    = dtc.predict(X, y=Y_test[ii])
 
+        ## # temp
+        ## if Y_test[ii][0] < 1.0:
+        ##     print est_y
+        ##     sys.exit()
+            
+
         for jj in xrange(len(est_y)):
-            if est_y[jj] > 0.0:
+            if est_y[jj] > 0.0:                
                 try:
                     delay_idx = idx_test[ii][jj]
                 except:
@@ -313,7 +349,8 @@ def disp_score(results, method, nPoints):
         except:
             print "failed to get TPR and FPR"
             break
-        print fpr_l, tpr_l
+        print "tpr: ", tpr_l
+        print "fpr: ", fpr_l
 
         # get AUC
         ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
@@ -353,6 +390,11 @@ if __name__ == '__main__':
                  help='type the user name')
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
+
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
@@ -452,27 +494,28 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range,\
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
         nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 3
+        nFiles = 4
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [1.0,2.0,4.0,8.0],\
-        ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
-        ##               'w_negative': [0.5,3.0,6.0] }
+        ##               'cost': [2.,3.,4.],\
+        ##               'gamma': [1.5, 2.0], \
+        ##               'w_negative': [1.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.],\
-                      'gamma': [2.0], \
-                      'w_negative': [0.1, 0.5, 1.0] }
+                      'cost': [3.,4.,5.],\
+                      'gamma': [1.5,2.0,2.5], \
+                      'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
@@ -480,14 +523,15 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range)
+                                                                       rf_center, local_range,\
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
         nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints) }
         param_dict['ROC'] = ROC_param_dict
@@ -498,9 +542,9 @@ if __name__ == '__main__':
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.],\
-                      'gamma': [2.0], \
-                      'w_negative': [0.1, 0.5, 1.0] }
+                      'cost': [1.0, 2.0, 4., 6.0, 8.0],\
+                      'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
+                      'w_negative': [2.0, 4.0, 8.0] }
 
     else:
         print "Selected task name is not available."
@@ -517,11 +561,11 @@ if __name__ == '__main__':
     print "max_param_idx = ", max_param_idx
     AE_param_dict = param_dict['AE']
     if AE_param_dict['switch'] == True and AE_param_dict['add_option'] is not None:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_rawftb.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_rawftb_'+str(opt.dim)+'.pkl')
     elif AE_param_dict['switch'] == True:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw_'+str(opt.dim)+'.pkl')
     else:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'.pkl')
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'.pkl')
         
     ##################################################################################################
     # cpu version

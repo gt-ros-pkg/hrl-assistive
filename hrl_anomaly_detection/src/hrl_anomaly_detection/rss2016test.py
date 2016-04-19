@@ -158,7 +158,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     normalTestData    = successData[:, normalTestIdx, :] 
     abnormalTestData  = failureData[:, abnormalTestIdx, :] 
     
-
     # training hmm
     nEmissionDim = len(normalTrainData)
     ## hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
@@ -166,7 +165,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-    ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    if data_dict['handFeatures_noise']:
+        ret = ml.fit(normalTrainData+\
+                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                     cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    else:
+        ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+        
     ## ths = threshold
     startIdx = 4
         
@@ -177,10 +182,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        testDataX = np.vstack([np.swapaxes(normalTestData, 0, 1), np.swapaxes(abnormalTestData, 0, 1)])
+        testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
         testDataX = np.swapaxes(testDataX, 0, 1)
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                np.ones(len(abnormalTrainData[0])) ])
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
@@ -228,7 +233,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     target_idx = 1
 
     # training data
-    if useTrain:
+    if useTrain and False:
 
         log_ll = []
         exp_log_ll = []        
@@ -273,36 +278,34 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
 
             
     # normal test data
-    ## if useNormalTest and False:
+    if useNormalTest:
 
-    ##     log_ll = []
-    ##     ## exp_log_ll = []        
-    ##     for i in xrange(len(normalTestData[0])):
+        log_ll = []
+        ## exp_log_ll = []        
+        for i in xrange(len(normalTestData[0])):
 
-    ##         log_ll.append([])
-    ##         ## exp_log_ll.append([])
+            log_ll.append([])
+            ## exp_log_ll.append([])
+            for j in range(startIdx, len(normalTestData[0][i])):
+                X = [x[i,:j] for x in normalTestData]                
+                logp = ml.loglikelihood(X)
+                log_ll[i].append(logp)
 
-    ##         for j in range(2, len(normalTestData[0][i])):
-    ##             X = [x[i,:j] for x in normalTestData]                
+                ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
+                ## log_ll[i].append(logp)
+                ## exp_log_ll[i].append(exp_logp)
 
-    ##             logp = ml.loglikelihood(X)
-    ##             log_ll[i].append(logp)
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
-    ##             ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
-    ##             ## log_ll[i].append(logp)
-    ##             ## exp_log_ll[i].append(exp_logp)
+            # disp 
+            if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
+            else: plt.plot(log_ll[i], 'b-')
 
-    ##         if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-    ##         if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+            ## plt.plot(exp_log_ll[i], 'r*-')
 
-    ##         # disp 
-    ##         if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
-    ##         else: plt.plot(log_ll[i], 'g-')
-
-    ##         ## plt.plot(exp_log_ll[i], 'r*-')
-
-    ##     if useNormalTest_color: 
-    ##         plt.legend(loc=3,prop={'size':16})
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
 
     # abnormal test data
     if useAbnormalTest:
@@ -368,6 +371,9 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
     if os.path.isfile(crossVal_pkl) and data_renew is False: 
         print "Loading cv data"
         d = ut.load_pickle(crossVal_pkl)
+        if 'aeSuccessData' not in d.keys():
+            print "Reload data!!"
+            sys.exit()
     else:
         d = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
@@ -377,11 +383,15 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
 
-        kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
-                                          len(d['aeFailureData'][0]),\
-                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        if os.path.isfile(crossVal_pkl):
+            dd = ut.load_pickle(crossVal_pkl)
+            d['kFoldList'] = dd['kFoldList'] 
+        else:
+            kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]),\
+                                              len(d['aeFailureData'][0]),\
+                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
 
-        d['kFoldList']       = kFold_list                                             
+            d['kFoldList']       = kFold_list                                             
         ut.save_pickle(d, crossVal_pkl)
 
     # Training HMM, and getting classifier training and testing data
@@ -520,7 +530,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
     # parameters
-    startIdx    = 20
+    startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -625,9 +635,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
 
 
-            # add noise
-            if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
+            ## # add noise
+            ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
             # scaling
             if verbose: print "scaling data"
@@ -643,7 +652,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             nLength      = len(normalTrainData[0][0]) - startIdx
 
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False) 
+            if data_dict['handFeatures_noise']:
+                ret = ml.fit(normalTrainData+\
+                             np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                             cov_mult=cov_mult, use_pkl=False)
+            else:
+                ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
             if ret == 'Failure': 
                 print "-------------------------"
@@ -738,6 +752,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 ##     print ">> ", np.shape(ll_logp[i]), np.shape(ll_post[i])
                 ##     print i, np.shape(l_X), np.shape(l_Y)
 
+
             #-----------------------------------------------------------------------------------------
             d = {}
             d['nEmissionDim'] = ml.nEmissionDim
@@ -764,7 +779,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         tag = ''
         for ft in AE_dict['add_option']:
             tag += ft[:2]
-        
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw_'+tag+'.pkl')
     elif AE_dict['switch'] and AE_dict['add_option'] is None:
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw.pkl')
@@ -787,7 +801,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization
+    # parallelization 
     r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict ) \
@@ -839,8 +853,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             fnr_l = []
             delay_mean_l = []
             delay_std_l  = []
-
-            print np.shape(tp_ll), np.shape(fn_ll), nPoints
 
             for i in xrange(nPoints):
                 tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
@@ -1083,7 +1095,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
         # loading and time-sync
         if idx == 0:
             if verbose: print "Load success data"
-            data_pkl = os.path.join(processed_data_path, task+'_success_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(success_list, isTrainingData=True,
                                                        downSampleSize=downSampleSize,\
@@ -1092,7 +1104,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        renew=data_renew, save_pkl=data_pkl, verbose=verbose)
         else:
             if verbose: print "Load failure data"
-            data_pkl = os.path.join(processed_data_path, task+'_failure_'+rf_center+\
+            data_pkl = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
                                     '_'+str(local_range))
             raw_data_dict, interp_data_dict = loadData(failure_list, isTrainingData=False,
                                                        downSampleSize=downSampleSize,\
@@ -1377,6 +1389,10 @@ if __name__ == '__main__':
 
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -1437,21 +1453,24 @@ if __name__ == '__main__':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
                                                                          opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
                                                                          
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, opt.bDataRenew, \
                                                                          opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range)
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, opt.bDataRenew, \
                                                                        opt.bAERenew, opt.bHMMRenew,\
-                                                                       rf_center, local_range)
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     else:
         print "Selected task name is not available."
@@ -1475,6 +1494,7 @@ if __name__ == '__main__':
         '''
         successData = True
         failureData = True
+        modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
         
         data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \
@@ -1502,24 +1522,26 @@ if __name__ == '__main__':
     elif opt.bFeaturePlot:
         success_viz = True
         failure_viz = True
-
+        
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=param_dict['AE']['switch'],\
+                      ae_data=False,\
                       data_ext=param_dict['data_param']['lowVarDataRemv'],\
                       cut_data=param_dict['data_param']['cut_data'],
                       save_pdf=opt.bSavePdf, solid_color=True,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 
     elif opt.bAEDataExtraction:
+        param_dict['AE']['switch']     = True
         aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict, verbose=opt.bVerbose)
 
     elif opt.bAEDataExtractionPlot:
         success_viz = True
         failure_viz = True
         handFeature_viz = False
+        param_dict['AE']['switch']     = True        
         aeDataExtraction(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                          handFeature_viz=handFeature_viz,\
                          success_viz=success_viz, failure_viz=failure_viz,\
@@ -1529,7 +1551,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=True, \
-                              useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                              useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
                               

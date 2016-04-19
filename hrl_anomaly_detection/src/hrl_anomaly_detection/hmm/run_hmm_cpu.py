@@ -80,7 +80,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
                 d = ut.load_pickle(AE_proc_data)
-
+                
                 if AE_dict['filter']:
                     # NOTE: pooling dimension should vary on each auto encoder.
                     # Filtering using variances
@@ -137,11 +137,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ##                                                          pooling_param_dict)
                 ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
                 ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
-                
-            # add noise
-            if data_dict['handFeatures_noise']:
-                normalTrainData += np.random.normal(0.0, 0.1, np.shape(normalTrainData) ) 
+                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)                
 
             # scaling
             if verbose: print "scaling data"
@@ -157,29 +153,78 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             # scaling
             ml = hmm.learning_hmm( param['nState'], nEmissionDim )
-            ret = ml.fit( normalTrainData, cov_mult=cov_mult )
+            if (data_dict['handFeatures_noise'] and AE_dict['switch'] is False):
+                ret = ml.fit( normalTrainData+\
+                              np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                              cov_mult=cov_mult )
+            else:
+                ret = ml.fit( normalTrainData, cov_mult=cov_mult )
+                
             if ret == 'Failure':
                 scores.append(-1.0 * 1e+10)
-            else:           
-                ## # evaluation:  dim x sample => sample x dim
-                ## ## testData_x = np.swapaxes( normalTestData, 0, 1)
-                ## testData_x = np.vstack([ np.swapaxes( normalTestData, 0, 1),
-                ##                          np.swapaxes( abnormalTestData, 0, 1) ])
-                ## testData_x = np.swapaxes( testData_x, 0, 1) #dim x sample
-                                         
-                ## ## testData_y = [1.0]*len( normalTestData[0] )
-                ## testData_y = [1.0]*len( normalTestData[0] ) + [-1]*len( abnormalTestData[0] )
-                ## scores.append( ml.score( testData_x, y=testData_y, n_jobs=-1 ) )
-                scores.append(ret)
+                break
+
+
+            #-----------------------------------------------------------------------------------------
+            # Classifier train data
+            #-----------------------------------------------------------------------------------------
+            testDataX = []
+            testDataY = []
+            for i in xrange(nEmissionDim):
+                temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+                testDataX.append( temp )
+
+            testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                    np.ones(len(abnormalTrainData[0])) ])
+
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                    [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                    ml.nEmissionDim, ml.nState,\
+                                                                    startIdx=nLength-3, \
+                                                                    bPosterior=False)
+                                                                    for i in xrange(len(testDataX[0])))
+            _, ll_classifier_test_idx, ll_logp = zip(*r)
+
+            norm_logp=[]
+            abnorm_logp=[]
+            for i in xrange(len(ll_logp)):
+
+                if np.nan in ll_logp[i]: continue                
+                if np.inf in ll_logp[i]: continue
+                if np.isnan(np.mean(ll_logp[i])): continue
+                
+                if testDataY[i] > 0.0: abnorm_logp += ll_logp[i]
+                else:  norm_logp += ll_logp[i]
+
+            logps = norm_logp + abnorm_logp
+            if len(logps) == 0:
+                scores.append(-100000)
+                continue
+                
+            max_logp = np.amax(logps) 
+            norm_logp /= max_logp
+            abnorm_logp /= max_logp
+
+            diff_vals = -abnorm_logp + np.mean(norm_logp)
+            diff_list = []
+            for v in diff_vals:
+                if v is np.nan or v is np.inf: continue
+                diff_list.append(v)
+
+            if len(diff_list)==0: continue
+            ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
+            scores.append( np.median(diff_list) )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
 
 
-    for i, param in enumerate(param_list):
+    idx_list = np.argsort(mean_list)
+
+    for i in idx_list:
         print("%0.3f (+/-%0.03f) for %r"
-              % (mean_list[i], std_list[i], param))
+              % (mean_list[i], std_list[i], param_list[i]))
 
 
     ## # Get sorted results
@@ -471,6 +516,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
+    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
+                 default=False, help='Enable AE data.')
     opt, args = p.parse_args()
     
     rf_center     = 'kinEEPos'        
@@ -480,24 +529,27 @@ if __name__ == '__main__':
         subjects  = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
-        parameters = {'nState': [25], 'scale': np.linspace(5.0,15.0,10), \
-                      'cov': np.linspace(1.0,10.0,10) }
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
+        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
+                      'cov': np.linspace(0.1,2.0,4) }
                                                                          
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
-                                                                         rf_center, local_range)
-        parameters = {'nState': [25], 'scale': np.linspace(0.5,5.0,10), \
-                      'cov': np.linspace(0.5,5.0,10) }
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,10), \
+                      'cov': np.linspace(1.0,5.0,10) }
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
-                                                                       rf_center, local_range)
-        parameters = {'nState': [10, 15, 20], 'scale': np.linspace(0.5,5.0,5), \
-                      'cov': np.linspace(0.5,5.0,5) }
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
+        parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.5,10.0,10), \
+                      'cov': np.linspace(0.5,4.0,4) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }

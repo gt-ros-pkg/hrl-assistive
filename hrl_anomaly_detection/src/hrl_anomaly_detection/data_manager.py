@@ -146,9 +146,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
-        ## data_dict['successData'] = data_dict['trainingData']
-        ## data_dict['failureData'] = data_dict['abnormalTestData']
-        ## ut.save_pickle(data_dict, save_pkl)
     else:
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
@@ -198,14 +195,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
               extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
                              nFailure=len(failure_list), cut_data=cut_data)
 
-            data_dict['aeSuccessData'] = successData = np.array(ae_successData)
-            data_dict['aeFailureData'] = failureData = np.array(ae_failureData)
+            data_dict['aeSuccessData'] = np.array(ae_successData)
+            data_dict['aeFailureData'] = np.array(ae_failureData)
             data_dict['aeParamDict']   = ae_param_dict
 
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        print data_dict.keys()
-        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            
         ut.save_pickle(data_dict, save_pkl)
 
     #-----------------------------------------------------------------------------
@@ -214,39 +207,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     # almost deprecated??
     feature_names = np.array(param_dict.get('feature_names', handFeatures))
-    ## if data_ext:
-    ##     # 1) exclude stationary data
-    ##     thres = 0.025
-    ##     n,m,k = np.shape(successData)
-    ##     diff_all_data = successData[:,:,1:] - successData[:,:,:-1]
-    ##     add_idx    = []
-    ##     remove_idx = []
-    ##     std_list = []
-    ##     for i in xrange(n):
-    ##         std = np.max(np.max(diff_all_data[i], axis=1))
-    ##         std_list.append(std)
-    ##         if  std < thres: remove_idx.append(i)
-    ##         else: add_idx.append(i)
-
-    ##     allData          = allData[add_idx]
-    ##     successData      = successData[add_idx]
-    ##     failureData      = failureData[add_idx]
-    ##     AddFeature_names    = feature_names[add_idx]
-    ##     RemoveFeature_names = feature_names[remove_idx]
-
-    ##     print "--------------------------------"
-    ##     print "STD list: ", std_list
-    ##     print "Add features: ", AddFeature_names
-    ##     print "Remove features: ", RemoveFeature_names
-    ##     print "--------------------------------"
-    ##     ## sys.exit()
-    ## else:
     AddFeature_names    = feature_names
-
 
     # -------------------- Display ---------------------
     fig = None
-    feature_names = np.array(param_dict.get('feature_names', handFeatures))
     if success_viz:
 
         fig = plt.figure()
@@ -286,14 +250,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     print "---------------------------------------------------"
     print "s/f data: ", np.shape(successData), np.shape(failureData)
-    ## print "augmented s/f data: ", np.shape(aug_successData), np.shape(aug_failureData)
     print "---------------------------------------------------"
-
     return data_dict
-    ## return successData, failureData, aug_successData, aug_failureData, param_dict
-    ## if ae_data:
-    ## else:
-    ##     return allData, successData, failureData, failureNameList, param_dict
 
 
 def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, handParam, \
@@ -617,6 +575,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     # -------------------------------------------------------------        
 
     # extract local features
+    startOffsetSize = 4
     dataList   = []
     for idx in xrange(len(d['timesList'])): # each sample
 
@@ -637,7 +596,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         # Unimoda feature - AudioWrist ---------------------------------------
         if 'unimodal_audioWristRMS' in feature_list:
             audioWristRMS = d['audioWristRMSList'][idx]            
-            unimodal_audioWristRMS = audioWristRMS - np.mean(audioWristRMS[:4])
+            unimodal_audioWristRMS = audioWristRMS - np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
@@ -665,7 +624,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
                 ## unimodal_ftForce_ind = ftForce[2:3,:]
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:4])
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
@@ -724,7 +683,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             # 1
             ## unimodal_ppsForce = np.array([np.linalg.norm(pps, axis=0)])
 
-            unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:5], axis=1)]).T
+            unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:startOffsetSize], axis=1)]).T
 
             ## unimodal_ppsForce = []
             ## for time_idx in xrange(len(timeList)):
@@ -777,7 +736,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:4])
+            dist = dist - np.mean(dist[:startOffsetSize])
             
             crossmodal_targetEEDist = []
             for time_idx in xrange(len(timeList)):
@@ -795,7 +754,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:4])
+            dist = dist - np.mean(dist[:startOffsetSize])
 
             print np.shape(dist)
             vel = dist[1:]-dist[:-1]
@@ -831,7 +790,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 crossmodal_targetEEAng.append( abs(diff_ang) )
 
             crossmodal_targetEEAng = np.array(crossmodal_targetEEAng)
-            crossmodal_targetEEAng -= np.mean(crossmodal_targetEEAng[:4])
+            crossmodal_targetEEAng -= np.mean(crossmodal_targetEEAng[:startOffsetSize])
 
             ## fig = plt.figure()
             ## ## plt.plot(crossmodal_targetEEAng)
@@ -855,6 +814,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             visionArtagPos = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
 
             dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
+            dist = dist - np.mean(dist[:startOffsetSize])
+            
             crossmodal_artagEEDist = []
             for time_idx in xrange(len(timeList)):
                 crossmodal_artagEEDist.append(dist[time_idx])
@@ -869,9 +830,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinEEQuat    = d['kinEEQuatList'][idx]
             visionArtagQuat = d['visionArtagQuatList'][idx][:4]
 
-            kinEEPos  = d['kinEEPosList'][idx]
-            visionArtagPos = d['visionArtagPosList'][idx][:3]
-            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
+            ## kinEEPos  = d['kinEEPosList'][idx]
+            ## visionArtagPos = d['visionArtagPosList'][idx][:3]
+            ## dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
             
             crossmodal_artagEEAng = []
             for time_idx in xrange(len(timeList)):
@@ -882,10 +843,53 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 diff_ang = qt.quat_angle(startQuat, endQuat)
                 crossmodal_artagEEAng.append( abs(diff_ang) )
 
+            crossmodal_artagEEAng = np.array(crossmodal_artagEEAng)
+            crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
+
             if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
             if 'artagEEAng' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('artagEEAng')
+
+
+        # Crossmodal feature - vision relative dist with sub vision target----
+        if 'crossmodal_subArtagEEDist' in feature_list:
+            kinEEPos  = d['kinEEPosList'][idx]
+            visionArtagPos = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
+
+            dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
+            dist = dist - np.mean(dist[:startOffsetSize])
+            
+            crossmodal_artagEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_artagEEDist.append(dist[time_idx])
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEDist])
+            if 'subArtagEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('subArtagEEDist')
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_subArtagEEAng' in feature_list:                
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            visionArtagQuat = d['visionArtagQuatList'][idx][4:8]
+
+            crossmodal_artagEEAng = []
+            for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = visionArtagQuat[:,time_idx]
+
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_artagEEAng.append( abs(diff_ang) )
+
+            crossmodal_artagEEAng = np.array(crossmodal_artagEEAng)
+            crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
+
+            if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
+            if 'subArtagEEAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('subArtagEEAng')
 
         # ----------------------------------------------------------------
         dataList.append(dataSample)
@@ -945,7 +949,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         timeList     = d['timesList'][idx]
         dataSample = None
 
-        # rightEE-leftEE - vision relative dist with main(first) vision target----
+        # rightEE-leftEE - relative dist ----
         if 'relativePose_target_EE' in raw_feature_list:
             kinEEPos      = d['kinEEPosList'][idx]
             kinEEQuat     = d['kinEEQuatList'][idx]
@@ -963,7 +967,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
 
             relativePose = np.array(relativePose).T[:-1]
-            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
+            relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -989,9 +993,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
                 relativePose.append( dh.KDLframe2List(diffFrame) )
             
             relativePose = np.array(relativePose).T[:-1]
-            print np.shape(relativePose)
-            print np.shape(np.mean(relativePose[:,:startOffsetSize], axis=1))
-            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]
+            relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
             
             if dataSample is None: dataSample = relativePose
             else: dataSample = np.vstack([dataSample, relativePose])
@@ -1049,8 +1051,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             ftForce  = d['ftForceList'][idx]
             ftTorque = d['ftTorqueList'][idx]
 
-            ftForce  -= np.mean(ftForce[:startOffsetSize,:], axis=1)
-            ftTorque -= np.mean(ftTorque[:startOffsetSize,:], axis=1)
+            ftForce  -= np.array([np.mean(ftForce[:startOffsetSize,:], axis=1)]).T
+            ftTorque -= np.array([np.mean(ftTorque[:startOffsetSize,:], axis=1)]).T
 
             if dataSample is None: dataSample = np.array(ftForce)
             else: dataSample = np.vstack([dataSample, ftForce])
@@ -1065,8 +1067,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             ppsLeft  = d['ppsLeftList'][idx]
             ppsRight = d['ppsRightList'][idx]
 
-            ppsLeft  -= np.mean(ppsLeft[:startOffsetSize,:], axis=1)
-            ppsRight -= np.mean(ppsRight[:startOffsetSize,:], axis=1)
+            ppsLeft  -= np.array([np.mean(ppsLeft[:startOffsetSize,:], axis=1)]).T
+            ppsRight -= np.array([np.mean(ppsRight[:startOffsetSize,:], axis=1)]).T
 
             if dataSample is None: dataSample = ppsLeft
             else: dataSample = np.vstack([dataSample, ppsLeft])

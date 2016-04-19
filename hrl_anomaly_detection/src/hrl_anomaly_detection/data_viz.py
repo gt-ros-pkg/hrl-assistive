@@ -497,16 +497,84 @@ class data_viz:
 if __name__ == '__main__':
 
 
-    subject = 'gatsbii'
-    task    = 'scooping'
-    verbose = True
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
+                 help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
+    opt, args = p.parse_args()
+
+    from hrl_anomaly_detection.params import *
+    import itertools
+    colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    if opt.task == 'pushing_microwhite':
+        subjects = ['gatsbii']
+        ## raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
+        ##                                                                  opt.bAERenew, opt.bHMMRenew,\
+        ##                                                                  rf_center, local_range)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/AE150'
+        method = 'svm'
+        nPoints = 20
+        fig = plt.figure()
+
+        for dim in xrange(2,5+1):
+            roc_pkl = os.path.join(save_data_path+'_'+str(dim), 'roc_'+opt.task+'.pkl')
+            ROC_data = ut.load_pickle(roc_pkl)
+
+            tp_ll = ROC_data[method]['tp_l']
+            fp_ll = ROC_data[method]['fp_l']
+            tn_ll = ROC_data[method]['tn_l']
+            fn_ll = ROC_data[method]['fn_l']
+            delay_ll = ROC_data[method]['delay_l']
+
+            tpr_l = []
+            fpr_l = []
+            fnr_l = []
+            delay_mean_l = []
+            delay_std_l  = []
+
+            for i in xrange(nPoints):
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
+                delay_mean_l.append( np.mean(delay_ll[i]) )
+                delay_std_l.append( np.std(delay_ll[i]) )
+
+            label = method+'_dim_'+str(dim)
+            
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+        plt.legend(loc='lower right', prop={'size':20})
+        plt.show()
+
+
+
+
+    ## subject = 'gatsbii'
+    ## task    = 'scooping'
+    ## verbose = True
     
 
-    l = data_viz(subject, task, verbose=verbose)
-    ## l.audio_test()
-    ## l.kinematics_test()
-    ## l.reduce_cart()
+    ## l = data_viz(subject, task, verbose=verbose)
+    ## ## l.audio_test()
+    ## ## l.kinematics_test()
+    ## ## l.reduce_cart()
 
-    # set RF over EE
-    l.extractLocalFeature()
+    ## # set RF over EE
+    ## l.extractLocalFeature()
     
