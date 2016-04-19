@@ -37,9 +37,8 @@ RFH.PickAndPlace = function (options) {
             case 'ID-LOCATION':
                 if (args[0] == 'PLACE_LOC' || args[0] == 'PICK_LOC' || args[0] == 'ELSEWHERE'){
                     startFunc = function () {
-                        RFH.taskMenu.tasks.paramLocationTask.setOffset({'position':{'x':0, 'y':0, 'z':0.1}});
-                        //RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({'x':0, 'y':0, 'z':0.38, 'w':0.925});
-                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null);
+                        RFH.taskMenu.tasks.paramLocationTask.setOffset({'position':{'x':0.15, 'y':0, 'z':0}});
+                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({'x':0, 'y':0, 'z':0.38, 'w':0.925});
                         RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
                         RFH.taskMenu.startTask('paramLocationTask');
                     }
@@ -242,7 +241,7 @@ RFH.PickAndPlace = function (options) {
             self.updatePDDLState(['(GRASPING '+hand+' '+object+')']);
         }
         msg.goal = [];  // Empty goal will use default for task
-        self.taskPublisher.publish(msg);
+        setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
 
 };

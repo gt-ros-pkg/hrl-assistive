@@ -96,6 +96,8 @@ RFH.Smach = function(options) {
             self.smachTasks.pop();
             if (self.smachTasks.length === 0){
                 RFH.taskMenu.startTask(RFH.taskMenu.defaultTaskName);
+                for (var i=0;i<RFH.regions.
+                self.display.empty();
                 return;
             }
             var newActions = self.smachTasks[self.smachTasks.length-1].actionList;

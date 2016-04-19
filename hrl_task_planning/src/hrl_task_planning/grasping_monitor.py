@@ -22,22 +22,18 @@ class GraspStateMonitor(object):
         rospy.loginfo("[%s] %s Grasp State Monitor Ready.", rospy.get_name(), self.side.capitalize())
 
     def grasp_state_cb(self, grasping_msg):
-        update = False
-        if grasping_msg.data:
-            if self.grasped_item is None:
+        if (grasping_msg.data and self.grasped_item is None):
                 pred = pddl.Predicate('GRASPING', [self.gripper_name, self.item_name])
                 self.grasped_item = self.item_name
-                update = True
+        elif (not grasping_msg.data and self.grasped_item is not None):
+                pred = pddl.Predicate('GRASPING', [self.gripper_name, self.grasped_item], neg=True)
+                self.grasped_item = None
         else:
-            if self.grasped_item is not None:
-                pred = pddl.Predicate('GRASPING', [self.gripper_name , self.grasped_item], neg=True)
-                self.grasped_item = self.item_name
-                update = True
-        if update:
-            state_msg = PDDLState()
-            state_msg.domain = self.domain
-            state_msg.predicates = [str(pred)]
-            self.state_pub.publish(state_msg)
+            return  # nothing new here
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.predicates = [str(pred)]
+        self.state_pub.publish(state_msg)
 
 
 def main():
