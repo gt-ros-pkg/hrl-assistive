@@ -345,6 +345,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                        ae_swtch=False, dim=3):
 
     
+    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' 
     if dim == 5:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
@@ -353,6 +354,13 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 2.83, 'scale': 4.72}
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(1., -3., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
+                          'fixed_param_range': np.linspace(2.0, -1.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 4:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
@@ -361,6 +369,13 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.83, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(1., -3., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
+                          'fixed_param_range': np.linspace(2.0, -1.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
@@ -368,11 +383,25 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 2.0, 'cost': 2.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 1.66, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(1., -3., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
+                          'fixed_param_range': np.linspace(2.0, -1.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.01, 'cost': 8.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4, 'scale': 6.83}
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-4., 1., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0.8, nPoints),\
+                          'fixed_param_range': np.linspace(2.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
         
                         
     rawFeatures = ['relativePose_artag_EE', \
@@ -432,14 +461,6 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 1.5}
 
 
-    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'progress_time_cluster', 'fixed', 'cssvm'
-    ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
-                      'update_list': ['svm'],\
-                      'nPoints': nPoints,\
-                      'progress_param_range':np.linspace(1., -3., nPoints), \
-                      'svm_param_range': np.logspace(-2, 0.1, nPoints),\
-                      'fixed_param_range': np.linspace(2.0, -1.0, nPoints),\
-                      'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
