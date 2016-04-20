@@ -399,7 +399,7 @@ if __name__ == '__main__':
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
                  help='Enable cpu mode')
-    p.add_option('--renew', action='store_true', dest='bRenew', default=True,
+    p.add_option('--renew', action='store_true', dest='bRenew', default=False,
                  help='Renew result')
     opt, args = p.parse_args()
 
