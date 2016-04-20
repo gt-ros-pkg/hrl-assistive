@@ -118,7 +118,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
         else:
-            SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 5.0}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 5.5}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -352,7 +352,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 6.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 2.83, 'scale': 4.72}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
                           'update_list': [],\
@@ -366,7 +366,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.1, 'cost': 8.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.83, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed' ],\
