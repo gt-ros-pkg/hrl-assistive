@@ -672,8 +672,13 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
     
     new_data_array = None    
     for i in xrange(n):
-        interp = interpolate.splrep(time_array, target_array[i], s=0)
-        interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+        try:
+            interp = interpolate.splrep(time_array, target_array[i], s=0)
+            interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+        except:
+            print np.shape(time_array), np.shape(target_array[i]), i,n
+            sys.exit()
+            
 
         if np.isnan(np.max(interp_data)):
             print "Interpolation error by NaN values"

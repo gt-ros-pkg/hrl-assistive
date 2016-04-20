@@ -1387,7 +1387,7 @@ if __name__ == '__main__':
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
 
-    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microblack',
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')

@@ -127,8 +127,7 @@ class classifier(learning_base):
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
               ## +' -t 4'
-              
-              
+                            
             ## try: self.dt = svm.svm_train(y, [list(row) for row in K_train], commands )
             try: self.dt = svm.svm_train(y, X, commands )
             except: return False

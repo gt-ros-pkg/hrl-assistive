@@ -509,12 +509,12 @@ if __name__ == '__main__':
 
         nFiles = 4
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [2.,3.,4.],\
-        ##               'gamma': [1.5, 2.0], \
-        ##               'w_negative': [1.0] }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [3.,4.,5.],\
-                      'gamma': [1.5,2.0,2.5], \
+        ##               'cost': [3.,4.,5.],\
+        ##               'gamma': [1.5,2.0,2.5], \
+        ##               'w_negative': np.linspace(0.2,0.7,5) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
+                      'cost': [1.],\
+                      'gamma': [1.], \
                       'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
