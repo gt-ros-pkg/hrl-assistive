@@ -503,6 +503,8 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.params import *
@@ -560,7 +562,14 @@ if __name__ == '__main__':
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
         plt.legend(loc='lower right', prop={'size':20})
-        plt.show()
+
+        if opt.bSavePdf is False:
+            plt.show()
+        else:
+            print "Save pdf to Dropbox folder"
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('mv test.p* ~/Dropbox/HRL/')
 
 
 
