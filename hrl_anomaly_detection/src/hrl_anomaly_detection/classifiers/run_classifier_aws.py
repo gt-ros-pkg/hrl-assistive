@@ -519,7 +519,7 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.1, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-1.8, -1.0, nPoints) }
+                          'cssvm_param_range': np.logspace(-1.8, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 9
@@ -533,14 +533,14 @@ if __name__ == '__main__':
         ##               'w_negative': [2.0, 4.0, 8.0] }
         if opt.dim == 4:
             parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cssvm_cost': np.linspace(5.0,15.0,10),\
+                          'cssvm_cost': np.linspace(5.0,30.0,10),\
                           'cssvm_gamma': [0.1], \
                           'cssvm_w_negative': [8.0] }
         elif opt.dim == 3:
             parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cssvm_cost': np.linspace(0.1,4.0,5),\
+                          'cssvm_cost': np.linspace(0.1,30.0,10),\
                           'cssvm_gamma': [2.0], \
-                          'cssvm_w_negative': np.linspace(0.1,2.0, 5) }
+                          'cssvm_w_negative': [2.0] }
                       
 
     else:
