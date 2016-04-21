@@ -1,8 +1,9 @@
-RFH.regions = {};
+RFH.regions = [];
 RFH.RegionView = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
+    self.name = options.name;
     var viewer = options.viewer;
     var center = options.center || {x:0, y:0, z:0};
     var radius = options.radius || 0.1;

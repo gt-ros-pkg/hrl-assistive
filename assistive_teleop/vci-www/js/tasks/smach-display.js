@@ -96,7 +96,11 @@ RFH.Smach = function(options) {
             self.smachTasks.pop();
             if (self.smachTasks.length === 0){
                 RFH.taskMenu.startTask(RFH.taskMenu.defaultTaskName);
-                for (var i=0;i<RFH.regions.
+                for (var i=0;i<RFH.regions.length; i+=1) {
+                    if (RFH.regions[i].name.indexOf(planStepMsg.domain) >= 0) {
+                        RFH.regions[i].remove();
+                    }
+                }
                 self.display.empty();
                 return;
             }
