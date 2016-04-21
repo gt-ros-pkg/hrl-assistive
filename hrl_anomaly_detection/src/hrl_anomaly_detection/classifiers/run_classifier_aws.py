@@ -164,7 +164,6 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
               or np.nan in test_X[ii][0]:
                 continue
 
-            print method
             if 'svm' in method:
                 X = scaler.transform(test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
@@ -550,10 +549,16 @@ if __name__ == '__main__':
         ##               'cost': [1.0, 2.0, 4., 6.0, 8.0],\
         ##               'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
         ##               'w_negative': [2.0, 4.0, 8.0] }
-        parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.1,4.0,10),\
-                      'gamma': [2.0], \
-                      'w_negative': [2.0] }
+        if dim == 4:
+            parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(0.1,10.0,10),\
+                          'gamma': [0.1], \
+                          'w_negative': [8.0] }
+        elif dim == 3:
+            parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(0.1,4.0,10),\
+                          'gamma': [2.0], \
+                          'w_negative': [2.0] }
                       
 
     else:
