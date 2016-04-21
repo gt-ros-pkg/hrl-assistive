@@ -551,7 +551,7 @@ if __name__ == '__main__':
         ##               'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
         ##               'w_negative': [2.0, 4.0, 8.0] }
         parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.1,8.0,8),\
+                      'cost': np.linspace(2.0,6.0,8),\
                       'gamma': [2.0], \
                       'w_negative': [8.0] }
                       
