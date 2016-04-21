@@ -551,14 +551,14 @@ if __name__ == '__main__':
         ##               'w_negative': [2.0, 4.0, 8.0] }
         if opt.dim == 4:
             parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(0.1,10.0,10),\
-                          'gamma': [0.1], \
-                          'w_negative': [8.0] }
+                          'cssvm_cost': np.linspace(5.0,15.0,10),\
+                          'cssvm_gamma': [0.1], \
+                          'cssvm_w_negative': [8.0] }
         elif opt.dim == 3:
             parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(0.1,4.0,5),\
-                          'gamma': [2.0], \
-                          'w_negative': np.linspace(0.1,2.0, 5) }
+                          'cssvm_cost': np.linspace(0.1,4.0,5),\
+                          'cssvm_gamma': [2.0], \
+                          'cssvm_w_negative': np.linspace(0.1,2.0, 5) }
                       
 
     else:

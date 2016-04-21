@@ -60,6 +60,11 @@ class classifier(learning_base):
                  gamma       = 0.3,\
                  cost        = 4.,\
                  w_negative  = 7.0,\
+                 # cssvm
+                 cssvm_degree      = 3,\
+                 cssvm_gamma       = 0.3,\
+                 cssvm_cost        = 4.,\
+                 cssvm_w_negative  = 7.0,\                 
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -80,16 +85,16 @@ class classifier(learning_base):
             self.gamma       = gamma 
             self.cost        = cost 
             self.w_negative  = w_negative             
-        elif self.method == 'cssvm_standard' or self.method == 'cssvm':
+        elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             self.class_weight = class_weight
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
-            self.degree      = degree 
-            self.gamma       = gamma 
-            self.cost        = cost 
-            self.w_negative  = w_negative 
+            self.cssvm_degree     = cssvm_degree 
+            self.cssvm_gamma      = cssvm_gamma 
+            self.cssvm_cost       = cssvm_cost 
+            self.cssvm_w_negative = cssvm_w_negative 
         elif self.method == 'progress_time_cluster':
             self.nLength   = nLength
             self.std_coff  = 1.0
@@ -142,10 +147,11 @@ class classifier(learning_base):
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
-            commands = '-q -C 1 -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
-              +' -g '+str(self.gamma)\
-              +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.w_negative) \
+            commands = '-q -C 1 -s '+str(self.svm_type)+' -t '+str(self.kernel_type)\
+              +' -d '+str(self.cssvm_degree)\
+              +' -g '+str(self.cssvm_gamma)\
+              +' -c '+str(self.cssvm_cost)+' -w1 '+str(self.class_weight)\
+              +' -w-1 '+str(self.cssvm_w_negative) \
               +' -m 200'
             try: self.dt = cssvm.svm_train(y, X, commands )
             except: return False
