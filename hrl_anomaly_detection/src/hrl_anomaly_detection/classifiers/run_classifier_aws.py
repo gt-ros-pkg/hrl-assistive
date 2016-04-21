@@ -553,7 +553,7 @@ if __name__ == '__main__':
         parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': np.linspace(4.0,7.0,10),\
                       'gamma': [2.0], \
-                      'w_negative': [8.0] }
+                      'w_negative': [2.0] }
                       
 
     else:
