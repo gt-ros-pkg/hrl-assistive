@@ -556,9 +556,9 @@ if __name__ == '__main__':
                           'w_negative': [8.0] }
         elif opt.dim == 3:
             parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(0.1,4.0,10),\
+                          'cost': np.linspace(0.1,4.0,5),\
                           'gamma': [2.0], \
-                          'w_negative': [2.0] }
+                          'w_negative': np.linspace(0.1,2.0, 5) }
                       
 
     else:
