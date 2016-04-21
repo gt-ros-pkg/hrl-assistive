@@ -86,7 +86,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
     #------------------------------------------
 
     ## Custom parameters
-    method = custom_params['method']
+    method = custom_params['method'][0]
 
     # load data and preprocess it
     print "Start to get data"
@@ -164,6 +164,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
               or np.nan in test_X[ii][0]:
                 continue
 
+            print method
             if 'svm' in method:
                 X = scaler.transform(test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
@@ -508,14 +509,18 @@ if __name__ == '__main__':
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 4
+        parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': [3.,4.,5.],\
+                      'gamma': [1.5,2.0,2.5], \
+                      'w_negative': np.linspace(0.2,0.7,5) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
-                      'cost': [1.],\
-                      'gamma': [1.], \
-                      'w_negative': np.linspace(0.2,0.7,5) }
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
+        ##               'cost': [1.],\
+        ##               'gamma': [1.], \
+        ##               'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
@@ -541,10 +546,15 @@ if __name__ == '__main__':
         ##               'cost': [1.0,2.0,4.0,8.0],\
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.0, 2.0, 4., 6.0, 8.0],\
-                      'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
-                      'w_negative': [2.0, 4.0, 8.0] }
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [1.0, 2.0, 4., 6.0, 8.0],\
+        ##               'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
+        ##               'w_negative': [2.0, 4.0, 8.0] }
+        parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': [0.1,0.5,1., 4.0, 8.0],\
+                      'gamma': [1.5,2.0,2.5], \
+                      'w_negative': np.linspace(0.2,1.5,4) }
+                      
 
     else:
         print "Selected task name is not available."
