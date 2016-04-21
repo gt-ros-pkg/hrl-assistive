@@ -30,11 +30,11 @@ def _dict_to_pose_stamped(ps_dict):
 
 
 class ProximityMonitor(object):
-    def __init__(self, domain, object_name, frame, distance_threshold=0.1):
-        self.domain = domain
-        self.object_name = object_name
-        self.frame = frame
-        self.dist_thresh = distance_threshold
+    def __init__(self):
+        self.domain = rospy.get_param('~domain')
+        self.object_name = rospy.get_param('~object')
+        self.frame = rospy.get_param('~frame')
+        self.dist_thresh = rospy.get_param('~distance_threshold', 0.1)
         self.grasping = []
         self.near_locations = []
         self.tfl = TransformListener()
@@ -91,14 +91,10 @@ class ProximityMonitor(object):
             for loc in poplist:
                 self.known_locations.pop(loc)
 
-        #print "Known Grasping: %s", self.grasping
-        #print "Currently Grasping:", current_grasped_items
         for item in self.grasping:
             if item not in current_grasped_items:
-                #print "No longer grasping %s" % item
                 self.grasping.remove(item)
                 for loc in self.near_locations:
-                    #print "Dropped %s at %s" % (item, loc)
                     update_preds.append(pddl.Predicate('AT', [item, loc]))  # the item was grasped, now isn't (dropped), so must be at the location
 
         for pred in update_preds:
@@ -106,11 +102,9 @@ class ProximityMonitor(object):
             if pred.neg and pos_pred in self.state:
                 self.state.remove(pos_pred)
                 self.state.append(pred)
-                #print "Added Neg %s to state" % str(pred)
                 pub = True
             if not pred.neg and pred not in self.state:
                 self.state.append(pred)
-                #print "Added %s to state" % str(pred)
                 pub = True
 
         if pub:
@@ -129,7 +123,7 @@ class ProximityMonitor(object):
                     (trans, _) = self.tfl.lookupTransform(loc_pose.header.frame_id, self.frame, rospy.Time(0))
                     loc = np.array([loc_pose.pose.position.x, loc_pose.pose.position.y, loc_pose.pose.position.z])
                     dist = np.linalg.norm(loc-trans)
-                    #print "[%s] %s to %s --> %s m" % (rospy.get_name(), self.frame, loc_name, dist)
+                    # print "[%s] %s to %s --> %s m" % (rospy.get_name(), self.frame, loc_name, dist)
                     if dist < self.dist_thresh:
                         now_near.append(loc_name)
                 except (LookupException, ConnectivityException, ExtrapolationException):
@@ -167,15 +161,16 @@ class ProximityMonitor(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Monitor location of frames, and update domain state when close to known locations.")
-    parser.add_argument('domain', help="The domain for which the parameter will be monitored.")
-    parser.add_argument('object', help="The pddl name of the object to monitor for nearness to locations.")
-    parser.add_argument('frame', help="The TF frame corresponding to the pddl object.")
-    parser.add_argument('--distance', '-d', type=float, default=0.1, help="The threshold distance to declare 'near.'")
-    args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
+#    parser = argparse.ArgumentParser(description="Monitor location of frames, and update domain state when close to known locations.")
+#    parser.add_argument('domain', help="The domain for which the parameter will be monitored.")
+#    parser.add_argument('object', help="The pddl name of the object to monitor for nearness to locations.")
+#    parser.add_argument('frame', help="The TF frame corresponding to the pddl object.")
+#    parser.add_argument('--distance', '-d', type=float, default=0.1, help="The threshold distance to declare 'near.'")
+#    args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
-    rospy.init_node('%s_proximity_monitor' % args.domain)
-    monitor = ProximityMonitor(args.domain, args.object, args.frame, args.distance)
+    rospy.init_node('~proximity_monitor')
+#    monitor = ProximityMonitor(args.domain, args.object, args.frame, args.distance)
+    monitor = ProximityMonitor()
     rate = rospy.Rate(0.5)
     while not rospy.is_shutdown():
         monitor.check_state()
