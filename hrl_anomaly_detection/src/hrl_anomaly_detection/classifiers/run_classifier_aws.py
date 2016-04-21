@@ -261,24 +261,6 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
 
     dtc.set_params(**params)
 
-    #temp 
-    ## dtc.set_params( cost=1.0 )
-    ## dtc.set_params( gamma=1.0 )
-    ## dtc.set_params( class_weight=1.0 )
-    ## dtc.set_params( w_negative=1.0 )
-    ## print np.shape(X_scaled)
-    ## data = []
-    ## for count in xrange(len(X_scaled)/196):
-    ##     data.append(X_scaled[count*196:count*196+196,0])
-
-    ## print np.shape(X_test)
-    ## print np.shape(data)
-    ## plt.figure()
-    ## plt.plot(np.array(data).T, 'b')
-    ## plt.plot(np.array(X_test)[:,:,0].T, 'r')
-    ## plt.show()
-    
-    
     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
     if ret is False: return 'fit failed', -1
 

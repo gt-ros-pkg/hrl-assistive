@@ -64,7 +64,7 @@ class classifier(learning_base):
                  cssvm_degree      = 3,\
                  cssvm_gamma       = 0.3,\
                  cssvm_cost        = 4.,\
-                 cssvm_w_negative  = 7.0,\                 
+                 cssvm_w_negative  = 7.0,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
