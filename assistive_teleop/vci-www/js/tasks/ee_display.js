@@ -41,7 +41,7 @@ RFH.EEDisplay = function (options) {
     gripperMaterial.transparent = true;
     gripperMaterial.opacity = 0.4;
     gripperMaterial.depthTest = true;
-    gripperMaterial.depthWrite = true;
+    gripperMaterial.depthWrite = false;
     gripperMaterial.color.setRGB(1.6,1.6,1.6);
 
     var previewMaterial = gripperMaterial.clone();
