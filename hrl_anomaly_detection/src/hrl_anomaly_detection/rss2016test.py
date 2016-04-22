@@ -1376,7 +1376,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
                            methods,\
                            success_viz=True, failure_viz=False, save_pdf=False,\
-                           pca_renew=True):
+                           pca_renew=False):
     from sklearn import preprocessing
     from sklearn.externals import joblib
 
@@ -1491,6 +1491,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         dd['Y_test_flat'] = Y_test_flat
         dd['X_train_pca'] = X_train_pca
         dd['X_test_pca']  = X_test_pca
+        ut.save_pickle(dd, pca_data_pkl)
 
 
     # Discriminative classifier --------------------------------------------------------------------
@@ -1498,14 +1499,13 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     print np.shape(X_train), np.shape(X_test)
     print np.shape(X), np.shape(Y_test)
-
     print np.shape(X_test_flat), np.shape(X_test_flat)
 
     # step size in the mesh
     h = .02
     # create a mesh to plot in
-    x_min, x_max = X_test_flat[:, 0].min() - 1, X_test_flat[:, 0].max() + 1
-    y_min, y_max = X_test_flat[:, 1].min() - 1, X_test_flat[:, 1].max() + 1
+    x_min, x_max = X_test_pca[:, 0].min() - 1, X_test_pca[:, 0].max() + 1
+    y_min, y_max = X_test_pca[:, 1].min() - 1, X_test_pca[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                          np.arange(y_min, y_max, h))
 
@@ -1518,23 +1518,23 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
             dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
         elif method == 'cssvm_standard':
             weights = np.logspace(-2, 0.1, nPoints)
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
+            if j==0: ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
         elif method == 'fixed':
             thresholds = ROC_dict['fixed_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
+            if j==0: ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
 
         ## for ii in xrange(len(X_test)):
         ##     if len(Y_test[ii])==0: continue
