@@ -1391,6 +1391,9 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     cov      = HMM_dict['cov']
     # SVM
 
+    # ROC
+    ROC_dict = param_dict['ROC']
+
     foldIdx = 0
     
     # Generative model ----------------------------------------------------------------------------
