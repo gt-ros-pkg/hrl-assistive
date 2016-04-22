@@ -1376,7 +1376,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
                            methods,\
                            success_viz=True, failure_viz=False, save_pdf=False,\
-                           pca_renew=False):
+                           pca_renew=True):
     from sklearn import preprocessing
     from sklearn.externals import joblib
 
@@ -1429,6 +1429,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         dd = ut.load_pickle(pca_data_pkl)
         X_train_flat = dd['X_train_flat']
         Y_train_flat = dd['Y_train_flat']
+        idx_train    = dd['train_flat_idx']
         X_test = dd['X_test']
         Y_test = dd['Y_test']
         X_test_flat = dd['X_test_flat']
@@ -1484,8 +1485,9 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 Y_test_flat.append(Y_test[i][j])
 
         dd = {}
-        dd['X_train_flat'] = X_train_flat = X_scaled
-        dd['Y_train_flat'] = Y_train_flat = Y_train
+        dd['X_train_flat']   = X_train_flat = X_scaled
+        dd['Y_train_flat']   = Y_train_flat = Y_train
+        dd['train_flat_idx'] = train_flat_idx = idx_train
         dd['X_test']      = X_test
         dd['Y_test']      = Y_test
         dd['X_test_flat'] = X_test_flat
@@ -1497,11 +1499,6 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
-
-    print np.shape(X_train), np.shape(X_test)
-    print np.shape(X), np.shape(Y_test)
-    print np.shape(X_test_flat), np.shape(X_test_flat)
-
     # step size in the mesh
     h = .02
     # create a mesh to plot in
@@ -1519,23 +1516,23 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
             dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'cssvm_standard':
             weights = np.logspace(-2, 0.1, nPoints)
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
+            ret = dtc.fit(X_train_flat, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
+            if j==0: ret = dtc.fit(X_train_flat, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'fixed':
             thresholds = ROC_dict['fixed_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_train_flat, Y_train, idx_train, parallel=False)                
+            if j==0: ret = dtc.fit(X_train_flat, Y_train_flat, train_flat_idx, parallel=False)                
 
         ## for ii in xrange(len(X_test)):
         ##     if len(Y_test[ii])==0: continue
@@ -1544,6 +1541,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         
         data = np.c_[xx.ravel(), yy.ravel()]
         print "------------------------------------"
+        print np.shape(X_train_flat), np.shape(Y_train)
         print np.shape(xx.ravel()), np.shape(data)
 
         # Put the result into a color plot
