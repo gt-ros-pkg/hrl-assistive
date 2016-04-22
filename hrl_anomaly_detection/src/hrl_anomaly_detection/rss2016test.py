@@ -1427,12 +1427,14 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'.pkl')
     if os.path.isfile(pca_data_pkl) and pca_renew is False:
         dd = ut.load_pickle(pca_data_pkl)
-        X_train  = dd['X_train']
-        Y_train  = dd['Y_train']
-        X_test   = dd['X_test']    
-        Y_test   = dd['Y_test']        
-        X_train_pca = dd['X_train_pca']    
-        X_test_pca  = dd['X_test_pca']    
+        X_train_flat = dd['X_train_flat']
+        Y_train_flat = dd['Y_train_flat']
+        X_test = dd['X_test']
+        Y_test = dd['Y_test']
+        X_test_flat = dd['X_test_flat']
+        Y_test_flat = dd['Y_test_flat']
+        X_train_pca = dd['X_train_pca']
+        X_test_pca  = dd['X_test_pca']
     else:
         # flatten the data
         X_train = []
@@ -1472,11 +1474,21 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         X_test = np.array(X_test)
         X_test_pca = np.array(X_test_pca)
 
+        # flatten the data
+        X_test_flat = []
+        Y_test_flat = []
+        for i in xrange(len(X_test)):
+            for j in xrange(len(X_test[i])):
+                X_test_flat.append(X_test[i][j])
+                Y_test_flat.append(Y_test[i][j])
+
         dd = {}
-        dd['X_train']     = X_train = X_scaled
-        dd['Y_train']     = Y_train
+        dd['X_train_flat'] = X_train_flat = X_scaled
+        dd['Y_train_flat'] = Y_train_flat = Y_train
         dd['X_test']      = X_test
         dd['Y_test']      = Y_test
+        dd['X_test_flat'] = X_test_flat
+        dd['Y_test_flat'] = Y_test_flat
         dd['X_train_pca'] = X_train_pca
         dd['X_test_pca']  = X_test_pca
 
@@ -1484,15 +1496,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
 
-    print np.shape(X_scaled)
-    print np.shape(X_test), np.shape(X), np.shape(Y_test)
-    # flatten the data
-    X_test_flat = []
-    Y_test_flat = []
-    for i in xrange(len(X_test)):
-        for j in xrange(len(X_test[i])):
-            X_test_flat.append(X_test[i][j])
-            Y_test_flat.append(Y_test[i][j])
+    print np.shape(X_train), np.shape(X_test)
+    print np.shape(X), np.shape(Y_test)
 
     print np.shape(X_test_flat), np.shape(X_test_flat)
 
