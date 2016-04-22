@@ -1427,23 +1427,25 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'.pkl')
     if os.path.isfile(pca_data_pkl) and pca_renew is False:
         dd = ut.load_pickle(pca_data_pkl)
-        X_train_org = dd['X_train_org']
-        Y_train_org = dd['Y_train_org']
-        X_test      = dd['X_test']    
-        Y_test      = dd['Y_test']        
+        X_train  = dd['X_train']
+        Y_train  = dd['Y_train']
+        X_test   = dd['X_test']    
+        Y_test   = dd['Y_test']        
+        X_train_pca = dd['X_train_pca']    
+        X_test_pca  = dd['X_test_pca']    
     else:
         # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
+        X_train = []
+        Y_train = []
+        idx_train = []
         for i in xrange(len(ll_classifier_train_X)):
             for j in xrange(len(ll_classifier_train_X[i])):
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
+                X_train.append(ll_classifier_train_X[i][j])
+                Y_train.append(ll_classifier_train_Y[i][j])
+                idx_train.append(ll_classifier_train_idx[i][j])
 
         scaler_viz = preprocessing.StandardScaler()
-        X_scaled = scaler_viz.fit_transform(X_train_org)
+        X_scaled = scaler_viz.fit_transform(X_train)
 
         from sklearn.decomposition import KernelPCA
         ml_viz = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=True, \
@@ -1455,36 +1457,50 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ml_viz = joblib.load(pca_model)
         else:
             print "Start to fit PCA"
-            ml_viz.fit(np.array(X_scaled))
+            X_train_pca = ml_viz.fit(np.array(X_scaled))
             joblib.dump(ml_viz, pca_model)
 
         X_test = []
         Y_test = [] 
+        X_test_pca = []
         for j in xrange(len(ll_classifier_test_X)):
             if len(ll_classifier_test_X[j])==0: continue
             X = scaler_viz.transform(ll_classifier_test_X[j])
-            X = ml_viz.transform(X)
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[j])
-        print np.shape(X_test), np.shape(X)
-
+            X_test_pca.append( ml_viz.transform(X) )
         X_test = np.array(X_test)
+        X_test_pca = np.array(X_test_pca)
 
         dd = {}
-        dd['X_train_org'] = X_train_org
-        dd['Y_train_org'] = Y_train_org
+        dd['X_train']     = X_train = X_scaled
+        dd['Y_train']     = Y_train
         dd['X_test']      = X_test
         dd['Y_test']      = Y_test
+        dd['X_train_pca'] = X_train_pca
+        dd['X_test_pca']  = X_test_pca
 
 
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
 
+    print np.shape(X_scaled)
+    print np.shape(X_test), np.shape(X), np.shape(Y_test)
+    # flatten the data
+    X_test_flat = []
+    Y_test_flat = []
+    for i in xrange(len(X_test)):
+        for j in xrange(len(X_test[i])):
+            X_test_flat.append(X_test[i][j])
+            Y_test_flat.append(Y_test[i][j])
+
+    print np.shape(X_test_flat), np.shape(X_test_flat)
+
     # step size in the mesh
     h = .02
     # create a mesh to plot in
-    x_min, x_max = X_test[:, 0].min() - 1, X_test[:, 0].max() + 1
-    y_min, y_max = X_test[:, 1].min() - 1, X_test[:, 1].max() + 1
+    x_min, x_max = X_test_flat[:, 0].min() - 1, X_test_flat[:, 0].max() + 1
+    y_min, y_max = X_test_flat[:, 1].min() - 1, X_test_flat[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                          np.arange(y_min, y_max, h))
 
@@ -1497,23 +1513,23 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
             dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
         elif method == 'cssvm_standard':
             weights = np.logspace(-2, 0.1, nPoints)
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            if j==0: ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
         elif method == 'fixed':
             thresholds = ROC_dict['fixed_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            if j==0: ret = dtc.fit(X_scaled, Y_train, idx_train, parallel=False)                
 
         ## for ii in xrange(len(X_test)):
         ##     if len(Y_test[ii])==0: continue
@@ -1521,6 +1537,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         ##     est_y    = dtc.predict(X, y=Y_test[ii])
         
         data = np.c_[xx.ravel(), yy.ravel()]
+        print "------------------------------------"
         print np.shape(xx.ravel()), np.shape(data)
 
         # Put the result into a color plot
