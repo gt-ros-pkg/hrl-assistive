@@ -1373,7 +1373,155 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
         ##     break
    
 
+def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
+                           methods,\
+                           success_viz=True, failure_viz=False, save_pdf=False):
+    from sklearn import preprocessing
+    from sklearn.externals import joblib
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+
+    foldIdx = 0
     
+    # Generative model ----------------------------------------------------------------------------
+    if AE_dict['switch'] and AE_dict['add_option'] is not None:
+        tag = ''
+        for ft in AE_dict['add_option']:
+            tag += ft[:2]
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_raw_'+tag+'_'+str(foldIdx)+'.pkl')
+    elif AE_dict['switch'] and AE_dict['add_option'] is None:
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_raw_'+str(foldIdx)+'.pkl')
+    else:
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(foldIdx)+'.pkl')
+
+    if os.path.isfile(modeling_pkl) is False:
+        print "No HMM modeling file exists:", modeling_pkl
+    else:
+        d = ut.load_pickle(modeling_pkl)
+        nEmissionDim = d['nEmissionDim'] 
+        nState       = d['nState']    
+        startIdx     = d['startIdx']     
+        ll_classifier_train_X   = d['ll_classifier_train_X']  
+        ll_classifier_train_Y   = d['ll_classifier_train_Y']             
+        ll_classifier_train_idx = d['ll_classifier_train_idx']
+        ll_classifier_test_X    = d['ll_classifier_test_X'] 
+        ll_classifier_test_Y    = d['ll_classifier_test_Y']            
+        ll_classifier_test_idx  = d['ll_classifier_test_idx'] 
+        nLength                 = d['nLength']
+
+
+    # Data conversion for plotting on 2D -----------------------------------------------------------
+    pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'.pkl')
+    if os.path.isfile(pca_data_pkl):
+        dd = ut.load_pickle(pca_data_pkl)
+        X_train_org = dd['X_train_org']
+        Y_train_org = dd['Y_train_org']
+        X_test      = dd['X_test']    
+        Y_test      = dd['Y_test']        
+    else:
+        # flatten the data
+        X_train_org = []
+        Y_train_org = []
+        idx_train_org = []
+        for i in xrange(len(ll_classifier_train_X)):
+            for j in xrange(len(ll_classifier_train_X[i])):
+                X_train_org.append(ll_classifier_train_X[i][j])
+                Y_train_org.append(ll_classifier_train_Y[i][j])
+                idx_train_org.append(ll_classifier_train_idx[i][j])
+
+        scaler_viz = preprocessing.StandardScaler()
+        X_scaled = scaler_viz.fit_transform(X_train_org)
+
+        from sklearn.decomposition import KernelPCA
+        ml_viz = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=True, \
+                           gamma=1.0)
+
+        pca_model = os.path.join(save_data_path, 'hmm_pca_'+task+'_'+str(foldIdx)+'.pkl')
+        if os.path.isfile(pca_model):
+            print "PCA model exists: ", pca_model
+            ml_viz = joblib.load(pca_model)
+        else:
+            ml_viz.fit(np.array(X_scaled))
+            joblib.dump(ml_viz, pca_model)
+
+        X_test = []
+        Y_test = [] 
+        for j in xrange(len(ll_classifier_test_X)):
+            if len(ll_classifier_test_X[j])==0: continue
+            X = scaler.transform(ll_classifier_test_X[j])                                
+            X_test.append(X)
+            Y_test.append(ll_classifier_test_Y[j])
+
+        X_test = np.array(X_test)
+
+        dd = {}
+        dd['X_train_org'] = X_train_org
+        dd['Y_train_org'] = Y_train_org
+        dd['X_test']      = X_test
+        dd['Y_test']      = Y_test
+
+
+    # Discriminative classifier --------------------------------------------------------------------
+    nPoints     = ROC_dict['nPoints']
+
+    # create a mesh to plot in
+    x_min, x_max = X_test[:, 0].min() - 1, X_test[:, 0].max() + 1
+    y_min, y_max = X_test[:, 1].min() - 1, X_test[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    
+    for method in methods:
+        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
+
+        j = 3
+        if method == 'svm':
+            weights = ROC_dict['svm_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            dtc.set_params( **SVM_dict )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'cssvm_standard':
+            weights = np.logspace(-2, 0.1, nPoints)
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'cssvm':
+            weights = ROC_dict['cssvm_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'progress_time_cluster':
+            thresholds = ROC_dict['progress_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'fixed':
+            thresholds = ROC_dict['fixed_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+
+        ## for ii in xrange(len(X_test)):
+        ##     if len(Y_test[ii])==0: continue
+        ##     X = X_test[ii]                
+        ##     est_y    = dtc.predict(X, y=Y_test[ii])
+        
+        data = np.c_[xx.ravel(), yy.ravel()]
+        print np.shape(xx.ravel()), np.shape(data)
+
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
+        plt.contourf(xx, yy, Z, cmap=plt.cm.Paired)
+        plt.axis('off')
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -1404,6 +1552,8 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
+    p.add_option('--decision_boundary', '--db', action='store_true', dest='bDecisionBoundary',
+                 default=False, help='Plot decision boundaries.')
     
     p.add_option('--aeDataExtraction', '--ae', action='store_true', dest='bAEDataExtraction',
                  default=False, help='Extract auto-encoder data.')
@@ -1521,7 +1671,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = True
+        failure_viz = False
         
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
@@ -1530,8 +1680,17 @@ if __name__ == '__main__':
                       ae_data=False,\
                       data_ext=param_dict['data_param']['lowVarDataRemv'],\
                       cut_data=param_dict['data_param']['cut_data'],
-                      save_pdf=opt.bSavePdf, solid_color=True,\
+                      save_pdf=opt.bSavePdf, solid_color=False,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
+
+    elif opt.bDecisionBoundary:
+        success_viz = True
+        failure_viz = False
+        methods     = ['svm', 'progress_time_cluster']
+
+        plotDecisionBoundaries(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                               methods,\
+                               success_viz, failure_viz, save_pdf=opt.bSavePdf)
 
     elif opt.bAEDataExtraction:
         param_dict['AE']['switch']     = True

@@ -215,25 +215,35 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
-        if nPlot is None:
-            if n%2==0: nPlot = n
-            else: nPlot = n+1
+        ## if nPlot is None:
+        ##     if n%2==0: nPlot = n
+        ##     else: nPlot = n+1
+        nPlot = n
 
         for i in xrange(n):
-            ax = fig.add_subplot((nPlot/2)*100+20+i)
+            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+            ax = fig.add_subplot(n*100+10+i)
             if solid_color: ax.plot(successData[i].T, c='b')
             else: ax.plot(successData[i].T)
-            ax.set_title( AddFeature_names[i] )
+
+            print AddFeature_names[i]
+            if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
+            elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
+            elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
+            else: ax.set_ylabel(AddFeature_names[i])
+                ## ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
-        if nPlot is None:
-            if n%2==0: nPlot = n
-            else: nPlot = n+1
+        ## if nPlot is None:
+        ##     if n%2==0: nPlot = n
+        ##     else: nPlot = n+1
+        nPlot = n
 
         for i in xrange(n):
-            ax = fig.add_subplot((nPlot/2)*100+20+i)
+            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+            ax = fig.add_subplot(n*100+10+i)
             if solid_color: ax.plot(failureData[i].T, c='r')
             else: ax.plot(failureData[i].T)
             ax.set_title( AddFeature_names[i] )
