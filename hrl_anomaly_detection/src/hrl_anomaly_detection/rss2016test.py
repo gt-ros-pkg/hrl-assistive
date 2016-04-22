@@ -1376,7 +1376,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
                            methods,\
                            success_viz=True, failure_viz=False, save_pdf=False,\
-                           pca_renew=False):
+                           pca_renew=True):
     from sklearn import preprocessing
     from sklearn.externals import joblib
 
@@ -1450,7 +1450,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                            gamma=1.0)
 
         pca_model = os.path.join(save_data_path, 'hmm_pca_'+task+'_'+str(foldIdx)+'.pkl')
-        if os.path.isfile(pca_model):
+        if os.path.isfile(pca_model) and pca_renew is False:
             print "PCA model exists: ", pca_model
             ml_viz = joblib.load(pca_model)
         else:
@@ -1462,9 +1462,11 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         Y_test = [] 
         for j in xrange(len(ll_classifier_test_X)):
             if len(ll_classifier_test_X[j])==0: continue
-            X = scaler_viz.transform(ll_classifier_test_X[j])                                
+            X = scaler_viz.transform(ll_classifier_test_X[j])
+            X = ml_viz.transform(X)
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[j])
+        print np.shape(X_test), np.shape(X)
 
         X_test = np.array(X_test)
 
@@ -1519,7 +1521,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         ##     est_y    = dtc.predict(X, y=Y_test[ii])
         
         data = np.c_[xx.ravel(), yy.ravel()]
-        print np.shape(xx.ravel()), np.shape(data)
+        print np.shape(xx.ravel()), np.shape(data), print 
 
         # Put the result into a color plot
         Z = Z.reshape(xx.shape)
