@@ -1521,7 +1521,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         ##     est_y    = dtc.predict(X, y=Y_test[ii])
         
         data = np.c_[xx.ravel(), yy.ravel()]
-        print np.shape(xx.ravel()), np.shape(data), print 
+        print np.shape(xx.ravel()), np.shape(data)
 
         # Put the result into a color plot
         Z = Z.reshape(xx.shape)
