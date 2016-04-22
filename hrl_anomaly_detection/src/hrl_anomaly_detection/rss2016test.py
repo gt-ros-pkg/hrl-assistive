@@ -1478,6 +1478,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
 
+    # step size in the mesh
+    h = .02
     # create a mesh to plot in
     x_min, x_max = X_test[:, 0].min() - 1, X_test[:, 0].max() + 1
     y_min, y_max = X_test[:, 1].min() - 1, X_test[:, 1].max() + 1
