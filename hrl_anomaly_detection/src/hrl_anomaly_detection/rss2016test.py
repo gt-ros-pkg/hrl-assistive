@@ -1390,7 +1390,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
-
+    SVM_dict = param_dict['SVM']
     # ROC
     ROC_dict = param_dict['ROC']
 
