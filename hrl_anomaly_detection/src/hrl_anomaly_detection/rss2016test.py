@@ -1375,7 +1375,8 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 
 def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
                            methods,\
-                           success_viz=True, failure_viz=False, save_pdf=False):
+                           success_viz=True, failure_viz=False, save_pdf=False,\
+                           pca_renew=False):
     from sklearn import preprocessing
     from sklearn.externals import joblib
 
@@ -1421,7 +1422,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     # Data conversion for plotting on 2D -----------------------------------------------------------
     pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'.pkl')
-    if os.path.isfile(pca_data_pkl):
+    if os.path.isfile(pca_data_pkl) and pca_renew is False:
         dd = ut.load_pickle(pca_data_pkl)
         X_train_org = dd['X_train_org']
         Y_train_org = dd['Y_train_org']
@@ -1442,7 +1443,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         X_scaled = scaler_viz.fit_transform(X_train_org)
 
         from sklearn.decomposition import KernelPCA
-        ml_viz = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=True, \
+        ml_viz = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=True, \
                            gamma=1.0)
 
         pca_model = os.path.join(save_data_path, 'hmm_pca_'+task+'_'+str(foldIdx)+'.pkl')
@@ -1450,6 +1451,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             print "PCA model exists: ", pca_model
             ml_viz = joblib.load(pca_model)
         else:
+            print "Start to fit PCA"
             ml_viz.fit(np.array(X_scaled))
             joblib.dump(ml_viz, pca_model)
 
@@ -1457,7 +1459,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         Y_test = [] 
         for j in xrange(len(ll_classifier_test_X)):
             if len(ll_classifier_test_X[j])==0: continue
-            X = scaler.transform(ll_classifier_test_X[j])                                
+            X = scaler_viz.transform(ll_classifier_test_X[j])                                
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[j])
 
