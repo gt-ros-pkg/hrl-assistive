@@ -160,8 +160,8 @@ var PR2GripperSensor = function (options) {
         self.reloadParams(); // Don't enforce a callback, because the open action shouldn't take palce immediately.  It's a race condition we should always win.
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
         msg.command.event.trigger_conditions = 2; // Slip OR finger contact OR accelerometer
-        msg.command.event.acceleration_trigger_magnitude = 4.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
-        msg.command.event.slip_trigger_magnitude = 0.01; // Default value recommended in msg def file
+        msg.command.event.acceleration_trigger_magnitude = 2.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
+        msg.command.event.slip_trigger_magnitude = 0.008; // Default value recommended in msg def file is 0.01
         var goal = new ROSLIB.Goal({
             actionClient: releaseActionClient,
             goalMessage: msg
