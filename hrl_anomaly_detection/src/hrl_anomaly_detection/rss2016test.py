@@ -1457,9 +1457,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         if os.path.isfile(pca_model) and pca_renew is False:
             print "PCA model exists: ", pca_model
             ml_viz = joblib.load(pca_model)
+            X_train_pca = ml_viz.transform(np.array(X_scaled))
         else:
             print "Start to fit PCA"
-            X_train_pca = ml_viz.fit(np.array(X_scaled))
+            X_train_pca = ml_viz.fit_transform(np.array(X_scaled))
             joblib.dump(ml_viz, pca_model)
 
         X_test = []
