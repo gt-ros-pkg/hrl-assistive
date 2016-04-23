@@ -1431,76 +1431,70 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         
         if os.path.isfile(pca_data_pkl) and pca_renew is False:
             dd = ut.load_pickle(pca_data_pkl)
-            X_train_flat = dd['X_train_flat']
-            Y_train_flat = dd['Y_train_flat']
-            train_flat_idx = dd['train_flat_idx']
-            X_test = dd['X_test']
-            Y_test = dd['Y_test']
-            X_test_flat = dd['X_test_flat']
-            Y_test_flat = dd['Y_test_flat']
-            X_train_pca = dd['X_train_pca']
-            X_test_pca  = dd['X_test_pca']
-            X_test_pca_flat  = dd['X_test_pca_flat']
+            X_train_flat        = dd['X_train_flat']
+            Y_train_flat        = dd['Y_train_flat']
+            idx_train_flat      = dd['idx_train_flat']
+            X_train_flat_scaled = dd['X_train_flat_scaled']            
+            X_train_flat_pca = dd['X_train_flat_pca']
+            X_test_flat        = dd['X_test_flat']
+            Y_test_flat        = dd['Y_test_flat'] 
+            X_test_flat_scaled = dd['X_test_flat_scaled']            
+            X_test_flat_pca    = dd['X_test_flat_pca']
         else:
-            # flatten the data
-            X_train = []
-            Y_train = []
-            idx_train = []
+            # flatten train data
+            X_train_flat = [] #
+            Y_train_flat = [] #
+            idx_train_flat = []
             for i in xrange(len(ll_classifier_train_X)):
                 for j in xrange(len(ll_classifier_train_X[i])):
-                    X_train.append(ll_classifier_train_X[i][j])
-                    Y_train.append(ll_classifier_train_Y[i][j])
-                    idx_train.append(ll_classifier_train_idx[i][j])
+                    X_train_flat.append(ll_classifier_train_X[i][j])
+                    Y_train_flat.append(ll_classifier_train_Y[i][j])
+                    idx_train_flat.append(ll_classifier_train_idx[i][j])
 
-            scaler_viz = preprocessing.StandardScaler()
-            X_scaled = scaler_viz.fit_transform(X_train)
+            # flatten test data
+            X_test_flat = [] #
+            Y_test_flat = [] #
+            for i in xrange(len(ll_classifier_test_X)):
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    X_test_flat.append(ll_classifier_test_X[i][j])
+                    Y_test_flat.append(ll_classifier_test_Y[i][j])
+            X_test_flat = np.array(X_test_flat)
+
+            # ------------------ PCA ---------------------------------------------------
+            ml_scaler = preprocessing.StandardScaler()
+            X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat) #
+            X_train_flat_scaled = np.array(X_train_flat_scaled)
 
             from sklearn.decomposition import KernelPCA
-            ml_viz = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=True, \
+            ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=True, \
                                gamma=pca_gamma)
 
             if os.path.isfile(pca_model) and pca_renew is False:
                 print "PCA model exists: ", pca_model
-                ml_viz = joblib.load(pca_model)
-                X_train_pca = ml_viz.transform(np.array(X_scaled))
+                ml_pca = joblib.load(pca_model)
+                X_train_flat_pca = ml_pca.transform(X_train_flat_scaled) #
             else:
                 print "Start to fit PCA"
-                X_train_pca = ml_viz.fit_transform(np.array(X_scaled))
-                joblib.dump(ml_viz, pca_model)
+                X_train_flat_pca = ml_pca.fit_transform(X_train_flat_scaled)
+                joblib.dump(ml_pca, pca_model)
 
-            X_test = []
-            Y_test = [] 
-            X_test_pca = []
-            for j in xrange(len(ll_classifier_test_X)):
-                if len(ll_classifier_test_X[j])==0: continue
-                X = scaler_viz.transform(ll_classifier_test_X[j])
-                X_test.append(X)
-                Y_test.append(ll_classifier_test_Y[j])
-                X_test_pca.append( ml_viz.transform(X) )
-            X_test = np.array(X_test)
-            X_test_pca = np.array(X_test_pca)
+            X_test_flat_scaled = []
+            X_test_flat_pca = []
+            for i in xrange(len(X_test_flat)):
+                if len(X_test_flat[i])==0: continue
+                X = ml_scaler.transform(X_test_flat[i])
+                X_test_flat_scaled.append(X)                
+                X_test_flat_pca.append( ml_pca.transform(X) )
+            X_test_flat_scaled = np.array(X_test_flat_scaled)
+            X_test_flat_pca    = np.array(X_test_flat_pca)
 
-            # flatten the data
-            X_test_flat = []
-            Y_test_flat = []
-            for i in xrange(len(X_test)):
-                for j in xrange(len(X_test[i])):
-                    X_test_flat.append(X_test[i][j])
-                    Y_test_flat.append(Y_test[i][j])
-
-            X_test_pca_flat = []
-            for i in xrange(len(X_test_pca)):
-                for j in xrange(len(X_test_pca[i])):
-                    X_test_pca_flat.append(X_test_pca[i][j])
-            X_test_pca_flat = np.array(X_test_pca_flat)
-
-            xx_normal = []
-            xx_abnormal = []
-            for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_pca_flat):
-                if y > 0: xx_abnormal.append(x_pca)
-                else:     xx_normal.append(x_pca)
-            xx_normal   = np.array(xx_normal)
-            xx_abnormal = np.array(xx_abnormal)
+            ## xx_normal = []
+            ## xx_abnormal = []
+            ## for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
+            ##     if y > 0: xx_abnormal.append(x_pca)
+            ##     else:     xx_normal.append(x_pca)
+            ## xx_normal   = np.array(xx_normal)
+            ## xx_abnormal = np.array(xx_abnormal)
 
             ## fig = plt.figure(1)
             ## plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
@@ -1513,18 +1507,16 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ##     fig.savefig('test_'+str(pca_gamma)+'.pdf')
             ##     os.system('mv test_* ~/Dropbox/HRL/')
 
-
             dd = {}
-            dd['X_train_flat']   = X_train_flat = X_scaled
-            dd['Y_train_flat']   = Y_train_flat = Y_train
-            dd['train_flat_idx'] = train_flat_idx = idx_train
-            dd['X_test']      = X_test
-            dd['Y_test']      = Y_test
-            dd['X_test_flat'] = X_test_flat
-            dd['Y_test_flat'] = Y_test_flat
-            dd['X_train_pca'] = X_train_pca
-            dd['X_test_pca']  = X_test_pca
-            dd['X_test_pca_flat']  = X_test_pca_flat
+            dd['X_train_flat']       = X_train_flat 
+            dd['Y_train_flat']       = Y_train_flat
+            dd['idx_train_flat']     = idx_train_flat
+            dd['X_train_flat_scaled']= X_train_flat_scaled
+            dd['X_train_flat_pca']   = X_train_flat_pca
+            dd['X_test_flat']        = X_test_flat
+            dd['Y_test_flat']        = Y_test_flat
+            dd['X_test_flat_scaled'] = X_test_flat_scaled
+            dd['X_test_flat_pca']    = X_test_flat_pca
             ut.save_pickle(dd, pca_data_pkl)
 
     # Discriminative classifier --------------------------------------------------------------------
@@ -1532,92 +1524,86 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # step size in the mesh
     h = .02
     # create a mesh to plot in
-    x1_min, x1_max = X_test_pca_flat[:, 0].min() , X_test_pca_flat[:, 0].max() 
-    x2_min, x2_max = X_test_pca_flat[:, 1].min() , X_test_pca_flat[:, 1].max() 
+    x1_min, x1_max = X_test_flat_pca[:, 0].min() , X_test_flat_pca[:, 0].max() 
+    x2_min, x2_max = X_test_flat_pca[:, 1].min() , X_test_flat_pca[:, 1].max() 
     x1, x2 = np.meshgrid(np.arange(x1_min, x1_max, h),
                          np.arange(x2_min, x2_max, h))
-
     print "x1 range: ", x1_min, x1_max
     print "x2 range: ", x2_min, x2_max
 
     methods = ['svm']
     methods = ['progress_time_cluster']
+    fig = plt.figure(1)
     for method in methods:
 
         # scaling?
-        if method.find('svm')>=0:
-            scaler = preprocessing.StandardScaler()
-            X_scaled = scaler.fit_transform(X_train_flat)
-        else:
-            X_scaled = X_train_flat
-            
+        if method.find('svm')>=0: X_scaled = X_train_flat_scaled
+        else: X_scaled = X_train_flat
         
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
 
         # weight number
-        j = 16
+        j = 5
         if method == 'svm':
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
             dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_scaled, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_flat, train_flat_idx, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            ret = dtc.fit(X_scaled, Y_train_flat, train_flat_idx, parallel=True)                
         elif method == 'fixed':
             thresholds = ROC_dict['fixed_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            ret = dtc.fit(X_scaled, Y_train_flat, train_flat_idx, parallel=False)                
+        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
         # Background
         print "Run background data"
-        data  = np.c_[x1.ravel(), x2.ravel()]
-        ml_viz = joblib.load(pca_model)
-        X_inv = ml_viz.inverse_transform(data)
+        data         = np.c_[x1.ravel(), x2.ravel()]
+        ml_pca       = joblib.load(pca_model)
+        X_inv_scaled = ml_pca.inverse_transform(data)
         if method.find('svm')>=0:
-            X_inv_scaled = scaler.transform(X_inv)
+            X_inv = X_inv_scaled
         else:
-            X_inv_scaled = X_inv
+            X_inv = ml_scaler.transform(X_inv_scaled)
         
-        z     = dtc.predict(np.array(X_inv_scaled))
+        z     = dtc.predict(np.array(X_inv))
+        z     = [1.0 if val > 1.0 else -1.0 for val in z]
         z     = np.array(z)
+        print z
         z     = z.reshape(np.shape(x1)) 
         ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
         plt.contourf(x1, x2, z, cmap=plt.cm.cool) # 0: blue, 1.0: red
         ## plt.axis('off')
 
-        print z
+        # single test points
+        test_idx = 1
+        
 
-        # test points
-        print "Run test data"
-        ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
-        xx_normal = []
-        xx_abnormal = []
-        for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_pca_flat):
-            if y > 0: xx_abnormal.append(x_pca)
-            else:     xx_normal.append(x_pca)
-        xx_normal   = np.array(xx_normal)
-        xx_abnormal = np.array(xx_abnormal)
 
-        fig = plt.figure(1)
-        plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
-        plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
+    # test points
+    print "Run test data"
+    ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
+    xx_normal = []
+    xx_abnormal = []
+    for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
+        if y > 0: xx_abnormal.append(x_pca)
+        else:     xx_normal.append(x_pca)
+    xx_normal   = np.array(xx_normal)
+    xx_abnormal = np.array(xx_abnormal)
 
-        if save_pdf is False:
-            plt.show()
-        else:
-            print "Save pdf to Dropbox folder"
-            fig.savefig('test.pdf')
-            fig.savefig('test.png')
-            os.system('mv test.* ~/Dropbox/HRL/')
+    plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
+    plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
 
-        ## # Put the result into a color plot
-        ## Z = Z.reshape(x1.shape)
+    if save_pdf is False:
+        plt.show()
+    else:
+        print "Save pdf to Dropbox folder"
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('mv test.* ~/Dropbox/HRL/')
 
 
 
