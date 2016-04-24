@@ -1475,7 +1475,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
             # ------------------ PCA ---------------------------------------------------
             from sklearn.decomposition import KernelPCA
-            ml_pca = KernelPCA(n_components=pca_ndim, kernel="linear", fit_inverse_transform=True, \
+            ml_pca = KernelPCA(n_components=pca_ndim, kernel="rbf", fit_inverse_transform=True, \
                                gamma=pca_gamma)
 
             if os.path.isfile(pca_model) and pca_renew is False:
@@ -1503,24 +1503,24 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ## X_test_flat_scaled = np.array(X_test_flat_scaled)
             ## X_test_flat_pca    = np.array(X_test_flat_pca)
 
-            ## xx_normal = []
-            ## xx_abnormal = []
-            ## for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
-            ##     if y > 0: xx_abnormal.append(x_pca)
-            ##     else:     xx_normal.append(x_pca)
-            ## xx_normal   = np.array(xx_normal)
-            ## xx_abnormal = np.array(xx_abnormal)
+            xx_normal = []
+            xx_abnormal = []
+            for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
+                if y > 0: xx_abnormal.append(x_pca)
+                else:     xx_normal.append(x_pca)
+            xx_normal   = np.array(xx_normal)
+            xx_abnormal = np.array(xx_abnormal)
 
-            ## fig = plt.figure(1)
-            ## plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
-            ## plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
+            fig = plt.figure(1)
+            plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
+            plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
 
-            ## if save_pdf is False:
-            ##     plt.show()
-            ## else:
-            ##     print "Save pdf to Dropbox folder"
-            ##     fig.savefig('test_'+str(pca_gamma)+'.pdf')
-            ##     os.system('mv test_* ~/Dropbox/HRL/')
+            if save_pdf is False:
+                plt.show()
+            else:
+                print "Save pdf to Dropbox folder"
+                fig.savefig('test_'+str(pca_gamma)+'.pdf')
+                os.system('mv test_* ~/Dropbox/HRL/')
 
             dd = {}
             dd['X_train_flat']       = X_train_flat 
@@ -1579,7 +1579,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     print "Run classifier"
     methods = ['svm']
-    methods = ['progress_time_cluster']
+    ## methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
@@ -1617,7 +1617,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 print "Progress? Weight: ", thresholds[j]
                 X_inv = ml_scaler.inverse_transform(X_inv_scaled)
             z = dtc.predict(np.array(X_inv))                
-            z = np.array([1.0 if val > 0.0 else -1.0 for val in z])
+            ## z = np.array([1.0 if val > 0.0 else -1.0 for val in z])
+            ## print X_scaled[180]
+            ## print X_inv[180]
+            print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
                 
             if np.amax(z) == np.amin(z):
                 print "Max equals to min. Wrong classification!"
@@ -1632,10 +1635,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
             ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
             plt.axis('tight')
-            ## plt.xlim([-1, 1])
-            ## plt.ylim([-1, 1])
-            plt.xlim([x1_min, x1_max])
-            plt.ylim([x2_min, x2_max])
+            plt.xlim([0, 1])
+            plt.ylim([0, 1])
+            ## plt.xlim([x1_min, x1_max])
+            ## plt.ylim([x2_min, x2_max])
 
             if save_pdf is False:
                 plt.show()
