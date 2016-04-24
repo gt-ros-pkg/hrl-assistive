@@ -1572,7 +1572,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     print "Run classifier"
     methods = ['svm']
-    methods = ['progress_time_cluster']
+    ## methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
