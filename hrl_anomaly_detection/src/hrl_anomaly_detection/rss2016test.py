@@ -1571,8 +1571,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
 
     print "Run classifier"
-    #methods = ['svm']
-    methods = ['progress_time_cluster']
+    methods = ['svm']
+    ## methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
@@ -1625,10 +1625,12 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ## plt.axis('off')
 
             plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
-            plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
+            ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
             plt.axis('tight')
-            plt.xlim()[x1_min, x1_max]
-            plt.ylim()[x2_min, x2_max]
+            plt.xlim([-1, 1])
+            plt.ylim([-1, 1])
+            ## plt.xlim([x1_min, x1_max])
+            ## plt.ylim([x2_min, x2_max])
 
             if save_pdf is False:
                 plt.show()
