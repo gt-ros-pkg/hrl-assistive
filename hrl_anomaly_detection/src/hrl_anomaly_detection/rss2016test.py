@@ -1553,6 +1553,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # Background
     print "Run background data"
     data         = np.c_[x1.ravel(), x2.ravel()]
+    print np.shape(data), np.shape(data[:,:1]), np.shape(data[:,1:])
     ml_pca       = joblib.load(pca_model)
     X_inv_scaled = np.hstack([data[:,:1],\
                               ml_pca.inverse_transform(data[:,1:])])

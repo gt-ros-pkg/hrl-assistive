@@ -140,7 +140,7 @@ class anomaly_detector:
     def initDetector(self):
         
         train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
-        startIdx = 4
+        startIdx  = 4
         
         if os.path.isfile(train_pkl):
             d = ut.load_pickle(train_pkl)
@@ -188,8 +188,14 @@ class anomaly_detector:
             self.nEmissionDim   = len(normalTrainData)
             detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
             self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
-            ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
-                              ml_pkl=detection_param_pkl, use_pkl=True)
+            if self.param_dict['data_param']['handFeatures_noise']:
+                ret = self.ml.fit(normalTrainData+
+                                  np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*self.scale, \
+                                  cov_mult=[self.cov]*(self.nEmissionDim**2),
+                                  ml_pkl=detection_param_pkl, use_pkl=True)
+            else:
+                ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
+                                  ml_pkl=detection_param_pkl, use_pkl=True)
 
             if ret == 'Failure':
                 print "-------------------------"
