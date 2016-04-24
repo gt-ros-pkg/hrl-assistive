@@ -1494,8 +1494,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             for i in xrange(len(X_test_flat)):
                 if len(X_test_flat[i])==0: continue
                 X = ml_scaler.transform(X_test_flat[i])
-                X_test_flat_scaled.append(X)                
-                X_test_flat_pca.append( [X[0]]+ml_pca.transform(X[1:])[0] )
+                X_test_flat_scaled.append(X)
+                X_test_flat_pca.append( [X[0], ml_pca.transform(X[1:])[0,0]] )
             X_test_flat_scaled = np.array(X_test_flat_scaled)
             X_test_flat_pca    = np.array(X_test_flat_pca)
 
@@ -1531,8 +1531,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ut.save_pickle(dd, pca_data_pkl)
 
     print np.shape(X_test_flat), np.shape(Y_test_flat)
-    print np.shape(X_test_flat_scaled)
-    print np.shape(X_test_flat_pca)
+    print np.shape(X_train_flat_pca), np.shape(X_test_flat_pca)
 
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
