@@ -1538,8 +1538,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # step size in the mesh
     h = .02
     # create a mesh to plot in
-    x1_min, x1_max = X_test_flat_pca[:, 0].min() , X_test_flat_pca[:, 0].max() 
-    x2_min, x2_max = X_test_flat_pca[:, 1].min() , X_test_flat_pca[:, 1].max() 
+    x1_min, x1_max = X_train_flat_pca[:, 0].min() , X_train_flat_pca[:, 0].max() 
+    x2_min, x2_max = X_train_flat_pca[:, 1].min() , X_train_flat_pca[:, 1].max() 
     x1, x2 = np.meshgrid(np.arange(x1_min, x1_max, h),
                          np.arange(x2_min, x2_max, h))
     print "x1 range: ", x1_min, x1_max
@@ -1572,14 +1572,13 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     print "Run classifier"
     methods = ['svm']
-    ## methods = ['progress_time_cluster']
+    methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
         # scaling?
         if method.find('svm')>=0:
-            ml_svm_scaler = preprocessing.StandardScaler()
-            X_scaled      = ml_svm_scaler.fit_transform(X_train_flat)
+            X_scaled = X_train_flat_scaled
         else:
             X_scaled = X_train_flat            
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
@@ -1606,8 +1605,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
             if method.find('svm')>=0:
                 print "SVM Weight: ", weights[j], np.shape(X_inv_scaled)
-                X_inv = ml_scaler.inverse_transform(X_inv_scaled)
-                X_inv = ml_svm_scaler.transform(X_inv)
+                X_inv = X_inv_scaled
             else:
                 print "Progress? Weight: ", thresholds[j]
                 X_inv = ml_scaler.inverse_transform(X_inv_scaled)
@@ -1627,10 +1625,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
             ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
             plt.axis('tight')
-            plt.xlim([-1, 1])
-            plt.ylim([-1, 1])
-            ## plt.xlim([x1_min, x1_max])
-            ## plt.ylim([x2_min, x2_max])
+            ## plt.xlim([-1, 1])
+            ## plt.ylim([-1, 1])
+            plt.xlim([x1_min, x1_max])
+            plt.ylim([x2_min, x2_max])
 
             if save_pdf is False:
                 plt.show()
