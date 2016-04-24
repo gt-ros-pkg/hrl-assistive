@@ -1425,7 +1425,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     # Data conversion for plotting on 2D -----------------------------------------------------------
     pca_gammas = [0.03]
-    pca_ndim   = 2
+    pca_ndim   = 1
     for pca_gamma in pca_gammas:
         pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'_'+str(pca_gamma)+'_'+str(pca_ndim)+'.pkl')
         pca_model    = os.path.join(save_data_path, 'hmm_pca_'+task+'_'+str(foldIdx)+'_'+str(pca_gamma)+'_'+str(pca_ndim)+'.pkl')
@@ -1463,7 +1463,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             X_test_flat = np.array(X_test_flat)
             Y_test_flat = np.array(Y_test_flat)
 
-            # ------------------ PCA ---------------------------------------------------
+            # ------------------ scaling ---------------------------------------------------
             if os.path.isfile(scaler_model) and pca_renew is False:
                 ml_scaler = joblib.load(scaler_model)
                 X_train_flat_scaled = ml_scaler.transform(X_train_flat)
@@ -1473,6 +1473,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 joblib.dump(ml_scaler, scaler_model)
             X_train_flat_scaled = np.array(X_train_flat_scaled)
 
+            # ------------------ PCA ---------------------------------------------------
             from sklearn.decomposition import KernelPCA
             ml_pca = KernelPCA(n_components=pca_ndim, kernel="rbf", fit_inverse_transform=True, \
                                gamma=pca_gamma)
@@ -1480,10 +1481,12 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             if os.path.isfile(pca_model) and pca_renew is False:
                 print "PCA model exists: ", pca_model
                 ml_pca = joblib.load(pca_model)
-                X_train_flat_pca = ml_pca.transform(X_train_flat_scaled) #
+                X_train_flat_pca = np.hstack([X_train_flat_scaled[:,:1],\
+                                              ml_pca.transform(X_train_flat_scaled[:,1:])])
             else:
                 print "Start to fit PCA"
-                X_train_flat_pca = ml_pca.fit_transform(X_train_flat_scaled)
+                X_train_flat_pca = np.hstack([X_train_flat_scaled[:,:1],\
+                                              ml_pca.fit_transform(X_train_flat_scaled[:,1:])])
                 joblib.dump(ml_pca, pca_model)
 
             X_test_flat_scaled = []
@@ -1492,7 +1495,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 if len(X_test_flat[i])==0: continue
                 X = ml_scaler.transform(X_test_flat[i])
                 X_test_flat_scaled.append(X)                
-                X_test_flat_pca.append( ml_pca.transform(X)[0] )
+                X_test_flat_pca.append( [X[0]]+ml_pca.transform(X[1:])[0] )
             X_test_flat_scaled = np.array(X_test_flat_scaled)
             X_test_flat_pca    = np.array(X_test_flat_pca)
 
@@ -1534,7 +1537,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # Discriminative classifier --------------------------------------------------------------------
     nPoints     = ROC_dict['nPoints']
     # step size in the mesh
-    h = .02
+    h = .01
     # create a mesh to plot in
     x1_min, x1_max = X_test_flat_pca[:, 0].min() , X_test_flat_pca[:, 0].max() 
     x2_min, x2_max = X_test_flat_pca[:, 1].min() , X_test_flat_pca[:, 1].max() 
@@ -1552,30 +1555,30 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     print "Run background data"
     data         = np.c_[x1.ravel(), x2.ravel()]
     ml_pca       = joblib.load(pca_model)
-    X_inv_scaled = ml_pca.inverse_transform(data)
+    X_inv_scaled = np.hstack([data[:,:1],\
+                              ml_pca.inverse_transform(data[:,1:])])
+
+    # test points
+    print "Run test data"
+    ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
+    xx_normal = []
+    xx_abnormal = []
+    for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
+        if y > 0: xx_abnormal.append(x_pca)
+        else:     xx_normal.append(x_pca)
+    xx_normal   = np.array(xx_normal)
+    xx_abnormal = np.array(xx_abnormal)
+
 
     print "Run classifier"
     methods = ['svm']
-    methods = ['progress_time_cluster']
+    ## methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
 
         # scaling?
         if method.find('svm')>=0: X_scaled = X_train_flat_scaled
-        else: X_scaled = X_train_flat
-
-        # test points
-        print "Run test data"
-        ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
-        xx_normal = []
-        xx_abnormal = []
-        for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
-            if y > 0: xx_abnormal.append(x_pca)
-            else:     xx_normal.append(x_pca)
-        xx_normal   = np.array(xx_normal)
-        xx_abnormal = np.array(xx_abnormal)
-
-            
+        else: X_scaled = X_train_flat            
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
 
         # weight number
@@ -1598,26 +1601,36 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 dtc.set_params( ths_mult = thresholds[j] )
                 if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
-            if method.find('svm')>=0: X_inv = X_inv_scaled
-            else: X_inv = ml_scaler.inverse_transform(X_inv_scaled)
-
-            z     = dtc.predict(np.array(X_inv))
-            z     = [1.0 if val > 1.0 else -1.0 for val in z]
-            z     = np.array(z)
-            print np.amax(z), np.amin(z)
-            z     = z.reshape(np.shape(x1)) 
+            if method.find('svm')>=0:
+                print "SVM Weight: ", weights[j], np.shape(X_inv_scaled)
+                X_inv = X_inv_scaled
+                z = dtc.predict(np.array(X_inv))
+                print np.amax(z), np.amin(z)
+                z = np.array([1.0 if val > 0.0 else -1.0 for val in z])
+            else:
+                print "Progress? Weight: ", thresholds[j]
+                X_inv = ml_scaler.inverse_transform(X_inv_scaled)
+                z = dtc.predict(np.array(X_inv))                
+                z = np.array([1.0 if val > 0.0 else -1.0 for val in z])
+                
+            if np.amax(z) == np.amin(z):
+                print "Max equals to min. Wrong classification!"
+                continue
+            z = z.reshape(np.shape(x1)) 
             ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
-            plt.contourf(x1, x2, z, cmap=plt.cm.cool) # 0: blue, 1.0: red
+            plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
+            plt.contour(x1, x2, z, levels=[0], linewidths=2, colors='red')
+            plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
             ## plt.axis('off')
 
-
-            plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
-            plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
+            plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
+            plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
+            plt.axis('tight')
 
             if save_pdf is False:
                 plt.show()
             else:
-                print "Save pdf to Dropbox folder"
+                print "Save pdf to Dropbox folder ", j
                 fig.savefig('test_'+str(j)+'.pdf')
                 fig.savefig('test_'+str(j)+'.png')
                 os.system('mv test_* ~/Dropbox/HRL/')
