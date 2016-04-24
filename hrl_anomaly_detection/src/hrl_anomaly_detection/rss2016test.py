@@ -1469,13 +1469,13 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 X_train_flat_scaled = ml_scaler.transform(X_train_flat)
             else:
                 ml_scaler = preprocessing.StandardScaler()
-                X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat) #
+                X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat) 
                 joblib.dump(ml_scaler, scaler_model)
-            X_train_flat_scaled = np.array(X_train_flat_scaled)
+            X_train_flat_scaled = np.array(X_train_flat_scaled) #
 
             # ------------------ PCA ---------------------------------------------------
             from sklearn.decomposition import KernelPCA
-            ml_pca = KernelPCA(n_components=pca_ndim, kernel="rbf", fit_inverse_transform=True, \
+            ml_pca = KernelPCA(n_components=pca_ndim, kernel="linear", fit_inverse_transform=True, \
                                gamma=pca_gamma)
 
             if os.path.isfile(pca_model) and pca_renew is False:
@@ -1486,18 +1486,22 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             else:
                 print "Start to fit PCA"
                 X_train_flat_pca = np.hstack([X_train_flat_scaled[:,:1],\
-                                              ml_pca.fit_transform(X_train_flat_scaled[:,1:])])
+                                              ml_pca.fit_transform(X_train_flat_scaled[:,1:])]) #
                 joblib.dump(ml_pca, pca_model)
 
-            X_test_flat_scaled = []
-            X_test_flat_pca = []
-            for i in xrange(len(X_test_flat)):
-                if len(X_test_flat[i])==0: continue
-                X = ml_scaler.transform(X_test_flat[i])
-                X_test_flat_scaled.append(X)
-                X_test_flat_pca.append( [X[0], ml_pca.transform(X[1:])[0,0]] )
-            X_test_flat_scaled = np.array(X_test_flat_scaled)
-            X_test_flat_pca    = np.array(X_test_flat_pca)
+            X_test_flat_scaled = ml_scaler.transform(X_test_flat) #
+            X_test_flat_pca    = np.hstack([ X_test_flat_scaled[:,:1],\
+                                             ml_pca.transform(X_test_flat_scaled[:,1:]) ]) #
+
+            ## X_test_flat_scaled = []
+            ## X_test_flat_pca = []
+            ## for i in xrange(len(X_test_flat)):
+            ##     if len(X_test_flat[i])==0: continue
+            ##     X = ml_scaler.transform(X_test_flat[i])
+            ##     X_test_flat_scaled.append(X)
+            ##     X_test_flat_pca.append( [X[0], ml_pca.transform(X[1:])[0,0]] )
+            ## X_test_flat_scaled = np.array(X_test_flat_scaled)
+            ## X_test_flat_pca    = np.array(X_test_flat_pca)
 
             ## xx_normal = []
             ## xx_abnormal = []
@@ -1537,13 +1541,17 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     nPoints     = ROC_dict['nPoints']
     # step size in the mesh
     h = .02
-    # create a mesh to plot in
+    # Adjusting range
     x1_min, x1_max = X_train_flat_pca[:, 0].min() , X_train_flat_pca[:, 0].max() 
-    x2_min, x2_max = X_train_flat_pca[:, 1].min() , X_train_flat_pca[:, 1].max() 
-    x1, x2 = np.meshgrid(np.arange(x1_min, x1_max, h),
-                         np.arange(x2_min, x2_max, h))
-    print "x1 range: ", x1_min, x1_max
-    print "x2 range: ", x2_min, x2_max
+    x2_min, x2_max = X_train_flat_pca[:, 1].min() , X_train_flat_pca[:, 1].max()
+    X_train_flat_pca_scaled = (X_train_flat_pca - x1_min)/(x1_max-x1_min)
+    X_test_flat_pca_scaled  = (X_test_flat_pca - x1_min)/(x1_max-x1_min)
+    
+    # create a mesh to plot in
+    x1, x2 = np.meshgrid(np.arange(0, 1, h),
+                         np.arange(0, 1, h))
+    ## print "x1 range: ", x1_min, x1_max
+    ## print "x2 range: ", x2_min, x2_max
     if os.path.isfile(scaler_model):
         ml_scaler = joblib.load(scaler_model)
     else:
@@ -1553,17 +1561,16 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # Background
     print "Run background data"
     data         = np.c_[x1.ravel(), x2.ravel()]
-    print np.shape(data), np.shape(data[:,:1]), np.shape(data[:,1:])
     ml_pca       = joblib.load(pca_model)
     X_inv_scaled = np.hstack([data[:,:1],\
-                              ml_pca.inverse_transform(data[:,1:])])
+                              ml_pca.inverse_transform( data[:,1:]*(x2_max-x2_min)+x2_min ) ])
 
     # test points
     print "Run test data"
     ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
     xx_normal = []
     xx_abnormal = []
-    for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
+    for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca_scaled):
         if y > 0: xx_abnormal.append(x_pca)
         else:     xx_normal.append(x_pca)
     xx_normal   = np.array(xx_normal)
@@ -1572,7 +1579,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
     print "Run classifier"
     methods = ['svm']
-    ## methods = ['progress_time_cluster']
+    methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
