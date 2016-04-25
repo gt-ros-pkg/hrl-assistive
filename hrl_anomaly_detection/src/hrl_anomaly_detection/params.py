@@ -30,7 +30,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 0.73, 'scale': 10.0}
     SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0}
 
     nPoints        = 20
