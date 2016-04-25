@@ -393,26 +393,10 @@ if __name__ == '__main__':
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        handFeatures = ['unimodal_audioWristRMS',\
-                        'unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng']
-        modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
-                         'vision_change', 'pps']
-        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data'
-        downSampleSize = 200
-
-
-
-        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False,}
+        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
+                                                               False, False,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
@@ -422,8 +406,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+        param_dict['ROC'] = ROC_param_dict
 
         nFiles = 16
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -438,24 +421,10 @@ if __name__ == '__main__':
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        feature_list = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-                        'crossmodal_artagEEAng'] #'unimodal_audioPower'
-        modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
-
-        save_data_path = '/home/'+opt.user+'/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data'
-        downSampleSize = 200
-
-        data_param_dict= {'renew': False, 'rf_center': rf_center, 'local_range': local_range,\
-                          'downSampleSize': downSampleSize, 'cut_data': [0,170], \
-                          'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': feature_list, 'nAugment': 0, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False,}
-        
+        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
+                                                               False, False,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
         nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
                           'update_list': [],\
@@ -464,8 +433,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
+        param_dict['ROC'] = ROC_param_dict
 
         nFiles = 16
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -490,7 +458,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'sgd_param_range': np.logspace(-1.2, 0., nPoints)}
+                          'sgd_param_range': np.logspace(-0.8, -0.5, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 4
