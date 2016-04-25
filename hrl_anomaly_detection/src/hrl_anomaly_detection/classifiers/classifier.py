@@ -111,7 +111,7 @@ class classifier(learning_base):
             self.class_weight = class_weight
             self.w_negative   = w_negative             
             self.gamma        = gamma
-            self.cost         = cost
+            ## self.cost         = cost
             
             
         learning_base.__init__(self)
@@ -208,7 +208,8 @@ class classifier(learning_base):
             self.rbf_feature = RBFSampler(gamma=self.gamma, random_state=1)
             X_features       = self.rbf_feature.fit_transform(X)
             # fitting
-            self.dt = SGDClassifier()
+            d = {+1: self.class_weight, -1: self.w_negative}
+            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=1000)
             self.dt.fit(X_features, y)
 
 
@@ -279,7 +280,7 @@ class classifier(learning_base):
 
         elif self.method == 'sgd':
             X_features = self.rbf_feature.transform(X)
-            return self.dt.transform(X_features)
+            return self.dt.predict(X_features)
 
         
 

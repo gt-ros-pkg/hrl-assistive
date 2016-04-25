@@ -147,7 +147,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
                 idx_train_org.append(train_idx[i][j])
 
         # training data preparation
-        if 'svm' in method:
+        if 'svm' in method or 'sgd' in method:
             scaler = preprocessing.StandardScaler()
             ## scaler = preprocessing.scale()
             X_scaled = scaler.fit_transform(X_train_org)
@@ -164,7 +164,7 @@ def getData(nFiles, processed_data_path, task_name, default_params, custom_param
               or np.nan in test_X[ii][0]:
                 continue
 
-            if 'svm' in method:
+            if 'svm' in method or 'sgd' in method:
                 X = scaler.transform(test_X[ii])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = test_X[ii]
@@ -255,6 +255,9 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
     elif method == 'fixed':
         thresholds = ROC_dict['fixed_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
+    elif method == 'sgd':
+        weights = ROC_dict['sgd_param_range']
+        dtc.set_params( class_weight=weights[j] )
     else:
         print "Not available method"
         return "Not available method", -1, params
@@ -486,15 +489,14 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\        
-                          'sgd_param_range': np.logspace(-2, 0, nPoints)}
+                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'sgd_param_range': np.logspace(-1.2, 0., nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 4
         parameters = {'method': ['sgd'], \
-                      'cost': [3.,4.,5.],\
-                      'gamma': [1.5,2.0,2.5], \
-                      'w_negative': np.linspace(0.2,0.7,5) }
+                      'gamma': [1.0], \
+                      'w_negative': [0.1,0.3,0.5,1.0] }
         ## parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \

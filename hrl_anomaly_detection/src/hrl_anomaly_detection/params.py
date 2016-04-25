@@ -73,7 +73,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                       'filter':True, 'filterDim':4,\
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}                      
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
     SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
 
     nPoints        = 20
