@@ -119,11 +119,11 @@ class anomaly_detector:
             self.SVM_dict  = self.param_dict['SVM']
 
             if 'svm' in self.classifier_method:
-                self.w_max = self.param_dict['SVM']['svm_param_range'][-1]
-                self.w_min = self.param_dict['SVM']['svm_param_range'][0]
-            elif self.classifier_method == 'progress_time_cluster'                    
-                self.w_max = self.param_dict['SVM']['progress_param_range'][-1]
-                self.w_min = self.param_dict['SVM']['progress_param_range'][0]
+                self.w_max = self.param_dict['ROC']['svm_param_range'][-1]
+                self.w_min = self.param_dict['ROC']['svm_param_range'][0]
+            elif self.classifier_method == 'progress_time_cluster':                    
+                self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
+                self.w_min = self.param_dict['ROC']['progress_param_range'][0]
             else:
                 print "sensitivity info is not available"
                 sys.exit()
@@ -294,7 +294,7 @@ class anomaly_detector:
 
         if 'svm' in self.classifier_method:
             sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
-        elif self.classifier_method == 'progress_time_cluster'                    
+        elif self.classifier_method == 'progress_time_cluster':                    
             sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
         self.sensitivity_pub.publish(sensitivity)                                   
         
@@ -396,7 +396,7 @@ class anomaly_detector:
 
         if 'svm' in self.classifier_method:           
             self.classifier.set_params(class_weight=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min )
-        elif self.classifier_method == 'progress_time_cluster'                    
+        elif self.classifier_method == 'progress_time_cluster':                    
             self.classifier.set_params(ths_mult=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min)
             
         self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
