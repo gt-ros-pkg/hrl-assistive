@@ -50,10 +50,10 @@ from sklearn import metrics
 
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
-                 class_weight=1.0, \
                  #progress
                  logp_offset = 0.0,\
                  # svm
+                 class_weight=1.0, \
                  svm_type    = 0,\
                  kernel_type = 2,\
                  degree      = 3,\

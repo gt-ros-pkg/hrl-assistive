@@ -49,7 +49,7 @@ from joblib import Parallel, delayed
 # msg
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse
 from hrl_anomaly_detection.msg import MultiModality
-from std_msgs.msg import String
+from std_msgs.msg import String, Float64
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
@@ -118,9 +118,16 @@ class anomaly_detector:
 
             self.SVM_dict  = self.param_dict['SVM']
 
+            if 'svm' in self.classifier_method:
+                self.w_max = self.param_dict['SVM']['svm_param_range'][-1]
+                self.w_min = self.param_dict['SVM']['svm_param_range'][0]
+            elif self.classifier_method == 'progress_time_cluster'                    
+                self.w_max = self.param_dict['SVM']['progress_param_range'][-1]
+                self.w_min = self.param_dict['SVM']['progress_param_range'][0]
+            else:
+                print "sensitivity info is not available"
+                sys.exit()
 
-        # Discriminative classifier
-        ## self.threshold = -200.0
 
     '''
     Subscribe raw data
@@ -129,10 +136,14 @@ class anomaly_detector:
         # Publisher
         self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String)
         self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String)
+        self.sensitivity_pub         = rospy.Publisher("/manipulation_task/ad_sensitivity_state", \
+                                                       Float64, latch=True)
 
         # Subscriber
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
-        # sensitiviy control topic
+        rospy.Subscriber('/hrl_manipulation_task/status', String, self.statusCallback)
+        rospy.Subscriber('/hrl_manipulation_task/user_feedback', String, self.userfbCallback)
+        rospy.Subscriber('/hrl_manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
@@ -263,22 +274,30 @@ class anomaly_detector:
             ut.save_pickle(d, train_pkl)
 
         # data preparation
-        self.scaler = preprocessing.StandardScaler()
+        self.scaler       = preprocessing.StandardScaler()
+        self.Y_test_org   = Y_test_org
+        self.idx_test_org = idx_test_org
         if 'svm' in self.classifier_method:
-            X_scaled = self.scaler.fit_transform(X_test_org)
+            self.X_scaled = self.scaler.fit_transform(X_test_org)
         else:
-            X_scaled = X_test_org
-        print self.classifier_method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_test_org)
+            self.X_scaled = X_test_org
+            
+        print self.classifier_method, " : Before classification : ", \
+          np.shape(self.X_scaled), np.shape(self.Y_test_org)
             
         # Fit Classifier
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
                                         nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
-        self.classifier.fit(X_scaled, Y_test_org, idx_test_org)
+        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
         print "Finished to train SVM"
+
+        if 'svm' in self.classifier_method:
+            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
+        elif self.classifier_method == 'progress_time_cluster'                    
+            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+        self.sensitivity_pub.publish(sensitivity)                                   
         
-        #TEMP
-        ## self.tempdata = normalTrainData[:,0:1,:]
         return
 
 
@@ -338,10 +357,20 @@ class anomaly_detector:
         self.fabric_skin_values_y  = msg.fabric_skin_values_y
         self.fabric_skin_values_z  = msg.fabric_skin_values_z
 
+        # If detector is disbled, detector does not fill out the dataList.
         if self.enable_detector is False: return
         
         self.lock.acquire()
-        newData = self.extractLocalFeature() 
+        newData = self.extractLocalFeature()
+
+        # get offset
+        startOffsetSize = 4
+        if len(self.dataList[0][0]) == startOffsetSize:
+            self.offsetData = np.mean(self.dataList, axis=2)/self.scale
+        elif len(self.dataList[0][0]) < startOffsetSize:
+            self.offsetData = np.zeros(np.shape(newData))
+        newData -= self.offsetData
+        
         if len(self.dataList) == 0:
             self.dataList = (np.array(newData)*self.scale).tolist()
         else:                
@@ -349,11 +378,34 @@ class anomaly_detector:
             for i in xrange(self.nEmissionDim):
                 self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
+                       
         self.lock.release()
+
+
+    def statusCallback(self, msg):
+        self.cur_task = msg.data
+
+    def userfbCallback(self, msg):
+        self.user_feedback = msg.data
+
+    def sensitivityCallback(self, msg):
+        '''
+        Requested value's range is 0~1.
+        '''
+        self.sensitivity_req = msg.data
+
+        if 'svm' in self.classifier_method:           
+            self.classifier.set_params(class_weight=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min )
+        elif self.classifier_method == 'progress_time_cluster'                    
+            self.classifier.set_params(ths_mult=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            
+        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
+        
 
                     
     def extractLocalFeature(self):
 
+        startOffsetSize = 4
         data_dict = {}
         data_dict['timesList'] = [[0.]]
             
@@ -440,34 +492,15 @@ class anomaly_detector:
     '''
     def run(self):
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
-
-
-        ## dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
-        ##                    self.save_data_path, self.rf_center, \
-        ##                    self.rf_radius,\
-        ##                    downSampleSize=self.downSampleSize, \
-        ##                    scale=1.0,\
-        ##                    ae_data=False,\
-        ##                    data_ext=self.data_ext,\
-        ##                    handFeatures=self.handFeatures, \
-        ##                    cut_data=self.cut_data,\
-        ##                    data_renew=False)
-
-        ## handFeatureParams = dd['param_dict']
-
-        ## # dim x sample x length # TODO: what is the best selection?
-        ## self.dataList = normalTrainData   = dd['successData'][:, 0:1, :] * self.scale
-        ## print "-----------------------------------------------"
-        ## print np.shape(normalTrainData)
-        ## print "-----------------------------------------------"
-        
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
+            
             if self.enable_detector is False: 
                 self.dataList = []
                 continue            
             if len(self.dataList) == 0 or len(self.dataList[0][0]) < 10: continue
-            
+
+            #-----------------------------------------------------------------------
             self.lock.acquire()
             cur_length     = len(self.dataList[0][0])
             l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
@@ -481,15 +514,12 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-            ## print np.amin(self.dataList, axis=0), np.amax(self.dataList, axis=0), self.handFeatureParams
-            print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1]), " cutoff: ", self.param_dict['HMM']['nState']*0.85
-            ## print l_post[-1]
-            ## print l_logp[-1], ' Shape of l_logp:', np.shape(l_logp), 'l_post:', np.shape(l_post)   
+
+            print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1]), \
+              " cutoff: ", self.param_dict['HMM']['nState']*0.85
             if np.argmax(l_post[cur_length-1])==0 and l_logp < 0.0: continue
             if np.argmax(l_post[cur_length-1])>self.param_dict['HMM']['nState']*0.85: continue
-            
             ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist() 
-            ## print ll_classifier_test_X
 
             if 'svm' in self.classifier_method:
                 X = self.scaler.transform([ll_classifier_test_X])
