@@ -62,7 +62,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,170], \
+                      'downSampleSize': downSampleSize, 'cut_data': [0,200], \
                       'nNormalFold':4, 'nAbnormalFold':4,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': False}
