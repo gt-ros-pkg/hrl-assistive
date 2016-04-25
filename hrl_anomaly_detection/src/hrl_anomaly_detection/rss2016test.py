@@ -1393,6 +1393,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     SVM_dict = param_dict['SVM']
     # ROC
     ROC_dict = param_dict['ROC']
+    nPoints  = ROC_dict['nPoints']
 
     foldIdx = 0
     
@@ -1422,164 +1423,131 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         ll_classifier_test_idx  = d['ll_classifier_test_idx'] 
         nLength                 = d['nLength']
 
-
-    # Data conversion for plotting on 2D -----------------------------------------------------------
-    pca_gammas = [0.03]
-    pca_ndim   = 1
-    for pca_gamma in pca_gammas:
-        pca_data_pkl = os.path.join(save_data_path, 'hmm_pca_'+task+'_data_'+str(foldIdx)+'_'+str(pca_gamma)+'_'+str(pca_ndim)+'.pkl')
-        pca_model    = os.path.join(save_data_path, 'hmm_pca_'+task+'_'+str(foldIdx)+'_'+str(pca_gamma)+'_'+str(pca_ndim)+'.pkl')
-        scaler_model = os.path.join(save_data_path, 'hmm_pca_scaler_'+task+'_'+str(foldIdx)+'.pkl')
+    # ----------------------------------------------------------
+    bd_data    = os.path.join(save_data_path, 'hmm_bd_data_'+task+'_'+str(foldIdx)+'.pkl')
+    scaler_model = os.path.join(save_data_path, 'hmm_bd_scaler_'+task+'_'+str(foldIdx)+'.pkl')
+    if os.path.isfile(bd_data) and pca_renew is False:
+        dd = ut.load_pickle(bd_data)
+        X_train_flat        = dd['X_train_flat']
+        Y_train_flat        = dd['Y_train_flat']
+        idx_train_flat      = dd['idx_train_flat']
+        X_train_flat_scaled = dd['X_train_flat_scaled']            
+        X_test_flat        = dd['X_test_flat']
+        Y_test_flat        = dd['Y_test_flat'] 
+        X_test_flat_scaled = dd['X_test_flat_scaled']
+        X_bg        = dd['X_bg']
+        x1          = dd['x1']
+        x2          = dd['x2']
+        xx_normal   = dd['xx_normal']
+        xx_abnormal = dd['xx_abnormal']
         
-        if os.path.isfile(pca_data_pkl) and pca_renew is False:
-            dd = ut.load_pickle(pca_data_pkl)
-            X_train_flat        = dd['X_train_flat']
-            Y_train_flat        = dd['Y_train_flat']
-            idx_train_flat      = dd['idx_train_flat']
-            X_train_flat_scaled = dd['X_train_flat_scaled']            
-            X_train_flat_pca = dd['X_train_flat_pca']
-            X_test_flat        = dd['X_test_flat']
-            Y_test_flat        = dd['Y_test_flat'] 
-            X_test_flat_scaled = dd['X_test_flat_scaled']            
-            X_test_flat_pca    = dd['X_test_flat_pca']
+        if os.path.isfile(scaler_model):
+            ml_scaler = joblib.load(scaler_model)
         else:
-            # flatten train data
-            X_train_flat = [] #
-            Y_train_flat = [] #
-            idx_train_flat = []
-            for i in xrange(len(ll_classifier_train_X)):
-                for j in xrange(len(ll_classifier_train_X[i])):
-                    X_train_flat.append(ll_classifier_train_X[i][j])
-                    Y_train_flat.append(ll_classifier_train_Y[i][j])
-                    idx_train_flat.append(ll_classifier_train_idx[i][j])
+            ml_scaler = preprocessing.StandardScaler()
+            X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat)         
+    else:    
+        # flatten train data
+        X_train_flat = [] #
+        Y_train_flat = [] #
+        idx_train_flat = []
+        post_list = []
+        for i in xrange(len(ll_classifier_train_X)):
+            for j in xrange(len(ll_classifier_train_X[i])):
+                X_train_flat.append(ll_classifier_train_X[i][j])
+                Y_train_flat.append(ll_classifier_train_Y[i][j])
+                idx_train_flat.append(ll_classifier_train_idx[i][j])
+                post_list.append(ll_classifier_train_X[i][j][1:])
 
-            # flatten test data
-            X_test_flat = [] #
-            Y_test_flat = [] #
-            for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[i])):
-                    X_test_flat.append(ll_classifier_test_X[i][j])
-                    Y_test_flat.append(ll_classifier_test_Y[i][j])
-            X_test_flat = np.array(X_test_flat)
-            Y_test_flat = np.array(Y_test_flat)
+        # flatten test data
+        X_test_flat = [] #
+        Y_test_flat = [] #
+        for i in xrange(len(ll_classifier_test_X)):
+            for j in xrange(len(ll_classifier_test_X[i])):
+                X_test_flat.append(ll_classifier_test_X[i][j])
+                Y_test_flat.append(ll_classifier_test_Y[i][j])
+        X_test_flat = np.array(X_test_flat)
+        Y_test_flat = np.array(Y_test_flat)
 
-            # ------------------ scaling ---------------------------------------------------
-            if os.path.isfile(scaler_model) and pca_renew is False:
-                ml_scaler = joblib.load(scaler_model)
-                X_train_flat_scaled = ml_scaler.transform(X_train_flat)
-            else:
-                ml_scaler = preprocessing.StandardScaler()
-                X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat) 
-                joblib.dump(ml_scaler, scaler_model)
-            X_train_flat_scaled = np.array(X_train_flat_scaled) #
+        # ------------------ scaling -----------------------------------------------
+        if os.path.isfile(scaler_model):
+            ml_scaler = joblib.load(scaler_model)
+            X_train_flat_scaled = ml_scaler.transform(X_train_flat)
+        else:
+            ml_scaler = preprocessing.StandardScaler()
+            X_train_flat_scaled = ml_scaler.fit_transform(X_train_flat) 
+            joblib.dump(ml_scaler, scaler_model)
+        X_test_flat_scaled  = ml_scaler.transform(X_test_flat)
+        X_train_flat_scaled = np.array(X_train_flat_scaled) #
+        X_test_flat_scaled  = np.array(X_test_flat_scaled) #
+        
+        # --------------------------------------------------------------------------
+        # Generate hidden-state distribution axis over center...
+        n_logp = 100
+        n_post = 100
+        post_exp_list = np.zeros((n_post,nState))
+        mean_list     = np.linspace(0,nState-1,n_post)
+        std_list      = [0.5]*n_post
 
-            # ------------------ PCA ---------------------------------------------------
-            from sklearn.decomposition import KernelPCA
-            ml_pca = KernelPCA(n_components=pca_ndim, kernel="rbf", fit_inverse_transform=True, \
-                               gamma=pca_gamma)
+        from scipy.stats import norm
+        for i in xrange(n_post):
+            rv = norm(loc=mean_list[i],scale=std_list[i])
+            post_exp_list[i] = rv.pdf(np.linspace(0,nState-1,nState))
+            post_exp_list[i] /=np.sum(post_exp_list[i])
 
-            if os.path.isfile(pca_model) and pca_renew is False:
-                print "PCA model exists: ", pca_model
-                ml_pca = joblib.load(pca_model)
-                X_train_flat_pca = np.hstack([X_train_flat_scaled[:,:1],\
-                                              ml_pca.transform(X_train_flat_scaled[:,1:])])
-            else:
-                print "Start to fit PCA"
-                X_train_flat_pca = np.hstack([X_train_flat_scaled[:,:1],\
-                                              ml_pca.fit_transform(X_train_flat_scaled[:,1:])]) #
-                joblib.dump(ml_pca, pca_model)
+        # Discriminative classifier ---------------------------------------------------
+        # Adjusting range
+        ## x1_min, x1_max = X_train_flat_pca[:, 0].min() , X_train_flat_pca[:, 0].max() 
+        x2_min, x2_max = np.array(X_train_flat)[:,:1].min() , np.array(X_train_flat)[:,:1].max()
 
-            X_test_flat_scaled = ml_scaler.transform(X_test_flat) #
-            X_test_flat_pca    = np.hstack([ X_test_flat_scaled[:,:1],\
-                                             ml_pca.transform(X_test_flat_scaled[:,1:]) ]) #
+        # create a mesh to plot in
+        x1, x2 = np.meshgrid(range(n_post),
+                             np.linspace(x2_min, x2_max, n_logp) )
 
-            ## X_test_flat_scaled = []
-            ## X_test_flat_pca = []
-            ## for i in xrange(len(X_test_flat)):
-            ##     if len(X_test_flat[i])==0: continue
-            ##     X = ml_scaler.transform(X_test_flat[i])
-            ##     X_test_flat_scaled.append(X)
-            ##     X_test_flat_pca.append( [X[0], ml_pca.transform(X[1:])[0,0]] )
-            ## X_test_flat_scaled = np.array(X_test_flat_scaled)
-            ## X_test_flat_pca    = np.array(X_test_flat_pca)
+        # Background
+        print "Run background data"
+        data = np.c_[x1.ravel(), x2.ravel()]    
+        X_bg = np.hstack([ np.array([x2.ravel()]).T, post_exp_list[x1.ravel().tolist()] ])
+        print np.shape(X_bg)
 
-            xx_normal = []
-            xx_abnormal = []
-            for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca):
-                if y > 0: xx_abnormal.append(x_pca)
-                else:     xx_normal.append(x_pca)
-            xx_normal   = np.array(xx_normal)
-            xx_abnormal = np.array(xx_abnormal)
+        # test points
+        print "Run test data"
+        ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
+        xx_normal = []
+        xx_abnormal = []
+        for x,y in zip(X_test_flat, Y_test_flat):
+            post = x[1:]
+            min_index, min_dist = cf.findBestPosteriorDistribution(post, post_exp_list)
+            if y > 0: xx_abnormal.append([min_index,x[0]])
+            else:     xx_normal.append([min_index,x[0]])
+        xx_normal   = np.array(xx_normal)
+        xx_abnormal = np.array(xx_abnormal)
 
-            fig = plt.figure(1)
-            plt.plot(xx_normal[:,0],xx_normal[:,1],'b.')
-            plt.plot(xx_abnormal[:,0],xx_abnormal[:,1],'rx')
-
-            if save_pdf is False:
-                plt.show()
-            else:
-                print "Save pdf to Dropbox folder"
-                fig.savefig('test_'+str(pca_gamma)+'.pdf')
-                os.system('mv test_* ~/Dropbox/HRL/')
-
-            dd = {}
-            dd['X_train_flat']       = X_train_flat 
-            dd['Y_train_flat']       = Y_train_flat
-            dd['idx_train_flat']     = idx_train_flat
-            dd['X_train_flat_scaled']= X_train_flat_scaled
-            dd['X_train_flat_pca']   = X_train_flat_pca
-            dd['X_test_flat']        = X_test_flat
-            dd['Y_test_flat']        = Y_test_flat
-            dd['X_test_flat_scaled'] = X_test_flat_scaled
-            dd['X_test_flat_pca']    = X_test_flat_pca
-            ut.save_pickle(dd, pca_data_pkl)
-
-    print np.shape(X_test_flat), np.shape(Y_test_flat)
-    print np.shape(X_train_flat_pca), np.shape(X_test_flat_pca)
-
-    # Discriminative classifier --------------------------------------------------------------------
-    nPoints     = ROC_dict['nPoints']
-    # step size in the mesh
-    h = .02
-    # Adjusting range
-    x1_min, x1_max = X_train_flat_pca[:, 0].min() , X_train_flat_pca[:, 0].max() 
-    x2_min, x2_max = X_train_flat_pca[:, 1].min() , X_train_flat_pca[:, 1].max()
-    X_train_flat_pca_scaled = (X_train_flat_pca - x1_min)/(x1_max-x1_min)
-    X_test_flat_pca_scaled  = (X_test_flat_pca - x1_min)/(x1_max-x1_min)
-    
-    # create a mesh to plot in
-    x1, x2 = np.meshgrid(np.arange(0, 1, h),
-                         np.arange(0, 1, h))
-    ## print "x1 range: ", x1_min, x1_max
-    ## print "x2 range: ", x2_min, x2_max
-    if os.path.isfile(scaler_model):
-        ml_scaler = joblib.load(scaler_model)
-    else:
-        print "No scaler file"
-        sys.exit()
-
-    # Background
-    print "Run background data"
-    data         = np.c_[x1.ravel(), x2.ravel()]
-    ml_pca       = joblib.load(pca_model)
-    X_inv_scaled = np.hstack([data[:,:1],\
-                              ml_pca.inverse_transform( data[:,1:]*(x2_max-x2_min)+x2_min ) ])
-
-    # test points
-    print "Run test data"
-    ## Y_test_flat_est = dtc.predict(np.array(X_test_flat))
-    xx_normal = []
-    xx_abnormal = []
-    for x,y,x_pca in zip(X_test_flat, Y_test_flat, X_test_flat_pca_scaled):
-        if y > 0: xx_abnormal.append(x_pca)
-        else:     xx_normal.append(x_pca)
-    xx_normal   = np.array(xx_normal)
-    xx_abnormal = np.array(xx_abnormal)
+        dd = {}
+        dd['X_train_flat']       = X_train_flat 
+        dd['Y_train_flat']       = Y_train_flat
+        dd['idx_train_flat']     = idx_train_flat
+        dd['X_train_flat_scaled']= X_train_flat_scaled
+        dd['X_test_flat']        = X_test_flat
+        dd['Y_test_flat']        = Y_test_flat
+        dd['X_test_flat_scaled'] = X_test_flat_scaled
+        dd['X_bg']               = X_bg
+        dd['x1']                 = x1
+        dd['x2']                 = x2
+        dd['xx_normal']          = xx_normal
+        dd['xx_abnormal']        = xx_abnormal        
+        ut.save_pickle(dd, bd_data)
 
 
+    ## print np.shape(X_bg)
+    ## print np.amax(X_bg[:,0]), np.amin(X_bg[:,0])
+    ## print X_bg[0]
+    ## print X_bg[-1]
+        
+    # -----------------------------------------------------------------------------
     print "Run classifier"
     methods = ['svm']
-    ## methods = ['progress_time_cluster']
+    methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
@@ -1611,20 +1579,19 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
             if method.find('svm')>=0:
-                print "SVM Weight: ", weights[j], np.shape(X_inv_scaled)
-                X_inv = X_inv_scaled
+                ## print "SVM Weight: ", weights[j], np.shape(X_inv_scaled)
+                X_bg_scaled = ml_scaler.transform(X_bg)
             else:
                 print "Progress? Weight: ", thresholds[j]
-                X_inv = ml_scaler.inverse_transform(X_inv_scaled)
-            z = dtc.predict(np.array(X_inv))                
-            ## z = np.array([1.0 if val > 0.0 else -1.0 for val in z])
-            ## print X_scaled[180]
-            ## print X_inv[180]
+                X_bg_scaled = X_bg
+            z = dtc.predict(np.array(X_bg_scaled))                
             print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
                 
             if np.amax(z) == np.amin(z):
                 print "Max equals to min. Wrong classification!"
                 continue
+            z = np.array(z)
+            print type(z)
             z = z.reshape(np.shape(x1)) 
             ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
             plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
@@ -1635,8 +1602,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
             ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
             plt.axis('tight')
-            plt.xlim([0, 1])
-            plt.ylim([0, 1])
+            ## plt.xlim([0, 1])
+            ## plt.ylim([0, 1])
             ## plt.xlim([x1_min, x1_max])
             ## plt.ylim([x2_min, x2_max])
 
@@ -1647,6 +1614,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 fig.savefig('test_'+str(j)+'.pdf')
                 fig.savefig('test_'+str(j)+'.png')
                 os.system('mv test_* ~/Dropbox/HRL/')
+
+
 
 
 
@@ -1712,8 +1681,8 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
+    #---------------------------------------------------------------------------
     if opt.task == 'scooping':
-        ## subjects = ['gatsbii']
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
         raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
                                                                 opt.bAERenew, opt.bHMMRenew,\
@@ -1722,7 +1691,6 @@ if __name__ == '__main__':
         
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
                                                                opt.bAERenew, opt.bHMMRenew,\
@@ -1810,7 +1778,7 @@ if __name__ == '__main__':
                       success_viz=success_viz, failure_viz=failure_viz,\
                       ae_data=False,\
                       data_ext=param_dict['data_param']['lowVarDataRemv'],\
-                      cut_data=param_dict['data_param']['cut_data'],
+                      cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=False,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 

@@ -437,7 +437,7 @@ if __name__ == '__main__':
 
         nFiles = 16
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [1.0, 2.0, 4.0, 6.0],\
+                      'cost': np.linspace(1.0,15.0,10),\
                       'gamma': np.linspace(0.001, 0.015, 4).tolist(), \
                       'w_negative': np.linspace(0.01, 1.3, 5) }
 
@@ -451,20 +451,20 @@ if __name__ == '__main__':
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
-        nPoints        = 10
+        nPoints        = 20
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'sgd_param_range': np.logspace(-0.8, -0.5, nPoints)}
+                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4
+        nFiles = 9
         parameters = {'method': ['sgd'], \
-                      'gamma': [1.0], \
-                      'w_negative': [0.1,0.3,0.5,1.0] }
+                      'gamma': np.logspace(-1.5,-0.5,5), \
+                      'w_negative': np.linspace(0.5,1.5,5) }
         ## parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \

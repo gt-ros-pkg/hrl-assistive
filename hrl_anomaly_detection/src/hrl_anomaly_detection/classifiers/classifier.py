@@ -209,7 +209,7 @@ class classifier(learning_base):
             X_features       = self.rbf_feature.fit_transform(X)
             # fitting
             d = {+1: self.class_weight, -1: self.w_negative}
-            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=1000)
+            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=10)
             self.dt.fit(X_features, y)
 
 
