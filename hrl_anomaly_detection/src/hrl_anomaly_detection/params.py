@@ -109,7 +109,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\        
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 4:
@@ -132,7 +132,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.logspace(-2, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\        
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:
@@ -149,7 +149,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
@@ -164,7 +164,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     rawFeatures = ['relativePose_artag_EE', \
