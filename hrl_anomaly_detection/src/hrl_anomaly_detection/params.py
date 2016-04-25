@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, dim=4):
+def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
     
     handFeatures = ['unimodal_audioWristRMS',\
                     'unimodal_ftForce',\
@@ -15,12 +15,13 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, di
                      'vision_change', 'pps']
     downSampleSize = 200
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/TEST'
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False}
+                      'downSampleSize': downSampleSize, 'cut_data': [0,200], 'nNormalFold':4, 'nAbnormalFold':4,\
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': False}
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -46,7 +47,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, di
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, dim=4):
+def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
     handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                     'crossmodal_artagEEDist', 'crossmodal_artagEEAng'] 
     rawFeatures = ['relativePose_target_EE', \
@@ -57,13 +58,14 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, dim
     modality_list   = ['ft'] #'kinematics', 'audioWrist', , 'vision_artag'
     downSampleSize = 200
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/TEST'
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': downSampleSize, 'cut_data': [0,170], \
                       'nNormalFold':4, 'nAbnormalFold':4,\
-                      'feature_list': handFeatures, 'lowVarDataRemv': False}
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': False}
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \

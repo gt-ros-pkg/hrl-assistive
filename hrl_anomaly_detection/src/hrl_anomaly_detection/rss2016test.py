@@ -1717,7 +1717,8 @@ if __name__ == '__main__':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
         raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
                                                                 opt.bAERenew, opt.bHMMRenew,\
-                                                                rf_center, local_range)
+                                                                rf_center, local_range,\
+                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
@@ -1725,7 +1726,8 @@ if __name__ == '__main__':
         subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
                                                                opt.bAERenew, opt.bHMMRenew,\
-                                                               rf_center, local_range)
+                                                               rf_center, local_range,\
+                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
         
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':

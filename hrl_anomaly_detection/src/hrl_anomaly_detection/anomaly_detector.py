@@ -51,6 +51,9 @@ from hrl_srvs.srv import Bool_None, Bool_NoneResponse
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 
+from hrl_anomaly_detection.params import *
+
+
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict):
