@@ -107,6 +107,12 @@ class classifier(learning_base):
             self.mu  = 0.0
             self.std = 0.0
             self.ths_mult = ths_mult
+        elif self.method == 'sgd':
+            self.class_weight = class_weight
+            self.w_negative   = w_negative             
+            self.gamma        = gamma
+            self.cost         = cost
+            
             
         learning_base.__init__(self)
 
@@ -195,6 +201,16 @@ class classifier(learning_base):
             self.std = np.std(ll_logp)
             return True
                 
+        elif self.method == 'sgd':
+            from sklearn.kernel_approximation import RBFSampler
+            from sklearn.linear_model import SGDClassifier
+            # get time-based clustering center? Not yet implemented
+            self.rbf_feature = RBFSampler(gamma=self.gamma, random_state=1)
+            X_features       = self.rbf_feature.fit_transform(X)
+            # fitting
+            self.dt = SGDClassifier()
+            self.dt.fit(X_features, y)
+
 
     def predict(self, X, y=None):
         '''
@@ -259,7 +275,13 @@ class classifier(learning_base):
                 logp = X[i][0]
                 err = self.mu + self.ths_mult * self.std - logp
                 l_err.append(err)
-            return l_err 
+            return l_err
+
+        elif self.method == 'sgd':
+            X_features = self.rbf_feature.transform(X)
+            return self.dt.transform(X_features)
+
+        
 
     ## def predict_batch(self, X, y, idx):
 
