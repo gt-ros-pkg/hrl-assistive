@@ -554,67 +554,36 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
 
+
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    local_range   = 10.0    
+
     if opt.task == 'scooping':
     
         subject_names     = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2']
-        task_name         = opt.task
+        raw_data_path, _, param_dict = getScooping(opt.task, False, \
+                                                   False, False,\
+                                                   rf_center, local_range)
         check_method      = 'svm' # cssvm
-        raw_data_path     = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/demo'
-
-        handFeatures = ['unimodal_audioWristRMS',\
-                        ## 'unimodal_kinVel',\
-                        'unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng']
-
-        data_param_dict= {'renew': False, 'rf_center': 'kinEEPos', 'local_range': 10.,\
-                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
-                          'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
-                          ## 'class_weight': 1.4e-3}
-
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict}
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                             'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
     elif opt.task == 'feeding':
         subject_names  = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        task_name      = opt.task 
-        check_method   = 'svm' #'progress_time_cluster' # cssvm
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/demo'
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        
-        handFeatures    = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-                           'crossmodal_artagEEAng'] #'unimodal_audioPower'
-
-        data_param_dict= {'renew': False, 'rf_center': 'kinEEPos', 'local_range': 10.,\
-                          'downSampleSize': 200, 'cut_data': [0,170], \
-                          'nNormalFold':4, 'nAbnormalFold':4,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4,\
-                          'add_option': None} 
-        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
-                          'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
-                                 
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict}
-        
-                      
+        raw_data_path, _, param_dict = getFeeding(opt.task, False, \
+                                                  False, False,\
+                                                  rf_center, local_range)
+        check_method      = 'svm' #'progress_time_cluster' # cssvm
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
+                             'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
     else:
         sys.exit()
 
 
-    ad = anomaly_detector(subject_names, task_name, check_method, raw_data_path, save_data_path, \
+    ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
                           param_dict)
     ad.run()
 
