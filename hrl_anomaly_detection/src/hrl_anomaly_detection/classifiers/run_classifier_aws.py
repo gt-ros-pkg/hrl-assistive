@@ -393,10 +393,10 @@ if __name__ == '__main__':
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
+        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
+                                                                False, False,\
+                                                                rf_center, local_range,\
+                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
