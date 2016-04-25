@@ -526,18 +526,18 @@ if __name__ == '__main__':
     local_range    = 10.0    
 
     if opt.task == 'scooping':
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
+        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
+                                                                False, False,\
+                                                                rf_center, local_range, \
+                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [20, 25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
                       'cov': np.linspace(0.1,2.0,4) }
 
     elif opt.task == 'feeding':
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
+        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
+                                                               False, False,\
+                                                               rf_center, local_range, \
+                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
                       'cov': np.linspace(0.1,2.0,4) }
 
@@ -575,7 +575,7 @@ if __name__ == '__main__':
         d = ut.load_pickle(crossVal_pkl)
         kFold_list  = d['kFoldList']
     else:
-        print "no existing data file"
+        print "no existing data file, ", crossVal_pkl
         sys.exit()
 
     tune_hmm(parameters, d, param_dict, save_data_path, verbose=True)
