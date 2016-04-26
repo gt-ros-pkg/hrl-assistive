@@ -300,6 +300,8 @@ class anomaly_detector:
         elif self.classifier_method == 'progress_time_cluster':                    
             sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
         self.sensitivity_pub.publish(sensitivity)                                   
+
+        print "Current sensitivity is ", sensitivity
         
         return
 
@@ -396,6 +398,9 @@ class anomaly_detector:
         Requested value's range is 0~1.
         '''
         self.sensitivity_req = msg.data
+        sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+        print "Current sensitivity is ", sensitivity
+        print "Requested sensitivity is ", self.sensitivity_req
 
         if 'svm' in self.classifier_method:           
             self.classifier.set_params(class_weight=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min )

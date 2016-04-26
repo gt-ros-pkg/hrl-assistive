@@ -591,6 +591,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
         timeList     = d['timesList'][idx]
         dataSample = None
+        if len(timeList) < 2: offset_flag=False
+        else: offset_flag=True
+            
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
@@ -606,7 +609,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         # Unimoda feature - AudioWrist ---------------------------------------
         if 'unimodal_audioWristRMS' in feature_list:
             audioWristRMS = d['audioWristRMSList'][idx]            
-            unimodal_audioWristRMS = audioWristRMS - np.mean(audioWristRMS[:startOffsetSize])
+            unimodal_audioWristRMS = audioWristRMS
+            if offset_flag:
+                unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
@@ -634,7 +639,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
                 ## unimodal_ftForce_ind = ftForce[2:3,:]
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+                if offset_flag:
+                    unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
@@ -692,8 +698,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             
             # 1
             ## unimodal_ppsForce = np.array([np.linalg.norm(pps, axis=0)])
-
-            unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:startOffsetSize], axis=1)]).T
+            if offset_flag:
+                unimodal_ppsForce -= np.array([np.mean(unimodal_ppsForce[:,:startOffsetSize], \
+                                                       axis=1)]).T
 
             ## unimodal_ppsForce = []
             ## for time_idx in xrange(len(timeList)):
@@ -746,7 +753,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:startOffsetSize])
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
             
             crossmodal_targetEEDist = []
             for time_idx in xrange(len(timeList)):
@@ -764,7 +772,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             dist = np.linalg.norm(kinTargetPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:startOffsetSize])
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
 
             print np.shape(dist)
             vel = dist[1:]-dist[:-1]
@@ -800,7 +809,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 crossmodal_targetEEAng.append( abs(diff_ang) )
 
             crossmodal_targetEEAng = np.array(crossmodal_targetEEAng)
-            crossmodal_targetEEAng -= np.mean(crossmodal_targetEEAng[:startOffsetSize])
+            if offset_flag:
+                crossmodal_targetEEAng -= np.mean(crossmodal_targetEEAng[:startOffsetSize])
 
             ## fig = plt.figure()
             ## ## plt.plot(crossmodal_targetEEAng)
@@ -824,7 +834,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             visionArtagPos = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
 
             dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:startOffsetSize])
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
             
             crossmodal_artagEEDist = []
             for time_idx in xrange(len(timeList)):
@@ -854,7 +865,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 crossmodal_artagEEAng.append( abs(diff_ang) )
 
             crossmodal_artagEEAng = np.array(crossmodal_artagEEAng)
-            crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
+            if offset_flag:
+                crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])
@@ -868,7 +880,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             visionArtagPos = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
 
             dist = np.linalg.norm(visionArtagPos - kinEEPos, axis=0)
-            dist = dist - np.mean(dist[:startOffsetSize])
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
             
             crossmodal_artagEEDist = []
             for time_idx in xrange(len(timeList)):
@@ -894,7 +907,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 crossmodal_artagEEAng.append( abs(diff_ang) )
 
             crossmodal_artagEEAng = np.array(crossmodal_artagEEAng)
-            crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
+            if offset_flag:
+                crossmodal_artagEEAng -= np.mean(crossmodal_artagEEAng[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(crossmodal_artagEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_artagEEAng])

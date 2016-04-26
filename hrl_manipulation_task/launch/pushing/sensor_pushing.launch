@@ -1,9 +1,10 @@
 <launch>
-	<arg name="task_name" default="pushing_microwhite" />
+	<arg name="task_name" default="pushing_microblack" />
   
-	<arg name="marker_size" default="4.2" />
+	<arg name="marker_size" default="6.3" />
+	<!--arg name="marker_size" default="6.3" /-->
 	<arg name="max_new_marker_error" default="0.05" />
-	<arg name="max_track_error" default="0.2" />
+	<arg name="max_track_error" default="0.1" />
 
 	<arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" />
 	<arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" />		

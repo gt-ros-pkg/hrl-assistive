@@ -177,20 +177,20 @@ class armReachAction(mpcBaseAction):
         # It uses the l_gripper_push_frame
         self.motions['initToolCase'] = {}
         self.motions['initToolCase']['left'] = \
-          [['MOVEJ', '[0.82, 0.43, 1.52, -1.26, 2.04, -1.49, 2.72]', 5.0] ] 
+          [['MOVEJ', '[0.82, 0.43, 1.52, -1.26, 2.04, -1.49, 0.0]', 5.0] ] 
         self.motions['initToolCase']['right'] = []
 
         self.motions['runToolCase1'] = {}
         self.motions['runToolCase1']['left'] = \
-          [['MOVEL', '[-0.115, 0.0, 0.05, 0.0, 1.57, 0.0]', 5.0, 'self.main_tag_frame'], 
+          [['MOVEL', '[-0.03, 0.08, 0.05, 0.0, 1.57, 3.14]', 5.0, 'self.main_tag_frame'], 
            ['PAUSE', 1.0] ]
         self.motions['runToolCase1']['right'] = []
         ## 
         
         self.motions['runToolCase2'] = {}
         self.motions['runToolCase2']['left'] = \
-          [['MOVEL', '[-0.115, 0.0, -0.03, 0.0, 1.57, 0.0]', 2.5, 'self.main_tag_frame'],
-           ['MOVEL', '[-0.115, 0.0, 0.05, 0.0, 1.57, 0.0]', 3.0, 'self.main_tag_frame']] 
+          [['MOVEL', '[-0.03, 0.08, -0.03, 0.0, 1.57, 3.14]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.03, 0.08, 0.05, 0.0, 1.57, 3.14]', 3.0, 'self.main_tag_frame']] 
         self.motions['runToolCase2']['right'] = []
         
         ## Pushing cabinet motoins --------------------------------------------------------

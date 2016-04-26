@@ -87,6 +87,32 @@ def pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detect
     log.close_log_file(bCont, status)
 
     
+def pushing_toolcase(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                     train=False, abnormal=False, bCont=False, status='skip'):
+
+    log.task = 'pushing_toolcase'
+    log.initParams()
+    
+    ## Scooping -----------------------------------    
+    print "Initializing left arm for scooping"
+    print armReachActionLeft("getMainTagPos")
+    print armReachActionLeft("initToolCase")
+    print armReachActionLeft("runToolCase1")
+    
+    print "Start to log!"    
+    log.log_start()
+    if detection_flag: log.enableDetector(True)
+    
+    print "Running pushing!"
+    print armReachActionLeft("runToolCase2")
+
+    if detection_flag: log.enableDetector(False)
+    print "Finish to log!"    
+    log.close_log_file(bCont, status)
+
+    print armReachActionLeft("initToolCase")
+    
+    
 if __name__ == '__main__':
     
     import optparse
@@ -108,6 +134,7 @@ if __name__ == '__main__':
 
     ## task_name = 'pushing_microwhite'
     task_name = 'pushing_microblack'
+    ## task_name = 'pushing_toolcase'
     
     log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
                  vision_change=False, \
@@ -122,7 +149,7 @@ if __name__ == '__main__':
 
         if opt.bCont: trial = last_trial
         else:
-            trial  = raw_input('Enter trial\'s status (e.g. 1:MW, 2: MB else: exit): ')
+            trial  = raw_input('Enter trial\'s status (e.g. 1:MW, 2: MB, 3: TC else: exit): ')
             if trial=='': trial=last_trial
         
         if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
@@ -137,9 +164,13 @@ if __name__ == '__main__':
                 if task_name == 'pushing_microwhite':
                     pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
                                             bCont=opt.bCont, status=opt.bStatus)
-            if trial == '2':
+            elif trial == '2':
                 if task_name == 'pushing_microblack':
                     pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                            bCont=opt.bCont, status=opt.bStatus)
+            elif trial == '3':
+                if task_name == 'pushing_toolcase':
+                    pushing_toolcase(armReachActionLeft, armReachActionRight, log, detection_flag,\
                                             bCont=opt.bCont, status=opt.bStatus)
         else:
             break

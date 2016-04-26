@@ -3,17 +3,17 @@ var Pr2AD = function (ros) {
     var ad = this;
     ad.ros = ros;
     ad.state = 0.0;
-    ad.ros.getMsgDetails('std_msgs/Int8');
+    ad.ros.getMsgDetails('std_msgs/Float64');
     ad.statePub = new ad.ros.Topic({
         name: 'manipulation_task/ad_sensitivity_request',
-        messageType: 'std_msgs/Int8'
+        messageType: 'std_msgs/Float64'
     });
 
     ad.statePub.advertise();
 
     ad.stateSub = new ad.ros.Topic({
         name: 'manipulation_task/ad_sensitivity_state',
-        messageType: 'std_msgs/Int8'
+        messageType: 'std_msgs/Float64'
     });
 
     ad.setState = function (msg) {
@@ -44,8 +44,8 @@ var Pr2AD = function (ros) {
 var initAdSlider = function (orientation) {
     $('#ad_slider').slider({
         min: 0.0,
-        max: 100.0,
-        step: 5.0,
+        max: 1.0,
+        step: 0.05,
         orientation: orientation
     });
     var adStateDisplay = function (msg) {
@@ -60,9 +60,9 @@ var initAdSlider = function (orientation) {
 
     
     document.getElementById('ad_sense_max').addEventListener('click', function (e) {
-        newVal1 = $('#ad_slider').slider("value")+5;
-        if (newVal1 > 100) {
-            newVal1 = 100;
+        newVal1 = $('#ad_slider').slider("value")+0.05;
+        if (newVal1 > 1) {
+            newVal1 = 1;
         }
  
         assistive_teleop.ad.setSensitivity(newVal1);
@@ -71,7 +71,7 @@ var initAdSlider = function (orientation) {
     });
     document.getElementById('ad_sense_min').addEventListener('click', function (e) {
 
-        newVal2 = $('#ad_slider').slider("value")-5;
+        newVal2 = $('#ad_slider').slider("value")-0.05;
         if (newVal2 < 0) {
             newVal2 = 0;
         }
