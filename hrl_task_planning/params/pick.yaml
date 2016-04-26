@@ -1,0 +1,2 @@
+constant_predicates: []
+default_goal: ['(GRASPING RIGHT_HAND_OBJECT RIGHT_HAND)']
