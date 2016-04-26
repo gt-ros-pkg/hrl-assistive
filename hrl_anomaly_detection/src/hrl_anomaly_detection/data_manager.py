@@ -523,6 +523,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     if param_dict is None:
         isTrainingData=True
         param_dict = {}
+        param_dict['timeList'] = d['timesList'][0]
 
         if 'unimodal_audioPower' in feature_list:
             ## power_max = np.amax(d['audioPowerList'])

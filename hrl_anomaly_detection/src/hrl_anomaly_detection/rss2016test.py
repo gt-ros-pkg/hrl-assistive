@@ -65,7 +65,7 @@ from joblib import Parallel, delayed
 import hrl_anomaly_detection.classifiers.classifier as cf
 
 import itertools
-colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -1394,10 +1394,14 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     SVM_dict = param_dict['SVM']
     # ROC
     ROC_dict = param_dict['ROC']
-    nPoints  = ROC_dict['nPoints']
+    nPoints  = 4 #ROC_dict['nPoints']
 
     foldIdx = 0
-    
+
+    # temp
+    ROC_dict['progress_param_range'] = np.linspace(-5, 1., nPoints)
+    ROC_dict['svm_param_range']      = np.logspace(-1.5, 0., nPoints)
+
     # Generative model ----------------------------------------------------------------------------
     if AE_dict['switch'] and AE_dict['add_option'] is not None:
         tag = ''
@@ -1423,6 +1427,13 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         ll_classifier_test_Y    = d['ll_classifier_test_Y']            
         ll_classifier_test_idx  = d['ll_classifier_test_idx'] 
         nLength                 = d['nLength']
+
+    # Get time
+    all_data_pkl     = os.path.join(save_data_path, task+'_all_'+data_dict['rf_center']+\
+                                    '_'+str(data_dict['local_range'])+'_interp.pkl' )
+    all_data_dict = ut.load_pickle(all_data_pkl)
+    timeList  = all_data_dict['timesList'][0][startIdx:]
+    print np.shape(timeList)
 
     # ----------------------------------------------------------
     bd_data    = os.path.join(save_data_path, 'hmm_bd_data_'+task+'_'+str(foldIdx)+'.pkl')
@@ -1527,7 +1538,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         xx_abnormal = []
         for x,y in zip(X_test_flat, Y_test_flat):
             post = x[1:]
-            min_index, min_dist = cf.findBestPosteriorDistribution(post, post_exp_list)
+            ## min_index, min_dist = cf.findBestPosteriorDistribution(post, post_exp_list)
             if y > 0: xx_abnormal.append([min_index,x[0]])
             else:     xx_normal.append([min_index,x[0]])
         xx_normal   = np.array(xx_normal)
@@ -1548,114 +1559,125 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         dd['xx_abnormal']        = xx_abnormal        
         ut.save_pickle(dd, bd_data)
 
-
-    ## print np.shape(X_bg)
-    ## print np.amax(X_bg[:,0]), np.amin(X_bg[:,0])
-    ## print X_bg[0]
-    ## print X_bg[-1]
-        
     # -----------------------------------------------------------------------------
     print "Run classifier"
     methods = ['svm']
     methods = ['progress_time_cluster']
+
+    from matplotlib import rc
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+    rc('text', usetex=True)
     fig = plt.figure(1)
     for method in methods:
-        ## bd_method_data = os.path.join(save_data_path, 'hmm_bd_'+task+'_'+str(foldIdx)+'_'+method'.pkl')
         
-        # scaling?
-        if method.find('svm')>=0:
-            X_scaled = X_train_flat_scaled
-        else:
-            X_scaled = X_train_flat            
-        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
-
         lines  = []
         labels = []
+        print "Current method ", method
+        bd_method_data = os.path.join(save_data_path, 'hmm_bd_'+task+'_'+str(foldIdx)+'_'+method+'.pkl')
+        if os.path.isfile(bd_method_data):
+            d = ut.load_pickle(bd_method_data)
+        else:
+            d = {}
+            d[method] = method
+            d['data'] = []
 
-        # weight number
-        startPoint = 10
-        for j in xrange(startPoint, nPoints,2):
-            dtc.set_params( **SVM_dict )
-            if method == 'svm':
-                weights = ROC_dict['svm_param_range']
-                dtc.set_params( class_weight=weights[j] )
-                dtc.set_params( kernel_type=0 ) # temp
-                ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
-            elif method == 'cssvm':
-                weights = ROC_dict['cssvm_param_range']
-                dtc.set_params( class_weight=weights[j] )
-                ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
-            elif method == 'progress_time_cluster':
-                thresholds = ROC_dict['progress_param_range']
-                dtc.set_params( ths_mult=thresholds[j] )
-                if j==startPoint:
+            # scaling?
+            if method.find('svm')>=0: X_scaled = X_train_flat_scaled
+            else: X_scaled = X_train_flat            
+            dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
+
+            # weight number
+            startPoint = 0
+            for j in xrange(nPoints):
+                dtc.set_params( **SVM_dict )
+                if method == 'svm':
+                    weights = ROC_dict['svm_param_range']
+                    dtc.set_params( class_weight=weights[j] )
+                    dtc.set_params( kernel_type=0 ) # temp
                     ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
-            elif method == 'fixed':
-                thresholds = ROC_dict['fixed_param_range']
-                dtc.set_params( ths_mult=thresholds[j] )
-                if j==startPoint:
+                elif method == 'cssvm':
+                    weights = ROC_dict['cssvm_param_range']
+                    dtc.set_params( class_weight=weights[j] )
                     ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                elif method == 'progress_time_cluster':
+                    weights = ROC_dict['progress_param_range']
+                    dtc.set_params( ths_mult=weights[j] )
+                    if j==startPoint:
+                        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                elif method == 'fixed':
+                    weights = ROC_dict['fixed_param_range']
+                    dtc.set_params( ths_mult=weights[j] )
+                    if j==startPoint:
+                        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
-            if method.find('svm')>=0:
-                print "SVM Weight: ", weights[j], np.shape(X_bg)
-                X_bg_scaled = ml_scaler.transform(X_bg)
-            else:
-                print "Progress? Weight: ", thresholds[j]
-                X_bg_scaled = X_bg
+                if method.find('svm')>=0:
+                    print "SVM Weight: ", weights[j], np.shape(X_bg)
+                    X_bg_scaled = ml_scaler.transform(X_bg)
+                else:
+                    print "Progress? Weight: ", weights[j]
+                    X_bg_scaled = X_bg
 
-            ## print X_bg[100]
-            ## print X_bg_scaled[100]
-                
-            z = dtc.predict(np.array(X_bg_scaled))                
-            print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
-            ## f = dtc.predict(np.array(X_test_flat_scaled))                
-            ## print np.amin(f), np.amax(f), " : ", np.amin(Y_test_flat), np.amax(Y_test_flat)
-            ## g = dtc.predict(np.array(X_train_flat_scaled))                
-            ## print np.amin(g), np.amax(g), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
-                
-            if np.amax(z) == np.amin(z):
-                print "Max equals to min. Wrong classification!"
-                ## continue
-            z = np.array(z)
-            ## print type(z)
-            z = z.reshape(np.shape(x1)) 
-            ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
-            #plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
-            #plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
+                z = dtc.predict(np.array(X_bg_scaled))                
+                print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
 
+                if np.amax(z) == np.amin(z):
+                    print "Max equals to min. Wrong classification!"
+                z = np.array(z)
+                z = z.reshape(np.shape(x1)) 
+                ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
+                #plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
+                #plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
+                d['data'].append( {'x1': x1, 'x2': x2, 'z':z, 'weight':weights[j] } )
+
+            ut.save_pickle(d, bd_method_data)
+
+        for data in d['data']:
+            x1     = data['x1']
+            x2     = data['x2']
+            z      = data['z']
+            weight = data['weight']
+            
             color = colors.next()
             CS=plt.contour(x1, x2, z, levels=[0], linewidths=2, colors=color)
             ## plt.clabel(CS, inline=1, fontsize=10)
             lines.append(CS.collections[0])
             if method.find('svm')>=0:
-                labels.append( "Classifier with w+1 = {0:.3f}".format(weights[j]) )
+                labels.append( r'$w_{+1}$ = '+'{0:.3f}'.format(weight) )
             else:
-                labels.append( "Classifier with w+1 = {0:.3f}".format(thresholds[j]) )
+                labels.append( r'$c$ = '+'{0:.3f}'.format(weight) )
 
-
+        plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red', marker='x', \
+                    label="Anomalous data")
         plt.scatter(xx_normal[:,0],xx_normal[:,1],c='blue', marker='o', lw=0,\
                     label="Non-anomalous data")
-        plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red', marker='x', lw=0,\
-                    label="Anomalous data")
         plt.axis('tight')
-        if np.amin(xx_normal[:,1])>0:
-            plt.ylim([ np.amin(xx_normal[:,1])-100, np.amax(xx_normal[:,1])*1.3 ])
-        else:
-            plt.ylim([ np.amin(xx_normal[:,1])*1.3, np.amax(xx_normal[:,1])*1.3 ])
-            
         ## plt.axis('off')
-        plt.legend(lines, labels, loc=4, prop={'size':16})
+        if np.amin(xx_normal[:,1])>0:
+            plt.ylim([ np.amin(xx_normal[:,1])-150, np.amax(xx_normal[:,1])*1. ])
+        else:
+            plt.ylim([ np.amin(xx_normal[:,1])*1.3, np.amax(xx_normal[:,1])*1. ])
+            
+        plt.legend(lines, labels, loc=4, prop={'size':12})
         plt.ylabel("Log-likelihood", fontsize=22)
-        plt.xlabel("Time Indices", fontsize=22)
+        plt.xlabel("Progress Vector Change [Index]", fontsize=22)
+        ## plt.xlabel("Time [s]", fontsize=22)
 
+        n_post = len(ll_classifier_train_X[0])
+        time_array = np.linspace(0,n_post-1,3)
+        plt.xticks(np.linspace(0,n_post-1,3).astype(int))
+        ## time_array = np.linspace(timeList[0], timeList[-1],3)
+        ## tick_list = []
+        ## for i in xrange(3):
+        ##     tick_list.append( "{0:.3f}".format(time_array[i]) )
+        ## plt.xticks(np.linspace(0,n_post-1,3), tick_list )
 
         if save_pdf is False:
             plt.show()
         else:
-            print "Save pdf to Dropbox folder ", j
-            fig.savefig('test_'+str(j)+'.pdf')
-            fig.savefig('test_'+str(j)+'.png')
-            os.system('mv test_* ~/Dropbox/HRL/')
+            print "Save pdf to Dropbox folder "
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('mv test.* ~/Dropbox/HRL/')
 
 
 
