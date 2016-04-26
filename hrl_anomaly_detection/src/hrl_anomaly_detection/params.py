@@ -274,7 +274,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2., 'cost': 5.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 0.73, 'scale': 3.25}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 5.0, 'scale': 5.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
@@ -296,7 +296,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
         else:
             SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 4.0}
-            HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 5.0}
+            HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 3.22, 'scale': 5.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
@@ -313,7 +313,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 0.7, 'gamma': 1.5, 'cost': 5.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 5.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 3.67, 'scale': 5.0}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
@@ -424,7 +424,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.83, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'cssvm' ],\
-                          'update_list': ['cssvm'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.5, -4., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.8, nPoints),\
