@@ -978,7 +978,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method.find('svm')>=0 or method.find('svm')>=0:
+            if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
