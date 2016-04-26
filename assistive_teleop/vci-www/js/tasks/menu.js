@@ -119,7 +119,12 @@ RFH.initTaskMenu = function (divId) {
                                                 name:'paramLocationTask',
                                                 paramName:'location',
                                                 camera: RFH.mjpeg.cameraModel}));
-    RFH.taskMenu.addTask(new RFH.PickAndPlace({ros:RFH.ros,
+    RFH.taskMenu.addTask(new RFH.Domains.Pick({ros:RFH.ros,
+                                               r_arm: RFH.pr2.r_arm_cart,
+                                               r_gripper: RFH.pr2.r_gripper,
+                                               l_arm: RFH.pr2.l_arm_cart,
+                                               l_gripper: RFH.pr2.l_gripper}));
+    RFH.taskMenu.addTask(new RFH.Domains.Place({ros:RFH.ros,
                                                r_arm: RFH.pr2.r_arm_cart,
                                                r_gripper: RFH.pr2.r_gripper,
                                                l_arm: RFH.pr2.l_arm_cart,

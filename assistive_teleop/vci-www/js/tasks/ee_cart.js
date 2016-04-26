@@ -130,17 +130,14 @@ RFH.CartesianEEControl = function (options) {
         if (graspingMsg.data) {
             self.$pickAndPlaceButton.text("Set Down");
             self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
+            self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['place'].sendTaskGoal(self.side)});
         } else {
             self.$pickAndPlaceButton.text("Pick Up");
             self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
+            self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['pick'].sendTaskGoal(self.side)});
         }
     };
     self.gripper.graspingCBList.push(updatePickPlaceButton);
-
-    var pickPlaceButtonCB = function (event) {
-        RFH.taskMenu.tasks['pick_and_place'].sendTaskGoal(self.side);
-    };
-    self.$pickAndPlaceButton.on('click.pickandplace', pickPlaceButtonCB);
 
     self.eeDeltaCmd = function (xyzrpy) {
         // Get default values for unspecified options

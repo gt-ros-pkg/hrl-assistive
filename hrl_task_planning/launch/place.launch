@@ -1,0 +1,13 @@
+<launch>
+
+    <group ns="pddl_tasks">
+        <group ns="place" clear_params="true">
+            <param name="domain" textfile="$(find hrl_task_planning)/params/place.domain"/>
+            <rosparam command="load" file="$(find hrl_task_planning)/params/place.yaml"/>
+            <node name='known_loc_monitor' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="place KNOWN -a PLACE_LOC"/>
+            <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d place -s right"/>
+            <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d place -s left"/>
+        </group>
+    </group>
+
+</launch>

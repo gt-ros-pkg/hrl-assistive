@@ -1,0 +1,10 @@
+(DEFINE
+(PROBLEM test_problem)
+(:DOMAIN place)
+(:OBJECTS RIGHT_HAND - GRIPPER RIGHT_HAND_OBJECT)
+(:INIT  
+        (grasping RIGHT_HAND RIGHT_HAND_OBJECT)
+        (tried-auto-place)
+)
+(:GOAL (AND (PLACED RIGHT_HAND_OBJECT)))
+)
