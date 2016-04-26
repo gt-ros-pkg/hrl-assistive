@@ -65,6 +65,10 @@ class classifier(learning_base):
                  cssvm_gamma       = 0.3,\
                  cssvm_cost        = 4.,\
                  cssvm_w_negative  = 7.0,\
+                 # sgd
+                 sgd_gamma      = 2.0,\
+                 sgd_w_negative = 1.0,\
+                 sgd_n_iter     = 10,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -109,8 +113,9 @@ class classifier(learning_base):
             self.ths_mult = ths_mult
         elif self.method == 'sgd':
             self.class_weight = class_weight
-            self.w_negative   = w_negative             
-            self.gamma        = gamma
+            self.sgd_w_negative = sgd_w_negative             
+            self.sgd_gamma      = sgd_gamma
+            self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
             
             
@@ -206,14 +211,14 @@ class classifier(learning_base):
             ## from sklearn.kernel_approximation import RBFSampler
             ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
             from sklearn.kernel_approximation import Nystroem
-            self.rbf_feature = Nystroem(gamma=self.gamma, n_components=1000, random_state=1)
+            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=1000, random_state=1)
                 
             from sklearn.linear_model import SGDClassifier
             # get time-based clustering center? Not yet implemented
             X_features       = self.rbf_feature.fit_transform(X)
             # fitting
-            d = {+1: self.class_weight, -1: self.w_negative}
-            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=10)
+            d = {+1: self.class_weight, -1: self.sgd_w_negative}
+            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
             self.dt.fit(X_features, y)
 
 

@@ -121,7 +121,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
         else:
-            SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 4.0}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 4.0,\
+                              'sgd_gamma':0.32, 'sgd_w_negative':2.5}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 5.5}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -423,7 +424,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.83, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'cssvm' ],\
-                          'update_list': [],\
+                          'update_list': ['cssvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.5, -4., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.8, nPoints),\

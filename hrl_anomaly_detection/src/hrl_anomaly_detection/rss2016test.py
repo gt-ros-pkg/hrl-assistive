@@ -871,6 +871,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
             elif method == 'fixed': label='HMMs with a fixed threshold'
             elif method == 'cssvm': label='HMM-CSSVM'
+            elif method == 'sgd': label='SGD'
                 
             # visualization
             color = colors.next()
@@ -963,7 +964,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     # pass method if there is existing result
 
     # data preparation
-    if method.find('svm')>=0:
+    if method.find('svm')>=0 or method.find('sgd')>=0:
         scaler = preprocessing.StandardScaler()
         ## scaler = preprocessing.scale()
         X_scaled = scaler.fit_transform(X_train_org)
@@ -977,7 +978,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method.find('svm')>=0:
+            if method.find('svm')>=0 or method.find('svm')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
@@ -992,13 +993,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     # classifier # TODO: need to make it efficient!!
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
     for j in xrange(nPoints):
+        dtc.set_params( **SVM_dict )
         if method == 'svm':
             weights = ROC_dict['svm_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'cssvm_standard':
-            weights = np.logspace(-2, 0.1, nPoints)
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'cssvm':
@@ -1013,6 +1010,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             thresholds = ROC_dict['fixed_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'sgd':
+            weights = ROC_dict['sgd_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
 
         ## X_scaled = scaler.transform(X_test_org)
         ## est_y = dtc.predict(X_scaled, Y_test_org)
@@ -1376,7 +1377,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
 def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_dict,\
                            methods,\
                            success_viz=True, failure_viz=False, save_pdf=False,\
-                           pca_renew=False):
+                           db_renew=False):
     from sklearn import preprocessing
     from sklearn.externals import joblib
 
@@ -1426,7 +1427,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # ----------------------------------------------------------
     bd_data    = os.path.join(save_data_path, 'hmm_bd_data_'+task+'_'+str(foldIdx)+'.pkl')
     scaler_model = os.path.join(save_data_path, 'hmm_bd_scaler_'+task+'_'+str(foldIdx)+'.pkl')
-    if os.path.isfile(bd_data) and pca_renew is False:
+    if os.path.isfile(bd_data) and db_renew is False:
         dd = ut.load_pickle(bd_data)
         X_train_flat        = dd['X_train_flat']
         Y_train_flat        = dd['Y_train_flat']
@@ -1484,16 +1485,25 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         # --------------------------------------------------------------------------
         # Generate hidden-state distribution axis over center...
         n_logp = 100
-        n_post = 100
-        post_exp_list = np.zeros((n_post,nState))
-        mean_list     = np.linspace(0,nState-1,n_post)
-        std_list      = [0.5]*n_post
+        ## n_post = 100
+        ## post_exp_list = np.zeros((n_post,nState))
+        ## mean_list     = np.linspace(0,nState-1,n_post)
+        ## std_list      = [0.3]*n_post #[0.5]*n_post
 
-        from scipy.stats import norm
-        for i in xrange(n_post):
-            rv = norm(loc=mean_list[i],scale=std_list[i])
-            post_exp_list[i] = rv.pdf(np.linspace(0,nState-1,nState))
-            post_exp_list[i] /=np.sum(post_exp_list[i])
+        ## from scipy.stats import norm
+        ## for i in xrange(n_post):
+        ##     rv = norm(loc=mean_list[i],scale=std_list[i])
+        ##     post_exp_list[i] = rv.pdf(np.linspace(0,nState-1,nState))
+        ##     post_exp_list[i] /=np.sum(post_exp_list[i])
+
+        n_post = len(ll_classifier_train_X[0])
+        post_exp_list = []
+        for i in xrange(len(ll_classifier_train_X[0])):
+            post = np.array(ll_classifier_train_X)[:,i,1:]
+            post = np.mean(post, axis=0)
+            post /= np.sum(post)
+            post_exp_list.append(post)
+        post_exp_list = np.array(post_exp_list)
 
         # Discriminative classifier ---------------------------------------------------
         # Adjusting range
@@ -1506,7 +1516,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
         # Background
         print "Run background data"
-        data = np.c_[x1.ravel(), x2.ravel()]    
+        data = np.c_[x1.ravel(), x2.ravel()]
         X_bg = np.hstack([ np.array([x2.ravel()]).T, post_exp_list[x1.ravel().tolist()] ])
         print np.shape(X_bg)
 
@@ -1559,11 +1569,12 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
 
         # weight number
-        for j in xrange(nPoints):
+        for j in xrange(10, nPoints):
             if method == 'svm':
                 weights = ROC_dict['svm_param_range']
-                dtc.set_params( class_weight=weights[j] )
                 dtc.set_params( **SVM_dict )
+                dtc.set_params( class_weight=weights[j] )
+                dtc.set_params( kernel_type=0 )
                 ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
             elif method == 'cssvm':
                 weights = ROC_dict['cssvm_param_range']
@@ -1571,15 +1582,15 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
             elif method == 'progress_time_cluster':
                 thresholds = ROC_dict['progress_param_range']
-                dtc.set_params( ths_mult = thresholds[j] )
+                dtc.set_params( ths_mult=thresholds[j] )
                 if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
             elif method == 'fixed':
                 thresholds = ROC_dict['fixed_param_range']
-                dtc.set_params( ths_mult = thresholds[j] )
+                dtc.set_params( ths_mult=thresholds[j] )
                 if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
             if method.find('svm')>=0:
-                ## print "SVM Weight: ", weights[j], np.shape(X_inv_scaled)
+                print "SVM Weight: ", weights[j], np.shape(X_bg)
                 X_bg_scaled = ml_scaler.transform(X_bg)
             else:
                 print "Progress? Weight: ", thresholds[j]
@@ -1590,9 +1601,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 
             z = dtc.predict(np.array(X_bg_scaled))                
             print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
-            f = dtc.predict(np.array(X_test_flat_scaled))                
-            print np.amin(f), np.amax(f), " : ", np.amin(Y_test_flat), np.amax(Y_test_flat)
-            sys.exit()
+            ## f = dtc.predict(np.array(X_test_flat_scaled))                
+            ## print np.amin(f), np.amax(f), " : ", np.amin(Y_test_flat), np.amax(Y_test_flat)
+            ## g = dtc.predict(np.array(X_train_flat_scaled))                
+            ## print np.amin(g), np.amax(g), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
                 
             if np.amax(z) == np.amin(z):
                 print "Max equals to min. Wrong classification!"
@@ -1601,26 +1613,29 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             ## print type(z)
             z = z.reshape(np.shape(x1)) 
             ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
-            plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
-            plt.contour(x1, x2, z, levels=[0], linewidths=2, colors='red')
-            plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
+            #plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
+            CS=plt.contour(x1, x2, z, levels=[0], linewidths=2, colors='red')
+            #plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
             ## plt.axis('off')
+            plt.clabel(CS, inline=1, fontsize=10)
 
-            plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
-            ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
-            plt.axis('tight')
-            ## plt.xlim([0, 1])
-            ## plt.ylim([0, 1])
-            ## plt.xlim([x1_min, x1_max])
-            ## plt.ylim([x2_min, x2_max])
+        plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
+        ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
+        plt.axis('tight')
+        ## plt.xlim([0, 1])
+        ## plt.ylim([0, 1])
+        ## plt.xlim([x1_min, x1_max])
+        ## plt.ylim([x2_min, x2_max])
+        plt.ylim([-50, 400])
+        plt.legend(loc=3,prop={'size':16})
 
-            if save_pdf is False:
-                plt.show()
-            else:
-                print "Save pdf to Dropbox folder ", j
-                fig.savefig('test_'+str(j)+'.pdf')
-                fig.savefig('test_'+str(j)+'.png')
-                os.system('mv test_* ~/Dropbox/HRL/')
+        if save_pdf is False:
+            plt.show()
+        else:
+            print "Save pdf to Dropbox folder ", j
+            fig.savefig('test_'+str(j)+'.pdf')
+            fig.savefig('test_'+str(j)+'.png')
+            os.system('mv test_* ~/Dropbox/HRL/')
 
 
 
@@ -1639,6 +1654,8 @@ if __name__ == '__main__':
                  default=False, help='Renew AE data.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+                 default=False, help='Renew Classifiers.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
                  help='type the desired task name')
@@ -1796,7 +1813,7 @@ if __name__ == '__main__':
 
         plotDecisionBoundaries(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                methods,\
-                               success_viz, failure_viz, save_pdf=opt.bSavePdf)
+                               success_viz, failure_viz, save_pdf=opt.bSavePdf, db_renew=opt.bClassifierRenew)
 
     elif opt.bAEDataExtraction:
         param_dict['AE']['switch']     = True
