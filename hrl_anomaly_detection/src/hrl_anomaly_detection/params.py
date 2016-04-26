@@ -35,7 +35,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
 
     nPoints        = 20
     ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                      'update_list': ['progress_time_cluster', 'svm','fixed'],\
+                      'update_list': [],\
                       'nPoints': nPoints,\
                       'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                       'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -420,11 +420,11 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.1, 'cost': 8.0,\
-                          'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 17.5}
+                          'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 11.25}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 2.83, 'scale': 4.72}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'cssvm' ],\
-                          'update_list': [],\
+                          'update_list': ['cssvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.5, -4., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.8, nPoints),\
