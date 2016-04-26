@@ -1547,7 +1547,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # -----------------------------------------------------------------------------
     print "Run classifier"
     methods = ['svm']
-    methods = ['progress_time_cluster']
+    ## methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
         
@@ -1584,14 +1584,21 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             else:
                 print "Progress? Weight: ", thresholds[j]
                 X_bg_scaled = X_bg
+
+            ## print X_bg[100]
+            ## print X_bg_scaled[100]
+                
             z = dtc.predict(np.array(X_bg_scaled))                
             print np.amin(z), np.amax(z), " : ", np.amin(Y_train_flat), np.amax(Y_train_flat)
+            f = dtc.predict(np.array(X_test_flat_scaled))                
+            print np.amin(f), np.amax(f), " : ", np.amin(Y_test_flat), np.amax(Y_test_flat)
+            sys.exit()
                 
             if np.amax(z) == np.amin(z):
                 print "Max equals to min. Wrong classification!"
-                continue
+                ## continue
             z = np.array(z)
-            print type(z)
+            ## print type(z)
             z = z.reshape(np.shape(x1)) 
             ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
             plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red

@@ -202,10 +202,14 @@ class classifier(learning_base):
             return True
                 
         elif self.method == 'sgd':
-            from sklearn.kernel_approximation import RBFSampler
+
+            ## from sklearn.kernel_approximation import RBFSampler
+            ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
+            from sklearn.kernel_approximation import Nystroem
+            self.rbf_feature = Nystroem(gamma=self.gamma, n_components=1000, random_state=1)
+                
             from sklearn.linear_model import SGDClassifier
             # get time-based clustering center? Not yet implemented
-            self.rbf_feature = RBFSampler(gamma=self.gamma, random_state=1)
             X_features       = self.rbf_feature.fit_transform(X)
             # fitting
             d = {+1: self.class_weight, -1: self.w_negative}

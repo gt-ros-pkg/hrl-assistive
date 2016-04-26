@@ -464,7 +464,7 @@ if __name__ == '__main__':
         nFiles = 9
         parameters = {'method': ['sgd'], \
                       'gamma': np.logspace(-1.5,-0.5,5), \
-                      'w_negative': np.linspace(0.5,1.5,5) }
+                      'w_negative': np.linspace(1.0,2.5,5) }
         ## parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
