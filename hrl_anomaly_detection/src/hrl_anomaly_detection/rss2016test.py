@@ -1557,9 +1557,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # -----------------------------------------------------------------------------
     print "Run classifier"
     methods = ['svm']
-    ## methods = ['progress_time_cluster']
+    methods = ['progress_time_cluster']
     fig = plt.figure(1)
     for method in methods:
+        ## bd_method_data = os.path.join(save_data_path, 'hmm_bd_'+task+'_'+str(foldIdx)+'_'+method'.pkl')
         
         # scaling?
         if method.find('svm')>=0:
@@ -1568,13 +1569,17 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             X_scaled = X_train_flat            
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength)
 
+        lines  = []
+        labels = []
+
         # weight number
-        for j in xrange(10, nPoints):
+        startPoint = 10
+        for j in xrange(startPoint, nPoints,2):
+            dtc.set_params( **SVM_dict )
             if method == 'svm':
                 weights = ROC_dict['svm_param_range']
-                dtc.set_params( **SVM_dict )
                 dtc.set_params( class_weight=weights[j] )
-                dtc.set_params( kernel_type=0 )
+                dtc.set_params( kernel_type=0 ) # temp
                 ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
             elif method == 'cssvm':
                 weights = ROC_dict['cssvm_param_range']
@@ -1583,11 +1588,13 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             elif method == 'progress_time_cluster':
                 thresholds = ROC_dict['progress_param_range']
                 dtc.set_params( ths_mult=thresholds[j] )
-                if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                if j==startPoint:
+                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
             elif method == 'fixed':
                 thresholds = ROC_dict['fixed_param_range']
                 dtc.set_params( ths_mult=thresholds[j] )
-                if j==0: ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                if j==startPoint:
+                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
 
             if method.find('svm')>=0:
                 print "SVM Weight: ", weights[j], np.shape(X_bg)
@@ -1614,20 +1621,33 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             z = z.reshape(np.shape(x1)) 
             ## plt.contourf(x1, x2, z, cmap=plt.cm.Paired)
             #plt.contourf(x1, x2, z, levels=np.linspace(z.min(), 0, 7), cmap=plt.cm.Blues_r) # -1: blue, 1.0: red
-            CS=plt.contour(x1, x2, z, levels=[0], linewidths=2, colors='red')
             #plt.contourf(x1, x2, z, levels=[0, z.max()], colors='orange')
-            ## plt.axis('off')
-            plt.clabel(CS, inline=1, fontsize=10)
 
-        plt.scatter(xx_normal[:,0],xx_normal[:,1],c='green')
-        ## plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red')
+            color = colors.next()
+            CS=plt.contour(x1, x2, z, levels=[0], linewidths=2, colors=color)
+            ## plt.clabel(CS, inline=1, fontsize=10)
+            lines.append(CS.collections[0])
+            if method.find('svm')>=0:
+                labels.append( "Classifier with w+1 = {0:.3f}".format(weights[j]) )
+            else:
+                labels.append( "Classifier with w+1 = {0:.3f}".format(thresholds[j]) )
+
+
+        plt.scatter(xx_normal[:,0],xx_normal[:,1],c='blue', marker='o', lw=0,\
+                    label="Non-anomalous data")
+        plt.scatter(xx_abnormal[:,0],xx_abnormal[:,1],c='red', marker='x', lw=0,\
+                    label="Anomalous data")
         plt.axis('tight')
-        ## plt.xlim([0, 1])
-        ## plt.ylim([0, 1])
-        ## plt.xlim([x1_min, x1_max])
-        ## plt.ylim([x2_min, x2_max])
-        plt.ylim([-50, 400])
-        plt.legend(loc=3,prop={'size':16})
+        if np.amin(xx_normal[:,1])>0:
+            plt.ylim([ np.amin(xx_normal[:,1])-100, np.amax(xx_normal[:,1])*1.3 ])
+        else:
+            plt.ylim([ np.amin(xx_normal[:,1])*1.3, np.amax(xx_normal[:,1])*1.3 ])
+            
+        ## plt.axis('off')
+        plt.legend(lines, labels, loc=4, prop={'size':16})
+        plt.ylabel("Log-likelihood", fontsize=22)
+        plt.xlabel("Time Indices", fontsize=22)
+
 
         if save_pdf is False:
             plt.show()
