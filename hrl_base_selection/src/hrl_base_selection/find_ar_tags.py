@@ -8,7 +8,7 @@ import os, threading, copy
 
 import hrl_lib.circular_buffer as cb
 import tf
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs import AlvarMarkers
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from geometry_msgs.msg import PoseStamped  # , PointStamped, PoseArray
 from hrl_msgs.msg import FloatArrayBare
