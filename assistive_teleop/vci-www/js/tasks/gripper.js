@@ -7,7 +7,7 @@ RFH.GripperDisplay = function (options) {
     var $gripperSlider = $div.find('.gripper-slider').css('zIndex', 10);
     var $grabButton = $div.find('.grab').button();
     var $releaseButton = $div.find('.release').button().hide();
-    var $releaseLabel = $('label[for='+$releaseButton.prop('id')+']').hide();
+    var $releaseLabel = $('label[for='+$releaseButton.prop('id')+']').hide().css('zIndex',10);
     var handleWidthPct = 10; // Width of the slider handles relative to the slider;
     $gripperSlider.slider({
         range: true,
