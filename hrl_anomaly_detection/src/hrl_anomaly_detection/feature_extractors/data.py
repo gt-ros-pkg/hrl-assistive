@@ -102,7 +102,7 @@ def getData3(time_window, renew=False):
                     nSet=nSet, \
                     downSampleSize=downSampleSize, \
                     scale=1.0,\
-                    ae_data=True, data_ext=False, nAugment=nAugment, \
+                    ae_data=True, nAugment=nAugment, \
                     feature_list=feature_list, \
                     data_renew=renew)
 

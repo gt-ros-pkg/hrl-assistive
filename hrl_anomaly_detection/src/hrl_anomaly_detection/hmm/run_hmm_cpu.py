@@ -219,8 +219,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
 
-
-    idx_list = np.argsort(mean_list)
+    score_array = np.array(mean_list)-np.array(std_list)
+    idx_list = np.argsort(score_array)
 
     for i in idx_list:
         print("%0.3f (+/-%0.03f) for %r"

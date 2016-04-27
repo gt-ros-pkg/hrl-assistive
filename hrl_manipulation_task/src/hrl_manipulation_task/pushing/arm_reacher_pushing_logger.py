@@ -64,6 +64,7 @@ def pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detect
     print "Finish to log!"    
     log.close_log_file(bCont, status)
 
+
 def pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
                             train=False, abnormal=False, bCont=False, status='skip'):
 
@@ -121,6 +122,10 @@ if __name__ == '__main__':
                  default=False, help='Continuously publish data.')
     p.add_option('--continue', '--c', action='store_true', dest='bCont',
                  default=False, help='Continuously run program.')
+    p.add_option('--classifier_update', '--cu', action='store_true', dest='bClassUpdate',
+                 default=False, help='Continous classifier update.')
+    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
+                 default=False, help='Enable anomaly detector.')
     p.add_option('--status', '--s', action='store', dest='bStatus',
                  default='success', help='continous data collection status [sucesss, failure, skip(default)]')
     opt, args = p.parse_args()
@@ -132,8 +137,8 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
 
-    ## task_name = 'pushing_microwhite'
-    task_name = 'pushing_microblack'
+    task_name = 'pushing_microwhite'
+    ## task_name = 'pushing_microblack'
     ## task_name = 'pushing_toolcase'
     
     log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
@@ -142,39 +147,52 @@ if __name__ == '__main__':
                  subject="gatsbii", task=task_name, data_pub=opt.bDataPub, verbose=False)
 
     # need to be removed somehow
-    last_trial  = '2'
-    last_detect = '2'
+    last_trial  = '0'
+    last_detect = '0'
     
     while not rospy.is_shutdown():
 
-        if opt.bCont: trial = last_trial
+        if opt.bCont and last_trial is not '0': trial = last_trial
         else:
-            trial  = raw_input('Enter trial\'s status (e.g. 1:MW, 2: MB, 3: TC else: exit): ')
+            trial  = raw_input('Enter trial\'s status (e.g. 1:MW, 2: MB, 3: TC 0: exit): ')
             if trial=='': trial=last_trial
-        
-        if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
 
-            if opt.bCont: detect = last_detect
-            else: detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
+        if trial is '0': break
+
+        # Anomaly detectoin
+        if opt.bCont:
+            detect = last_detect
+        elif opt.bADL:
+            detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
-            if detect == '1': detection_flag = True
-            else: detection_flag = False
-            
-            if trial == '1':
-                if task_name == 'pushing_microwhite':
-                    pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
-                                            bCont=opt.bCont, status=opt.bStatus)
-            elif trial == '2':
-                if task_name == 'pushing_microblack':
-                    pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
-                                            bCont=opt.bCont, status=opt.bStatus)
-            elif trial == '3':
-                if task_name == 'pushing_toolcase':
-                    pushing_toolcase(armReachActionLeft, armReachActionRight, log, detection_flag,\
-                                            bCont=opt.bCont, status=opt.bStatus)
-        else:
-            break
+        else: detect = '0'
+        
+        if detect == '1': detection_flag = True
+        else: detection_flag = False
 
+        # Run task
+        if trial == '1':
+            if task_name == 'pushing_microwhite':
+                pushing_microwave_white(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                        bCont=opt.bCont, status=opt.bStatus)
+        elif trial == '2':
+            if task_name == 'pushing_microblack':
+                pushing_microwave_black(armReachActionLeft, armReachActionRight, log, detection_flag, \
+                                        bCont=opt.bCont, status=opt.bStatus)
+        elif trial == '3':
+            if task_name == 'pushing_toolcase':
+                pushing_toolcase(armReachActionLeft, armReachActionRight, log, detection_flag,\
+                                        bCont=opt.bCont, status=opt.bStatus)
+
+        # Evaluation (Success or Failure) for continuous update
+        if opt.bClassUpdate:
+            update = raw_input('Update anomaly detector? (e.g. 1: update else: no update): ')
+            if update is '1': log.update_detector(log.savedFileName)
+
+            # change sensitivity?
+            
+
+            
         last_trial  = trial
         last_detect = detect
     

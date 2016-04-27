@@ -119,6 +119,7 @@ class logger:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
             self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', String_None)
             print "Detected anomaly detector service"
 
     ##GUI implementation
@@ -250,9 +251,10 @@ class logger:
 
             print 'Saving to', fileName
             ut.save_pickle(self.data, fileName)
+            self.savedFileName = fileName
 
         gc.collect()
-        rospy.sleep(1.0)
+        ## rospy.sleep(1.0)
 
 
 ##GUI section
@@ -341,6 +343,9 @@ class logger:
     def enableDetector(self, enableFlag):
         ret = self.ad_srv(enableFlag)
 
+    def updateDetector(self, fileName):        
+        ret = self.ad_update_srv(fileName)
+        
         
     def waitForReady(self):
 
