@@ -172,7 +172,9 @@ class classifier(learning_base):
             if type(X) == list: X = np.array(X)
             ## ll_logp = X[:,0:1]
             ## ll_post = X[:,1:]
-            if ll_idx is None: print "idx is not inserted"
+            if ll_idx is None:
+                print "Error>> ll_idx is not inserted"
+                sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]

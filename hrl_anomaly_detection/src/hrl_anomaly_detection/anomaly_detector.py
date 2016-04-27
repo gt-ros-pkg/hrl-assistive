@@ -95,7 +95,6 @@ class anomaly_detector:
             self.rf_center = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/rf_center')
             self.downSampleSize = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/downSampleSize')
             self.handFeatures = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/feature_list')
-            self.data_ext = False
             self.nNormalFold   = 2
             self.nAbnormalFold = 2
 
@@ -110,7 +109,6 @@ class anomaly_detector:
             self.rf_center = self.param_dict['data_param']['rf_center']
             self.downSampleSize = self.param_dict['data_param']['downSampleSize']
             self.handFeatures = self.param_dict['data_param']['handFeatures']
-            self.data_ext     = self.param_dict['data_param']['lowVarDataRemv']
             self.cut_data     = self.param_dict['data_param']['cut_data']
             self.nNormalFold   = self.param_dict['data_param']['nNormalFold']
             self.nAbnormalFold = self.param_dict['data_param']['nAbnormalFold']
@@ -150,6 +148,7 @@ class anomaly_detector:
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
+        self.update_service    = rospy.Service('anomaly_detector_update', String_None, self.updateCallback)
 
     def initDetector(self):
         
@@ -179,7 +178,6 @@ class anomaly_detector:
                                downSampleSize=self.downSampleSize, \
                                scale=1.0,\
                                ae_data=False,\
-                               data_ext=self.data_ext,\
                                handFeatures=self.handFeatures, \
                                cut_data=self.cut_data,\
                                data_renew=False)
@@ -319,6 +317,45 @@ class anomaly_detector:
             self.reset()
 
         return Bool_NoneResponse()
+
+
+    def updateCallback(self, msg):
+        fileName = msg.data
+        if os.path.isfile(fileName):
+            print "Start to update detector using ", fileName
+
+            # Get label
+            if 'success' in fileName: self.Y_test_org.append(0)
+            else: Y_test_org.append(1)
+
+            # Preprocessing
+            singleData = dm.getData(fileName, self.rf_center, self.local_range,\
+                                    self.handFeatureParams,\
+                                    downSampleSize = self.downSampleSize, \
+                                    cut_data       = self.cut_data\
+                                    handFeatures   = self.handFeatures)
+            print np.shape(singleData)
+
+            ## HMM
+            l_logp, l_post = self.ml.loglikelihoods(singleData, bPosterior=True)
+            X = []
+            for logp, post in zip(l_logp, l_post):
+                X.append([logp]+post.tolist())
+
+            ## Scaling
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X) ])
+            else:
+                self.X_scaled = np.vstack([ self.X_scaled, X ])
+                
+            # Run SGD? or SVM?
+            if self.classifier_method.find('svm'):
+                self.classifier.fit(self.X_scaled, self.Y_test_org)
+            else:
+                print "Not available update method"
+            
+        return String_NoneResponse()
+        
 
     def rawDataCallback(self, msg):
         

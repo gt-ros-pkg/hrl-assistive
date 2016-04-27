@@ -133,7 +133,6 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                            downSampleSize=data_dict['downSampleSize'], \
                            scale=1.0,\
                            ae_data=False,\
-                           data_ext=data_dict['lowVarDataRemv'],\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'],\
                            data_renew=data_dict['renew'])
@@ -378,7 +377,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
         d = dm.getDataSet(subject_names, task_name, raw_data_path, processed_data_path, \
                            data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'], data_ext=data_dict['lowVarDataRemv'], \
+                           ae_data=AE_dict['switch'], \
                            handFeatures=handFeatures, rawFeatures=rawFeatures,\
                            cut_data=data_dict['cut_data'],
                            data_renew=data_renew)
@@ -511,7 +510,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            ae_data=AE_dict['switch'],\
-                           data_ext=data_dict['lowVarDataRemv'], \
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
@@ -1846,7 +1844,6 @@ if __name__ == '__main__':
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
                       ae_data=False,\
-                      data_ext=param_dict['data_param']['lowVarDataRemv'],\
                       cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=False,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)

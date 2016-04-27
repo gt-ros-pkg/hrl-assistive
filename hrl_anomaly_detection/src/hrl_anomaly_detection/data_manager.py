@@ -110,9 +110,28 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
     return kFold_list
 
 
+
+
 #-------------------------------------------------------------------------------------------------
+def getData(fileName, rf_center, local_range, param_dict, downSampleSize=200, cut_data=None, \
+            handFeatures=['crossmodal_targetEEDist']):
+    '''
+    Load single data
+    '''
+    if os.path.isfile(fileName):
+
+        _, data_dict = util.loadData(fileName, isTrainingData=False,
+                                     downSampleSize=downSampleSize,
+                                     local_range=local_range, rf_center=rf_center)
+
+        data, _ = extractHandFeature(data_dict, handFeatures, \
+                                     param_dict=param_dict, cut_data=cut_data)
+
+        return 
+
+
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
-               downSampleSize=200, scale=1.0, ae_data=False, data_ext=True, \
+               downSampleSize=200, scale=1.0, ae_data=False, \
                cut_data=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
@@ -1368,7 +1387,7 @@ def get_time_window_data(subject_names, task, raw_data_path, processed_data_path
     data_dict = getDataSet(subject_names, task, raw_data_path, processed_data_path, \
                            rf_center, local_range,\
                            downSampleSize=downSampleSize, scale=1.0,\
-                           ae_data=True, data_ext=False, \
+                           ae_data=True, \
                            handFeatures=handFeatures, rawFeatures=rawFeatures, \
                            cut_data=cut_data,\
                            data_renew=renew)
