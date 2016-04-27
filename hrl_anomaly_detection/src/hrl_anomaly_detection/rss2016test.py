@@ -1014,6 +1014,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             weights = ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        else:
+            print "Not available method"
+            return "Not available method", -1, params
 
         ## X_scaled = scaler.transform(X_test_org)
         ## est_y = dtc.predict(X_scaled, Y_test_org)

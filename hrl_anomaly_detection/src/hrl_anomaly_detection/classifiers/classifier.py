@@ -241,11 +241,6 @@ class classifier(learning_base):
             if self.verbose:
                 print svm.__file__
 
-            ## if np.shape(X)==2:
-            ##     X[:,0] *= 1.5
-            ## else:
-            ##     X[0] *= 1.5
-
             if type(X) is not list: X=X.tolist()
             if y is not None:
                 ## p_labels, _, p_vals = svm.svm_predict(y, [list(row) for row in K_test], self.dt)
