@@ -408,6 +408,7 @@ class anomaly_detector:
             self.classifier.set_params(ths_mult=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min)
             
         self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
+        print "Classifier is updated!"
         
 
                     
