@@ -409,6 +409,15 @@ class anomaly_detector:
             
         self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
         print "Classifier is updated!"
+
+        if 'svm' in self.classifier_method:
+            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
+            print "Current sensitivity is ", sensitivity, self.classifier.class_weight
+        elif self.classifier_method == 'progress_time_cluster':                    
+            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+            print "Current sensitivity is ", sensitivity, self.classifier.ths_mult
+        self.sensitivity_pub.publish(sensitivity)                                   
+
         
 
                     
