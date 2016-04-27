@@ -144,9 +144,9 @@ class anomaly_detector:
 
         # Subscriber
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
-        rospy.Subscriber('/hrl_manipulation_task/status', String, self.statusCallback)
-        rospy.Subscriber('/hrl_manipulation_task/user_feedback', String, self.userfbCallback)
-        rospy.Subscriber('/hrl_manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
+        rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
+        rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
+        rospy.Subscriber('/manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
