@@ -71,12 +71,11 @@ RFH.Domains.Place = function (options) {
                 return "Select Place";
             case 'FORGET-LOCATION':
                 return "Clear Place Selection";
-            case "AUTO-GRASP":
+            case "AUTO-PLACE":
                 return "Automatic Placement";
-            case 'MANUAL-GRASP':
+            case 'MANUAL-PLACE':
                 return "Manual Placement";
         }
-
     }
 
     self.getActionHelpText = function (name, args) {
@@ -85,9 +84,9 @@ RFH.Domains.Place = function (options) {
                 return "Click on the spot to place the object.";
             case 'FORGET-LOCATION':
                 return "Clear previously indicates placement spot.";
-            case "AUTO-GRASP":
+            case "AUTO-PLACE":
                 return "Wait for the automated placement to set down the object."
-            case 'MANUAL-GRASP':
+            case 'MANUAL-PLACE':
                 return "Use the controls to place the object.";
         }
     };
@@ -108,9 +107,9 @@ RFH.Domains.Place = function (options) {
                 name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
             });
             param.delete();
-            if (RFH.regions[param.name] !== undefined) {
-                RFH.regions[param.name].remove();
-            }
+//            if (RFH.regions[param.name] !== undefined) {
+//                RFH.regions[param.name].remove();
+//            }
         }
     };
 
@@ -129,7 +128,7 @@ RFH.Domains.Place = function (options) {
         var object = hand + '_OBJECT';
         self.clearLocationParams(['PLACE_LOC']);
         self.setDefaultGoal(['(PLACED '+object+')']);
-        self.updatePDDLState(['(GRASPING '+object+' '+hand+'))','(NOT (TRIED-AUTO-PLACE))']);
+        self.updatePDDLState(['(NOT (TRIED-AUTO-PLACE))', '(NOT (PLACED '+object+'))']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'place' + '-' + new Date().getTime().toString();
         msg.domain = 'place';

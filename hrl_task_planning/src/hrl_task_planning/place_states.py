@@ -5,6 +5,7 @@ import tf
 
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
+from hrl_task_planning.msg import PDDLState
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -17,7 +18,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
                                 init_state=init_state, goal_state=goal_state,
                                 outcomes=SPA)
     elif action == 'AUTO-PLACE':
-        return OverheadPlaceState(hand=args[0], location=args[1], domain=domain, problem=problem,
+        return OverheadPlaceState(hand=args[0], item=args[1], location=args[2], domain=domain, problem=problem,
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
     elif action in ['ID-LOCATION', 'MANUAL-PLACE']:
@@ -46,15 +47,17 @@ from assistive_teleop.msg import OverheadPlaceAction, OverheadPlaceGoal
 
 
 class OverheadPlaceState(PDDLSmachState):
-    def __init__(self, hand, location, domain, *args, **kwargs):
+    def __init__(self, hand, item, location, domain, *args, **kwargs):
         super(OverheadPlaceState, self).__init__(domain=domain, *args, **kwargs)
         self.location = location
         self.domain = domain
+        self.item = item
         self.tfl = tf.TransformListener()
         if hand == 'RIGHT_HAND':
             self.overhead_place_client = actionlib.SimpleActionClient('/right_arm/overhead_place', OverheadPlaceAction)
         elif hand == 'LEFT_HAND':
             self.overhead_place_client = actionlib.SimpleActionClient('/left_arm/overhead_place', OverheadPlaceAction)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=1)
 
     def on_execute(self, ud):
         try:
@@ -66,6 +69,12 @@ class OverheadPlaceState(PDDLSmachState):
         goal_msg = OverheadPlaceGoal()
         goal_msg.goal_pose = goal_pose
         self.overhead_place_client.send_goal(goal_msg)
+        self.overhead_place_client.wait_for_result()
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.problem = self.problem
+        state_update.predicates = ['(TRIED-AUTO-PLACE)', '(PLACED '+self.item+')']
+        self.state_update_pub.publish(state_update)
 
 
 def _pose_stamped_to_dict(ps_msg):
