@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from copy import copy, deepcopy
+from copy import deepcopy
 
 import rospy
 import actionlib
 from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import Bool
+import tf
 
 
 class HapticMpcArmWrapper(object):
@@ -13,25 +14,37 @@ class HapticMpcArmWrapper(object):
         self.side = side
         self.pose_state = None
         self.in_deadzone = None
+        self.tfl = tf.TransformListener()
         self.state_sub = rospy.Subscriber('/'+side+'_arm/haptic_mpc/gripper_pose', PoseStamped, self.state_cb)
         self.at_goal_sub = rospy.Subscriber('/'+side+'_arm/haptic_mpc/in_deadzone', Bool, self.deadzone_cb)
         self.goal_pub = rospy.Publisher('/'+side+'_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=3)
 
-    def state_cb(self, ps_msg):
-        self.state = ps_msg
-
     def deadzone_cb(self, msg):
         self.in_deadzone = msg.data
 
-    def move_arm(self, ps_msg, wait=False):
+    def state_cb(self, msg):
+        new_frame = '/base_link'
+        if msg.header.frame_id == new_frame:
+            self.pose_state = msg
+        msg.header.stamp = rospy.Time(0)
+        try:
+            self.tfl.waitForTransform(msg.header.frame_id, new_frame, msg.header.stamp, rospy.Duration(10.0))
+        except (tf.ConnectivityException, tf.LookupException, tf.ExtrapolationException) as e:
+            rospy.logerr('[%s]: TF Exception: %s', rospy.get_name(), e)
+        self.pose_state = self.tfl.transformPose(new_frame, msg)
+
+    def move_arm(self, ps_msg, wait=False, timeout=0):
         ps_msg.header.stamp = rospy.Time.now()
         self.goal_pub.publish(ps_msg)
         if not wait:
-            return
-        self.in_deadzone = False
+            return True
+        endtime = rospy.Time.now() + rospy.Duration(timeout)
         rospy.sleep(1.0)  # make sure the msg has time to arrive...
-        while not self.in_deadzone:
+        while not self.in_deadzone and not rospy.is_shutdown():
+            if rospy.Time.now() > endtime:
+                return False
             rospy.sleep(0.1)
+        return True
 
 
 from pr2_controllers_msgs.msg import Pr2GripperCommandAction, Pr2GripperCommandGoal, Pr2GripperCommand
@@ -93,30 +106,44 @@ class OverheadGrasp(object):
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
         print "moving arm to setup"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Setup Position"))
-        self.arm.move_arm(setup_pose, wait=True)
+        reached = self.arm.move_arm(setup_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
+            print "Failed to reach setup"
+            return
         print "moving arm to overhead"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Overhead Position"))
-        self.arm.move_arm(overhead_pose, wait=True)
+        reached = self.arm.move_arm(overhead_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
+            print "Failed to reach overhead"
+            return
         print "opening gripper"
         self.action_server.publish_feedback(OverheadGraspFeedback("Opening Gripper"))
         self.gripper.open_gripper()
         rospy.sleep(2.0)
         print "moving arm to goal"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to goal"))
-        self.arm.move_arm(goal_pose, wait=True)
+        reached = self.arm.move_arm(goal_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Goal'))
+            print "Failed to reach goal"
+            return
         print "closing gripper"
         self.action_server.publish_feedback(OverheadGraspFeedback("Closing Gripper"))
-        self.gripper.grasp()
+        self.gripper.grasp(wait=True)
         self.action_server.publish_feedback(OverheadGraspFeedback("finished"))
         self.action_server.set_succeeded(OverheadGraspResult('finished'))
 
     def process_path(self, goal_pose):
-        while self.arm.state is None:
+        while self.arm.pose_state is None and not rospy.is_shutdown():
             rospy.sleep(0.1)
             rospy.loginfo("[%s] Waiting for %s arm state", rospy.get_name(), self.side)
-        current_pose = deepcopy(self.arm.state)
+        current_pose = deepcopy(self.arm.pose_state)
+        print "Current Pose:\n", current_pose
         goal_pose.pose.orientation = Quaternion(0.7071067, 0, -0.7071067, 0)
-        overhead_height = goal_pose.pose.position.z + self.overhead_offset
+        overhead_height = max(goal_pose.pose.position.z + self.overhead_offset, current_pose.pose.position.z)
+        print "Overhead height:\n", overhead_height
         setup_pose = deepcopy(current_pose)
         setup_pose.header.frame_id = '/base_link'
         setup_pose.pose.position.z = overhead_height
@@ -144,28 +171,41 @@ class OverheadPlace(object):
         self.action_server.publish_feedback(OverheadGraspFeedback("Processing Goal Pose"))
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
         print "moving arm to setup"
-        self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Setup Position"))
-        self.arm.move_arm(setup_pose, wait=True)
-        print "moving arm to overhead"
-        self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Overhead Position"))
-        self.arm.move_arm(overhead_pose, wait=True)
+        self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Setup Position"))
+        reached = self.arm.move_arm(setup_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
+            print "Failed to reach setup"
+            return
+        self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Overhead Position"))
+        reached = self.arm.move_arm(overhead_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
+            print "Failed to reach overhead"
+            return
         self.gripper.release_on_contact()
         print "moving arm to goal"
-        self.action_server.publish_feedback(OverheadGraspFeedback("Moving to goal"))
-        self.arm.move_arm(goal_pose, wait=True)
+        self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to goal"))
+        reached = self.arm.move_arm(goal_pose, wait=True, timeout=10)
+        if not reached:
+            self.action_server.set_aborted(OverheadGraspResult('Reaching to Goal'))
+            print "Failed to reach goal"
+            return
         print "opening gripper"
-        self.action_server.publish_feedback(OverheadGraspFeedback("Opening Gripper"))
+        self.action_server.publish_feedback(OverheadPlaceFeedback("Opening Gripper"))
         self.gripper.open_gripper()
-        self.action_server.publish_feedback(OverheadGraspFeedback("finished"))
-        self.action_server.set_succeeded(OverheadGraspResult('finished'))
+        self.action_server.publish_feedback(OverheadPlaceFeedback("finished"))
+        self.action_server.set_succeeded(OverheadPlaceResult('finished'))
 
     def process_path(self, goal_pose):
-        while self.arm.state is None:
+        while self.arm.pose_state is None and not rospy.is_shutdown():
             rospy.sleep(0.1)
             rospy.loginfo("[%s] Waiting for %s arm state", rospy.get_name(), self.side)
-        current_pose = deepcopy(self.arm.state)
+        current_pose = deepcopy(self.arm.pose_state)
+        print "Current Pose:\n", current_pose
         goal_pose.pose.orientation = Quaternion(0.7071067, 0, -0.7071067, 0)
-        overhead_height = goal_pose.pose.position.z + self.overhead_offset
+        overhead_height = max(goal_pose.pose.position.z + self.overhead_offset, current_pose.pose.position.z)
+        print "Overhead height:\n", overhead_height
         setup_pose = deepcopy(current_pose)
         setup_pose.header.frame_id = '/base_link'
         setup_pose.pose.position.z = overhead_height

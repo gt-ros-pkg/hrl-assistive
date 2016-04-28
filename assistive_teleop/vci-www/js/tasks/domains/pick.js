@@ -107,9 +107,9 @@ RFH.Domains.Pick = function (options) {
                 name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
             });
             param.delete();
-            if (RFH.regions[param.name] !== undefined) {
-                RFH.regions[param.name].remove();
-            }
+//            if (RFH.regions[param.name] !== undefined) {
+//                RFH.regions[param.name].remove();
+//            }
         }
     };
 
@@ -128,7 +128,7 @@ RFH.Domains.Pick = function (options) {
         var object = hand + '_OBJECT';
         self.clearLocationParams([object]);
         self.setDefaultGoal(['(GRASPING '+hand+' '+object+')']);
-        self.updatePDDLState(['(NOT (GRASPING '+hand+' '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))','(NOT (TRIED-AUTO-GRASP))','(NOT (KNOWN '+object+'))']);
+        self.updatePDDLState(['(NOT (GRASPING '+hand+' '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))','(NOT (AUTO-GRASP-FAILED))','(NOT (KNOWN '+object+'))']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick' + '-' + new Date().getTime().toString();
         msg.domain = 'pick';
