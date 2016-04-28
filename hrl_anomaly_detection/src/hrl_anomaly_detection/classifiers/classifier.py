@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import os, sys, copy
+import os, sys, copy, time
 
 # visualization
 import matplotlib
@@ -46,17 +46,29 @@ import hrl_lib.util as ut
 from scipy.stats import norm, entropy
 from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
+from sklearn import metrics
 
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
-                 class_weight=1.0, \
+                 #progress
+                 logp_offset = 0.0,\
                  # svm
+                 class_weight=1.0, \
                  svm_type    = 0,\
                  kernel_type = 2,\
                  degree      = 3,\
                  gamma       = 0.3,\
                  cost        = 4.,\
                  w_negative  = 7.0,\
+                 # cssvm
+                 cssvm_degree      = 3,\
+                 cssvm_gamma       = 0.3,\
+                 cssvm_cost        = 4.,\
+                 cssvm_w_negative  = 7.0,\
+                 # sgd
+                 sgd_gamma      = 2.0,\
+                 sgd_w_negative = 1.0,\
+                 sgd_n_iter     = 10,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -64,6 +76,7 @@ class classifier(learning_base):
         ths_mult: only for progress-based classifier
         '''              
         self.method = method
+        self.dt     = None
         self.verbose = verbose
 
         if self.method == 'svm':
@@ -75,23 +88,36 @@ class classifier(learning_base):
             self.degree      = degree 
             self.gamma       = gamma 
             self.cost        = cost 
-            self.w_negative  = w_negative 
-            
-        elif self.method == 'cssvm_standard' or self.method == 'cssvm':
+            self.w_negative  = w_negative             
+        elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             self.class_weight = class_weight
+            self.svm_type    = svm_type
+            self.kernel_type = kernel_type
+            self.cssvm_degree     = cssvm_degree 
+            self.cssvm_gamma      = cssvm_gamma 
+            self.cssvm_cost       = cssvm_cost 
+            self.cssvm_w_negative = cssvm_w_negative 
         elif self.method == 'progress_time_cluster':
             self.nLength   = nLength
             self.std_coff  = 1.0
             self.nPosteriors = nPosteriors
             self.ths_mult = ths_mult
+            self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors) 
         elif self.method == 'fixed':
             self.mu  = 0.0
             self.std = 0.0
             self.ths_mult = ths_mult
+        elif self.method == 'sgd':
+            self.class_weight = class_weight
+            self.sgd_w_negative = sgd_w_negative             
+            self.sgd_gamma      = sgd_gamma
+            self.sgd_n_iter     = sgd_n_iter 
+            ## self.cost         = cost
+            
             
         learning_base.__init__(self)
 
@@ -99,22 +125,28 @@ class classifier(learning_base):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
-
-        # saved file check.
+        # get custom precomputed kernel for svms
+        ## if 'svm' in self.method:
+        ##     self.X_train=X
+        ##     ## y_train=y
+        ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
         if self.method == 'svm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             ## print svm.__file__
+
+            ## X[:,0] *= 1.5            
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
-            try:
-                self.dt = svm.svm_train(y, X, commands )
-            except:
-                return False
+              ## +' -t 4'
+                            
+            ## try: self.dt = svm.svm_train(y, [list(row) for row in K_train], commands )
+            try: self.dt = svm.svm_train(y, X, commands )
+            except: return False
             return True
         elif self.method == 'cssvm_standard':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
@@ -126,14 +158,24 @@ class classifier(learning_base):
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
             if type(X) is not list: X=X.tolist()
-            self.dt = cssvm.svm_train(y, X, '-C 1 -c 4 -t 2 -g 0.03 -w1 2.0 -w-1 '+str(self.class_weight) )
+            commands = '-q -C 1 -s '+str(self.svm_type)+' -t '+str(self.kernel_type)\
+              +' -d '+str(self.cssvm_degree)\
+              +' -g '+str(self.cssvm_gamma)\
+              +' -c '+str(self.cssvm_cost)+' -w1 '+str(self.class_weight)\
+              +' -w-1 '+str(self.cssvm_w_negative) \
+              +' -m 200'
+            try: self.dt = cssvm.svm_train(y, X, commands )
+            except: return False
             return True
             
         elif self.method == 'progress_time_cluster':
             if type(X) == list: X = np.array(X)
             ## ll_logp = X[:,0:1]
             ## ll_post = X[:,1:]
-            ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
+            if ll_idx is None:
+                print "Error>> ll_idx is not inserted"
+                sys.exit()
+            else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
 
@@ -166,6 +208,21 @@ class classifier(learning_base):
             self.std = np.std(ll_logp)
             return True
                 
+        elif self.method == 'sgd':
+
+            ## from sklearn.kernel_approximation import RBFSampler
+            ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
+            from sklearn.kernel_approximation import Nystroem
+            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=1000, random_state=1)
+                
+            from sklearn.linear_model import SGDClassifier
+            # get time-based clustering center? Not yet implemented
+            X_features       = self.rbf_feature.fit_transform(X)
+            # fitting
+            d = {+1: self.class_weight, -1: self.sgd_w_negative}
+            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
+            self.dt.fit(X_features, y)
+
 
     def predict(self, X, y=None):
         '''
@@ -174,6 +231,8 @@ class classifier(learning_base):
         '''
 
         if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm':
+            ## K_test = custom_kernel(X, self.X_train, gamma=self.gamma)
+            
             if self.method == 'svm':
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
@@ -183,33 +242,53 @@ class classifier(learning_base):
 
             if self.verbose:
                 print svm.__file__
+
             if type(X) is not list: X=X.tolist()
             if y is not None:
+                ## p_labels, _, p_vals = svm.svm_predict(y, [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
+                ## p_labels, _, p_vals = svm.svm_predict([0]*len(X), [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
+        
         elif self.method == 'progress_time_cluster':
-            logp = X[0]
-            post = X[1:]
+            if len(np.shape(X))==1: X = [X]
 
-            # Find the best posterior distribution
-            min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-            nState = len(post)
-            ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-            ## c_time = np.logspace(0,-0.9,nState)[min_index]
-            c_time = 1.0
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                post = X[i][1:]
 
-            if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
-                type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult[min_index]*self.ll_std[min_index]) - logp
-            else:
-                err = (self.ll_mu[min_index] + c_time * self.ths_mult*self.ll_std[min_index]) - logp
-            return err 
+                # Find the best posterior distribution
+                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                nState = len(post)
+                ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
+                ## c_time = np.logspace(0,-0.9,nState)[min_index]
+
+                if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
+                    type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
+                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                else:
+                    err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+                l_err.append(err)
+            return l_err
+        
         elif self.method == 'fixed':
-            logp = X[0]
-            err = self.mu + self.ths_mult * self.std - logp
-            return err
+            if len(np.shape(X))==1: X = [X]
+                
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                err = self.mu + self.ths_mult * self.std - logp
+                l_err.append(err)
+            return l_err
+
+        elif self.method == 'sgd':
+            X_features = self.rbf_feature.transform(X)
+            return self.dt.predict(X_features)
+
+        
 
     ## def predict_batch(self, X, y, idx):
 
@@ -267,12 +346,36 @@ class classifier(learning_base):
             print "Not implemented funciton Score"
             return 
 
+        
+    def save_model(fileName):
+        if self.dt is None: 
+            print "No trained classifier"
+            return
+        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            svm.svm_save_model(use_pkl, self.dt) 
+        else:
+            print "Not available method"
 
+            
+    def load_model(fileName):        
+        if self.method == 'svm':
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm            
+            self.dt = svm.svm_load_model(use_pkl) 
+        else:
+            print "Not available method"
+        
+            
+
+        
 ####################################################################
 # functions for distances
 ####################################################################
 
-def custom_kernel(x1,x2):
+def custom_kernel(x1,x2, gamma=1.0):
     '''
     Similarity estimation between (loglikelihood, state distribution) feature vector.
     kernel must take as arguments two matrices of shape (n_samples_1, n_features), (n_samples_2, n_features)
@@ -281,35 +384,22 @@ def custom_kernel(x1,x2):
 
     if len(np.shape(x1)) == 2: 
 
-        kernel_mat = np.zeros((len(x1), len(x2)))
-
-        r = Parallel(n_jobs=4)(delayed(customDist)(i, j, x1[i,1:], x2[j,1:]) for i in xrange(len(x1)) for j in xrange(len(x2)))
-        
-        ## l_i, l_j, l_dist = zip(*r)
-        for i,j,dist in zip(r):
-            kernel_mat[i,j] = dist
-
-        
-        ## for i in xrange(len(x1)):
-        ##     for j in xrange(len(x2)):
-
-                ## kernel_mat[i,j] += (x1[i,0]-x2[j,0])**2            
-                ## kernel_mat[i,j] += 1.0/symmetric_entropy(x1[i,1:], x2[j,1:])
-
-                ## if np.isnan(kernel_mat[i,j]): print "wrong kernel result ", x1, x2
-
-        # normalization?? How do we know bounds?
-
-        return kernel_mat
-
+        kernel_mat       = np.zeros((len(x1), len(x2)+1))
+        kernel_mat[:,:1] = np.arange(len(x1))[:,np.newaxis]+1
+        kernel_mat[:,1:] = metrics.pairwise.pairwise_distances(x1[:,0],x2[:,0], metric='l1') 
+        kernel_mat[:,1:] += gamma*metrics.pairwise.euclidean_distances(x1[:,1:],x2[:,1:])*\
+          (metrics.pairwise.pairwise_distances(np.argmax(x1[:,1:],axis=1),\
+                                               np.argmax(x2[:,1:],axis=1),
+                                               metric='l1') + 1.0)
+        return np.exp(-kernel_mat)
     else:
+        d1 = abs(x1[0] - x2[0]) 
+        d2 = np.linalg.norm(x1[1:]-x2[1:])*( abs(np.argmax(x1[1:])-np.argmax(x2[1:])) + 1.0)
+        return np.exp(-(d1 + gamma*d2))
 
-        d1 = (x1[0] - x2[0])**2
-        d2 = 1.0/symmetric_entropy(x1[1:], x2[1:])
-        return d1+d2
+def customDist(i,j, x1, x2, gamma):
+    return i,j,(x1-x2)**2 + gamma*1.0/symmetric_entropy(x1,x2)
 
-def customDist(i,j, x1, x2):
-    return i,j,(x1-x2)**2 + 1.0/symmetric_entropy(x1,x2)
 
 def custom_kernel2(x1,x2):
     '''
@@ -335,12 +425,18 @@ def custom_kernel2(x1,x2):
         ## return 1.0/symmetric_entropy(x1, x2)
         return np.linalg.norm(x1[i]-x2[j])
 
+def KLS(p,q, gamma=3.0):
+    return np.exp(-gamma*( entropy(p,np.array(q)+1e-6) + entropy(q,np.array(p)+1e-6) ) )
+
 def symmetric_entropy(p,q):
     '''
     Return the sum of KL divergences
     '''
-
-    return min(entropy(p,q), entropy(q,p)) + 1e-6
+    pp = np.array(p)+1e-6
+    qq = np.array(q)+1e-6
+    
+    ## return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
+    return min(entropy(pp,qq), entropy(qq,pp))
 
 
 def findBestPosteriorDistribution(post, l_statePosterior):
@@ -350,6 +446,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
+            
         if min_dist > dist:
             min_index = j
             min_dist  = dist
@@ -388,6 +485,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         weight_sum += weight
         weight2_sum += weight**2
 
+    if abs(weight_sum)<1e-3: weight_sum=1e-3
     l_statePosterior   = g_post / weight_sum 
     l_likelihood_mean  = g_lhood / weight_sum 
 

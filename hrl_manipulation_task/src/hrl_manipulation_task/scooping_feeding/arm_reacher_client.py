@@ -48,27 +48,37 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
     
-    if True:
-        ## print armReachActionRight("initScooping")
-        ## print armReachActionLeft("getBowlPos")
-        ## print armReachActionLeft('lookAtBowl')
-        print armReachActionLeft("testingMotion")
+    if False:
+        ## print armReachActionLeft("testingMotion")
+        print armReachActionRight("initScooping1")
+        print armReachActionLeft("initScooping1")
+        print armReachActionLeft("getBowlPos")
+        print armReachActionLeft('lookAtBowl')
+        print armReachActionRight("initScooping2")
+        print armReachActionLeft("initScooping2")
+        print armReachActionLeft("runScooping")
         sys.exit()
     
     
     ## Scooping -----------------------------------    
     if True:
         print "Initializing left arm for scooping"
+        print armReachActionLeft("initScooping1")
+        print armReachActionRight("initScooping1")
+        
+        print "Initializing left arm for scooping"
+        print armReachActionRight("initScooping2")
         ## print armReachActionRight("runScooping")
-        print armReachActionRight("runScoopingRandom")
+        ## print armReachActionRight("runScoopingRandom")
 
         #ut.get_keystroke('Hit a key to proceed next')        
-        print armReachActionLeft("getBowlPos")
+        ## print armReachActionLeft("getBowlPos")
         print armReachActionLeft('lookAtBowl')
-        print armReachActionLeft("initScooping")
+        print armReachActionLeft("initScooping2")
 
         print "Running scooping!"
         print armReachActionLeft("runScooping")
+        sys.exit()
 
     ## Feeding -----------------------------------
     if True:

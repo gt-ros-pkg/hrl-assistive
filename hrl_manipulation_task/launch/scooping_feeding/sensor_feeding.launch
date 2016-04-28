@@ -6,8 +6,10 @@
 	<arg name="max_new_marker_error" default="0.05" />
 	<arg name="max_track_error" default="0.2" />
 
-	<arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" />
-	<arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" />		
+	<!--arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" /-->
+	<!--arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" /-->		
+	<arg name="cam_image_topic" default="/head_mount_kinect/sd/points" />
+	<arg name="cam_info_topic" default="/head_mount_kinect/sd/camera_info" />		
 	<arg name="output_frame" default="/torso_lift_link" />        
 
         <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
@@ -17,7 +19,7 @@
         <!--node name="change_detector" pkg="hrl_manipulation_task" type="change_detector" respawn="false" output="screen" /-->
 
         <!-- Bowl and Head conversion -->  
-        <node name="findBowl" pkg="hrl_manipulation_task" type="findBowl.py" respawn="false" output="screen" />
+        <!--node name="findBowl" pkg="hrl_manipulation_task" type="findBowl.py" respawn="false" output="screen" /-->
         <node name="findMouth" pkg="hrl_manipulation_task" type="findMouth.py" respawn="false" output="screen" />
 
         <!-- F/T sensor -->

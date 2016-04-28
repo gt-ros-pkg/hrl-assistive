@@ -174,7 +174,7 @@ class learning_base():
         # Split the dataset in two equal parts
         print("Tuning hyper-parameters for %s :", X.shape)
         print()        
-        clf = GridSearchCV(self, parameters, cv=nFold, n_jobs=n_jobs)
+        clf = GridSearchCV(self, parameters, cv=nFold, n_jobs=n_jobs, verbose=50)
         clf.fit(X) # [n_samples, n_features] 
 
         print("Best parameters set found on development set:")
@@ -196,13 +196,5 @@ class learning_base():
             std_list.append(scores.std())
         print()
 
-        # Save data
-        data = {}
-        data['mean'] = mean_list
-        data['std'] = std_list
-        data['params'] = params_list
-        if save_file is None:
-            save_file='tune_data.pkl'            
-        ut.save_pickle(data, save_file)
-        
-        
+        return params_list, mean_list, std_list
+

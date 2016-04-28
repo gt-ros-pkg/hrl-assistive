@@ -181,6 +181,8 @@ class CloudSearch():
                     node_user = node.ssh.get_current_user()
                     node.ssh.switch_user(self.user_name)
                     node.ssh.execute("pkill -f ipengineapp", ignore_exit_status=True)
+                    node.ssh.execute("pkill -f ipcontroller", ignore_exit_status=True)
+                    node.ssh.execute("pkill -f python", ignore_exit_status=True)
                     node.ssh.switch_user(node_user)
                 except:
                     print "closing engine on node failed"
@@ -190,12 +192,23 @@ class CloudSearch():
         self._revoke_ipcluster()
         time.sleep(1)
         master_ssh.switch_user('root')
+        master_ssh.execute("/etc/init.d/nfs start")
+        for node in self.clust.running_nodes:
+            try:
+                if node is not self.clust.master_node:
+                    node_user = node.ssh.get_current_user()
+                    node.ssh.switch_user('root')
+                    node.ssh.execute("mount /home", ignore_exit_status=True)
+                    node.ssh.switch_user(node_user)
+            except:
+                print "unmount fail"
+        print "NFS started"
         try:
             self.clust.run_plugin(plug)
         except:
             print "run_plugin error, but ignored.."
         time.sleep(10)
-        
+
         if not self.auth:
             self.clust.ssh_to_master(user=self.user_name, command="echo 'hello world'")
         master_ssh.switch_user(self.user_name)
@@ -205,6 +218,23 @@ class CloudSearch():
         self.client = Client(self.path_json, sshkey=self.path_key)
         self.client[:].use_dill()
         self.lb_view = self.client.load_balanced_view()
+        """
+        for node in self.clust.running_nodes:
+            try:
+                if node is not self.clust.master_node:
+                    node_user = node.ssh.get_current_user()
+                    node.ssh.switch_user('root')
+                    temp_command = 'cp /home/' + self.user_name + '/.ipython/profile_default /scratch/'+ self.user_name +' -r'
+                    node.ssh.execute(temp_command)
+                    node.ssh.execute("umount /home -f -l", ignore_exit_status=True)
+                    temp_command = 'cp /scratch/' + self.user_name + '/profile_default /home/' + self.user_name + '/.ipython -r'
+                    node.ssh.execute(temp_command)
+                    node.ssh.switch_user(node_user)
+            except:
+                print "unmount fail"
+        print "NFS stopped"
+        """
+        master_ssh.execute("/etc/init.d/nfs stop")
         #try:
         #    master_ssh.switch_user(orig_user)
         #except:

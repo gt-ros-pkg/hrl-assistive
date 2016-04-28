@@ -1,10 +1,9 @@
 #undo {
-    height:90%;
-    width:100px;
+    height:2.5em;
+    width:70%;
     position:relative;
-    display: inline-block;
-    top:1%;
-    left:0%;
+    left:15%;
+    display: block;
     background: #FF8500;
 }
 

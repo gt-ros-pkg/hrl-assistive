@@ -64,11 +64,12 @@ RFH.EERotation = function (options) {
 
         self.raycaster.setFromCamera(mouse, RFH.viewer.camera);
         var objs = self.raycaster.intersectObjects( RFH.viewer.scene.children, true );
-        if (objs.length > 0 && objs[0].object instanceof THREE.Mesh && objs[0].object.userData.side === self.side) {
-            return self.rotArrows[objs[0].object.userData.direction];
-        } else {
-            return null;
+        for (var i=0; i < objs.length; i+=1) {
+            if (objs[i].object.userData.interactive && objs[i].object.userData.side === self.side) {
+                return self.rotArrows[objs[i].object.userData.direction];
+            }
         }
+        return null;
     };
 
     self.canvasClickCB = function (event) {
@@ -146,7 +147,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.1, 0.13, 0.13);
+        pos = new THREE.Vector3(-0.185, 0.13, 0.13);
         rot = new THREE.Euler(Math.PI/2, 0, -Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -163,7 +164,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.1, -0.13, 0.13);
+        pos = new THREE.Vector3(-0.135, -0.13, 0.13);
         rot = new THREE.Euler(-Math.PI/2, 0, Math.PI/2);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -181,7 +182,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.13, -0.025, -0.13);
+        pos = new THREE.Vector3(-0.16, -0.025, -0.13);
         rot = new THREE.Euler(0, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -198,7 +199,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.13, 0.025, 0.13);
+        pos = new THREE.Vector3(-0.16, 0.025, 0.13);
         rot = new THREE.Euler(Math.PI,0,0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -216,7 +217,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.13, -0.13, 0.025);
+        pos = new THREE.Vector3(-0.16, -0.13, 0.025);
         rot = new THREE.Euler(-Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -233,7 +234,7 @@ RFH.EERotation = function (options) {
         edges = new THREE.EdgesHelper(mesh, edgeColor, edgeMinAngle);
         edges.material.transparent = true;
         edges.material.opacity = edgeOpacity;
-        pos = new THREE.Vector3(-0.13, 0.13, -0.025);
+        pos = new THREE.Vector3(-0.16, 0.13, -0.025);
         rot = new THREE.Euler(Math.PI/2, 0, 0);
         mat = new THREE.Matrix4().makeRotationFromEuler(rot);
         mat.setPosition(pos);
@@ -243,6 +244,8 @@ RFH.EERotation = function (options) {
         for (var dir in self.rotArrows) {
             self.rotArrows[dir].mesh.visible = false;
             self.rotArrows[dir].edges.visible = false;
+            self.rotArrows[dir].mesh.userData.interactive = true;
+            self.rotArrows[dir].edges.userData.interactive = false;
             RFH.viewer.scene.add(self.rotArrows[dir].mesh);
             RFH.viewer.scene.add(self.rotArrows[dir].edges);
         }

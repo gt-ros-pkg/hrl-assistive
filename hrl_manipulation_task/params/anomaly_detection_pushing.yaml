@@ -58,3 +58,23 @@ hrl_manipulation_task:
     artag_buf_size: 10
     artag_pos_thres: 0.2
   
+  pushing_microblack:
+    artag_id: 
+       - 10
+       - 9
+    artag_length: 0.063
+       - 0.063
+    artag_max_id: 18
+    artag_total_tags: 2
+    artag_buf_size: 10
+    artag_pos_thres: 0.2
+
+  pushing_toolcase:
+    artag_id: 
+       - 9
+       - 10
+    artag_length: 0.063
+    artag_max_id: 18
+    artag_total_tags: 2
+    artag_buf_size: 10
+    artag_pos_thres: 0.2

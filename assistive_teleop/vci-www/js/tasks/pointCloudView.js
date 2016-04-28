@@ -7,7 +7,7 @@ RFH.PointCloudView = function(options){
     var maxPoints = options.maxPoints || 500;
     self.locked = false;
 
-    var material = new THREE.PointsMaterial({size: 15.0,
+    var material = new THREE.PointsMaterial({size: 6.0,
                                              vertexColors: THREE.VertexColors,
                                              opacity:0.87,
                                              depthTest:1,
@@ -37,6 +37,7 @@ RFH.PointCloudView = function(options){
     self.pcGeom.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     self.pointCloud = new THREE.Points(self.pcGeom, material);
+    self.pointCloud.userData.interactive = false;
     self.pointCloud.frameSubscribed = false;
     self.pointCloud.frameReceived = false;
     self.pointCloud.matrixAutoUpdate = false;

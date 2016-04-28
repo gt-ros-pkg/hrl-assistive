@@ -79,7 +79,7 @@ if __name__ == '__main__':
                                                                processed_data_path, rf_center, local_range,\
                                                                nSet=nSet, \
                                                                downSampleSize=downSampleSize, \
-                                                               raw_data=True, data_ext=False, \
+                                                               raw_data=True, \
                                                                feature_list=feature_list, \
                                                                data_renew=True)
 

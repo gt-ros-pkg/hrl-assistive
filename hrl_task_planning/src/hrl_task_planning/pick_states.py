@@ -1,9 +1,13 @@
 import rospy
+import actionlib
+# from actionlib_msgs.msg import GoalStatus as GS
 from geometry_msgs.msg import PoseStamped
 import tf
+from hrl_task_planning.msg import PDDLState
 
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
+
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -15,11 +19,11 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
                                 action=action, action_args=args,
                                 init_state=init_state, goal_state=goal_state,
                                 outcomes=SPA)
-    elif action == 'MOVE-ARM':
-        return MoveArmState(location=args[1], domain=domain, problem=problem,
-                            action=action, action_args=args, init_state=init_state,
-                            goal_state=goal_state, outcomes=SPA)
-    else:
+    elif action == 'AUTO-GRASP':
+        return OverheadGraspState(hand=args[0], location=args[1], domain=domain, problem=problem,
+                                  action=action, action_args=args, init_state=init_state,
+                                  goal_state=goal_state, outcomes=SPA)
+    elif action in ['MANUAL-GRASP', 'ID-LOCATION']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
 
@@ -41,13 +45,21 @@ class DeleteParamState(PDDLSmachState):
             return 'aborted'
 
 
-class MoveArmState(PDDLSmachState):
-    def __init__(self, location, domain, *args, **kwargs):
-        super(MoveArmState, self).__init__(domain=domain, *args, **kwargs)
+from assistive_teleop.msg import OverheadGraspAction, OverheadGraspGoal
+
+
+class OverheadGraspState(PDDLSmachState):
+    def __init__(self, hand, location, domain, *args, **kwargs):
+        super(OverheadGraspState, self).__init__(domain=domain, *args, **kwargs)
         self.location = location
         self.domain = domain
+        self.problem = kwargs['problem']
         self.tfl = tf.TransformListener()
-        self.mpc_pub = rospy.Publisher("/right_arm/haptic_mpc/goal_pose", PoseStamped)
+        if hand == 'RIGHT_HAND':
+            self.overhead_grasp_client = actionlib.SimpleActionClient('/right_arm/overhead_grasp', OverheadGraspAction)
+        elif hand == 'LEFT_HAND':
+            self.overhead_grasp_client = actionlib.SimpleActionClient('/left_arm/overhead_grasp', OverheadGraspAction)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=1)
 
     def on_execute(self, ud):
         try:
@@ -56,7 +68,17 @@ class MoveArmState(PDDLSmachState):
         except KeyError:
             rospy.loginfo("[%s] Move Arm Cannot find location %s on parameter server", rospy.get_name(), self.location)
             return 'aborted'
-        self.mpc_pub.publish(goal_pose)
+        goal_msg = OverheadGraspGoal()
+        goal_msg.goal_pose = goal_pose
+        self.overhead_grasp_client.send_goal(goal_msg)
+        self.overhead_grasp_client.wait_for_result()
+        rospy.loginfo("Overhead Grasp Completed")
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.problem = self.problem
+        state_update.predicates = ['(AUTO-GRASP-DONE)']
+        print "Publishing (AUTO-GRASP-DONE) update"
+        self.state_update_pub.publish(state_update)
 
 
 def _pose_stamped_to_dict(ps_msg):

@@ -30,6 +30,7 @@
 
 # System
 import sys, time, copy
+import random
 import numpy as np
 
 # ROS
@@ -54,7 +55,8 @@ class armReachAction(mpcBaseAction):
 
         #Variables...! #
         self.stop_motion = False
-        self.verbose = verbose
+        self.verbose     = verbose
+        self.tag0_frame  = None
 
         self.default_frame      = PyKDL.Frame()
 
@@ -98,7 +100,7 @@ class armReachAction(mpcBaseAction):
         '''
         Industrial movment commands generally follows following format, 
         
-               Movement type, joint or pose(pos+euler), timeout, relative_frame(not implemented)
+               Movement type, joint or pose(pos+euler), timeout, relative_frame
 
         In this code, we allow to use following movement types,
 
@@ -131,9 +133,9 @@ class armReachAction(mpcBaseAction):
            ## ['PAUSE', 1.0],
            ## ['MOVEL', '[-0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
            ## ['MOVEL', '[0.7, 0.190, 0.04, -0.04, 0.026, -0.105, 0.9929 ]', 3.0],
-          ['MOVET', '[0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
-          ['PAUSE', 1.0],
-          ['MOVET', '[-0.1, 0.0, 0.0, 0.0, 0.0, 0.0 ]', 6.0],
+           ['MOVET', '[0., 0.0, 0.1, 0.0, 0.0, 0.0 ]', 3.0],
+           ['PAUSE', 1.0],
+           ['MOVET', '[-0., 0.0, -0.1, 0.0, 0.0, 0.0 ]', 3.0],
           ] 
         ## 
            
@@ -144,19 +146,54 @@ class armReachAction(mpcBaseAction):
         self.motions['initMicroWhite'] = {}
         self.motions['initMicroWhite']['left'] = \
           [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
-           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.microwave_white_frame'],           
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.main_tag_frame'], 
            ['PAUSE', 1.0]
             ] 
         self.motions['initMicroWhite']['right'] = []
 
         self.motions['runMicroWhite'] = {}
         self.motions['runMicroWhite']['left'] = \
-          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.microwave_white_frame'],           
-           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.microwave_white_frame']] 
+          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.main_tag_frame']] 
         self.motions['runMicroWhite']['right'] = []
 
+        ## Pushing black microwave motoins --------------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initMicroBlack'] = {}
+        self.motions['initMicroBlack']['left'] = \
+          [['MOVEJ', '[0.44, 0.98, 0.53, -2.06, 3.12, -1.05, 2.84]', 5.0],
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0, 'self.main_tag_frame'], 
+           ['PAUSE', 1.0]
+            ] 
+        self.motions['initMicroBlack']['right'] = []
+
+        self.motions['runMicroBlack'] = {}
+        self.motions['runMicroBlack']['left'] = \
+          [['MOVEL', '[-0.05, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.2, -0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0, 'self.main_tag_frame']] 
+        self.motions['runMicroBlack']['right'] = []
+
+        ## Pushing heatgun tool case motoins --------------------------------------------------
+        # It uses the l_gripper_push_frame
+        self.motions['initToolCase'] = {}
+        self.motions['initToolCase']['left'] = \
+          [['MOVEJ', '[0.82, 0.43, 1.52, -1.26, 2.04, -1.49, 0.0]', 5.0] ] 
+        self.motions['initToolCase']['right'] = []
+
+        self.motions['runToolCase1'] = {}
+        self.motions['runToolCase1']['left'] = \
+          [['MOVEL', '[-0.03, 0.08, 0.05, 0.0, 1.57, 3.14]', 5.0, 'self.main_tag_frame'], 
+           ['PAUSE', 1.0] ]
+        self.motions['runToolCase1']['right'] = []
+        ## 
+        
+        self.motions['runToolCase2'] = {}
+        self.motions['runToolCase2']['left'] = \
+          [['MOVEL', '[-0.03, 0.08, -0.03, 0.0, 1.57, 3.14]', 2.5, 'self.main_tag_frame'],
+           ['MOVEL', '[-0.03, 0.08, 0.05, 0.0, 1.57, 3.14]', 3.0, 'self.main_tag_frame']] 
+        self.motions['runToolCase2']['right'] = []
+        
         ## Pushing cabinet motoins --------------------------------------------------------
-        # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initCabinet'] = {}
         self.motions['initCabinet']['left'] = \
           [] 
@@ -181,8 +218,8 @@ class armReachAction(mpcBaseAction):
         self.stop_motion = False
 
         if task == 'getMainTagPos':
-            self.main_tag_frame = copy.deepcopy(self.main_tag_frame)
-            return "Get a main tag position"
+            self.main_tag_frame = copy.deepcopy(self.tag0_frame)
+            return "Get a main tag position"        
         else:        
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task
@@ -203,11 +240,11 @@ class armReachAction(mpcBaseAction):
 
     def mainTagPoseCallback(self, data):
 
-        self.main_tag_frame = dh.pose2KDLframe(data.pose)
-
-        M = PyKDL.Rotation.Quaternion(0,0,0,1)
-        self.microwave_white_frame = PyKDL.Frame(M, self.main_tag_frame.p)
-
+        ## tag_frame = dh.pose2KDLframe(data.pose)
+        ## M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        ## self.tag0_frame = PyKDL.Frame(M, tag_frame.p)
+        
+        self.tag0_frame = dh.pose2KDLframe(data.pose)
         
 
 
@@ -220,7 +257,7 @@ if __name__ == '__main__':
 
     # Initial variables
     d_robot    = 'pr2'
-    controller = 'static' # quasistatic model predictive controller
+    ## controller = 'static' # quasistatic model predictive controller
     controller = 'actionlib'
     arm        = opt.arm
     tool_id    = 2

@@ -1,0 +1,50 @@
+(define (domain place)
+ (:requirements :typing :conditional-effects)
+ (:types
+  item gripper - physobj
+  location
+ )
+
+ (:constants right_hand - gripper
+             left_hand - gripper
+             right_hand_object - item
+             left_hand_object - item
+             place_loc - location
+ )
+
+ (:predicates
+  (known ?l - location)
+  (grasping ?g - gripper ?o - item)
+  (placed ?o - item)
+  (auto-place-done)
+ )
+
+ (:action auto-place
+  :parameters (?g - gripper ?o - item ?l - location)
+  :precondition (and (known ?l)
+                     (not (auto-place-done))
+                     (grasping ?g ?o)
+                )
+  :effect (and (not(grasping ?g ?o)))
+ )
+
+ (:action manual-place
+  :parameters (?g - gripper ?o - item ?l - location)
+  :precondition (and (known ?l)
+                     (auto-place-done)
+                     (grasping ?g ?o)
+                 )
+  :effect (and  (not (grasping ?g ?o)))
+ )
+
+ (:action id-location
+  :parameters (?l - location)
+  :effect (known ?l)
+  )
+
+ (:action forget-location
+  :parameters (?l - location)
+  :precondition (and (known ?l))
+  :effect (not (known ?l))
+  )
+)

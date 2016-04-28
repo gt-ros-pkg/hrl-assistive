@@ -11,6 +11,8 @@ RFH.CartesianEEControl = function (options) {
     self.buttonClass = 'hand-button';
     self.$div = $('#'+divId);
     self.gripper = options.gripper;
+    self.eeDisplay = options.eeDisplay;
+    self.eeDisplay.hide();
     self.stepSizes = {'tiny': 0.025,
         'small': 0.05,
         'medium': 0.1,
@@ -27,18 +29,13 @@ RFH.CartesianEEControl = function (options) {
     self.mode = "table"; // "wall", "free"
     self.active = false;
     self.$viewer = $('#viewer-canvas').css('zIndex',1);
-    var goalMarkerGeom = new THREE.SphereGeometry(0.01,10,10);
-    var goalMarkerMat = new THREE.MeshBasicMaterial({color: 0x208840});
-    self.goalMarker = new THREE.Mesh(goalMarkerGeom, goalMarkerMat);
-    self.goalMarker.transparent = true;
-    self.goalMarker.opacity=0.45;
-    RFH.viewer.scene.add(self.goalMarker);
 
     self.pixel23d = new RFH.Pixel23DClient({
         ros: ros,
         cameraInfoTopic: self.camera.infoTopic,
         serviceName: '/pixel_2_3d'
     });
+
 
     $('#touchspot-toggle, #toward-button, #away-button').button();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
@@ -100,8 +97,8 @@ RFH.CartesianEEControl = function (options) {
         // All the points defined, move the camera and render views
         var camera = RFH.viewer.camera;
         var reverse = false;
-        var peakPauseMS = 1500;
-        var travelTimeMS = 300;
+        var peakPauseMS = 2800; // Default: 1500
+        var travelTimeMS = 400; // Default: 300
         var delay = travelTimeMS / arcPoints.length;
         // Set camera position along path, adjust lookAt, render, and set next call after delay
         var renderCameraStep = function (step) {
@@ -124,17 +121,6 @@ RFH.CartesianEEControl = function (options) {
     };
     $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing);
 
-    var displayGoalPose = function (ps_msg) {
-        self.goalMarker.position.set(ps_msg.pose.position.x, ps_msg.pose.position.y, ps_msg.pose.position.z);
-        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
-    };
-
-    var handGoalSubscriber = new ROSLIB.Topic({
-        ros: ros,
-        name: self.side + '_arm/haptic_mpc/goal_pose', 
-        messageType: 'geometry_msgs/PoseStamped'
-    });
-    handGoalSubscriber.subscribe(displayGoalPose);
 
     self.getStepSize = function () {
         return $('input[name=speedOption]:checked').attr('id');
@@ -144,17 +130,14 @@ RFH.CartesianEEControl = function (options) {
         if (graspingMsg.data) {
             self.$pickAndPlaceButton.text("Set Down");
             self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
+            self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['place'].sendTaskGoal(self.side)});
         } else {
             self.$pickAndPlaceButton.text("Pick Up");
             self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
+            self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['pick'].sendTaskGoal(self.side)});
         }
     };
     self.gripper.graspingCBList.push(updatePickPlaceButton);
-
-    var pickPlaceButtonCB = function (event) {
-        RFH.taskMenu.tasks['pick_and_place_'+self.side].sendTaskGoal();
-    };
-    self.$pickAndPlaceButton.on('click.pickandplace', pickPlaceButtonCB);
 
     self.eeDeltaCmd = function (xyzrpy) {
         // Get default values for unspecified options
@@ -650,6 +633,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $('#speedOptions').show();
         self.gripperDisplay.show();
+        self.eeDisplay.show();
         $('#'+self.side[0]+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
@@ -657,7 +641,6 @@ RFH.CartesianEEControl = function (options) {
         $('#'+self.side[0]+'-posrot-pos').click();
         self.active = true;
         self.$viewer.show();
-        self.goalMarker.visible = true;
         self.updateCtrlRingViz();
     };
 
@@ -669,6 +652,7 @@ RFH.CartesianEEControl = function (options) {
         self.$viewer.hide();
         $('#speedOptions').hide();
         self.gripperDisplay.hide();
+        self.eeDisplay.hide();
         if ($('#touchspot-toggle').prop('checked')) {
             $('#touchspot-toggle-label').click();
         }
@@ -676,7 +660,6 @@ RFH.CartesianEEControl = function (options) {
         self.trackHand(false);
         self.active = false;
         self.rotationControl.hide();
-        self.goalMarker.visible = false;
 //        for (var dir in self.rotArrows) {
 //            self.rotArrows[dir].mesh.visible = false;
 //            self.rotArrows[dir].edges.visible = false;

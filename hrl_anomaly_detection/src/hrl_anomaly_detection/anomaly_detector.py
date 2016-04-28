@@ -36,6 +36,7 @@ import hrl_lib.quaternion as qt
 from hrl_anomaly_detection import util
 from hrl_anomaly_detection import data_manager as dm
 from sound_play.libsoundplay import SoundClient
+import hrl_lib.util as ut
 
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm
@@ -48,12 +49,14 @@ from joblib import Parallel, delayed
 # msg
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse
 from hrl_anomaly_detection.msg import MultiModality
-from std_msgs.msg import String
+from std_msgs.msg import String, Float64
+
+from hrl_anomaly_detection.params import *
+
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict):
-        ## rospy.init_node(task_name)
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
@@ -92,7 +95,6 @@ class anomaly_detector:
             self.rf_center = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/rf_center')
             self.downSampleSize = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/downSampleSize')
             self.handFeatures = rospy.get_param('/hrl_manipulation_task/'+self.task_name+'/feature_list')
-            self.data_ext = False
             self.nNormalFold   = 2
             self.nAbnormalFold = 2
 
@@ -107,7 +109,6 @@ class anomaly_detector:
             self.rf_center = self.param_dict['data_param']['rf_center']
             self.downSampleSize = self.param_dict['data_param']['downSampleSize']
             self.handFeatures = self.param_dict['data_param']['handFeatures']
-            self.data_ext     = self.param_dict['data_param']['lowVarDataRemv']
             self.cut_data     = self.param_dict['data_param']['cut_data']
             self.nNormalFold   = self.param_dict['data_param']['nNormalFold']
             self.nAbnormalFold = self.param_dict['data_param']['nAbnormalFold']
@@ -118,129 +119,190 @@ class anomaly_detector:
 
             self.SVM_dict  = self.param_dict['SVM']
 
+            if 'svm' in self.classifier_method:
+                self.w_max = self.param_dict['ROC']['svm_param_range'][-1]
+                self.w_min = self.param_dict['ROC']['svm_param_range'][0]
+            elif self.classifier_method == 'progress_time_cluster':                    
+                self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
+                self.w_min = self.param_dict['ROC']['progress_param_range'][0]
+            else:
+                print "sensitivity info is not available"
+                sys.exit()
 
-        # Discriminative classifier
-        ## self.threshold = -200.0
 
     '''
     Subscribe raw data
     '''
     def initComms(self):
         # Publisher
-        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String)
-        self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String)
+        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String,
+                                                       queue_size=QUEUE_SIZE)
+        self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String,
+                                                       queue_size=QUEUE_SIZE)
+        self.sensitivity_pub         = rospy.Publisher("/manipulation_task/ad_sensitivity_state", \
+                                                       Float64, queue_size=QUEUE_SIZE, latch=True)
 
         # Subscriber
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
-        # sensitiviy control topic
+        rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
+        rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
+        rospy.Subscriber('/manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
-        self.detection_service = rospy.Service('anomaly_detector_enable/' + self.task_name, Bool_None, self.enablerCallback)
+        self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
+        self.update_service    = rospy.Service('anomaly_detector_update', String_None, self.updateCallback)
 
     def initDetector(self):
+        
+        train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
+        startIdx  = 4
+        
+        if os.path.isfile(train_pkl):
+            d = ut.load_pickle(train_pkl)
+            # HMM
+            self.nEmissionDim = d['nEmissionDim']
+            self.A            = d['A']
+            self.B            = d['B']
+            self.pi           = d['pi']
+            self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
+            self.ml.set_hmm_object(self.A, self.B, self.pi)
+            
+            X_test_org   = d['X_test_org'] 
+            Y_test_org   = d['Y_test_org']
+            idx_test_org = d['idx_test_org']
+            nLength      = d['nLength']
+            self.handFeatureParams = d['param_dict']
 
-        dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
-                           self.save_data_path, self.rf_center, \
-                           self.rf_radius,\
-                           downSampleSize=self.downSampleSize, \
-                           scale=1.0,\
-                           ae_data=False,\
-                           data_ext=self.data_ext,\
-                           handFeatures=self.handFeatures, \
-                           cut_data=self.cut_data,\
-                           data_renew=False)
+        else:
+            dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
+                               self.save_data_path, self.rf_center, \
+                               self.rf_radius,\
+                               downSampleSize=self.downSampleSize, \
+                               scale=1.0,\
+                               ae_data=False,\
+                               handFeatures=self.handFeatures, \
+                               cut_data=self.cut_data,\
+                               data_renew=False)
 
-        self.handFeatureParams = dd['param_dict']
-                           
-        # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
-                                              self.nNormalFold, self.nAbnormalFold )
-        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
+            self.handFeatureParams = dd['param_dict']
 
-
-        # dim x sample x length # TODO: what is the best selection?
-        normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
-        abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
-        normalTestData    = dd['successData'][:, normalTestIdx, :] * self.scale
-        abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :] * self.scale
-
-        # training hmm
-        self.nEmissionDim   = len(normalTrainData)
-        detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
-        self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
-        ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
-                          ml_pkl=detection_param_pkl, use_pkl=True)
-
-        if ret == 'Failure':
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-
-        #-----------------------------------------------------------------------------------------
-        # Classifier test data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(self.nEmissionDim):
-            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
-            testDataX.append( temp )
-
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
-
-        startIdx = 4
-        r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, \
-                                                                         self.ml.pi, self.ml.F,
-                                                                         [ testDataX[j][i] for j in xrange(self.nEmissionDim) ],
-                                                                self.ml.nEmissionDim, self.ml.nState,
-                                                                startIdx=startIdx, bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
-
-        # nSample x nLength
-        ll_classifier_test_X = []
-        ll_classifier_test_Y = []
-        for i in xrange(len(ll_logp)):
-            l_X = []
-            l_Y = []
-            for j in xrange(len(ll_logp[i])):        
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                if testDataY[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-            ll_classifier_test_X.append(l_X)
-            ll_classifier_test_Y.append(l_Y)
+            # Task-oriented hand-crafted features        
+            kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
+                                                  self.nNormalFold, self.nAbnormalFold )
+            (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
 
 
-        # flatten the data
-        X_test_org = []
-        Y_test_org = []
-        idx_test_org = []
-        for i in xrange(len(ll_classifier_test_X)):
-            for j in xrange(len(ll_classifier_test_X[i])):
-                X_test_org.append(ll_classifier_test_X[i][j])
-                Y_test_org.append(ll_classifier_test_Y[i][j])
-                idx_test_org.append(ll_classifier_test_idx[i][j])
+            # dim x sample x length # TODO: what is the best selection?
+            normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
+            abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
+            normalTestData    = dd['successData'][:, normalTestIdx, :] * self.scale
+            abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :] * self.scale
 
+            # training hmm
+            self.nEmissionDim   = len(normalTrainData)
+            detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
+            self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
+            if self.param_dict['data_param']['handFeatures_noise']:
+                ret = self.ml.fit(normalTrainData+
+                                  np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*self.scale, \
+                                  cov_mult=[self.cov]*(self.nEmissionDim**2),
+                                  ml_pkl=detection_param_pkl, use_pkl=True)
+            else:
+                ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
+                                  ml_pkl=detection_param_pkl, use_pkl=True)
+
+            if ret == 'Failure':
+                print "-------------------------"
+                print "HMM returned failure!!   "
+                print "-------------------------"
+                sys.exit()
+
+            #-----------------------------------------------------------------------------------------
+            # Classifier test data
+            #-----------------------------------------------------------------------------------------
+            testDataX = []
+            testDataY = []
+            for i in xrange(self.nEmissionDim):
+                temp = np.vstack([normalTestData[i], abnormalTestData[i]])
+                testDataX.append( temp )
+
+            testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                    np.ones(len(abnormalTestData[0])) ])
+
+            r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, \
+                                                                             self.ml.pi, self.ml.F,
+                                                                             [ testDataX[j][i] for j in xrange(self.nEmissionDim) ],
+                                                                    self.ml.nEmissionDim, self.ml.nState,
+                                                                    startIdx=startIdx, bPosterior=True)
+                                                                    for i in xrange(len(testDataX[0])))
+            _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+
+            # nSample x nLength
+            ll_classifier_test_X = []
+            ll_classifier_test_Y = []
+            for i in xrange(len(ll_logp)):
+                l_X = []
+                l_Y = []
+                for j in xrange(len(ll_logp[i])):        
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+                    if testDataY[i] > 0.0: l_Y.append(1)
+                    else: l_Y.append(-1)
+
+                ll_classifier_test_X.append(l_X)
+                ll_classifier_test_Y.append(l_Y)
+
+
+            # flatten the data
+            X_test_org = []
+            Y_test_org = []
+            idx_test_org = []
+            for i in xrange(len(ll_classifier_test_X)):
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    X_test_org.append(ll_classifier_test_X[i][j])
+                    Y_test_org.append(ll_classifier_test_Y[i][j])
+                    idx_test_org.append(ll_classifier_test_idx[i][j])
+
+
+            d = {}
+            d['A']  = self.ml.A
+            d['B']  = self.ml.B
+            d['pi'] = self.ml.pi
+            d['nEmissionDim'] = self.nEmissionDim
+            d['X_test_org']   = X_test_org
+            d['Y_test_org']   = Y_test_org
+            d['idx_test_org'] = idx_test_org
+            d['nLength']      = nLength = len(normalTrainData[0][0])
+            d['param_dict']   = self.handFeatureParams
+            ut.save_pickle(d, train_pkl)
 
         # data preparation
-        self.scaler = preprocessing.StandardScaler()
+        self.scaler       = preprocessing.StandardScaler()
+        self.Y_test_org   = Y_test_org
+        self.idx_test_org = idx_test_org
         if 'svm' in self.classifier_method:
-            X_scaled = self.scaler.fit_transform(X_test_org)
+            self.X_scaled = self.scaler.fit_transform(X_test_org)
         else:
-            X_scaled = X_test_org
-        print self.classifier_method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_test_org)
-
+            self.X_scaled = X_test_org
+            
+        print self.classifier_method, " : Before classification : ", \
+          np.shape(self.X_scaled), np.shape(self.Y_test_org)
+            
         # Fit Classifier
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
-                                        nLength=len(normalTrainData[0][0]) - startIdx )
+                                        nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
-        self.classifier.fit(X_scaled, Y_test_org, idx_test_org)
+        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
+        print "Finished to train SVM"
 
-        #TEMP
-        self.tempdata = normalTrainData[:,0:1,:]
+        if 'svm' in self.classifier_method:
+            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
+        elif self.classifier_method == 'progress_time_cluster':                    
+            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+        self.sensitivity_pub.publish(sensitivity)                                   
+
+        print "Current sensitivity is ", sensitivity
+        
         return
 
 
@@ -248,13 +310,54 @@ class anomaly_detector:
     def enablerCallback(self, msg):
 
         if msg.data is True:
+            print "anomaly detector enabled"
             self.enable_detector = True
         else:
+            print "anomaly detector disabled"
             # Reset detector
             self.enable_detector = False
             self.reset()
 
         return Bool_NoneResponse()
+
+
+    def updateCallback(self, msg):
+        fileName = msg.data
+        if os.path.isfile(fileName):
+            print "Start to update detector using ", fileName
+
+            # Get label
+            if 'success' in fileName: self.Y_test_org.append(0)
+            else: Y_test_org.append(1)
+
+            # Preprocessing
+            singleData = dm.getData(fileName, self.rf_center, self.local_range,\
+                                    self.handFeatureParams,\
+                                    downSampleSize = self.downSampleSize, \
+                                    cut_data       = self.cut_data\
+                                    handFeatures   = self.handFeatures)
+            print np.shape(singleData)
+
+            ## HMM
+            l_logp, l_post = self.ml.loglikelihoods(singleData, bPosterior=True)
+            X = []
+            for logp, post in zip(l_logp, l_post):
+                X.append([logp]+post.tolist())
+
+            ## Scaling
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X) ])
+            else:
+                self.X_scaled = np.vstack([ self.X_scaled, X ])
+                
+            # Run SGD? or SVM?
+            if self.classifier_method.find('svm'):
+                self.classifier.fit(self.X_scaled, self.Y_test_org)
+            else:
+                print "Not available update method"
+            
+        return String_NoneResponse()
+        
 
     def rawDataCallback(self, msg):
         
@@ -298,21 +401,68 @@ class anomaly_detector:
         self.fabric_skin_values_y  = msg.fabric_skin_values_y
         self.fabric_skin_values_z  = msg.fabric_skin_values_z
 
+        # If detector is disbled, detector does not fill out the dataList.
         if self.enable_detector is False: return
         
         self.lock.acquire()
         newData = self.extractLocalFeature()
+
+        # get offset
+        startOffsetSize = 4
+        if len(self.dataList[0][0]) == startOffsetSize:
+            self.offsetData = np.mean(self.dataList, axis=2)/self.scale
+        elif len(self.dataList[0][0]) < startOffsetSize:
+            self.offsetData = np.zeros(np.shape(newData))
+        newData -= self.offsetData
+        
         if len(self.dataList) == 0:
-            self.dataList = newData
+            self.dataList = (np.array(newData)*self.scale).tolist()
         else:                
-            #self.dataList = np.swapaxes(self.dataList, 0,1)
+            ## self.dataList = np.swapaxes(self.dataList, 0,1)
             for i in xrange(self.nEmissionDim):
-                self.dataList[i] = np.hstack([ self.dataList[i], newData[i] ])
+                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
+            ## self.dataList = np.swapaxes(self.dataList, 0,1)
+                       
         self.lock.release()
+
+
+    def statusCallback(self, msg):
+        self.cur_task = msg.data
+
+    def userfbCallback(self, msg):
+        self.user_feedback = msg.data
+
+    def sensitivityCallback(self, msg):
+        '''
+        Requested value's range is 0~1.
+        '''
+        self.sensitivity_req = msg.data
+        sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+        print "Current sensitivity is ", sensitivity
+        print "Requested sensitivity is ", self.sensitivity_req
+
+        if 'svm' in self.classifier_method:           
+            self.classifier.set_params(class_weight=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min )
+        elif self.classifier_method == 'progress_time_cluster':                    
+            self.classifier.set_params(ths_mult=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            
+        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
+        print "Classifier is updated!"
+
+        if 'svm' in self.classifier_method:
+            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
+            print "Current sensitivity is ", sensitivity, self.classifier.class_weight
+        elif self.classifier_method == 'progress_time_cluster':                    
+            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+            print "Current sensitivity is ", sensitivity, self.classifier.ths_mult
+        self.sensitivity_pub.publish(sensitivity)                                   
+
+        
 
                     
     def extractLocalFeature(self):
 
+        startOffsetSize = 4
         data_dict = {}
         data_dict['timesList'] = [[0.]]
             
@@ -346,13 +496,15 @@ class anomaly_detector:
 
         # Unimodal feature - vision change ------------------------------------
         if 'unimodal_visionChange' in self.handFeatures:
-            vision_centers = np.array([self.vision_change_centers_x, self.vision_change_centers_y, self.vision_change_centers_z])
+            vision_centers = np.array([self.vision_change_centers_x, self.vision_change_centers_y, \
+                                       self.vision_change_centers_z])
             data_dict['visionChangeMagList'] = [len(vision_centers[0])]
             print 'unimodal_visionChange may not be implemented properly'
 
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in self.handFeatures:
-            fabric_skin_values  = [self.fabric_skin_values_x, self.fabric_skin_values_y, self.fabric_skin_values_z]
+            fabric_skin_values  = [self.fabric_skin_values_x, self.fabric_skin_values_y, \
+                                   self.fabric_skin_values_z]
             if not fabric_skin_values[0]:
                 data_dict['fabricMagList'] = [0]
             else:
@@ -370,10 +522,12 @@ class anomaly_detector:
 
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_artagEEDist' in self.handFeatures:
+            data_dict['kinEEPosList']     = [np.array([self.kinematics_ee_pos]).T]
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
 
         # Crossmodal feature - vision relative angle --------------------------
         if 'crossmodal_artagEEAng' in self.handFeatures:
+            data_dict['kinEEQuatList'] = [np.array([self.kinematics_ee_quat]).T]
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
             data_dict['visionArtagQuatList'] = [np.array([self.vision_artag_quat]).T]
 
@@ -395,28 +549,35 @@ class anomaly_detector:
     '''
     def run(self):
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
-
         rate = rospy.Rate(20) # 25Hz, nominally.
         while not rospy.is_shutdown():
-            if self.enable_detector is False: continue            
-            if self.dataList == [] or len(self.dataList[0][0]) < 10: continue
+            
+            if self.enable_detector is False: 
+                self.dataList = []
+                continue            
+            if len(self.dataList) == 0 or len(self.dataList[0][0]) < 10: continue
 
+            #-----------------------------------------------------------------------
             self.lock.acquire()
-            l_logp, l_post = self.ml.loglikelihoods(self.dataList, bPosterior=True, startIdx=4)
-            ## l_logp, l_post = self.ml.loglikelihoods(self.tempdata, bPosterior=True, startIdx=4)
-            self.lock.release()
-            
-            l_logp = l_logp[0]
-            l_post = l_post[0]
-            if l_logp == []: 
-                rate.sleep()                
+            cur_length     = len(self.dataList[0][0])
+            l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
+            self.lock.release()            
+            if l_logp == None: 
+                print "logp is None => anomaly"
+                self.action_interruption_pub.publish(self.task_name+'_anomaly')
+                self.task_interruption_pub.publish(self.task_name+'_anomaly')
+                self.soundHandle.play(2)
+                self.enable_detector = False
+                self.reset()
                 continue
-            ## print 'Shape of l_logp:', np.shape(l_logp), 'l_post:', np.shape(l_post)
-            
-            ll_classifier_test_X = [l_logp[-1]] + l_post[-1].tolist() 
 
-            #?????                
-            ## for i in xrange(len(ll_classifier_test_X)):
+
+            print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1]), \
+              " cutoff: ", self.param_dict['HMM']['nState']*0.85
+            if np.argmax(l_post[cur_length-1])==0 and l_logp < 0.0: continue
+            if np.argmax(l_post[cur_length-1])>self.param_dict['HMM']['nState']*0.85: continue
+            ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist() 
+
             if 'svm' in self.classifier_method:
                 X = self.scaler.transform([ll_classifier_test_X])
             elif self.classifier_method == 'progress_time_cluster' or \
@@ -448,68 +609,38 @@ if __name__ == '__main__':
     p.add_option('--task', action='store', dest='task', type='string', default='scooping',
                  help='type the desired task name')
     opt, args = p.parse_args()
+    rospy.init_node(opt.task)
+
+
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    local_range   = 10.0    
 
     if opt.task == 'scooping':
     
         subject_names     = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2']
-        task_name         = opt.task
-        check_method      = 'svm' #'progress_time_cluster' # cssvm
-        raw_data_path     = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task_name+'_data/demo'
-
-        handFeatures = ['unimodal_audioWristRMS',\
-                        ## 'unimodal_kinVel',\
-                        'unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng']
-
-        data_param_dict= {'renew': False, 'rf_center': 'kinEEPos', 'local_range': 10.,\
-                          'downSampleSize': 200, 'cut_data': [0,130], 'nNormalFold':4, 'nAbnormalFold':4,\
-                          'handFeatures': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4}
-        HMM_param_dict = {'renew': False, 'nState': 20, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
-                          'class_weight': 1.4e-3}
-                          ## 'class_weight': 1.4e-3}
-
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict}
+        raw_data_path, _, param_dict = getScooping(opt.task, False, \
+                                                   False, False,\
+                                                   rf_center, local_range)
+        check_method      = 'svm' # cssvm
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                             'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
     elif opt.task == 'feeding':
-        subjects       = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        task           = opt.task 
-        check_method   = 'svm' #'progress_time_cluster' # cssvm
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data'
-        raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
-        
-        handFeatures    = ['unimodal_audioWristRMS', 'unimodal_ftForce', 'crossmodal_artagEEDist', \
-                           'crossmodal_artagEEAng'] #'unimodal_audioPower'
-
-        data_param_dict= {'renew': False, 'rf_center': 'kinEEPos', 'local_range': 10.,\
-                          'downSampleSize': 200, 'cut_data': [0,170], \
-                          'nNormalFold':4, 'nAbnormalFold':4,\
-                          'feature_list': handFeatures, 'lowVarDataRemv': False}
-        AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, 'filter': True, \
-                          'layer_sizes':[64,32,16], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                          'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                          'max_iteration':30000, 'min_loss':0.1, 'cuda':True, 'filter':True, 'filterDim':4,\
-                          'add_option': None, 'add_feature': feature_list} 
-        HMM_param_dict = {'renew': False, 'nState': 25, 'cov': 5.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
-                          'class_weight': 0.05}
-                                 
-        param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                      'SVM': SVM_param_dict}
-        
-                      
+        subject_names  = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        raw_data_path, _, param_dict = getFeeding(opt.task, False, \
+                                                  False, False,\
+                                                  rf_center, local_range)
+        check_method      = 'svm' #'progress_time_cluster' # cssvm
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
+                             'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
     else:
         sys.exit()
 
 
-    ad = anomaly_detector(subject_names, task_name, check_method, raw_data_path, save_data_path, \
+    ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
                           param_dict)
     ad.run()
 

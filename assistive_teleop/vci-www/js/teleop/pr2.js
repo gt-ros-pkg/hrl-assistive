@@ -160,8 +160,8 @@ var PR2GripperSensor = function (options) {
         self.reloadParams(); // Don't enforce a callback, because the open action shouldn't take palce immediately.  It's a race condition we should always win.
         var msg = ros.composeMsg('pr2_gripper_sensor_msgs/PR2GripperReleaseGoal');
         msg.command.event.trigger_conditions = 2; // Slip OR finger contact OR accelerometer
-        msg.command.event.acceleration_trigger_magnitude = 4.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
-        msg.command.event.slip_trigger_magnitude = 0.01; // Default value recommended in msg def file
+        msg.command.event.acceleration_trigger_magnitude = 2.0; // Msg def file recommends 2.0 for small motions, 5.0 for large, rapid motion-planned motions
+        msg.command.event.slip_trigger_magnitude = 0.008; // Default value recommended in msg def file is 0.01
         var goal = new ROSLIB.Goal({
             actionClient: releaseActionClient,
             goalMessage: msg
@@ -231,7 +231,6 @@ var PR2Head = function (options) {
     var joints = options.joints || ['head_pan_joint', 'head_tilt_joint'];
     self.pointingFrame = options.pointingFrame || 'head_mount_kinect_rgb_optical_frame';
     var trackingInterval = null;
-    var undoSetActiveService = options.undoSetActiveService || 'undo/move_head/set_active';
     ros.getMsgDetails('trajectory_msgs/JointTrajectory');
     ros.getMsgDetails('trajectory_msgs/JointTrajectoryPoint');
     var jointPub = new ROSLIB.Topic({
@@ -329,28 +328,17 @@ var PR2Head = function (options) {
         actionGoal.send();
     };
 
-    var undoToggleService = new ROSLIB.Service({
-        ros: ros,
-        name: undoSetActiveService,
-        serviceType: 'hrl_undo/SetActive'
-    });
 
     self.trackPoint = function (x, y, z, frame) {
-        // Don't register head tracking the hand with undo...
-        var disableUndoReq = new ROSLIB.ServiceRequest({set_active:false});
-        undoToggleService.callService(disableUndoReq, function(){});
         self.pointHead(x, y, z, frame); // Start looking now
         trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
-        console.log("Beginning Head tracking of ", frame);
+//        console.log("Beginning Head tracking of ", frame);
     };
 
     self.stopTracking = function () {
         // Stop sending tracking messages
         clearInterval(trackingInterval);
-        // Re-enable undo recording of head movements
-        var enableUndoReq = new ROSLIB.ServiceRequest({set_active:true});
-        undoToggleService.callService(enableUndoReq, function(){});
-        console.log("Ending Head tracking");
+//        console.log("Ending Head tracking");
     };
 };
 
@@ -452,7 +440,6 @@ var PR2ArmMPC = function (options) {
         msg.header.frame_id = frame_id;
         msg.pose.position = position;
         msg.pose.orientation = orientation;
-//        console.log("Sending Goal:", msg);
         self.goalPosePublisher.publish(msg);
     };
 
@@ -504,8 +491,7 @@ var PR2 = function (ros) {
     self.head = new PR2Head({ros: ros,
                             limits: [[-2.85, 2.85], [1.18, -0.38]],
                             joints: ['head_pan_joint', 'head_tilt_joint'],
-                            pointingFrame: 'head_mount_kinect_rgb_optical_frame',
-                            undoSetActiveService: 'undo/move_head/set_active'});
+                            pointingFrame: 'head_mount_kinect_rgb_optical_frame'});
     self.head.stopTracking(); // Cancel left-over tracking goals from before page refresh...
     self.r_arm_cart = new PR2ArmMPC({side:'right',
                                      ros: ros,

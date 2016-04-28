@@ -2,10 +2,12 @@ RFH.PickAndPlace = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
-    self.arm = options.arm;
-    self.gripper = options.gripper;
-    self.side = self.gripper.side;
-    self.name = options.name || 'pick_and_place_'+self.side;
+    self.arms = {'right': options.r_arm,
+                 'left': options.l_arm};
+    self.grippers = {'right': options.r_gripper,
+                     'left': options.l_gripper};
+    self.name = options.name || 'pick_and_place';
+    self.domain = 'pick_and_place'
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -17,63 +19,75 @@ RFH.PickAndPlace = function (options) {
     ros.getMsgDetails('hrl_task_planning/PDDLState');
     self.pddlStateUpdatePub = new ROSLIB.Topic({
         ros: ros,
-        name: '/pddl_tasks/pick_and_place_'+self.side+'/state_updates',
+        name: '/pddl_tasks/pick_and_place/state_updates',
         messageType: '/hrl_task_planning/PDDLState'
     });
     self.pddlStateUpdatePub.advertise();
     
     self.updatePDDLState = function(pred_array){
         var msg = ros.composeMsg('hrl_task_planning/PDDLState');
-        msg.domain = self.name;
+        msg.domain = self.domain;
         msg.predicates = pred_array;
         self.pddlStateUpdatePub.publish(msg);
     };
 
-    self.startAction = function (planStepMsg) {
-        switch (planStepMsg.action){
+    self.getActionFunction = function (name, args) {
+        var startFunc;
+        switch (name){
             case 'ID-LOCATION':
-                if (planStepMsg.args[0] == 'PLACE_LOC' ||
-                    planStepMsg.args[0] == 'PICK_LOC' ||
-                    planStepMsg.args[0] == 'ELSEWHERE'){
-                    RFH.taskMenu.tasks.paramLocationTask.setOffset({'position':{'x':0, 'y':0, 'z':0.1}});
-                    RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({'x':0, 'y':0, 'z':0.38, 'w':0.925});
+                if (args[0] == 'PLACE_LOC' || args[0] == 'PICK_LOC' || args[0] == 'ELSEWHERE'){
+                    startFunc = function () {
+                        RFH.taskMenu.tasks.paramLocationTask.setOffset({'position':{'x':0.0, 'y':0, 'z':0}});
+                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({'x':0, 'y':0, 'z':0.38, 'w':0.925});
+                        RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                        RFH.taskMenu.startTask('paramLocationTask');
+                    }
                 } else {
-                    RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
-                    RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
-                    RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
+                    startFunc = function () {
+                        RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
+                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
+                        RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
+                        RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                        RFH.taskMenu.startTask('paramLocationTask');
+                    }
                 }
-                RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.name+'/KNOWN/'+planStepMsg.args[0]);
-                RFH.taskMenu.startTask('paramLocationTask');
                 break;
             case 'FORGET-LOCATION':
-                RFH.taskMenu.startTask('LookingTask');
+                startFunc = function () {
+                    RFH.taskMenu.startTask('LookingTask');
+                }
                 break;
             case 'MOVE-ARM':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
-                break;
             case 'GRAB':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
-                break;
             case 'RELEASE':
-                RFH.taskMenu.startTask(self.side.substring(0,1)+'EECartTask');
+                if (args[0] === 'RIGHT_HAND') {
+                    startFunc = function () {
+                        RFH.taskMenu.startTask('rEECartTask');
+                    }
+                } else if (args[0] === 'LEFT_HAND') {
+                    startFunc = function () {
+                        RFH.taskMenu.startTask('lEECartTask');
+                    }
+                };
                 break;
         }
+        return startFunc;
     };
 
-    self.getActionLabel = function (action) {
+    self.getActionLabel = function (name, args) {
         var loc;
-        switch (action.name){
+        switch (name){
             case 'ID-LOCATION':
-                if (action.args[0].indexOf('PICK') >= 0) {
+                if (args[0].indexOf('PICK') >= 0) {
                     loc = 'Pickup';
-                } else if (action.args[0].indexOf('PLACE') >= 0) {
+                } else if (args[0].indexOf('PLACE') >= 0) {
                     loc = 'Place';
                 } else {
                     loc = 'Empty';
                 }
                 return "Indicate %loc Location".replace('%loc', loc);
             case 'FORGET-LOCATION':
-                switch (action.args[0]) {
+                switch (args[0]) {
                     case 'PICK_LOC':
                         loc = 'Pickup';
                         break;
@@ -89,7 +103,7 @@ RFH.PickAndPlace = function (options) {
                 }
                 return "Clear Saved %loc Location".replace('%loc', loc);
             case 'MOVE-ARM':
-                switch (action.args[1]) {
+                switch (args[1]) {
                     case 'PICK_LOC':
                         loc = 'pickup';
                         break;
@@ -111,20 +125,20 @@ RFH.PickAndPlace = function (options) {
         }
     };
 
-
-    self.getActionHelpText = function (action) {
-        switch (action.name){
+    self.getActionHelpText = function (name, args) {
+        var loc
+        switch (name){
             case 'ID-LOCATION':
-                if (action.args[0].indexOf('PICK') >= 0) {
+                if (args[0].indexOf('PICK') >= 0) {
                     loc = 'the item you wish to pick up';
-                } else if (action.args[0].indexOf('PLACE') >= 0) {
+                } else if (args[0].indexOf('PLACE') >= 0) {
                     loc = 'the spot where you want to place the item';
                 } else {
                     loc = 'a clear spot on a surface';
                 }
                 return "Click on %loc. If not visible, click the gray edges to look around.".replace('%loc', loc);
             case 'FORGET-LOCATION':
-                switch (action.args[0]) {
+                switch (args[0]) {
                     case 'PICK_LOC':
                         loc = 'the pickup';
                         break;
@@ -140,7 +154,7 @@ RFH.PickAndPlace = function (options) {
                 }
                 return "Clears %loc location".replace('%loc', loc);
             case 'MOVE-ARM':
-                switch (action.args[1]) {
+                switch (args[1]) {
                     case 'PICK_LOC':
                         loc = 'pickup';
                         break;
@@ -165,7 +179,7 @@ RFH.PickAndPlace = function (options) {
     self.setPoseToParam = function (ps_msg, location_name) {
         var poseParam = new ROSLIB.Param({
             ros: ros,
-            name: '/pddl_tasks/'+self.name+'/KNOWN/'+location_name
+            name: '/pddl_tasks/'+self.domain+'/KNOWN/'+location_name
         });
         console.log("Setting " + location_name + " pose as:", ps_msg);
         poseParam.set(ps_msg);
@@ -175,24 +189,59 @@ RFH.PickAndPlace = function (options) {
         for (var i=0; i<loc_list.length; i+=1) {
             var param = new ROSLIB.Param({
                 ros: ros,
-                name: '/pddl_tasks/'+self.name+'/KNOWN/'+loc_list[i]
+                name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
             });
             param.delete();
+            if (RFH.regions[param.name] !== undefined) {
+                RFH.regions[param.name].remove();
+            }
         }
     };
 
-    self.sendTaskGoal = function () {
+    self.setDefaultGoal = function (goal_pred_list) {
+        var paramName = '/pddl_tasks/'+self.domain+'/default_goal';
+        var goalParam = new ROSLIB.Param({
+            ros: ros,
+            name: paramName
+        });
+        goalParam.set(goal_pred_list);
+//        waitForParamUpdate(paramName, goal_pred_list, 100);
+    };
+
+    var waitForParamUpdate = function (param, value, delayMS) {
+        var param = new ROSLIB.Param({
+            ros: ros,
+            name: param
+        });
+        var flag = false;
+        var checkFN = function () {
+            if (param.get() === value) { 
+                flag = true;
+            } else {
+                setTimeout(checkFN, delayMS);
+            }
+        }
+        setTimeout(checkFN, delayMS);
+    };
+
+    self.sendTaskGoal = function (side) {
         self.clearLocationParams(['HAND_START_LOC', 'PICK_LOC', 'PLACE_LOC', 'ELSEWHERE']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'pick_and_place_'+self.side+'-'+ new Date().getTime().toString();
-        msg.domain = 'pick_and_place_'+self.side;
-        self.setPoseToParam(self.arm.getState(), 'HAND_START_LOC');
-        self.updatePDDLState(['(NOT (AT TARGET PLACE_LOC))','(AT TARGET PICK_LOC)']);
-        if (!self.gripper.getGrasping()) {
-            msg.init.push('(AT TARGET PICK_LOC)');
+        msg.name = 'pick_and_place' + '-' + new Date().getTime().toString();
+        msg.domain = 'pick_and_place';
+        var hand = side.toUpperCase()+'_HAND';
+        var otherHand = hand === 'LEFT_HAND' ? 'RIGHT_HAND' : 'LEFT_HAND'
+        var object = hand + '_OBJECT';
+        self.setDefaultGoal(['(AT '+object+' PLACE_LOC)']);
+        self.updatePDDLState(['(NOT (AT '+object+' PLACE_LOC))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))']);
+        self.setPoseToParam(self.arms[side].getState(), 'HAND_START_LOC');
+        if (!self.grippers[side].getGrasping()) {
+            self.updatePDDLState(['(AT '+object+' PICK_LOC)']);
+        } else {
+            self.updatePDDLState(['(GRASPING '+hand+' '+object+')']);
         }
         msg.goal = [];  // Empty goal will use default for task
-        self.taskPublisher.publish(msg);
+        setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
 
 };

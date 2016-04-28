@@ -72,7 +72,7 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
-def viz(X1, X2=None):
+def viz(X1, normTest=None, abnormTest=None, skip=False):
     '''
     dim x sample x length
     X1: normal data
@@ -81,6 +81,7 @@ def viz(X1, X2=None):
     import itertools
 
     n_cols = int(float(len(X1))/4.0)
+    if n_cols == 0: n_cols = 1
     n_rows = int(float(len(X1))/float(n_cols))        
     colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
 
@@ -105,28 +106,38 @@ def viz(X1, X2=None):
         ax.set_ylim([0,1])
         plt.yticks([0,1.0])
 
-    if X2 is None:
-        plt.show()
-        return
+    if normTest is not None:
+        for i in xrange(len(normTest)):
+
+            n_col = int(i/n_rows)
+            n_row = i%n_rows
+            ax    = fig.add_subplot(n_rows,n_cols,i+1)
+            x     = range(len(normTest[i][0]))
+            for j in xrange(len(normTest[i])):
+                ax.plot(x, normTest[i][j], c='b')
+                if j>3: break
+
+            ax.set_xlim([0,x[-1]])
+            ax.set_ylim([0,1])
+            plt.yticks([0,1.0])
+
+    if abnormTest is not None:
+        for i in xrange(len(abnormTest)):
+
+            n_col = int(i/n_rows)
+            n_row = i%n_rows
+            ax    = fig.add_subplot(n_rows,n_cols,i+1)
+            x     = range(len(abnormTest[i][0]))
+            for j in xrange(len(abnormTest[i])):
+                ax.plot(x, abnormTest[i][j], c='r')
+                if j>3: break
+
+            ax.set_xlim([0,x[-1]])
+            ax.set_ylim([0,1])
+            plt.yticks([0,1.0])
 
 
-    for i in xrange(len(X2)):
-
-        n_col = int(i/n_rows)
-        n_row = i%n_rows
-        ax    = fig.add_subplot(n_rows,n_cols,i+1)
-        colors = itertools.cycle(['r', 'g', 'm', 'c'])
-
-        x     = range(len(X2[i][0]))
-        for j in xrange(len(X2[i])):
-            color = colors.next()
-            ax.plot(x, X2[i][j], c=color)
-            if j>3: break
-            
-        ax.set_xlim([0,x[-1]])
-        ax.set_ylim([0,1])
-        plt.yticks([0,1.0])
-
+    if skip is True: return
     plt.show()
     
 
@@ -486,16 +497,93 @@ class data_viz:
 if __name__ == '__main__':
 
 
-    subject = 'gatsbii'
-    task    = 'scooping'
-    verbose = True
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
+                 help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+                 help='type the desired dimension')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
+    opt, args = p.parse_args()
+
+    from hrl_anomaly_detection.params import *
+    import itertools
+    colors = itertools.cycle(['r', 'g', 'b', 'm', 'c', 'k', 'y'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    if opt.task == 'pushing_microwhite':
+        subjects = ['gatsbii']
+        ## raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
+        ##                                                                  opt.bAERenew, opt.bHMMRenew,\
+        ##                                                                  rf_center, local_range)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/AE150'
+        method = 'svm'
+        nPoints = 20
+        fig = plt.figure()
+
+        for dim in xrange(2,5+1):
+            roc_pkl = os.path.join(save_data_path+'_'+str(dim), 'roc_'+opt.task+'.pkl')
+            ROC_data = ut.load_pickle(roc_pkl)
+
+            tp_ll = ROC_data[method]['tp_l']
+            fp_ll = ROC_data[method]['fp_l']
+            tn_ll = ROC_data[method]['tn_l']
+            fn_ll = ROC_data[method]['fn_l']
+            delay_ll = ROC_data[method]['delay_l']
+
+            tpr_l = []
+            fpr_l = []
+            fnr_l = []
+            delay_mean_l = []
+            delay_std_l  = []
+
+            for i in xrange(nPoints):
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
+                delay_mean_l.append( np.mean(delay_ll[i]) )
+                delay_std_l.append( np.std(delay_ll[i]) )
+
+            label = method+'_dim_'+str(dim)
+            
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+        plt.legend(loc='lower right', prop={'size':20})
+
+        if opt.bSavePdf is False:
+            plt.show()
+        else:
+            print "Save pdf to Dropbox folder"
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('mv test.p* ~/Dropbox/HRL/')
+
+
+
+
+    ## subject = 'gatsbii'
+    ## task    = 'scooping'
+    ## verbose = True
     
 
-    l = data_viz(subject, task, verbose=verbose)
-    ## l.audio_test()
-    ## l.kinematics_test()
-    ## l.reduce_cart()
+    ## l = data_viz(subject, task, verbose=verbose)
+    ## ## l.audio_test()
+    ## ## l.kinematics_test()
+    ## ## l.reduce_cart()
 
-    # set RF over EE
-    l.extractLocalFeature()
+    ## # set RF over EE
+    ## l.extractLocalFeature()
     

@@ -48,6 +48,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+QUEUE_SIZE = 10
 
 
 class armReachAction(mpcBaseAction):
@@ -87,8 +88,10 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers and subscribers
-        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped, latch=True)
-        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped, latch=True)
+        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped,
+                                        queue_size=QUEUE_SIZE, latch=True)
+        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped,
+                                         queue_size=QUEUE_SIZE, latch=True)
         
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
         ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
@@ -134,10 +137,10 @@ class armReachAction(mpcBaseAction):
         # Used to test and find the best optimal procedure to scoop the target.
         self.motions['testingMotion'] = {}
         self.motions['testingMotion']['left'] = \
-          [['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.052, -1.928, -1.64]', 5.0],\
-          ['MOVEJ', '[0.054, 0.038, 0.298, -2.118, -3.090, -1.872, -1.39]', 10.0],\
-          ['MOVEJ', '[0.645, 0.016, 0.279, -2.118, -3.127, -1.803, -2.176]', 10.0],\
-          ['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.053, -1.928, -1.64]', 10.0]]
+          [['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.052, -1.928, -1.64]', 2.0],\
+          ['MOVEJ', '[0.054, 0.038, 0.298, -2.118, -3.090, -1.872, -1.39]', 2.0],\
+          ['MOVEJ', '[0.645, 0.016, 0.279, -2.118, -3.127, -1.803, -2.176]', 2.0],\
+          ['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.053, -1.928, -1.64]', 2.0]]
 
         #  ['MOVES', '[ 0.521, -0.137, -0.041, 38, -99, -4]', 5.0]]
         self.motions['testingMotion']['right'] = []

@@ -77,12 +77,13 @@ class artag_vision():
         '''
         Get parameters
         '''
-        self.nTags          = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_total_tags')        
-        self.tag_id         = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_id')
-        ## self.tag_length     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_length')
-        ## self.tag_max_id     = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_max_id')
-        self.tag_buf_size   = rospy.get_param('hrl_manipulation_task/'+self.task+'/artag_buf_size')
-
+        try:
+            self.nTags          = rospy.get_param('/hrl_manipulation_task/'+self.task+'/artag_total_tags')        
+        except:
+            print "total tags = ", self.nTags
+            
+        self.tag_id         = rospy.get_param('/hrl_manipulation_task/'+self.task+'/artag_id')
+        self.tag_buf_size   = rospy.get_param('/hrl_manipulation_task/'+self.task+'/artag_buf_size')
         self.artag_pos  = np.zeros((3*self.nTags,1))
         self.artag_quat = np.zeros((4*self.nTags,1))
         self.pos_buf    = []

@@ -45,14 +45,18 @@
   <script type="text/javascript" src="js/tasks/gripper.js"></script>
   <script type="text/javascript" src="js/tasks/ee_cart.js"></script>
   <script type="text/javascript" src="js/tasks/ee_rotation.js"></script>
+  <script type="text/javascript" src="js/tasks/ee_display.js"></script>
   <script type="text/javascript" src="js/tasks/ee_focus.js"></script>
   <script type="text/javascript" src="js/tasks/move-object.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/pick.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/place.js"></script>
   <script type="text/javascript" src="js/tasks/pick-and-place.js"></script>
   <script type="text/javascript" src="js/tasks/publish-location.js"></script>
   <script type="text/javascript" src="js/tasks/param-location.js"></script>
   <script type="text/javascript" src="js/tasks/smach-display.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
   <script type="text/javascript" src="js/tasks/pointCloudView.js"></script>
+  <script type="text/javascript" src="js/tasks/regionView.js"></script>
 
   <script type="text/javascript" src="js/video/mjpeg_client.js"></script>
   <script type="text/javascript" src="js/video/pixel23D.js"></script>
@@ -72,9 +76,8 @@
 
 <body onload="RFH.init()">
  <div id="status-bar">
-     <div id="undo"><p>Undo</p></div>
      <div id="notifications"></div>
-     <div id="network-status"></div>
+<!--     <div id="network-status"></div>
      <div id='battery-status'>
          <div class='battery-contact'></div>
          <div class='battery-main'>
@@ -84,10 +87,11 @@
                  <div class="triangle tri-down"></div>
              </div>
          </div>
-     </div>
+     </div>-->
  </div>
  <div id="left-col">
      <div id="main-menu">
+        <div id="undo"><p>Undo</p></div>
         <h3>Main Menu</h3>
      </div>
      <div id="controls">

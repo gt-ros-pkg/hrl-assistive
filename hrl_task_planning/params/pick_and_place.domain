@@ -1,0 +1,35 @@
+(define (domain pick_and_place)
+ (:requirements :typing :conditional-effects)
+ (:types
+  item gripper - physobj
+  location
+ )
+
+ (:constants right_hand - gripper
+             left_hand - gripper
+             right_hand_object - item
+             left_hand_object - item
+             place_loc - location
+ )
+
+ (:predicates
+  (grasping ?g - gripper ?o - item)
+  (can-grasp ?g - gripper)
+ )
+
+ (:action pick
+  :parameters (?g - gripper ?o - item)
+  :precondition (and (can-grasp ?g)
+                     (forall (?obj - item) (not (grasping ?g ?obj)))
+                     (forall (?gr - gripper) (not (grasping ?gr ?o)))
+                )
+  :effect (and (grasping ?g ?o))
+ )
+
+ (:action place
+  :parameters (?g - gripper ?o - item ?l - location)
+  :precondition (and (grasping ?g ?o))
+  :effect (and (not (grasping ?g ?o))
+          )
+ )
+)

@@ -1,2 +1,0 @@
-constant_predicates: ["(AT TARGET-OBJECT START)"]
-default_goal: ["(AT TARGET-OBJECT GOAL)"]

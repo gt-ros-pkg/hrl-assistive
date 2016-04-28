@@ -17,12 +17,12 @@
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
-  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
+  <node name="at_pr2_rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
     <param name="port" type="int" value="$(arg ws_port)" />
     <param name="binary_encoder" type="str" value="bson" />
   </node>
-  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
-  <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath vci-www"/>
+  <node name="at_pr2_rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
+  <node name="at_pr2_roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
   <!--<node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>-->
   <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
@@ -57,8 +57,15 @@
 
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
+  <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
+      <remap from="twist_in" to="l_cart/web_commands" />
+      <remap from="pose_out" to="/haptic_mpc/goal_pose" />
+      <param name="ee_frame" value="/l_wrist_roll_link" />
+    </node>
+
+
   <!-- Arms: Haptic MPC -->
-  <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
+  <!--<include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>
     <arg name="skin" value="fabric"/>
     <arg name="namespace" value="left_arm"/>
@@ -72,6 +79,6 @@
     <arg name="namespace" value="right_arm"/>
     <arg name="rviz_teleop" value="true"/>
     <arg name="verbose" value="true"/>
-  </include>
+  </include>-->
 
 </launch>

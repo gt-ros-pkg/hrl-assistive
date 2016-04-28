@@ -34,7 +34,7 @@
   <run_depend>tf_conversions</run_depend>
 
   <!--run_depend>ar_track_alvar_msgs</run_depend-->
-  <run_depend>ar_track_alvar</run_depend>
+  <run_depend>ar_track_alvar_msgs</run_depend>
   <run_depend>hark_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>pr2_msgs</run_depend>

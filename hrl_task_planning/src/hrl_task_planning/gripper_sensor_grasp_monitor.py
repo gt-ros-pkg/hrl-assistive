@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+from collections import deque
 
 import rospy
 from std_msgs.msg import Bool
@@ -17,6 +18,7 @@ class GripperSensorGraspMonitor(object):
         gsa_ns = '/' + self.side[0] + '_gripper_sensor_controller'
 
         self.grasping = None
+        self.grasp_state_deque = deque([None]*24, 24)
         self.grasp_state_pub = rospy.Publisher('/grasping/'+self.side+'_gripper', Bool, queue_size=10, latch=True)
         self.fully_closed = False
         self.cannot_close = False
@@ -73,13 +75,20 @@ class GripperSensorGraspMonitor(object):
             return  # Nothing happening, skip ahead
 
 #        print grasping_now, msg, self.openness
-        if grasping_now != self.grasping:
-            if grasping_now:
+        self.grasp_state_deque.append(grasping_now)
+        if None in self.grasp_state_deque:
+            return
+#        print "Deque:\n", self.grasp_state_deque
+        filtered_grasping = True if sum(self.grasp_state_deque) > self.grasp_state_deque.maxlen/2 else False
+#        print "Filtered Grasping: ", filtered_grasping
+
+        if filtered_grasping != self.grasping:
+            if filtered_grasping:
                 print "%s Gripper Grasped" % self.side.capitalize()
             else:
                 print "%s Gripper Released" % self.side.capitalize()
-            self.grasping = grasping_now
-            self.grasp_state_pub.publish(grasping_now)
+            self.grasping = filtered_grasping
+            self.grasp_state_pub.publish(filtered_grasping)
 
 
 def main():

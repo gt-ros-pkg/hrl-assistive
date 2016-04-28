@@ -1,0 +1,6 @@
+
+geometry_msgs/PoseStamped goal_pose
+---
+string current_step
+---
+string final_step 

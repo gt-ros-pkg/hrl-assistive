@@ -11,10 +11,11 @@ from hrl_lib import quaternion as qt
 import hrl_lib.util as ut
 import hrl_lib.circular_buffer as cb
 
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs.msg import AlvarMarkers
 import geometry_msgs
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
+QUEUE_SIZE = 10
 
 class arTagDetector:
 
@@ -40,7 +41,8 @@ class arTagDetector:
         self.y_90_frame = PyKDL.Frame.Identity()
         #self.y_90_frame.M = PyKDL.Rotation.Quaternion(0.0, np.sqrt(0.5), 0.0, np.sqrt(0.5))
        
-        self.bowl_cen_pose_pub = rospy.Publisher("ar_track_alvar/bowl_cen_pose", PoseStamped, latch=True)
+        self.bowl_cen_pose_pub = rospy.Publisher("ar_track_alvar/bowl_cen_pose", PoseStamped, \
+                                                 queue_size=QUEUE_SIZE, latch=True)
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
         self.frame_lock = threading.RLock()                
@@ -261,7 +263,7 @@ if __name__ == '__main__':
     max_idx   = 18
 
     #save_file = '/home/dpark/git/hrl-assistive/hrl_multimodal_anomaly_detection/params/ar_tag/bowl_offsetframe.pkl' 
-    save_file = '/home/dpark/git/hrl-assistive/hrl_manipulation_task/params/ar_tag/bowl_offsetframe.pkl' 
+    save_file = os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_manipulation_task/params/ar_tag/bowl_offsetframe.pkl' 
     
         
     atd = arTagDetector(tag_id, tag_side_length, pos_thres)

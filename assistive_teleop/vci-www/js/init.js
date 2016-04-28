@@ -73,7 +73,7 @@ var RFH = {
 
     this.ros = new ROSLIB.Ros({url: 'ws://'+ this.ROBOT + ':'+ this.PORT});
     this.ros.on('close', function(e) {
-        log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
+        console.log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
       }
     );
     this.ros.on('error', function(e) {
@@ -81,30 +81,38 @@ var RFH = {
       }
     );
     this.ros.on('connection', function(e) {
-        log("Connected to " + RFH.ROBOT + ".");
+        console.log("Connected to " + RFH.ROBOT + ".");
         extendROSJS(RFH.ros);
 //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
-        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
-                                                     div: 'battery-status'});
+//        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
+//                                                     div: 'battery-status'});
     // Setup a client to listen to TFs.
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
-                                            angularThres : 0.005,
+                                            angularThres : 0.001,
                                             transThres : 0.001,
-                                            rate : 20.0,
+                                            rate : 10.0,
                                             fixedFrame : '/base_link' });
         RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
         initMjpegCanvas();
         initViewer('video-main');
+        RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
+                                             ros: RFH.ros,
+                                             tfClient: RFH.tfClient});
+        RFH.leftEEDisplay = new RFH.EEDisplay({side: 'l',
+                                             ros: RFH.ros,
+                                             tfClient: RFH.tfClient});
         RFH.initTaskMenu('main-menu');
-        RFH.undo = new RFH.Undo({ros: RFH.ros,
-                                 undoTopic: '/undo',
-                                 buttonDiv: 'undo'});
         RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                                    ros: RFH.ros});
+        RFH.undo = new RFH.Undo({ros: RFH.ros,
+                                 undoTopic: '/undo',
+                                 buttonDiv: 'undo',
+                                 rightEEDisplay: RFH.rightEEDisplay,
+                                 leftEEDisplay: RFH.leftEEDisplay});
         RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
-                                                           topic: "/pcl_filters/vfx/output",
-                                                           maxPoints: 15000,
+                                                           topic: "/pcl_filters/peek_points",
+                                                           maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
 //        initClickableActions();
 //        initPr2(); 

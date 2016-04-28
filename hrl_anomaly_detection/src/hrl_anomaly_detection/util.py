@@ -539,19 +539,23 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name):
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=False):
     # List up recorded files
-    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]        
-
+    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
     failure_list = []
     for d in folder_list:
 
         name_flag = False
         for name in subject_names:
-            if d.find(name) >= 0: name_flag = True
+            if d.find(name) >= 0: 
+                if exact_name:
+                    if d.split(name+'_')[1] == task_name: name_flag = True
+                else:
+                    name_flag = True                    
                                     
-        if name_flag and d.find(task_name) >= 0:
+        if name_flag and ((d.find(task_name) >= 0 and exact_name is False) or \
+                          (d==subject_names[0]+'_'+task_name and exact_name) ):
             files = os.listdir(os.path.join(root_path,d))
 
             for f in files:
@@ -668,8 +672,13 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
     
     new_data_array = None    
     for i in xrange(n):
-        interp = interpolate.splrep(time_array, target_array[i], s=0)
-        interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+        try:
+            interp = interpolate.splrep(time_array, target_array[i], s=0)
+            interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+        except:
+            print np.shape(time_array), np.shape(target_array[i]), i,n
+            sys.exit()
+            
 
         if np.isnan(np.max(interp_data)):
             print "Interpolation error by NaN values"
@@ -1152,11 +1161,30 @@ def stackSample(X1,X2,first_axis='dim'):
         return np.vstack([X1,X2])
 
 
-def combineData(X1,X2,first_axis='dim'):
+def combineData(X1,X2, target_features, all_features, first_axis='dim', add_noise_features=[]):
 
+    idx_list = []
+    for feature in target_features:
+        idx = all_features.index(feature)
+        idx_list.append(idx)
+
+    if len(add_noise_features) > 0:
+        noise_idx_list = []
+        for feature in add_noise_features:
+            idx = all_features.index(feature)
+            noise_idx_list.append(idx)
+    else:
+        noise_idx_list = []
+        
     if first_axis == 'dim':
+        
         newX1 = np.swapaxes(X1,0,1)
-        newX2 = np.swapaxes(X2,0,1)
+        if len(noise_idx_list) > 0:
+            X2[noise_idx_list,:,:] = X2[noise_idx_list,:,:] + \
+              np.random.normal(0.0, 0.1, np.shape(X2[noise_idx_list,:,:]))
+        newX2 = X2[idx_list,:,:]
+        newX2 = np.swapaxes(newX2,0,1)
+        
         
         X = None
         for i in xrange(len(newX1)):
