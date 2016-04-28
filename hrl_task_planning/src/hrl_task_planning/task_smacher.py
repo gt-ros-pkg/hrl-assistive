@@ -133,7 +133,7 @@ class PDDLTaskThread(Thread):
 
             # Get solution from planner
             try:
-                #print self.problem_msg
+                # print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
@@ -280,19 +280,18 @@ class PDDLStatePublisherState(smach.State):
         return 'succeeded'
 
 
-class StartNewTaskState(smach.State):
+class StartNewTaskState(PDDLSmachState):
     def __init__(self, problem_msg, *args, **kwargs):
         super(StartNewTaskState, self).__init__(*args, **kwargs)
         self.request = problem_msg
         self.problem_pub = rospy.Publisher("perform_task", PDDLProblem, queue_size=10)
         rospy.sleep(1)  # make sure subscribers can connect...
 
-    def execute(self, ud):
-        self.problem_pub.publish(self.request)
+    def on_execute(self, ud):
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
-        return 'succeeded'
+        self.problem_pub.publish(self.request)
 
 
 def main():

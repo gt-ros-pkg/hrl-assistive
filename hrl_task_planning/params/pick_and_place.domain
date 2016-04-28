@@ -9,63 +9,27 @@
              left_hand - gripper
              right_hand_object - item
              left_hand_object - item
-             pick_loc - location
              place_loc - location
-             hand_start_loc - location
-             elsewhere - location
  )
 
  (:predicates
-  (known ?l - location)
   (grasping ?g - gripper ?o - item)
-  (at ?o - physobj ?l - location)
   (can-grasp ?g - gripper)
  )
 
- (:action move-arm
-  :parameters (?g - gripper ?l - location)
-  :precondition (and (known ?l))
-  :effect (and (forall (?loc - location)(not (at ?g ?loc)) )
-               (at ?g ?l)
-           )
-  )
-
- (:action grab
-  :parameters (?g - gripper ?o - item ?l - location)
-  :precondition (and (known ?l)
-                     (can-grasp ?g)
-                     (at ?o ?l)
-                     (at ?g ?l)
+ (:action pick
+  :parameters (?g - gripper ?o - item)
+  :precondition (and (can-grasp ?g)
                      (forall (?obj - item) (not (grasping ?g ?obj)))
                      (forall (?gr - gripper) (not (grasping ?gr ?o)))
                 )
-  :effect (and (grasping ?g ?o)
-               (forall (?loc - location)
-                 (not (at ?o ?loc))
-               )
-           )
+  :effect (and (grasping ?g ?o))
  )
 
- (:action release
+ (:action place
   :parameters (?g - gripper ?o - item ?l - location)
-  :precondition (and (known ?l)
-                     (at ?g ?l)
-                     (grasping ?g ?o)
-                     (forall (?obj - item) (not (at ?obj ?l)))
-                 )
-  :effect (and (at ?o ?l)
-               (not (grasping ?g ?o))
+  :precondition (and (grasping ?g ?o))
+  :effect (and (not (grasping ?g ?o))
           )
  )
-
- (:action id-location
-  :parameters (?l - location)
-  :effect (known ?l)
-  )
-
- (:action forget-location
-  :parameters (?l - location)
-  :precondition (and (known ?l))
-  :effect (not (known ?l))
-  )
 )

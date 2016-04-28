@@ -38,7 +38,6 @@ RFH.Undo = function (options) {
                                               trajectoryGoalTopic: '/left_arm/haptic_mpc/joint_trajectory',
                                               plannerServiceName:'/moveit_plan/left_arm'});
 
-//    self.undoTopic = options.undoTopic || '/undo';
     var $undoButton = $('#'+options.buttonDiv).button();
     // Set up states registry
     var eventQueue = [];
@@ -76,10 +75,11 @@ RFH.Undo = function (options) {
             stopPreview(eventQueue[eventQueue.length-1]);
         }
     }
-
     $undoButton.hover(undoHoverStartCB, undoHoverStopCB).hide();
 
- /*   ros.getMsgDetails('std_msgs/Int32');
+/*
+    self.undoTopic = options.undoTopic || '/undo';
+   ros.getMsgDetails('std_msgs/Int32');
     var undoPub =  new ROSLIB.Topic({
         ros: ros,
         name: self.undoTopic,
@@ -106,9 +106,9 @@ RFH.Undo = function (options) {
     $undoButton.on('click.rfh', undoButtonCB); 
 
     /*/////////////  START TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
-
     previewFunctions['task'] = {
         start: function (undoEntry) {
+            // TODO: Display undo by highlighting target state in smach display
             $('#smach-container').css('background-color','orange');
         },
         stop: function(undoEntry) {
@@ -130,7 +130,7 @@ RFH.Undo = function (options) {
         for (lastStepIdx; lastStepIdx>=0; lastStepIdx-=1) {
             if (eventQueue[lastStepIdx].type === 'task') {
                 if (eventQueue[lastStepIdx].command.problem === step.problem) {
-                   break;
+                    break;
                 }
             }
         }

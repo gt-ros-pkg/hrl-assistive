@@ -16,31 +16,25 @@
   (known ?l - location)
   (grasping ?g - gripper ?o - item)
   (placed ?o - item)
-  (tried-auto-place)
+  (auto-place-done)
  )
 
  (:action auto-place
   :parameters (?g - gripper ?o - item ?l - location)
   :precondition (and (known ?l)
-                     (not (tried-auto-place))
+                     (not (auto-place-done))
                      (grasping ?g ?o)
                 )
-  :effect (and (not(grasping ?g ?o))
-                (tried-auto-place)
-                (placed ?o)
-           )
+  :effect (and (not(grasping ?g ?o)))
  )
 
  (:action manual-place
   :parameters (?g - gripper ?o - item ?l - location)
   :precondition (and (known ?l)
-                     (tried-auto-place)
+                     (auto-place-done)
                      (grasping ?g ?o)
                  )
-  :effect (and  (not (grasping ?g ?o))
-                (tried-auto-place)
-                (placed ?o)
-          )
+  :effect (and  (not (grasping ?g ?o)))
  )
 
  (:action id-location

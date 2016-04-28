@@ -107,9 +107,6 @@ RFH.Domains.Pick = function (options) {
                 name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
             });
             param.delete();
-//            if (RFH.regions[param.name] !== undefined) {
-//                RFH.regions[param.name].remove();
-//            }
         }
     };
 
@@ -122,7 +119,8 @@ RFH.Domains.Pick = function (options) {
         goalParam.set(goal_pred_list);
     };
 
-    self.sendTaskGoal = function (side) {
+    self.sendTaskGoal = function (side, goal) {
+        goal = goal || [];  // Empty goal will use default for task
         var hand = side.toUpperCase()+'_HAND';
         var otherHand = hand === 'LEFT_HAND' ? 'RIGHT_HAND' : 'LEFT_HAND'
         var object = hand + '_OBJECT';
@@ -132,7 +130,7 @@ RFH.Domains.Pick = function (options) {
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick' + '-' + new Date().getTime().toString();
         msg.domain = 'pick';
-        msg.goal = [];  // Empty goal will use default for task
+        msg.goal = goal;
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
 
