@@ -54,7 +54,7 @@
   :effect (not (known ?o))
   )
 
- (:reset-auto-tried
+ (:action reset-auto-tried
   :precondition (auto-grasp-done)
   :effect (not(auto-grasp-done))
  )
