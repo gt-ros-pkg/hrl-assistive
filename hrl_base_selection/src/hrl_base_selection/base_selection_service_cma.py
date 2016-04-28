@@ -17,6 +17,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
+from sklearn.neighbors import KNeighborsClassifier
 
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
@@ -412,36 +413,44 @@ class BaseSelector(object):
 
         # Slightly more complicated for autobed because the person can move around on the bed.
         elif model == 'autobed':
+            
             self.model_B_pr2 = self.pr2_B_model.I
             # self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
             self.origin_B_pr2 = copy.copy(self.model_B_pr2)
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
+            # Use the heady of the nearest neighbor from the data.
+            head_possibilities = (np.arange(21)-10)*.01
+            neigh = KNeighborsClassifier(n_neighbors=1)
+            neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
+            heady = neigh.predict([model_B_head[1, 3])
+            headx = 0.
+
             ## This next bit selects what entry in the dictionary of scores to use based on the location of the head
             # with respect to the bed model. Currently it just selects the dictionary entry with the closest relative
             # head location. Ultimately it should use a gaussian to get scores from the dictionary based on the actual
             # head location.
-            if model_B_head[0, 3] > -.025 and model_B_head[0, 3] < .025:
-                headx = 0.
-            elif model_B_head[0, 3] >= .025 and model_B_head[0, 3] < .75:
-                headx = 0.
-            elif model_B_head[0, 3] <= -.025 and model_B_head[0, 3] > -.75:
-                headx = 0.
-            elif model_B_head[0, 3] >= .075:
-                headx = 0.
-            elif model_B_head[0, 3] <= -.075:
-                headx = 0.
+            #if model_B_head[0, 3] > -.025 and model_B_head[0, 3] < .025:
+            #    headx = 0.
+            #elif model_B_head[0, 3] >= .025 and model_B_head[0, 3] < .75:
+            #    headx = 0.
+            #elif model_B_head[0, 3] <= -.025 and model_B_head[0, 3] > -.75:
+            #    headx = 0.
+            #elif model_B_head[0, 3] >= .075:
+            #    headx = 0.
+            #elif model_B_head[0, 3] <= -.075:
+            #    headx = 0.
 
-            if model_B_head[1, 3] > -.025 and model_B_head[1, 3] < .025:
-                heady = 0
-            elif model_B_head[1, 3] >= .025 and model_B_head[1, 3] < .075:
-                heady = .05
-            elif model_B_head[1, 3] > -.075 and model_B_head[1, 3] <= -.025:
-                heady = -.05
-            elif model_B_head[1, 3] >= .075:
-                heady = .1
-            elif model_B_head[1, 3] <= -.075:
-                heady = -.1
+            #if model_B_head[1, 3] > -.025 and model_B_head[1, 3] < .025:
+            #    heady = 0
+            #elif model_B_head[1, 3] >= .025 and model_B_head[1, 3] < .075:
+            #    heady = .05
+            #elif model_B_head[1, 3] > -.075 and model_B_head[1, 3] <= -.025:
+            #    heady = -.05
+            #elif model_B_head[1, 3] >= .075:
+            #    heady = .1
+            #elif model_B_head[1, 3] <= -.075:
+            #    heady = -.1
 
         # subject_location is the transform from the robot to the origin of the model that was used in creating the
         # databases for base selection
@@ -460,7 +469,8 @@ class BaseSelector(object):
                 return None, None
         else:
             all_scores = self.scores_dict[model, task]
-        scores = all_scores[headx, heady]
+        #scores = all_scores[headx, heady]
+        scores = all_scores[heady, 0., 0.]
 
         ## Set the weights for the different scores.
         alpha = 0.0001  # Weight on base's closeness to goal
