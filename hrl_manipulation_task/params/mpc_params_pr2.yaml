@@ -50,5 +50,12 @@ haptic_mpc:
     #orientation_scale_gradient: 1.0 # multiplier. 
     #timeout: 100.0 #seconds
   
+    # Waypoint Generator Params
+    waypoint_step_dist: 5.0  # Max Cartesian waypoint step size in meters. default=0.1 meters
+    waypoint_dist_thresh: 0.02  # Distance threshold at which a waypoint has been 'reached.' default=0.03 meters
+    waypoint_step_angle: 361.0  # Max angular waypoint step size in degrees. default=15.0 degrees
+    waypoint_angle_thresh: 5.0  # Angular threshold at which at waypoint has been 'reached.' default=3.0 degrees
+    waypoint_step_posture: 5.0  # Max Angular steps size for posture waypoints in degrees. default=5.0 degrees
+    waypoint_posture_thresh: 10.0  # Angular threshold at which a posture waypoint has been 'reached.' default=10.0 degrees
 
 

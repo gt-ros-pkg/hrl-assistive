@@ -49,10 +49,14 @@ if __name__ == '__main__':
 
     
     if True:
-        ## print armReachActionRight("initScooping")
-        ## print armReachActionLeft("getBowlPos")
-        ## print armReachActionLeft('lookAtBowl')
-        print armReachActionLeft("testingMotion")
+        print armReachActionRight("initScooping1")
+        print armReachActionLeft("initScooping1")
+        print armReachActionLeft("getBowlPos")
+        print armReachActionLeft('lookAtBowl')
+        print armReachActionRight("initScooping2")
+        print armReachActionLeft("initScooping2")
+        print armReachActionLeft("runScooping")
+        ## print armReachActionLeft("testingMotion")
         sys.exit()
     
     

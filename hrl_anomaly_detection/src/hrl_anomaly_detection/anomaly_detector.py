@@ -135,10 +135,12 @@ class anomaly_detector:
     '''
     def initComms(self):
         # Publisher
-        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String)
-        self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String)
+        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String,
+                                                       queue_size=QUEUE_SIZE)
+        self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String,
+                                                       queue_size=QUEUE_SIZE)
         self.sensitivity_pub         = rospy.Publisher("/manipulation_task/ad_sensitivity_state", \
-                                                       Float64, latch=True)
+                                                       Float64, queue_size=QUEUE_SIZE, latch=True)
 
         # Subscriber
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)

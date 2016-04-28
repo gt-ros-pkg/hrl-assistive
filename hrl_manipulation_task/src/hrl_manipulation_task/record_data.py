@@ -55,9 +55,9 @@ from sensor.kinect_vision import kinect_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
-
 ##GUI
 from std_msgs.msg import String
+QUEUE_SIZE = 10
 
 class logger:
     def __init__(self, ft=False, audio=False, audio_wrist=False, kinematics=False, vision_artag=False, \
@@ -111,10 +111,12 @@ class logger:
         '''        
         ##GUI implementation       
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
-        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String)
+        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String,
+                                                 queue_size=QUEUE_SIZE)
         
         if self.data_pub:
-            self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality)
+            self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
+                                                 queue_size=QUEUE_SIZE)
         if self.ad_flag:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
