@@ -11,10 +11,11 @@ from hrl_lib import quaternion as qt
 import hrl_lib.util as ut
 import hrl_lib.circular_buffer as cb
 
-from ar_track_alvar.msg import AlvarMarkers
+from ar_track_alvar_msgs.msg import AlvarMarkers
 import geometry_msgs
 from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
+QUEUE_SIZE = 10
 
 class arTagDetector:
 
@@ -48,7 +49,8 @@ class arTagDetector:
     def initComms(self):
         self.pose_pub = []
         for i in xrange(self.nTags):
-            self.pose_pub.append( rospy.Publisher("ar_track_alvar/pose_"+str(i), PoseStamped, latch=True) )
+            self.pose_pub.append( rospy.Publisher("ar_track_alvar/pose_"+str(i), PoseStamped, \
+                                                  queue_size=QUEUE_SIZE, latch=True) )
 
         rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 

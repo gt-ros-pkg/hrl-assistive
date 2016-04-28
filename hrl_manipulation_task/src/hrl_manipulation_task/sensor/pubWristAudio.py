@@ -44,6 +44,8 @@ import struct
 import array
 from features import mfcc
 
+QUEUE_SIZE = 10
+
 class wrist_audio_collector:
     FRAME_SIZE = 4096 # frame per buffer
     RATE       = 44100 # sampling rate
@@ -77,7 +79,8 @@ class wrist_audio_collector:
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.FRAME_SIZE, input_device_index=deviceIndex)
         ## self.stream.start_stream()
 
-        self.audio_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio", audio, latch=True)
+        self.audio_pub  = rospy.Publisher("hrl_manipulation_task/wrist_audio", audio, \
+                                          queue_size=QUEUE_SIZE, latch=True)
     
     def find_input_device(self):
         device_index = None
