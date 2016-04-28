@@ -14,13 +14,13 @@
   (known ?o - item)
   (grasping ?g - gripper ?o - item)
   (can-grasp ?g - gripper)
-  (auto-grasp-failed)
+  (auto-grasp-done)
  )
 
  (:action auto-grasp
   :parameters (?g - gripper ?o - item)
   :precondition (and (known ?o)
-                     (not (auto-grasp-failed))
+                     (not (auto-grasp-done))
                      (can-grasp ?g)
                      (forall (?obj - item) (not (grasping ?g ?obj)))
                      (forall (?gr - gripper) (not (grasping ?gr ?o)))
@@ -33,7 +33,7 @@
  (:action manual-grasp
     :parameters (?g - gripper ?o - item)
     :precondition (and (known ?o)
-                       (auto-grasp-failed)
+                       (auto-grasp-done)
                        (can-grasp ?g)
                        (forall (?obj - item) (not (grasping ?g ?obj)))
                        (forall (?gr - gripper) (not (grasping ?gr ?o)))
@@ -53,4 +53,9 @@
   :precondition (and (known ?o))
   :effect (not (known ?o))
   )
+
+ (:reset-auto-tried
+  :precondition (auto-grasp-done)
+  :effect (not(auto-grasp-done))
+ )
 )

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 from copy import deepcopy
+import numpy as np
 
 import rospy
 import actionlib
 from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import Bool
 import tf
+from tf import transformations as tft
 
 
 class HapticMpcArmWrapper(object):
@@ -33,18 +35,44 @@ class HapticMpcArmWrapper(object):
             rospy.logerr('[%s]: TF Exception: %s', rospy.get_name(), e)
         self.pose_state = self.tfl.transformPose(new_frame, msg)
 
-    def move_arm(self, ps_msg, wait=False, timeout=0):
-        ps_msg.header.stamp = rospy.Time.now()
-        self.goal_pub.publish(ps_msg)
+    def get_error(self, ps_goal):
+        ps_now = deepcopy(self.pose_state)
+        # Calculate cartesian error distance
+        pos_now = np.array([ps_now.pose.position.x, ps_now.pose.position.y, ps_now.pose.position.z])
+        pos_goal = np.array([ps_goal.pose.position.x, ps_goal.pose.position.y, ps_goal.pose.position.z])
+        cart_err = np.linalg.norm(pos_goal - pos_now)
+        # Calculate orientation error angle
+        q_now = [ps_now.pose.orientation.x, ps_now.pose.orientation.y, ps_now.pose.orientation.z, ps_now.pose.orientation.w]
+        q_goal = [ps_goal.pose.orientation.x, ps_goal.pose.orientation.y, ps_goal.pose.orientation.z, ps_goal.pose.orientation.w]
+        ang = np.arccos(np.dot(q_now, q_goal))
+        ang_err = ang if ang <= np.pi/2 else np.pi - ang  # handle equivalent quaternions
+        return (cart_err, ang_err)
+
+    def move_arm(self, ps_goal, wait=False, progress_error_ratio=0.99, progress_check_time=5, cart_threshold=None, ort_threshold=None):
+        ps_goal.header.stamp = rospy.Time.now()
+        self.goal_pub.publish(ps_goal)
         if not wait:
             return True
-        endtime = rospy.Time.now() + rospy.Duration(timeout)
-        rospy.sleep(1.0)  # make sure the msg has time to arrive...
+        rospy.sleep(0.7)  # make sure the msg has time to arrive...
+        check_delay = rospy.Duration(progress_check_time)
+        last_cart_err, last_ort_err = self.get_error(ps_goal)
+        next_check_time = rospy.Time.now() + check_delay
         while not self.in_deadzone and not rospy.is_shutdown():
-            if rospy.Time.now() > endtime:
-                return False
+            if rospy.Time.now() > next_check_time:
+                cart_err, ort_err = self.get_error(ps_goal)
+                print cart_err, ort_err
+                if cart_threshold is not None and cart_err < cart_threshold:
+                    if ort_threshold is None:
+                        return True
+                    elif ort_err < ort_threshold:
+                        return True
+                if cart_err <= progress_error_ratio*last_cart_err or ort_err <= progress_error_ratio*last_cart_err:
+                    last_cart_err, last_ort_err = cart_err, ort_err
+                    next_check_time = rospy.Time.now() + rospy.Duration(3)  # Progressing, set next check time
+                else:
+                    return False  # Not progressing
             rospy.sleep(0.1)
-        return True
+        return self.in_deadzone  # Return current state (if succeeded or node killed)
 
 
 from pr2_controllers_msgs.msg import Pr2GripperCommandAction, Pr2GripperCommandGoal, Pr2GripperCommand
@@ -74,7 +102,7 @@ class GripperGraspControllerWrapper(object):
         goal = PR2GripperGrabGoal(cmd)
         self.grab_client.send_goal(goal)
         if wait:
-            self.contact_release_client.wait_for_result()
+            self.grab_client.wait_for_result()
 
     def release_on_contact(self, wait=False):
         cmd = PR2GripperReleaseCommand()
@@ -101,39 +129,40 @@ class OverheadGrasp(object):
         rospy.loginfo("[%s] %s Overhead Grasp Action Started", rospy.get_name(), self.side.capitalize())
 
     def execute(self, goal):
-        print "received goal"
+        print "Received goal"
         self.action_server.publish_feedback(OverheadGraspFeedback("Processing Goal Pose"))
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
-        print "moving arm to setup"
+        print "Moving arm to setup"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Setup Position"))
-        reached = self.arm.move_arm(setup_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(setup_pose, wait=True, cart_threshold=0.05)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
             print "Failed to reach setup"
             return
-        print "moving arm to overhead"
+        print "Moving arm to overhead"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to Overhead Position"))
-        reached = self.arm.move_arm(overhead_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(overhead_pose, wait=True, cart_threshold=0.04, ort_threshold=np.radians(10))
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
             print "Failed to reach overhead"
             return
-        print "opening gripper"
+        print "Opening gripper"
         self.action_server.publish_feedback(OverheadGraspFeedback("Opening Gripper"))
         self.gripper.open_gripper()
         rospy.sleep(2.0)
-        print "moving arm to goal"
+        print "Moving arm to goal"
         self.action_server.publish_feedback(OverheadGraspFeedback("Moving to goal"))
-        reached = self.arm.move_arm(goal_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(goal_pose, wait=True)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Goal'))
             print "Failed to reach goal"
             return
-        print "closing gripper"
+        print "Closing Gripper"
         self.action_server.publish_feedback(OverheadGraspFeedback("Closing Gripper"))
         self.gripper.grasp(wait=True)
         self.action_server.publish_feedback(OverheadGraspFeedback("finished"))
         self.action_server.set_succeeded(OverheadGraspResult('finished'))
+        print "Finished"
 
     def process_path(self, goal_pose):
         while self.arm.pose_state is None and not rospy.is_shutdown():
@@ -172,13 +201,13 @@ class OverheadPlace(object):
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
         print "moving arm to setup"
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Setup Position"))
-        reached = self.arm.move_arm(setup_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(setup_pose, wait=True)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
             print "Failed to reach setup"
             return
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Overhead Position"))
-        reached = self.arm.move_arm(overhead_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(overhead_pose, wait=True)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
             print "Failed to reach overhead"
@@ -186,7 +215,7 @@ class OverheadPlace(object):
         self.gripper.release_on_contact()
         print "moving arm to goal"
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to goal"))
-        reached = self.arm.move_arm(goal_pose, wait=True, timeout=10)
+        reached = self.arm.move_arm(goal_pose, wait=True)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Goal'))
             print "Failed to reach goal"

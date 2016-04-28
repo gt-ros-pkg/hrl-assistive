@@ -1,6 +1,6 @@
 import rospy
 import actionlib
-from actionlib_msgs.msg import GoalStatus as GS
+# from actionlib_msgs.msg import GoalStatus as GS
 from geometry_msgs.msg import PoseStamped
 import tf
 from hrl_task_planning.msg import PDDLState
@@ -72,15 +72,13 @@ class OverheadGraspState(PDDLSmachState):
         goal_msg.goal_pose = goal_pose
         self.overhead_grasp_client.send_goal(goal_msg)
         self.overhead_grasp_client.wait_for_result()
-        state = self.overhead_grasp_client.get_state()
-        print "State: ", state
         rospy.loginfo("Overhead Grasp Completed")
-        if state != GS.SUCCEEDED:
-            state_update = PDDLState()
-            state_update.domain = self.domain
-            state_update.problem = self.problem
-            state_update.predicates = ['(AUTO-GRASP-FAILED)']
-            self.state_update_pub.publish(state_update)
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.problem = self.problem
+        state_update.predicates = ['(AUTO-GRASP-DONE)']
+        print "Publishing (AUTO-GRASP-DONE) update"
+        self.state_update_pub.publish(state_update)
 
 
 def _pose_stamped_to_dict(ps_msg):
