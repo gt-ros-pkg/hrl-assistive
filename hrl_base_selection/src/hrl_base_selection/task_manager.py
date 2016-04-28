@@ -21,6 +21,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from hrl_srvs.srv import String_String
+import time
 # from autobed_occupied_client import autobed_occupied_status_client
 # from tf_goal import TF_Goal
 # from navigation_feedback import *
@@ -269,7 +270,10 @@ class BaseSelectionManager(object):
 
         base_goals = []
         configuration_goals = []
+
+        start_time = rospy.Time.now()
         goal_array, config_array = self.call_base_selection()
+        print 'Time to get results back from base_selection: ', (rospy.Time.now() - start_time).to_sec()
         for item in goal_array:
             base_goals.append(item)
         for item in config_array:
@@ -312,12 +316,12 @@ class BaseSelectionManager(object):
             # Hack to have PR2 avoid the poles and things under the autobed that are not included in its collision
             # model.
             if configuration_goals[1] > 1.:
-                configuration_goals[1] += 14
+                configuration_goals[1] += 15
                 configuration_goals[0] += 0.14
             elif configuration_goals[1] < 1.:
                 configuration_goals[1] += 2
                 configuration_goals[0] += 0.02
-            autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9+14, self.bed_state_leg_theta]
+            autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
             print 'The autobed should be set to a height of: ', configuration_goals[1]+7
             print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
