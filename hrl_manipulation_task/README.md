@@ -81,8 +81,19 @@ Installation:
 1) python_speech_features: https://github.com/jameslyons/python_speech_features     
 2) sudo apt-get install ros-indigo-sound-play ros-indigo-ar-track-alvar ros-indigo-ar-track-alvar-msgs
 
-...
-GUI installation
 
-Installation sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
+GUI installation
+----------------------------
+    1) Installation sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
+    2) Install jqueryui
+        roscd assistive_teleop
+        mkdir jqueryui
+        cd jqueryui
+        wget https://jqueryui.com/resources/download/jquery-ui-1.11.4.zip
+        wget http://jqueryui.com/resources/download/jquery-ui-themes-1.11.4.zip
+        unzip jquery-ui-1.11.4.zip
+        unzip jquery-ui-themes-1.11.4.zip
+        cd www && ln -s ../jqueryui jqueryui
+        cd ../vci_www &&  ln -s ../jqueryui jqueryui
+
 
