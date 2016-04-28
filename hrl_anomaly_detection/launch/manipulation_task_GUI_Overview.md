@@ -36,6 +36,6 @@ After the change in Kinect2Overlay.cpp, modify file [assistive_teleop/www/js/vid
  features to match the new overlay. (topic name, width, height,etc)
 
 Installation
-sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server
+sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
 
 
