@@ -81,3 +81,8 @@ Installation:
 1) python_speech_features: https://github.com/jameslyons/python_speech_features     
 2) sudo apt-get install ros-indigo-sound-play ros-indigo-ar-track-alvar ros-indigo-ar-track-alvar-msgs
 
+...
+GUI installation
+
+Installation sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
+
