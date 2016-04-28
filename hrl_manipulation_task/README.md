@@ -76,4 +76,8 @@ Launch arm feeding server (**new** terminal window, ssh'd into **robot**):
     2) Both arms: roslaunch hrl_multimodal_anomaly_detection arm_reacher_all.launch
     
         
+Installation:
+----------------------------
+1) python_speech_features: https://github.com/jameslyons/python_speech_features     
+2) sudo apt-get install ros-indigo-sound-play
 
