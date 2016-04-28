@@ -79,5 +79,5 @@ Launch arm feeding server (**new** terminal window, ssh'd into **robot**):
 Installation:
 ----------------------------
 1) python_speech_features: https://github.com/jameslyons/python_speech_features     
-2) sudo apt-get install ros-indigo-sound-play
+2) sudo apt-get install ros-indigo-sound-play ros-indigo-ar-track-alvar ros-indigo-ar-track-alvar-msgs
 
