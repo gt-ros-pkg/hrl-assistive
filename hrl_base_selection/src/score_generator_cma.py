@@ -191,7 +191,6 @@ class ScoreGenerator(object):
                 self.origin_B_grasps.append(np.array(np.matrix(self.goal_list[0])*self.goal_B_gripper))
                 self.weights.append(self.selection_mat[0])
 
-
     def choose_task(self, task):
         if task == 'all_goals':
             self.selection_mat = np.ones(len(self.goal_list))
@@ -216,10 +215,19 @@ class ScoreGenerator(object):
         headx_max = 0.0+.01
         headx_int = 0.05
         heady_min = -0.1
-        heady_min = 0.
+        heady_min = -0.1
         heady_max = 0.1+.01
-        heady_int = 0.05
-        heady_int = 1.05
+        heady_int = 0.1
+        # heady_int = 1.05
+        # start_x_min = -1.0
+        start_x_min = 0.0
+        start_x_max = 3.0+.01
+        start_x_int = 10.
+        # start_y_min = -2.0
+        start_y_min = 0.0
+        start_y_max = 2.0+.01
+        start_y_int = 10.
+        head_y_range = (np.arange(3)-1)*.1
         if self.model == 'chair':
             bedz_min = 0.
             bedtheta_min = 0.
@@ -235,12 +243,12 @@ class ScoreGenerator(object):
 
         maxiter = 50
         # popsize = 1000
-        popsize = m.pow(6, 2)*7
-        opts1 = {'seed': 1234, 'ftarget': 4., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e5,
+        popsize = m.pow(12, 1)*7
+        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e5, 'CMA_cmean': 0.5,
                  'scaling_of_variables': [0.5, 0.5, 1.57, 0.075, 0.05, 0.3],
                  'bounds': [[-3., -3., -2.*m.pi, 0., 0., 0.], [3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180.]]}
-
         optimization_results = dict()
+        '''
         optimization_results[1, self.heady, self.distance] = [t for t in ((cma.fmin(self.objective_function_one_config,
                                                                                     [0., 0., 0., 0.15, 0.1, 35*m.pi/180],
                                                                                     1.,
@@ -251,28 +259,38 @@ class ScoreGenerator(object):
                                                               ]
         print optimization_results[1, self.heady, self.distance][0][0]
         print optimization_results[1, self.heady, self.distance][0][1]
+        '''
         # cma.plot()
         # cma.show()
         # rospy.sleep(10)
-        popsize = m.pow(12, 2)*7
-        opts2 = {'seed': 1234, 'ftarget': 4., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
-                'scaling_of_variables': [1.2, 1.2, 1.57, 0.075, 0.05, 0.3, 1.2, 1.2, 1.57, 0.075, 0.05, 0.3],
-                'bounds': [[-3., -3., -2.*m.pi, 0., 0., 0., -3., -3., -2.*m.pi, 0., 0., 0.],
-                           [3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180., 3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180.]]}
-        optimization_results[2, self.heady, self.distance] = [t for t in ((cma.fmin(self.objective_function_two_configs,
-                                                                                    # [0.5, 0.5, -0.5, 0.15, 0.1, 35*m.pi/180, 0.5, -0.5, 0.5, 0.15, 0.1, 35*m.pi/180],
-                                                                                    [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                    1.,
-                                                                                    options=opts2))
-                                                                          # for self.distance in np.arange(headx_min, headx_max, headx_int)
-                                                                          for self.heady in np.arange(heady_min, heady_max, heady_int)
-                                                                          )
-                                                              ]
-        print optimization_results[2, self.heady, self.distance][0][0]
-        print optimization_results[2, self.heady, self.distance][0][1]
+        popsize = m.pow(12, 1)*30
+        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
+                 'scaling_of_variables': [1.0, 1.0, 1.57, 0.075, 0.05, 0.3, 1.0, 1.0, 1.57, 0.075, 0.05, 0.3],
+                 'bounds': [[-3., -3., -2.*m.pi, 0., 0., 0., -3., -3., -2.*m.pi, 0., 0., 0.],
+                            [3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180., 3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180.]]}
+        for self.heady in head_y_range:
+            for self.start_x in np.arange(start_x_min, start_x_max, start_x_int):
+                for self.start_y in np.arange(start_y_min, start_y_max, start_y_int):
+                    # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_configs,
+                    optimization_results[2, self.heady, self.start_x, self.start_y] = cma.fmin(self.objective_function_two_configs,
+                                                                                                             [0.5, 0.75, 0., 0.15, 0.1, 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                                             # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                                             1.,
+                                                                                                             options=opts2)
+                                                                                                   # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
+                                                                                                   # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
+                                                                                                   # for self.heady in np.arange(heady_min, heady_max, heady_int)
+
+
+        print optimization_results[2, self.heady, self.start_x, self.start_y][0]
+        print optimization_results[2, self.heady, self.start_x, self.start_y][1]
         score_stuff = dict()
-        for self.heady in np.arange(heady_min, heady_max, heady_int):
-            score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
+
+        for self.heady in head_y_range:
+            for self.start_x in np.arange(start_x_min, start_x_max, start_x_int):
+                for self.start_y in np.arange(start_y_min, start_y_max, start_y_int):
+                    # score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
+                    score_stuff[self.heady, self.start_x, self.start_y] = self.check_which_num_base_is_better(optimization_results[2, self.heady, self.start_x, self.start_y])
 
 
         # score_stuff = []  # np.zeros([len(optimization_results), 9])
@@ -282,7 +300,9 @@ class ScoreGenerator(object):
         print 'SCORE RESULTS:'
         for item in score_stuff:
             print '(Head Y position, distance):', item
-            print '[x, y, th, z, bz, bth]'
+            print '[[x], [y], [th], [z], [bz], [bth]]'
+            print 'Or, if there are two configurations:'
+            print '[[x1, x2], [y1, y2], [th1, th2], [z1, z2], [bz1, bz2], [bth1, bth2]]'
             print score_stuff[item]
 
         print 'Time to generate all scores for individual base locations: %fs' % (time.time()-start_time)
@@ -290,6 +310,32 @@ class ScoreGenerator(object):
         start_time = time.time()
 
         return score_stuff
+
+    def check_which_num_base_is_better(self, results):
+        result_bases = results[0]
+        score = results[1]
+        base1 = np.reshape(result_bases[0:6], [6, 1])
+        base2 = np.reshape(result_bases[6:12], [6, 1])
+        double_base = np.hstack([base1, base2])
+        bases = []
+        bases.append(base1)
+        bases.append(base2)
+        bases.append(double_base)
+        # scores = []
+        # for base in bases:
+        # self.visualize = True
+        scores = self.score_two_configs(double_base)
+        print 'Scores are: ', scores
+        ind = scores.argmax()
+        if ind == 2:
+            print 'Two bases was better'
+        else:
+            print 'One base was better. It was base (0 or 1) from the two base config solution:', ind
+        output = [bases[ind], scores[ind]]
+        if scores[ind] < 0.95*score:
+            print 'Somehow the best score when comparing the single and double base configurations was less than the' \
+                  'score given earlier, even given the discount on two configs'
+        return output
 
     def compare_results_one_vs_two_configs(self, results1, results2):
         if (10. - results1[0][1]) >= (10. - results2[0][1])*0.95 and (10. - results1[0][1]) > 0.:
@@ -521,7 +567,7 @@ class ScoreGenerator(object):
 
 
         # Set the weights for the different scores.
-        beta = 5.  # Weight on number of reachable goals
+        beta = 10.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = .0007  # Weight on distance to move to get to that goal location
         if reach_score == 0.:
@@ -539,22 +585,30 @@ class ScoreGenerator(object):
         bz = [current_parameters[4], current_parameters[10]]
         bth = [current_parameters[5], current_parameters[11]]
 
-        planar_difference = np.linalg.norm([x[0]-x[1], y[0]-y[1]])
-        if planar_difference < 0.2:
-            return 10 + 10*(0.2 - planar_difference)
+        # planar_difference = np.linalg.norm([x[0]-x[1], y[0]-y[1]])
+        # if planar_difference < 0.2:
+        #     return 10 + 10*(0.2 - planar_difference)
+
+        # Cost on distanced moved.
+        # travel = [np.linalg.norm([self.start_x - x[0], self.start_y - y[0]]),
+        #           np.linalg.norm([self.start_x - x[1], self.start_y - y[1]])]
+        # travel.append(travel[0]+travel[1])
 
         distance = 10000000.
         out_of_reach = False
 
-        reach_score = 0.
-        manip_score = 0.
+        reach_score = np.array([0., 0., 0.])
+        manip_score = np.array([0., 0., 0.])
+        reached = np.zeros([len(self.goals), 3])
+        manip = np.zeros([len(self.goals), 3])
 
-        better_config = np.array([-1]*len(self.goals))
+        # better_config = np.array([-1]*len(self.goals))
+        best = None
 
         for num in xrange(len(self.goals)):
             fully_collided = 0
-            manip = [0., 0.]
-            reached = [0., 0.]
+            # manip = [0., 0., 0.]
+            # reached = [0., 0., 0.]
             distance = [100000., 100000.]
             for config_num in xrange(len(x)):
                 origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]],
@@ -648,9 +702,7 @@ class ScoreGenerator(object):
                 pr2_B_goal = origin_B_pr2.I*origin_B_grasp
                 this_distance = np.linalg.norm(pr2_B_goal[:2, 3])
                 distance[config_num] = np.min([this_distance, distance[config_num]])
-                if this_distance >= 1.25:
-                    unused_dist = distance
-                else:
+                if this_distance < 1.25:
                     with self.robot:
                         v = self.robot.GetActiveDOFValues()
                         v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
@@ -688,7 +740,7 @@ class ScoreGenerator(object):
                                 # print 'sol is:', sol
                                 # print 'sols are: \n', sols
                                 #print 'I was able to find a grasp to this goal'
-                                reached[config_num] = 1.
+                                reached[num, config_num] = 1
                                 for solution in sols:
                                     self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
                                     # Tee = self.manip.GetEndEffectorTransform()
@@ -698,29 +750,43 @@ class ScoreGenerator(object):
                                     J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
                                     try:
                                         joint_limit_weight = self.gen_joint_limit_weight(solution)
-                                        manip[config_num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[config_num]])
+                                        manip[num, config_num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num, config_num]])
                                     except ValueError:
                                         print 'WARNING!!'
                                         print 'Jacobian may be singular or close to singular'
                                         print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
-                                        manip[config_num] = np.max([0., manip[config_num]])
+                                        manip[num, config_num] = np.max([0., manip[num, config_num]])
                         else:
                             # print 'Too close, robot base in collision with bed'
                             # print 10 + 1.25 - distance
+                            fully_collided += 1
                             if this_distance > 3:
                                 print 'This shouldnt be possible. Distance is: ', this_distance
-                            if this_distance < 0.5:
-                                return 10 + 2. - this_distance
-                            else:
-                                return 10 + 2*random.random()
+                            # if this_distance < 0.5:
+                            #     return 10 + 2. - this_distance
+                            # else:
+                            #     return 10 + 2*random.random()
+            if fully_collided == 2 and np.min(distance) < 2.:
+                return 10. + 1. + (1.25 - np.min(distance))
+            reached[num, 2] = np.max(reached[num])
+            manip[num, 2] = np.max(manip[num])
+        # if np.sum(reached[:, 2]) > np.sum(reached[num, 0]) + 0.00001 and np.sum(reached[:, 2]) > np.sum(reached[num, 1]) + 0.00001:
+        #     best = 2
+        # elif np.sum(reached[num, 0]) > np.sum(reached[num, 1]) + 0.00001:
+        #     best = 0
+        # elif np.sum(reached[num, 1]) > np.sum(reached[num, 0]) + 0.00001:
+        #     best = 1
+        # elif np.sum(manip[:, 2])*0.95 > np.sum(manip[num, 0]) + 0.00001 and np.sum(manip[:, 2])*0.95 > np.sum(manip[num, 1]) + 0.00001:
+        #     best = 2
+        # elif np.sum(manip[num, 0]) > np.sum(manip[num, 1]) + 0.00001:
+        #     best = 0
+        # else:  # if np.sum(manip[num, 1]) > np.sum(manip[num, 0]) + 0.00001:
+        #     best = 1
 
-
-            manip_score += np.max(reached)*np.max(manip)*self.weights[0]
-            reach_score += np.max(reached) * self.weights[0]
-            if manip[0] >= manip[1] and manip[0] > 0.:
-                better_config[num] = 0
-            elif manip[0] < manip[1] and manip[1] > 0:
-                better_config[num] = 1
+            # if manip[0] >= manip[1] and manip[0] > 0.:
+            #     better_config[num] = 0
+            # elif manip[0] < manip[1] and manip[1] > 0:
+            #     better_config[num] = 1
         # print 'Manip score: ', manip_score
         # print 'Reach score: ', reach_score
         # print 'Distance: ', distance
@@ -729,26 +795,305 @@ class ScoreGenerator(object):
         for dist in distance:
             if dist >= 1.25:
                 over_dist += 2*(dist - 1.25)
-        if over_dist > 0.01:
+        if over_dist > 0.001:
             return 10 + 1 + 10*over_dist
 
-        if reach_score == 0:
-            if np.min(distance) >= 0.8:
-                # output =
-                # print output
-                return 10 + 1 + 2*(np.min(distance) - 0.8)
-        if 0 not in better_config or 1 not in better_config:
-            return 10. + 2*random.random()
+        reach_score[0] = np.sum(reached[:, 0] * self.weights[0])
+        reach_score[1] = np.sum(reached[:, 1] * self.weights[0])
+        reach_score[2] = np.sum(reached[:, 2] * self.weights[0])
+
+        if np.max(reach_score) == 0:
+            return 10 + 2*random.random()
+
+        manip_score[0] = np.sum(reached[:, 0]*manip[:, 0]*self.weights[0])
+        manip_score[1] = np.sum(reached[:, 1]*manip[:, 1]*self.weights[0])
+        manip_score[2] = np.sum(reached[:, 2]*manip[:, 2]*self.weights[0])*0.95
+
+
+
+        # if reach_score == 0:
+        #     if np.min(distance) >= 0.8:
+        #         # output =
+        #         # print output
+        #         return 10 + 1 + 2*(np.min(distance) - 0.8)
+        # if 0 not in better_config or 1 not in better_config:
+        #     return 10. + 2*random.random()
         # else:
         ## Set the weights for the different scores.
-        beta = 5.  # Weight on number of reachable goals
+        beta = 10.  # Weight on number of reachable goals
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .0007  # Weight on distance to move to get to that goal location
+        zeta = .05  # Weight on distance to move to get to that goal location
         # thisScore =
         # print 'Reach score: ', reach_score
         # print 'Manip score: ', manip_score
         # print 'Calculated score: ', 10.-beta*reach_score-gamma*manip_score
-        return 10.-beta*reach_score-gamma*manip_score  # +zeta*self.distance
+        best = None
+
+
+        # Travel cost
+        # travel_score = np.array([0., 0., 0.])
+        # travel_score[0] = np.min([travel[0], 2.0])
+        # travel_score[1] = np.min([travel[1], 2.0])
+        # travel_score[2] = np.min([travel[2], 2.0])
+
+
+
+        # 1. - m.pow(1.0, np.abs(2.0 - travel[0]))
+        # print 'reach score', reach_score
+        # print 'manip score', manip_score
+        # print 'travel score', travel_score
+
+        outputs = 10. - beta*reach_score - gamma*manip_score #+ zeta*travel_score
+        # print 'outputs', outputs
+        best = np.argmin(outputs)
+        if np.min(outputs) < -1.0:
+            print 'reach score', reach_score
+            print 'manip score', manip_score
+            #print 'travel score', travel_score
+            print outputs
+        if outputs[best] < -1.0:
+            print 'reach score', reach_score
+            print 'manip score', manip_score
+            #print 'travel score', travel_score
+            print outputs
+        return outputs[best]
+        # return 10.-beta*reach_score-gamma*manip_score  # +zeta*self.distance
+
+    def score_two_configs(self, config):
+        if self.visualize:
+            self.env.SetViewer('qtcoin')
+            rospy.sleep(5)
+        x = config[0]
+        y = config[1]
+        th = config[2]
+        z = config[3]
+        bz = config[4]
+        bth = config[5]
+        reach_score = []
+        manip_score = []
+
+        # for num in xrange(len(x)+1):
+        #     reach_score.append(0.)
+        #     manip_score.append(0.)
+
+        # Cost on distance traveled
+        # travel = [np.linalg.norm([self.start_x - x[0], self.start_y - y[0]]),
+        #           np.linalg.norm([self.start_x - x[1], self.start_y - y[1]])]
+        # travel.append(travel[0]+travel[1])
+
+        reach_score = np.array([0., 0., 0.])
+        manip_score = np.array([0., 0., 0.])
+        reached = np.zeros([len(self.goals), 3])
+        manip = np.zeros([len(self.goals), 3])
+
+        for num in xrange(len(self.goals)):
+            # manip = [0., 0., 0.]
+            # reached = [0., 0., 0.]
+            for config_num in xrange(len(x)):
+                origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                self.robot.SetTransform(np.array(origin_B_pr2))
+                v = self.robot.GetActiveDOFValues()
+                v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z[config_num]
+                self.robot.SetActiveDOFValues(v)
+                self.env.UpdatePublishedBodies()
+
+                if self.model == 'chair':
+                    headmodel = self.wheelchair.GetLink('head_center')
+                    origin_B_head = np.matrix(headmodel.GetTransform())
+                    self.selection_mat = np.zeros(len(self.goals))
+                    self.goal_list = np.zeros([len(self.goals), 4, 4])
+                    for thing in xrange(len(self.reference_names)):
+                        if self.reference_names[thing] == 'head':
+                            self.origin_B_references[thing] = origin_B_head
+                        elif self.reference_names[thing] == 'base_link':
+                            self.origin_B_references[thing] = origin_B_pr2
+                            # self.origin_B_references[thing] = np.matrix(self.robot.GetTransform())
+
+                    thing = num
+                    self.goal_list[0] = copy.copy(self.origin_B_references[int(self.reference_mat[thing])]*np.matrix(self.goals[thing, 0]))
+                    self.selection_mat[0] = copy.copy(self.goals[thing, 1])
+
+                    self.set_goals()
+                    headmodel = self.wheelchair.GetLink('head_center')
+                elif self.model == 'autobed':
+                    self.selection_mat = np.zeros(1)
+                    self.goal_list = np.zeros([1, 4, 4])
+                    self.set_autobed(bz[config_num], bth[config_num], self.headx, self.heady)
+                    headmodel = self.autobed.GetLink('head_link')
+                    ual = self.autobed.GetLink('arm_left_link')
+                    uar = self.autobed.GetLink('arm_right_link')
+                    fal = self.autobed.GetLink('forearm_left_link')
+                    far = self.autobed.GetLink('forearm_right_link')
+                    thl = self.autobed.GetLink('quad_left_link')
+                    thr = self.autobed.GetLink('quad_right_link')
+                    calfl = self.autobed.GetLink('calf_left_link')
+                    calfr = self.autobed.GetLink('calf_right_link')
+                    ch = self.autobed.GetLink('upper_body_link')
+                    origin_B_head = np.matrix(headmodel.GetTransform())
+                    origin_B_ual = np.matrix(ual.GetTransform())
+                    origin_B_uar = np.matrix(uar.GetTransform())
+                    origin_B_fal = np.matrix(fal.GetTransform())
+                    origin_B_far = np.matrix(far.GetTransform())
+                    origin_B_thl = np.matrix(thl.GetTransform())
+                    origin_B_thr = np.matrix(thr.GetTransform())
+                    origin_B_calfl = np.matrix(calfl.GetTransform())
+                    origin_B_calfr = np.matrix(calfr.GetTransform())
+                    origin_B_ch = np.matrix(ch.GetTransform())
+                    self.origin_B_references = []
+                    # for thing in xrange(len(self.reference_names)):
+                    thing = int(self.goals[num, 2])
+                    if self.reference_names[thing] == 'head':
+                        self.origin_B_references.append(origin_B_head)
+                    elif self.reference_names[thing] == 'base_link':
+                        self.origin_B_references.append(origin_B_pr2)
+                    elif self.reference_names[thing] == 'upper_arm_left':
+                        self.origin_B_references.append(origin_B_ual)
+                    elif self.reference_names[thing] == 'upper_arm_right':
+                        self.origin_B_references.append(origin_B_uar)
+                    elif self.reference_names[thing] == 'forearm_left':
+                        self.origin_B_references.append(origin_B_fal)
+                    elif self.reference_names[thing] == 'forearm_right':
+                        self.origin_B_references.append(origin_B_far)
+                    elif self.reference_names[thing] == 'thigh_left':
+                        self.origin_B_references.append(origin_B_thl)
+                    elif self.reference_names[thing] == 'thigh_right':
+                        self.origin_B_references.append(origin_B_thr)
+                    elif self.reference_names[thing] == 'knee_left':
+                        self.origin_B_references.append(origin_B_calfl)
+                    elif self.reference_names[thing] == 'knee_right':
+                        self.origin_B_references.append(origin_B_calfr)
+                    elif self.reference_names[thing] == 'chest':
+                        self.origin_B_references.append(origin_B_ch)
+
+                    # for thing in xrange(len(self.goals)):
+                    # thing = num
+                    self.goal_list[0] = copy.copy(self.origin_B_references[0]*np.matrix(self.goals[num, 0]))
+                    self.selection_mat[0] = copy.copy(self.goals[num, 1])
+                    self.set_goals(single_goal=True)
+                else:
+                    print 'I GOT A BAD MODEL. NOT SURE WHAT TO DO NOW!'
+
+                # for origin_B_goal in self.origin_B_grasps:
+                # origin_B_grasp = self.origin_B_grasps[0]
+                # pr2_B_goal = origin_B_pr2.I*origin_B_grasp
+                # this_distance = np.linalg.norm(pr2_B_goal[:2, 3])
+                # distance[config_num] = np.min([this_distance, distance[config_num]])
+                if True:
+                    with self.robot:
+                        v = self.robot.GetActiveDOFValues()
+                        v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
+                        v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                        v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                        v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
+                        v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = 0.
+                        v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0.
+                        v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.
+                        self.robot.SetActiveDOFValues(v)
+                        if not self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            Tgrasp = self.origin_B_grasps[0]
+
+                            # print 'no collision!'
+                            # for num, Tgrasp in enumerate(self.origin_B_grasps):
+                                # sol = None
+                                # sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+
+                                #sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
+                            sols = []
+                            sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                            if sols == []:
+                                v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -0.023593
+                                v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
+                                v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()] = -1.5566882
+                                v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -2.124408
+                                v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = -1.4175
+                                v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = -1.8417
+                                v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.21436
+                                self.robot.SetActiveDOFValues(v)
+                                sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+
+                            if sols != []:  # not None:
+                                # print 'I got a solution!!'
+                                # print 'sol is:', sol
+                                # print 'sols are: \n', sols
+                                #print 'I was able to find a grasp to this goal'
+                                reached[num, config_num] = 1.
+                                for solution in sols:
+                                    self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
+                                    # Tee = self.manip.GetEndEffectorTransform()
+                                    self.env.UpdatePublishedBodies()
+
+
+                                    J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
+                                    try:
+                                        joint_limit_weight = self.gen_joint_limit_weight(solution)
+                                        manip[num, config_num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num, config_num]])
+                                    except ValueError:
+                                        print 'WARNING!!'
+                                        print 'Jacobian may be singular or close to singular'
+                                        print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
+                                        manip[num, config_num] = np.max([0., manip[num, config_num]])
+                                # rospy.sleep(5)
+                                # print np.degrees(solution)
+
+            manip[2] = np.max(manip)
+            reached[2] = np.max(reached)
+            # manip_score[0] += reached[0]*manip[0]*self.weights[0]
+            # manip_score[1] += reached[1]*manip[1]*self.weights[0]
+            # manip_score[2] += reached[2]*0.95*manip[2]*self.weights[0]
+            #
+            # # np.max(reached)*np.max([manip[0], manip[1], 0.95*manip[2]])*self.weights[0]
+            # reach_score[0] += reached[0] * self.weights[0]
+            # reach_score[1] += reached[1] * self.weights[0]
+            # reach_score[2] += reached[2] * self.weights[0]
+
+        reach_score[0] = np.sum(reached[:, 0] * self.weights[0])
+        reach_score[1] = np.sum(reached[:, 1] * self.weights[0])
+        reach_score[2] = np.sum(reached[:, 2] * self.weights[0])
+
+        manip_score[0] = np.sum(reached[:, 0]*manip[:, 0]*self.weights[0])
+        manip_score[1] = np.sum(reached[:, 1]*manip[:, 1]*self.weights[0])
+        manip_score[2] = np.sum(reached[:, 2]*manip[:, 2]*self.weights[0])*0.95
+
+        ## Set the weights for the different scores.
+        beta = 10.  # Weight on number of reachable goals
+        gamma = 1.  # Weight on manipulability of arm at each reachable goal
+        zeta = .05  # Weight on distance to move to get to that goal location
+        # thisScore =
+        # print 'Reach score: ', reach_score
+        # print 'Manip score: ', manip_score
+        # print 'Calculated score: ', 10.-beta*reach_score-gamma*manip_score
+        best = None
+
+        # Distance travel cost
+        # travel_score = np.array([0., 0., 0.])
+        # travel_score[0] = np.min([travel[0], 2.0])
+        # travel_score[1] = np.min([travel[1], 2.0])
+        # travel_score[2] = np.min([travel[2], 2.0])
+
+
+        # 1. - m.pow(1.0, np.abs(2.0 - travel[0]))
+
+        outputs = beta*reach_score + gamma*manip_score #- zeta*travel_score
+        # best = np.argmin(outputs)
+        return outputs
+
+        # print manip_score
+        # print reach_score
+        # ## Set the weights for the different scores.
+        # beta = 5.  # Weight on number of reachable goals
+        # gamma = 1.  # Weight on manipulability of arm at each reachable goal
+        # zeta = .0007  # Weight on distance to move to get to that goal location
+        # # thisScore =
+        # # print 'Reach score: ', reach_score
+        # # print 'Manip score: ', manip_score
+        # # print 'Calculated score: ', 10.-beta*reach_score-gamma*manip_score
+        # output = []
+        # for sco in xrange(len(manip_score)):
+        #     output.append(beta*reach_score[sco]+gamma*manip_score[sco])
+        # return output  # +zeta*self.distance
 
     def eval_init_config(self, init_config, goal_data):
         start_time = time.time()
@@ -1330,7 +1675,6 @@ class ScoreGenerator(object):
         self.autobed.SetActiveDOFValues(v)
         self.env.UpdatePublishedBodies()
 
-
     def show_rviz(self):
         #rospy.init_node(''.join(['base_selection_goal_visualization']))
         sub_pos, sub_ori = Bmat_to_pos_quat(self.originsubject_B_originworld)
@@ -1413,7 +1757,6 @@ class ScoreGenerator(object):
         marker.color.b = 0.0
         vis_pub.publish(marker)
         print 'Published a goal marker to rviz'
-        
 
     # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
     def publish_sub_marker(self, pos, ori):
@@ -1601,8 +1944,8 @@ class ScoreGenerator(object):
 
     def gen_joint_limit_weight(self, q):
         # define the total range limit for each joint
-        l_min = [-130., -30., -44., 0., -400., 0., -400.]
-        l_max = [40., 80., 224., 133., 400., 130., 400.]
+        l_min = [-40., -30., -44., -133., -400., -130., -400.]
+        l_max = [130., 80., 224., 0., 400., 0., 400.]
         # l1_max = 40.
         # l2_min = -30.
         # l2_max = 80.

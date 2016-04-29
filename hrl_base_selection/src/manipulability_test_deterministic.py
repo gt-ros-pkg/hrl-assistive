@@ -125,7 +125,7 @@ class Manipulability_Testing(object):
         if self.best_base[1][1] == 0:
             print 'There are no base locations with reachable goals. Something went wrong in the scoring or the setup'
         print 'The best base location is: \n', self.best_base
-        visualize_best = False
+        visualize_best = True
         if visualize_best:
             self.visualize_base_config(self.best_base, self.goal_data, self.raw_reference_options)
 
@@ -534,9 +534,18 @@ class Manipulability_Testing(object):
                       0.52777768],
                     [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
                       0.02473747]]
+
         a = np.reshape(unformat[0],[6,1])
         b = np.reshape(unformat[1],[6,1])
         base_config = np.hstack([a,b])
+        base_config = [[ 0.96138881,  0.83774071],
+       [ 0.63033125, -1.07430128],
+       [-2.0599323 , -0.17919976],
+       [ 0.0974726 ,  0.23857654],
+       # [ 0.09994156,  0.1857015 ],
+       # [ 0.69738434,  0.83414354]]
+       [ 0.09994156,  0.09994156 ],
+       [ 0.69738434,  0.69738434]]
         base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
 
         visualize = True
@@ -567,7 +576,7 @@ if __name__ == "__main__":
     base_config = np.hstack([a,b])
     best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
     myTest.load_goals()
-    myTest.run_comparisons(best_base)
+    # myTest.run_comparisons(best_base)
     rospy.spin()
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()
