@@ -516,7 +516,44 @@ if __name__ == '__main__':
                           'cssvm_cost': np.linspace(1.,15.0,10),\
                           'cssvm_gamma': [2.0], \
                           'cssvm_w_negative': [2.0] }
-                      
+
+    #---------------------------------------------------------------------------           
+    elif opt.task == 'pushing_microblack':
+    
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
+                                                                         False, False,\
+                                                                         rf_center, local_range,\
+                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
+        
+        #temp
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['svm'],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-1., -10., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
+        param_dict['ROC'] = ROC_param_dict
+
+        nFiles = 9
+        ## parameters = {'method': ['sgd'], \
+        ##               'gamma': np.logspace(-1.5,-0.5,5), \
+        ##               'w_negative': np.linspace(1.0,2.5,5) }
+        ## parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [3.,4.,5.],\
+        ##               'gamma': [1.5,2.0,2.5], \
+        ##               'w_negative': np.linspace(0.2,0.7,5) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': [3.,4.,5.],\
+                      'gamma': [1.5,2.0,2.5], \
+                      'w_negative': np.linspace(0.2,0.7,5) }
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
+        ##               'cost': [1.],\
+        ##               'gamma': [1.], \
+        ##               'w_negative': np.linspace(0.2,0.7,5) }
+                          
 
     else:
         print "Selected task name is not available."
