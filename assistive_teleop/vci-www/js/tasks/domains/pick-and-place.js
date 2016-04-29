@@ -16,7 +16,7 @@ RFH.Domains.PickAndPlace = function (options) {
     ros.getMsgDetails('hrl_task_planning/PDDLState');
     self.pddlStateUpdatePub = new ROSLIB.Topic({
         ros: ros,
-        name: '/pddl_tasks/pick_and_place/state_updates',
+        name: '/pddl_tasks/state_updates',
         messageType: '/hrl_task_planning/PDDLState'
     });
     self.pddlStateUpdatePub.advertise();

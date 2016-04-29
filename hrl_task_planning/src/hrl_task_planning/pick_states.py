@@ -13,8 +13,8 @@ SPA = ["succeeded", "preempted", "aborted"]
 
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
-    if action == 'FORGET-LOCATION':
-        param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
+    if action == 'FORGET-OBJECT':
+        param = "/pddl_tasks/%s/%s/%s" % (domain, 'CHOSEN-OBJ', args[0])
         return DeleteParamState(param, domain=domain, problem=problem,
                                 action=action, action_args=args,
                                 init_state=init_state, goal_state=goal_state,
@@ -23,7 +23,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return OverheadGraspState(hand=args[0], location=args[1], domain=domain, problem=problem,
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
-    elif action in ['MANUAL-GRASP', 'ID-LOCATION']:
+    elif action in ['MANUAL-GRASP', 'CHOOSE-OBJECT']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
 
@@ -59,11 +59,11 @@ class OverheadGraspState(PDDLSmachState):
             self.overhead_grasp_client = actionlib.SimpleActionClient('/right_arm/overhead_grasp', OverheadGraspAction)
         elif hand == 'LEFT_HAND':
             self.overhead_grasp_client = actionlib.SimpleActionClient('/left_arm/overhead_grasp', OverheadGraspAction)
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=1)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1)
 
     def on_execute(self, ud):
         try:
-            goal_pose_dict = rospy.get_param('/pddl_tasks/%s/KNOWN/%s' % (self.domain, self.location))
+            goal_pose_dict = rospy.get_param('/pddl_tasks/%s/CHOSEN-OBJ/%s' % (self.domain, self.location))
             goal_pose = _dict_to_pose_stamped(goal_pose_dict)
         except KeyError:
             rospy.loginfo("[%s] Move Arm Cannot find location %s on parameter server", rospy.get_name(), self.location)

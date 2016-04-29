@@ -17,7 +17,7 @@ class GraspStateMonitor(object):
         self.gripper_name = 'RIGHT_HAND' if 'R' in self.side.upper() else 'LEFT_HAND'
         self.item_name = self.gripper_name+'_OBJECT'
         self.grasped_item = None
-        self.state_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % domain, PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.grasp_state_sub = rospy.Subscriber('/grasping/%s_gripper' % side, Bool, self.grasp_state_cb)
         rospy.loginfo("[%s] %s Grasp State Monitor Ready.", rospy.get_name(), self.side.capitalize())
 

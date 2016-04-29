@@ -15,7 +15,7 @@ class ParameterMonitor(object):
         self.args = args
         self.params = ["/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg) for arg in self.args]
         self.state = []
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=10, latch=True)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         rospy.loginfo("[%s] Parameter monitor for %s ready.", rospy.get_name(), self.domain)
         for param in self.params:
             rospy.loginfo("Monitoring %s", param)
