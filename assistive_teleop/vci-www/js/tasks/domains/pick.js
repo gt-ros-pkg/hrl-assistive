@@ -35,16 +35,16 @@ RFH.Domains.Pick = function (options) {
     self.getActionFunction = function (name, args) {
         var startFunc;
         switch (name){
-            case 'ID-LOCATION':
+            case 'CHOOSE-OBJECT':
                 startFunc = function () {
                     RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
                     RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
-                    RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                    RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/CHOSEN-OBJ/'+args[0]);
                     RFH.taskMenu.startTask('paramLocationTask');
                 }
                 break;
-            case 'FORGET-LOCATION':
+            case 'FORGET-OBJECT':
                 startFunc = function () {
                     RFH.taskMenu.startTask('LookingTask');
                 }
@@ -67,9 +67,9 @@ RFH.Domains.Pick = function (options) {
 
     self.getActionLabel = function (name, args) {
         switch (name){
-            case 'ID-LOCATION':
+            case 'CHOOSE-OBJECT':
                 return "Select Object";
-            case 'FORGET-LOCATION':
+            case 'FORGET-OBJECT':
                 return "Clear Object Selection";
             case "AUTO-GRASP":
                 return "Automatic Grasp";
@@ -80,9 +80,9 @@ RFH.Domains.Pick = function (options) {
 
     self.getActionHelpText = function (name, args) {
         switch (name){
-            case 'ID-LOCATION':
+            case 'CHOOSE-OBJECT':
                 return "Click on the object to grasp.";
-            case 'FORGET-LOCATION':
+            case 'FORGET-OBJECT':
                 return "Clear saved object location.";
             case "AUTO-GRASP":
                 return "Wait for the automated grasping to retrieve the object."
@@ -94,7 +94,7 @@ RFH.Domains.Pick = function (options) {
     self.setPoseToParam = function (ps_msg, location_name) {
         var poseParam = new ROSLIB.Param({
             ros: ros,
-            name: '/pddl_tasks/'+self.domain+'/KNOWN/'+location_name
+            name: '/pddl_tasks/'+self.domain+'/CHOSEN-OBJ/'+location_name
         });
         console.log("Setting " + location_name + " pose as:", ps_msg);
         poseParam.set(ps_msg);
@@ -104,7 +104,7 @@ RFH.Domains.Pick = function (options) {
         for (var i=0; i<loc_list.length; i+=1) {
             var param = new ROSLIB.Param({
                 ros: ros,
-                name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
+                name: '/pddl_tasks/'+self.domain+'/CHOSEN-OBJ/'+loc_list[i]
             });
             param.delete();
         }
@@ -126,7 +126,7 @@ RFH.Domains.Pick = function (options) {
         var object = hand + '_OBJECT';
         self.clearLocationParams([object]);
         self.setDefaultGoal(['(GRASPING '+hand+' '+object+')']);
-        self.updatePDDLState(['(NOT (GRASPING '+hand+' '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))','(NOT (AUTO-GRASP-DONE))','(NOT (KNOWN '+object+'))']);
+        self.updatePDDLState(['(NOT (GRASPING '+hand+' '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))','(NOT (AUTO-GRASP-DONE))','(NOT (CHOSEN-OBJ '+object+'))']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick' + '-' + new Date().getTime().toString();
         msg.domain = 'pick';

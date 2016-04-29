@@ -71,14 +71,7 @@ RFH.ParamLocation = function(options) {
         self.$image.removeClass('cursor-wait');
         pose_msg.pose = applyOffset(pose_msg.pose);
         console.log("Modified msg: ", pose_msg);
-        //var pose_dict = pose_msg_to_dict(pose_msg);
         self.param.set(pose_msg);
-//        RFH.regions.push(new RFH.RegionView({ros: ros,
-//                                             name: self.param.name,
-//                                             viewer: RFH.viewer,
-//                                             center: pose_msg.pose.position,
-//                                             radius: 0.2}));
-                                                        
     };
 
     self.clickCB = function(event, ui) {
@@ -145,5 +138,4 @@ RFH.ParamLocation = function(options) {
         }
         return pose;
     };
-
 };

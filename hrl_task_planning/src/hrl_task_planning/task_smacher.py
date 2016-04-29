@@ -27,9 +27,9 @@ class TaskSmacher(object):
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
-        kill_ids = set([thread.problem_name for thread in running])
-        for problem_name in kill_ids:
-            self.preempt_threads(problem_name)
+        kill_ids = set([thread.domain for thread in running if thread.domain == req.domain])
+        for domain in kill_ids:
+            self.preempt_threads(domain)
         thread = self.create_thread(req)
         thread.start()
 
@@ -37,15 +37,15 @@ class TaskSmacher(object):
         self.preempt_threads(preempt_request.problem_name)
         return True
 
-    def preempt_threads(self, problem_name):
+    def preempt_threads(self, domain):
         for thread in self._sm_threads:
-            if thread.problem_name == problem_name:
+            if thread.domain == domain:
                 if thread.is_alive():
                     thread.preempt()
                     rospy.loginfo("Killing %s thread", thread.problem_name)
                     thread.join()  # DANGEROUS BLOCKING CALL HERE
                     rospy.loginfo("Killed %s thread", thread.problem_name)
-        self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
+        self._sm_threads = [thread for thread in self._sm_threads if thread.domain != domain]  # cut out now-preempted thread objects
 
     def create_thread(self, problem_msg):
         # If we're given a subgoal, prep a second thread for going to the default goal to call once we get to the subgoal

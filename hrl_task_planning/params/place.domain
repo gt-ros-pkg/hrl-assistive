@@ -25,7 +25,9 @@
                      (not (auto-place-done))
                      (grasping ?g ?o)
                 )
-  :effect (and (not(grasping ?g ?o)))
+  :effect (and (not(grasping ?g ?o))
+               (placed ?o) 
+          )
  )
 
  (:action manual-place
@@ -34,7 +36,9 @@
                      (auto-place-done)
                      (grasping ?g ?o)
                  )
-  :effect (and  (not (grasping ?g ?o)))
+  :effect (and (not (grasping ?g ?o))
+               (placed ?o) 
+          )
  )
 
  (:action id-location
