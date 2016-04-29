@@ -59,7 +59,7 @@ class OverheadGraspState(PDDLSmachState):
             self.overhead_grasp_client = actionlib.SimpleActionClient('/right_arm/overhead_grasp', OverheadGraspAction)
         elif hand == 'LEFT_HAND':
             self.overhead_grasp_client = actionlib.SimpleActionClient('/left_arm/overhead_grasp', OverheadGraspAction)
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=1)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1)
 
     def on_execute(self, ud):
         try:

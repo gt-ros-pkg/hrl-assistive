@@ -57,7 +57,7 @@ class OverheadPlaceState(PDDLSmachState):
             self.overhead_place_client = actionlib.SimpleActionClient('/right_arm/overhead_place', OverheadPlaceAction)
         elif hand == 'LEFT_HAND':
             self.overhead_place_client = actionlib.SimpleActionClient('/left_arm/overhead_place', OverheadPlaceAction)
-        self.state_update_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % self.domain, PDDLState, queue_size=1)
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1)
 
     def on_execute(self, ud):
         try:
@@ -73,7 +73,7 @@ class OverheadPlaceState(PDDLSmachState):
         state_update = PDDLState()
         state_update.domain = self.domain
         state_update.problem = self.problem
-        state_update.predicates = ['(TRIED-AUTO-PLACE)', '(PLACED '+self.item+')']
+        state_update.predicates = ['(TRIED-AUTO-PLACE)']
         self.state_update_pub.publish(state_update)
 
 
