@@ -138,7 +138,7 @@ RFH.CartesianEEControl = function (options) {
         }
     };
     self.gripper.graspingCBList.push(updatePickPlaceButton);
-    self.$pickAndPlaceButton.on('click.pickandplace', function(){RFH.taskMenu.tasks['pick-and-place'].sendTaskGoal(self.side)});
+    self.$pickAndPlaceButton.on('click.pickandplace', function(){RFH.taskMenu.tasks['pick_and_place'].sendTaskGoal(self.side)});
 
     self.eeDeltaCmd = function (xyzrpy) {
         // Get default values for unspecified options

@@ -55,7 +55,7 @@
   )
 
  (:action reset-auto-tried
-  :precondition (auto-grasp-done)
+  :precondition (and (auto-grasp-done))
   :effect (not(auto-grasp-done))
  )
 )

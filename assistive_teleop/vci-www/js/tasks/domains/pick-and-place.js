@@ -1,4 +1,5 @@
-RFH.PickAndPlace = function (options) {
+RFH.Domains = RFH.Domains || {};
+RFH.Domains.PickAndPlace = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
@@ -20,9 +21,9 @@ RFH.PickAndPlace = function (options) {
     });
     self.pddlStateUpdatePub.advertise();
     
-    self.updatePDDLState = function(pred_array){
+    self.updatePDDLState = function(pred_array, domain){
         var msg = ros.composeMsg('hrl_task_planning/PDDLState');
-        msg.domain = self.domain;
+        msg.domain = domain || self.domain;
         msg.predicates = pred_array;
         self.pddlStateUpdatePub.publish(msg);
     };
@@ -102,6 +103,7 @@ RFH.PickAndPlace = function (options) {
         var object = hand + '_OBJECT';
         self.setDefaultGoal(['(PLACED '+object+')']);
         self.updatePDDLState(['(NOT (PLACED '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))']);
+        self.updatePDDLState(['(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))'], 'pick');
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
