@@ -492,8 +492,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     
     #------------------------------------------
 
-    
-
+   
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
