@@ -365,21 +365,21 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
     if AE_param_dict['method']=='pca':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['add_option']       = None
         AE_param_dict['learning_rate'] = 1e-6            
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
