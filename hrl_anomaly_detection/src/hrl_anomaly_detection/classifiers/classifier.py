@@ -210,10 +210,16 @@ class classifier(learning_base):
                 
         elif self.method == 'sgd':
 
+            if len(X) < 196:
+                n_components =len(X)
+            else:
+                n_components = 196
+                
+
             ## from sklearn.kernel_approximation import RBFSampler
             ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
             from sklearn.kernel_approximation import Nystroem
-            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=1000, random_state=1)
+            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=n_components, random_state=1)
                 
             from sklearn.linear_model import SGDClassifier
             # get time-based clustering center? Not yet implemented
@@ -222,6 +228,20 @@ class classifier(learning_base):
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
             self.dt.fit(X_features, y)
+
+
+    def partial_fit(self, X, y):
+        '''
+        X: samples x hmm-feature vec
+        y: sample
+        '''
+
+        if self.method == 'sgd':
+            X_features       = self.rbf_feature.fit_transform(X)
+            self.dt.partial_fit(X_features,y)
+        else:
+            print "Not available method, ", self.method
+            sys.exit()
 
 
     def predict(self, X, y=None):

@@ -210,15 +210,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             ll_classifier_train_Y.append(l_Y)
 
         # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
-
+        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
+                                                                ll_classifier_train_Y, \
+                                                                ll_classifier_train_idx)
+        
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
@@ -936,14 +931,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
     #-----------------------------------------------------------------------------------------
     # flatten the data
-    X_train_org = []
-    Y_train_org = []
-    idx_train_org = []
-    for i in xrange(len(ll_classifier_train_X)):
-        for j in xrange(len(ll_classifier_train_X[i])):
-            X_train_org.append(ll_classifier_train_X[i][j])
-            Y_train_org.append(ll_classifier_train_Y[i][j])
-            idx_train_org.append(ll_classifier_train_idx[i][j])
+    X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
+                                                            ll_classifier_train_Y, \
+                                                            ll_classifier_train_idx)
 
     data = {}
     # pass method if there is existing result
@@ -1472,14 +1462,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 post_list.append(ll_classifier_train_X[i][j][1:])
 
         # flatten test data
-        X_test_flat = [] #
-        Y_test_flat = [] #
-        for i in xrange(len(ll_classifier_test_X)):
-            for j in xrange(len(ll_classifier_test_X[i])):
-                X_test_flat.append(ll_classifier_test_X[i][j])
-                Y_test_flat.append(ll_classifier_test_Y[i][j])
-        X_test_flat = np.array(X_test_flat)
-        Y_test_flat = np.array(Y_test_flat)
+        X_test_flat, Y_test_flat, _ = flattenSample(ll_classifier_test_X, \
+                                                    ll_classifier_test_Y, \
+                                                    ll_classifier_test_idx)
+
 
         # ------------------ scaling -----------------------------------------------
         if os.path.isfile(scaler_model):
