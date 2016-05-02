@@ -1161,6 +1161,24 @@ def stackSample(X1,X2,first_axis='dim'):
         return np.vstack([X1,X2])
 
 
+def flattenSample(ll_X, ll_Y, ll_idx=None):
+    '''
+    ll : sample x length x hmm features
+    l  : sample...  x hmm features
+    '''
+
+    l_X = []
+    l_Y = []
+    l_idx = []
+    for i in xrange(len(ll_X)):
+        for j in xrange(len(ll_X[i])):
+            l_X.append(ll_X[i][j])
+            l_Y.append(ll_Y[i][j])
+            if ll_idx is not None:
+                l_idx.append(ll_idx[i][j])
+    
+    return l_X, l_Y, l_idx
+
 def combineData(X1,X2, target_features, all_features, first_axis='dim', add_noise_features=[]):
 
     idx_list = []

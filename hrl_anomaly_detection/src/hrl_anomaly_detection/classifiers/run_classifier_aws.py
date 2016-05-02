@@ -166,8 +166,7 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
 
     for ii in xrange(len(X_test)):
         if len(Y_test[ii])==0: continue
-        X = X_test[ii]                
-        est_y    = dtc.predict(X, y=Y_test[ii])
+        est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
         ## # temp
         ## if Y_test[ii][0] < 1.0:
@@ -416,7 +415,7 @@ if __name__ == '__main__':
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
-        nPoints        = 20
+        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
