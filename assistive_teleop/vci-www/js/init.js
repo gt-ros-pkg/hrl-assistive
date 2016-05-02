@@ -1,33 +1,40 @@
 var RFH = {
     positionInElement: function (e) {
-        var posx = 0;
-        var posy = 0;
-        if (e === undefined) {e = window.event;}
-        if (e.pageX || e.pageY) 	{
-            posx = e.pageX;
-            posy = e.pageY;
-        }
-        else if (e.clientX || e.clientY) 	{
-            posx = e.clientX + document.body.scrollLeft +
-                 document.documentElement.scrollLeft;
-            posy = e.clientY + document.body.scrollTop +
-                 document.documentElement.scrollTop;
-        }
-        var offsetLeft = 0;
-        var offsetTop = 0;
-        var element = document.getElementById(e.target.id);
-        while (element &&
-               !isNaN(element.offsetLeft) &&
-               !isNaN(element.offsetTop)) {
-            offsetLeft += element.offsetLeft;
-            offsetTop += element.offsetTop;
-            element = element.offsetParent;
-        }
-        posx -= offsetLeft;
-        posy -= offsetTop;
-//        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
+        var target_pos = $(e.target).position();
+        var posx = e.pageX - target_pos.left;
+        var posy = e.pageY - target_pos.top;
+        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
         return [posx, posy];
     },
+
+//        var posx = 0;
+//        var posy = 0;
+//        if (e === undefined) {e = window.event;}
+//        if (e.pageX || e.pageY) 	{
+//            posx = e.pageX;
+//            posy = e.pageY;
+//        }
+//        else if (e.clientX || e.clientY) 	{
+//            posx = e.clientX + document.body.scrollLeft +
+//                 document.documentElement.scrollLeft;
+//            posy = e.clientY + document.body.scrollTop +
+//                 document.documentElement.scrollTop;
+//        }
+//        var offsetLeft = 0;
+//        var offsetTop = 0;
+//        var element = document.getElementById(e.target.id);
+//        while (element &&
+//               !isNaN(element.offsetLeft) &&
+//               !isNaN(element.offsetTop)) {
+//            offsetLeft += element.offsetLeft;
+//            offsetTop += element.offsetTop;
+//            element = element.offsetParent;
+//        }
+//        posx -= offsetLeft;
+//        posy -= offsetTop;
+//        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
+//        return [posx, posy];
+//    },
 
   checkBrowser: function () {
       var ua = navigator.userAgent;
