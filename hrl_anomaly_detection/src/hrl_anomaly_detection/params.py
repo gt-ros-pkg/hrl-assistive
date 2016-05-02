@@ -31,7 +31,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}
     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 0.73, 'scale': 10.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 1.25, 'gamma': 0.01, 'cost': 1.625}
+    SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 1.25}
 
     nPoints        = 20
     ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
@@ -292,11 +292,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         if ae_swtch:
-            SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
-            SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 4.0}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 1.0, 'scale': 8.0}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2.5, 'cost': 4.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
@@ -365,21 +365,21 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
     if AE_param_dict['method']=='pca':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['add_option']       = None
         AE_param_dict['learning_rate'] = 1e-6            
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
