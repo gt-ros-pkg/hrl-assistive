@@ -21,9 +21,8 @@ RFH.Domains.PickAndPlace = function (options) {
     });
     self.pddlStateUpdatePub.advertise();
     
-    self.updatePDDLState = function(pred_array, domain){
+    self.updatePDDLState = function(pred_array){
         var msg = ros.composeMsg('hrl_task_planning/PDDLState');
-        msg.domain = domain || self.domain;
         msg.predicates = pred_array;
         self.pddlStateUpdatePub.publish(msg);
     };
@@ -54,16 +53,13 @@ RFH.Domains.PickAndPlace = function (options) {
         }
     };
 
-    self.clearLocationParams = function (loc_list) {
-        for (var i=0; i<loc_list.length; i+=1) {
+    self.clearParams = function (paramList) {
+        for (var i=0; i<paramList.length; i+=1) {
             var param = new ROSLIB.Param({
                 ros: ros,
-                name: '/pddl_tasks/'+self.domain+'/KNOWN/'+loc_list[i]
+                name: paramList[i]
             });
             param.delete();
-            if (RFH.regions[param.name] !== undefined) {
-                RFH.regions[param.name].remove();
-            }
         }
     };
 
@@ -94,7 +90,7 @@ RFH.Domains.PickAndPlace = function (options) {
 
     self.sendTaskGoal = function (side, goal) {
         goal = goal || []; // Empty goal will use default for task
-        self.clearLocationParams(['PICK_LOC']);
+        self.clearLocationParams(['/pddl_tasks/place/KNOWN/PLACE_LOC', '/pddl_tasks/pick/CHOSEN-OBJ/RIGHT_HAND_OBJECT', '/pddl_tasks/pick/CHOSEN-OBJ/LEFT_HAND_OBJECT']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick_and_place' + '-' + new Date().getTime().toString();
         msg.domain = 'pick_and_place';
@@ -102,8 +98,7 @@ RFH.Domains.PickAndPlace = function (options) {
         var otherHand = hand === 'LEFT_HAND' ? 'RIGHT_HAND' : 'LEFT_HAND'
         var object = hand + '_OBJECT';
         self.setDefaultGoal(['(PLACED '+object+')']);
-        self.updatePDDLState(['(NOT (PLACED '+object+'))','(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))']);
-        self.updatePDDLState(['(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))'], 'pick');
+        self.updatePDDLState(['(NOT (PLACED '+object+'))', '(NOT (AUTO-PLACE-DONE))', '(NOT (AUTO-GRASP-DONE))', '(CAN-GRASP '+hand+')', '(NOT (CAN-GRASP '+otherHand+'))']);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };

@@ -29,15 +29,25 @@ class TaskSmacher(object):
         running = [thread for thread in self._sm_threads if thread.is_alive()]
         kill_ids = set([thread.domain for thread in running if thread.domain == req.domain])
         for domain in kill_ids:
-            self.preempt_threads(domain)
+            self.preempt_domain_threads(domain)
         thread = self.create_thread(req)
         thread.start()
 
     def preempt_service_cb(self, preempt_request):
-        self.preempt_threads(preempt_request.problem_name)
+        self.preempt_problem_threads(preempt_request.problem_name)
         return True
 
-    def preempt_threads(self, domain):
+    def preempt_problem_threads(self, problem_name):
+        for thread in self._sm_threads:
+            if thread.problem_name == problem_name:
+                if thread.is_alive():
+                    thread.preempt()
+                    rospy.loginfo("Killing %s thread", thread.problem_name)
+                    thread.join()  # DANGEROUS BLOCKING CALL HERE
+                    rospy.loginfo("Killed %s thread", thread.problem_name)
+        self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
+
+    def preempt_domain_threads(self, domain):
         for thread in self._sm_threads:
             if thread.domain == domain:
                 if thread.is_alive():
@@ -124,12 +134,9 @@ class PDDLTaskThread(Thread):
                 while self.domain_state is None:
                     rospy.loginfo("Waiting for state of %s domain.", self.domain)
                     rospy.sleep(1)
-                rospy.sleep(2)
+                rospy.sleep(0)
+                first_run = False
             self.problem_msg.init = self.domain_state
-#                print "Extending initial state"
-#                [self.problem_msg.init.append(pred) for pred in self.domain_state if pred not in self.problem_msg.init]
-#            else:
-            first_run = False
 
             # Get solution from planner
             try:
