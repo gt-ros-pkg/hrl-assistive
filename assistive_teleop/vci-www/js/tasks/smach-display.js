@@ -12,15 +12,16 @@ RFH.Smach = function(options) {
                                                  name:'preempt_pddl_task',
                                                  serviceType: '/hrl_task_planning/PreemptTask'});
 
-    var cancelAction = function (problem) {
+    self.cancelTask = function (problem) {
         var cancelResultCB = function (resp) {
             if (resp.result) {
                 console.log("Cancelled task successfully");
                 var i = self.smachTasks.length;
-                while (i-=1) {
+                while (i>0) {
                     if (self.smachTasks[i].problem == problem) {
                         self.smachTasks.pop();
                     }
+                    i -= 1;
                 }
                 self.display.empty();
             } else {
@@ -31,9 +32,9 @@ RFH.Smach = function(options) {
         var req = new ROSLIB.ServiceRequest({'problem_name':problem});
         preemptTaskClient.callService(req, cancelResultCB);
     };
-    self.display.cancelAction = cancelAction;
+    self.display.cancelTask = self.cancelTask;
 
-    var getDomainData = function (domain) {
+    self.getDomainData = function (domain) {
         for (var i=0; i<self.smachTasks.length; i+= 1){
             if (self.smachTasks[i].domain === domain) {
                 return self.smachTasks[i];
@@ -56,10 +57,6 @@ RFH.Smach = function(options) {
         return newActionList;
     };
 
-    self.getActionData = function (action, args) {
-        
-    };
-
     self.planSolutionCB = function(msg) {
         self.display.empty(); // Out with the old
         var domainData = RFH.taskMenu.tasks[msg.domain];
@@ -72,7 +69,7 @@ RFH.Smach = function(options) {
             actions[i].goal_state = msg.states[i+1];
             actions[i].completed = false;
         }
-        var previousTaskData = getDomainData(msg.domain);
+        var previousTaskData = self.getDomainData(msg.domain);
         var actionList = updateFullActionList(previousTaskData.actionList, actions);
         self.display.setActionList(actionList);
         var taskData = {'domain': msg.domain,
@@ -234,7 +231,7 @@ RFH.SmachDisplay = function(options) {
             self.$container.append($('<div>', { class: "smach-state-separator" }));
         }
         self.$container.find('.smach-state-separator').last().remove(); // Don't need extra connector bar hanging off the end.
-        var cancelButton = $('<div>', {class:"smach-state cancel", text:"Cancel"}).on('click.rfh', function (event) {self.cancelAction(currentProblem)});
+        var cancelButton = $('<div>', {class:"smach-state cancel", text:"Cancel"}).on('click.rfh', function (event) {self.cancelTask(currentProblem)});
         self.$container.append(cancelButton);
         self.setActive(getActionIndex(currentAction));
     };

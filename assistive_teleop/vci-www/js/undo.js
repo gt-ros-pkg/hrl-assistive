@@ -43,7 +43,6 @@ RFH.Undo = function (options) {
     var eventQueue = [];
     eventQueue.pushUndoEntry = function (undoEntry) {
         $undoButton.show();
-        //console.log(undoEntry.type);
         eventQueue.push(undoEntry);
     };
     eventQueue.popUndoEntry = function () {
@@ -168,11 +167,23 @@ RFH.Undo = function (options) {
 
     sentUndoCommands['task'] = {};
     undoFunctions['task'] = function (undoEntry) {
+        var domainActions = RFH.smach.getDomainData(undoEntry.command.domain).actionList;
+        for (var i=0; i < domainActions.length; i += 1) {
+            if (domainActions[i].name == undoEntry.command.action) {
+                if (i == 0) {
+                    RFH.smach.cancelTask(undoEntry.command.problem);
+                    return;
+                } else {
+                    var goal = domainActions[i-1].goal_state;
+                    continue;
+                }
+            }
+        }
         var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
         pddlCmd.domain = undoEntry.command.domain;
         pddlCmd.name = undoEntry.command.problem;
         pddlCmd.objects = undoEntry.command.objects;
-        pddlCmd.goal = undoEntry.stateGoal;
+        pddlCmd.goal = goal;
         sentUndoCommands['task'][undoEntry.command.domain] += 1;
         taskCmdPub.publish(pddlCmd);
     };
