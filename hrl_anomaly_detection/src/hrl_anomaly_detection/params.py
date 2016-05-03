@@ -31,11 +31,11 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}
     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 0.73, 'scale': 10.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 1.25}
+    SVM_param_dict = {'renew': False, 'w_negative': 1.25, 'gamma': 0.203, 'cost': 2.0}
 
     nPoints        = 20
     ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                      'update_list': [],\
+                      'update_list': ['svm'],\
                       'nPoints': nPoints,\
                       'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                       'svm_param_range': np.logspace(-4, 1.2, nPoints),\
