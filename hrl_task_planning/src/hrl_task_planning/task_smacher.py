@@ -153,7 +153,8 @@ class PDDLTaskThread(Thread):
                 if solution.solved:
                     if not solution.steps:  # Already solved, no action retquired
                         rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)
-                        break
+                        self.result = 'succeeded'
+                        continue
                 else:
                     rospy.loginfo("[%s] Planner could not find a solution to problem %s in %s domain.",
                                   rospy.get_name(), self.problem_name, self.domain)
@@ -185,14 +186,14 @@ class PDDLTaskThread(Thread):
                     self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
             try:
                 self.result = self.state_machine.execute()
-                print "Result: ", self.result
+                print "Exceution of %s plan: " % self.domain, self.result
             except Exception as e:
                 raise e
             if self.result == 'preempted':
                 if self.next_thread is not None:
                     self.next_thread.preempt()
                 break
-
+        print "Domain %s: %s" % (self.domain, self.result)
         # Publish empty action to current action topic (since we're done)
         plan_step_msg = PDDLPlanStep()
         plan_step_msg.domain = self.domain
@@ -200,6 +201,7 @@ class PDDLTaskThread(Thread):
         self.action_pub.publish(plan_step_msg)
 
         if self.next_thread is not None:
+            print "Domain %s - Starting second-half thread." % self.domain
             self.next_thread.start()
 
     def preempt(self):

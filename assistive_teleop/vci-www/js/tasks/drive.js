@@ -438,7 +438,6 @@ RFH.Drive = function (options) {
     };
 
     self.getRTheta = function (e) {
-        //var pt = RFH.positionInElement(e); 
         var target_pos = $(e.target).position();
         var pt = [e.pageX - target_pos.left, e.pageY - target_pos.top];
         var px = (pt[0]/e.target.clientWidth) * camera.width;
