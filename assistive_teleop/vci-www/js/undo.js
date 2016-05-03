@@ -43,7 +43,7 @@ RFH.Undo = function (options) {
     var eventQueue = [];
     eventQueue.pushUndoEntry = function (undoEntry) {
         $undoButton.show();
-        console.log(undoEntry.type);
+        //console.log(undoEntry.type);
         eventQueue.push(undoEntry);
     };
     eventQueue.popUndoEntry = function () {
@@ -170,7 +170,7 @@ RFH.Undo = function (options) {
     undoFunctions['task'] = function (undoEntry) {
         var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
         pddlCmd.domain = undoEntry.command.domain;
-        pddlCmd.name = undoEntry.command.name;
+        pddlCmd.name = undoEntry.command.problem;
         pddlCmd.objects = undoEntry.command.objects;
         pddlCmd.goal = undoEntry.stateGoal;
         sentUndoCommands['task'][undoEntry.command.domain] += 1;
@@ -202,6 +202,18 @@ RFH.Undo = function (options) {
         messageType: 'hrl_task_planning/DomainList'
     });
     activeDomainsSub.subscribe(activeDomainsCB);
+
+    var domainSolutions = {};
+    var taskSolutionCB = function (sol_msg) {
+        domainSolutions[sol_msg.domain] = {'actions': sol_msg.actions,
+                                           'states': sol_msg.states}
+    };
+    var taskSolutionSub = new ROSLIB.Topic({
+        ros: ros,
+        name: '/task_solution',
+        messageType: 'hrl_task_planning/PDDLSolution'
+    });
+    taskSolutionSub.subscribe(taskSolutionCB);
 
 //    var taskCmdSub = new ROSLIB.Topic({
 //        ros: ros,

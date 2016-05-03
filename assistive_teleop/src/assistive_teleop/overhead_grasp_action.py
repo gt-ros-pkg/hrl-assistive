@@ -178,7 +178,7 @@ class OverheadGrasp(object):
         setup_pose.pose.position.z = overhead_height
         overhead_pose = deepcopy(goal_pose)
         overhead_pose.pose.position.z = overhead_height
-        goal_pose.pose.position.z += 0.03
+        goal_pose.pose.position.z += 0.005
         return (setup_pose, overhead_pose, goal_pose)
 
 
@@ -201,13 +201,13 @@ class OverheadPlace(object):
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
         print "moving arm to setup"
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Setup Position"))
-        reached = self.arm.move_arm(setup_pose, wait=True)
+        reached = self.arm.move_arm(setup_pose, wait=True, cart_threshold=0.05, ort_threshold=30)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
             print "Failed to reach setup"
             return
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Overhead Position"))
-        reached = self.arm.move_arm(overhead_pose, wait=True)
+        reached = self.arm.move_arm(overhead_pose, wait=True, cart_threshold=0.03)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
             print "Failed to reach overhead"

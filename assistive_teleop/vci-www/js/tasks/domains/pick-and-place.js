@@ -90,7 +90,7 @@ RFH.Domains.PickAndPlace = function (options) {
 
     self.sendTaskGoal = function (side, goal) {
         goal = goal || []; // Empty goal will use default for task
-        self.clearLocationParams(['/pddl_tasks/place/KNOWN/PLACE_LOC', '/pddl_tasks/pick/CHOSEN-OBJ/RIGHT_HAND_OBJECT', '/pddl_tasks/pick/CHOSEN-OBJ/LEFT_HAND_OBJECT']);
+        self.clearParams(['/pddl_tasks/place/KNOWN/PLACE_LOC', '/pddl_tasks/pick/CHOSEN-OBJ/RIGHT_HAND_OBJECT', '/pddl_tasks/pick/CHOSEN-OBJ/LEFT_HAND_OBJECT']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'pick_and_place' + '-' + new Date().getTime().toString();
         msg.domain = 'pick_and_place';
