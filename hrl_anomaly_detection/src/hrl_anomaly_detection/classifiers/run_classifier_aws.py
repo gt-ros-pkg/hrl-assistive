@@ -434,7 +434,7 @@ if __name__ == '__main__':
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [3.,4.,5.],\
+                      'cost': [1.,2.,3.,4.,5.],\
                       'gamma': [1.5,2.0,2.5], \
                       'w_negative': np.linspace(0.2,0.7,5) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
