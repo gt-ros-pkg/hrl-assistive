@@ -224,6 +224,7 @@ class classifier(learning_base):
             from sklearn.linear_model import SGDClassifier
             # get time-based clustering center? Not yet implemented
             X_features       = self.rbf_feature.fit_transform(X)
+            if self.verbose: print "sgd classifier: ", np.shape(X), np.shape(X_features)
             # fitting
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
@@ -237,7 +238,7 @@ class classifier(learning_base):
         '''
 
         if self.method == 'sgd':
-            X_features       = self.rbf_feature.fit_transform(X)
+            X_features       = self.rbf_feature.transform(X)
             self.dt.partial_fit(X_features,y)
         else:
             print "Not available method, ", self.method
