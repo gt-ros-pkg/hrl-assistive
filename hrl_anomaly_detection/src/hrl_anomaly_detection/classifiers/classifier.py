@@ -210,10 +210,11 @@ class classifier(learning_base):
                 
         elif self.method == 'sgd':
 
-            if len(X) < 196:
+            max_components = 1000 #196
+            if len(X) < max_components:
                 n_components =len(X)
             else:
-                n_components = 196
+                n_components = max_components
                 
 
             ## from sklearn.kernel_approximation import RBFSampler
