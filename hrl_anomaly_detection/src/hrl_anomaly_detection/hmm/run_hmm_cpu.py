@@ -200,6 +200,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if len(logps) == 0:
                 scores.append(-100000)
                 continue
+            if np.mean(norm_logp) < 0:
+                continue
                 
             max_logp = np.amax(logps) 
             norm_logp /= max_logp
