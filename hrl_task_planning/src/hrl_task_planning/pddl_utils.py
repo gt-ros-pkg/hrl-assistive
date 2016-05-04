@@ -887,6 +887,8 @@ class FF(object):
                         return []
                     else:
                         # print "FF Could not find a solution to problem: %s" % self.problem.domain_name
+                        print "Problem file:\n", str(problem)
+                        print "Domain file:\n", str(domain)
                         raise PlanningException("FF could not solve problem (%s) in domain (%s)" % (problem.name, domain.name))
                 finally:
                     # clean up the soln file produced by ff (avoids large dumps of files in /tmp)

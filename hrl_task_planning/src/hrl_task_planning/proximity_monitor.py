@@ -41,7 +41,7 @@ class ProximityMonitor(object):
         self.state = []
         self.known_locations = {}
         self.known_locations_lock = Lock()
-        self.state_update_pub = rospy.Publisher("/pddl_tasks/%s/state_updates" % self.domain, PDDLState, queue_size=10)
+        self.state_update_pub = rospy.Publisher("/pddl_tasks/state_updates", PDDLState, queue_size=10)
         self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
 
     def domain_state_cb(self, state_msg):

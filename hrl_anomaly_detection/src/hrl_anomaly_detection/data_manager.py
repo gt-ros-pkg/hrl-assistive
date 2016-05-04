@@ -434,6 +434,121 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
     ut.save_pickle(d, AE_proc_data)
     return d
 
+
+
+def getHMMData(method, nFiles, processed_data_path, task_name, default_params):
+    import os
+    from sklearn import preprocessing
+
+    ## Default Parameters
+    # data
+    data_dict = default_params['data_param']
+    # AE
+    AE_dict = default_params['AE']
+    # HMM
+    HMM_dict = default_params['HMM']
+    # ROC
+    ROC_dict = default_params['ROC']
+    #------------------------------------------
+
+    # load data and preprocess it
+    print "Start to get data"
+    data = {}
+    for file_idx in xrange(nFiles):
+        if AE_dict['switch'] and AE_dict['add_option'] is not None:
+            tag = ''
+            for ft in AE_dict['add_option']:
+                tag += ft[:2]
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(file_idx)+'.pkl')
+        elif AE_dict['switch']:
+            modeling_pkl = os.path.join(processed_data_path, \
+                                        'hmm_'+task_name+'_raw_'+str(file_idx)+'.pkl')
+        else:
+            modeling_pkl = os.path.join(processed_data_path, \
+                                        'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
+
+        if os.path.isfile(modeling_pkl) is False:
+            print "Please run evaluation all first to get hmm files."
+            sys.exit()
+        # train a classifier and evaluate it using test data.
+        d            = ut.load_pickle(modeling_pkl)
+        ## startIdx = d['startIdx']
+        
+        # sample x length x feature vector
+        ll_classifier_train_X   = d['ll_classifier_train_X']
+        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+        ll_classifier_train_idx = d['ll_classifier_train_idx']
+        ## ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
+        nLength      = d['nLength']
+        nPoints      = ROC_dict['nPoints']
+
+
+        # divide into training and param estimation set
+        import random
+        train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
+        test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx] 
+
+        train_X = np.array(ll_classifier_train_X)[train_idx]
+        train_Y = np.array(ll_classifier_train_Y)[train_idx]
+        train_idx = np.array(ll_classifier_train_idx)[train_idx]
+        test_X  = np.array(ll_classifier_train_X)[test_idx]
+        test_Y  = np.array(ll_classifier_train_Y)[test_idx]
+        test_idx = np.array(ll_classifier_train_idx)[test_idx]
+
+
+        # flatten the data
+        X_train_org = []
+        Y_train_org = []
+        idx_train_org = []
+
+        for i in xrange(len(train_X)):
+            for j in xrange(len(train_X[i])):                
+                X_train_org.append(train_X[i][j])
+                Y_train_org.append(train_Y[i][j])
+                idx_train_org.append(train_idx[i][j])
+
+        # training data preparation
+        if 'svm' in method or 'sgd' in method:
+            scaler = preprocessing.StandardScaler()
+            ## scaler = preprocessing.scale()
+            X_scaled = scaler.fit_transform(X_train_org)
+        else:
+            X_scaled = X_train_org
+        ## print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+
+        # test data preparation
+        X_test = []
+        Y_test = []
+        idx_test = test_idx
+        for ii in xrange(len(test_X)):
+            if np.nan in test_X[ii] or len(test_X[ii]) == 0 \
+              or np.nan in test_X[ii][0]:
+                continue
+
+            if 'svm' in method or 'sgd' in method:
+                X = scaler.transform(test_X[ii])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = test_X[ii]
+            X_test.append(X)
+            Y_test.append(test_Y[ii])
+
+
+        data[file_idx]={}
+        data[file_idx]['X_scaled']      = X_scaled
+        data[file_idx]['Y_train_org']   = Y_train_org
+        data[file_idx]['idx_train_org'] = idx_train_org
+        data[file_idx]['X_test']   = X_test
+        data[file_idx]['Y_test']   = Y_test
+        data[file_idx]['idx_test'] = idx_test
+        data[file_idx]['nLength'] = nLength
+
+    return data 
+
+
+
+
 def errorPooling(norX, abnorX, param_dict):
     '''
     dim x samples

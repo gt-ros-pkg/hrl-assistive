@@ -27,17 +27,17 @@ class TaskSmacher(object):
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
-        kill_ids = set([thread.problem_name for thread in running])
-        for problem_name in kill_ids:
-            self.preempt_threads(problem_name)
+        kill_ids = set([thread.domain for thread in running if thread.domain == req.domain])
+        for domain in kill_ids:
+            self.preempt_domain_threads(domain)
         thread = self.create_thread(req)
         thread.start()
 
     def preempt_service_cb(self, preempt_request):
-        self.preempt_threads(preempt_request.problem_name)
+        self.preempt_problem_threads(preempt_request.problem_name)
         return True
 
-    def preempt_threads(self, problem_name):
+    def preempt_problem_threads(self, problem_name):
         for thread in self._sm_threads:
             if thread.problem_name == problem_name:
                 if thread.is_alive():
@@ -46,6 +46,16 @@ class TaskSmacher(object):
                     thread.join()  # DANGEROUS BLOCKING CALL HERE
                     rospy.loginfo("Killed %s thread", thread.problem_name)
         self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
+
+    def preempt_domain_threads(self, domain):
+        for thread in self._sm_threads:
+            if thread.domain == domain:
+                if thread.is_alive():
+                    thread.preempt()
+                    rospy.loginfo("Killing %s thread", thread.problem_name)
+                    thread.join()  # DANGEROUS BLOCKING CALL HERE
+                    rospy.loginfo("Killed %s thread", thread.problem_name)
+        self._sm_threads = [thread for thread in self._sm_threads if thread.domain != domain]  # cut out now-preempted thread objects
 
     def create_thread(self, problem_msg):
         # If we're given a subgoal, prep a second thread for going to the default goal to call once we get to the subgoal
@@ -124,12 +134,9 @@ class PDDLTaskThread(Thread):
                 while self.domain_state is None:
                     rospy.loginfo("Waiting for state of %s domain.", self.domain)
                     rospy.sleep(1)
-                rospy.sleep(2)
+                rospy.sleep(0)
+                first_run = False
             self.problem_msg.init = self.domain_state
-#                print "Extending initial state"
-#                [self.problem_msg.init.append(pred) for pred in self.domain_state if pred not in self.problem_msg.init]
-#            else:
-            first_run = False
 
             # Get solution from planner
             try:
@@ -146,7 +153,8 @@ class PDDLTaskThread(Thread):
                 if solution.solved:
                     if not solution.steps:  # Already solved, no action retquired
                         rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)
-                        break
+                        self.result = 'succeeded'
+                        continue
                 else:
                     rospy.loginfo("[%s] Planner could not find a solution to problem %s in %s domain.",
                                   rospy.get_name(), self.problem_name, self.domain)
@@ -178,14 +186,14 @@ class PDDLTaskThread(Thread):
                     self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
             try:
                 self.result = self.state_machine.execute()
-                print "Result: ", self.result
+                print "Exceution of %s plan: " % self.domain, self.result
             except Exception as e:
                 raise e
             if self.result == 'preempted':
                 if self.next_thread is not None:
                     self.next_thread.preempt()
                 break
-
+        print "Domain %s: %s" % (self.domain, self.result)
         # Publish empty action to current action topic (since we're done)
         plan_step_msg = PDDLPlanStep()
         plan_step_msg.domain = self.domain
@@ -193,6 +201,7 @@ class PDDLTaskThread(Thread):
         self.action_pub.publish(plan_step_msg)
 
         if self.next_thread is not None:
+            print "Domain %s - Starting second-half thread." % self.domain
             self.next_thread.start()
 
     def preempt(self):

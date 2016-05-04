@@ -17,22 +17,25 @@ class GraspStateMonitor(object):
         self.gripper_name = 'RIGHT_HAND' if 'R' in self.side.upper() else 'LEFT_HAND'
         self.item_name = self.gripper_name+'_OBJECT'
         self.grasped_item = None
-        self.state_pub = rospy.Publisher('/pddl_tasks/%s/state_updates' % domain, PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.grasp_state_sub = rospy.Subscriber('/grasping/%s_gripper' % side, Bool, self.grasp_state_cb)
         rospy.loginfo("[%s] %s Grasp State Monitor Ready.", rospy.get_name(), self.side.capitalize())
 
     def grasp_state_cb(self, grasping_msg):
+        preds = []
         if (grasping_msg.data and self.grasped_item is None):
-                pred = pddl.Predicate('GRASPING', [self.gripper_name, self.item_name])
+                preds.append(pddl.Predicate('GRASPING', [self.gripper_name, self.item_name]))
+                preds.append(pddl.Predicate('PLACED', [self.item_name], neg=True))
                 self.grasped_item = self.item_name
         elif (not grasping_msg.data and self.grasped_item is not None):
-                pred = pddl.Predicate('GRASPING', [self.gripper_name, self.grasped_item], neg=True)
+                preds.append(pddl.Predicate('GRASPING', [self.gripper_name, self.grasped_item], neg=True))
+                preds.append(pddl.Predicate('PLACED', [self.grasped_item]))
                 self.grasped_item = None
         else:
             return  # nothing new here
         state_msg = PDDLState()
         state_msg.domain = self.domain
-        state_msg.predicates = [str(pred)]
+        state_msg.predicates = map(str, preds)
         self.state_pub.publish(state_msg)
 
 

@@ -1,2 +1,2 @@
 constant_predicates: []
-default_goal: ['(AT TARGET PLACE_LOC)']
+default_goal: ['(NOT (GRASPING RIGHT_HAND RIGHT_HAND_OBJECT))', '(NOT (GRASPING LEFT_HAND LEFT_HAND_OBJECT)']

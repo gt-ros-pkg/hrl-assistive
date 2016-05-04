@@ -1,15 +1,15 @@
 ///////////////////////////////////////////////////////////////
-// This is a readme file for the GUI for hrl_manipulation_task
-// This gives a brief overview of the GUI implementation.
+This is a readme file for the GUI for hrl_manipulation_task
+This gives a brief overview of the GUI implementation.
 ///////////////////////////////////////////////////////////////
-// Written by You Keun Kim
+Written by You Keun Kim
 ///////////////////////////////////////////////////////////////
 
 
 GUI uses [assistive_teleop] package to make the web-based GUI.
 Look at the [assistive_teleop/launch/hrl_manipulation_task_assistive.launch] to see the launch files.
 
-To add new tabs, buttons or slider, see [assistive_teleop/www/hz_tab_interface.html]. Use thie file to add tabs, buttons, sliders, etc.
+To add new tabs, buttons or slider, see [assistive_teleop/www/hz_tab_interface.html]. Use this file to add tabs, buttons, sliders, etc.
 
 After adding new tabs, buttons or sliders on [assistive_teleop/www/hz_tab_interface.html], two things must be done in order for added buttons and tabs to function.
 
@@ -35,6 +35,7 @@ Video feedback file is in [hrl_manipulation_task/src/Kinect2Overlay.cpp] This fi
 After the change in Kinect2Overlay.cpp, modify file [assistive_teleop/www/js/video/mjpeg_client.js]. In self.cameraData, change 'Feedback'
  features to match the new overlay. (topic name, width, height,etc)
 
-
+Installation
+sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
 
 
