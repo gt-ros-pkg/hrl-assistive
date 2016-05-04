@@ -38,7 +38,7 @@
     border-color: hsla(0, 100%, 0%, 0.75);
     color: hsla(0, 0%, 0%, 0.5);
     overflow:hidden;
-    width: 5%;
+/*    width: 5%;*/
     cursor: pointer;
 }
 .smach-state-separator {

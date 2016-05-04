@@ -31,7 +31,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}
     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 0.73, 'scale': 10.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 1.25}
+    SVM_param_dict = {'renew': False, 'w_negative': 1.25, 'gamma': 0.203, 'cost': 2.0}
 
     nPoints        = 20
     ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
@@ -274,11 +274,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 10.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.45, 'gamma': 1.5, 'cost': 3.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 1.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
@@ -295,7 +295,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
-            HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 3.0, 'scale': 7.0}
+            HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.0, 'scale': 9.0}
+            ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 3.0, 'scale': 7.0}
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 3.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -312,7 +313,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 2.0, 'scale': 7.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 10.0, 'scale': 8.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.57, 'gamma': 2.5, 'cost': 4.0}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
