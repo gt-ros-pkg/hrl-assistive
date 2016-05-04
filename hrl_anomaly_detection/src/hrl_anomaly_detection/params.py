@@ -273,7 +273,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 10.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 8.0, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 1.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
