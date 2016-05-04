@@ -5,8 +5,11 @@ RFH.Smach = function(options) {
     self.display = new RFH.SmachDisplay({ros: ros,
                                          container: self.$displayContainer});
     self.smachTasks = []; // Array of data on tasks. Display only most recent (last index) for ordering of sub-tasks.
+    self.domains = {};
+    self.activeDomains = [];
     self.activeState = null;
     self.currentActionSubscribers = {};
+    self.solutionSubscribers = {};
 
     var preemptTaskClient = new ROSLIB.Service({ros:ros,
                                                  name:'preempt_pddl_task',
@@ -34,6 +37,66 @@ RFH.Smach = function(options) {
     };
     self.display.cancelTask = self.cancelTask;
 
+    self.setupNewDomain = function (domain) {
+        self.activeDomains.push(domain);
+        self.setupCurrentActionSubscriber(domain);
+        self.setupSolutionSubscriber(domain);
+    };
+
+    self.cleanupDomain = function (domain) {
+        var idx = self.activeDomains.indexOf(domain);
+        self.activeDomains.splice(idx, 1);
+        self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
+        delete self.currentActionSubscribers[domain];
+        self.solutionSubscribers[domain].unsubscribe();
+        delete self.solutionSubscribers[domain];
+        // TODO: CLEAR VISUALIZATION
+    };
+
+    var activeDomainsCB = function (domains_msg) {
+        var newDomains = domains_msg.domain_list;
+        for (var domain in self.domains) {
+            var idx = newDomains.indexOf(domain);
+            if (idx < 0) { // Previously active, now gone, so clean up
+                self.cleanupDomain(domain);
+            } else {
+               newDomains.splice(idx, 1);  // If already known, remove from list
+            }
+        }
+        // Set up subscribers for newly active domains
+        for (var i=0; i<newDomains.length; i+=1) {
+            self.setupNewDomain(newDomains[i]);
+        };
+    };
+    var activeDomainsSubscriber = new ROSLIB.Topic({
+        ros: ros,
+        name: '/pddl_tasks/active_domains',
+        messageType: '/hrl_task_planning/DomainList'
+    });
+    activeDomainsSubscriber.subscribe(activeDomainsCB);
+
+    self.setupCurrentActionSubscriber = function (domain) {
+        self.currentActionSubscribers[domain] = new ROSLIB.Topic({
+                                                    ros: ros,
+                                                    name: '/pddl_tasks/'+domain+'/current_action',
+                                                    messageType: '/hrl_task_planning/PDDLPlanStep'
+                                                });
+        self.currentActionSubscribers[domain].subscribe(function(msg){self.updateCurrentAction(domain, msg)});
+    };
+
+    self.setupSolutionSubscriber = function (domain) {
+        self.solutionSubscribers[domain] = new ROSLIB.Topic({
+                                                ros: ros,
+                                                name: '/pddl_tasks/'+domain+'/solution',
+                                                messageType: 'hrl_task_planning/PDDLSolution'
+                                            });
+        self.solutionSubscribers[domain].subscribe(function(msg){self.updateSolution(domain, msg)});
+    };
+
+
+
+///////////////// THE LINE ////////////////////////////
+
     self.getDomainData = function (domain) {
         for (var i=0; i<self.smachTasks.length; i+= 1){
             if (self.smachTasks[i].domain === domain) {
@@ -57,7 +120,7 @@ RFH.Smach = function(options) {
         return newActionList;
     };
 
-    self.planSolutionCB = function(msg) {
+    self.updateSolution = function(domain, msg) {
         self.display.empty(); // Out with the old
         var domainData = RFH.taskMenu.tasks[msg.domain];
         var actions = self.parseActionStrings(msg.actions);
@@ -89,23 +152,7 @@ RFH.Smach = function(options) {
         };
     };
 
-    var solutionSubscriber = new ROSLIB.Topic({
-        ros: ros,
-        name: '/task_solution',
-        type: 'hrl_task_planning/PDDLSolution'
-    });
-    solutionSubscriber.subscribe(self.planSolutionCB);
-
-    self.setupCurrentActionSubscriber = function (domain) {
-        self.currentActionSubscribers[domain] = new ROSLIB.Topic({
-            ros: ros,
-            name: '/pddl_tasks/'+domain+'/current_action',
-            type: '/hrl_task_planning/PDDLPlanStep'
-        });
-        self.currentActionSubscribers[domain].subscribe(self.updateCurrentAction);
-    };
-
-    self.updateCurrentAction = function (planStepMsg) {
+    self.updateCurrentAction = function (domain, planStepMsg) {
         if (planStepMsg.action === '') { // Empty current action means domain completed successfully
             self.smachTasks.pop();
             if (self.smachTasks.length === 0){ // If last active task is now complete, clear everything
@@ -130,6 +177,10 @@ RFH.Smach = function(options) {
         }
     };
 
+    self.refreshState = function () {
+        // TODO: Crawl problem, update display based on best available data
+    };
+
     self.parseActionString = function (action_str) {
             action_str = action_str.slice(1, -2); // First+last(2) char are open/close parens. Remove them.
             name_args = action_str.split('(');
@@ -145,16 +196,6 @@ RFH.Smach = function(options) {
         var acts_list = [];
         for (i = 0; i < actions.length; i += 1) {
             acts_list[i] = self.parseActionString(actions[i]);
-//            act = actions[i];
-//            act = act.slice(1, -2); // First+last(2) char are open/close parens. Remove them.
-//            name_args = act.split('(');
-//            name = name_args[0];
-//            args = name_args.slice(1);
-//            args = args[0].split(' ');
-//            acts_list[i] = {
-//                name: name,
-//                args: args
-//            };
         }
         return acts_list;
     };
