@@ -11,7 +11,7 @@
  )
 
  (:predicates
-  (known ?o - item)
+  (chosen-obj ?o - item)
   (grasping ?g - gripper ?o - item)
   (can-grasp ?g - gripper)
   (auto-grasp-done)
@@ -19,43 +19,43 @@
 
  (:action auto-grasp
   :parameters (?g - gripper ?o - item)
-  :precondition (and (known ?o)
+  :precondition (and (chosen-obj ?o)
                      (not (auto-grasp-done))
                      (can-grasp ?g)
                      (forall (?obj - item) (not (grasping ?g ?obj)))
                      (forall (?gr - gripper) (not (grasping ?gr ?o)))
                 )
   :effect (and (grasping ?g ?o)
-               (not (known ?o))
+               (not (chosen-obj ?o))
           )
  )
 
  (:action manual-grasp
     :parameters (?g - gripper ?o - item)
-    :precondition (and (known ?o)
+    :precondition (and (chosen-obj ?o)
                        (auto-grasp-done)
                        (can-grasp ?g)
                        (forall (?obj - item) (not (grasping ?g ?obj)))
                        (forall (?gr - gripper) (not (grasping ?gr ?o)))
                        )
     :effect (and (grasping ?g ?o)
-                 (not (known ?o))
+                 (not (chosen-obj ?o))
                  )
  )
 
- (:action id-location
+ (:action choose-object
   :parameters (?o - item)
-  :effect (known ?o)
+  :effect (chosen-obj ?o)
   )
 
- (:action forget-location
+ (:action forget-object
   :parameters (?o - item)
-  :precondition (and (known ?o))
-  :effect (not (known ?o))
+  :precondition (and (chosen-obj ?o))
+  :effect (not (chosen-obj ?o))
   )
 
- (:reset-auto-tried
-  :precondition (auto-grasp-done)
+ (:action reset-auto-tried
+  :precondition (and (auto-grasp-done))
   :effect (not(auto-grasp-done))
  )
 )

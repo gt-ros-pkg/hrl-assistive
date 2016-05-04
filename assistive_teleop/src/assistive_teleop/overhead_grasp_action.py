@@ -6,9 +6,7 @@ import numpy as np
 import rospy
 import actionlib
 from geometry_msgs.msg import PoseStamped, Quaternion
-from std_msgs.msg import Bool
 import tf
-from tf import transformations as tft
 
 
 class HapticMpcArmWrapper(object):
@@ -18,11 +16,9 @@ class HapticMpcArmWrapper(object):
         self.in_deadzone = None
         self.tfl = tf.TransformListener()
         self.state_sub = rospy.Subscriber('/'+side+'_arm/haptic_mpc/gripper_pose', PoseStamped, self.state_cb)
-        self.at_goal_sub = rospy.Subscriber('/'+side+'_arm/haptic_mpc/in_deadzone', Bool, self.deadzone_cb)
         self.goal_pub = rospy.Publisher('/'+side+'_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=3)
-
-    def deadzone_cb(self, msg):
-        self.in_deadzone = msg.data
+        self.deadzone_dist = rospy.get_param('/'+side+'_arm/haptic_mpc/deadzone_distance', 0.01)
+        self.deadzone_angle = np.radians(rospy.get_param('/'+side+'_arm/haptic_mpc/deadzone_angle', 3))
 
     def state_cb(self, msg):
         new_frame = '/base_link'
@@ -57,22 +53,23 @@ class HapticMpcArmWrapper(object):
         check_delay = rospy.Duration(progress_check_time)
         last_cart_err, last_ort_err = self.get_error(ps_goal)
         next_check_time = rospy.Time.now() + check_delay
-        while not self.in_deadzone and not rospy.is_shutdown():
+        while not rospy.is_shutdown():
+            cart_err, ort_err = self.get_error(ps_goal)
+            if cart_err < self.deadzone_dist and ort_err < self.deadzone_angle:
+                return True
             if rospy.Time.now() > next_check_time:
-                cart_err, ort_err = self.get_error(ps_goal)
-                print cart_err, ort_err
                 if cart_threshold is not None and cart_err < cart_threshold:
                     if ort_threshold is None:
                         return True
                     elif ort_err < ort_threshold:
                         return True
-                if cart_err <= progress_error_ratio*last_cart_err or ort_err <= progress_error_ratio*last_cart_err:
+                if cart_err <= progress_error_ratio*last_cart_err or ort_err <= progress_error_ratio*last_ort_err:
                     last_cart_err, last_ort_err = cart_err, ort_err
                     next_check_time = rospy.Time.now() + rospy.Duration(3)  # Progressing, set next check time
                 else:
                     return False  # Not progressing
             rospy.sleep(0.1)
-        return self.in_deadzone  # Return current state (if succeeded or node killed)
+        return False  # node killed...
 
 
 from pr2_controllers_msgs.msg import Pr2GripperCommandAction, Pr2GripperCommandGoal, Pr2GripperCommand
@@ -92,7 +89,6 @@ class GripperGraspControllerWrapper(object):
     def open_gripper(self, wait=False):
         cmd = Pr2GripperCommand(0.09, -1.0)
         goal = Pr2GripperCommandGoal(cmd)
-        print "Gripper Goal: ", goal
         self.gripper_client.send_goal(goal)
         if wait:
             self.contact_release_client.wait_for_result()
@@ -129,7 +125,6 @@ class OverheadGrasp(object):
         rospy.loginfo("[%s] %s Overhead Grasp Action Started", rospy.get_name(), self.side.capitalize())
 
     def execute(self, goal):
-        print "Received goal"
         self.action_server.publish_feedback(OverheadGraspFeedback("Processing Goal Pose"))
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
         print "Moving arm to setup"
@@ -169,16 +164,14 @@ class OverheadGrasp(object):
             rospy.sleep(0.1)
             rospy.loginfo("[%s] Waiting for %s arm state", rospy.get_name(), self.side)
         current_pose = deepcopy(self.arm.pose_state)
-        print "Current Pose:\n", current_pose
         goal_pose.pose.orientation = Quaternion(0.7071067, 0, -0.7071067, 0)
         overhead_height = max(goal_pose.pose.position.z + self.overhead_offset, current_pose.pose.position.z)
-        print "Overhead height:\n", overhead_height
         setup_pose = deepcopy(current_pose)
         setup_pose.header.frame_id = '/base_link'
         setup_pose.pose.position.z = overhead_height
         overhead_pose = deepcopy(goal_pose)
         overhead_pose.pose.position.z = overhead_height
-        goal_pose.pose.position.z += 0.03
+        goal_pose.pose.position.z += 0.005
         return (setup_pose, overhead_pose, goal_pose)
 
 
@@ -196,18 +189,18 @@ class OverheadPlace(object):
         rospy.loginfo("[%s] %s Overhead Place Action Started", rospy.get_name(), self.side.capitalize())
 
     def execute(self, goal):
-        print "received goal"
         self.action_server.publish_feedback(OverheadGraspFeedback("Processing Goal Pose"))
         (setup_pose, overhead_pose, goal_pose) = self.process_path(goal.goal_pose)
-        print "moving arm to setup"
+        print "Moving arm to setup"
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Setup Position"))
-        reached = self.arm.move_arm(setup_pose, wait=True)
+        reached = self.arm.move_arm(setup_pose, wait=True, cart_threshold=0.05, ort_threshold=30)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Setup'))
             print "Failed to reach setup"
             return
         self.action_server.publish_feedback(OverheadPlaceFeedback("Moving to Overhead Position"))
-        reached = self.arm.move_arm(overhead_pose, wait=True)
+        print "Moving arm to overhead"
+        reached = self.arm.move_arm(overhead_pose, wait=True, cart_threshold=0.03)
         if not reached:
             self.action_server.set_aborted(OverheadGraspResult('Reaching to Overhead'))
             print "Failed to reach overhead"
@@ -231,10 +224,8 @@ class OverheadPlace(object):
             rospy.sleep(0.1)
             rospy.loginfo("[%s] Waiting for %s arm state", rospy.get_name(), self.side)
         current_pose = deepcopy(self.arm.pose_state)
-        print "Current Pose:\n", current_pose
         goal_pose.pose.orientation = Quaternion(0.7071067, 0, -0.7071067, 0)
         overhead_height = max(goal_pose.pose.position.z + self.overhead_offset, current_pose.pose.position.z)
-        print "Overhead height:\n", overhead_height
         setup_pose = deepcopy(current_pose)
         setup_pose.header.frame_id = '/base_link'
         setup_pose.pose.position.z = overhead_height

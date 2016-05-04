@@ -15,6 +15,7 @@
  (:predicates
   (grasping ?g - gripper ?o - item)
   (can-grasp ?g - gripper)
+  (placed ?o - item)
  )
 
  (:action pick
@@ -23,13 +24,16 @@
                      (forall (?obj - item) (not (grasping ?g ?obj)))
                      (forall (?gr - gripper) (not (grasping ?gr ?o)))
                 )
-  :effect (and (grasping ?g ?o))
+  :effect (and (grasping ?g ?o)
+               (not (placed ?o))
+          )
  )
 
  (:action place
   :parameters (?g - gripper ?o - item ?l - location)
   :precondition (and (grasping ?g ?o))
   :effect (and (not (grasping ?g ?o))
+               (placed ?o)
           )
  )
 )

@@ -81,3 +81,13 @@ Installation:
 1) python_speech_features: https://github.com/jameslyons/python_speech_features     
 2) sudo apt-get install ros-indigo-sound-play ros-indigo-ar-track-alvar ros-indigo-ar-track-alvar-msgs
 
+
+GUI installation
+----------------------------
+    1) Installation sudo apt-get install ros-indigo-pr2-common-action-msgs ros-indigo-rosbridge-server ros-indigo-mjpeg-server ros-indigo-web-video-server
+    2) Install jqueryui
+        roscd assistive_teleop
+        wget https://jqueryui.com/resources/download/jquery-ui-1.11.4.zip
+        unzip jquery-ui-1.11.4.zip
+        cd www && ln -s ../jquery-ui-1.11.4 jqueryui
+    3) Install hrl-pr2-behaviors, hrl-sensor-utils

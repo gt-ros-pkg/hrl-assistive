@@ -4,23 +4,9 @@
         <group ns="pick_and_place" clear_params="true">
             <param name="domain" textfile="$(find hrl_task_planning)/params/pick_and_place.domain"/>
             <rosparam command="load" file="$(find hrl_task_planning)/params/pick_and_place.yaml"/>
+            <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s right"/>
+            <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s left"/>
         </group>
     </group>
-    <node name='known_loc_monitor' pkg="hrl_task_planning" type="known_location_monitor" output="screen" args="pick_and_place KNOWN -a HAND_START_LOC PICK_LOC PLACE_LOC ELSEWHERE"/>
-    <node name='proximity_monitor_right' pkg="hrl_task_planning" type="proximity_monitor" output="screen">
-        <param name="distance_threshold" value="0.15" type="double"/>
-        <param name="domain" value="pick_and_place" type="string"/>
-        <param name="frame" value="r_gripper_tool_frame" type="string"/>
-        <param name="object" value="RIGHT_HAND" type="string" />
-    </node>
-
-    <node name='proximity_monitor_left' pkg="hrl_task_planning" type="proximity_monitor" output="screen">
-        <param name="distance_threshold" value="0.15" type="double"/>
-        <param name="domain" value="pick_and_place" type="string"/>
-        <param name="frame" value="l_gripper_tool_frame" type="string"/>
-        <param name="object" value="LEFT_HAND" type="string"/>
-    </node>
-    <node name='grasp_state_monitor_right' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s right"/>
-    <node name='grasp_state_monitor_left' pkg="hrl_task_planning" type="grasping_monitor" output="screen" args="-d pick_and_place -s left"/>
 
 </launch>

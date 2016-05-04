@@ -219,7 +219,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
 
-    score_array = np.array(mean_list)-np.array(std_list)
+    score_array = np.array(mean_list) #-np.array(std_list)
     idx_list = np.argsort(score_array)
 
     for i in idx_list:
@@ -530,8 +530,8 @@ if __name__ == '__main__':
                                                                 False, False,\
                                                                 rf_center, local_range, \
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [20, 25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(0.1,2.0,4) }
+        parameters = {'nState': [20, 25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(0.1,2.0,10) }
 
     elif opt.task == 'feeding':
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
