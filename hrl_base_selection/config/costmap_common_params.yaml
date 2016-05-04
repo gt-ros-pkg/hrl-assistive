@@ -38,21 +38,21 @@ obstacle_layer:
     clearing: true
     min_obstacle_height: -0.10
     max_obstacle_height: 2.0
-  tilt_scan: 
-    sensor_frame: laser_tilt_link
-    topic: /tilt_scan
-    data_type: LaserScan
-    expected_update_rate: 0.2
-    observation_persistence: 0.2
-    marking: true
-    clearing: true
-    min_obstacle_height: -20.00
-    max_obstacle_height: 40.0}
+ # tilt_scan: 
+ #   sensor_frame: laser_tilt_link
+ #   topic: /tilt_scan
+ #   data_type: LaserScan
+ #   expected_update_rate: 0.2
+ #   observation_persistence: 0.2
+ #   marking: true
+ #   clearing: true
+ #   min_obstacle_height: -20.00
+ #   max_obstacle_height: 40.0}
 
 #cost_scaling_factor and inflation_radius were now moved to the inflation_layer ns
 inflation_layer:
   enabled:              true
   cost_scaling_factor:  5.0  # exponential rate at which the obstacle cost drops off (default: 10)
-  inflation_radius:     0.55  # max. distance from an obstacle at which costs are incurred for planning paths.
+  inflation_radius:     0.35  # max. distance from an obstacle at which costs are incurred for planning paths.
 static_layer:
   enabled:              true

@@ -6,6 +6,7 @@ import copy
 
 import rospy
 import smach
+from std_msgs.msg import String
 
 from hrl_task_planning.msg import PDDLProblem, PDDLState, PDDLSolution, DomainList, PDDLPlanStep
 from hrl_task_planning.srv import PDDLPlanner, PreemptTask
@@ -19,6 +20,7 @@ class TaskSmacher(object):
         self._sm_threads = []
         self.last_running_set = set([])
         self.active_domains_pub = rospy.Publisher('pddl_tasks/active_domains', DomainList, queue_size=10, latch=True)
+        self.active_problem = rospy.Publisher('pddl_tasks/current_problem', String, queue_size=10, latch=True)
         self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.preempt_service_cb)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
         self.active_domains_pub.publish(DomainList([]))  # Initialize to empty list
@@ -27,11 +29,12 @@ class TaskSmacher(object):
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
-        kill_ids = set([thread.domain for thread in running if thread.domain == req.domain])
+        kill_ids = set([thread.domain for thread in running if (thread.domain == req.domain or thread.problem_name != req.name)])
         for domain in kill_ids:
             self.preempt_domain_threads(domain)
         thread = self.create_thread(req)
         thread.start()
+        self.active_problem.publish(thread.problem_name)
 
     def preempt_service_cb(self, preempt_request):
         self.preempt_problem_threads(preempt_request.problem_name)
@@ -107,9 +110,7 @@ class PDDLTaskThread(Thread):
         self.domain = problem_msg.domain
         self.result = None
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
-        self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
-#        print "Default goal from /pddl_tasks/%s/default_goal: %s " %(self.domain, self.default_goal);
-        self.solution_pub = rospy.Publisher('task_solution', PDDLSolution, queue_size=10, latch=True)
+        self.solution_pub = rospy.Publisher('/pddl_tasks/%s/solution' % self.domain, PDDLSolution, queue_size=10, latch=True)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         # TODO: Catch close signal, publish empty action before stopping...
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
