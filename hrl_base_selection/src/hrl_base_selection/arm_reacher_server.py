@@ -51,13 +51,14 @@ from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
 class armReachAction(mpcBaseAction):
     def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
+        self.listener = tf.TransformListener()
 
         #Variables...! #
         self.stop_motion = False
         self.verbose = verbose
 
         self.default_frame      = PyKDL.Frame()
-        self.listener = tf.TransformListener()
+        self.knee_left = None
 
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
@@ -116,45 +117,64 @@ class armReachAction(mpcBaseAction):
         
         self.motions = {}
 
-        ## test motoins --------------------------------------------------------
+        ## test motions --------------------------------------------------------
         # It uses the l_gripper_push_frame
         self.motions['initTest'] = {}
         self.motions['initTest']['left'] = \
           [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 10.0],
            ['PAUSE', 1.0],
-           ['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           ['MOVES', '[0.3, 0.45, 0.2, -3.1415, 0.0, 1.57]', 2.],
            #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],
            #['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],
            #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],
           ]
         self.motions['initTest']['right'] = []
 
+        self.motions['scratching_knee_left'] = {}
+#        self.motions['leftKnee']['left'] = \
+ #         [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 10., 'self.knee_left']]
+        self.motions['scratching_knee_left']['left'] = \
+          [['MOVES', '[-0.04310556,  0.07347758+0.05,  0.00485197, 0.48790861, -0.50380292,  0.51703901, -0.4907122]', 10., 'self.knee_left']]
+        self.motions['scratching_knee_left']['right'] = []
 
-
-        now = rospy.Time.now()
-        self.listener.waitForTransform('/autobed/base_link', '/user_head_link', now, rospy.Duration(15))
-        (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', now)
-        p = PyKDL.Vector(trans[0], trans[1], trans[2])
-        M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
-        self.knee_left = PyKDL.Frame(M, p)
-        # reference_B_goal = (array([-0.04310556,  0.07347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
-        # import tf.transformations as tft
-        # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
--1.5545391757129157, -0.010091262211602251, -1.6131045463852083
-        self.motions['leftKnee'] = {}
-        self.motions['leftKnee']['left'] = \
-          [['MOVES', '[-0.04310556,  0.07347758,  0.00485197, -2.7837531887646243, 1.5256272978351686, 1.2025216534291792]', 2., 'self.knee_left']]
-        self.motions['leftKnee']['right'] = []
-                                                            
+        self.motions['reach_initialization'] = {}
+        self.motions['reach_initialization']['left'] = \
+          [['MOVEJ', '[0.7629304700932569, -0.3365186041095207, 0.5240000202473829, -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]', 10.0],
+           ['PAUSE', 1.0],
+           #['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVES', '[0.3, 0.45, 0.2, -3.1415, 0.0, 1.57]', 2.],
+           #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 5.0],
+           #['MOVET', '[-0.05, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 2.5],
+           #['MOVET', '[-0.2, 0.0, -0.1, 0.0, 0.0, 0.0, 1.0]', 3.0],
+          ]
+        self.motions['reach_initialization']['right'] = []
+                                                           
         rospy.loginfo("Parameters are loaded.")
-
-
-
         
     def serverCallback(self, req):
         task = req.data
         self.stop_motion = False
-
+        
+        if 'knee' in task.split('_') and 'left' in task.split('_'):
+         
+            print 'Will now interpret left knee'
+          
+            now = rospy.Time.now()
+            rospy.sleep(1)
+            self.listener.waitForTransform('/torso_lift_link', '/autobed/calf_left_link', now, rospy.Duration(5))
+            print 'here!'
+            now = rospy.Time.now()
+            rospy.sleep(1)
+            (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/autobed/calf_left_link', now)
+            print trans, '\n', rot
+            p = PyKDL.Vector(trans[0], trans[1], trans[2])
+            M = PyKDL.Rotation.Quaternion(rot[0], rot[1], rot[2], rot[3])
+            self.knee_left = PyKDL.Frame(M, p)
+            # reference_B_goal = (array([-0.04310556,  0.17347758,  0.00485197]), array([ 0.48790861, -0.50380292,  0.51703901, -0.4907122 ]))
+            # import tf.transformations as tft
+            # tft.euler_from_quaternion([ 0.48790861, -0.50380292,  0.51703901, -0.4907122], 'szyx')
+           
         self.parsingMovements(self.motions[task][self.arm_name])
         return "Completed to execute "+task
 
