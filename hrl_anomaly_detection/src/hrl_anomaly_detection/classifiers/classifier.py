@@ -227,6 +227,7 @@ class classifier(learning_base):
             X_features       = self.rbf_feature.fit_transform(X)
             if self.verbose: print "sgd classifier: ", np.shape(X), np.shape(X_features)
             # fitting
+            print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
             self.dt.fit(X_features, y)
