@@ -225,6 +225,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     idx_list = np.argsort(score_array)
 
     for i in idx_list:
+        if np.isnan(score_array[i]): continue
+            
         print("%0.3f : %0.3f (+/-%0.03f) for %r"
               % (score_array[i], mean_list[i], std_list[i], param_list[i]))
 
