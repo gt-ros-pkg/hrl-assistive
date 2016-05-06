@@ -4,9 +4,7 @@ RFH.Smach = function(options) {
     self.$displayContainer = options.displayContainer || $('#scmah-display');
     self.display = new RFH.SmachDisplay({ros: ros,
                                          container: self.$displayContainer});
-    self.smachTasks = []; // Array of data on tasks. Display only most recent (last index) for ordering of sub-tasks.
     self.domains = {};
-    self.activeDomains = [];
     self.activeState = null;
     self.currentActionSubscribers = {};
     self.solutionSubscribers = {};
@@ -15,18 +13,11 @@ RFH.Smach = function(options) {
                                                  name:'preempt_pddl_task',
                                                  serviceType: '/hrl_task_planning/PreemptTask'});
 
+    // Send a preempt request to task_smacher for the problem name
     self.cancelTask = function (problem) {
         var cancelResultCB = function (resp) {
             if (resp.result) {
                 console.log("Cancelled task successfully");
-                var i = self.smachTasks.length;
-                while (i>0) {
-                    if (self.smachTasks[i].problem == problem) {
-                        self.smachTasks.pop();
-                    }
-                    i -= 1;
-                }
-                self.display.empty();
             } else {
                 RFH.log("Failed to cancel task");
             }
@@ -37,24 +28,25 @@ RFH.Smach = function(options) {
     };
     self.display.cancelTask = self.cancelTask;
 
+    // Add a newly active domain to the internal list, and subscribe to its solution and current action topics
     self.setupNewDomain = function (domain) {
-        self.activeDomains.push(domain);
         self.setupCurrentActionSubscriber(domain);
         self.setupSolutionSubscriber(domain);
     };
 
+    // Remove a domain from the internal list, close subscribers for its solution and current_action topics
     self.cleanupDomain = function (domain) {
-        var idx = self.activeDomains.indexOf(domain);
-        self.activeDomains.splice(idx, 1);
         self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
         delete self.currentActionSubscribers[domain];
         self.solutionSubscribers[domain].unsubscribe();
         delete self.solutionSubscribers[domain];
-        // TODO: CLEAR VISUALIZATION
+        delete self.domains[domain];
+        self.updateInterface();
     };
 
+    // Subscribe to the list of currently active domains, and update internal list
     var activeDomainsCB = function (domains_msg) {
-        var newDomains = domains_msg.domain_list;
+        var newDomains = domains_msg.domains;
         for (var domain in self.domains) {
             var idx = newDomains.indexOf(domain);
             if (idx < 0) { // Previously active, now gone, so clean up
@@ -75,6 +67,21 @@ RFH.Smach = function(options) {
     });
     activeDomainsSubscriber.subscribe(activeDomainsCB);
 
+    // Get current problem name from task_smacher (display lowest leaf action in current problem tree)
+    self.currentProblem = null;
+    var updateCurrentProblem = function (msg) {
+        self.currentProblem = msg.data === '' ? null : msg.data;
+        self.display.setCurrentProblem(self.currentProblem);
+        self.updateInterface();
+    };
+    var currentProblemSubscriber = new ROSLIB.Topic({
+                                        ros: ros, 
+                                        name: '/pddl_tasks/current_problem',
+                                        messageType: 'std_msgs/String'});
+    currentProblemSubscriber.subscribe(updateCurrentProblem);
+
+
+    // Create a subscriber for the current_action of an active domain, and add to the internal list for future reference
     self.setupCurrentActionSubscriber = function (domain) {
         self.currentActionSubscribers[domain] = new ROSLIB.Topic({
                                                     ros: ros,
@@ -84,6 +91,14 @@ RFH.Smach = function(options) {
         self.currentActionSubscribers[domain].subscribe(function(msg){self.updateCurrentAction(domain, msg)});
     };
 
+    self.updateCurrentAction = function (domain, planStepMsg) {
+        self.domains[domain] = self.domains[domain] || {}; // Initialize if needed
+        self.domains[domain].problem = planStepMsg.problem;
+        self.domains[domain].currentAction = {'name': planStepMsg.action, 'args':planStepMsg.args};
+        self.updateInterface(); // We have some new information, which might effect the interface, so update
+    };
+
+    // Create a subscriber for the current solution of an active domain, and add to an internal list for future reference
     self.setupSolutionSubscriber = function (domain) {
         self.solutionSubscribers[domain] = new ROSLIB.Topic({
                                                 ros: ros,
@@ -93,92 +108,51 @@ RFH.Smach = function(options) {
         self.solutionSubscribers[domain].subscribe(function(msg){self.updateSolution(domain, msg)});
     };
 
-
-
-///////////////// THE LINE ////////////////////////////
-
-    self.getDomainData = function (domain) {
-        for (var i=0; i<self.smachTasks.length; i+= 1){
-            if (self.smachTasks[i].domain === domain) {
-                return self.smachTasks[i];
-            }
-        }
-        return {domain: domain, problem:'', actionList:[]};
-    };
-
-    var updateFullActionList = function (currentActionList, updateActionList) {
-        var newActionList = [];
-        for (var i=0; i < currentActionList.length; i += 1){
-            if (currentActionList[i].completed) {
-                newActionList.push(currentActionList[i]);
-            } else {
-                break;
-            }
-        };
-        // TODO: catch and replace visited states in new list?
-        newActionList.push.apply(newActionList, updateActionList);
-        return newActionList;
-    };
-
     self.updateSolution = function(domain, msg) {
-        self.display.empty(); // Out with the old
-        var domainData = RFH.taskMenu.tasks[msg.domain];
+        self.domains[domain] = self.domains[domain] || {}; // Initialize if needed
+        // Set the problem this domain currently applies to
+        self.domains[domain].problem = msg.problem;
+        // Get action meta-data for interface, add to solution information in domain list
         var actions = self.parseActionStrings(msg.actions);
+        var domainDetails = RFH.taskMenu.tasks[domain];
         for (var i=0; i<actions.length; i+=1) {
-            actions[i].label = domainData.getActionLabel(actions[i].name, actions[i].args);
-            actions[i].helpText = domainData.getActionHelpText(actions[i].name, actions[i].args);
-            actions[i].startFunction = domainData.getActionFunction(actions[i].name, actions[i].args);
+            actions[i].label = domainDetails.getActionLabel(actions[i].name, actions[i].args);
+            actions[i].helpText = domainDetails.getActionHelpText(actions[i].name, actions[i].args);
+            actions[i].startFunction = domainDetails.getActionFunction(actions[i].name, actions[i].args);
             actions[i].init_state = msg.states[i];
             actions[i].goal_state = msg.states[i+1];
-            actions[i].completed = false;
         }
-        var previousTaskData = self.getDomainData(msg.domain);
-        var actionList = updateFullActionList(previousTaskData.actionList, actions);
-        self.display.setActionList(actionList);
-        var taskData = {'domain': msg.domain,
-                        'problem': msg.problem,
-                        'currentAction': null,
-                        'actionList': actionList};
-        var duplicate = false;
-        for (var j=0; j<self.smachTasks.length; j += 1) {
-            if (self.smachTasks[j].domain == msg.domain && self.smachTasks[j].problem == msg.problem) {
-                self.smachTasks[j] = taskData;
-                duplicate=true;
-            }
-        }
-        if (!duplicate) { 
-            self.smachTasks.push(taskData);
-            self.setupCurrentActionSubscriber(msg.domain);
-        };
+        self.domains[domain].solution_steps = actions;
+        // We have some new information, which might effect the interface, so update
+        self.updateInterface();
     };
 
-    self.updateCurrentAction = function (domain, planStepMsg) {
-        if (planStepMsg.action === '') { // Empty current action means domain completed successfully
-            self.smachTasks.pop();
-            if (self.smachTasks.length === 0){ // If last active task is now complete, clear everything
-                RFH.taskMenu.startTask(RFH.taskMenu.defaultTaskName);
-                self.display.empty();
-            } else {  // Otherwise, get the next task up the heirarchy
-                var newActions = self.smachTasks[self.smachTasks.length-1].actionList;
-                var newCurrentAction = self.smachTasks[self.smachTasks.length-1].currentAction;
-                self.display.setActionList(newActions);
-                self.display.setCurrentAction(newCurrentAction, planStepMsg.problem);
-                self.display.refreshDisplay();
-            }            
-        } else { // Get the task from the list matching this message
-            nowCurrentAction =  {'name':planStepMsg.action, 'args': planStepMsg.args};
-            for (var i=0; i<self.smachTasks.length; i+=1){
-                if (self.smachTasks[i].domain == planStepMsg.domain && self.smachTasks[i].problem == planStepMsg.problem) {
-                    self.smachTasks[i].currentAction = nowCurrentAction;
-                }
-            }
-            self.display.setCurrentAction(nowCurrentAction, planStepMsg.problem);
-            self.display.refreshDisplay();
-        }
-    };
+    self.updateInterface = function () {
+        // If there is no known current problem, clear the display, 
+        if (self.currentProblem === null ) {
+            self.display.empty();
+//            RFH.taskMenu.startTask(RFH.taskMenu.defaultTask);
+            return; 
+        }; 
 
-    self.refreshState = function () {
-        // TODO: Crawl problem, update display based on best available data
+        // Identify active domains relevant to this problem, with a known current action
+        var relevantDomains = getProblemDomains(self.currentProblem);
+        if (relevantDomains.length === 0) { return; }; // Still waiting for domain data
+        for (var i=0; i<relevantDomains.length; i += 1) {
+            var dom = relevantDomains[i];
+            if (!self.domains[dom].currentAction || ! self.domains[dom].solution_steps) { return; } 
+        }
+        // Find the leaf domain + action of the domain/action tree
+        var leafDomainName = getLeafDomain(relevantDomains);
+        var leafDomain = self.domains[leafDomainName];
+        var actIdx = getActionIndex(leafDomain.currentAction, leafDomain.solution_steps);
+        if (actIdx < 0) { return; } // Desired action not in existing plan...
+
+        // Send leaf domain data to display, update, run.
+        self.display.setActionList(leafDomain.solution_steps);
+        self.display.setCurrentAction(leafDomain.currentAction);
+        self.display.refreshDisplay();
+        leafDomain.solution_steps[actIdx].startFunction();
     };
 
     self.parseActionString = function (action_str) {
@@ -199,6 +173,79 @@ RFH.Smach = function(options) {
         }
         return acts_list;
     };
+
+    self.getPriorState = function () {
+        var relevantDomains = getProblemDomains(self.currentProblem);
+        if (relevantDomains.length === 0) { return; }; // Still waiting for domain data
+        for (var i=0; i<relevantDomains.length; i += 1) {
+            var dom = relevantDomains[i];
+            if (!self.domains[dom].currentAction || ! self.domains[dom].solution_steps) { return null; } 
+        }
+        // Find the leaf action of the domain/action tree
+        var leafDomain = getLeafDomain(relevantDomains);
+        // Get action index, if 0, repeat on next-higher domain OR return null
+        do {
+            var currentActionIndex = getActionIndex(self.domains[leafDomain].currenAction, self.domains[leafDomain].solution_steps);
+            if (currentActionIndex == 0) {
+                leafDomain = getParentDomain(leafDomain);
+            } else {
+               return self.domains[leafDomain].solution_steps[currentActionIndex - 1].init_state; 
+            };
+        } while (leafDomain !== null);
+        return null; // Currently in 1st state in top-level domain
+    };
+
+    var getActionIndex = function (action, actionList) {
+        for (var idx in actionList) {
+            if (action.name !== actionList[idx].name) { continue; }
+            var argsMatch = true;
+            for (var argInd in actionList[idx].args) {
+                if (action.args[argInd] !== actionList[idx].args[argInd]) { 
+                    argsMatch = false;
+                    continue;
+                }
+            }
+            if (argsMatch) { return idx };
+        }
+        return -1;
+    };
+
+    var getLeafDomain = function (relevantDomains) {
+        for (var idx in relevantDomains) {
+            var domAction = self.domains[relevantDomains[idx]].currentAction;
+            if (relevantDomains.indexOf(domAction.name.toLowerCase()) > 0) {
+                continue; // The currently active action in this domain is it's own domain...
+            } else {
+               return relevantDomains[idx]; // No sub-task for the current action here, must be the one to display!
+            }
+        };
+        return null;
+    };
+
+    // Get the known domain for which this domain is a sub-action (if any)
+    var getParentDomain = function (domain) {
+        var problemDomains = getProblemDomains(self.domains[domain].problem); 
+        for (var idx in problemDomains) {
+            if (!problemDomains[idx].solution_steps) {continue};
+            solution = problemDomains[idx].solution_steps;
+            for (var action in solution) {
+                if (solution[action].name === domain) { return problemDomains[idx]; }
+            };
+        };
+        return null; // Found nothing in loop above...
+    };
+
+    // Get all of the known domains which are used in the given problem
+    var getProblemDomains = function (problem) {
+        var relevantDomains = [];
+        for (var domain in self.domains) {
+            if (self.domains[domain].problem === problem) {
+                relevantDomains.push(domain); 
+            }
+        }
+        return relevantDomains;
+    };
+
 };
 
 
@@ -232,35 +279,42 @@ RFH.SmachDisplay = function(options) {
         return actionList;
     };
 
-    self.setCurrentAction = function (action, problem) {
+    self.setCurrentAction = function (action) {
         currentAction = action;
-        currentProblem = problem;
     };
 
     self.getCurrentAction = function () {
         return currentAction;
     };
 
-    var getActionIndex = function (action) {
-        var i, j, match;
-        for (i=0; i<actionList.length; i += 1){
-            if (actionList[i].name == action.name) {
-                match = true;
-                for (j=0; j < action.args.length; j += 1) {
-                    if (actionList[i].args[j] !== action.args[j]) {
-                        actionList[i].completed = true;
-                        match = false; 
-                    } 
+    self.setCurrentProblem = function (problem) {
+        currentProblem = problem;
+    };
+
+    self.getCurrentProblem = function () {
+        return currentProblem;
+    };
+
+    var getCurrentActionIndex = function () {
+        for (var idx in actionList) {
+            if (currentAction.name !== actionList[idx].name) { continue; }
+            var argsMatch = true;
+            for (var argInd in actionList[idx].args) {
+                if (currentAction.args[argInd] !== actionList[idx].args[argInd]) { 
+                    argsMatch = false;
+                    continue;
                 }
-                if (match) { return i; };
-            } else { 
-                actionList[i].completed = true;
             }
-        };
+            if (argsMatch) { return idx };
+        }
+        return -1;
     };
 
     self.refreshDisplay = function (){
+        var currentIdx = getCurrentActionIndex();
+        if (currentIdx < 0) { return; };
         self.empty();
+        if (currentProblem === null) { return; };
         var bubble;
         for (var i=0; i<actionList.length; i +=1) {
            bubble = $('<div>', {class: "smach-state incomplete",
@@ -274,7 +328,7 @@ RFH.SmachDisplay = function(options) {
         self.$container.find('.smach-state-separator').last().remove(); // Don't need extra connector bar hanging off the end.
         var cancelButton = $('<div>', {class:"smach-state cancel", text:"Cancel"}).on('click.rfh', function (event) {self.cancelTask(currentProblem)});
         self.$container.append(cancelButton);
-        self.setActive(getActionIndex(currentAction));
+        self.setActive(currentIdx);
     };
 
     // Receives a list of label strings, creates a display of actions in sequence with highlighting for done/current/future actions

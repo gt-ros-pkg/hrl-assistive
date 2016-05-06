@@ -23,6 +23,7 @@ class TaskSmacher(object):
         self.active_problem = rospy.Publisher('pddl_tasks/current_problem', String, queue_size=10, latch=True)
         self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.preempt_service_cb)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
+        self.active_problem.publish('')  # Initialize to empty string
         self.active_domains_pub.publish(DomainList([]))  # Initialize to empty list
         rospy.loginfo("[%s] Ready", rospy.get_name())
 
@@ -92,6 +93,8 @@ class TaskSmacher(object):
         if running_set != self.last_running_set:
             self.active_domains_pub.publish(running_set)
             self.last_running_set = running_set
+            if not running_set:
+                self.active_problem.publish('')  # If all domains ended, set problem to empty
 
     def spin(self, hz=25):
         rate = rospy.Rate(hz)
@@ -109,6 +112,7 @@ class PDDLTaskThread(Thread):
         self.problem_name = problem_msg.name
         self.domain = problem_msg.domain
         self.result = None
+        self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.solution_pub = rospy.Publisher('/pddl_tasks/%s/solution' % self.domain, PDDLSolution, queue_size=10, latch=True)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
@@ -196,10 +200,10 @@ class PDDLTaskThread(Thread):
                 break
         print "Domain %s: %s" % (self.domain, self.result)
         # Publish empty action to current action topic (since we're done)
-        plan_step_msg = PDDLPlanStep()
-        plan_step_msg.domain = self.domain
-        plan_step_msg.problem = self.problem_name
-        self.action_pub.publish(plan_step_msg)
+       # plan_step_msg = PDDLPlanStep()
+       # plan_step_msg.domain = self.domain
+       # plan_step_msg.problem = self.problem_name
+       # self.action_pub.publish(plan_step_msg)
 
         if self.next_thread is not None:
             print "Domain %s - Starting second-half thread." % self.domain
