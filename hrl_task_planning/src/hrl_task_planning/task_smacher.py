@@ -30,12 +30,8 @@ class TaskSmacher(object):
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
+        # TODO: if domain + problem already has a thread, re-purpose that....
         kill_ids = set([thread.domain for thread in running if (thread.domain == req.domain or thread.problem_name != req.name)])
-#        print "Req: ", req
-#        print "Running: "
-#        for th in running:
-#            print th.domain, th.problem_name
-#        print "Kill IDS: ", kill_ids
         for domain in kill_ids:
             self.preempt_domain_threads(domain)
         thread = self.create_thread(req)
@@ -117,7 +113,9 @@ class PDDLTaskThread(Thread):
         self.problem_name = problem_msg.name
         self.domain = problem_msg.domain
         self.result = None
-        self.action_history = []
+        self.force_new_goal = False
+        self.traversed_solution = {'steps': [], 'states': []}
+        self.solution_history = []
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.solution_pub = rospy.Publisher('/pddl_tasks/%s/solution' % self.domain, PDDLSolution, queue_size=10, latch=True)
@@ -131,7 +129,11 @@ class PDDLTaskThread(Thread):
         self.daemon = True
 
     def current_action_cb(self, plan_step_msg):
-        self.action_history.append(plan_step_msg)
+        sol = self.solution_history[-1]
+        for i, action in enumerate(sol.steps):
+            if plan_step_msg.action in action and all([arg in action for arg in plan_step_msg.args]):
+                self.traversed_solution['steps'].append(action)
+                self.traversed_solution['states'].append(sol.states[i])
 
     def domain_state_cb(self, pddl_state_msg):
         self.domain_state = pddl_state_msg.predicates
@@ -156,16 +158,18 @@ class PDDLTaskThread(Thread):
             try:
                 # print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
-#                new_solution_sequence = []
-#                for i in range(len(solution.steps)):
-#                    new_solution_sequence.append((solution.steps[i], solution.states[i], solution.states[i+1]))
-#                full_solution_history = merge_solutions(self.action_history, new_solution_sequence)
+                self.solution_history.append(solution)
+                steps = copy.copy(self.traversed_solution['steps'])
+                steps.extend(solution.steps)
+                states = copy.copy(self.traversed_solution['states'])
+                states.extend(solution.states)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
                 sol_msg.problem = self.problem_name
                 sol_msg.solved = solution.solved
-                sol_msg.actions = solution.steps
-                sol_msg.states = solution.states
+                sol_msg.actions = steps
+                sol_msg.states = states
+                print sol_msg
                 self.solution_pub.publish(sol_msg)
                 print "Solution:\n", solution.steps
                 if solution.solved:
@@ -208,6 +212,8 @@ class PDDLTaskThread(Thread):
             except Exception as e:
                 raise e
             if self.result == 'preempted':
+                if self.force_new_goal:
+                    continue
                 if self.next_thread is not None:
                     self.next_thread.preempt()
                 break
@@ -220,6 +226,9 @@ class PDDLTaskThread(Thread):
     def preempt(self):
         if self.state_machine is not None:
             self.state_machine.request_preempt()
+
+    def set_new_goal(self, problem_msg):
+        self.problem_msg
 
 
 # def merge_solutions(prior, new):
