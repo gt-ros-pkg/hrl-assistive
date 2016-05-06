@@ -31,6 +31,11 @@ class TaskSmacher(object):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
         kill_ids = set([thread.domain for thread in running if (thread.domain == req.domain or thread.problem_name != req.name)])
+#        print "Req: ", req
+#        print "Running: "
+#        for th in running:
+#            print th.domain, th.problem_name
+#        print "Kill IDS: ", kill_ids
         for domain in kill_ids:
             self.preempt_domain_threads(domain)
         thread = self.create_thread(req)
@@ -46,9 +51,9 @@ class TaskSmacher(object):
             if thread.problem_name == problem_name:
                 if thread.is_alive():
                     thread.preempt()
-                    rospy.loginfo("Killing %s thread", thread.problem_name)
+                    rospy.loginfo("Preempt Problem %s -- Killing %s thread", thread.problem_name, thread.domain)
                     thread.join()  # DANGEROUS BLOCKING CALL HERE
-                    rospy.loginfo("Killed %s thread", thread.problem_name)
+                    rospy.loginfo("Preempt Problem %s -- Killed %s thread", thread.problem_name, thread.domain)
         self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
 
     def preempt_domain_threads(self, domain):
@@ -56,9 +61,9 @@ class TaskSmacher(object):
             if thread.domain == domain:
                 if thread.is_alive():
                     thread.preempt()
-                    rospy.loginfo("Killing %s thread", thread.problem_name)
+                    rospy.loginfo("Preempt domain %s -- Killing thread in problem %s", thread.domain, thread.problem_name)
                     thread.join()  # DANGEROUS BLOCKING CALL HERE
-                    rospy.loginfo("Killed %s thread", thread.problem_name)
+                    rospy.loginfo("Preempt domain %s -- Killed thread in problem %s", thread.domain, thread.problem_name)
         self._sm_threads = [thread for thread in self._sm_threads if thread.domain != domain]  # cut out now-preempted thread objects
 
     def create_thread(self, problem_msg):
@@ -112,10 +117,11 @@ class PDDLTaskThread(Thread):
         self.problem_name = problem_msg.name
         self.domain = problem_msg.domain
         self.result = None
+        self.action_history = []
         self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.solution_pub = rospy.Publisher('/pddl_tasks/%s/solution' % self.domain, PDDLSolution, queue_size=10, latch=True)
-        self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
+        self.action_sub = rospy.Subscriber('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, self.current_action_cb)
         # TODO: Catch close signal, publish empty action before stopping...
         self.planner_service = rospy.ServiceProxy("/pddl_planner", PDDLPlanner)
         self.domain_smach_states = importlib.import_module("hrl_task_planning.%s_states" % self.domain)
@@ -123,6 +129,9 @@ class PDDLTaskThread(Thread):
         self.domain_status_sub = rospy.Subscriber('/pddl_tasks/%s/state' % self.domain, PDDLState, self.domain_state_cb)
         self.state_machine = None
         self.daemon = True
+
+    def current_action_cb(self, plan_step_msg):
+        self.action_history.append(plan_step_msg)
 
     def domain_state_cb(self, pddl_state_msg):
         self.domain_state = pddl_state_msg.predicates
@@ -147,6 +156,10 @@ class PDDLTaskThread(Thread):
             try:
                 # print self.problem_msg
                 solution = self.planner_service.call(self.problem_msg)
+#                new_solution_sequence = []
+#                for i in range(len(solution.steps)):
+#                    new_solution_sequence.append((solution.steps[i], solution.states[i], solution.states[i+1]))
+#                full_solution_history = merge_solutions(self.action_history, new_solution_sequence)
                 sol_msg = PDDLSolution()
                 sol_msg.domain = self.domain
                 sol_msg.problem = self.problem_name
@@ -199,11 +212,6 @@ class PDDLTaskThread(Thread):
                     self.next_thread.preempt()
                 break
         print "Domain %s: %s" % (self.domain, self.result)
-        # Publish empty action to current action topic (since we're done)
-       # plan_step_msg = PDDLPlanStep()
-       # plan_step_msg.domain = self.domain
-       # plan_step_msg.problem = self.problem_name
-       # self.action_pub.publish(plan_step_msg)
 
         if self.next_thread is not None:
             print "Domain %s - Starting second-half thread." % self.domain
@@ -212,6 +220,10 @@ class PDDLTaskThread(Thread):
     def preempt(self):
         if self.state_machine is not None:
             self.state_machine.request_preempt()
+
+
+# def merge_solutions(prior, new):
+#     for
 
 
 class PDDLSmachState(smach.State):
@@ -245,9 +257,6 @@ class PDDLSmachState(smach.State):
         self.action_pub.publish(plan_step_msg)
         self.on_execute(ud)
         rate = rospy.Rate(20)
-        # print "Starting PDDLSmachState: %s" % self.action
-        # print "Initial State: ", str(self.init_state)
-        # print "Goal State: ", str(self.goal_state)
         while self.current_state is None:
             rospy.loginfo("State %s waiting for current state", self.action)
             rospy.sleep(1)

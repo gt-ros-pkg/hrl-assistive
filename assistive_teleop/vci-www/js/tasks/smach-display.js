@@ -36,10 +36,14 @@ RFH.Smach = function(options) {
 
     // Remove a domain from the internal list, close subscribers for its solution and current_action topics
     self.cleanupDomain = function (domain) {
-        self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
-        delete self.currentActionSubscribers[domain];
-        self.solutionSubscribers[domain].unsubscribe();
-        delete self.solutionSubscribers[domain];
+        if (self.currentActionSubscribers[domain]){
+            self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
+            delete self.currentActionSubscribers[domain];
+        }
+        if (self.solutionSubscribers[domain]) {
+            self.solutionSubscribers[domain].unsubscribe();
+            delete self.solutionSubscribers[domain];
+        }
         delete self.domains[domain];
         self.updateInterface();
     };

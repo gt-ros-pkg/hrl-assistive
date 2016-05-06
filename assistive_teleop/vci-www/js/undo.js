@@ -123,7 +123,7 @@ RFH.Undo = function (options) {
             }
         }
         for (var j in toCancelList) {
-            to_preds.push('(NOT '+toCancelList[i]+')');
+            to_preds.push('(NOT '+toCancelList[j]+')');
         };
         return to_preds;
     };
@@ -134,13 +134,14 @@ RFH.Undo = function (options) {
         if (priorState === null) {
             RFH.smach.cancelTask(undoEntry.command.problem);
         } else {
-            var dom = priorState.domain;
+            var dom = priorState.domain.toLowerCase();
             var currentActIdx = RFH.smach.getActionIndex(RFH.smach.domains[dom].currentAction, RFH.smach.domains[dom].solution_steps);
             var currentState = RFH.smach.domains[dom].solution_steps[currentActIdx].init_state;
             // TODO: Get differences in state to revert
             var problem_msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-            problem_msg.name = undoEntry.command.problem_name;
-            problem_msg.goal = getStateDiff(currentState, priorState.predicates);
+            problem_msg.domain = dom;
+            problem_msg.name = undoEntry.command.problem;
+            problem_msg.goal = getStateDiff(currentState.predicates, priorState.predicates);
             taskCmdPub.publish(problem_msg);
         }
     };

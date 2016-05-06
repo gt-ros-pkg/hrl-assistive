@@ -26,7 +26,6 @@
                      (forall (?gr - gripper) (not (grasping ?gr ?o)))
                 )
   :effect (and (grasping ?g ?o)
-               (not (chosen-obj ?o))
           )
  )
 
@@ -39,7 +38,6 @@
                        (forall (?gr - gripper) (not (grasping ?gr ?o)))
                        )
     :effect (and (grasping ?g ?o)
-                 (not (chosen-obj ?o))
                  )
  )
 
