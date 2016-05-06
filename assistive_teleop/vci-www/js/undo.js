@@ -115,12 +115,44 @@ RFH.Undo = function (options) {
         }
     };
 
+    var getStateDiff = function (from_preds, to_preds) {
+        var toCancelList = [];
+        for (var i in from_preds) {
+            if (to_preds.indexOf(from_preds[i]) < 0) {
+                toCancelList.push(from_preds[i]);
+            }
+        }
+        for (var j in toCancelList) {
+            to_preds.push('(NOT '+toCancelList[i]+')');
+        };
+        return to_preds;
+    };
+
+    sentUndoCommands['task'] = {};
+    undoFunctions['task'] = function (undoEntry) {
+        var priorState = RFH.smach.getPriorState();
+        if (priorState === null) {
+            RFH.smach.cancelTask(undoEntry.command.problem);
+        } else {
+            var dom = priorState.domain;
+            var currentActIdx = RFH.smach.getActionIndex(RFH.smach.domains[dom].currentAction, RFH.smach.domains[dom].solution_steps);
+            var currentState = RFH.smach.domains[dom].solution_steps[currentActIdx].init_state;
+            // TODO: Get differences in state to revert
+            var problem_msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
+            problem_msg.name = undoEntry.command.problem_name;
+            problem_msg.goal = getStateDiff(currentState, priorState.predicates);
+            taskCmdPub.publish(problem_msg);
+        }
+    };
+
+    // TODO: Listen to perform_task and record commands by domain/problem to re-use objects field later?
+    
     self.states['task'] = {};
     var domainStateCB = function (state) {
         self.states['task'][state.domain] = state.predicates;
     };
 
-    var domainStepCB = function (step) {
+    var currentActionCB = function (step) {
         if (sentUndoCommands['task'][step.domain] > 0) {
             sentUndoCommands['task'][step.domain] -= 1;
             return;
@@ -139,113 +171,51 @@ RFH.Undo = function (options) {
 
         var undoEntry = new RFH.UndoEntry({
             type: 'task',
-            stateGoal: self.states['task'][step.domain],
+            stateGoal: [], 
             command: step
         });
         eventQueue.pushUndoEntry(undoEntry);
     };
 
-    var taskStateSubs = {};
-    var taskStepSubs = {};
-    var setupDomainSubs = function (domain) {
-        var stateSub = new ROSLIB.Topic({
-            ros: ros,
-            name: 'pddl_tasks/'+domain+'/state',
-            messageType: 'hrl_task_planning/PDDLState'
-        });
-        stateSub.subscribe(domainStateCB);
-        taskStateSubs[domain] = stateSub;
-
-        var stepSub = new ROSLIB.Topic({
+    var currentActionSubs = {};
+    var setupDomain = function (domain) {
+        var currentActionSub = new ROSLIB.Topic({
             ros: ros,
             name: 'pddl_tasks/'+domain+'/current_action',
             messageType: 'hrl_task_planning/PDDLPlanStep'
         });
-        stepSub.subscribe(domainStepCB);
-        taskStepSubs[domain] = stepSub;
+        currentActionSub.subscribe(currentActionCB);
+        currentActionSubs[domain] = currentActionSub;
     };
 
-    sentUndoCommands['task'] = {};
-    undoFunctions['task'] = function (undoEntry) {
-        var domainActions = RFH.smach.getDomainData(undoEntry.command.domain).actionList;
-        for (var i=0; i < domainActions.length; i += 1) {
-            if (domainActions[i].name == undoEntry.command.action) {
-                if (i == 0) {
-                    RFH.smach.cancelTask(undoEntry.command.problem);
-                    return;
-                } else {
-                    var goal = domainActions[i-1].goal_state;
-                    continue;
-                }
-            }
-        }
-        var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        pddlCmd.domain = undoEntry.command.domain;
-        pddlCmd.name = undoEntry.command.problem;
-        pddlCmd.objects = undoEntry.command.objects;
-        pddlCmd.goal = goal;
-        sentUndoCommands['task'][undoEntry.command.domain] += 1;
-        taskCmdPub.publish(pddlCmd);
-    };
-    
     var taskCmdPub = new ROSLIB.Topic({
         ros: ros,
         name: 'perform_task',
         messageType: 'hrl_task_planning/PDDLProblem'
     });
 
-    var taskActiveDomains = [];
+    var activeDomains = [];
     var activeDomainsCB = function (domains_msg) {
-        var domains = domains_msg.domains;
-        var newDomains = [];
-        for (var i=0; i<domains.length; i+=1) {
-            if (taskActiveDomains.indexOf(domains[i]) < 0){
-                newDomains.push(domains[i]);
+        var newDomains = domains_msg.domains;
+        for (var domain in self.domains) {
+            var idx = newDomains.indexOf(domain);
+            if (idx < 0) { // Previously active, now gone, so clean up
+                self.clearDomain(domain);
+            } else {
+               newDomains.splice(idx, 1);  // If already known, remove from list
             }
         }
-        for (var j=0; j<newDomains.length; j+=1) {
-            setupDomainSubs(newDomains[j]);
-        }
+        // Set up subscribers for newly active domains
+        for (var i=0; i<newDomains.length; i+=1) {
+            setupDomain(newDomains[i]);
+        };
     };
-    var activeDomainsSub = new ROSLIB.Topic({
+    var activeDomainsSubscriber = new ROSLIB.Topic({
         ros: ros,
-        name: 'pddl_tasks/active_domains',
-        messageType: 'hrl_task_planning/DomainList'
+        name: '/pddl_tasks/active_domains',
+        messageType: '/hrl_task_planning/DomainList'
     });
-    activeDomainsSub.subscribe(activeDomainsCB);
-
-    var domainSolutions = {};
-    var taskSolutionCB = function (sol_msg) {
-        domainSolutions[sol_msg.domain] = {'actions': sol_msg.actions,
-                                           'states': sol_msg.states}
-    };
-    var taskSolutionSub = new ROSLIB.Topic({
-        ros: ros,
-        name: '/task_solution',
-        messageType: 'hrl_task_planning/PDDLSolution'
-    });
-    taskSolutionSub.subscribe(taskSolutionCB);
-
-//    var taskCmdSub = new ROSLIB.Topic({
-//        ros: ros,
-//        name: 'perform_task',
-//        messageType: 'hrl_task_planning/PDDLProblem'
-//    });
-//
-//    var taskCmdCB = function (problem_msg) {
-//        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
-//            sentUndoCommands['task'][problem_msg.domain] -= 1;
-//            return;
-//        };
-//        var undoEntry = new RFH.UndoEntry({
-//            type: 'task',
-//            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
-//            command: problem_msg
-//        });
-//       eventQueue.pushUndoEntry(undoEntry); 
-//    };
-//    taskCmdSub.subscribe(taskCmdCB);
-
+    activeDomainsSubscriber.subscribe(activeDomainsCB);
     /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT ARM UNDO FUNCTIONS ////////////////////*/
