@@ -5,7 +5,6 @@ RFH.Smach = function(options) {
     self.display = new RFH.SmachDisplay({ros: ros,
                                          container: self.$displayContainer});
     self.domains = {};
-    self.activeState = null;
     self.currentActionSubscribers = {};
     self.solutionSubscribers = {};
 
@@ -17,6 +16,7 @@ RFH.Smach = function(options) {
     self.cancelTask = function (problem) {
         var cancelResultCB = function (resp) {
             if (resp.result) {
+                RFH.taskMenu.startTask(RFH.taskMenu.defaultTask);
                 console.log("Cancelled task successfully");
             } else {
                 RFH.log("Failed to cancel task");
@@ -36,10 +36,14 @@ RFH.Smach = function(options) {
 
     // Remove a domain from the internal list, close subscribers for its solution and current_action topics
     self.cleanupDomain = function (domain) {
-        self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
-        delete self.currentActionSubscribers[domain];
-        self.solutionSubscribers[domain].unsubscribe();
-        delete self.solutionSubscribers[domain];
+        if (self.currentActionSubscribers[domain]){
+            self.currentActionSubscribers[domain].unsubscribe(); // Warning: removes all subs in rosjs, may be dangerous
+            delete self.currentActionSubscribers[domain];
+        }
+        if (self.solutionSubscribers[domain]) {
+            self.solutionSubscribers[domain].unsubscribe();
+            delete self.solutionSubscribers[domain];
+        }
         delete self.domains[domain];
         self.updateInterface();
     };
@@ -131,7 +135,6 @@ RFH.Smach = function(options) {
         // If there is no known current problem, clear the display, 
         if (self.currentProblem === null ) {
             self.display.empty();
-//            RFH.taskMenu.startTask(RFH.taskMenu.defaultTask);
             return; 
         }; 
 
@@ -145,7 +148,7 @@ RFH.Smach = function(options) {
         // Find the leaf domain + action of the domain/action tree
         var leafDomainName = getLeafDomain(relevantDomains);
         var leafDomain = self.domains[leafDomainName];
-        var actIdx = getActionIndex(leafDomain.currentAction, leafDomain.solution_steps);
+        var actIdx = self.getActionIndex(leafDomain.currentAction, leafDomain.solution_steps);
         if (actIdx < 0) { return; } // Desired action not in existing plan...
 
         // Send leaf domain data to display, update, run.
@@ -185,7 +188,7 @@ RFH.Smach = function(options) {
         var leafDomain = getLeafDomain(relevantDomains);
         // Get action index, if 0, repeat on next-higher domain OR return null
         do {
-            var currentActionIndex = getActionIndex(self.domains[leafDomain].currenAction, self.domains[leafDomain].solution_steps);
+            var currentActionIndex = self.getActionIndex(self.domains[leafDomain].currentAction, self.domains[leafDomain].solution_steps);
             if (currentActionIndex == 0) {
                 leafDomain = getParentDomain(leafDomain);
             } else {
@@ -195,7 +198,7 @@ RFH.Smach = function(options) {
         return null; // Currently in 1st state in top-level domain
     };
 
-    var getActionIndex = function (action, actionList) {
+    self.getActionIndex = function (action, actionList) {
         for (var idx in actionList) {
             if (action.name !== actionList[idx].name) { continue; }
             var argsMatch = true;
@@ -226,10 +229,10 @@ RFH.Smach = function(options) {
     var getParentDomain = function (domain) {
         var problemDomains = getProblemDomains(self.domains[domain].problem); 
         for (var idx in problemDomains) {
-            if (!problemDomains[idx].solution_steps) {continue};
-            solution = problemDomains[idx].solution_steps;
+            if (!self.domains[problemDomains[idx]].solution_steps) {continue};
+            var solution = self.domains[problemDomains[idx]].solution_steps;
             for (var action in solution) {
-                if (solution[action].name === domain) { return problemDomains[idx]; }
+                if (solution[action].name.toLowerCase() === domain) { return problemDomains[idx]; }
             };
         };
         return null; // Found nothing in loop above...

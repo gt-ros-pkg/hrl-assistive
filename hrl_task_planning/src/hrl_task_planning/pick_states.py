@@ -23,6 +23,8 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return OverheadGraspState(hand=args[0], location=args[1], domain=domain, problem=problem,
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
+    elif action == 'RESET-AUTO-TRIED':
+        return ResetAutoTriedState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action in ['MANUAL-GRASP', 'CHOOSE-OBJECT']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
@@ -43,6 +45,22 @@ class DeleteParamState(PDDLSmachState):
         except rospy.ROSException:
             rospy.warn("[%s] Error trying to delete param %s", rospy.get_name(), self.param)
             return 'aborted'
+
+
+class ResetAutoTriedState(PDDLSmachState):
+    def __init__(self, *args, **kwargs):
+        super(ResetAutoTriedState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=3)
+
+    def on_execute(self, ud):
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.problem = self.problem
+        state_update.predicates = ['(NOT (AUTO-GRASP-DONE))']
+        print "Publishing (AUTO-GRASP-DONE) update"
+        self.state_update_pub.publish(state_update)
 
 
 from assistive_teleop.msg import OverheadGraspAction, OverheadGraspGoal
@@ -71,7 +89,17 @@ class OverheadGraspState(PDDLSmachState):
         goal_msg = OverheadGraspGoal()
         goal_msg.goal_pose = goal_pose
         self.overhead_grasp_client.send_goal(goal_msg)
-        self.overhead_grasp_client.wait_for_result()
+        while not rospy.is_shutdown() and self.overhead_grasp_client.get_result() is None:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Cancelling overhead grasp action.", rospy.get_name())
+                self.overhead_grasp_client.cancel_goal()
+            print "OGA Result: ", self.overhead_grasp_client.get_result()
+            rospy.sleep(1)
+        if self.preempt_requested():
+            return
+#        result = self.overhead_grasp_client.get_state()
+#        print "Result: ", result
+#        if result not in [GS.ABORTED, GS.PREEMPTED]:
         rospy.loginfo("Overhead Grasp Completed")
         state_update = PDDLState()
         state_update.domain = self.domain
