@@ -132,7 +132,7 @@ def getData(fileName, rf_center, local_range, param_dict, downSampleSize=200, cu
 
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
                downSampleSize=200, scale=1.0, ae_data=False, \
-               cut_data=None, \
+               cut_data=None, init_param_dict=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
@@ -194,8 +194,13 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                                              renew=data_renew, save_pkl=failure_data_pkl)
 
         # Task-oriented hand-crafted features
-        allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                                 cut_data=cut_data)
+        if init_param_dict is not None:
+            allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                            param_dict=init_param_dict, cut_data=cut_data)
+            param_dict=init_param_dict                                            
+        else:
+            allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                                     cut_data=cut_data)            
         successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
                                                  param_dict=param_dict, cut_data=cut_data)
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \

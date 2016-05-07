@@ -9,9 +9,11 @@ from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection.classifiers import classifier as cb
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.params import *
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 
 from sklearn import preprocessing
 from joblib import Parallel, delayed
+import random, copy
 
 
 import itertools
@@ -20,7 +22,7 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
 
-def onlineEvaluation(task, raw_data_path, save_data_path, param_dict, renew=False ):
+def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, renew=False ):
 
     ## Parameters
     # data
@@ -83,7 +85,145 @@ def onlineEvaluation(task, raw_data_path, save_data_path, param_dict, renew=Fals
         ut.save_pickle(ROC_data, roc_data_pkl)
     else:
         ROC_data = ut.load_pickle(roc_data_pkl)
+
+    plotROC(method, ROC_data)
+
+    return
+
+
+def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
+                           task2, raw_data_path2, save_data_path2, param_dict2, renew=False ):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict    = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+    
+    #------------------------------------------
+    # get subject1 - task1 's hmm & classifier data
+    nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
+    method = 'sgd'
+    ROC_dict['nPoints'] = nPoints = 10
+    roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+task2+'.pkl')
+
+    if os.path.isfile(roc_data_pkl) is False or renew is True:
+
+        ROC_data = {}
+        ROC_data[method] = {}
+        ROC_data[method]['complete'] = False 
+        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+        ## ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['result'] = [ [] for j in xrange(nPoints) ]
+
         
+
+        # parallelization 
+        r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_diff)( idx,
+                                                                           task, raw_data_path, \
+                                                                           save_data_path,\
+                                                                           param_dict, \
+                                                                           task2, raw_data_path2, \
+                                                                           save_data_path2, \
+                                                                           param_dict2, \
+                                                                           method, ROC_data ) \
+                                                                           for idx in xrange(nFolds) )
+        l_data = r
+        for i in xrange(len(l_data)):
+            for j in xrange(nPoints):
+                try:
+                    method = l_data[i].keys()[0]
+                except:
+                    print l_data[i]
+                    sys.exit()
+                ## if ROC_data[method]['complete'] == True: continue
+                ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+                ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+                ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+                ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+                ## ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+                ROC_data[method]['result'][j].append(l_data[i][method]['result'][j])
+
+        ROC_data[method]['complete'] = True
+
+        ut.save_pickle(ROC_data, roc_data_pkl)
+    else:
+        ROC_data = ut.load_pickle(roc_data_pkl)
+
+    plotROC(method, ROC_data)
+
+    return
+
+
+
+
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
+    
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    local_range   = 10.0
+    
+    #---------------------------------------------------------------------------
+    if task == 'scooping':
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
+        raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
+                                                                bAERenew, bHMMRenew,\
+                                                                rf_center, local_range,\
+                                                                ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------
+    elif task == 'feeding':
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
+                                                               bAERenew, bHMMRenew,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_microwhite':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task, bDataRenew, \
+                                                                         bAERenew, bHMMRenew,\
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=bAESwitch, dim=dim)
+                                                                         
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_microblack':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(task, bDataRenew, \
+                                                                         bAERenew, bHMMRenew,\
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_toolcase':
+        subjects = ['gatsbii']
+        raw_data_path, save_data_path, param_dict = getPushingToolCase(task, bDataRenew, \
+                                                                       bAERenew, bHMMRenew,\
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=bAESwitch, dim=dim)
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    param_dict['subject_list'] = subjects
+    return raw_data_path, save_data_path, param_dict
+
+
+def plotROC(method, ROC_data):
     #-------------------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
     elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
@@ -198,7 +338,7 @@ def onlineEvaluation(task, raw_data_path, save_data_path, param_dict, renew=Fals
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         plt.show()
     
-    return ROC_data
+    return
 
 
 def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict ):
@@ -259,16 +399,6 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
-
-    # random order
-    import random, copy
-    def randomList(a):
-        b = []
-        for i in range(len(a)):
-            element = random.choice(a)
-            a.remove(element)
-            b.append(element)
-        return b
 
     idx_list = range(len(X_test))
     new_idx_list = randomList(idx_list)
@@ -345,11 +475,242 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     return data
 
 
+def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, \
+                          task2, raw_data_path2, save_data_path2, param_dict2, \
+                          method, ROC_data ):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+
+    ### Training HMM and SVM using task 1 data ------------------------------------------------
+    crossVal_pkl = os.path.join(save_data_path, 'cv_'+task+'.pkl')
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+
+    # Scaling data
+    d = ut.load_pickle(crossVal_pkl)
+    init_param_dict = d['param_dict']
+    
+
+    print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    nState       = d['nState']
+    nEmissionDim = d['nEmissionDim']
+    ll_classifier_train_X   = d['ll_classifier_train_X']
+    ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+    ll_classifier_train_idx = d['ll_classifier_train_idx']
+    ll_classifier_test_X    = d['ll_classifier_test_X']  
+    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ll_classifier_test_idx  = d['ll_classifier_test_idx']
+    nLength = d['nLength']
+    nPoints = param_dict['ROC']['nPoints']
+
+    X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
+                                                ll_classifier_train_Y, \
+                                                ll_classifier_train_idx)
+
+    # data preparation
+    if method.find('svm')>=0 or method.find('sgd')>=0:
+        scaler = preprocessing.StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+    else:
+        X_train_scaled = X_train
+    print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)
+    
+    ## # pre-trained HMM from training data
+    ## ml = hmm.learning_hmm(nState, d['nEmissionDim'], verbose=False)
+    ## ml.set_hmm_object(d['A'], d['B'], d['pi'])
+    
+    #### Getting Test data from task 2 ------------------------------------------------------
+    d2 = dm.getDataSet(param_dict2['subject_list'], task2, raw_data_path2, save_data_path2, \
+                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
+                       downSampleSize=param_dict['data_param']['downSampleSize'], \
+                       handFeatures=param_dict['data_param']['handFeatures'], \
+                       cut_data=param_dict['data_param']['cut_data'] )
+                       
+    successData = d2['successData'] 
+    failureData = d2['failureData']
+    init_param_dict2 = d2['param_dict']
+
+
+    target_max = init_param_dict['feature_max']
+    target_min = init_param_dict['feature_min']
+    cur_max    = init_param_dict['feature_max']
+    cur_min    = init_param_dict['feature_min']
+
+
+    testDataX = []
+    testDataY = []
+    for i in xrange(nEmissionDim):
+        temp = np.vstack([successData[i], failureData[i]])
+        testDataX.append( temp )
+
+    testDataY = np.hstack([ -np.ones(len(successData[0])), \
+                            np.ones(len(failureData[0])) ])
+
+    
+    # rescaling by two param dicts
+    new_testDataX = []
+    for i, feature in enumerate(testDataX):
+        # recover
+        new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
+        # rescaling
+        new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
+        new_testDataX.append(new_feature)
+
+    print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
+
+    #### Run HMM with the test data from task 2 ----------------------------------------------
+    ## new_idx_list = randomList(idx_list)
+    ## X_test = [X_test[idx] for idx in new_idx_list]
+    ## Y_test = [Y_test[idx] for idx in new_idx_list]
+
+    startIdx = 4
+    r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)\
+                            (i, d['A'], d['B'], d['pi'], d['F'], \
+                             [ new_testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                             nEmissionDim, nState,\
+                             startIdx=startIdx, \
+                            bPosterior=True)
+                            for i in xrange(len(new_testDataX[0])))
+    _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+
+    # nSample x nLength
+    ll_classifier_test_X = []
+    ll_classifier_test_Y = []
+    for i in xrange(len(ll_logp)):
+        l_X = []
+        l_Y = []
+        for j in xrange(len(ll_logp[i])):        
+            l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+            if testDataY[i] > 0.0: l_Y.append(1)
+            else: l_Y.append(-1)
+
+            if np.isnan(ll_logp[i][j]):
+                print "nan values in ", i, j
+                print testDataX[0][i]
+                print ll_logp[i][j], ll_post[i][j]
+                sys.exit()
+
+        ll_classifier_test_X.append(l_X)
+        ll_classifier_test_Y.append(l_Y)
+
+
+
+    idx_list = range(len(ll_classifier_test_X))
+    new_idx_list = randomList(idx_list)
+    X_test = [ll_classifier_test_X[idx] for idx in new_idx_list]
+    Y_test = [ll_classifier_test_Y[idx] for idx in new_idx_list]
+    
+
+    print np.shape(X_test), np.shape(Y_test)
+    ## sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    for j in xrange(nPoints): 
+        dtc.set_params(**SVM_dict)        
+        if method == 'sgd':
+            weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
+            dtc.set_params( class_weight=weights[j] )
+        else:
+            print "Not available method"
+            return "Not available method", -1, params
+
+        print "Start to train a classifier: ", idx, j, np.shape(X_train), np.shape(Y_train)
+        ret = dtc.fit(X_train_scaled, Y_train)
+        if ret is False: return 'fit failed', -1
+
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []
+        result_list = []
+
+        # incremental learning and classification
+        for i in xrange(len(X_test)):
+            if len(Y_test[i])==0: continue
+            
+            # 1) update classifier
+            # Get partial fitting data
+            if i is not 0:
+                X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
+                sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                sample_weight/=np.sum(sample_weight)
+                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+
+            # 2) test classifier
+            X_ptest = X_test[i]
+            Y_ptest = Y_test[i]
+            Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+            for k, y_est in enumerate(Y_est):
+                if y_est > 0:
+                    break
+
+            tp=0; fp=0; tn=0; fn=0
+            if Y_ptest[0] > 0:
+                if y_est > 0:
+                    tp = 1
+                    tp_l.append(1)
+                else:
+                    fn = 1
+                    fn_l.append(1)
+            elif Y_ptest[0] <= 0:
+                if y_est > 0:
+                    fp = 1
+                    fp_l.append(1)
+                else:
+                    tn = 1
+                    tn_l.append(1)
+
+            result_list.append([tp,fn,fp,tn])
+
+        data[method]['tp_l'][j] += tp_l
+        data[method]['fp_l'][j] += fp_l
+        data[method]['fn_l'][j] += fn_l
+        data[method]['tn_l'][j] += tn_l
+        ## ROC_data[method]['delay_l'][j] += delay_l
+        ROC_data[method]['result'][j].append(result_list)
+        ## print "length: ", np.shape(ROC_data[method]['result'][j]), np.shape(result_list)
+
+    return data
+
+
+
+
+                          
+
+
+
 def getAUC(fpr_l, tpr_l):
     area = 0.0
     for i in range(len(fpr_l)-1):        
         area += (fpr_l[i+1]-fpr_l[i])*(tpr_l[i]+tpr_l[i+1])*0.5
     return area
+
+
+# random order
+def randomList(a):
+    b = []
+    for i in range(len(a)):
+        element = random.choice(a)
+        a.remove(element)
+        b.append(element)
+    return b
 
 
 if __name__ == '__main__':
@@ -360,6 +721,11 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--task2', action='store', dest='task2', type='string', default='pushing_microblack',
                  help='type the desired task name')
+
+    p.add_option('--same_class', '--sc', action='store_true', dest='bSameClass', \
+                 default=False,help='Run online evaluation with the same class data')
+    p.add_option('--diff_class', '--dc', action='store_true', dest='bDiffClass', \
+                 default=False,help='Run online evaluation with the different class data')
 
     
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
@@ -378,59 +744,23 @@ if __name__ == '__main__':
     
     opt, args = p.parse_args()
 
-    rf_center     = 'kinEEPos'        
-    scale         = 1.0
-    local_range   = 10.0
-    
+
+
+    #---------------------------------------------------------------------------           
+    #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------
-    if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
-                                                                opt.bAERenew, opt.bHMMRenew,\
-                                                                rf_center, local_range,\
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-    #---------------------------------------------------------------------------
-    elif opt.task == 'feeding':
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
-                                                               opt.bAERenew, opt.bHMMRenew,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-    #---------------------------------------------------------------------------           
-    elif opt.task == 'pushing_microwhite':
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
-                                                                         opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-                                                                         
-    #---------------------------------------------------------------------------           
-    elif opt.task == 'pushing_microblack':
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, opt.bDataRenew, \
-                                                                         opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-    #---------------------------------------------------------------------------           
-    elif opt.task == 'pushing_toolcase':
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, opt.bDataRenew, \
-                                                                       opt.bAERenew, opt.bHMMRenew,\
-                                                                       rf_center, local_range, \
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
+    if opt.bDiffClass:
+        raw_data_path1, save_data_path1, param_dict1 = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        raw_data_path2, save_data_path2, param_dict2 = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        onlineEvaluationDouble(opt.task, raw_data_path1, save_data_path1, param_dict1, \
+                               opt.task2, raw_data_path2, save_data_path2, param_dict2, \
+                               renew=opt.bRenew )
     else:
-        print "Selected task name is not available."
-        sys.exit()
-
-
-    #---------------------------------------------------------------------------           
-    #---------------------------------------------------------------------------           
-    #---------------------------------------------------------------------------                  
-    onlineEvaluation(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew )
+        raw_data_path, save_data_path, param_dict = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew )
             
 
 
