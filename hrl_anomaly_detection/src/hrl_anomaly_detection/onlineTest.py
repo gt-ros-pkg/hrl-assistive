@@ -566,15 +566,15 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     testDataY = np.hstack([ -np.ones(len(successData[0])), \
                             np.ones(len(failureData[0])) ])
 
-    
-    # rescaling by two param dicts
-    new_testDataX = []
-    for i, feature in enumerate(testDataX):
-        # recover
-        new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
-        # rescaling
-        new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
-        new_testDataX.append(new_feature)
+    new_testDataX = testDataX
+    ## # rescaling by two param dicts
+    ## new_testDataX = []
+    ## for i, feature in enumerate(testDataX):
+    ##     # recover
+    ##     new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
+    ##     # rescaling
+    ##     new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
+    ##     new_testDataX.append(new_feature)
 
     print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
 

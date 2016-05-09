@@ -725,7 +725,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 l_X = []
                 l_Y = []
                 for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                    ## l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                    if j == 0:
+                        l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                    else:
+                        l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
