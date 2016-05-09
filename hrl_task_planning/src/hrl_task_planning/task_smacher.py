@@ -37,11 +37,11 @@ class TaskSmacher(object):
                     thread.abort()
         new_thread = self.create_thread(req)
         new_thread.start()
-        self.active_problem.publish(thread.problem_name)
+        self.active_problem.publish(new_thread.problem_name)
 
     def create_thread(self, problem_msg):
         # If we're given a subgoal, prep a second thread for going to the default goal to call once we get to the subgoal
-        thread = PDDLTaskThread()
+        thread = PDDLTaskThread(problem_msg.domain)
         thread.set_problem(problem_msg)
         self._sm_threads.append(thread)
         return thread
@@ -90,8 +90,9 @@ class TaskSmacher(object):
 
 
 class PDDLTaskThread(Thread):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, domain, *args, **kwargs):
         super(PDDLTaskThread, self).__init__(*args, **kwargs)
+        self.domain = domain
         self.problem_msg = None
         self.problem_lock = Lock()
         self.abort_requested = False
@@ -110,10 +111,10 @@ class PDDLTaskThread(Thread):
         self.daemon = True
 
     def set_problem(self, problem_msg):
+        assert self.domain == problem_msg.domain, "Applying problem msg for domain %s to Solver Thread for domain %s" % (problem_msg.domain, self.domain)
         with self.problem_lock:
             self.problem_msg = problem_msg
             self.problem_name = problem_msg.name
-            self.domain = problem_msg.domain
 
     def current_action_cb(self, plan_step_msg):
         sol = self.solution_history[-1]
@@ -195,7 +196,7 @@ class PDDLTaskThread(Thread):
                                                                                 steps[i].name, steps[i].args,
                                                                                 states[i], states[i+1])
                         transitions['succeeded'] = 'succeeded' if (i == n_steps-1) else '%d-%s' % (i+1, steps[i+1].name)
-                        self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
+                        self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=copy.deepcopy(transitions))
 
             # Run the SMACH State-machine
             result = self.state_machine.execute()
@@ -243,11 +244,11 @@ class PDDLSmachState(smach.State):
         plan_step_msg.args = self.action_args
         self.action_pub.publish(plan_step_msg)
         self.on_execute(ud)
-        rate = rospy.Rate(20)
+        rospy.loginfo("State %s waiting for current state", self.action)
         while self.current_state is None:
-            rospy.loginfo("State %s waiting for current state", self.action)
-            rospy.sleep(1)
-        # print "Current State: ", str(self.current_state)
+            rospy.sleep(0.2)
+        rospy.loginfo("State %s received current state", self.action)
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             if self.preempt_requested():
                 rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
