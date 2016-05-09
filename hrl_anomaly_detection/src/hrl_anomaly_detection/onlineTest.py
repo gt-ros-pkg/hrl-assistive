@@ -566,50 +566,50 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     testDataY = np.hstack([ -np.ones(len(successData[0])), \
                             np.ones(len(failureData[0])) ])
 
-    new_testDataX = testDataX
-    ## # rescaling by two param dicts
-    ## new_testDataX = []
-    ## for i, feature in enumerate(testDataX):
-    ##     # recover
-    ##     new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
-    ##     # rescaling
-    ##     new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
-    ##     new_testDataX.append(new_feature)
+    # rescaling by two param dicts
+    new_testDataX = []
+    for i, feature in enumerate(testDataX):
+        # recover
+        new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
+        # rescaling
+        new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
+        new_testDataX.append(new_feature)
 
-    ## print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
+    print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
+    testDataX = new_testDataX*HMM_dict['scale']
 
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
-    ## startIdx = 4
-    ## r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)\
-    ##                         (i, d['A'], d['B'], d['pi'], d['F'], \
-    ##                          [ new_testDataX[j][i] for j in xrange(nEmissionDim) ], \
-    ##                          nEmissionDim, nState,\
-    ##                          startIdx=startIdx, \
-    ##                         bPosterior=True)
-    ##                         for i in xrange(len(new_testDataX[0])))
-    ## _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+    startIdx = 4
+    r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)\
+                            (i, d['A'], d['B'], d['pi'], d['F'], \
+                             [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                             nEmissionDim, nState,\
+                             startIdx=startIdx, \
+                            bPosterior=True)
+                            for i in xrange(len(testDataX[0])))
+    _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
-    ## # nSample x nLength
-    ## ll_classifier_test_X = []
-    ## ll_classifier_test_Y = []
-    ## for i in xrange(len(ll_logp)):
-    ##     l_X = []
-    ##     l_Y = []
-    ##     for j in xrange(len(ll_logp[i])):        
-    ##         l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+    # nSample x nLength
+    ll_classifier_test_X = []
+    ll_classifier_test_Y = []
+    for i in xrange(len(ll_logp)):
+        l_X = []
+        l_Y = []
+        for j in xrange(len(ll_logp[i])):        
+            l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
-    ##         if testDataY[i] > 0.0: l_Y.append(1)
-    ##         else: l_Y.append(-1)
+            if testDataY[i] > 0.0: l_Y.append(1)
+            else: l_Y.append(-1)
 
-    ##         if np.isnan(ll_logp[i][j]):
-    ##             print "nan values in ", i, j
-    ##             print testDataX[0][i]
-    ##             print ll_logp[i][j], ll_post[i][j]
-    ##             sys.exit()
+            if np.isnan(ll_logp[i][j]):
+                print "nan values in ", i, j
+                print testDataX[0][i]
+                print ll_logp[i][j], ll_post[i][j]
+                sys.exit()
 
-    ##     ll_classifier_test_X.append(l_X)
-    ##     ll_classifier_test_Y.append(l_Y)
+        ll_classifier_test_X.append(l_X)
+        ll_classifier_test_Y.append(l_Y)
 
 
     X_test = []

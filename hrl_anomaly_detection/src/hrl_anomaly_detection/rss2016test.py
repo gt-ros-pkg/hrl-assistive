@@ -467,6 +467,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                   add_logp_d=False,\
                    data_renew=False, save_pdf=False, show_plot=True, verbose=False):
 
     ## Parameters
@@ -683,12 +684,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    ## l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-                    if j == 0:
-                        l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
                     else:
-                        l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + ll_post[i][j].tolist() )
+                        l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
@@ -728,12 +730,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    ## l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-                    if j == 0:
-                        l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                    else:
-                        l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:                    
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
