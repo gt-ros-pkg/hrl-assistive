@@ -177,7 +177,7 @@ class classifier(learning_base):
                 sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
@@ -281,7 +281,7 @@ class classifier(learning_base):
             l_err = []
             for i in xrange(len(X)):
                 logp = X[i][0]
-                post = X[i][1:]
+                post = X[i][-self.nPosteriors:]
 
                 # Find the best posterior distribution
                 min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
