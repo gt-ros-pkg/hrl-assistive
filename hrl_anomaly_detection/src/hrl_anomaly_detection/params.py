@@ -274,7 +274,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 8.0, 'scale': 4.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 1.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.47, 'gamma': 3.22, 'cost': 1.55}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
@@ -301,7 +301,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -10., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
@@ -314,11 +314,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 7.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.57, 'gamma': 2.5, 'cost': 4.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 1.89, 'cost': 2.27}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
