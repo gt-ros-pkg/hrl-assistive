@@ -467,7 +467,6 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   add_logp_d=False,\
                    data_renew=False, save_pdf=False, show_plot=True, verbose=False):
 
     ## Parameters
@@ -481,7 +480,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
-    SVM_dict = param_dict['SVM']
+    SVM_dict   = param_dict['SVM']
+    add_logp_d = SVM_dict.get('add_logp_d', False)
 
     # ROC
     ROC_dict = param_dict['ROC']

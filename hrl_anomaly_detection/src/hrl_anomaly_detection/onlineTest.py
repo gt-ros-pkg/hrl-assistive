@@ -535,12 +535,7 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     ## ml.set_hmm_object(d['A'], d['B'], d['pi'])
     
     ## Getting Test data from task 2 ------------------------------------------------------
-    ## d2 = dm.getDataSet(param_dict2['subject_list'], task2, raw_data_path2, save_data_path2, \
-    ##                    param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
-    ##                    downSampleSize=param_dict['data_param']['downSampleSize'], \
-    ##                    handFeatures=param_dict['data_param']['handFeatures'], \
-    ##                    cut_data=param_dict['data_param']['cut_data'] )
-    d2 = dm.getDataSet(param_dict['subject_list'], task, raw_data_path, save_data_path, \
+    d2 = dm.getDataSet(param_dict2['subject_list'], task2, raw_data_path2, save_data_path2, \
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], \
                        handFeatures=param_dict['data_param']['handFeatures'], \
@@ -553,8 +548,8 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
 
     target_max = init_param_dict['feature_max']
     target_min = init_param_dict['feature_min']
-    cur_max    = init_param_dict['feature_max']
-    cur_min    = init_param_dict['feature_min']
+    cur_max    = init_param_dict2['feature_max']
+    cur_min    = init_param_dict2['feature_min']
 
 
     testDataX = []
@@ -576,7 +571,7 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
         new_testDataX.append(new_feature)
 
     print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
-    testDataX = new_testDataX*HMM_dict['scale']
+    testDataX = np.array(new_testDataX)*HMM_dict['scale']
 
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
@@ -677,7 +672,7 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
                 sample_weight = np.logspace(-4.,0,len(X_ptrain))
                 sample_weight/=np.sum(sample_weight)
-                ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]
