@@ -1,7 +1,7 @@
 # pylint: disable=F0401,E0611
 
 import importlib
-from threading import Thread
+from threading import Thread, Lock
 import copy
 
 import rospy
@@ -12,8 +12,6 @@ from hrl_task_planning.msg import PDDLProblem, PDDLState, PDDLSolution, DomainLi
 from hrl_task_planning.srv import PDDLPlanner, PreemptTask
 from hrl_task_planning.pddl_utils import PlanStep, State, GoalState, Predicate
 
-SPA = ["succeeded", "preempted", "aborted"]
-
 
 class TaskSmacher(object):
     def __init__(self):
@@ -21,7 +19,7 @@ class TaskSmacher(object):
         self.last_running_set = set([])
         self.active_domains_pub = rospy.Publisher('pddl_tasks/active_domains', DomainList, queue_size=10, latch=True)
         self.active_problem = rospy.Publisher('pddl_tasks/current_problem', String, queue_size=10, latch=True)
-        self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.preempt_service_cb)
+        self.preempt_service = rospy.Service("preempt_pddl_task", PreemptTask, self.cancel_service_cb)
         self.task_req_sub = rospy.Subscriber("perform_task", PDDLProblem, self.req_cb)
         self.active_problem.publish('')  # Initialize to empty string
         self.active_domains_pub.publish(DomainList([]))  # Initialize to empty list
@@ -30,51 +28,37 @@ class TaskSmacher(object):
     def req_cb(self, req):
         # Find any running tasks for this domain, kill them and their peers
         running = [thread for thread in self._sm_threads if thread.is_alive()]
-        # TODO: if domain + problem already has a thread, re-purpose that....
-        kill_ids = set([thread.domain for thread in running if (thread.domain == req.domain or thread.problem_name != req.name)])
-        for domain in kill_ids:
-            self.preempt_domain_threads(domain)
-        thread = self.create_thread(req)
-        thread.start()
+        for thread in running:
+            if thread.domain == req.domain:
+                if thread.problem_name == req.name:
+                    thread.set_new_goal(req)
+                    return
+                else:
+                    thread.abort()
+        new_thread = self.create_thread(req)
+        new_thread.start()
         self.active_problem.publish(thread.problem_name)
-
-    def preempt_service_cb(self, preempt_request):
-        self.preempt_problem_threads(preempt_request.problem_name)
-        return True
-
-    def preempt_problem_threads(self, problem_name):
-        for thread in self._sm_threads:
-            if thread.problem_name == problem_name:
-                if thread.is_alive():
-                    thread.preempt()
-                    rospy.loginfo("Preempt Problem %s -- Killing %s thread", thread.problem_name, thread.domain)
-                    thread.join()  # DANGEROUS BLOCKING CALL HERE
-                    rospy.loginfo("Preempt Problem %s -- Killed %s thread", thread.problem_name, thread.domain)
-        self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
-
-    def preempt_domain_threads(self, domain):
-        for thread in self._sm_threads:
-            if thread.domain == domain:
-                if thread.is_alive():
-                    thread.preempt()
-                    rospy.loginfo("Preempt domain %s -- Killing thread in problem %s", thread.domain, thread.problem_name)
-                    thread.join()  # DANGEROUS BLOCKING CALL HERE
-                    rospy.loginfo("Preempt domain %s -- Killed thread in problem %s", thread.domain, thread.problem_name)
-        self._sm_threads = [thread for thread in self._sm_threads if thread.domain != domain]  # cut out now-preempted thread objects
 
     def create_thread(self, problem_msg):
         # If we're given a subgoal, prep a second thread for going to the default goal to call once we get to the subgoal
-        default_goal_thread = None
-        if problem_msg.goal:
-            default_goal_problem = copy.copy(problem_msg)
-            default_goal_problem.init = problem_msg.goal
-            default_goal_problem.goal = []
-            default_goal_thread = PDDLTaskThread(default_goal_problem)
-            self._sm_threads.append(default_goal_thread)
-        # TODO: Validate combined plan sequence? (at least check that it exists?)
-        thread = PDDLTaskThread(problem_msg, next_thread=default_goal_thread)
+        thread = PDDLTaskThread()
+        thread.set_problem(problem_msg)
         self._sm_threads.append(thread)
         return thread
+
+    def cancel_service_cb(self, preempt_request):
+        self.abort_problem_threads(preempt_request.problem_name)
+        return True
+
+    def abort_problem_threads(self, problem_name):
+        for thread in self._sm_threads:
+            if thread.problem_name == problem_name:
+                if thread.is_alive():
+                    thread.abort()
+                    rospy.loginfo("Abort Problem %s -- Killing %s thread", thread.problem_name, thread.domain)
+                    thread.join()  # DANGEROUS BLOCKING CALL HERE
+                    rospy.loginfo("Abort Problem %s -- Killed %s thread", thread.problem_name, thread.domain)
+        self._sm_threads = [thread for thread in self._sm_threads if thread.problem_name != problem_name]  # cut out now-preempted thread objects
 
     def check_threads(self):
         """ Check for stopped threads, remove any, and re-publish updates list if any changes occur """
@@ -106,17 +90,14 @@ class TaskSmacher(object):
 
 
 class PDDLTaskThread(Thread):
-    def __init__(self, problem_msg, next_thread=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(PDDLTaskThread, self).__init__(*args, **kwargs)
-        self.problem_msg = problem_msg
-        self.next_thread = next_thread
-        self.problem_name = problem_msg.name
-        self.domain = problem_msg.domain
-        self.result = None
-        self.force_new_goal = False
+        self.problem_msg = None
+        self.problem_lock = Lock()
+        self.abort_requested = False
+        self.abort_lock = Lock()
         self.traversed_solution = {'steps': [], 'states': []}
         self.solution_history = []
-        self.default_goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
         self.constant_predicates = rospy.get_param('/pddl_tasks/%s/constant_predicates' % self.domain, [])
         self.solution_pub = rospy.Publisher('/pddl_tasks/%s/solution' % self.domain, PDDLSolution, queue_size=10, latch=True)
         self.action_sub = rospy.Subscriber('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, self.current_action_cb)
@@ -128,6 +109,12 @@ class PDDLTaskThread(Thread):
         self.state_machine = None
         self.daemon = True
 
+    def set_problem(self, problem_msg):
+        with self.problem_lock:
+            self.problem_msg = problem_msg
+            self.problem_name = problem_msg.name
+            self.domain = problem_msg.domain
+
     def current_action_cb(self, plan_step_msg):
         sol = self.solution_history[-1]
         for i, action in enumerate(sol.steps):
@@ -138,101 +125,92 @@ class PDDLTaskThread(Thread):
     def domain_state_cb(self, pddl_state_msg):
         self.domain_state = pddl_state_msg.predicates
 
-    def run(self):
-        # Build out problem (init, goal), check for sub-goals, plan, check for irrecoverable actions, publish plan, compose sm, run sm
-        first_run = True
-        if not self.problem_msg.goal:
-            self.problem_msg.goal = self.default_goal
-        while self.result != 'succeeded':
-            # For the current problem get initial state and
-            [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
-            if first_run:
-                while self.domain_state is None:
-                    rospy.loginfo("Waiting for state of %s domain.", self.domain)
-                    rospy.sleep(1)
-                rospy.sleep(0)
-                first_run = False
-            self.problem_msg.init = self.domain_state
-
-            # Get solution from planner
-            try:
-                # print self.problem_msg
-                solution = self.planner_service.call(self.problem_msg)
-                self.solution_history.append(solution)
-                steps = copy.copy(self.traversed_solution['steps'])
-                steps.extend(solution.steps)
-                states = copy.copy(self.traversed_solution['states'])
-                states.extend(solution.states)
-                sol_msg = PDDLSolution()
-                sol_msg.domain = self.domain
-                sol_msg.problem = self.problem_name
-                sol_msg.solved = solution.solved
-                sol_msg.actions = steps
-                sol_msg.states = states
-                print sol_msg
-                self.solution_pub.publish(sol_msg)
-                print "Solution:\n", solution.steps
-                if solution.solved:
-                    if not solution.steps:  # Already solved, no action retquired
-                        rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)
-                        self.result = 'succeeded'
-                        continue
-                else:
-                    rospy.loginfo("[%s] Planner could not find a solution to problem %s in %s domain.",
-                                  rospy.get_name(), self.problem_name, self.domain)
-                    return
-            except rospy.ServiceException as e:
-                rospy.logerr("[%s] Error when planning solution to problem %s in %s domain: %s",
-                             rospy.get_name(), self.problem_name, self.domain, e.message)
-                return
-
-            # TODO: Check for irreversible actions and add a confirmation state.
-            steps = map(PlanStep.from_string, solution.steps)
-            state_preds = [state.predicates for state in solution.states]
-            states = [State(preds) for preds in [map(Predicate.from_string, preds) for preds in state_preds]]
-            n_steps = len(steps)
-            self.state_machine = smach.StateMachine(outcomes=SPA)
-            with self.state_machine:
-                for i in range(n_steps):
-                    smach_state = self.domain_smach_states.get_action_state(self.domain, self.problem_name,
-                                                                            steps[i].name, steps[i].args,
-                                                                            states[i], states[i+1])
-                    if i == n_steps-1:
-                        transitions = {'preempted': 'preempted',
-                                       'aborted': 'aborted',
-                                       'succeeded': 'succeeded'}
-                    else:
-                        transitions = {'preempted': 'preempted',
-                                       'aborted': 'aborted',
-                                       'succeeded': '%d-%s' % (i+1, steps[i+1].name)}
-                    self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
-            try:
-                self.result = self.state_machine.execute()
-                print "Exceution of %s plan: " % self.domain, self.result
-            except Exception as e:
-                raise e
-            if self.result == 'preempted':
-                if self.force_new_goal:
-                    continue
-                if self.next_thread is not None:
-                    self.next_thread.preempt()
-                break
-        print "Domain %s: %s" % (self.domain, self.result)
-
-        if self.next_thread is not None:
-            print "Domain %s - Starting second-half thread." % self.domain
-            self.next_thread.start()
-
-    def preempt(self):
+    def abort(self):
+        with self.abort_lock:
+            self.abort_requested = True
         if self.state_machine is not None:
             self.state_machine.request_preempt()
 
     def set_new_goal(self, problem_msg):
-        self.problem_msg
+        self.set_problem(problem_msg)
+        if self.state_machine is not None:
+            self.state_machine.request_preempt()
 
+    def run(self):
+        # Wait for domain state to become available
+        rospy.loginfo("[%s] Starting Thread for %s domain in problem: %s", rospy.get_name(), self.domain, self.problem_name)
+        while self.domain_state is None:
+            rospy.sleep(0.5)
+        # Plan + execute (and re-plan and re-execute) until task complete to default goal
+        result = None
+        while not rospy.is_shutdown():
+            # For the current problem get initial state and goal
+            with self.problem_lock:
+                # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
+                self.problem_msg.init = self.domain_state
+                # If no goal is specified, use the default problem goal
+                if not self.problem_msg.goal:
+                    self.problem_msg.goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
+                attempted_goal = copy.copy(self.problem_msg.goal)  # Save to make sure goal hasn't changed by end of run
+                # Get solution from planner
+                try:
+                    solution = self.planner_service.call(self.problem_msg)
+                    self.solution_history.append(solution)
+                    steps = copy.copy(self.traversed_solution['steps'])
+                    steps.extend(solution.steps)
+                    states = copy.copy(self.traversed_solution['states'])
+                    states.extend(solution.states)
+                    sol_msg = PDDLSolution()
+                    sol_msg.domain = self.domain
+                    sol_msg.problem = self.problem_name
+                    sol_msg.solved = solution.solved
+                    sol_msg.actions = steps
+                    sol_msg.states = states
+                    self.solution_pub.publish(sol_msg)
+                    print "Solution:\n", solution.steps
+                    if solution.solved:
+                        if not solution.steps:  # Already solved, no action retquired
+                            rospy.loginfo("[%s] %s domain already in goal state, no action required.", rospy.get_name(), self.domain)
+                            result = 'succeeded'
+                    else:
+                        rospy.loginfo("[%s] Planner could not find a solution to problem %s in %s domain.",
+                                      rospy.get_name(), self.problem_name, self.domain)
+                        result = 'aborted'
+                except rospy.ServiceException as e:
+                    rospy.logerr("[%s] Error when planning solution to problem %s in %s domain: %s",
+                                 rospy.get_name(), self.problem_name, self.domain, e.message)
+                    result = 'aborted'
 
-# def merge_solutions(prior, new):
-#     for
+                # TODO: Check for irreversible actions and add a confirmation state.
+                # Build smach state machine based on domain data
+                steps = map(PlanStep.from_string, solution.steps)
+                state_preds = [state.predicates for state in solution.states]
+                states = [State(preds) for preds in [map(Predicate.from_string, preds) for preds in state_preds]]
+                n_steps = len(steps)
+                transitions = {'preempted': 'preempted', 'aborted': 'aborted'}
+                self.state_machine = smach.StateMachine(outcomes=["succeeded", "preempted", "aborted"])
+                with self.state_machine:
+                    for i in range(n_steps):
+                        smach_state = self.domain_smach_states.get_action_state(self.domain, self.problem_name,
+                                                                                steps[i].name, steps[i].args,
+                                                                                states[i], states[i+1])
+                        transitions['succeeded'] = 'succeeded' if (i == n_steps-1) else '%d-%s' % (i+1, steps[i+1].name)
+                        self.state_machine.add('%d-%s' % (i, steps[i].name), smach_state, transitions=transitions)
+
+            # Run the SMACH State-machine
+            result = self.state_machine.execute()
+            print "Exceution of %s SMACH plan: " % self.domain, result
+
+            # Evaluate results, break if completely succeeded or aborted
+            if result == 'aborted' or (result == 'preempted' and self.abort_requested):
+                break
+            if result == 'preempted':
+                continue  # Interrupted, but not aborted, so probably have new goal. Re-try.
+            if result == 'succeeded':
+                default_goal_now = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
+                if (attempted_goal == default_goal_now):
+                    break
+        print "Domain %s: %s" % (self.domain, result)
 
 
 class PDDLSmachState(smach.State):
