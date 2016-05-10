@@ -228,9 +228,11 @@ class learning_hmm(learning_base):
         A /= np.sum(A)
         pi /= np.sum(pi)
 
-        print np.shape(xData)
+        print np.shape(xData), "-----------------------------"        
+        X = util.convert_sequence(xData, emission=False)
+        print np.shape(X)
         
-        X = np.squeeze(xData)
+        X = np.squeeze(X)
         final_ts_obj = ghmm.EmissionSequence(self.F, X.tolist())
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
