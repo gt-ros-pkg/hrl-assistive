@@ -177,11 +177,10 @@ class learning_hmm(learning_base):
         covs = []
         for i in xrange(self.nState):
             mus.append( self.B[i][0] + [ float(i) / float(self.nState)*scale ])
-            covs.append( self.B[i][1] )
-            
+            covs.append( self.B[i][1] )            
         mus  = np.array(mus)
         covs = np.array(covs)
-        ## new_mus = np.array(new_mus)
+        new_B = copy.copy(self.B)
 
         # update b ------------------------------------------------------------
         # mu
