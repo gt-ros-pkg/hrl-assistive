@@ -448,9 +448,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
-                
-                ## 
+
+                # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
+                sample_weight *= 3.0
+                
                 sample_weight /= float(len(ll_classifier_train_X) + i)
                 
                 ## sample_weight += 0.1
@@ -881,10 +883,21 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     A,B,pi = d['A'], d['B'], d['pi']
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
+
+        plt.figure()
+        plt.show(False)
+        plt.draw()
+
+        
         for i in xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
             A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
+
+            plt.plot(np.array(B)[:,0])
+
+        plt.show()
+        
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
