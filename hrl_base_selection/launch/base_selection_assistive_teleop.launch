@@ -1,9 +1,10 @@
 <launch>
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <arg name="use_kinect" default="false" />
   <arg name="kinect_ns" default="head_mount_kinect" />
-  <arg name="kinect_points" default="/$(arg kinect_ns)/depth_registered/points" />
+  <arg name="kinect_points" default="/$(arg kinect_ns)/qhd/points" />
   <!-- kinect_camera may need to be set to .../image_raw for simulated kinect -->
-  <arg name="kinect_camera" default="/$(arg kinect_ns)/rgb/image_color" />
+  <arg name="kinect_camera" default="/$(arg kinect_ns)/qhd/image_color" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="test" default="true"/>
 
@@ -17,16 +18,16 @@
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
-  <node name="at_pr2_rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
+  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
     <param name="port" type="int" value="$(arg ws_port)" />
     <param name="binary_encoder" type="str" value="bson" />
   </node>
-  <node name="at_pr2_rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
-  <node name="at_pr2_roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
-  <!--<node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>-->
-  <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
+  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
+  <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
+  <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
+  <!--<node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
-  </node>
+  </node>-->
   <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
 
   <!-- Throttling nodes for robot state -->
@@ -45,15 +46,22 @@
   <node if="$(arg run_ft_sensor)" name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
         args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
 
+  <!-- Launch Kinect (needed for pixel_2_3d -->
+  <include if="$(arg use_kinect)" file="$(find openni_launch)/launch/openni.launch" >
+    <arg name="camera" value="$(arg kinect_ns)" />
+    <arg name="publish_tf" value="false" />
+  </include>
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
-      <remap from="info_topic" to="$(arg kinect_ns)/depth_lowres/camera_info" />
-      <!--<remap from="info_topic" to="$(arg kinect_ns)/rgb/camera_info" />-->
+      <remap from="info_topic" to="$(arg kinect_ns)/qhd/camera_info" />
+      <!--remap from="image" to="$(arg kinect_camera)" /-->
       <remap from="point_cloud" to="$(arg kinect_points)" />
-      <param name="output_frame" type="string" value="/base_link" />
+      <!-- <param name="output_frame" type="string" value="/base_link" /> -->
       <param name="normal_radius" type="double" value="0.035" />
-      <param name="use_closest_pixel"  value="true"/>
+      <param name="use_closest_pixel"  value="True"/>
   </node>
+
 
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
