@@ -228,10 +228,11 @@ class learning_hmm(learning_base):
         A /= np.sum(A)
         pi /= np.sum(pi)
 
+        xData = [np.array(data) for data in xData]
         print np.shape(xData), "-----------------------------"
-
         X_ptrain = util.convert_sequence(xData) # Training input
         X_ptrain = X_ptrain.tolist()
+        print np.shape(X_ptrain), "-----------------------------"
         final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
