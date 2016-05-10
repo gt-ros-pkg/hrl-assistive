@@ -436,9 +436,9 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
                 ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
                 ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
-                sample_weight = np.linspace(0.,1.0,len(X_ptrain))
-                sample_weight/=np.sum(sample_weight)
-                sample_weight += 0.2
+                sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
+                sample_weight /= np.sum(sample_weight)
+                sample_weight += 0.1
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
