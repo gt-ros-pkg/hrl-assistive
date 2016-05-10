@@ -230,21 +230,21 @@ class learning_hmm(learning_base):
 
         est_A = np.zeros((self.nState, self.nState))
         new_A = np.zeros((self.nState, self.nState))
-        ## for i in xrange(self.nState):
-        ##     for j in xrange(self.nState):
+        for i in xrange(self.nState):
+            for j in xrange(self.nState):
 
-        ##         temp1 = 0.0
-        ##         temp2 = 0.0
-        ##         for t in xrange(len()):                    
-        ##             p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
-        ##             temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
-        ##             temp2 += alpha[i,t-1] * beta[j,t]
+                temp1 = 0.0
+                temp2 = 0.0
+                for t in xrange(len()):                    
+                    p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
+                    temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
+                    temp2 += alpha[i,t-1] * beta[j,t]
 
-        ##         eat_A[i,j] = temp1/temp2
-        ##         new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
+                eat_A[i,j] = temp1/temp2
+                new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
 
-        ## self.set_hmm_object(new_A, new_B, pi)
-        ## return new_A, new_B, pi
+        self.set_hmm_object(new_A, new_B, pi)
+        return new_A, new_B, pi
         
 
     ## def predict(self, X):

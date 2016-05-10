@@ -436,10 +436,10 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                sample_weight = np.logspace(1.,15.,len(X_ptrain))
+                sample_weight = np.log10(1.,20.,len(X_ptrain))
                 ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
-                sample_weight /= np.sum(sample_weight)
+                sample_weight /= np.amax(sample_weight)
                 sample_weight += 0.5
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
@@ -770,7 +770,8 @@ def multiDataPlot(task, raw_data_path, save_data_path, param_dict, \
 
 
 def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
-                   task2, raw_data_path2, save_data_path2, param_dict2, renew=False):
+                   task2, raw_data_path2, save_data_path2, param_dict2, renew=False, \
+                   bUpdateHMM=False ):
 
     ## Parameters
     # data
@@ -857,6 +858,17 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
 
     print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
+
+
+    if bUpdateHMM:
+        ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
+        ml.set_hmm_object(d['A'], d['B'], d['pi'])
+        ## ml.par
+        
+
+
+
+
 
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
@@ -963,6 +975,9 @@ if __name__ == '__main__':
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew result.')
 
+    p.add_option('--update_hmm', '--uh', action='store_true', dest='bUpdateHMM',
+                 default=False, help='Update HMM.')    
+
     p.add_option('--dim', action='store', dest='dim', type=int, default=4,
                  help='type the desired dimension')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
@@ -990,7 +1005,7 @@ if __name__ == '__main__':
           getParams(opt.task2, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
         likelihoodPlot(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                        opt.task2, raw_data_path2, save_data_path2, param_dict2, \
-                       renew=opt.bRenew )
+                       renew=opt.bRenew, opt.bUpdateHMM )
         
     elif opt.bDiffClass:
         raw_data_path1, save_data_path1, param_dict1 = \
@@ -1006,7 +1021,7 @@ if __name__ == '__main__':
     else:
         raw_data_path, save_data_path, param_dict = \
           getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew )
+        onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
             
 
 
