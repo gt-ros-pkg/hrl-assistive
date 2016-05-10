@@ -75,6 +75,9 @@ class learning_hmm(learning_base):
 
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                        A, B, pi)
+        self.A = A
+        self.B = B
+        self.pi = pi
         return self.ml
 
 
@@ -212,9 +215,11 @@ class learning_hmm(learning_base):
 
                 x_l[min_idx].append(feature.tolist())
 
+
+        print np.shape(mus), np.shape(x_l), np.shape(X)
         
         for i in xrange(len(mus)):
-            new_B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
+            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
             
         # Normalize the state prior and transition values.
         A /= np.sum(A)
