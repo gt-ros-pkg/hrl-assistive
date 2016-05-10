@@ -179,7 +179,8 @@ class learning_hmm(learning_base):
         '''
         data: dimension x sample x length
         '''
-
+        print "xData: ", np.shape(xData)
+        
         A  = copy.copy(self.A)
         B  = copy.copy(self.B)
         pi = copy.copy(self.pi)
@@ -221,15 +222,15 @@ class learning_hmm(learning_base):
 
         
         for i in xrange(len(mus)):
-            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(X)))
+            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(xData)))
 
         # Normalize the state prior and transition values.
         A /= np.sum(A)
         pi /= np.sum(pi)
 
-        print np.shape(X)
+        print np.shape(xData)
         
-        X = np.squeeze(X)
+        X = np.squeeze(xData)
         final_ts_obj = ghmm.EmissionSequence(self.F, X.tolist())
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
