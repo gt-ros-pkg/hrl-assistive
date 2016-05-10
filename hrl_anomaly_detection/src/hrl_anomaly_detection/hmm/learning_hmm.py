@@ -38,7 +38,7 @@ import learning_util as util
 
 import ghmm
 from joblib import Parallel, delayed
-from scipy import signal
+from scipy.stats import multivariate_normal
 
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
