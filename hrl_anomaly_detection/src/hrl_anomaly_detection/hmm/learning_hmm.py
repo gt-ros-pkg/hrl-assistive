@@ -170,7 +170,64 @@ class learning_hmm(learning_base):
 
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
             return ret
-                               
+
+    def partial_fit(self, xData, nTrain, scale):
+
+        mus  = []
+        covs = []
+        for i in xrange(self.nState):
+            mus.append( self.B[i][0] + [ float(i) / float(self.nState)*scale ])
+            covs.append( self.B[i][1] )
+            
+        mus  = np.array(mus)
+        covs = np.array(covs)
+        ## new_mus = np.array(new_mus)
+
+        # update b ------------------------------------------------------------
+        # mu
+        x_l = [[] for i in xrange(self.nState)]
+        X   = np.swapaxes(xData, 0, 1) # sample x dim x length
+        for i in xrange(len(X)):
+            sample = np.swapaxes(X[i], 0, 1) # length x dim
+
+            idx_l = []
+            for j in xrange(len(sample)):
+                feature = np.array( sample[j].tolist() + [float(j)/float(len(sample))*scale ] )
+
+                min_dist = 10000
+                min_idx  = 0
+                for idx, mu in enumerate(mus):
+                    dist = np.linalg.norm(mu-feature)
+                    if dist < min_dist:
+                        min_dist = dist
+                        min_idx  = idx
+
+                x_l[min_idx].append(feature.tolist())
+
+        
+        for i in xrange(len(mus)):
+            self.B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
+            
+        # Normalize the state prior and transition values.
+        self.A /= np.sum(self.A)
+        self.pi /= np.sum(self.pi)
+        
+        X = np.squeeze(X)
+        X_test = X.tolist()
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+        (alpha, scale) = self.ml.forward(final_ts_obj)
+
+        
+
+
+        X = [np.array(data) for data in xData]
+
+        # update b
+        
+
+
+        return ret 
+        
 
     ## def predict(self, X):
     ##     '''

@@ -434,8 +434,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
+                sample_weight = np.linspace(0.,1.0,len(X_ptrain))
                 sample_weight/=np.sum(sample_weight)
+                sample_weight += 1.0
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
@@ -672,7 +675,7 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
                 sample_weight = np.logspace(-4.,0,len(X_ptrain))
                 sample_weight/=np.sum(sample_weight)
-                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]
@@ -711,8 +714,8 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     return data
 
 
-def multiPlot(task, raw_data_path, save_data_path, param_dict, \
-              task2, raw_data_path2, save_data_path2, param_dict2, renew=False):
+def multiDataPlot(task, raw_data_path, save_data_path, param_dict, \
+                  task2, raw_data_path2, save_data_path2, param_dict2, renew=False):
 
     #### Getting Test data from task 2 ------------------------------------------------------
     d1 = dm.getDataSet(param_dict['subject_list'], task, raw_data_path, save_data_path, \
@@ -763,8 +766,151 @@ def multiPlot(task, raw_data_path, save_data_path, param_dict, \
     sys.exit()
 
 
-    
 
+def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
+                   task2, raw_data_path2, save_data_path2, param_dict2, renew=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    #### Getting Test data from task 1 ------------------------------------------------------
+    idx = 1
+    crossVal_pkl = os.path.join(save_data_path, 'cv_'+task+'.pkl')
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+
+    # Scaling data
+    d = ut.load_pickle(crossVal_pkl)
+    init_param_dict = d['param_dict']
+    
+    ## d1 = dm.getDataSet(param_dict['subject_list'], task, raw_data_path, save_data_path, \
+    ##                    param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
+    ##                    downSampleSize=param_dict['data_param']['downSampleSize'], \
+    ##                    handFeatures=param_dict['data_param']['handFeatures'], \
+    ##                    cut_data=param_dict['data_param']['cut_data'] )
+    ## successData1     = d1['successData'] 
+    ## failureData1     = d1['failureData']
+    ## init_param_dict = d1['param_dict']
+
+    print "start to load hmm data, ", modeling_pkl
+    d                       = ut.load_pickle(modeling_pkl)
+    nState                  = d['nState']        
+    nEmissionDim            = d['nEmissionDim']
+    ll_classifier_train_X   = d['ll_classifier_train_X']
+    ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+    ll_classifier_train_idx = d['ll_classifier_train_idx']
+    ## ll_classifier_test_X    = d['ll_classifier_test_X']  
+    ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
+    nLength                 = d['nLength']
+
+    
+    #### Getting Test data from task 2 ------------------------------------------------------
+    d2 = dm.getDataSet(param_dict2['subject_list'], task2, raw_data_path2, save_data_path2, \
+                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
+                       downSampleSize=param_dict['data_param']['downSampleSize'], \
+                       handFeatures=param_dict['data_param']['handFeatures'], \
+                       cut_data=param_dict['data_param']['cut_data'] )
+    successData2     = d2['successData'] 
+    failureData2     = d2['failureData']
+    init_param_dict2 = d2['param_dict']
+
+    target_max = init_param_dict['feature_max']
+    target_min = init_param_dict['feature_min']
+    cur_max    = init_param_dict2['feature_max']
+    cur_min    = init_param_dict2['feature_min']
+
+
+    testDataX = []
+    testDataY = []
+    for i in xrange(nEmissionDim):
+        temp = np.vstack([successData2[i], failureData2[i]])
+        testDataX.append( temp )
+
+    testDataY = np.hstack([ -np.ones(len(successData2[0])), \
+                            np.ones(len(failureData2[0])) ])
+    ## testDataX = successData2
+    ## testDataY = -np.ones(len(successData2[0]))
+
+    # rescaling by two param dicts
+    new_testDataX = []
+    for i, feature in enumerate(testDataX):
+        # recover
+        new_feature = feature *(cur_max[i] - cur_min[i]) + cur_min[i]
+        # rescaling
+        new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
+        new_testDataX.append(new_feature)
+
+    print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
+    testDataX = np.array(new_testDataX)*HMM_dict['scale']
+
+    #### Run HMM with the test data from task 2 ----------------------------------------------
+
+    startIdx = 4
+    r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)\
+                            (i, d['A'], d['B'], d['pi'], d['F'], \
+                             [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                             nEmissionDim, nState,\
+                             startIdx=startIdx, \
+                            bPosterior=True)
+                            for i in xrange(len(testDataX[0])))
+    _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+
+    # nSample x nLength
+    ll_classifier_test_X = []
+    ll_classifier_test_Y = []
+    for i in xrange(len(ll_logp)):
+        l_X = []
+        l_Y = []
+        for j in xrange(len(ll_logp[i])):        
+            l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+            if testDataY[i] > 0.0: l_Y.append(1)
+            else: l_Y.append(-1)
+
+            if np.isnan(ll_logp[i][j]):
+                print "nan values in ", i, j
+                print testDataX[0][i]
+                print ll_logp[i][j], ll_post[i][j]
+                sys.exit()
+
+        ll_classifier_test_X.append(l_X)
+        ll_classifier_test_Y.append(l_Y)
+
+    #----------------------------------------------------------------------------------------
+
+    # training data
+    print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_Y)
+
+    ll_logp_train = []
+    for i in xrange(10):
+        ll_logp_train.append(np.swapaxes(ll_classifier_train_X[i], 0, 1)[0])
+
+    ll_logp_test_normal = []
+    for i in xrange(15):
+        ll_logp_test_normal.append(np.swapaxes(ll_classifier_test_X[i], 0, 1)[0])
+
+    ll_logp_test_abnormal = []
+    for i in xrange(15):
+        ll_logp_test_abnormal.append(np.swapaxes(ll_classifier_test_X[-i], 0, 1)[0])
+        
+    fig = plt.figure()
+    plt.plot( np.swapaxes(ll_logp_train,0,1), 'b-' )
+    plt.plot( np.swapaxes(ll_logp_test_normal,0,1), 'g-' )
+    plt.plot( np.swapaxes(ll_logp_test_abnormal,0,1), 'r-' )
+    plt.show()        
 
                           
 
@@ -800,8 +946,10 @@ if __name__ == '__main__':
                  default=False,help='Run online evaluation with the same class data')
     p.add_option('--diff_class', '--dc', action='store_true', dest='bDiffClass', \
                  default=False,help='Run online evaluation with the different class data')
-    p.add_option('--multi_plot', '--mp', action='store_true', dest='bMultiPlot', \
+    p.add_option('--multi_plot', '--mp', action='store_true', dest='bMultiDataPlot', \
                  default=False,help='plot multiple classes')
+    p.add_option('--likelihood_plot', '--lp', action='store_true', dest='bLikelihoodPlot', \
+                 default=False,help='plot likelihood given multiple classes')
 
     
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
@@ -825,7 +973,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------
-    if opt.bMultiPlot:
+    if opt.bMultiDataPlot:
         raw_data_path1, save_data_path1, param_dict1 = \
           getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
         raw_data_path2, save_data_path2, param_dict2 = \
@@ -833,14 +981,22 @@ if __name__ == '__main__':
         multiPlot(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                   opt.task2, raw_data_path2, save_data_path2, param_dict2, \
                   renew=opt.bRenew )
+    elif opt.bLikelihoodPlot:
+        raw_data_path1, save_data_path1, param_dict1 = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        raw_data_path2, save_data_path2, param_dict2 = \
+          getParams(opt.task2, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        likelihoodPlot(opt.task, raw_data_path1, save_data_path1, param_dict1, \
+                       opt.task2, raw_data_path2, save_data_path2, param_dict2, \
+                       renew=opt.bRenew )
         
     elif opt.bDiffClass:
         raw_data_path1, save_data_path1, param_dict1 = \
           getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        ## raw_data_path2, save_data_path2, param_dict2 = \
-        ##   getParams(opt.task2, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        opt.task2 = opt.task
-        raw_data_path2, save_data_path2, param_dict2 = raw_data_path1, save_data_path1, param_dict1
+        raw_data_path2, save_data_path2, param_dict2 = \
+          getParams(opt.task2, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
+        ## opt.task2 = opt.task
+        ## raw_data_path2, save_data_path2, param_dict2 = raw_data_path1, save_data_path1, param_dict1
         onlineEvaluationDouble(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                                opt.task2, raw_data_path2, save_data_path2, param_dict2, \
                                renew=opt.bRenew )
