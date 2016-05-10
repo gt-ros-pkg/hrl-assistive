@@ -311,11 +311,13 @@ def plotROC(method, nPoints, ROC_data):
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
 
+        from sklearn import metrics
         print "--------------------------------"
         print method
         print tpr_l
         print fpr_l
-        print getAUC(fpr_l, tpr_l)
+        print metrics.auc(fpr_l, tpr_l, True)
+        ## print getAUC(fpr_l, tpr_l)
         print "--------------------------------"
 
         # visualization
@@ -439,7 +441,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
                 sample_weight /= np.sum(sample_weight)
                 sample_weight += 0.05
-                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]
