@@ -213,13 +213,12 @@ class learning_hmm(learning_base):
                         min_dist = dist
                         min_idx  = idx
 
-                x_l[min_idx].append(feature.tolist())
+                x_l[min_idx].append(feature[:-1].tolist())
 
 
-        print np.shape(mus), np.shape(x_l), np.shape(X)
         
         for i in xrange(len(mus)):
-            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
+            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(X)))
             
         # Normalize the state prior and transition values.
         A /= np.sum(A)
