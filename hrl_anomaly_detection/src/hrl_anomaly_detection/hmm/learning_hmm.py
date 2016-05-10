@@ -176,6 +176,9 @@ class learning_hmm(learning_base):
             return ret
 
     def partial_fit(self, xData, nTrain, scale):
+        '''
+        data: dimension x sample x length
+        '''
 
         A  = copy.copy(self.A)
         B  = copy.copy(self.B)
@@ -219,14 +222,15 @@ class learning_hmm(learning_base):
         
         for i in xrange(len(mus)):
             new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(X)))
-            
+
         # Normalize the state prior and transition values.
         A /= np.sum(A)
         pi /= np.sum(pi)
+
+        print np.shape(X)
         
         X = np.squeeze(X)
-        X_test = X.tolist()
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+        final_ts_obj = ghmm.EmissionSequence(self.F, X.tolist())
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
