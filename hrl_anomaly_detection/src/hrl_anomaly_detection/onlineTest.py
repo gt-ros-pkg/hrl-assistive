@@ -317,7 +317,6 @@ def plotROC(method, nPoints, ROC_data):
         print tpr_l
         print fpr_l
         print metrics.auc(fpr_l, tpr_l, True)
-        ## print getAUC(fpr_l, tpr_l)
         print "--------------------------------"
 
         # visualization
@@ -441,7 +440,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
                 sample_weight /= np.amax(sample_weight)
-                ## sample_weight += 0.5
+                sample_weight += 0.5
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
@@ -864,7 +863,8 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
         ml.set_hmm_object(d['A'], d['B'], d['pi'])
-        ## ml.par
+        ml.partial_fit( testDataX, len(ll_classifier_train_X[0]), HMM_dict['scale'] )
+        
         
 
 
