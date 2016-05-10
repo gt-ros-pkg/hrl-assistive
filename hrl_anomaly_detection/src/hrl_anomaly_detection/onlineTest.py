@@ -691,8 +691,10 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                sample_weight = np.logspace(-4.,0,len(X_ptrain))
-                sample_weight/=np.sum(sample_weight)
+                ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                ## sample_weight/=np.sum(sample_weight)
+                sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                sample_weight /= np.amax(sample_weight)
                 sample_weight *= 10.0                
                 sample_weight /= float(len(ll_classifier_train_X) + i)                
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
@@ -888,7 +890,7 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         plt.ion()
         fig = plt.figure()
 
-        for i in xrange(4): #xrange(len(testDataX[0])):
+        for i in xrange(3): #xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
             
@@ -897,10 +899,10 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
             mu_l = []
             for j in xrange(len(B)):
                 mu_l.append(B[j,0][0])
-            plt.plot(mu_l)
+            plt.plot(mu_l, label=)
             
         plt.show()
-        
+    print "----------------------------------------------------------"
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
