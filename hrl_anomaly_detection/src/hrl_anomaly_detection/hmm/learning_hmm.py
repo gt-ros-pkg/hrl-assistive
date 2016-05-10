@@ -176,12 +176,15 @@ class learning_hmm(learning_base):
 
         mus  = []
         covs = []
+        org_mus = []
         for i in xrange(self.nState):
             mus.append( self.B[i][0] + [ float(i) / float(self.nState)*scale ])
-            covs.append( self.B[i][1] )            
-        mus  = np.array(mus)
-        covs = np.array(covs)
-        new_B = copy.copy(self.B)
+            covs.append( self.B[i][1] )
+            org_mus.append( self.B[i][0] )
+        mus     = np.array(mus)
+        covs    = np.array(covs)
+        org_mus = np.array(org_mus)
+        new_B   = copy.copy(self.B)
 
         # update b ------------------------------------------------------------
         # mu
@@ -223,7 +226,8 @@ class learning_hmm(learning_base):
         est_A = np.zeros((self.nState, self.nState))
         for i in xrange(self.nState):
             for j in xrange(self.nState):
-                
+
+                multivariate_normal.pdf(,mean=, cov=)
                 temp1 = alpha[i] * self.A[i,j] * signal.gaussian() *beta[j]
         ##         temp2 = 
                 
