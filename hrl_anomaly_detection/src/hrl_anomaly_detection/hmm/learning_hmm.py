@@ -249,8 +249,8 @@ class learning_hmm(learning_base):
                 temp1 = 0.0
                 temp2 = 0.0
                 for t in xrange(seq_len):
-                    print seq_len, np.shape(X), np.shape(mus), np.shape(covs)
-                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=covs[j])
+                    print seq_len, np.shape(X[0][:,t]), np.shape(mus[j]), np.shape(covs[j])
+                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=np.reshape(covs[j], (self.nEmissionDim, self.nEmissionDim)))
                     temp1 += alpha[t-1,i] * A[i,j] * p * beta[t,j]
                     temp2 += alpha[t-1,i] * beta[t,j]
 
