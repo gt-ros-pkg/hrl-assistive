@@ -200,6 +200,7 @@ class learning_hmm(learning_base):
         # mu
         x_l = [[] for i in xrange(self.nState)]
         X   = np.swapaxes(xData, 0, 1) # sample x dim x length
+        seq_len = len(X[0][0])
         for i in xrange(len(X)):
             sample = np.swapaxes(X[i], 0, 1) # length x dim
 
@@ -247,8 +248,8 @@ class learning_hmm(learning_base):
 
                 temp1 = 0.0
                 temp2 = 0.0
-                for t in xrange(len(xData[0,0])):                    
-                    p = multivariate_normal.pdf( xData[:,0,t], mean=mus[j], cov=covs[j])
+                for t in xrange(seq_len):                    
+                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=covs[j])
                     temp1 += alpha[t-1,i] * A[i,j] * p * beta[t,j]
                     temp2 += alpha[t-1,i] * beta[t,j]
 
