@@ -693,7 +693,8 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
                 ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
                 ## sample_weight/=np.sum(sample_weight)
-                sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                ## sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                sample_weight = np.linspace(0,1.0,len(X_ptrain) )
                 sample_weight /= np.amax(sample_weight)
                 sample_weight *= 10.0                
                 sample_weight /= float(len(ll_classifier_train_X) + i)                
@@ -887,10 +888,15 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
 
-        plt.ion()
+        ## plt.ion()
         fig = plt.figure()
 
-        for i in xrange(3): #xrange(len(testDataX[0])):
+        mu_l = []
+        for j in xrange(len(B)):
+            mu_l.append(B[j,0][0])
+        plt.plot(mu_l, label='org')
+
+        for i in xrange(2): #xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
             
@@ -899,8 +905,9 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
             mu_l = []
             for j in xrange(len(B)):
                 mu_l.append(B[j,0][0])
-            ## plt.plot(mu_l, label=)
-            
+            plt.plot(mu_l, label=str(i))
+
+        plt.legend(loc=3,prop={'size':16})            
         plt.show()
     print "----------------------------------------------------------"
         
@@ -913,7 +920,8 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
                              nEmissionDim, nState,\
                              startIdx=startIdx, \
                             bPosterior=True)
-                            for i in xrange(len(testDataX[0])))
+                            for i in xrange(15))
+                            ## for i in xrange(len(testDataX[0])))
     _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
     # nSample x nLength
@@ -950,14 +958,14 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     for i in xrange(15):
         ll_logp_test_normal.append(np.swapaxes(ll_classifier_test_X[i], 0, 1)[0])
 
-    ll_logp_test_abnormal = []
-    for i in xrange(15):
-        ll_logp_test_abnormal.append(np.swapaxes(ll_classifier_test_X[-i], 0, 1)[0])
+    ## ll_logp_test_abnormal = []
+    ## for i in xrange(15):
+    ##     ll_logp_test_abnormal.append(np.swapaxes(ll_classifier_test_X[-i], 0, 1)[0])
         
     fig = plt.figure()
     plt.plot( np.swapaxes(ll_logp_train,0,1), 'b-' )
     plt.plot( np.swapaxes(ll_logp_test_normal,0,1), 'g-' )
-    plt.plot( np.swapaxes(ll_logp_test_abnormal,0,1), 'r-' )
+    ## plt.plot( np.swapaxes(ll_logp_test_abnormal,0,1), 'r-' )
     plt.show()        
 
                           
