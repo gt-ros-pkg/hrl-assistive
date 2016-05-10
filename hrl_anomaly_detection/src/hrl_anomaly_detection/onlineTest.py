@@ -446,7 +446,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 sample_weight += 0.1
                 ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
                
-                ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]
