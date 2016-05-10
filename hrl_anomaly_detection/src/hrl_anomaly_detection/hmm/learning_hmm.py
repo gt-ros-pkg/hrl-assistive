@@ -216,6 +216,8 @@ class learning_hmm(learning_base):
         final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
+
+        
         
 
 
