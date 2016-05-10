@@ -436,8 +436,8 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
                 ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
-                ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
-                sample_weight = np.linspace(1.,8.,len(X_ptrain))
+                sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
+                ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
                 
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
