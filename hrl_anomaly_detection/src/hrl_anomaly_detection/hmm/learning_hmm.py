@@ -232,6 +232,7 @@ class learning_hmm(learning_base):
             xData = [np.array(data) for data in xData]
             print np.shape(xData), "-----------------------------"
             X_ptrain = util.convert_sequence(xData) # Training input
+            X_ptrain = np.squeeze(X_ptrain)
             X_ptrain = X_ptrain.tolist()
             print np.shape(X_ptrain), "-----------------------------"
             final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
