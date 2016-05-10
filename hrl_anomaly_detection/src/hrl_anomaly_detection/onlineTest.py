@@ -444,7 +444,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
                 
                 sample_weight += 0.2
-                sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
+                ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
                 
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
@@ -861,16 +861,17 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
         new_testDataX.append(new_feature)
 
-    print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
+    print "testDataX: ", np.shape(testDataX)
 
 
+    A,B,pi = d['A'], d['B'], d['pi']
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
-        ml.set_hmm_object(d['A'], d['B'], d['pi'])
-        A,B,pi = ml.partial_fit( testDataX, len(ll_classifier_train_X[0]), HMM_dict['scale'] )
-    else:
-        A,B,pi = d['A'], d['B'], d['pi']
+        for i in xrange(len(testDataX[0])):
+            if testDataY[i] > 0: continue
+            ml.set_hmm_object(A,B,pi)            
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], len(testDataX[0]), HMM_dict['scale'] )
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
 

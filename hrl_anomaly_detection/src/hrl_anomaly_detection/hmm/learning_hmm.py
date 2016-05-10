@@ -228,31 +228,32 @@ class learning_hmm(learning_base):
         A /= np.sum(A)
         pi /= np.sum(pi)
 
-        xData = [np.array(data) for data in xData]
-        print np.shape(xData), "-----------------------------"
-        X_ptrain = util.convert_sequence(xData) # Training input
-        X_ptrain = X_ptrain.tolist()
-        print np.shape(X_ptrain), "-----------------------------"
-        final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
-        (alpha, scale) = self.ml.forward(final_ts_obj)
-        beta = self.ml.backward(final_ts_obj, scale)
+        for idx in xrange(len(xData[0])):
+            xData = [np.array(data) for data in xData]
+            print np.shape(xData), "-----------------------------"
+            X_ptrain = util.convert_sequence(xData) # Training input
+            X_ptrain = X_ptrain.tolist()
+            print np.shape(X_ptrain), "-----------------------------"
+            final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
+            (alpha, scale) = self.ml.forward(final_ts_obj)
+            beta = self.ml.backward(final_ts_obj, scale)
 
-        print np.shape(alpha), np.shape(beta)
+            print np.shape(alpha), np.shape(beta)
 
-        est_A = np.zeros((self.nState, self.nState))
-        new_A = np.zeros((self.nState, self.nState))
-        for i in xrange(self.nState):
-            for j in xrange(self.nState):
+            est_A = np.zeros((self.nState, self.nState))
+            new_A = np.zeros((self.nState, self.nState))
+            for i in xrange(self.nState):
+                for j in xrange(self.nState):
 
-                temp1 = 0.0
-                temp2 = 0.0
-                for t in xrange(len()):                    
-                    p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
-                    temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
-                    temp2 += alpha[i,t-1] * beta[j,t]
+                    temp1 = 0.0
+                    temp2 = 0.0
+                    for t in xrange(len()):                    
+                        p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
+                        temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
+                        temp2 += alpha[i,t-1] * beta[j,t]
 
-                eat_A[i,j] = temp1/temp2
-                new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
+                    eat_A[i,j] = temp1/temp2
+                    new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
 
         self.set_hmm_object(new_A, new_B, pi)
         return new_A, new_B, pi
