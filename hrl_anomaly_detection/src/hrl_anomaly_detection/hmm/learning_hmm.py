@@ -221,11 +221,11 @@ class learning_hmm(learning_base):
         print np.shape(alpha), np.shape(beta)
 
         est_A = np.zeros((self.nState, self.nState))
-        ## for i in xrange(self.nState):
-        ##     for j in xrange(self.nState):
+        for i in xrange(self.nState):
+            for j in xrange(self.nState):
                 
-        ##         temp1 = alpha[i] * self.A[i,j] * *beta[j]
-        ##         temp2 = 
+                temp1 = alpha[i] * self.A[i,j] * *beta[j]
+                temp2 = 
                 
         ##         est_A[i,j] = 
 
