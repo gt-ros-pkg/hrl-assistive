@@ -247,8 +247,10 @@ class learning_hmm(learning_base):
                     p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=np.reshape(covs[j], (self.nEmissionDim, self.nEmissionDim)))
                     temp1 += alpha[t-1][i] * A[i,j] * p * beta[t][j]
                     temp2 += alpha[t-1][i] * beta[t][j]
-
-                est_A[i,j] = temp1/temp2
+                try:
+                    est_A[i,j] = temp1/temp2
+                except:
+                    est_A[i,j] = 0
                 new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]) / float(nTrain)
 
         self.set_hmm_object(new_A, new_B, pi)

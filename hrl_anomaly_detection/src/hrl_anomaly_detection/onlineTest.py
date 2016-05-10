@@ -442,9 +442,9 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
                 ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
                 sample_weight = np.logspace(1,20,len(X_ptrain) )
-                sample_weight = np.logspace(1,3.0,len(X_ptrain) )
+                sample_weight = np.logspace(1,2.0,len(X_ptrain) )
                 ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
-                sample_weight = np.ones(len(X_ptrain))
+                ## sample_weight = np.ones(len(X_ptrain))
                 
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
@@ -884,19 +884,20 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
 
-        plt.figure()
-        plt.show(False)
-        plt.draw()
+        plt.ion()
+        fig = plt.figure()
 
         
         for i in xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
-            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
-
+            print np.shape()
             plt.plot(np.array(B)[:,0])
-
-        plt.show()
+            
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
+            
+            plt.plot(np.array(B)[:,0])
+            plt.show()
         
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
