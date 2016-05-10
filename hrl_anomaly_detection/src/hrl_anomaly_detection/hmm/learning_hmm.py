@@ -174,17 +174,22 @@ class learning_hmm(learning_base):
 
     def partial_fit(self, xData, nTrain, scale):
 
-        mus  = []
-        covs = []
-        org_mus = []
+        A  = copy.copy(self.A)
+        B  = copy.copy(self.B)
+        pi = copy.copy(self.pi)
+
+        new_B = copy.copy(self.B)
+
+        t_features = []
+        mus        = []
+        covs       = []
         for i in xrange(self.nState):
-            mus.append( self.B[i][0] + [ float(i) / float(self.nState)*scale ])
-            covs.append( self.B[i][1] )
-            org_mus.append( self.B[i][0] )
+            t_features.append( B[i][0] + [ float(i) / float(self.nState)*scale ])
+            mus.append( B[i][0] )
+            covs.append( B[i][1] )
+        t_features = np.array(t_features)
         mus     = np.array(mus)
         covs    = np.array(covs)
-        org_mus = np.array(org_mus)
-        new_B   = copy.copy(self.B)
 
         # update b ------------------------------------------------------------
         # mu
@@ -199,8 +204,8 @@ class learning_hmm(learning_base):
 
                 min_dist = 10000
                 min_idx  = 0
-                for idx, mu in enumerate(mus):
-                    dist = np.linalg.norm(mu-feature)
+                for idx, t_feature in enumerate(t_features):
+                    dist = np.linalg.norm(t_feature-feature)
                     if dist < min_dist:
                         min_dist = dist
                         min_idx  = idx
@@ -209,11 +214,11 @@ class learning_hmm(learning_base):
 
         
         for i in xrange(len(mus)):
-            self.B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
+            new_B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
             
         # Normalize the state prior and transition values.
-        self.A /= np.sum(self.A)
-        self.pi /= np.sum(self.pi)
+        A /= np.sum(A)
+        pi /= np.sum(pi)
         
         X = np.squeeze(X)
         X_test = X.tolist()
@@ -224,22 +229,22 @@ class learning_hmm(learning_base):
         print np.shape(alpha), np.shape(beta)
 
         est_A = np.zeros((self.nState, self.nState))
-        for i in xrange(self.nState):
-            for j in xrange(self.nState):
+        new_A = np.zeros((self.nState, self.nState))
+        ## for i in xrange(self.nState):
+        ##     for j in xrange(self.nState):
 
-                multivariate_normal.pdf(,mean=, cov=)
-                temp1 = alpha[i] * self.A[i,j] * signal.gaussian() *beta[j]
-        ##         temp2 = 
-                
-        ##         est_A[i,j] = 
+        ##         temp1 = 0.0
+        ##         temp2 = 0.0
+        ##         for t in xrange(len()):                    
+        ##             p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
+        ##             temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
+        ##             temp2 += alpha[i,t-1] * beta[j,t]
 
-        X = [np.array(data) for data in xData]
+        ##         eat_A[i,j] = temp1/temp2
+        ##         new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
 
-        # update b
-        
-
-
-        return ret 
+        ## self.set_hmm_object(new_A, new_B, pi)
+        ## return new_A, new_B, pi
         
 
     ## def predict(self, X):
