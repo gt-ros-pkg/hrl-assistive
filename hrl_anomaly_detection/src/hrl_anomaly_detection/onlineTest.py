@@ -451,7 +451,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
                 # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
-                sample_weight *= 10.0
+                sample_weight *= 20.0
                 
                 sample_weight /= float(len(ll_classifier_train_X) + i)
                 
@@ -890,13 +890,14 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         for i in xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
-            print np.shape(np.array(B)), np.shape(np.array(B)[:,0])
-            print np.array(B)[:,0]
-            plt.plot(np.array(B)[:,0])
             
             A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
             
-            plt.plot(np.array(B)[:,0])
+            mu_l = []
+            for j in xrange(len(B)):
+                mu_l.append(B[j,0][0])
+            plt.plot(mu_l)
+            
             plt.show()
         
         
