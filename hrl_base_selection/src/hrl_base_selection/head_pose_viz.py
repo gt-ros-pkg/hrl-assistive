@@ -25,19 +25,12 @@ class HeadDetector:
     '''Detects the head of a person sleeping on the autobed'''
     def __init__(self):
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        rospy.init_node('head_pose_estimator', anonymous=True)
+        rospy.init_node('head_pose_viz', anonymous=True)
         rospy.Subscriber("/fsascan", FloatArrayBare, 
                 self.current_physical_pressure_map_callback)
-        self.database_path = '/home/yashc/Desktop/dataset/subject_4'
-        [self.p_world_mat, self.R_world_mat] = pkl.load(
-                open(os.path.join(self.database_path,'mat_axes.p'), "r"))         
-        print self.p_world_mat
-        print self.R_world_mat
         self.mat_sampled = False
         self.mat_pose = []
         self.head_pose = []
-        self.zoom_factor = 2
-        self.ground_truth = np.array(self.get_ground_truth()) 
 
     def relu(self, x):
         if x < 0:
@@ -120,12 +113,17 @@ class HeadDetector:
         p_map = np.array(weights)*np.array(p_map)
         #plt.matshow(p_map)
         #plt.show()
-        blobs = blob_doh(p_map, 
-                         min_sigma=1, 
-                         max_sigma=7, 
-                         threshold=20,
-                         overlap=0.1) 
+        try:
+            blobs = blob_doh(p_map, 
+                             min_sigma=1, 
+                             max_sigma=7, 
+                             threshold=20,
+                             overlap=0.1) 
+        except:
+            blobs = None
+            print "Head Not On Mat!"
         return blobs
+
 
     def visualize_pressure_map(self, pressure_map_matrix, rotated_targets=None, fileNumber=0, plot_3d=False):
         '''Visualizing a plot of the pressure map'''        
@@ -177,19 +175,6 @@ class HeadDetector:
             plt.pause(0.05) 
             plt.clf()
 
-    def get_ground_truth(self):
-        home_sup = pkl.load(
-                open(os.path.join(self.database_path,'home_sup.p'), "rb")) 
-        target_raw = home_sup[0][1]
-        print target_raw
-        #target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-        target_mat = self.world_to_mat(target_raw)
-        print target_mat
-        target_discrete = self.mat_to_taxels(target_mat) + np.array([0,3])
-        print target_discrete
-        target_cont = target_mat[0]
-        return target_cont[:2]
-
     def run(self):
         '''Runs pose estimation''' 
         head_center = [0, 0, 0]
@@ -200,36 +185,15 @@ class HeadDetector:
         while not rospy.is_shutdown():
             if self.mat_sampled:
                 blobs = self.detect_blob()
-                if blobs.any():
-                    head_center = blobs[0, :]
-                taxels_to_meters = np.array([MAT_HEIGHT/(NUMOFTAXELS_X*self.zoom_factor), 
-                                            MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
-                                            1])
-                #y, x, r = head_center
-                print head_center
-                print taxels_to_meters
-                y, x, r = taxels_to_meters*head_center
-                print "X:{}, Y:{}".format(x,y)
-                print "Radius:{}".format(r)
-                print "Final Ground Truth:"
-                print self.ground_truth
+                if blobs is not None:
+                    if blobs.any():
+                        head_center = blobs[0, :]
+                else:
+                    print "Blobs not registered. Is your head on the mat?"
+
+                y, x, r = head_center
                 self.visualize_pressure_map(self.pressure_map, rotated_targets=[x, y, r],\
                                             plot_3d=False)
-                error = np.linalg.norm(np.array([x,y]) - np.array(self.ground_truth))
-                #if error <= 4:
-                #    self.pos = self.pos + 1
-                #self.total_count = self.total_count + 1
-                #if self.total_count == 1000:
-                #    print "Accuracy:Detected {} correctly out of {}".format(self.pos, self.total_count)
-                #    sys.exit()
-                self.error_array.append(error)
-                self.count += 1 
-                if self.count == 3000:
-                    mean_err = np.mean(self.error_array)
-                    std_err = np.std(self.error_array)
-                    print "Average Error: {}".format(mean_err)
-                    print "Standard Deviation : {}".format(std_err)
-                    sys.exit()
             else:
                 pass
 

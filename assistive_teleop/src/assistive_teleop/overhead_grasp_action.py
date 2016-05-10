@@ -44,7 +44,7 @@ class HapticMpcArmWrapper(object):
         ang_err = ang if ang <= np.pi/2 else np.pi - ang  # handle equivalent quaternions
         return (cart_err, ang_err)
 
-    def move_arm(self, ps_goal, wait=False, progress_error_ratio=0.99, progress_check_time=5, cart_threshold=None, ort_threshold=None):
+    def move_arm(self, ps_goal, wait=False, progress_error_ratio=0.98, progress_check_time=1, cart_threshold=None, ort_threshold=None):
         ps_goal.header.stamp = rospy.Time.now()
         self.goal_pub.publish(ps_goal)
         if not wait:
@@ -115,7 +115,7 @@ from assistive_teleop.msg import OverheadGraspAction, OverheadGraspResult, Overh
 
 
 class OverheadGrasp(object):
-    def __init__(self, side, overhead_offset=0.15):
+    def __init__(self, side, overhead_offset=0.12):
         self.overhead_offset = overhead_offset
         self.side = side
         self.arm = HapticMpcArmWrapper(side)
@@ -171,7 +171,7 @@ class OverheadGrasp(object):
         setup_pose.pose.position.z = overhead_height
         overhead_pose = deepcopy(goal_pose)
         overhead_pose.pose.position.z = overhead_height
-        goal_pose.pose.position.z += 0.005
+        goal_pose.pose.position.z += -0.01
         return (setup_pose, overhead_pose, goal_pose)
 
 
@@ -231,7 +231,7 @@ class OverheadPlace(object):
         setup_pose.pose.position.z = overhead_height
         overhead_pose = deepcopy(goal_pose)
         overhead_pose.pose.position.z = overhead_height
-        goal_pose.pose.position.z += 0.03
+        goal_pose.pose.position.z += -0.01
         return (setup_pose, overhead_pose, goal_pose)
 
 

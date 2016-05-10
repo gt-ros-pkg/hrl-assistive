@@ -54,7 +54,7 @@ RFH.Undo = function (options) {
     self.states.mode = null;
     var previewFunctions = {};
     var undoFunctions = {};
-    var sentUndoCommands = {};
+    self.sentUndoCommands = {};
 
     // Preview the undo action that will take place
     var startPreview = function (undoEvent) {
@@ -115,14 +115,47 @@ RFH.Undo = function (options) {
         }
     };
 
+    var getStateDiff = function (from_preds, to_preds) {
+        var toCancelList = [];
+        for (var i in from_preds) {
+            if (to_preds.indexOf(from_preds[i]) < 0) {
+                toCancelList.push(from_preds[i]);
+            }
+        }
+        for (var j in toCancelList) {
+            to_preds.push('(NOT '+toCancelList[j]+')');
+        };
+        return to_preds;
+    };
+
+    self.sentUndoCommands['task'] = {};
+    undoFunctions['task'] = function (undoEntry) {
+        var priorState = RFH.smach.getPriorState();
+        if (priorState === null) {
+            RFH.smach.cancelTask(undoEntry.command.problem);
+        } else {
+            var dom = priorState.domain.toLowerCase();
+            var currentActIdx = RFH.smach.getActionIndex(RFH.smach.domains[dom].currentAction, RFH.smach.domains[dom].solution_steps);
+            var currentState = RFH.smach.domains[dom].solution_steps[currentActIdx].init_state;
+            // TODO: Get differences in state to revert
+            var problem_msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
+            problem_msg.domain = dom;
+            problem_msg.name = undoEntry.command.problem;
+            problem_msg.goal = getStateDiff(currentState.predicates, priorState.predicates);
+            taskCmdPub.publish(problem_msg);
+        }
+    };
+
+    // TODO: Listen to perform_task and record commands by domain/problem to re-use objects field later?
+    
     self.states['task'] = {};
     var domainStateCB = function (state) {
         self.states['task'][state.domain] = state.predicates;
     };
 
-    var domainStepCB = function (step) {
-        if (sentUndoCommands['task'][step.domain] > 0) {
-            sentUndoCommands['task'][step.domain] -= 1;
+    var currentActionCB = function (step) {
+        if (self.sentUndoCommands['task'][step.domain] > 0) {
+            self.sentUndoCommands['task'][step.domain] -= 1;
             return;
         };
         var lastStepIdx = eventQueue.length - 1;
@@ -139,113 +172,51 @@ RFH.Undo = function (options) {
 
         var undoEntry = new RFH.UndoEntry({
             type: 'task',
-            stateGoal: self.states['task'][step.domain],
+            stateGoal: [], 
             command: step
         });
         eventQueue.pushUndoEntry(undoEntry);
     };
 
-    var taskStateSubs = {};
-    var taskStepSubs = {};
-    var setupDomainSubs = function (domain) {
-        var stateSub = new ROSLIB.Topic({
-            ros: ros,
-            name: 'pddl_tasks/'+domain+'/state',
-            messageType: 'hrl_task_planning/PDDLState'
-        });
-        stateSub.subscribe(domainStateCB);
-        taskStateSubs[domain] = stateSub;
-
-        var stepSub = new ROSLIB.Topic({
+    var currentActionSubs = {};
+    var setupDomain = function (domain) {
+        var currentActionSub = new ROSLIB.Topic({
             ros: ros,
             name: 'pddl_tasks/'+domain+'/current_action',
             messageType: 'hrl_task_planning/PDDLPlanStep'
         });
-        stepSub.subscribe(domainStepCB);
-        taskStepSubs[domain] = stepSub;
+        currentActionSub.subscribe(currentActionCB);
+        currentActionSubs[domain] = currentActionSub;
     };
 
-    sentUndoCommands['task'] = {};
-    undoFunctions['task'] = function (undoEntry) {
-        var domainActions = RFH.smach.getDomainData(undoEntry.command.domain).actionList;
-        for (var i=0; i < domainActions.length; i += 1) {
-            if (domainActions[i].name == undoEntry.command.action) {
-                if (i == 0) {
-                    RFH.smach.cancelTask(undoEntry.command.problem);
-                    return;
-                } else {
-                    var goal = domainActions[i-1].goal_state;
-                    continue;
-                }
-            }
-        }
-        var pddlCmd = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        pddlCmd.domain = undoEntry.command.domain;
-        pddlCmd.name = undoEntry.command.problem;
-        pddlCmd.objects = undoEntry.command.objects;
-        pddlCmd.goal = goal;
-        sentUndoCommands['task'][undoEntry.command.domain] += 1;
-        taskCmdPub.publish(pddlCmd);
-    };
-    
     var taskCmdPub = new ROSLIB.Topic({
         ros: ros,
         name: 'perform_task',
         messageType: 'hrl_task_planning/PDDLProblem'
     });
 
-    var taskActiveDomains = [];
+    var activeDomains = [];
     var activeDomainsCB = function (domains_msg) {
-        var domains = domains_msg.domains;
-        var newDomains = [];
-        for (var i=0; i<domains.length; i+=1) {
-            if (taskActiveDomains.indexOf(domains[i]) < 0){
-                newDomains.push(domains[i]);
+        var newDomains = domains_msg.domains;
+        for (var domain in self.domains) {
+            var idx = newDomains.indexOf(domain);
+            if (idx < 0) { // Previously active, now gone, so clean up
+                self.clearDomain(domain);
+            } else {
+               newDomains.splice(idx, 1);  // If already known, remove from list
             }
         }
-        for (var j=0; j<newDomains.length; j+=1) {
-            setupDomainSubs(newDomains[j]);
-        }
+        // Set up subscribers for newly active domains
+        for (var i=0; i<newDomains.length; i+=1) {
+            setupDomain(newDomains[i]);
+        };
     };
-    var activeDomainsSub = new ROSLIB.Topic({
+    var activeDomainsSubscriber = new ROSLIB.Topic({
         ros: ros,
-        name: 'pddl_tasks/active_domains',
-        messageType: 'hrl_task_planning/DomainList'
+        name: '/pddl_tasks/active_domains',
+        messageType: '/hrl_task_planning/DomainList'
     });
-    activeDomainsSub.subscribe(activeDomainsCB);
-
-    var domainSolutions = {};
-    var taskSolutionCB = function (sol_msg) {
-        domainSolutions[sol_msg.domain] = {'actions': sol_msg.actions,
-                                           'states': sol_msg.states}
-    };
-    var taskSolutionSub = new ROSLIB.Topic({
-        ros: ros,
-        name: '/task_solution',
-        messageType: 'hrl_task_planning/PDDLSolution'
-    });
-    taskSolutionSub.subscribe(taskSolutionCB);
-
-//    var taskCmdSub = new ROSLIB.Topic({
-//        ros: ros,
-//        name: 'perform_task',
-//        messageType: 'hrl_task_planning/PDDLProblem'
-//    });
-//
-//    var taskCmdCB = function (problem_msg) {
-//        if (sentUndoCommands['task'][problem_msg.domain] > 0) {
-//            sentUndoCommands['task'][problem_msg.domain] -= 1;
-//            return;
-//        };
-//        var undoEntry = new RFH.UndoEntry({
-//            type: 'task',
-//            stateGoal: self.states['task'][problem_msg.domain], // TODO: Make sure this always exists...
-//            command: problem_msg
-//        });
-//       eventQueue.pushUndoEntry(undoEntry); 
-//    };
-//    taskCmdSub.subscribe(taskCmdCB);
-
+    activeDomainsSubscriber.subscribe(activeDomainsCB);
     /*/////////////  END TASK-PLANNING UNDO FUNCTIONS ////////////////////*/
 
     /*/////////////  START LEFT ARM UNDO FUNCTIONS ////////////////////*/
@@ -260,9 +231,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['lArm'] = 0;
+    self.sentUndoCommands['lArm'] = 0;
     undoFunctions['lArm'] = function (undoEntry) {
-        sentUndoCommands['lArm'] += 1;
+        self.sentUndoCommands['lArm'] += 1;
         var gp = undoEntry.stateGoal;
         rArm.sendPoseGoal({position: gp.pose.position,
                            orientation: gp.pose.orientation,
@@ -277,8 +248,8 @@ RFH.Undo = function (options) {
     });
 
     var lArmCmdCB = function (cmd_msg) {
-        if (sentUndoCommands['lArm'] > 0) {
-            sentUndoCommands['lArm'] -= 1;
+        if (self.sentUndoCommands['lArm'] > 0) {
+            self.sentUndoCommands['lArm'] -= 1;
             return;
         }
         var armInTorso = lArm.getState(); // Received in torso_lift_link
@@ -307,9 +278,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['rArm'] = 0;
+    self.sentUndoCommands['rArm'] = 0;
     undoFunctions['rArm'] = function (undoEntry) {
-        sentUndoCommands['rArm'] += 1;
+        self.sentUndoCommands['rArm'] += 1;
         var gp = undoEntry.stateGoal;
         rArm.sendPoseGoal({position: gp.pose.position,
                            orientation: gp.pose.orientation,
@@ -324,8 +295,8 @@ RFH.Undo = function (options) {
     });
 
     var rArmCmdCB = function (cmd_msg) {
-        if (sentUndoCommands['rArm'] > 0) {
-            sentUndoCommands['rArm'] -= 1;
+        if (self.sentUndoCommands['rArm'] > 0) {
+            self.sentUndoCommands['rArm'] -= 1;
             return;
         }
         var armInTorso = rArm.getState(); // Received in torso_lift_link
@@ -373,9 +344,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands.lGripper = 0;
+    self.sentUndoCommands.lGripper = 0;
     undoFunctions.lGripper = function (undoEntry) {
-        sentUndoCommands.lGripper += 1;
+        self.sentUndoCommands.lGripper += 1;
         if (undoEntry.stateGoal === 'grab') {
             lGripper.grab();
         } else {
@@ -384,8 +355,8 @@ RFH.Undo = function (options) {
     };
 
     var lGripperGenerateUndoEntry = function (cmd_msg) {
-        if (sentUndoCommands.lGripper > 0) { 
-            sentUndoCommands.lGripper -= 1;
+        if (self.sentUndoCommands.lGripper > 0) { 
+            self.sentUndoCommands.lGripper -= 1;
             return;
         }
         var state = self.states.lGripper === 'grab' ? 'grab' : lGripper.getState();
@@ -460,9 +431,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands.rGripper = 0;
+    self.sentUndoCommands.rGripper = 0;
     undoFunctions.rGripper = function (undoEntry) {
-        sentUndoCommands.rGripper += 1;
+        self.sentUndoCommands.rGripper += 1;
         if (undoEntry.stateGoal === 'grab') {
             rGripper.grab();
         } else {
@@ -471,8 +442,8 @@ RFH.Undo = function (options) {
     };
 
     var rGripperGenerateUndoEntry = function (cmd_msg) {
-        if (sentUndoCommands.rGripper > 0) { 
-            sentUndoCommands.rGripper -= 1;
+        if (self.sentUndoCommands.rGripper > 0) { 
+            self.sentUndoCommands.rGripper -= 1;
             return;
         }
         var state = self.states.rGripper === 'grab' ? 'grab' : rGripper.getState();
@@ -525,9 +496,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['look'] = 0;
+    self.sentUndoCommands['look'] = 0;
     undoFunctions['look'] = function (undoEntry) {
-        sentUndoCommands['look'] += 1;
+        self.sentUndoCommands['look'] += 1;
         head.pointHead(undoEntry.stateGoal.x,
                        undoEntry.stateGoal.y,
                        undoEntry.stateGoal.z,
@@ -547,8 +518,8 @@ RFH.Undo = function (options) {
             self.states.mode == 'lEECartTask') {
                 return; 
         };
-        if (sentUndoCommands['look'] > 0 ) {
-            sentUndoCommands['look'] -= 1;
+        if (self.sentUndoCommands['look'] > 0 ) {
+            self.sentUndoCommands['look'] -= 1;
             return;
         }
         var camModel = RFH.mjpeg.cameraModel;
@@ -585,9 +556,9 @@ RFH.Undo = function (options) {
         }
     };
     
-    sentUndoCommands['mode'] = 0; // Initialize on list
+    self.sentUndoCommands['mode'] = 0; // Initialize on list
     undoFunctions['mode'] = function (undoEntry) {
-        sentUndoCommands['mode'] += 1  //Increment counter so we know to expect incoming commands
+        self.sentUndoCommands['mode'] += 1  //Increment counter so we know to expect incoming commands
         RFH.taskMenu.startTask(undoEntry.stateGoal);
     };
 
@@ -601,8 +572,8 @@ RFH.Undo = function (options) {
             self.states.mode = state_msg.data;
             return;
         };
-        if (sentUndoCommands['mode'] > 0) {  
-            sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
+        if (self.sentUndoCommands['mode'] > 0) {  
+            self.sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
             self.states.mode = state_msg.data; // Keep updated state for later reference
             return;
         }
@@ -638,15 +609,15 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['torso'] = 0; // Initialize counter
+    self.sentUndoCommands['torso'] = 0; // Initialize counter
     undoFunctions['torso'] = function (undoEntry) {
-        sentUndoCommands['torso'] += 1;
+        self.sentUndoCommands['torso'] += 1;
         torso.setPosition(undoEntry.stateGoal);
     };
 
     var torsoCmdCB = function (cmdMsg) {
-        if (sentUndoCommands['torso'] > 0) {
-            sentUndoCommands['torso'] -= 1;
+        if (self.sentUndoCommands['torso'] > 0) {
+            self.sentUndoCommands['torso'] -= 1;
             return;
         }
         var undoEntry = new RFH.UndoEntry({

@@ -38,6 +38,7 @@ import learning_util as util
 
 import ghmm
 from joblib import Parallel, delayed
+from scipy.stats import multivariate_normal
 
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
@@ -170,7 +171,81 @@ class learning_hmm(learning_base):
 
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
             return ret
-                               
+
+    def partial_fit(self, xData, nTrain, scale):
+
+        A  = copy.copy(self.A)
+        B  = copy.copy(self.B)
+        pi = copy.copy(self.pi)
+
+        new_B = copy.copy(self.B)
+
+        t_features = []
+        mus        = []
+        covs       = []
+        for i in xrange(self.nState):
+            t_features.append( B[i][0] + [ float(i) / float(self.nState)*scale ])
+            mus.append( B[i][0] )
+            covs.append( B[i][1] )
+        t_features = np.array(t_features)
+        mus     = np.array(mus)
+        covs    = np.array(covs)
+
+        # update b ------------------------------------------------------------
+        # mu
+        x_l = [[] for i in xrange(self.nState)]
+        X   = np.swapaxes(xData, 0, 1) # sample x dim x length
+        for i in xrange(len(X)):
+            sample = np.swapaxes(X[i], 0, 1) # length x dim
+
+            idx_l = []
+            for j in xrange(len(sample)):
+                feature = np.array( sample[j].tolist() + [float(j)/float(len(sample))*scale ] )
+
+                min_dist = 10000
+                min_idx  = 0
+                for idx, t_feature in enumerate(t_features):
+                    dist = np.linalg.norm(t_feature-feature)
+                    if dist < min_dist:
+                        min_dist = dist
+                        min_idx  = idx
+
+                x_l[min_idx].append(feature.tolist())
+
+        
+        for i in xrange(len(mus)):
+            new_B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
+            
+        # Normalize the state prior and transition values.
+        A /= np.sum(A)
+        pi /= np.sum(pi)
+        
+        X = np.squeeze(X)
+        X_test = X.tolist()
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+        (alpha, scale) = self.ml.forward(final_ts_obj)
+        beta = self.ml.backward(final_ts_obj, scale)
+
+        print np.shape(alpha), np.shape(beta)
+
+        est_A = np.zeros((self.nState, self.nState))
+        new_A = np.zeros((self.nState, self.nState))
+        for i in xrange(self.nState):
+            for j in xrange(self.nState):
+
+                temp1 = 0.0
+                temp2 = 0.0
+                for t in xrange(len()):                    
+                    p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
+                    temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
+                    temp2 += alpha[i,t-1] * beta[j,t]
+
+                eat_A[i,j] = temp1/temp2
+                new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
+
+        self.set_hmm_object(new_A, new_B, pi)
+        return new_A, new_B, pi
+        
 
     ## def predict(self, X):
     ##     '''

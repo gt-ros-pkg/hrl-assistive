@@ -177,7 +177,7 @@ class classifier(learning_base):
                 sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
@@ -227,12 +227,13 @@ class classifier(learning_base):
             X_features       = self.rbf_feature.fit_transform(X)
             if self.verbose: print "sgd classifier: ", np.shape(X), np.shape(X_features)
             # fitting
+            print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
             self.dt.fit(X_features, y)
 
 
-    def partial_fit(self, X, y):
+    def partial_fit(self, X, y, sample_weight=None):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -240,7 +241,7 @@ class classifier(learning_base):
 
         if self.method == 'sgd':
             X_features       = self.rbf_feature.transform(X)
-            self.dt.partial_fit(X_features,y)
+            self.dt.partial_fit(X_features,y, sample_weight=sample_weight)
         else:
             print "Not available method, ", self.method
             sys.exit()
@@ -280,7 +281,7 @@ class classifier(learning_base):
             l_err = []
             for i in xrange(len(X)):
                 logp = X[i][0]
-                post = X[i][1:]
+                post = X[i][-self.nPosteriors:]
 
                 # Find the best posterior distribution
                 min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)

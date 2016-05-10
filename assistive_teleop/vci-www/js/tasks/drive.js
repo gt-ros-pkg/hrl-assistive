@@ -438,10 +438,13 @@ RFH.Drive = function (options) {
     };
 
     self.getRTheta = function (e) {
-        var target_pos = $(e.target).position();
+        var $target = $(e.target);
+        var target_pos = $target.position();
+        var target_width = $target.width();
+        var target_height = $target.height();
         var pt = [e.pageX - target_pos.left, e.pageY - target_pos.top];
-        var px = (pt[0]/e.target.clientWidth) * camera.width;
-        var py = (pt[1]/e.target.clientHeight) * camera.height;
+        var px = (pt[0]/target_width) * camera.width;
+        var py = (pt[1]/target_height) * camera.height;
         if (camera.frame_id === '') {
             alert("Camera position not up to date.  Cannot drive safely.");
             camera.updateCameraInfo();

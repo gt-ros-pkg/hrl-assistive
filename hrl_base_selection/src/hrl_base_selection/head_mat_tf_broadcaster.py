@@ -12,8 +12,8 @@ from skimage.feature import blob_doh
 from hrl_msgs.msg import FloatArrayBare
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 
-MAT_WIDTH = 0.762 #metres
-MAT_HEIGHT = 1.854 #metres
+MAT_WIDTH = 0.74#0.762 #metres
+MAT_HEIGHT = 1.75 #1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2 
 NUMOFTAXELS_X = 64#73 #taxels
 NUMOFTAXELS_Y = 27#30 
@@ -65,12 +65,17 @@ class HeadDetector:
         #plt.matshow(self.pressure_map)
         #plt.show()
         #Select top 20 pixels of pressure map
-        p_map = self.pressure_map[:20,:]
+        weights = np.zeros(np.shape(p_map))
+        for i in range(np.shape(p_map)[0]):
+            weights[i, :] = self.sigmoid((np.shape(p_map)[0]/8.533 - i))
+        p_map = np.array(weights)*np.array(p_map)
+        #plt.matshow(p_map)
+        #plt.show()
         try:
-            blobs = blob_doh(p_map,
+            blobs = blob_doh(p_map, 
                              min_sigma=1, 
-                             max_sigma=4, 
-                             threshold=30,
+                             max_sigma=7, 
+                             threshold=20,
                              overlap=0.1) 
         except:
             blobs = np.copy(self.head_center_2d)

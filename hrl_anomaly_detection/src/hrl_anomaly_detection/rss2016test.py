@@ -480,7 +480,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
-    SVM_dict = param_dict['SVM']
+    SVM_dict   = param_dict['SVM']
+    add_logp_d = SVM_dict.get('add_logp_d', False)
 
     # ROC
     ROC_dict = param_dict['ROC']
@@ -683,8 +684,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else:
+                        l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
@@ -724,8 +730,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:                    
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
