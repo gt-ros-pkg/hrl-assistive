@@ -218,8 +218,6 @@ class learning_hmm(learning_base):
 
                 x_l[min_idx].append(feature[:-1].tolist())
 
-
-        
         for i in xrange(len(mus)):
             new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(xData)))
 
@@ -229,17 +227,14 @@ class learning_hmm(learning_base):
 
         # Daehyung: What is the shape and type of input data?
         xData = [np.array(data) for data in xData]
-        print np.shape(xData), "-----------------------------"        
         X_ptrain = util.convert_sequence(xData) # Training input
         X_ptrain = np.squeeze(X_ptrain)
-        print np.shape(X_ptrain), "-----------------------------"
-        
-        ## final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
+
         final_ts_obj = ghmm.EmissionSequence(self.F, X_ptrain.tolist())        
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
-        print np.shape(alpha), np.shape(beta)
+        print np.shape(alpha), np.shape(beta), type(alpha), type(beta)
 
         est_A = np.zeros((self.nState, self.nState))
         new_A = np.zeros((self.nState, self.nState))
@@ -249,13 +244,12 @@ class learning_hmm(learning_base):
                 temp1 = 0.0
                 temp2 = 0.0
                 for t in xrange(seq_len):
-                    print seq_len, np.shape(X[0][:,t]), np.shape(mus[j]), np.shape(covs[j])
                     p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=np.reshape(covs[j], (self.nEmissionDim, self.nEmissionDim)))
-                    temp1 += alpha[t-1,i] * A[i,j] * p * beta[t,j]
-                    temp2 += alpha[t-1,i] * beta[t,j]
+                    temp1 += alpha[t-1][i] * A[i,j] * p * beta[t][j]
+                    temp2 += alpha[t-1][i] * beta[t][j]
 
-                eat_A[i,j] = temp1/temp2
-                new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
+                est_A[i,j] = temp1/temp2
+                new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]) / float(nTrain)
 
         self.set_hmm_object(new_A, new_B, pi)
         return new_A, new_B, pi

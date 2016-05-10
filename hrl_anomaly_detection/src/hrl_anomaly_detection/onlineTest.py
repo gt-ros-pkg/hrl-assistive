@@ -444,6 +444,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 sample_weight = np.logspace(1,20,len(X_ptrain) )
                 sample_weight = np.logspace(1,3.0,len(X_ptrain) )
                 ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
+                sample_weight = np.ones(len(X_ptrain))
                 
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
