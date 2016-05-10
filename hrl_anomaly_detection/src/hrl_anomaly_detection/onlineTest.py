@@ -438,7 +438,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
                 ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
                 ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
-                sample_weight = np.logspace(1,20,len(X_ptrain) )
+                sample_weight = np.logspace(1,10,len(X_ptrain) )
                 ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
                 
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
@@ -827,7 +827,7 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     nLength                 = d['nLength']
     print "train_X: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
     nNormalTrain = 0
-    for i in xrange(ll_classifier_train_Y):
+    for i in xrange(len(ll_classifier_train_Y)):
         if ll_classifier_train_Y[i][0]<0: nNormalTrain += 1
     
     #### Getting Test data from task 2 ------------------------------------------------------
@@ -876,7 +876,7 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         for i in xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
             ml.set_hmm_object(A,B,pi)
-            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'] )
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
