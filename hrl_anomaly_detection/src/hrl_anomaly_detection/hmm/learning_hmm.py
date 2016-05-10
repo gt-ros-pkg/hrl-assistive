@@ -230,11 +230,11 @@ class learning_hmm(learning_base):
         xData = [np.array(data) for data in xData]
         print np.shape(xData), "-----------------------------"        
         X_ptrain = util.convert_sequence(xData) # Training input
-        print np.shape(X_ptrain), "-----------------------------"
-        X_ptrain = X_ptrain.tolist()
+        X_ptrain = np.squeeze(X_ptrain)
         print np.shape(X_ptrain), "-----------------------------"
         
-        final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
+        ## final_ts_obj = ghmm.SequenceSet(self.F, X_ptrain)
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_ptrain.tolist())        
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
@@ -247,10 +247,10 @@ class learning_hmm(learning_base):
 
                 temp1 = 0.0
                 temp2 = 0.0
-                for t in xrange(len()):                    
-                    p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
-                    temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
-                    temp2 += alpha[i,t-1] * beta[j,t]
+                for t in xrange(len(xData[0,0])):                    
+                    p = multivariate_normal.pdf( xData[:,0,t], mean=mus[j], cov=covs[j])
+                    temp1 += alpha[t-1,i] * A[i,j] * p * beta[t,j]
+                    temp2 += alpha[t-1,i] * beta[t,j]
 
                 eat_A[i,j] = temp1/temp2
                 new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
