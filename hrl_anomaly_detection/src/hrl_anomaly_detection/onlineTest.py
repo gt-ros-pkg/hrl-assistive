@@ -436,11 +436,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                sample_weight = np.logspace(1.,15.,len(X_ptrain))
                 ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
-                sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
+                ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
                 sample_weight /= np.sum(sample_weight)
-                sample_weight += 0.05
+                ## sample_weight += 0.05
                 ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
@@ -918,11 +918,11 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
 
 
 
-def getAUC(fpr_l, tpr_l):
-    area = 0.0
-    for i in range(len(fpr_l)-1):        
-        area += (fpr_l[i+1]-fpr_l[i])*(tpr_l[i]+tpr_l[i+1])*0.5
-    return area
+## def getAUC(fpr_l, tpr_l):
+##     area = 0.0
+##     for i in range(len(fpr_l)-1):        
+##         area += (fpr_l[i+1]-fpr_l[i])*(tpr_l[i]+tpr_l[i+1])*0.5
+##     return area
 
 
 # random order

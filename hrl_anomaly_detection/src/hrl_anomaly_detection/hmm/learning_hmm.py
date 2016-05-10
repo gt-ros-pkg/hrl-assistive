@@ -38,6 +38,7 @@ import learning_util as util
 
 import ghmm
 from joblib import Parallel, delayed
+from scipy import signal
 
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
@@ -217,7 +218,16 @@ class learning_hmm(learning_base):
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
-        
+        print np.shape(alpha), np.shape(beta)
+
+        est_A = np.zeros((self.nState, self.nState))
+        for i in xrange(self.nState):
+            for j in xrange(self.nState):
+                
+                temp1 = alpha[i] * self.A[i,j] * *beta[j]
+                temp2 = 
+                
+                est_A[i,j] = 
         
 
 
