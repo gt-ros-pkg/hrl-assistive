@@ -152,10 +152,7 @@ class learning_hmm(learning_base):
             # print 'Generating HMM'
             # HMM model object
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-            # print 'Creating Training Data'
-            print np.shape(X)
-            sys.exit()
-            
+            # print 'Creating Training Data'            
             X_train = util.convert_sequence(X) # Training input
             X_train = X_train.tolist()
             if self.verbose: print "training data size: ", np.shape(X_train)
