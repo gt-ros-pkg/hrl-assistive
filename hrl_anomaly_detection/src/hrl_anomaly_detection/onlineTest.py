@@ -899,7 +899,7 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
             mu_l = []
             for j in xrange(len(B)):
                 mu_l.append(B[j,0][0])
-            plt.plot(mu_l, label=)
+            ## plt.plot(mu_l, label=)
             
         plt.show()
     print "----------------------------------------------------------"
