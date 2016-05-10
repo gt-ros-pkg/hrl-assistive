@@ -451,7 +451,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
                 # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
-                sample_weight *= 6.0
+                sample_weight *= 10.0
                 
                 sample_weight /= float(len(ll_classifier_train_X) + i)
                 
