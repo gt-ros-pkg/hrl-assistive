@@ -1005,7 +1005,7 @@ if __name__ == '__main__':
           getParams(opt.task2, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
         likelihoodPlot(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                        opt.task2, raw_data_path2, save_data_path2, param_dict2, \
-                       renew=opt.bRenew, opt.bUpdateHMM )
+                       renew=opt.bRenew, bUpdateHMM=opt.bUpdateHMM )
         
     elif opt.bDiffClass:
         raw_data_path1, save_data_path1, param_dict1 = \
