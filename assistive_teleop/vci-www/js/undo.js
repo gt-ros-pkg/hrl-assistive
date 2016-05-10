@@ -54,7 +54,7 @@ RFH.Undo = function (options) {
     self.states.mode = null;
     var previewFunctions = {};
     var undoFunctions = {};
-    var sentUndoCommands = {};
+    self.sentUndoCommands = {};
 
     // Preview the undo action that will take place
     var startPreview = function (undoEvent) {
@@ -128,7 +128,7 @@ RFH.Undo = function (options) {
         return to_preds;
     };
 
-    sentUndoCommands['task'] = {};
+    self.sentUndoCommands['task'] = {};
     undoFunctions['task'] = function (undoEntry) {
         var priorState = RFH.smach.getPriorState();
         if (priorState === null) {
@@ -154,8 +154,8 @@ RFH.Undo = function (options) {
     };
 
     var currentActionCB = function (step) {
-        if (sentUndoCommands['task'][step.domain] > 0) {
-            sentUndoCommands['task'][step.domain] -= 1;
+        if (self.sentUndoCommands['task'][step.domain] > 0) {
+            self.sentUndoCommands['task'][step.domain] -= 1;
             return;
         };
         var lastStepIdx = eventQueue.length - 1;
@@ -231,9 +231,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['lArm'] = 0;
+    self.sentUndoCommands['lArm'] = 0;
     undoFunctions['lArm'] = function (undoEntry) {
-        sentUndoCommands['lArm'] += 1;
+        self.sentUndoCommands['lArm'] += 1;
         var gp = undoEntry.stateGoal;
         rArm.sendPoseGoal({position: gp.pose.position,
                            orientation: gp.pose.orientation,
@@ -248,8 +248,8 @@ RFH.Undo = function (options) {
     });
 
     var lArmCmdCB = function (cmd_msg) {
-        if (sentUndoCommands['lArm'] > 0) {
-            sentUndoCommands['lArm'] -= 1;
+        if (self.sentUndoCommands['lArm'] > 0) {
+            self.sentUndoCommands['lArm'] -= 1;
             return;
         }
         var armInTorso = lArm.getState(); // Received in torso_lift_link
@@ -278,9 +278,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['rArm'] = 0;
+    self.sentUndoCommands['rArm'] = 0;
     undoFunctions['rArm'] = function (undoEntry) {
-        sentUndoCommands['rArm'] += 1;
+        self.sentUndoCommands['rArm'] += 1;
         var gp = undoEntry.stateGoal;
         rArm.sendPoseGoal({position: gp.pose.position,
                            orientation: gp.pose.orientation,
@@ -295,8 +295,8 @@ RFH.Undo = function (options) {
     });
 
     var rArmCmdCB = function (cmd_msg) {
-        if (sentUndoCommands['rArm'] > 0) {
-            sentUndoCommands['rArm'] -= 1;
+        if (self.sentUndoCommands['rArm'] > 0) {
+            self.sentUndoCommands['rArm'] -= 1;
             return;
         }
         var armInTorso = rArm.getState(); // Received in torso_lift_link
@@ -344,9 +344,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands.lGripper = 0;
+    self.sentUndoCommands.lGripper = 0;
     undoFunctions.lGripper = function (undoEntry) {
-        sentUndoCommands.lGripper += 1;
+        self.sentUndoCommands.lGripper += 1;
         if (undoEntry.stateGoal === 'grab') {
             lGripper.grab();
         } else {
@@ -355,8 +355,8 @@ RFH.Undo = function (options) {
     };
 
     var lGripperGenerateUndoEntry = function (cmd_msg) {
-        if (sentUndoCommands.lGripper > 0) { 
-            sentUndoCommands.lGripper -= 1;
+        if (self.sentUndoCommands.lGripper > 0) { 
+            self.sentUndoCommands.lGripper -= 1;
             return;
         }
         var state = self.states.lGripper === 'grab' ? 'grab' : lGripper.getState();
@@ -431,9 +431,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands.rGripper = 0;
+    self.sentUndoCommands.rGripper = 0;
     undoFunctions.rGripper = function (undoEntry) {
-        sentUndoCommands.rGripper += 1;
+        self.sentUndoCommands.rGripper += 1;
         if (undoEntry.stateGoal === 'grab') {
             rGripper.grab();
         } else {
@@ -442,8 +442,8 @@ RFH.Undo = function (options) {
     };
 
     var rGripperGenerateUndoEntry = function (cmd_msg) {
-        if (sentUndoCommands.rGripper > 0) { 
-            sentUndoCommands.rGripper -= 1;
+        if (self.sentUndoCommands.rGripper > 0) { 
+            self.sentUndoCommands.rGripper -= 1;
             return;
         }
         var state = self.states.rGripper === 'grab' ? 'grab' : rGripper.getState();
@@ -496,9 +496,9 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['look'] = 0;
+    self.sentUndoCommands['look'] = 0;
     undoFunctions['look'] = function (undoEntry) {
-        sentUndoCommands['look'] += 1;
+        self.sentUndoCommands['look'] += 1;
         head.pointHead(undoEntry.stateGoal.x,
                        undoEntry.stateGoal.y,
                        undoEntry.stateGoal.z,
@@ -518,8 +518,8 @@ RFH.Undo = function (options) {
             self.states.mode == 'lEECartTask') {
                 return; 
         };
-        if (sentUndoCommands['look'] > 0 ) {
-            sentUndoCommands['look'] -= 1;
+        if (self.sentUndoCommands['look'] > 0 ) {
+            self.sentUndoCommands['look'] -= 1;
             return;
         }
         var camModel = RFH.mjpeg.cameraModel;
@@ -556,9 +556,9 @@ RFH.Undo = function (options) {
         }
     };
     
-    sentUndoCommands['mode'] = 0; // Initialize on list
+    self.sentUndoCommands['mode'] = 0; // Initialize on list
     undoFunctions['mode'] = function (undoEntry) {
-        sentUndoCommands['mode'] += 1  //Increment counter so we know to expect incoming commands
+        self.sentUndoCommands['mode'] += 1  //Increment counter so we know to expect incoming commands
         RFH.taskMenu.startTask(undoEntry.stateGoal);
     };
 
@@ -572,8 +572,8 @@ RFH.Undo = function (options) {
             self.states.mode = state_msg.data;
             return;
         };
-        if (sentUndoCommands['mode'] > 0) {  
-            sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
+        if (self.sentUndoCommands['mode'] > 0) {  
+            self.sentUndoCommands['mode'] -= 1; // Ignore commands from this module undoing previous commands..
             self.states.mode = state_msg.data; // Keep updated state for later reference
             return;
         }
@@ -609,15 +609,15 @@ RFH.Undo = function (options) {
         }
     };
 
-    sentUndoCommands['torso'] = 0; // Initialize counter
+    self.sentUndoCommands['torso'] = 0; // Initialize counter
     undoFunctions['torso'] = function (undoEntry) {
-        sentUndoCommands['torso'] += 1;
+        self.sentUndoCommands['torso'] += 1;
         torso.setPosition(undoEntry.stateGoal);
     };
 
     var torsoCmdCB = function (cmdMsg) {
-        if (sentUndoCommands['torso'] > 0) {
-            sentUndoCommands['torso'] -= 1;
+        if (self.sentUndoCommands['torso'] > 0) {
+            self.sentUndoCommands['torso'] -= 1;
             return;
         }
         var undoEntry = new RFH.UndoEntry({

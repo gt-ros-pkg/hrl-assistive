@@ -29,9 +29,15 @@ RFH.Domains.PickAndPlace = function (options) {
 
     self.getActionFunction = function (name, args) {
         if (args[0] === 'RIGHT_HAND') {
-            return function () {RFH.taskMenu.startTask('rEECartTask');}
+            return function () {
+                RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+                RFH.taskMenu.startTask('rEECartTask');
+                }
         } else if (args[0] === 'LEFT_HAND') {
-            return function () {RFH.taskMenu.startTask('lEECartTask');}
+            return function () {
+            RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+            RFH.taskMenu.startTask('lEECartTask');
+            }
         };
     };
 
