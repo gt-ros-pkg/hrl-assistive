@@ -21,8 +21,11 @@
 // Boost
 #include <boost/thread.hpp>
 
-typedef pcl::PointXYZRGBA PointType;
-typedef pcl::PointXYZI KeyType;
+typedef pcl::PointXYZRGB PointType;
+/* typedef pcl::PointXYZRGBA PointType; */
+/* typedef pcl::PointXYZI KeyType; */
+/* typedef pcl::PointXYZ PointType; */
+/* typedef pcl::PointXYZI KeyType; */
 using namespace std;
 
 class UPSAMPLE
@@ -32,17 +35,15 @@ public:
     ~UPSAMPLE();
 
 private:
-    bool getParams();   
     bool initComms();
     bool initFilter();
 
     void cameraCallback(const sensor_msgs::PointCloud2ConstPtr& input);
 
 public:
-    void extractUPSAMPLE();
+    void runFilter();
 
-
-    ros::Publisher com_markers_pub_;
+    ros::Publisher pcl_filtered_pub_;
     ros::Subscriber camera_sub_;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -51,7 +52,6 @@ private:
 
     // Common major variables
     ros::NodeHandle nh_;
-    boost::mutex camera_mtx; // mutex for contact cost subscribers
 
     // PCL
     pcl::PointCloud<PointType>::Ptr cloud_ptr_; 
@@ -59,10 +59,9 @@ private:
 
     // filtering
     pcl::ConditionAnd<PointType>::Ptr range_cond_;
-    pcl::MovingLeastSquares<PointType, PointType> mls_filter_;
+    pcl::MovingLeastSquares<PointType, PointType>::Ptr mls_filter_;
 
     boost::mutex cloud_mtx_; // mutex for contact cost subscribers
-    /* boost::mutex points_mutex_; */
 
 };
 
