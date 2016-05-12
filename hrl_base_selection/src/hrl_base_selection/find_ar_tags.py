@@ -131,7 +131,6 @@ class arTagDetector:
         self.bed_state_leg_theta = data.data[2]
 
     def arTagCallback(self, msg):
-
         with self.frame_lock:
             markers = msg.markers
             for i in xrange(len(markers)):
@@ -147,9 +146,9 @@ class arTagDetector:
                     #frame_id = markers[i].pose.header.frame_id
                     #print 'Frame ID is: ', frame_id
 
-                    if np.linalg.norm(cur_p) > 4.0:
-                        print "Detected tag is located too far away."
-                        continue
+                    # if np.linalg.norm(cur_p) > 4.0:
+                    #     print "Detected tag is located too far away."
+                    #     continue
 
                     if len(self.quat_buf) < 1:
                         self.pos_buf.append( cur_p )
