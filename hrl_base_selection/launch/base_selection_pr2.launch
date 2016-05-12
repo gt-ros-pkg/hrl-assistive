@@ -20,5 +20,8 @@
     <node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen">
     </node>
 
+    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/occupied_autobed.URDF" />
+    <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
+    <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
 
 </launch>

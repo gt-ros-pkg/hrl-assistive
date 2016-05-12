@@ -130,8 +130,8 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
         elif load == 'paper':
             if model == 'autobed':
-                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
+                # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'face_wiping'] = self.load_task('face_wiping', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
@@ -706,7 +706,11 @@ class BaseSelector(object):
     # Set to load from svn now, where I have put the data files.
     def load_task(self, task, model, subj):
         home = expanduser("~")
-        if 'scratching' not in task:
+        if 'wiping' in task:
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, 'cma_real_expanded_score_data.pkl'])
+            return load_pickle(file_name)
+
+        elif 'scratching' not in task:
             # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
             file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
         else:

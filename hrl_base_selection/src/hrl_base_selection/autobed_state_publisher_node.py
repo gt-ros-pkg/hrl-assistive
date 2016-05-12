@@ -36,13 +36,13 @@ class AutobedStatePublisherNode(object):
     def __init__(self):
         self.joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=100)
 
-        rospy.wait_for_service('autobed_occ_status')
-        try:
-            AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
-            self.autobed_occupied_status = AutobedOcc().data
-
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+        # rospy.wait_for_service('autobed_occ_status')
+        # try:
+        #     AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+        #     self.autobed_occupied_status = AutobedOcc().data
+        #
+        # except rospy.ServiceException, e:
+        #     print "Service call failed: %s"%e
 
         # self.autobed_occupied_state_client = autobed_occupied_status_client()
         # self.pressure_grid_pub = rospy.Publisher('pressure_grid', Marker)
