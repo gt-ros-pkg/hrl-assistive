@@ -163,7 +163,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
     if data_dict['handFeatures_noise']:
         ret = ml.fit(normalTrainData+\
                      np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
@@ -1872,7 +1872,8 @@ if __name__ == '__main__':
                               decision_boundary_viz=True, \
                               useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
+                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                              verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll:                
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \

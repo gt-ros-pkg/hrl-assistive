@@ -435,12 +435,28 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
+
+                ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
+                ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
+                
+                ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
+                ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
+                sample_weight = np.logspace(1,20,len(X_ptrain) )
+                sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
+                ## sample_weight = np.ones(len(X_ptrain))
+                
                 ## sample_weight = np.log10(1.,20.,len(X_ptrain))
-                ## sample_weight = np.linspace(0.,1.0,len(X_ptrain))
                 ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
+
+                # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
-                ## sample_weight += 0.5
+                sample_weight *= 10.0                
+                sample_weight /= float(len(ll_classifier_train_X) + i)
+                
+                ## sample_weight += 0.1
+                ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
+               
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
@@ -675,9 +691,14 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
-                sample_weight = np.logspace(-4.,0,len(X_ptrain))
-                sample_weight/=np.sum(sample_weight)
-                ## dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                ## sample_weight = np.logspace(-4.,0,len(X_ptrain))
+                ## sample_weight/=np.sum(sample_weight)
+                ## sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                sample_weight = np.linspace(0,1.0,len(X_ptrain) )
+                sample_weight /= np.amax(sample_weight)
+                sample_weight *= 10.0                
+                sample_weight /= float(len(ll_classifier_train_X) + i)                
+                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]
@@ -818,7 +839,10 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
     ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
     nLength                 = d['nLength']
-
+    print "train_X: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+    nNormalTrain = 0
+    for i in xrange(len(ll_classifier_train_Y)):
+        if ll_classifier_train_Y[i][0]<0: nNormalTrain += 1
     
     #### Getting Test data from task 2 ------------------------------------------------------
     d2 = dm.getDataSet(param_dict2['subject_list'], task2, raw_data_path2, save_data_path2, \
@@ -856,16 +880,36 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         new_feature = (new_feature-target_min[i])/(target_max[i] - target_min[i])
         new_testDataX.append(new_feature)
 
-    print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
+    print "testDataX: ", np.shape(testDataX)
 
 
+    A,B,pi = d['A'], d['B'], d['pi']
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
-        ml.set_hmm_object(d['A'], d['B'], d['pi'])
-        A,B,pi = ml.partial_fit( testDataX, len(ll_classifier_train_X[0]), HMM_dict['scale'] )
-    else:
-        A,B,pi = d['A'], d['B'], d['pi']
+
+        ## plt.ion()
+        fig = plt.figure()
+
+        mu_l = []
+        for j in xrange(len(B)):
+            mu_l.append(B[j,0][0])
+        plt.plot(mu_l, label='org')
+
+        for i in xrange(2): #xrange(len(testDataX[0])):
+            if testDataY[i] > 0: continue
+            ml.set_hmm_object(A,B,pi)
+            
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
+            
+            mu_l = []
+            for j in xrange(len(B)):
+                mu_l.append(B[j,0][0])
+            plt.plot(mu_l, label=str(i))
+
+        plt.legend(loc=3,prop={'size':16})            
+        plt.show()
+    print "----------------------------------------------------------"
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
@@ -876,7 +920,8 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
                              nEmissionDim, nState,\
                              startIdx=startIdx, \
                             bPosterior=True)
-                            for i in xrange(len(testDataX[0])))
+                            for i in xrange(15))
+                            ## for i in xrange(len(testDataX[0])))
     _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
     # nSample x nLength
@@ -913,14 +958,14 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     for i in xrange(15):
         ll_logp_test_normal.append(np.swapaxes(ll_classifier_test_X[i], 0, 1)[0])
 
-    ll_logp_test_abnormal = []
-    for i in xrange(15):
-        ll_logp_test_abnormal.append(np.swapaxes(ll_classifier_test_X[-i], 0, 1)[0])
+    ## ll_logp_test_abnormal = []
+    ## for i in xrange(15):
+    ##     ll_logp_test_abnormal.append(np.swapaxes(ll_classifier_test_X[-i], 0, 1)[0])
         
     fig = plt.figure()
     plt.plot( np.swapaxes(ll_logp_train,0,1), 'b-' )
     plt.plot( np.swapaxes(ll_logp_test_normal,0,1), 'g-' )
-    plt.plot( np.swapaxes(ll_logp_test_abnormal,0,1), 'r-' )
+    ## plt.plot( np.swapaxes(ll_logp_test_abnormal,0,1), 'r-' )
     plt.show()        
 
                           

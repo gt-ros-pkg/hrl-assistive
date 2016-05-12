@@ -75,6 +75,9 @@ class learning_hmm(learning_base):
 
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                        A, B, pi)
+        self.A = A
+        self.B = B
+        self.pi = pi
         return self.ml
 
 
@@ -149,7 +152,7 @@ class learning_hmm(learning_base):
             # print 'Generating HMM'
             # HMM model object
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
-            # print 'Creating Training Data'
+            # print 'Creating Training Data'            
             X_train = util.convert_sequence(X) # Training input
             X_train = X_train.tolist()
             if self.verbose: print "training data size: ", np.shape(X_train)
@@ -173,7 +176,9 @@ class learning_hmm(learning_base):
             return ret
 
     def partial_fit(self, xData, nTrain, scale):
-
+        '''
+        data: dimension x sample x length
+        '''
         A  = copy.copy(self.A)
         B  = copy.copy(self.B)
         pi = copy.copy(self.pi)
@@ -195,6 +200,7 @@ class learning_hmm(learning_base):
         # mu
         x_l = [[] for i in xrange(self.nState)]
         X   = np.swapaxes(xData, 0, 1) # sample x dim x length
+        seq_len = len(X[0][0])
         for i in xrange(len(X)):
             sample = np.swapaxes(X[i], 0, 1) # length x dim
 
@@ -210,23 +216,25 @@ class learning_hmm(learning_base):
                         min_dist = dist
                         min_idx  = idx
 
-                x_l[min_idx].append(feature.tolist())
+                x_l[min_idx].append(feature[:-1].tolist())
 
-        
         for i in xrange(len(mus)):
-            new_B[i][0] = list((nTrain*new_mus[i] + np.sum(x_l[i], axis=1) ) / float(nTrain + len(X)))
-            
+            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(xData)))
+
         # Normalize the state prior and transition values.
         A /= np.sum(A)
         pi /= np.sum(pi)
-        
-        X = np.squeeze(X)
-        X_test = X.tolist()
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test)
+
+        # Daehyung: What is the shape and type of input data?
+        xData = [np.array(data) for data in xData]
+        X_ptrain = util.convert_sequence(xData) # Training input
+        X_ptrain = np.squeeze(X_ptrain)
+
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_ptrain.tolist())        
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
-        print np.shape(alpha), np.shape(beta)
+        print np.shape(alpha), np.shape(beta), type(alpha), type(beta)
 
         est_A = np.zeros((self.nState, self.nState))
         new_A = np.zeros((self.nState, self.nState))
@@ -235,13 +243,15 @@ class learning_hmm(learning_base):
 
                 temp1 = 0.0
                 temp2 = 0.0
-                for t in xrange(len()):                    
-                    p = multivariate_normal.pdf( O(t), mean=mus[j], cov=covs[j])
-                    temp1 += alpha[i,t-1] * A[i,j] * p * beta[j,t]
-                    temp2 += alpha[i,t-1] * beta[j,t]
-
-                eat_A[i,j] = temp1/temp2
-                new_A[i,j] = (float(nTrain-len())*A[i,j] + est_A[i,j]) / float(nTrain)
+                for t in xrange(seq_len):
+                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=np.reshape(covs[j], (self.nEmissionDim, self.nEmissionDim)))
+                    temp1 += alpha[t-1][i] * A[i,j] * p * beta[t][j]
+                    temp2 += alpha[t-1][i] * beta[t][j]
+                try:
+                    est_A[i,j] = temp1/temp2
+                except:
+                    est_A[i,j] = 0
+                new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]) / float(nTrain)
 
         self.set_hmm_object(new_A, new_B, pi)
         return new_A, new_B, pi
