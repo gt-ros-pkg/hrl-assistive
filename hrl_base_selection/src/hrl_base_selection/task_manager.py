@@ -315,15 +315,15 @@ class BaseSelectionManager(object):
 
             # Hack to have PR2 avoid the poles and things under the autobed that are not included in its collision
             # model.
-            if configuration_goals[1] > 1.:
-                configuration_goals[1] += 15
-                configuration_goals[0] += 0.14
-            elif configuration_goals[1] < 1.:
-                configuration_goals[1] += 2
-                configuration_goals[0] += 0.02
-            autobed_goal.data = [configuration_goals[2], configuration_goals[1]+9, self.bed_state_leg_theta]
+            # if configuration_goals[1] > 1.:
+            #     configuration_goals[1] += 15
+            #     configuration_goals[0] += 0.14
+            # elif configuration_goals[1] < 1.:
+            #     configuration_goals[1] += 2
+            #     configuration_goals[0] += 0.02
+            autobed_goal.data = [configuration_goals[2], configuration_goals[1], self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals[1]+7
+            print 'The autobed should be set to a height of: ', configuration_goals[1]
             print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
 
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
