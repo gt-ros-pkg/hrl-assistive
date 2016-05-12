@@ -65,6 +65,7 @@ class HeadDetector:
         #plt.matshow(self.pressure_map)
         #plt.show()
         #Select top 20 pixels of pressure map
+        p_map = self.pressure_map
         weights = np.zeros(np.shape(p_map))
         for i in range(np.shape(p_map)[0]):
             weights[i, :] = self.sigmoid((np.shape(p_map)[0]/8.533 - i))
