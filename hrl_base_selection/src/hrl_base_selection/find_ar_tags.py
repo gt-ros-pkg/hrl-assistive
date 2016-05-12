@@ -132,8 +132,6 @@ class arTagDetector:
 
     def arTagCallback(self, msg):
 
-        markers = msg.markers
-
         with self.frame_lock:
             markers = msg.markers
             for i in xrange(len(markers)):
