@@ -92,7 +92,8 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
 
 def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
-                           task2, raw_data_path2, save_data_path2, param_dict2, renew=False ):
+                           task2, raw_data_path2, save_data_path2, param_dict2, renew=False,\
+                           bUpdateHMM=False ):
 
     ## Parameters
     # data
@@ -129,8 +130,6 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
         ## ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
         ROC_data[method]['result'] = [ [] for j in xrange(nPoints) ]
 
-        
-
         # parallelization 
         r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_diff)( idx,
                                                                           task, raw_data_path, \
@@ -139,7 +138,8 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
                                                                           task2, raw_data_path2, \
                                                                           save_data_path2, \
                                                                           param_dict2, \
-                                                                          method, ROC_data ) \
+                                                                          method, ROC_data,\
+                                                                          bUpdateHMM=bUpdateHMM) \
                                                                           for idx in xrange(nFolds) )
         l_data = r
         for i in xrange(len(l_data)):
@@ -158,7 +158,6 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
                 ROC_data[method]['result'][j].append(l_data[i][method]['result'][j])
 
         ROC_data[method]['complete'] = True
-
         ut.save_pickle(ROC_data, roc_data_pkl)
     else:
         ROC_data = ut.load_pickle(roc_data_pkl)
@@ -498,7 +497,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
 def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, \
                           task2, raw_data_path2, save_data_path2, param_dict2, \
-                          method, ROC_data ):
+                          method, ROC_data, bUpdateHMM=False ):
 
     ## Parameters
     # data
@@ -538,6 +537,11 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     ll_classifier_test_idx  = d['ll_classifier_test_idx']
     nLength = d['nLength']
     nPoints = param_dict['ROC']['nPoints']
+
+    nNormalTrain = 0
+    for i in xrange(len(ll_classifier_train_Y)):
+        if ll_classifier_train_Y[i][0]<0: nNormalTrain += 1
+
 
     X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
                                                 ll_classifier_train_Y, \
@@ -594,11 +598,26 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
     print np.shape(testDataX), np.shape(new_testDataX), np.shape(feature), np.shape(new_feature)
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
 
+    A,B,pi = d['A'], d['B'], d['pi']
+
+    # update hmm
+    if bUpdateHMM is True:
+        ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
+        for i in xrange(len(testDataX[0])):
+            if testDataY[i] > 0: continue
+
+            ml.set_hmm_object(A,B,pi)            
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'], \
+                                     weight=4.0)
+
+            
+
+
     #### Run HMM with the test data from task 2 ----------------------------------------------
 
     startIdx = 4
     r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)\
-                            (i, d['A'], d['B'], d['pi'], d['F'], \
+                            (i, A, B, pi, d['F'], \
                              [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                              nEmissionDim, nState,\
                              startIdx=startIdx, \
@@ -686,8 +705,11 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
         # incremental learning and classification
         for i in xrange(len(X_test)):
             if len(Y_test[i])==0: continue
+
+            # 1) update model
+
             
-            # 1) update classifier
+            # 2) update classifier
             # Get partial fitting data
             if i is not 0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
@@ -883,32 +905,53 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
     print "testDataX: ", np.shape(testDataX)
 
-
     A,B,pi = d['A'], d['B'], d['pi']
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
 
-        ## plt.ion()
+        ## plt.ion() -----------------------------------------------
         fig = plt.figure()
+        org_mu_l  = []
+        org_cov_l = []
+        for j in xrange(len(d['B'])):
+            org_mu_l.append(d['B'][j,0]) # mu
+            org_cov_l.append( np.reshape(d['B'][j,1], (nEmissionDim, nEmissionDim)) ) # mu
+        org_mu_l  = np.array(org_mu_l)
+        org_cov_l = np.array(org_cov_l)
 
-        mu_l = []
-        for j in xrange(len(B)):
-            mu_l.append(B[j,0][0])
-        plt.plot(mu_l, label='org')
-
-        for i in xrange(2): #xrange(len(testDataX[0])):
+        for j in xrange(nEmissionDim):
+            ax = fig.add_subplot(100*nEmissionDim+10+j+1)                            
+            plt.plot(org_mu_l[:,j], label='org' )
+        # ----------------------------------------------------------
+        
+        for i in xrange(10): #xrange(len(testDataX[0])):
             if testDataY[i] > 0: continue
-            ml.set_hmm_object(A,B,pi)
-            
-            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'])
-            
-            mu_l = []
-            for j in xrange(len(B)):
-                mu_l.append(B[j,0][0])
-            plt.plot(mu_l, label=str(i))
 
+            ml.set_hmm_object(A,B,pi)            
+            A,B,pi = ml.partial_fit( testDataX[:,i:i+1,:], nNormalTrain+i, HMM_dict['scale'], \
+                                     weight=4.0)
+            
+            # ----------------------------------------------------------
+            mu_l = []
+            cov_l= []
+            for j in xrange(len(B)):
+                mu_l.append(B[j,0])
+                cov_l.append( np.reshape(B[j,1], (nEmissionDim, nEmissionDim)) )
+            mu_l  = np.array(mu_l)
+            cov_l = np.array(cov_l)
+
+            for j in xrange(nEmissionDim):
+                plt.subplot(100*nEmissionDim+10+j+1)                            
+                if j == 0: plt.plot(mu_l[:,j], label=str(i) )
+                else:      plt.plot(mu_l[:,j] )
+                
         plt.legend(loc=3,prop={'size':16})            
         plt.show()
+        sys.exit()
+        # ----------------------------------------------------------
+
+
+        
     print "----------------------------------------------------------"
         
     #### Run HMM with the test data from task 2 ----------------------------------------------
@@ -940,7 +983,8 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
                 print "nan values in ", i, j
                 print testDataX[0][i]
                 print ll_logp[i][j], ll_post[i][j]
-                sys.exit()
+                continue
+                ## sys.exit()
 
         ll_classifier_test_X.append(l_X)
         ll_classifier_test_Y.append(l_Y)
@@ -955,7 +999,7 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         ll_logp_train.append(np.swapaxes(ll_classifier_train_X[i], 0, 1)[0])
 
     ll_logp_test_normal = []
-    for i in xrange(15):
+    for i in xrange(10):
         ll_logp_test_normal.append(np.swapaxes(ll_classifier_test_X[i], 0, 1)[0])
 
     ## ll_logp_test_abnormal = []
@@ -1058,7 +1102,7 @@ if __name__ == '__main__':
         ## raw_data_path2, save_data_path2, param_dict2 = raw_data_path1, save_data_path1, param_dict1
         onlineEvaluationDouble(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                                opt.task2, raw_data_path2, save_data_path2, param_dict2, \
-                               renew=opt.bRenew )
+                               renew=opt.bRenew, bUpdateHMM=opt.bUpdateHMM )
                                
     else:
         raw_data_path, save_data_path, param_dict = \
