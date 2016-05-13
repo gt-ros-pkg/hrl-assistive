@@ -905,6 +905,11 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
     testDataX = np.array(new_testDataX)*HMM_dict['scale']
     print "testDataX: ", np.shape(testDataX)
 
+    modeling_pkl = os.path.join(save_data_path2, 'hmm_'+task2+'_'+str(idx)+'.pkl')
+    d2           = ut.load_pickle(modeling_pkl)
+    A2,B2,pi2    = d2['A'], d2['B'], d2['pi'] 
+
+
     A,B,pi = d['A'], d['B'], d['pi']
     if bUpdateHMM:
         ml = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=False)
@@ -913,15 +918,22 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
         fig = plt.figure()
         org_mu_l  = []
         org_cov_l = []
+        org_mu2_l  = []
+        org_cov2_l = []
         for j in xrange(len(d['B'])):
             org_mu_l.append(d['B'][j,0]) # mu
-            org_cov_l.append( np.reshape(d['B'][j,1], (nEmissionDim, nEmissionDim)) ) # mu
+            org_cov_l.append( np.reshape(d['B'][j,1], (nEmissionDim, nEmissionDim)) ) # cov
+            org_mu2_l.append(d2['B'][j,0]) # mu
+            org_cov2_l.append( np.reshape(d2['B'][j,1], (nEmissionDim, nEmissionDim)) ) # cov
         org_mu_l  = np.array(org_mu_l)
         org_cov_l = np.array(org_cov_l)
+        org_mu2_l  = np.array(org_mu2_l)
+        org_cov2_l = np.array(org_cov2_l)
 
         for j in xrange(nEmissionDim):
             ax = fig.add_subplot(100*nEmissionDim+10+j+1)                            
-            plt.plot(org_mu_l[:,j], label='org' )
+            plt.plot(org_mu_l[:,j], label='Task1' )
+            plt.plot(org_mu2_l[:,j], linewidth=3.0, label='Task2' )
         # ----------------------------------------------------------
         
         for i in xrange(10): #xrange(len(testDataX[0])):
@@ -944,7 +956,9 @@ def likelihoodPlot(task, raw_data_path, save_data_path, param_dict, \
                 plt.subplot(100*nEmissionDim+10+j+1)                            
                 if j == 0: plt.plot(mu_l[:,j], label=str(i) )
                 else:      plt.plot(mu_l[:,j] )
-                
+
+
+        
         plt.legend(loc=3,prop={'size':16})            
         plt.show()
         sys.exit()
