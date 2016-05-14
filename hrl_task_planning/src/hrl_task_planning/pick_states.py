@@ -13,8 +13,8 @@ SPA = ["succeeded", "preempted", "aborted"]
 
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
-    if action == 'FORGET-LOCATION':
-        param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
+    if action == 'FORGET-OBJECT':
+        param = "/pddl_tasks/%s/%s/%s" % (domain, 'CHOSEN-OBJ', args[0])
         return DeleteParamState(param, domain=domain, problem=problem,
                                 action=action, action_args=args,
                                 init_state=init_state, goal_state=goal_state,
@@ -23,7 +23,9 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return OverheadGraspState(hand=args[0], location=args[1], domain=domain, problem=problem,
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
-    elif action in ['MANUAL-GRASP', 'ID-LOCATION']:
+    elif action == 'RESET-AUTO-TRIED':
+        return ResetAutoTriedState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+    elif action in ['MANUAL-GRASP', 'CHOOSE-OBJECT']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
 
@@ -45,6 +47,22 @@ class DeleteParamState(PDDLSmachState):
             return 'aborted'
 
 
+class ResetAutoTriedState(PDDLSmachState):
+    def __init__(self, *args, **kwargs):
+        super(ResetAutoTriedState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
+        self.state_update_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=3)
+
+    def on_execute(self, ud):
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.problem = self.problem
+        state_update.predicates = ['(NOT (AUTO-GRASP-DONE))']
+        print "Publishing (AUTO-GRASP-DONE) update"
+        self.state_update_pub.publish(state_update)
+
+
 from assistive_teleop.msg import OverheadGraspAction, OverheadGraspGoal
 
 
@@ -63,7 +81,7 @@ class OverheadGraspState(PDDLSmachState):
 
     def on_execute(self, ud):
         try:
-            goal_pose_dict = rospy.get_param('/pddl_tasks/%s/KNOWN/%s' % (self.domain, self.location))
+            goal_pose_dict = rospy.get_param('/pddl_tasks/%s/CHOSEN-OBJ/%s' % (self.domain, self.location))
             goal_pose = _dict_to_pose_stamped(goal_pose_dict)
         except KeyError:
             rospy.loginfo("[%s] Move Arm Cannot find location %s on parameter server", rospy.get_name(), self.location)
@@ -71,7 +89,17 @@ class OverheadGraspState(PDDLSmachState):
         goal_msg = OverheadGraspGoal()
         goal_msg.goal_pose = goal_pose
         self.overhead_grasp_client.send_goal(goal_msg)
-        self.overhead_grasp_client.wait_for_result()
+        while not rospy.is_shutdown() and self.overhead_grasp_client.get_result() is None:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Cancelling overhead grasp action.", rospy.get_name())
+                self.overhead_grasp_client.cancel_goal()
+            print "OGA Result: ", self.overhead_grasp_client.get_result()
+            rospy.sleep(1)
+        if self.preempt_requested():
+            return
+#        result = self.overhead_grasp_client.get_state()
+#        print "Result: ", result
+#        if result not in [GS.ABORTED, GS.PREEMPTED]:
         rospy.loginfo("Overhead Grasp Completed")
         state_update = PDDLState()
         state_update.domain = self.domain

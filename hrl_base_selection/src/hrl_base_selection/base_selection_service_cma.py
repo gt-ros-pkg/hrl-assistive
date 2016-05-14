@@ -131,8 +131,8 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
         elif load == 'paper':
             if model == 'autobed':
-                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
+                # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'face_wiping'] = self.load_task('face_wiping', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
@@ -420,11 +420,13 @@ class BaseSelector(object):
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(21)-10)*.01
+            head_possibilities = (np.arange(5)-2)*.05
             neigh = KNeighborsClassifier(n_neighbors=1)
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
-            heady = neigh.predict([model_B_head[1, 3])
+            heady = neigh.predict(model_B_head[1, 3])[0]
             headx = 0.
+
+            print 'The nearest neighbor to the current head_y position is:', heady
 
             ## This next bit selects what entry in the dictionary of scores to use based on the location of the head
             # with respect to the bed model. Currently it just selects the dictionary entry with the closest relative
@@ -470,8 +472,8 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        scores = all_scores[heady, 0., 0.]
-
+        self.score = all_scores[heady, 0., 0.]
+        '''
         ## Set the weights for the different scores.
         alpha = 0.0001  # Weight on base's closeness to goal
         beta = 1.  # Weight on number of reachable goals
@@ -524,17 +526,18 @@ class BaseSelector(object):
 
         print 'Final version of scores is: \n', out_score[0]
         self.score_sheet = np.array(sorted(out_score, key=lambda t:t[1], reverse=True))
-        self.score_length = len(self.score_sheet)
-        print 'Best score and configuration is: \n', self.score_sheet[0]
-        print 'Number of scores in score sheet: ', self.score_length
+        '''
+        # self.score_length = len(self.score_sheet)
+        print 'Best score and configuration is: \n', self.score
+        # print 'Number of scores in score sheet: ', self.score_length
 
         print 'I have finished preparing the data for the task!'
         print 'Time to perform optimization: %fs' % (time.time()-start_time)
-
+        '''
         if self.score_sheet[0, 1] == 0:
             print 'There are no base locations with a score greater than 0. There are no good base locations!!'
             return None, None
-
+        '''
         # Published the wheelchair location to create a marker in rviz for visualization to compare where the service believes the wheelchair is to
         # where the person is (seen via kinect).
         pos_goal, ori_goal = Bmat_to_pos_quat(subject_location)
@@ -565,11 +568,11 @@ class BaseSelector(object):
         if data != None:
             score_sheet = copy.copy(data)
         else:
-            score_sheet = copy.copy(self.score_sheet)
+            score_sheet = copy.copy(self.score)
 
         # I only want to output the configuration with the best score, so first I grab it from the score sheet.
-        best_score_cfg = score_sheet[0, 0]
-        best_score_score = score_sheet[0, 1]
+        best_score_cfg = score_sheet[0]
+        best_score_score = score_sheet[1]
 
         pr2_base_output = []
         configuration_output = []
@@ -716,7 +719,11 @@ class BaseSelector(object):
     # Set to load from svn now, where I have put the data files.
     def load_task(self, task, model, subj):
         home = expanduser("~")
-        if 'scratching' not in task:
+        if 'wiping' in task:
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            return load_pickle(file_name)
+
+        elif 'scratching' not in task:
             # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
             file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
         else:

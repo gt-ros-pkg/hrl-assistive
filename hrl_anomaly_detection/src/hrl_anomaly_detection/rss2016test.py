@@ -163,7 +163,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
     cov_mult = [cov]*(nEmissionDim**2)
 
     # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
     if data_dict['handFeatures_noise']:
         ret = ml.fit(normalTrainData+\
                      np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
@@ -210,15 +210,10 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             ll_classifier_train_Y.append(l_Y)
 
         # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
-        for i in xrange(len(ll_classifier_train_X)):
-            for j in xrange(len(ll_classifier_train_X[i])):
-                X_train_org.append(ll_classifier_train_X[i][j])
-                Y_train_org.append(ll_classifier_train_Y[i][j])
-                idx_train_org.append(ll_classifier_train_idx[i][j])
-
+        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
+                                                                ll_classifier_train_Y, \
+                                                                ll_classifier_train_idx)
+        
         # discriminative classifier
         if decision_boundary_viz:
             dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
@@ -485,15 +480,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
-    SVM_dict = param_dict['SVM']
+    SVM_dict   = param_dict['SVM']
+    add_logp_d = SVM_dict.get('add_logp_d', False)
 
     # ROC
     ROC_dict = param_dict['ROC']
     
     #------------------------------------------
 
-    
-
+   
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
@@ -689,8 +684,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else:
+                        l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
@@ -730,8 +730,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             for i in xrange(len(ll_logp)):
                 l_X = []
                 l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:                    
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
                     if testDataY[i] > 0.0: l_Y.append(1)
                     else: l_Y.append(-1)
@@ -937,14 +941,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
     #-----------------------------------------------------------------------------------------
     # flatten the data
-    X_train_org = []
-    Y_train_org = []
-    idx_train_org = []
-    for i in xrange(len(ll_classifier_train_X)):
-        for j in xrange(len(ll_classifier_train_X[i])):
-            X_train_org.append(ll_classifier_train_X[i][j])
-            Y_train_org.append(ll_classifier_train_Y[i][j])
-            idx_train_org.append(ll_classifier_train_idx[i][j])
+    X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
+                                                            ll_classifier_train_Y, \
+                                                            ll_classifier_train_idx)
 
     data = {}
     # pass method if there is existing result
@@ -1473,14 +1472,10 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                 post_list.append(ll_classifier_train_X[i][j][1:])
 
         # flatten test data
-        X_test_flat = [] #
-        Y_test_flat = [] #
-        for i in xrange(len(ll_classifier_test_X)):
-            for j in xrange(len(ll_classifier_test_X[i])):
-                X_test_flat.append(ll_classifier_test_X[i][j])
-                Y_test_flat.append(ll_classifier_test_Y[i][j])
-        X_test_flat = np.array(X_test_flat)
-        Y_test_flat = np.array(Y_test_flat)
+        X_test_flat, Y_test_flat, _ = flattenSample(ll_classifier_test_X, \
+                                                    ll_classifier_test_Y, \
+                                                    ll_classifier_test_idx)
+
 
         # ------------------ scaling -----------------------------------------------
         if os.path.isfile(scaler_model):
@@ -1877,7 +1872,8 @@ if __name__ == '__main__':
                               decision_boundary_viz=True, \
                               useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf)
+                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                              verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll:                
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \

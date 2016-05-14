@@ -177,7 +177,7 @@ class classifier(learning_base):
                 sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,1:] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
@@ -210,18 +210,41 @@ class classifier(learning_base):
                 
         elif self.method == 'sgd':
 
+            max_components = 1000 #196
+            if len(X) < max_components:
+                n_components =len(X)
+            else:
+                n_components = max_components
+                
+
             ## from sklearn.kernel_approximation import RBFSampler
             ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
             from sklearn.kernel_approximation import Nystroem
-            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=1000, random_state=1)
+            self.rbf_feature = Nystroem(gamma=self.sgd_gamma, n_components=n_components, random_state=1)
                 
             from sklearn.linear_model import SGDClassifier
             # get time-based clustering center? Not yet implemented
             X_features       = self.rbf_feature.fit_transform(X)
+            if self.verbose: print "sgd classifier: ", np.shape(X), np.shape(X_features)
             # fitting
+            print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
             self.dt.fit(X_features, y)
+
+
+    def partial_fit(self, X, y, sample_weight=None):
+        '''
+        X: samples x hmm-feature vec
+        y: sample
+        '''
+
+        if self.method == 'sgd':
+            X_features       = self.rbf_feature.transform(X)
+            self.dt.partial_fit(X_features,y, sample_weight=sample_weight)
+        else:
+            print "Not available method, ", self.method
+            sys.exit()
 
 
     def predict(self, X, y=None):
@@ -258,7 +281,7 @@ class classifier(learning_base):
             l_err = []
             for i in xrange(len(X)):
                 logp = X[i][0]
-                post = X[i][1:]
+                post = X[i][-self.nPosteriors:]
 
                 # Find the best posterior distribution
                 min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)

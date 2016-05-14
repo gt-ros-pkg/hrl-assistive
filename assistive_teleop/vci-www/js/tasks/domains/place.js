@@ -41,11 +41,13 @@ RFH.Domains.Place = function (options) {
                     RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                    RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                     RFH.taskMenu.startTask('paramLocationTask');
                 }
                 break;
             case 'FORGET-LOCATION':
                 startFunc = function () {
+                    RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                     RFH.taskMenu.startTask('LookingTask');
                 }
                 break;
@@ -53,10 +55,12 @@ RFH.Domains.Place = function (options) {
             case 'MANUAL-PLACE':
                 if (args[0] === 'RIGHT_HAND') {
                     startFunc = function () {
+                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.taskMenu.startTask('rEECartTask');
                     }
                 } else if (args[0] === 'LEFT_HAND') {
                     startFunc = function () {
+                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.taskMenu.startTask('lEECartTask');
                     }
                 };

@@ -73,7 +73,7 @@ class OverheadPlaceState(PDDLSmachState):
         state_update = PDDLState()
         state_update.domain = self.domain
         state_update.problem = self.problem
-        state_update.predicates = ['(TRIED-AUTO-PLACE)']
+        state_update.predicates = ['(AUTO-PLACE-DONE)']
         self.state_update_pub.publish(state_update)
 
 

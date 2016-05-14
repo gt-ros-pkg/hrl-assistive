@@ -4,7 +4,7 @@
   <arg name="arm" default="r" />
 
   <include file='$(find hrl_realsense_camera)/launch/$(mount_loc)_mount_frame.launch' />
-  <include file='$(find realsense_camera)/launch/realsense_sr300.launch' />
+  <include file='$(find hrl_realsense_camera)/launch/realsense_sr300_copy.launch' />
 
 
 </launch>

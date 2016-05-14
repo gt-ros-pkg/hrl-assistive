@@ -28,6 +28,9 @@
   </node>
   <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
 
+  <!-- Automatic pick-and-place actions -->
+  <node name="overhead_grasp_actions" pkg="assistive_teleop" type="overhead_grasp_action" output="screen" />
+
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
       <remap from="info_topic" to="$(arg kinect_ns)/qhd/camera_info" />

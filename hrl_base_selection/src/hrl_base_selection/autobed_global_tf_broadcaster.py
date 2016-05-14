@@ -33,7 +33,7 @@ class AutobedGlobalTFBroadcaster(object):
                     self.tf_broadcaster.sendTransform(self.out_trans, self.out_rot,
                                                       rospy.Time.now(),
                                                       'autobed/base_link',
-                                                      'odom_combined')
+                                                      'map')
                     rate.sleep()
                 except:
                     print 'Bed TF broadcaster crashed trying to broadcast!'
@@ -53,8 +53,8 @@ class AutobedGlobalTFBroadcaster(object):
                msg.pose.orientation.w]
         now = rospy.Time.now()
         pr2_B_bed = createBMatrix(trans, rot)
-        self.tf_listener.waitForTransform('odom_combined', msg.header.frame_id, now, rospy.Duration(1))
-        (newtrans, newrot) = self.tf_listener.lookupTransform('odom_combined', msg.header.frame_id, now)
+        self.tf_listener.waitForTransform('map', msg.header.frame_id, now, rospy.Duration(1))
+        (newtrans, newrot) = self.tf_listener.lookupTransform('map', msg.header.frame_id, now)
         map_B_pr2 = createBMatrix(newtrans, newrot)
         self.map_B_bed = map_B_pr2*pr2_B_bed
         (self.out_trans, self.out_rot) = Bmat_to_pos_quat(self.map_B_bed)
