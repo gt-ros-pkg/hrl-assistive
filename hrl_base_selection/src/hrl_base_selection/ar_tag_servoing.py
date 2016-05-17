@@ -103,6 +103,7 @@ class AR_Tag_Servo(object):
 
     def start_tracking_AR_cb(self, msg):
         self.track_AR = msg.data
+        self.tracking_AR()
 
     def tracking_AR(self):
         while self.track_AR and not rospy.is_shutdown():
