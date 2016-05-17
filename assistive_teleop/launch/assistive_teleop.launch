@@ -64,6 +64,7 @@
     <arg name="skin" value="fabric"/>
     <arg name="namespace" value="left_arm"/>
     <arg name="rviz_teleop" value="true"/>
+    <arg name="mpc_config" value="$(find assistive_teleop)/params/mpc_params_pr2.yaml"/>
     <arg name="verbose" value="true"/>
   </include>
 
@@ -72,6 +73,7 @@
     <arg name="skin" value="none"/>
     <arg name="namespace" value="right_arm"/>
     <arg name="rviz_teleop" value="true"/>
+    <arg name="mpc_config" value="$(find assistive_teleop)/params/mpc_params_pr2.yaml"/>
     <arg name="verbose" value="true"/>
   </include>
 
