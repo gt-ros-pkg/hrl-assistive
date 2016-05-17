@@ -96,6 +96,7 @@ class AR_Tag_Servo(object):
             self.ar_tag_subscriber.unregister()
         elif not msg.data:
             self.currently_finding_AR = False
+            print 'Stopping finding AR tag'
         else:
             print 'Asked to find AR tag but already in the process of acquiring AR tag!'
             # rospy.sleep(5)
@@ -298,6 +299,7 @@ class AR_Tag_Servo(object):
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
         else:
             self.currently_finding_AR = False
+            print 'Stopping finding AR tag'
                         # ps = PoseStamped()
                         # ps.header.frame_id = 'torso_lift_link'  # markers[i].pose.header.frame_id
                         # ps.header.stamp = rospy.Time.now()  # markers[i].pose.header.stamp
