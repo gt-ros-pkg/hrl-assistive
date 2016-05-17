@@ -129,7 +129,7 @@ class AR_Tag_Servo(object):
             action_goal.goal = goal
             self.head_track_AR_pub.publish(action_goal)
 
-            rospy.sleep(1)
+            rospy.sleep(.5)
 
     '''
     def servo_base_cb(self, msg):
