@@ -12,11 +12,15 @@ from std_msgs.msg import String, Int32, Int8, Bool
 from geometry_msgs.msg import PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from sensor_msgs.msg import JointState
 from tf import TransformListener, transformations as tft
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from hrl_base_selection.srv import BaseMove_multi  # , BaseMoveRequest
 # from hrl_ellipsoidal_control.msg import EllipsoidParams
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 from hrl_srvs.srv import None_Bool, None_BoolResponse
+from hrl_pr2_ar_servo.msg import ARServoGoalData
+
+import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 
 roslib.load_manifest('hrl_base_selection')
 from helper_functions import createBMatrix, Bmat_to_pos_quat
@@ -39,6 +43,9 @@ class BaseSelectionManager(object):
         self.model = 'autobed'  # options are 'chair' and 'autobed'
         self.mode = mode
 
+        self.ar_acquired = False
+        self.ar_tracking = False
+
         self.frame_lock = RLock()
 
         self.listener = TransformListener()
@@ -48,6 +55,14 @@ class BaseSelectionManager(object):
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
+
+        self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
+        self.l_arm_pub = rospy.Publisher('/left_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
+        self.l_arm_pose_pub = rospy.Publisher('/left_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
+        rospy.sleep(1)
+        self.l_reset_traj = None
+        self.r_reset_traj = None
+        self.define_reset()
 
         if self.model == 'autobed':
             self.bed_state_z = 0.
@@ -87,6 +102,8 @@ class BaseSelectionManager(object):
             # self.ar_tag_head_sub = rospy.Subscriber('/head_pose', PoseStamped, self.ar_tag_head_cb)
 
             self.nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
+        elif self.mode == 'servo':
+            self.servo_goal_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData, queue_size=1)
 
         if self.mode == 'manual':
             self.base_pose = None
@@ -116,6 +133,9 @@ class BaseSelectionManager(object):
         self.torso_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                               SingleJointPositionActionGoal, queue_size=10, latch=True)
 
+        self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
+        self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
+
 
         # rospy.wait_for_service('autobed_occ_status')
         # self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
@@ -132,8 +152,10 @@ class BaseSelectionManager(object):
         self.move_base_input_sub = rospy.Subscriber("move_base_to_goal", String, self.move_base_ui_cb)
         self.move_arm_input_sub = rospy.Subscriber("move_arm_to_goal", String, self.move_arm_ui_cb)
         self.reset_arm_input_sub = rospy.Subscriber("reset_arm_ui", String, self.reset_arm_ui_cb)
+        self.reset_arm_input_sub = rospy.Subscriber("track_ar_ui", Bool, self.track_ar_ui_cb)
         # self.servo_fdbk_sub = rospy.Subscriber("/pr2_ar_servo/state_feedback", Int8, self.servo_fdbk_cb)
 
+        self.ar_acquired_sub = rospy.Subscriber('AR_acquired', Bool, self.ar_acquired_cb)
 
 
         print 'Task manager is ready!!'
@@ -150,6 +172,9 @@ class BaseSelectionManager(object):
     # def ar_tag_head_cb(self, msg):
     #     self.head_pose = msg
 
+    def ar_acquired_cb(self, msg):
+        self.ar_acquired = msg.data
+
     def move_base_ui_cb(self, msg):
         print 'Trying to move base. Received input to move base from user!'
         if not self.autobed_move_status:
@@ -157,18 +182,50 @@ class BaseSelectionManager(object):
             print log_msg
             self.feedback_pub.publish(String(log_msg))
             # rospy.sleep(2)
+        elif not self.ar_tracking:
+            log_msg = 'AR tag must be tracked during base movement! Do this now!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
         else:
             log_msg = 'Moving PR2 base'
             print log_msg
             self.feedback_pub.publish(String(log_msg))
-            self.nav_pub.publish(self.pr2_goal_pose)
+            if self.mode == 'ar_tag':
+                self.nav_pub.publish(self.pr2_goal_pose)
+            elif self.mode == 'servo':
+                goal = ARServoGoalData()
+                goal.tag_id = 4
+                goal.marker_topic = '/ar_pose_marker'
+                goal.tag_goal_pose = self.pr2_goal_pose
+                self.servo_goal_pub.publish(goal)
         return
 
     def reset_arm_ui_cb(self, msg):
         print 'Resetting arm configuration!'
         # split_msg = msg.data.split()
         # self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
-        print self.armReachActionLeft('reach_initialization')
+
+        self.r_arm_pub.publish(self.r_reset_traj)
+        self.l_arm_pub.publish(self.l_reset_traj)
+
+        # print self.armReachActionLeft('reach_initialization')
+        return
+
+    def track_ar_ui_cb(self, msg):
+        out = Bool()
+        out.data = msg.data
+        if msg.data:
+            print 'Starting acquiring and tracking AR tag'
+            self.ar_acquired = False
+            self.start_finding_AR_publisher.publish(out)
+            while not self.ar_acquired and not rospy.is_shutdown():
+                rospy.sleep(.5)
+            self.ar_tracking = True
+        else:
+            print 'Stopping tracking AR tag'
+            self.start_finding_AR_publisher.publish(out)
+            self.ar_tracking = False
+        self.start_tracking_AR_publisher.publish(out)
         return
 
     def move_arm_ui_cb(self, msg):
@@ -178,7 +235,7 @@ class BaseSelectionManager(object):
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
-        print self.armReachActionLeft(self.task)
+        print self.reach_arm(self.task)
         return
 
     def start_task_ui_cb(self, msg):
@@ -186,6 +243,7 @@ class BaseSelectionManager(object):
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
+            self.task = ''.join([split_msg[2], '_', split_msg[0]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
         # if self.send_task_count > 1 and self.base_selection_complete:
@@ -332,6 +390,22 @@ class BaseSelectionManager(object):
         torso_lift_msg.goal.position = configuration_goals[0]
         self.torso_lift_pub.publish(torso_lift_msg)
 
+        if self.mode == 'servo':
+            self.pr2_goal_pose = PoseStamped()
+            self.pr2_goal_pose.header.stamp = rospy.Time.now()
+            self.pr2_goal_pose.header.frame_id = 'base_footprint'
+            trans_out = base_goals[0][0]
+            rot_out = base_goals[0][1]
+            self.pr2_goal_pose.pose.position.x = trans_out[0]
+            self.pr2_goal_pose.pose.position.y = trans_out[1]
+            self.pr2_goal_pose.pose.position.z = trans_out[2]
+            self.pr2_goal_pose.pose.orientation.x = rot_out[0]
+            self.pr2_goal_pose.pose.orientation.y = rot_out[1]
+            self.pr2_goal_pose.pose.orientation.z = rot_out[2]
+            self.pr2_goal_pose.pose.orientation.w = rot_out[3]
+            rospy.loginfo('Ready to move! Click to move PR2 base!')
+            rospy.loginfo('Remember: The AR tag must be tracked before moving!')
+            print 'Ready to move! Click to move PR2 base!'
 
         if self.mode == 'ar_tag':
             self.pr2_goal_pose = PoseStamped()
@@ -359,183 +433,10 @@ class BaseSelectionManager(object):
             self.pr2_goal_pose.pose.orientation.w = rot_out[3]
 
             rospy.loginfo('Ready to move! Click to move PR2 base!')
+            rospy.loginfo('Remember: The AR tag must be tracked before moving!')
             print 'Ready to move! Click to move PR2 base!'
             # rospy.sleep(2)
             # self.base_selection_complete = True
-        '''
-        elif self.mode == 'manual':
-            self.navigation.start_navigate()
-
-        elif True:
-            goal_B_ref_model= np.matrix([[m.cos(base_goals[2]), -m.sin(base_goals[2]),     0.,  base_goals[0]],
-                                         [m.sin(base_goals[2]),  m.cos(base_goals[2]),     0.,  base_goals[1]],
-                                         [             0.,               0.,     1.,        0.],
-                                         [             0.,               0.,     0.,        1.]])
-            world_B_goal = self.world_B_ref_model*goal_B_ref_model.I
-            self.base_selection_complete = True
-            # pub_goal_tf = TF_Goal(world_B_goal, self.tfl)
-            # if self.servo_to_pose(world_B_goal):
-            #     self.base_selection_complete = True
-            #     print 'At desired location!!'
-        else:
-            self.servo_goal_pub.publish(base_goals_list[0])
-            ar_data = ARServoGoalData()
-            # 'base_link' in msg.tag_goal_pose.header.frame_id
-            with self.lock:
-                ar_data.tag_id = -1
-                ar_data.marker_topic = self.marker_topic
-                ar_data.tag_goal_pose = base_goals_list[0]
-                self.action = None
-                self.location = None
-
-            rospy.loginfo("[%s] Base position found. Sending Servoing goals." % rospy.get_name())
-        '''
-        # self.send_task_count += 1
-        # self.goal_data_pub.publish(ar_data)
-    '''
-    def servo_to_pose(self, world_B_goal):
-        # self.tfl.waitForTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time(), rospy.Duration(15.0))
-        # (trans, rot) = self.tf_listener.lookupTransform('/base_link', '/r_forearm_cam_optical_frame', rospy.Time())
-        #
-        # self.tfl.waitForTransform(
-
-
-        # ref_model_B_goal = np.matrix([[m.cos(goal_base_pose[2]), -m.sin(goal_base_pose[2]),     0.,  goal_base_pose[0]],
-        #                               [m.sin(goal_base_pose[2]),  m.cos(goal_base_pose[2]),     0.,  goal_base_pose[1]],
-        #                               [             0.,               0.,     1.,        0.],
-        #                               [             0.,               0.,     0.,        1.]])
-        base_move_pub = rospy.Publisher('/base_controller/command', Twist)
-        # error_pos = 1
-        done_moving = False
-        rate = rospy.Rate(2)
-        while not done_moving:
-            done = False
-            tw = Twist()
-            tw.linear.x=0
-            tw.linear.y=0
-            tw.linear.z=0
-            tw.angular.x=0
-            tw.angular.y=0
-            tw.angular.z=0
-            # while not rospy.is_shutdown() and np.abs(world_B_goal[0, 3]-self.world_B_robot[0, 3]) > 0.1:
-            while not done:
-                error_mat = self.world_B_robot.I*world_B_goal
-                if np.abs(error_mat[0, 3]) < 0.1:
-                    done = True
-                else:
-                    tw.linear.x = np.sign(error_mat[0, 3])*0.15
-                    base_move_pub.publish(tw)
-                    rospy.sleep(.1)
-            rospy.loginfo('Finished moving to X pose!')
-            print 'Finished moving to X pose!'
-            done = False
-            tw = Twist()
-            tw.linear.x=0
-            tw.linear.y=0
-            tw.linear.z=0
-            tw.angular.x=0
-            tw.angular.y=0
-            tw.angular.z=0
-            while not done:
-                error_mat = self.world_B_robot.I*world_B_goal
-                if np.abs(error_mat[1, 3]) < 0.1:
-                    done = True
-                else:
-                    tw.linear.y = np.sign(error_mat[1, 3])*0.15
-                    base_move_pub.publish(tw)
-                    rospy.sleep(.1)
-            rospy.loginfo('Finished moving to Y pose!')
-            print 'Finished moving to Y pose!'
-            done = False
-            tw = Twist()
-            tw.linear.x=0
-            tw.linear.y=0
-            tw.linear.z=0
-            tw.angular.x=0
-            tw.angular.y=0
-            tw.angular.z=0
-            while not done:
-                error_mat = self.world_B_robot.I*world_B_goal
-                if np.abs(m.acos(error_mat[0, 0])) < 0.1:
-                    done = True
-                else:
-                    tw.angular.z = np.sign(m.acos(error_mat[0, 0]))*0.1
-                    base_move_pub.publish(tw)
-                    rospy.sleep(.1)
-            rospy.loginfo('Finished moving to goal pose!')
-            print 'Finished moving to goal pose!'
-            done_moving = True
-            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            # error_pos = [error_mat[0,3], error_mat[1,3]]
-            # error_ori = m.acos(error_mat[0,0])
-            # # while not (rospy.is_shutdown() and (np.linalg.norm(error_pos)>0.1)) and False:
-            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            # error_pos = [error_mat[0,3], error_mat[1,3]]
-            # move = np.array([error_mat[0,3],error_mat[1,3],error_mat[2,3]])
-            # normalized_pos = move / (np.linalg.norm(move))
-            # tw = Twist()
-            # tw.linear.x=normalized_pos[0]
-            # tw.linear.y=normalized_pos[1]
-            # tw.linear.z=0
-            # tw.angular.x=0
-            # tw.angular.y=0
-            # tw.angular.z=0
-            # base_move_pub.publish(tw)
-            # rospy.sleep(.1)
-            # # rospy.loginfo('Finished moving to X-Y position. Now correcting orientation!')
-            # # print 'Finished moving to X-Y position. Now correcting orientation!'
-            # # while not rospy.is_shutdown() and (np.linalg.norm(error_ori)>0.1) and False:
-            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            # error_ori = m.acos(error_mat[0,0])
-            # move = -error_ori
-            # normalized_ori = move / (np.linalg.norm(move))
-            # tw = Twist()
-            # tw.linear.x=0
-            # tw.linear.y=0
-            # tw.linear.z=0
-            # tw.angular.x=0
-            # tw.angular.y=0
-            # tw.angular.z=normalized_ori
-            # base_move_pub.publish(tw)
-            # rospy.sleep(.1)
-            # # self.world_B_robot
-            # # self.world_B_head
-            # # self.world_B_ref_model
-            # # world_B_ref = createBMatrix(self)
-            # # error =
-            # error_mat = self.world_B_robot.I*self.world_B_ref_model*ref_model_B_goal
-            # error_pos = [error_mat[0,3], error_mat[1,3]]
-            # error_ori = m.acos(error_mat[0,0])
-            # if np.linalg.norm(error_pos)<0.05 and np.linalg.norm(error_ori)<0.05:
-            #     done_moving = True
-            # # rospy.loginfo('Finished moving to goal pose!')
-            # print 'Finished moving to goal pose!'
-        return True
-    '''
-    def call_arm_reacher(self):
-        # Place holder return
-        #bg = PoseStamped()
-        #bg.header.stamp = rospy.Time.now()
-        #bg.header.frame_id = 'ar_marker'
-        #bg.pose.position = Point(0., 0., 0.5)
-        #q = tft.quaternion_from_euler(0., np.pi/2, 0.)
-        #bg.pose.orientation = Quaternion(*q)
-        #return bg
-        ## End Place Holder
-        self.feedback_pub.publish("Reaching arm to goal, please wait.")
-        rospy.loginfo("[%s] Calling arm reacher. Please wait." %rospy.get_name())
-
-        # bm = BaseMoveRequest()
-        # bm.model = self.model
-        # bm.task = self.task
-        # try:
-        #     resp = self.call_arm_reacher()
-        #     # resp = self.base_selection_client.call(bm)
-        # except rospy.ServiceException as se:
-        #     rospy.logerr(se)
-        #     self.feedback_pub.publish("Failed to find good base position. Please try again.")
-        #     return None
-        return self.reach_service()
 
     def call_base_selection(self):
         self.feedback_pub.publish("Finding a good base location, please wait.")
@@ -586,79 +487,64 @@ class BaseSelectionManager(object):
             rospy.loginfo("TF Exception:\r\n%s" %e)
             return False
 
-    def set_autobed_user_configuration(self, headrest_th, head_x, head_y):
+    def define_reset(self):
+        r_reset_traj_point = JointTrajectoryPoint()
+        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., 0., 0.0]
 
-        autobed_joint_state = JointState()
-        autobed_joint_state.header.stamp = rospy.Time.now()
+        r_reset_traj_point.velocities = [0.0]*7
+        r_reset_traj_point.accelerations = [0.0]*7
+        r_reset_traj_point.time_from_start = rospy.Duration(5)
+        self.r_reset_traj = JointTrajectory()
+        self.r_reset_traj.joint_names = ['r_shoulder_pan_joint',
+                                         'r_shoulder_lift_joint',
+                                         'r_upper_arm_roll_joint',
+                                         'r_elbow_flex_joint',
+                                         'r_forearm_roll_joint',
+                                         'r_wrist_flex_joint',
+                                         'r_wrist_roll_joint']
+        self.r_reset_traj.points.append(r_reset_traj_point)
+        l_reset_traj_point = JointTrajectoryPoint()
+        # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
+        l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
+                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
+        l_reset_traj_point.velocities = [0.0]*7
+        l_reset_traj_point.accelerations = [0.0]*7
+        l_reset_traj_point.time_from_start = rospy.Duration(5)
+        self.l_reset_traj = JointTrajectory()
+        self.l_reset_traj.joint_names = ['l_shoulder_pan_joint',
+                                         'l_shoulder_lift_joint',
+                                         'l_upper_arm_roll_joint',
+                                         'l_elbow_flex_joint',
+                                         'l_forearm_roll_joint',
+                                         'l_wrist_flex_joint',
+                                         'l_wrist_roll_joint']
+        self.l_reset_traj.points.append(l_reset_traj_point)
 
-        autobed_joint_state.name = [None]*(18)
-        autobed_joint_state.position = [None]*(18)
-        autobed_joint_state.name[0] = "head_bed_updown_joint"
-        autobed_joint_state.name[1] = "head_bed_leftright_joint"
-        autobed_joint_state.name[2] = "head_rest_hinge"
-        autobed_joint_state.name[3] = "neck_body_joint"
-        autobed_joint_state.name[4] = "upper_mid_body_joint"
-        autobed_joint_state.name[5] = "mid_lower_body_joint"
-        autobed_joint_state.name[6] = "body_quad_left_joint"
-        autobed_joint_state.name[7] = "body_quad_right_joint"
-        autobed_joint_state.name[8] = "quad_calf_left_joint"
-        autobed_joint_state.name[9] = "quad_calf_right_joint"
-        autobed_joint_state.name[10] = "calf_foot_left_joint"
-        autobed_joint_state.name[11] = "calf_foot_right_joint"
-        autobed_joint_state.name[12] = "body_arm_left_joint"
-        autobed_joint_state.name[13] = "body_arm_right_joint"
-        autobed_joint_state.name[14] = "arm_forearm_left_joint"
-        autobed_joint_state.name[15] = "arm_forearm_right_joint"
-        autobed_joint_state.name[16] = "forearm_hand_left_joint"
-        autobed_joint_state.name[17] = "forearm_hand_right_joint"
-        autobed_joint_state.position[0] = head_x
-        autobed_joint_state.position[1] = head_y
-
-        bth = m.degrees(headrest_th)
-
-        # 0 degrees, 0 height
-        if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
-            autobed_joint_state.position[2] = (bth/40)*(0.6981317 - 0)+0
-            autobed_joint_state.position[3] = (bth/40)*(-.2-(-.1))+(-.1)
-            autobed_joint_state.position[4] = (bth/40)*(-.17-.4)+.4
-            autobed_joint_state.position[5] = (bth/40)*(-.76-(-.72))+(-.72)
-            autobed_joint_state.position[6] = -0.4
-            autobed_joint_state.position[7] = -0.4
-            autobed_joint_state.position[8] = 0.1
-            autobed_joint_state.position[9] = 0.1
-            autobed_joint_state.position[10] = (bth/40)*(-.05-.02)+.02
-            autobed_joint_state.position[11] = (bth/40)*(-.05-.02)+.02
-            autobed_joint_state.position[12] = (bth/40)*(-.06-(-.12))+(-.12)
-            autobed_joint_state.position[13] = (bth/40)*(-.06-(-.12))+(-.12)
-            autobed_joint_state.position[14] = (bth/40)*(.58-0.05)+.05
-            autobed_joint_state.position[15] = (bth/40)*(.58-0.05)+.05
-            autobed_joint_state.position[16] = -0.1
-            autobed_joint_state.position[17] = -0.1
-        elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
-            autobed_joint_state.position[2] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
-            autobed_joint_state.position[3] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
-            autobed_joint_state.position[4] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
-            autobed_joint_state.position[5] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
-            autobed_joint_state.position[6] = -0.4
-            autobed_joint_state.position[7] = -0.4
-            autobed_joint_state.position[8] = 0.1
-            autobed_joint_state.position[9] = 0.1
-            autobed_joint_state.position[10] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            autobed_joint_state.position[11] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            autobed_joint_state.position[12] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            autobed_joint_state.position[13] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            autobed_joint_state.position[14] = ((bth-40)/40)*(.88-0.58)+.58
-            autobed_joint_state.position[15] = ((bth-40)/40)*(.88-0.58)+.58
-            autobed_joint_state.position[16] = -0.1
-            autobed_joint_state.position[17] = -0.1
+    def reach_arm(self, task):
+        goal = PoseStamped()
+        if task == 'scratching_knee_left':
+            goal.pose.position.x = -0.04310556
+            goal.pose.position.y = 0.07347758+0.05
+            goal.pose.position.z = 0.00485197
+            goal.pose.orientation.x = 0.48790861
+            goal.pose.orientation.y = -0.50380292
+            goal.pose.orientation.z = 0.51703901
+            goal.pose.orientation.w = -0.4907122
+            goal.header.frame_id = '/autobed/calf_left_link'
+            log_msg = 'Reaching to left knee!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
         else:
-            print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
-        self.joint_pub.publish(autobed_joint_state)
+            log_msg = 'I dont know where I should be reaching!!'
+            self.feedback_pub.publish(String(log_msg))
+        self.l_arm_pose_pub.publish(goal)
+
+
 
 
 if __name__ == '__main__':
     rospy.init_node('base_selection_task_manager')
-    mode = 'ar_tag'  # options are 'ar_tag' for using ar tags to locate the bed and user, 'mo-cap' for
-                     # using motion capture positioning
+    mode = 'servo'  # options are 'ar_tag' for using ar tags to locate the bed and user, 'mo-cap' for
+                     # using motion capture positioning, 'servo' to use servoing
     manager = BaseSelectionManager(mode=mode)
     rospy.spin()

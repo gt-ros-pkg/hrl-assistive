@@ -16,7 +16,7 @@ from hrl_msgs.msg import FloatArrayBare
 from pr2_controllers_msgs.msg import PointHeadGoal, PointHeadActionGoal
 
 
-class AR_Tag_Servo(object):
+class AR_Tag_Tracking(object):
 
     def __init__(self, mode):
         print 'Starting detection of', mode, 'AR tag'
@@ -29,6 +29,7 @@ class AR_Tag_Servo(object):
         self.servo_base = False
         self.goal_location = None
         self.map_B_ar_pos = None
+
 
         self.listener = tf.TransformListener()
         self.broadcaster = tf.TransformBroadcaster()
@@ -67,6 +68,8 @@ class AR_Tag_Servo(object):
         self.start_finding_AR_subscriber = rospy.Subscriber('find_AR_now', Bool, self.start_finding_AR_cb)
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
 
+        self.AR_tag_acquired = rospy.Publisher('AR_acquired', Bool, queue_size=1)
+
         self.start_tracking_AR_subscriber = rospy.Subscriber('track_AR_now', Bool, self.start_tracking_AR_cb)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
@@ -103,8 +106,13 @@ class AR_Tag_Servo(object):
             # rospy.sleep(5)
 
     def start_tracking_AR_cb(self, msg):
-        self.track_AR = msg.data
-        self.tracking_AR()
+        if msg.data and not self.track_AR:
+            print 'Starting to track the AR tag!'
+            self.track_AR = msg.data
+            self.tracking_AR()
+        elif not msg.data and self.track_AR:
+            print 'Stopping tracking the AR tag!'
+            self.track_AR = msg.data
 
     def tracking_AR(self):
         while self.track_AR and not rospy.is_shutdown() and self.map_B_ar_pos is not None:
@@ -300,6 +308,9 @@ class AR_Tag_Servo(object):
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
                     else:
+                        success = Bool()
+                        success.data = True
+                        self.AR_tag_acquired.publish(success)
                         self.currently_finding_AR = False
                         print 'Stopping finding AR tag'
                         # ps = PoseStamped()
@@ -359,5 +370,5 @@ if __name__ == '__main__':
     p.add_option('--mode', action='store', dest='mode', default='autobed', type='string',
                  help='Select what AR tag to look for (e.g. head, autobed)')
     opt, args = p.parse_args()
-    atd = AR_Tag_Servo(opt.mode)
+    atd = AR_Tag_Tracking(opt.mode)
     rospy.spin()

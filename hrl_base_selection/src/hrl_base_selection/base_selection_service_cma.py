@@ -280,6 +280,10 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
+                    now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/autobed/base_link', now)
                     self.pr2_B_model = createBMatrix(trans, rot)
@@ -593,15 +597,17 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
-            pos_goal, ori_goal = Bmat_to_pos_quat(pr2_B_goal)
-            if pr2_B_goal[0,1]<=0:
-                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], m.acos(pr2_B_goal[0, 0])])
-            else:
-                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
+            pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
+            # if pr2_B_goal[0,1] <= 0:
+            #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], m.acos(pr2_B_goal[0, 0])])
+            # else:
+            #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
+            pr2_base_output.append([pos_goal, ori_goal])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
         print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))

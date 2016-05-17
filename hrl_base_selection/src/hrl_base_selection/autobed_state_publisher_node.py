@@ -76,13 +76,11 @@ class AutobedStatePublisherNode(object):
         self.bin_numbers = 21
         self.bin_numbers_for_leg_filter = 21
         self.collated_head_angle = np.zeros((self.bin_numbers, 1))
-        self.collated_leg_angle = np.zeros((
-            self.bin_numbers_for_leg_filter, 1))
-	self.head_filt_data = 0
-	self.leg_filt_data = 0
+        self.collated_leg_angle = np.zeros((self.bin_numbers_for_leg_filter, 1))
+        self.head_filt_data = 0
+        self.leg_filt_data = 0
         self.lpf = remez(self.bin_numbers, [0, 0.1, 0.25, 0.5], [1.0, 0.0])
-        self.lpf_for_legs = remez(self.bin_numbers_for_leg_filter, 
-                [0, 0.0005, 0.1, 0.5], [1.0, 0.0])
+        self.lpf_for_legs = remez(self.bin_numbers_for_leg_filter, [0, 0.0005, 0.1, 0.5], [1.0, 0.0])
         # self.pressuremap_flat = np.zeros((1, NUMOFTAXELS_X*NUMOFTAXELS_Y))
         #Publisher for Markers (can send them all as one marker message instead of an array because they're all spheres of the same size
         # self.marker_pub=rospy.Publisher('visualization_marker', Marker)
