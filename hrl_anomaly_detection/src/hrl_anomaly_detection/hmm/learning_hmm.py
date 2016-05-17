@@ -175,7 +175,7 @@ class learning_hmm(learning_base):
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
             return ret
 
-    def partial_fit(self, xData, nTrain, scale):
+    def partial_fit(self, xData, nTrain, scale, weight=8.0):
         '''
         data: dimension x sample x length
         '''
@@ -189,12 +189,12 @@ class learning_hmm(learning_base):
         mus        = []
         covs       = []
         for i in xrange(self.nState):
-            t_features.append( B[i][0] + [ float(i) / float(self.nState)*scale ])
+            t_features.append( B[i][0] + [ float(i) / float(self.nState)*scale/2.0 ])
             mus.append( B[i][0] )
             covs.append( B[i][1] )
         t_features = np.array(t_features)
-        mus     = np.array(mus)
-        covs    = np.array(covs)
+        mus        = np.array(mus)
+        covs       = np.array(covs)
 
         # update b ------------------------------------------------------------
         # mu
@@ -206,7 +206,7 @@ class learning_hmm(learning_base):
 
             idx_l = []
             for j in xrange(len(sample)):
-                feature = np.array( sample[j].tolist() + [float(j)/float(len(sample))*scale ] )
+                feature = np.array( sample[j].tolist() + [float(j)/float(len(sample))*scale/2.0 ] )
 
                 min_dist = 10000
                 min_idx  = 0
@@ -219,10 +219,15 @@ class learning_hmm(learning_base):
                 x_l[min_idx].append(feature[:-1].tolist())
 
         for i in xrange(len(mus)):
-            new_B[i][0] = list((nTrain*mus[i] + np.sum(x_l[i], axis=0) ) / float(nTrain + len(xData)))
+            if len(x_l[i]) > 0:
+                avg_x = np.mean(x_l[i], axis=0)
+                new_B[i][0] = list( ( float(nTrain-1)*mus[i] + avg_x*weight ) / float(nTrain+(weight-1) ) ) # specialized for single input
+
 
         # Normalize the state prior and transition values.
-        A /= np.sum(A)
+        A_sum = np.sum(A, axis=1)
+        for i in xrange(self.nState):
+            A[i,:] /= A_sum[i]
         pi /= np.sum(pi)
 
         # Daehyung: What is the shape and type of input data?
@@ -234,7 +239,7 @@ class learning_hmm(learning_base):
         (alpha, scale) = self.ml.forward(final_ts_obj)
         beta = self.ml.backward(final_ts_obj, scale)
 
-        print np.shape(alpha), np.shape(beta), type(alpha), type(beta)
+        ## print np.shape(alpha), np.shape(beta), type(alpha), type(beta)
 
         est_A = np.zeros((self.nState, self.nState))
         new_A = np.zeros((self.nState, self.nState))
@@ -244,15 +249,23 @@ class learning_hmm(learning_base):
                 temp1 = 0.0
                 temp2 = 0.0
                 for t in xrange(seq_len):
-                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], cov=np.reshape(covs[j], (self.nEmissionDim, self.nEmissionDim)))
+                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], \
+                                                 cov=np.reshape(covs[j], \
+                                                                (self.nEmissionDim, self.nEmissionDim)))
                     temp1 += alpha[t-1][i] * A[i,j] * p * beta[t][j]
                     temp2 += alpha[t-1][i] * beta[t][j]
-                try:
-                    est_A[i,j] = temp1/temp2
-                except:
-                    est_A[i,j] = 0
-                new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]) / float(nTrain)
 
+                if temp1 == 0.0 or temp2 == 0.0: est_A[i,j] = 0
+                else: est_A[i,j] = temp1/temp2
+                    
+                new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]*weight) / float(nTrain + (weight-1.0) )
+
+        # Normalize the state prior and transition values.
+        A_sum = np.sum(new_A, axis=1)
+        for i in xrange(self.nState):
+            new_A[i,:] /= A_sum[i]
+        pi /= np.sum(pi)
+            
         self.set_hmm_object(new_A, new_B, pi)
         return new_A, new_B, pi
         

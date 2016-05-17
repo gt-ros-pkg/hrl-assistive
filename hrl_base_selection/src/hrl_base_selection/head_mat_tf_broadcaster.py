@@ -59,12 +59,18 @@ class HeadDetector:
         self.pressure_map=p_map_hres
         self.mat_sampled = True
 
+
+    def sigmoid(self, x):
+        #return 1 / (1 + math.exp(-x))
+        return ((x / (1 + abs(x))) + 1)/2
+
     def detect_head(self):
         '''Computes blobs in pressure map and return top 
         blob as head'''
         #plt.matshow(self.pressure_map)
         #plt.show()
         #Select top 20 pixels of pressure map
+        p_map = self.pressure_map
         weights = np.zeros(np.shape(p_map))
         for i in range(np.shape(p_map)[0]):
             weights[i, :] = self.sigmoid((np.shape(p_map)[0]/8.533 - i))

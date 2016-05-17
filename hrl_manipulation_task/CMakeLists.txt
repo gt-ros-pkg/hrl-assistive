@@ -53,7 +53,7 @@ target_link_libraries(Overlay ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${image_ge
 #target_link_libraries(sift_extractor ${PCL_LIBRARIES} robot ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Upsampling Filter
-add_executable(pcl_upsampling src/pcl_upsample.cpp)
+add_executable(pcl_upsample src/pcl_upsample.cpp)
 target_link_libraries(pcl_upsample ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 
 

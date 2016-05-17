@@ -26,6 +26,8 @@ man_Task.js: This file calls out function for the manipulation tab.
 
 ad_slider.js: This file calls out function for slider in the manipulation tab. However, inactivation and activation of sliders are done in man_Task.js
 
+If the web-base GUI is not loading saved js file, try ctrl+F5. This force GUI to read off from the js file.
+
 ////////////////////////////////////////////////////////////////////
 
 Video Feedback
