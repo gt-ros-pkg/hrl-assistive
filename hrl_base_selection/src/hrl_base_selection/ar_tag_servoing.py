@@ -28,6 +28,7 @@ class AR_Tag_Servo(object):
         self.track_AR = False
         self.servo_base = False
         self.goal_location = None
+        self.map_B_ar_pos = None
 
         self.listener = tf.TransformListener()
         self.broadcaster = tf.TransformBroadcaster()
@@ -106,16 +107,16 @@ class AR_Tag_Servo(object):
         self.tracking_AR()
 
     def tracking_AR(self):
-        while self.track_AR and not rospy.is_shutdown():
+        while self.track_AR and not rospy.is_shutdown() and self.map_B_ar_pos is not None:
             action_goal = PointHeadActionGoal()
             goal = PointHeadGoal()
 
             # The point to be looking at is expressed in the 'odom_combined' frame
             point = PointStamped()
             point.header.frame_id = 'odom_combined'
-            point.point.x = self.out_pos[0]
-            point.point.y = self.out_pos[1]
-            point.point.z = self.out_pos[2]
+            point.point.x = self.map_B_ar_pos[0]
+            point.point.y = self.map_B_ar_pos[1]
+            point.point.z = self.map_B_ar_pos[2]
             goal.target = point
 
             # We want the X axis of the camera frame to be pointing at the target
@@ -237,70 +238,70 @@ class AR_Tag_Servo(object):
         self.bed_state_leg_theta = data.data[2]
 
     def arTagCallback(self, msg):
-        if self.currently_finding_AR and self.ar_count <= self.hist_size:
-            with self.frame_lock:
-                self.ar_count += 1
-                markers = msg.markers
-                for i in xrange(len(markers)):
-                    if markers[i].id == self.tag_id:
-                        cur_p = np.array([markers[i].pose.pose.position.x,
-                                          markers[i].pose.pose.position.y,
-                                          markers[i].pose.pose.position.z])
-                        cur_q = np.array([markers[i].pose.pose.orientation.x,
-                                          markers[i].pose.pose.orientation.y,
-                                          markers[i].pose.pose.orientation.z,
-                                          markers[i].pose.pose.orientation.w])
+        with self.frame_lock:
+            markers = msg.markers
+            for i in xrange(len(markers)):
+                if markers[i].id == self.tag_id:
+                    cur_p = np.array([markers[i].pose.pose.position.x,
+                                      markers[i].pose.pose.position.y,
+                                      markers[i].pose.pose.position.z])
+                    cur_q = np.array([markers[i].pose.pose.orientation.x,
+                                      markers[i].pose.pose.orientation.y,
+                                      markers[i].pose.pose.orientation.z,
+                                      markers[i].pose.pose.orientation.w])
 
-                        #frame_id = markers[i].pose.header.frame_id
-                        #print 'Frame ID is: ', frame_id
+                    #frame_id = markers[i].pose.header.frame_id
+                    #print 'Frame ID is: ', frame_id
 
-                        # if np.linalg.norm(cur_p) > 4.0:
-                        #     print "Detected tag is located too far away."
-                        #     continue
+                    # if np.linalg.norm(cur_p) > 4.0:
+                    #     print "Detected tag is located too far away."
+                    #     continue
 
-                        if len(self.quat_buf) < 1:
-                            self.pos_buf.append( cur_p )
-                            self.quat_buf.append( cur_q )
-                        else:
-                            first_p = self.pos_buf[0]
-                            first_q = self.quat_buf[0]
+                    if len(self.quat_buf) < 1:
+                        self.pos_buf.append( cur_p )
+                        self.quat_buf.append( cur_q )
+                    else:
+                        first_p = self.pos_buf[0]
+                        first_q = self.quat_buf[0]
 
-                            # check close quaternion and inverse
-                            if np.dot(cur_q, first_q) < 0.0:
-                                cur_q *= -1.0
+                        # check close quaternion and inverse
+                        if np.dot(cur_q, first_q) < 0.0:
+                            cur_q *= -1.0
 
-                            self.pos_buf.append(cur_p)
-                            self.quat_buf.append(cur_q)
+                        self.pos_buf.append(cur_p)
+                        self.quat_buf.append(cur_q)
 
-                        positions = self.pos_buf.get_array()
-                        quaternions = self.quat_buf.get_array()
+                    positions = self.pos_buf.get_array()
+                    quaternions = self.quat_buf.get_array()
 
-                        pos = None
-                        quat = None
-                        if False:
-                            # Moving average
-                            pos = np.sum(positions, axis=0)
-                            pos /= float(len(positions))
+                    pos = None
+                    quat = None
+                    if False:
+                        # Moving average
+                        pos = np.sum(positions, axis=0)
+                        pos /= float(len(positions))
 
-                            quat = np.sum(quaternions, axis=0)
-                            quat /= float(len(quaternions))
-                        else:
-                            # median
-                            positions = np.sort(positions, axis=0)
-                            pos = positions[len(positions)/2]
+                        quat = np.sum(quaternions, axis=0)
+                        quat /= float(len(quaternions))
+                    else:
+                        # median
+                        positions = np.sort(positions, axis=0)
+                        pos = positions[len(positions)/2]
 
-                            quaternions = np.sort(quaternions, axis=0)
-                            quat = quaternions[len(quaternions)/2]
-
+                        quaternions = np.sort(quaternions, axis=0)
+                        quat = quaternions[len(quaternions)/2]
+                    self.map_B_ar_pos = pos
+                    if self.currently_finding_AR and self.ar_count <= self.hist_size:
+                        self.ar_count += 1
                         map_B_ar = createBMatrix(pos, quat)
 
                         if self.mode == 'autobed':
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-        else:
-            self.currently_finding_AR = False
-            print 'Stopping finding AR tag'
+                    else:
+                        self.currently_finding_AR = False
+                        print 'Stopping finding AR tag'
                         # ps = PoseStamped()
                         # ps.header.frame_id = 'torso_lift_link'  # markers[i].pose.header.frame_id
                         # ps.header.stamp = rospy.Time.now()  # markers[i].pose.header.stamp
