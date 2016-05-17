@@ -49,7 +49,7 @@ class AR_Tag_Servo(object):
         # bed model).
         self.reference_B_ar = np.eye(4)
 
-        while not self.listener.canTransform('base_link', 'map', rospy.Time(0)):
+        while not self.listener.canTransform('base_link', 'odom_combined', rospy.Time(0)):
             rospy.sleep(2)
             print self.mode, ' AR tag waiting for the map transform.'
 
@@ -82,7 +82,7 @@ class AR_Tag_Servo(object):
             self.ar_count = 0
             self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
             self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
-            while not self.listener.canTransform('base_link', 'map', rospy.Time(0)):
+            while not self.listener.canTransform('base_link', 'odom_combined', rospy.Time(0)):
                 rospy.sleep(2)
                 print self.mode, ' AR tag waiting for the map transform.'
                 #now = rospy.Time.now()
