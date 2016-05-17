@@ -68,6 +68,36 @@ var TaskInterface = function (ros) {
       var txt = "Resetting arm configuration to be able to reach to task area";
       assistive_teleop.log(txt);
     };
+
+    taskUI.startTrackARPub = new taskUI.ros.Topic({
+      name: 'track_ar_ui',
+      messageType: 'std_msgs/Bool'
+    });
+    taskUI.startTrackARPub.advertise();
+
+    taskUI.startTrackAR = function () {
+      var msg = new taskUI.ros.Message({
+        data: true
+      });
+      taskUI.startTrackARPub.publish(msg);
+      var txt = "Start tracking the Bed AR tag";
+      assistive_teleop.log(txt);
+    };
+
+    taskUI.stopTrackARPub = new taskUI.ros.Topic({
+      name: 'track_ar_ui',
+      messageType: 'std_msgs/Bool'
+    });
+    taskUI.stopTrackARPub.advertise();
+
+    taskUI.stopTrackAR = function () {
+      var msg = new taskUI.ros.Message({
+        data: false
+      });
+      taskUI.stopTrackARPub.publish(msg);
+      var txt = "Stop tracking the Bed AR tag";
+      assistive_teleop.log(txt);
+    };
 }
 
 var initTaskInterface = function (tabDivId) {
@@ -79,6 +109,8 @@ var initTaskInterface = function (tabDivId) {
                          '<th id="' + tabDivId + '_R0C0">Action</th>' +
                          '<th id="' + tabDivId + '_R0C1">Side</th>' +
                          '<th id="' + tabDivId + '_R0C2">Area</th>' +
+                         '<td id="' + tabDivId + '_R0C3" colspan="2"></td>' +
+                         '<td id="' + tabDivId + '_R0C5" colspan="2"></td>' +
                        '</tr>' +
                        '<tr>' +
                          '<td id="' + tabDivId + '_R1C0"></td>' +
@@ -117,6 +149,12 @@ var initTaskInterface = function (tabDivId) {
     $(divRef+'_R1C4').append('<button id="reset_arm"> Reset Arm </button>');
     $("#reset_arm").button()
     $(divRef+'_R1C4').click(assistive_teleop.taskUI.resetArm);
+    $(divRef+'_R0C3').append('<button id="start_track_ar"> Start Track AR </button>');
+    $("#start_track_ar").button()
+    $(divRef+'_R0C3').click(assistive_teleop.taskUI.startTrackAR);
+    $(divRef+'_R0C5').append('<button id="stop_track_ar"> Stop Track AR </button>');
+    $("#stop_track_ar").button()
+    $(divRef+'_R0C5').click(assistive_teleop.taskUI.stopTrackAR);
 
     // Info dialog box -- Pops up with instructions for using the body registration tab
     var INFOTEXT = "The Tasks Tab allows you to command the robot to do various tasks.</br>" +
