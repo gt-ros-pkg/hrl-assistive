@@ -397,8 +397,8 @@ class BaseSelectionManager(object):
             self.pr2_goal_pose = PoseStamped()
             self.pr2_goal_pose.header.stamp = rospy.Time.now()
             self.pr2_goal_pose.header.frame_id = 'base_footprint'
-            trans_out = base_goals[0][0]
-            rot_out = base_goals[0][1]
+            trans_out = base_goals[:3]
+            rot_out = base_goals[3:]
             self.pr2_goal_pose.pose.position.x = trans_out[0]
             self.pr2_goal_pose.pose.position.y = trans_out[1]
             self.pr2_goal_pose.pose.position.z = trans_out[2]
