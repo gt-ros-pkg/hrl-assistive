@@ -36,7 +36,7 @@ class HeadDetector:
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))) and not rospy.is_shutdown():
         #while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
             print 'Waiting for head localization in world.'
             rospy.sleep(1)
