@@ -281,7 +281,7 @@ class BaseSelector(object):
                 elif model == 'autobed':
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
