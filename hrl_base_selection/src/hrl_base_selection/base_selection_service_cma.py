@@ -132,7 +132,7 @@ class BaseSelector(object):
         elif load == 'paper':
             if model == 'autobed':
                 # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'face_wiping'] = self.load_task('face_wiping', model, 0)
+                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
