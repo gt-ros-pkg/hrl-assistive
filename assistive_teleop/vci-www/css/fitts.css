@@ -1,0 +1,19 @@
+#startButton {
+    display: block;
+    position: relative;
+    left: 38%;
+    width:24%;
+    height:8%;
+    top: 46%;
+}
+
+.target {
+    background-color: red;
+    border: 2px solid black;
+}
+
+#testArea{
+    height: 540px;
+    width: 980px;
+    background-color:LightGray;
+}
