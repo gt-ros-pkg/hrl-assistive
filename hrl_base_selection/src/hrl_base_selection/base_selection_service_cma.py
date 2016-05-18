@@ -255,7 +255,7 @@ class BaseSelector(object):
             print 'The model in the service request differs from what was given to the service on initialization. As' \
                   'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task:
+            if self.load != task and self.load != 'paper':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
 
@@ -280,8 +280,8 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))

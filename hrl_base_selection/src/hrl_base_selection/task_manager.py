@@ -52,17 +52,19 @@ class BaseSelectionManager(object):
 
         self.send_task_count = 0
 
+        self.l_reset_traj = None
+        self.r_reset_traj = None
+
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
-
+        self.define_reset()
         self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
         self.l_arm_pub = rospy.Publisher('/left_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
         self.l_arm_pose_pub = rospy.Publisher('/left_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
         rospy.sleep(1)
-        self.l_reset_traj = None
-        self.r_reset_traj = None
-        self.define_reset()
+
+
 
         if self.model == 'autobed':
             self.bed_state_z = 0.
@@ -80,8 +82,8 @@ class BaseSelectionManager(object):
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
 
-            rospy.wait_for_service("/arm_reach_enable")
-            self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
+            # rospy.wait_for_service("/arm_reach_enable")
+            # self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
             rospy.wait_for_service("select_base_position")
             self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
 
@@ -239,13 +241,14 @@ class BaseSelectionManager(object):
         return
 
     def start_task_ui_cb(self, msg):
-        print 'My task is: ', msg.data
+        # print 'My task is: ', msg.data
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
-            self.task = ''.join([split_msg[2], '_', split_msg[0]])
+            # self.task = ''.join([split_msg[2], '_', split_msg[0]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print 'My task is: ', self.task
         # if self.send_task_count > 1 and self.base_selection_complete:
         #     self.base_selection_complete = False
         #     self.send_task_count = 0
@@ -394,8 +397,8 @@ class BaseSelectionManager(object):
             self.pr2_goal_pose = PoseStamped()
             self.pr2_goal_pose.header.stamp = rospy.Time.now()
             self.pr2_goal_pose.header.frame_id = 'base_footprint'
-            trans_out = base_goals[0][0]
-            rot_out = base_goals[0][1]
+            trans_out = base_goals[:3]
+            rot_out = base_goals[3:]
             self.pr2_goal_pose.pose.position.x = trans_out[0]
             self.pr2_goal_pose.pose.position.y = trans_out[1]
             self.pr2_goal_pose.pose.position.z = trans_out[2]

@@ -65,7 +65,7 @@ var TaskInterface = function (ros) {
         data: 'reach_initialization'
       });
       taskUI.resetArmPub.publish(msg);
-      var txt = "Resetting arm configuration to be able to reach to task area";
+      var txt = "Resetting arm configurations";
       assistive_teleop.log(txt);
     };
 
