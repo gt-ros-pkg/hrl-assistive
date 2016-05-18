@@ -80,11 +80,14 @@ class BaseSelectionManager(object):
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
 
-            rospy.wait_for_service("/arm_reach_enable")
-            self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
+            # rospy.wait_for_service("/arm_reach_enable")
+            # self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
             rospy.wait_for_service("select_base_position")
             self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-
+            print 'Services were found!'
+            print 'Services were found!'
+            print 'Services were found!'
+            print 'Services were found!'
             # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
             self.world_B_head = None
