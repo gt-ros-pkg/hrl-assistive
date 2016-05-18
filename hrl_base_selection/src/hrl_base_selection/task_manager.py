@@ -245,7 +245,7 @@ class BaseSelectionManager(object):
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
-            self.task = ''.join([split_msg[2], '_', split_msg[0]])
+            # self.task = ''.join([split_msg[2], '_', split_msg[0]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
         # if self.send_task_count > 1 and self.base_selection_complete:
