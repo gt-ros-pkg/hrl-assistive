@@ -52,17 +52,19 @@ class BaseSelectionManager(object):
 
         self.send_task_count = 0
 
+        self.l_reset_traj = None
+        self.r_reset_traj = None
+
         self.head_pose = None
         self.goal_pose = None
         self.marker_topic = None
-
+        self.define_reset()
         self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
         self.l_arm_pub = rospy.Publisher('/left_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
         self.l_arm_pose_pub = rospy.Publisher('/left_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
         rospy.sleep(1)
-        self.l_reset_traj = None
-        self.r_reset_traj = None
-        self.define_reset()
+
+
 
         if self.model == 'autobed':
             self.bed_state_z = 0.
@@ -84,10 +86,7 @@ class BaseSelectionManager(object):
             # self.armReachActionLeft = rospy.ServiceProxy("/arm_reach_enable", String_String)
             rospy.wait_for_service("select_base_position")
             self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-            print 'Services were found!'
-            print 'Services were found!'
-            print 'Services were found!'
-            print 'Services were found!'
+
             # self.autobed_joint_pub = rospy.Publisher('autobed/joint_states', JointState, queue_size=1)
 
             self.world_B_head = None
