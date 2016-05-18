@@ -241,13 +241,14 @@ class BaseSelectionManager(object):
         return
 
     def start_task_ui_cb(self, msg):
-        print 'My task is: ', msg.data
+        # print 'My task is: ', msg.data
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
             # self.task = ''.join([split_msg[2], '_', split_msg[0]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print 'My task is: ', self.task
         # if self.send_task_count > 1 and self.base_selection_complete:
         #     self.base_selection_complete = False
         #     self.send_task_count = 0
