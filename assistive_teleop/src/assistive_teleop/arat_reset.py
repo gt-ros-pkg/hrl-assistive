@@ -39,7 +39,10 @@ def reset_gripper(side, gripper_client):
 
 def reset_arm(side, arm_pub):
     traj_point = JointTrajectoryPoint()
-    traj_point.positions = [-0.88, 1.05, -1.47, -1.6, -4.14, -0.64, 4.61]
+    if side == 'right':
+        traj_point.positions = [-0.88, 1.05, -1.47, -1.6, -4.14, -0.64, 4.61]
+    else:
+        traj_point.positions = [0.88, 1.05, 1.47, -1.6, 4.14, -0.64, 1.51]
     traj_point.velocities = [0.0]*7
     traj_point.accelerations = [0.0]*7
     traj_point.time_from_start = rospy.Duration(5)
@@ -53,7 +56,6 @@ def reset_arm(side, arm_pub):
                         '%s_wrist_roll_joint' % side[0]]
     traj.points.append(traj_point)
     traj_point = JointTrajectoryPoint()
-    traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
     traj_point.velocities = [0.0]*7
     traj_point.accelerations = [0.0]*7
     traj_point.time_from_start = rospy.Duration(5)
@@ -79,7 +81,7 @@ def main():
     reset_torso(torso_pub)
     reset_head(head_ac)
     reset_arm('right', arm_pubs['right'])
-    # reset_arm('left', arm_pubs['left'])
+    reset_arm('left', arm_pubs['left'])
     reset_gripper('right', gripper_acs['right'])
     reset_gripper('left', gripper_acs['left'])
 
