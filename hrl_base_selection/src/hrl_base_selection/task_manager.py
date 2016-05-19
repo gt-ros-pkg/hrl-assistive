@@ -261,6 +261,11 @@ class BaseSelectionManager(object):
         # self.head_pose = self.world_B_head
         # self.head_pose =
 
+        if not self.ar_tracking:
+            log_msg = 'AR tag must be tracked to start the task and do base movement! Do this now!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            return
         if not self.get_head_pose():
             log_msg = "Head not currently found. Please look at the head."
             self.feedback_pub.publish(String(log_msg))
