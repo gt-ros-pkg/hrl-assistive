@@ -51,7 +51,7 @@ class AR_Tag_Tracking(object):
         # bed model).
         self.reference_B_ar = np.eye(4)
 
-        while not self.listener.canTransform('base_link', 'base_footprint', rospy.Time(0)) and not rospy.is_shutdown():
+        while not self.listener.canTransform('base_link', 'base_link', rospy.Time(0)) and not rospy.is_shutdown():
             rospy.sleep(2)
             print self.mode, ' AR tag waiting for the map transform.'
 
@@ -86,7 +86,7 @@ class AR_Tag_Tracking(object):
             self.ar_count = 0
             self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
             self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
-            while not self.listener.canTransform('base_link', 'base_footprint', rospy.Time(0)) and not rospy.is_shutdown():
+            while not self.listener.canTransform('base_link', 'base_link', rospy.Time(0)) and not rospy.is_shutdown():
                 rospy.sleep(2)
                 print self.mode, ' AR tag waiting for the map transform.'
                 #now = rospy.Time.now()
@@ -121,7 +121,7 @@ class AR_Tag_Tracking(object):
 
             # The point to be looking at is expressed in the 'odom_combined' frame
             point = PointStamped()
-            point.header.frame_id = 'base_footprint'
+            point.header.frame_id = 'base_link'
             point.point.x = self.map_B_ar_pos[0]
             point.point.y = self.map_B_ar_pos[1]
             point.point.z = self.map_B_ar_pos[2]
@@ -211,7 +211,7 @@ class AR_Tag_Tracking(object):
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time.now(),
                                                self.out_frame,
-                                               'base_footprint')
+                                               'base_link')
                 #print 'broadcast transform'
             rate.sleep()
 

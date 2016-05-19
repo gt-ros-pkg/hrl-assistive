@@ -8,7 +8,7 @@
     <arg name="cam_info_topic" default="/head_mount_kinect/qhd/camera_info" />
     <!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> -->
     <!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
-    <arg name="output_frame" default="base_footprint" />
+    <arg name="output_frame" default="base_link" />
 
 
     <!-- Vision sensor -->
