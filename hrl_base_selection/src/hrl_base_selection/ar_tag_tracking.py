@@ -106,12 +106,14 @@ class AR_Tag_Tracking(object):
             # rospy.sleep(5)
 
     def start_tracking_AR_cb(self, msg):
+        print msg
+        print self.track_AR
         if msg.data and not self.track_AR:
-            print 'Starting to track the AR tag!'
+            print 'THINGS AND STUFF Starting to track the AR tag!'
             self.track_AR = msg.data
             self.tracking_AR()
         elif not msg.data and self.track_AR:
-            print 'Stopping tracking the AR tag!'
+            print 'THIGNS AND STUFF Stopping tracking the AR tag!'
             self.track_AR = msg.data
 
     def tracking_AR(self):

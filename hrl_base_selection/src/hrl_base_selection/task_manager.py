@@ -220,20 +220,20 @@ class BaseSelectionManager(object):
         return
 
     def track_ar_ui_cb(self, msg):
-        out = Bool()
-        out.data = msg.data
+        #out = Bool()
+        #out.data = msg.data
         if msg.data:
             print 'Starting acquiring and tracking AR tag'
             self.ar_acquired = False
-            self.start_finding_AR_publisher.publish(out)
+            self.start_finding_AR_publisher.publish(msg)
             while not self.ar_acquired and not rospy.is_shutdown():
                 rospy.sleep(.5)
             self.ar_tracking = True
         else:
             print 'Stopping tracking AR tag'
-            self.start_finding_AR_publisher.publish(out)
+            self.start_finding_AR_publisher.publish(msg)
             self.ar_tracking = False
-        self.start_tracking_AR_publisher.publish(out)
+        self.start_tracking_AR_publisher.publish(msg)
         return
 
     def move_arm_ui_cb(self, msg):
