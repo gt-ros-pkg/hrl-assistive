@@ -10,19 +10,22 @@ var FittsLawTest = function (options) {
     'use strict';
     options = options || {};
     var self = this;
-    var minD = options.targetMin || 10;
-    var maxD = options.targetMax || 100;
     var $targetArea = $('#testArea');
+    var targetSets = [];
+    var targets = [];
+    var dataSets = [];
     var data = [];
-    var throughput;
-    var err;
+    var liveTarget = null;
+    var endTime;
+    var startTime;
 
     var sphericalTargets = function () {
         var h = $targetArea.height();
         var w =  $targetArea.width();
         var cx = w/2;
         var cy = h/2;
-        var widths = [20,50,100];
+        //var widths = [20,50,100];
+        var widths = [100];
         var lim = Math.min(h, w)/2 - 0.75*widths[widths.length-1];
         var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
         var n = 25;
@@ -67,46 +70,96 @@ var FittsLawTest = function (options) {
        return dMS + 1000*dS + 60*1000*dM + 60*60*1000*dH + 24*60*60*1000;
     };
 
-    var indexOfDifficulty = function (event, target) {
-        // TODO: Really do this;
-        return 3;
+    var indexOfDifficulty = function (data) {
+        var W = data['width'];
+        var Dx = data['endXY'][0] - data['startXY'][0];
+        var Dy = data['endXY'][1] - data['startXY'][1];
+        var D = Math.sqrt(Dx*Dx + Dy*Dy);
+        var Ex = data['endXY'][0] - data['goalXY'][0];
+        var Ey = data['endXY'][1] - data['goalXY'][1];
+        var E = Math.sqrt(Ex*Ex + Ey*Ey);
+        var ID = Math.log2((D/W) + 1);
+
+
+
     };
 
-    var recordStartTime = function (event) {
-        self.liveTarget.fittsData['start'] = new Date();
-    };
-
-    var nextTarget = function (event) {
+    var responseCB = function (event) {
         var clickTime = new Date();
-        var dT = timeDifferenceMS(self.liveTarget.data['start'], clickTime);
-        data.push({id: self.liveTarget.data['ID'],
-                        time: dT});
-
-        // Clear target, set next
-        self.liveTarget.hide(); 
-        self.liveTarget = self.allTargets.pop(0);
-        self.liveTarget.fittsData = {};
-        self.liveTarget.fittsData['id'] = indexOfDifficulty(event, self.liveTarget);
-        $targetArea.one('mousemove', recordStartTime);
-        self.liveTarget.show();
+        if (liveTarget.fittsData['startTime'] === undefined) { return; } // Probably haven't moved, just ignore the click...
+        liveTarget.fittsData['time'] = timeDifferenceMS(liveTarget.fittsData['startTime'], clickTime);
+        liveTarget.fittsData['endXY'] = [event.pageX, event.PageY];
+        data.push(liveTarget.fittsData);
+        liveTarget.remove(); 
+        nextTarget();
     };
     
-    self.allTargets = [];
-    self.liveTarget = null;
+    var recordStart = function (event) {
+        liveTarget.fittsData['startTime'] = new Date();
+        liveTarget.fittsData['startXY'] = [event.pageX, event.pageY];
+    };
+
+    var nextTarget = function () {
+        if (targets.length <= 0) {
+            newTargetSet();    
+        }
+        liveTarget = targets.pop(0);
+        liveTarget.fittsData = {};
+        $targetArea.one('mousemove', recordStart);
+        liveTarget.show();
+        var pos = liveTarget.position();
+        var w = liveTarget.width();
+        var h = liveTarget.height();
+        liveTarget.fittsData['width'] = w; // Assumes circular target
+        liveTarget.fittsData['goalXY'] = [pos['left']+w/2, pos['top']+h/2];
+    }
+
+    var newTargetSet = function () {
+        if (data.length > 0) { // Add data from last set and clear for all but first call
+            dataSets.push(data);
+            data = [];
+        }
+        if (targetSets.length <= 0) {
+            endTime = new Date();
+            finishAnalysis();
+        } else {
+            targets = targetSets.pop();
+        }
+    };
+
 
     self.run = function () {
+        targetSets = sphericalTargets(); 
         $('#startButton').remove();
-        var targetSets = sphericalTargets(); 
-        self.allTargets = [];
-        for (var i=0; i<targetSets.length; i +=1) {
-            var set = targetSets[i];
-            for (var j=0; j<set.length; j +=1) {
-                self.allTargets.push(set[j]);
+        nextTarget();
+        startTime = new Date();
+        $targetArea.on('mousedown', responseCB);
+    };
+
+    var finishAnalysis = function () {
+        //TODO: Process datasets for results
+        $targetArea.off('mousedown').css({'background-color':'orange'});
+        var data;
+        for (var i=0; i<dataSets.length; i += 1) {
+            data = dataSets[i];
+            directionalErrors = [];
+            for (var j=0; j<data.length; j +=1) {
+                
+
             }
+            // Calculate mean, stdev of distance travelled, time
+            // Throw out outliers outside 3std
+
+            // Compute effective width separately for each dataset
+
         }
-        self.liveTarget = self.allTargets.pop(0);
-        self.liveTarget.show();
-        $targetArea.on('click', nextTarget);
+        // combine list of (time, IDe) values for all datasets
+        // Least-squares fit, calculate throughput.
+    };
+
+    var displayResults = function (results) {
+        var html = "";
+        $targetArea.css({'background-color':'LightGreen'}).innerHTML(html);
     };
 
 };
