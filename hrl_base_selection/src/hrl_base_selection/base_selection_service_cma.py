@@ -598,10 +598,14 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            now = rospy.Time.now()
+            (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
+            world_B_pr2 = createBMatrix(trans, rot)
+
             pr2_B_goal_pose = PoseStamped()
             pr2_B_goal_pose.header.stamp = rospy.Time.now()
-            pr2_B_goal_pose.header.frame_id = 'base_footprint'
-            trans_out, rot_out = Bmat_to_pos_quat(pr2_B_goal)
+            pr2_B_goal_pose.header.frame_id = 'odom_combined'
+            trans_out, rot_out = Bmat_to_pos_quat(world_B_pr2*pr2_B_goal)
             pr2_B_goal_pose.pose.position.x = trans_out[0]
             pr2_B_goal_pose.pose.position.y = trans_out[1]
             pr2_B_goal_pose.pose.position.z = trans_out[2]
