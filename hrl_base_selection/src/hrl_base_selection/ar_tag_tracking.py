@@ -127,15 +127,15 @@ class AR_Tag_Tracking(object):
                 # rospy.sleep(5)
 
     def start_tracking_AR_cb(self, msg):
-        print msg
-        print self.track_AR
-        if msg.data and not self.track_AR:
+        # print msg
+        # print self.track_AR
+        if msg.data and not self.currently_tracking_AR:
             print 'THINGS AND STUFF Starting to track the AR tag!'
             # self.track_AR = msg.data
             # self.tracking_AR()
-        elif not msg.data and self.track_AR:
+        elif not msg.data and self.currently_tracking_AR:
             print 'THINGS AND STUFF Stopping tracking the AR tag!'
-        self.track_AR = msg.data
+        self.currently_tracking_AR = msg.data
 
     def tracking_AR(self):
         while self.track_AR and not rospy.is_shutdown() and self.map_B_ar_pos is not None:
@@ -323,15 +323,22 @@ class AR_Tag_Tracking(object):
                         quaternions = np.sort(quaternions, axis=0)
                         quat = quaternions[len(quaternions)/2]
                     self.map_B_ar_pos = pos
-                    if not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
+                    if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
-                    else:
+                    elif self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag:
                         success = Bool()
                         success.data = True
                         self.AR_tag_acquired.publish(success)
                         self.finished_acquiring_AR_tag = True
                         self.currently_acquiring_AR_tag = False
                         print 'Finished acquiring AR tag'
+                    # else:
+                    #     success = Bool()
+                    #     success.data = True
+                    #     self.AR_tag_acquired.publish(success)
+                    #     self.finished_acquiring_AR_tag = True
+                    #     self.currently_acquiring_AR_tag = False
+                    #     print 'Finished acquiring AR tag'
                     if self.finished_acquiring_AR_tag:
                         map_B_ar = createBMatrix(pos, quat)
 
@@ -340,7 +347,7 @@ class AR_Tag_Tracking(object):
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
 
-                    if self.currently_tracking_AR:
+                    if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]
                         self.point.point.y = self.map_B_ar_pos[1]
