@@ -506,7 +506,7 @@ class BaseSelectionManager(object):
 
     def define_reset(self):
         r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., 0., 0.0]
+        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1., 0.0]
 
         r_reset_traj_point.velocities = [0.0]*7
         r_reset_traj_point.accelerations = [0.0]*7
