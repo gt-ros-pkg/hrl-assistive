@@ -138,6 +138,9 @@ class BaseSelectionManager(object):
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
+        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
+        self.ar_tag_confirmation_publisher = rospy.Publisher('/pr2_ar_servo/tag_confirm', Bool, queue_size=1, latch=True)
+
 
         # rospy.wait_for_service('autobed_occ_status')
         # self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
@@ -200,6 +203,10 @@ class BaseSelectionManager(object):
                 goal.marker_topic = '/ar_pose_marker'
                 goal.tag_goal_pose = self.pr2_goal_pose
                 self.servo_goal_pub.publish(goal)
+                rospy.sleep(2)
+                move = Bool
+                move.data = True
+                self.ar_tag_confirmation_publisher.publish(move)
         return
 
     def reset_arm_ui_cb(self, msg):
@@ -414,6 +421,8 @@ class BaseSelectionManager(object):
             rospy.loginfo('Ready to move! Click to move PR2 base!')
             rospy.loginfo('Remember: The AR tag must be tracked before moving!')
             print 'Ready to move! Click to move PR2 base!'
+            self.goal_viz_publisher.publish(self.pr2_goal_pose)
+
 
         if self.mode == 'ar_tag':
             self.pr2_goal_pose = PoseStamped()
