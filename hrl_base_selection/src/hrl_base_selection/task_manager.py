@@ -256,6 +256,9 @@ class BaseSelectionManager(object):
 
     def start_task_ui_cb(self, msg):
         # print 'My task is: ', msg.data
+        move = Bool()
+        move.data = False
+        self.ar_tag_confirmation_publisher.publish(move)
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
