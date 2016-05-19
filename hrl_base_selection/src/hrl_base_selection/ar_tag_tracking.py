@@ -318,10 +318,14 @@ class AR_Tag_Tracking(object):
                     else:
                         # median
                         positions = np.sort(positions, axis=0)
-                        pos = positions[len(positions)/2]
+                        pos_int = positions[len(positions)/2-3:len(positions)/2+3]
+                        pos = np.sum(pos_int, axis=0)
+                        pos /= float(len(pos_int))
 
                         quaternions = np.sort(quaternions, axis=0)
-                        quat = quaternions[len(quaternions)/2]
+                        quat_int = quaternions[len(quaternions)/2-3:len(quaternions)/2+3]
+                        quat = np.sum(quat_int, axis=0)
+                        quat /= float(len(quat_int))
                     self.map_B_ar_pos = pos
                     if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
