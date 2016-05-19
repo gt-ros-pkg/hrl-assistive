@@ -36,7 +36,7 @@ class AR_Tag_Tracking(object):
         self.point = PointStamped()
         self.goal.pointing_frame = 'head_mount_kinect_ir_link'
         self.point.header.frame_id = 'base_link'
-        self.goal.min_duration = rospy.Duration(0.5)
+        self.goal.min_duration = rospy.Duration(0.25)
         self.currently_tracking_AR = False
 
 
