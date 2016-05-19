@@ -177,9 +177,14 @@ class BaseSelectionManager(object):
     #     self.head_pose = msg
 
     def ar_acquired_cb(self, msg):
-        log_msg = 'The AR tag has been acquired and can now be tracked! We can now proceed!!'
-        print log_msg
-        self.feedback_pub.publish(String(log_msg))
+        if msg.data:
+            log_msg = 'The AR tag has been acquired and can now be tracked! We can now proceed!!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+        else:
+            log_msg = 'Starting to acquire the AR tag. Please wait.'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
         self.ar_acquired = msg.data
 
     def move_base_ui_cb(self, msg):
