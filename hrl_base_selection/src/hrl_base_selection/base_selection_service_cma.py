@@ -49,6 +49,7 @@ class BaseSelector(object):
         self.model = model
         self.load = load
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
+        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
@@ -597,6 +598,18 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            pr2_B_goal_pose = PoseStamped()
+            pr2_B_goal_pose.header.stamp = rospy.Time.now()
+            pr2_B_goal_pose.header.frame_id = 'base_footprint'
+            trans_out, rot_out = Bmat_to_pos_quat(pr2_B_goal)
+            pr2_B_goal_pose.pose.position.x = trans_out[0]
+            pr2_B_goal_pose.pose.position.y = trans_out[1]
+            pr2_B_goal_pose.pose.position.z = trans_out[2]
+            pr2_B_goal_pose.pose.orientation.x = rot_out[0]
+            pr2_B_goal_pose.pose.orientation.y = rot_out[1]
+            pr2_B_goal_pose.pose.orientation.z = rot_out[2]
+            pr2_B_goal_pose.pose.orientation.w = rot_out[3]
+            self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal

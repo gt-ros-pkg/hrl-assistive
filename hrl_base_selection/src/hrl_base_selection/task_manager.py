@@ -138,7 +138,7 @@ class BaseSelectionManager(object):
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
-        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
+
         self.ar_tag_confirmation_publisher = rospy.Publisher('/pr2_ar_servo/tag_confirm', Bool, queue_size=1, latch=True)
 
 
@@ -421,7 +421,7 @@ class BaseSelectionManager(object):
             rospy.loginfo('Ready to move! Click to move PR2 base!')
             rospy.loginfo('Remember: The AR tag must be tracked before moving!')
             print 'Ready to move! Click to move PR2 base!'
-            self.goal_viz_publisher.publish(self.pr2_goal_pose)
+
 
 
         if self.mode == 'ar_tag':
