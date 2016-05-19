@@ -599,6 +599,8 @@ class BaseSelector(object):
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
             now = rospy.Time.now()
+            now = rospy.Time.now()
+            self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
             (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
             world_B_pr2 = createBMatrix(trans, rot)
 
