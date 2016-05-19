@@ -138,7 +138,6 @@ class BaseSelectionManager(object):
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
-
         self.ar_tag_confirmation_publisher = rospy.Publisher('/pr2_ar_servo/tag_confirm', Bool, queue_size=1, latch=True)
 
 
@@ -204,7 +203,7 @@ class BaseSelectionManager(object):
                 goal.tag_goal_pose = self.pr2_goal_pose
                 self.servo_goal_pub.publish(goal)
                 rospy.sleep(2)
-                move = Bool
+                move = Bool()
                 move.data = True
                 self.ar_tag_confirmation_publisher.publish(move)
         return
@@ -506,7 +505,7 @@ class BaseSelectionManager(object):
 
     def define_reset(self):
         r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1., 0.0]
+        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1.5, 0.0]
 
         r_reset_traj_point.velocities = [0.0]*7
         r_reset_traj_point.accelerations = [0.0]*7
