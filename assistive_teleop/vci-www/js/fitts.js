@@ -136,29 +136,59 @@ var FittsLawTest = function (options) {
         $targetArea.on('mousedown', responseCB);
     };
 
+    var removeOutliers = function (data) {
+        var distances = getDistances(data);
+        var times = getTimes(data);
+        var timeMean = math.mean(times);
+        var timeStd = math.std(times);
+        var minTime = timeMean - 3*timeStd; 
+        var maxTime = timeMean + 3*timeStd;
+        var distMean = math.mean(distances);
+        var distStd = math.std(distances)
+        var minDist = distMean - 3*distStd;
+        var maxDist = distMean + 3*distStd;
+        var timeMinOutliers = math.smaller(times, minTime);
+        var timeMaxOutliers = math.larger(times, maxTime);
+        var distMinOutliers = math.smaller(distances, minDist);
+        var distMaxOutliers = math.larger(distances, maxDist);
+        var outliers = math.or(timeMinOutliers, timeMaxOutliers)
+        outliers = math.or(outliers, distMinOutliers);
+        outliers = math.or(outliers, distMaxOutliers);
+        var filteredData = [];
+        for (var j=0; j<data.length; j += 1) {
+            if (!outliers[i]) {
+                filteredData.push(data[j]);
+            } else {
+                console.log("Removed outlier");
+            };
+        };
+        return filteredData;
+    }
+
+    var getTimes = function (data) {
+        var times = [];
+        for (var i=0; i < data.length; i += 1) {
+            times.push(data[i]['time']);
+        }
+        return times;
+    };
+
+    var getDistances = function (data) {
+        var distances = [];
+        for (var i=0; i < data.length; i += 1) {
+            distances.push(math.norm([data[i]['endXY'][0] - data[i]['startXY'][0],
+                                      data[i]['endXY'][1] - data[i]['startXY'][1] ]));
+        };
+        return distances;
+    };
+
     var finishAnalysis = function () {
         //TODO: Process datasets for results
         $targetArea.off('mousedown').css({'background-color':'orange'});
         var data;
         for (var i=0; i<dataSets.length; i += 1) {
-            data = dataSets[i];
-            var distances = [];
-            var times = [];
-            for (var j=0; j < data.length; j += 1) {
-                times.push(data['time']);
-                distances.push(math.norm([data['endXY'][0] - data['startXY'][0], data['endXY'][1] - data['startXY'][1] ]));
-            };
-            var timeMean = math.mean(times);
-            var timeStd = math.std(times);
-            var minTime = timeMean - 3*timeStd; 
-            var maxTime = timeMean + 3*timeStd;
-            var distMean = math.mean(distances);
-            var distStd = math.std(distances)
-            var minDist = distMean - 3*distStd;
-            var maxDist = distMean + 3*distStd;
-            var timeMinOut = math. 
-            // Calculate mean, stdev of distance travelled, time
-            // Throw out outliers outside 3std
+            data = removeOutliers(dataSets[i]);
+
             directionalErrors = [];
             for (var j=0; j<data.length; j +=1) {
                var Vse = [ data['endXY'][0] - data['startXY'][0], data['endXY'][1] - data['startXY'][1] ];
@@ -166,6 +196,10 @@ var FittsLawTest = function (options) {
                var err = ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vge) ) - math.norm(Vge);
                directionalErrors.push(err);
             }
+            var We = 4.133*math.std(directionalErrors);
+            var dists = getDistances(data);
+            var De = math.mean(dists);
+            var IDe = math.log((De/Ww)+1 , 2);
 
 
             // Compute effective width separately for each dataset
