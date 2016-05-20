@@ -142,13 +142,31 @@ var FittsLawTest = function (options) {
         var data;
         for (var i=0; i<dataSets.length; i += 1) {
             data = dataSets[i];
-            directionalErrors = [];
-            for (var j=0; j<data.length; j +=1) {
-                
-
-            }
+            var distances = [];
+            var times = [];
+            for (var j=0; j < data.length; j += 1) {
+                times.push(data['time']);
+                distances.push(math.norm([data['endXY'][0] - data['startXY'][0], data['endXY'][1] - data['startXY'][1] ]));
+            };
+            var timeMean = math.mean(times);
+            var timeStd = math.std(times);
+            var minTime = timeMean - 3*timeStd; 
+            var maxTime = timeMean + 3*timeStd;
+            var distMean = math.mean(distances);
+            var distStd = math.std(distances)
+            var minDist = distMean - 3*distStd;
+            var maxDist = distMean + 3*distStd;
+            var timeMinOut = math. 
             // Calculate mean, stdev of distance travelled, time
             // Throw out outliers outside 3std
+            directionalErrors = [];
+            for (var j=0; j<data.length; j +=1) {
+               var Vse = [ data['endXY'][0] - data['startXY'][0], data['endXY'][1] - data['startXY'][1] ];
+               var Vsg = [ data['goalXY'][0] - data['startXY'][0], data['goalXY'][1] - data['startXY'][1] ];
+               var err = ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vge) ) - math.norm(Vge);
+               directionalErrors.push(err);
+            }
+
 
             // Compute effective width separately for each dataset
 
