@@ -10,6 +10,7 @@ var FittsLawTest = function (options) {
     'use strict';
     options = options || {};
     var self = this;
+    var dwellTime = options.dwellTime || 0;
     var $targetArea = $('#testArea');
     var targetSets = [];
     var targets = [];
@@ -27,7 +28,8 @@ var FittsLawTest = function (options) {
         //var widths = [20,50,100];
         var widths = [100];
         var lim = Math.min(h, w)/2 - 0.75*widths[widths.length-1];
-        var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
+       // var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
+        var ringDiameters = [0.67*lim, lim]; 
         var n = 25;
         var targetSets = [];
         for (var iw=0; iw < widths.length; iw +=1) {
@@ -70,25 +72,11 @@ var FittsLawTest = function (options) {
        return dMS + 1000*dS + 60*1000*dM + 60*60*1000*dH + 24*60*60*1000;
     };
 
-    var indexOfDifficulty = function (data) {
-        var W = data['width'];
-        var Dx = data['endXY'][0] - data['startXY'][0];
-        var Dy = data['endXY'][1] - data['startXY'][1];
-        var D = Math.sqrt(Dx*Dx + Dy*Dy);
-        var Ex = data['endXY'][0] - data['goalXY'][0];
-        var Ey = data['endXY'][1] - data['goalXY'][1];
-        var E = Math.sqrt(Ex*Ex + Ey*Ey);
-        var ID = Math.log2((D/W) + 1);
-
-
-
-    };
-
     var responseCB = function (event) {
         var clickTime = new Date();
         if (liveTarget.fittsData['startTime'] === undefined) { return; } // Probably haven't moved, just ignore the click...
         liveTarget.fittsData['time'] = timeDifferenceMS(liveTarget.fittsData['startTime'], clickTime);
-        liveTarget.fittsData['endXY'] = [event.pageX, event.PageY];
+        liveTarget.fittsData['endXY'] = [event.pageX, event.pageY];
         data.push(liveTarget.fittsData);
         liveTarget.remove(); 
         nextTarget();
@@ -121,6 +109,7 @@ var FittsLawTest = function (options) {
         }
         if (targetSets.length <= 0) {
             endTime = new Date();
+            $targetArea.off('mousedown').css({'background-color':'orange'});
             finishAnalysis();
         } else {
             targets = targetSets.pop();
@@ -138,6 +127,7 @@ var FittsLawTest = function (options) {
 
     var removeOutliers = function (data) {
         var distances = getDistances(data);
+        console.log(distances);
         var times = getTimes(data);
         var timeMean = math.mean(times);
         var timeStd = math.std(times);
@@ -155,9 +145,9 @@ var FittsLawTest = function (options) {
         outliers = math.or(outliers, distMinOutliers);
         outliers = math.or(outliers, distMaxOutliers);
         var filteredData = [];
-        for (var j=0; j<data.length; j += 1) {
+        for (var i=0; i<data.length; i += 1) {
             if (!outliers[i]) {
-                filteredData.push(data[j]);
+                filteredData.push(data[i]);
             } else {
                 console.log("Removed outlier");
             };
@@ -176,36 +166,40 @@ var FittsLawTest = function (options) {
     var getDistances = function (data) {
         var distances = [];
         for (var i=0; i < data.length; i += 1) {
-            distances.push(math.norm([data[i]['endXY'][0] - data[i]['startXY'][0],
-                                      data[i]['endXY'][1] - data[i]['startXY'][1] ]));
+            distances.push(math.norm([data[i].endXY[0] - data[i].startXY[0],
+                                      data[i].endXY[1] - data[i].startXY[1] ]));
         };
         return distances;
     };
 
     var finishAnalysis = function () {
         //TODO: Process datasets for results
-        $targetArea.off('mousedown').css({'background-color':'orange'});
+        var MTs = [];
+        var IDes = [];
+
         var data;
         for (var i=0; i<dataSets.length; i += 1) {
             data = removeOutliers(dataSets[i]);
 
-            directionalErrors = [];
+            var directionalErrors = [];
             for (var j=0; j<data.length; j +=1) {
-               var Vse = [ data['endXY'][0] - data['startXY'][0], data['endXY'][1] - data['startXY'][1] ];
-               var Vsg = [ data['goalXY'][0] - data['startXY'][0], data['goalXY'][1] - data['startXY'][1] ];
-               var err = ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vge) ) - math.norm(Vge);
+               var Vse = [ data[j].endXY[0] - data[j].startXY[0], data[j].endXY[1] - data[j].startXY[1] ];
+               var Vsg = [ data[j].goalXY[0] - data[j].startXY[0], data[j].goalXY[1] - data[j].startXY[1] ];
+               var err = ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vsg) ) - math.norm(Vsg);
                directionalErrors.push(err);
             }
             var We = 4.133*math.std(directionalErrors);
             var dists = getDistances(data);
             var De = math.mean(dists);
-            var IDe = math.log((De/Ww)+1 , 2);
-
-
-            // Compute effective width separately for each dataset
-
+            var IDe = math.log((De/We)+1 , 2);
+            IDes.push(IDe);
+            var times = getTimes(data);
+            var MT = math.mean(times);
+            MTs.push(MT);
         }
-        // combine list of (time, IDe) values for all datasets
+        console.log(MTs);
+        console.log(IDes);
+
         // Least-squares fit, calculate throughput.
     };
 
