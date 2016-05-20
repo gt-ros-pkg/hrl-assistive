@@ -125,19 +125,20 @@ class HeadDetector:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
                 if head_rest_B_head is not None:
-                    (newtrans, newrot) = self.tf_listener.lookupTransform('autobed/base_link', \
-                                                                          'autobed/head_rest_link', rospy.Time(0))
+                    # (newtrans, newrot) = self.tf_listener.lookupTransform('autobed/base_link', \
+                    #                                                       'autobed/head_rest_link', rospy.Time(0))
                     #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
                     #                                                      'torso_lift_link', rospy.Time(0))
-                    bedbase_B_head_rest = createBMatrix(newtrans, newrot)
-                    bedbase_B_head = bedbase_B_head_rest*head_rest_B_head
-                    (out_trans, out_rot) = Bmat_to_pos_quat(bedbase_B_head)
+                    # bedbase_B_head_rest = createBMatrix(newtrans, newrot)
+                    # bedbase_B_head = bedbase_B_head_rest*head_rest_B_head
+                    # (out_trans, out_rot) = Bmat_to_pos_quat(bedbase_B_head)
+                    (out_trans, out_rot) = Bmat_to_pos_quat(head_rest_B_head)
                     try:
                         self.tf_broadcaster.sendTransform(out_trans, 
                                                           out_rot,
                                                           rospy.Time.now(),
                                                           'user_head_link',
-                                                          'autobed/base_link')
+                                                          'autobed/head_rest_link')
                                                           #'torso_lift_link')
                     
                     except:
