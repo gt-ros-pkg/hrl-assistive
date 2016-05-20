@@ -182,7 +182,7 @@ class BaseSelectionManager(object):
             print log_msg
             self.feedback_pub.publish(String(log_msg))
         else:
-            log_msg = 'Starting to acquire the AR tag. Please wait.'
+            log_msg = 'The AR tag is not acquired.'
             print log_msg
             self.feedback_pub.publish(String(log_msg))
         self.ar_acquired = msg.data
