@@ -39,55 +39,62 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
     # ROC
     ROC_dict = param_dict['ROC']
+
+    fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 10
-    roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'.pkl')
 
-    if os.path.isfile(roc_data_pkl) is False or renew is True:
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+fit_method+'.pkl')
 
-        ROC_data = {}
-        ROC_data[method] = {}
-        ROC_data[method]['complete'] = False 
-        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-        ## ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['result'] = [ [] for j in xrange(nPoints) ]
+        if os.path.isfile(roc_data_pkl) is False or renew is True:
 
-        # parallelization 
-        r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, save_data_path, task, \
-                                                                     method, ROC_data, ROC_dict, AE_dict, \
-                                                                     SVM_dict ) \
-                                                                     for idx in xrange(nFolds) )
-        l_data = r
-        for i in xrange(len(l_data)):
-            for j in xrange(nPoints):
-                try:
-                    method = l_data[i].keys()[0]
-                except:
-                    print l_data[i]
-                    sys.exit()
-                ## if ROC_data[method]['complete'] == True: continue
-                ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-                ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-                ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-                ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-                ## ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-                ROC_data[method]['result'][j].append(l_data[i][method]['result'][j])
+            ROC_data = {}
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ## ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [] for j in xrange(nPoints) ]
 
-        ROC_data[method]['complete'] = True
+            # parallelization 
+            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, save_data_path, task, \
+                                                                         method, ROC_data, ROC_dict, AE_dict, \
+                                                                         SVM_dict, fit_method=fit_method ) \
+                                                                         for idx in xrange(nFolds) )
+            l_data = r
+            for i in xrange(len(l_data)):
+                for j in xrange(nPoints):
+                    try:
+                        method = l_data[i].keys()[0]
+                    except:
+                        print l_data[i]
+                        sys.exit()
+                    ## if ROC_data[method]['complete'] == True: continue
+                    ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+                    ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+                    ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+                    ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+                    ## ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+                    ROC_data[method]['result'][j].append(l_data[i][method]['result'][j])
 
-        ut.save_pickle(ROC_data, roc_data_pkl)
-    else:
+            ROC_data[method]['complete'] = True
+            ut.save_pickle(ROC_data, roc_data_pkl)
+
+
+    fig = plt.figure(1)        
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+initial_fit+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-
-    plotROC(method, nPoints, ROC_data)
-
+        plotROC(method, nPoints, ROC_data, fig=fig)
+    plt.show()
+        
     return
 
 
@@ -222,7 +229,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
     return raw_data_path, save_data_path, param_dict
 
 
-def plotROC(method, nPoints, ROC_data):
+def plotROC(method, nPoints, ROC_data, fig=None):
     #-------------------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
     elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
@@ -293,7 +300,11 @@ def plotROC(method, nPoints, ROC_data):
 
 
     else:
-        fig = plt.figure(1)
+        if fig is None:
+            fig = plt.figure(1)
+            show_flag = True
+        else:
+            show_flag = False
         
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -336,12 +347,13 @@ def plotROC(method, nPoints, ROC_data):
         plt.xticks([0, 50, 100], fontsize=22)
         plt.yticks([0, 50, 100], fontsize=22)
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-        plt.show()
+        if show_flag: plt.show()
     
     return
 
 
-def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict ):
+def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
+                    fit_method='full_fit'):
 
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
 
@@ -381,7 +393,21 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         X_train_scaled = scaler.fit_transform(X_train)
     else:
         X_train_scaled = X_train
+
     print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)
+    if fit_method.find('full') >= 0:
+        initial_train_X = X_train_scaled
+        initial_train_Y = Y_train
+    else:
+        idx_list = range(len(Y_train))
+        random.shuffle(idx_list)
+        initial_train_X = []
+        initial_train_Y = [-1, 1]        
+        for idx in idx_list:
+            if Y_train[idx] == -1 and len(initial_train_X)==0:
+                initial_train_X.append(X_train_scaled[idx])
+            if Y_train[idx] == 1 and len(initial_train_X)==1:
+                initial_train_X.append(X_train_scaled[idx])        
 
     X_test = []
     Y_test = [] 
@@ -404,7 +430,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     new_idx_list = randomList(idx_list)
     X_test = [X_test[idx] for idx in new_idx_list]
     Y_test = [Y_test[idx] for idx in new_idx_list]
-    
+
     #-----------------------------------------------------------------------------------------
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints): 
@@ -416,8 +442,8 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             print "Not available method"
             return "Not available method", -1, params
 
-        print "Start to train a classifier: ", idx, j, np.shape(X_train), np.shape(Y_train)
-        ret = dtc.fit(X_train_scaled, Y_train)
+        print "Start to train a classifier: ", idx, j, np.shape(initial_train_X), np.shape(initial_train_Y)
+        ret = dtc.fit(initial_train_X, initial_train_Y)            
         if ret is False: return 'fit failed', -1
 
         tp_l = []
@@ -425,6 +451,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         tn_l = []
         fn_l = []
         result_list = []
+        nSamples = len(initial_train_Y)
 
         # incremental learning and classification
         for i in xrange(len(X_test)):
@@ -432,30 +459,31 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             
             # 1) update classifier
             # Get partial fitting data
-            if i is not 0:
+            if i is not 0 and fit_method.find('incremental')>=0:
                 X_ptrain, Y_ptrain = X_test[i-1], Y_test[i-1]
 
-                ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
-                ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
-                
-                ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
-                ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
-                sample_weight = np.logspace(1,20,len(X_ptrain) )
-                sample_weight = np.logspace(1,2.0,len(X_ptrain) )
-                ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
-                ## sample_weight = np.ones(len(X_ptrain))
-                
-                ## sample_weight = np.log10(1.,20.,len(X_ptrain))
-                ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
+                if fit_method == 'single_fit' and False:
+                    sample_weight = [1.0]*len(X_ptrain) #np.linspace(1.,2.,len(X_ptrain))**3 #good
+                else:
+                    ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
+                    ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
+                    ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
+                    ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
+                    sample_weight = np.logspace(1,20,len(X_ptrain) )
+                    sample_weight = np.logspace(1,2.0,len(X_ptrain) )
+                    ## sample_weight = np.linspace(1.,8.,len(X_ptrain))
+                    ## sample_weight = np.ones(len(X_ptrain))
+
+                    ## sample_weight = np.log10(1.,20.,len(X_ptrain))
+                    ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
 
                 # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
                 sample_weight *= 10.0                
-                sample_weight /= float(len(ll_classifier_train_X) + i)
+                sample_weight /= float(nSamples + i)
                 
                 ## sample_weight += 0.1
                 ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
-               
                 dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
 
             # 2) test classifier
@@ -483,6 +511,19 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                     tn_l.append(1)
 
             result_list.append([tp,fn,fp,tn])
+
+            ## if decision_boundary_viz:
+            ##     fig = plt.figure()
+            ##     min_logp = 0.0
+            ##     max_logp = 0.0
+
+            ##     plt.ylim([min_logp, max_logp])
+            ##     if save_pdf == True:
+            ##         fig.savefig('test.pdf')
+            ##         fig.savefig('test.png')
+            ##         os.system('cp test.p* ~/Dropbox/HRL/')
+            ##     else:
+            ##         plt.show()        
 
         data[method]['tp_l'][j] += tp_l
         data[method]['fp_l'][j] += fp_l
