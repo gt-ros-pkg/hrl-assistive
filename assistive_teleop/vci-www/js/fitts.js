@@ -1,8 +1,14 @@
 var FITTS = {
     setup: function () {
-        var test = new FittsLawTest();
-//        $('#startButton').button().on('click', test.run);
-        test.run();
+        var startFittsLaw = function () {
+            var dwellDelay = $('#dwellTimeInput').val();
+            var test = new FittsLawTest({dwellTime: dwellDelay});
+            $('#startButton').remove();
+            $('form').remove();
+            test.run();
+        }
+
+        $('#startButton').button().on('click', startFittsLaw);
     }
 };
 
@@ -69,7 +75,9 @@ var FittsLawTest = function (options) {
        var dM = date2.getMinutes() - date1.getMinutes();
        var dS = date2.getSeconds() - date1.getSeconds();
        var dMS = date2.getMilliseconds() - date1.getMilliseconds();
-       return dMS + 1000*dS + 60*1000*dM + 60*60*1000*dH + 24*60*60*1000;
+       var timeDiff = dMS + 1000*dS + 60*1000*dM + 60*60*1000*dH;
+       var withoutDwell = timeDiff - dwellTime;
+       return withoutDwell;
     };
 
     var responseCB = function (event) {
@@ -119,7 +127,6 @@ var FittsLawTest = function (options) {
 
     self.run = function () {
         targetSets = sphericalTargets(); 
-        $('#startButton').remove();
         nextTarget();
         startTime = new Date();
         $targetArea.on('mousedown', responseCB);
@@ -173,7 +180,6 @@ var FittsLawTest = function (options) {
     };
 
     var finishAnalysis = function () {
-        //TODO: Process datasets for results
         var MTs = [];
         var IDes = [];
 
@@ -197,15 +203,36 @@ var FittsLawTest = function (options) {
             var MT = math.mean(times);
             MTs.push(MT);
         }
-        console.log(MTs);
-        console.log(IDes);
-
-        // Least-squares fit, calculate throughput.
+        var A = [[1,1], IDes];
+        var fittsCoefficients = math.lusolve(A, MTs);
+        var a = math.round(fittsCoefficients[0], 4);
+        var b = math.round(fittsCoefficients[1], 4);
+        console.log(fittsCoefficients);
+        displayResults(a, b, dataSets);
     };
 
-    var displayResults = function (results) {
-        var html = "";
-        $targetArea.css({'background-color':'LightGreen'}).innerHTML(html);
+    var displayResults = function (a, b, dataSets) {
+        var html = "Fitts Law Model: MT = " + results[0].toString() + " + " + results[1].toString() + " x IDe";
+        var resultURL = makeResultsFile(a, b, dataSets);
+        var time = new Date();
+        var dataFileName = "FittsLawResults-"+time.getDate()+'-'+time.getMonth()+'-'+time.getUTCFullYear()+'-'+time.getHours()+'-'+time.getMinutes()+'-'+time.getSeconds();
+        $targetArea.css({'background-color':'LightGreen'}).html(html);
+        var $downloadDiv = $('<a download="'+dataFileName+'">Download Results</a>', {id:'downloadResults'}).button().attr('href', resultURL);
+        $targetArea.append($downloadDiv)
+    };
+
+    var resultsFile = null;
+    var makeResultsFile = function (a, b, data, dwellTime) {
+        var contents = new Blob([a.toString(),
+                                 b.toString(),
+                                 dwellTime.toString(),
+                                 JSON.stringify(dataSets)],
+                                {type:'text/plain'});
+        if (resultsFile !== null) {
+            window.URL.revokeObjectURL(resultsFile);
+        };
+        resultsFile = window.URL.createObjectURL(contents);
+        return resultsFile;
     };
 
 };

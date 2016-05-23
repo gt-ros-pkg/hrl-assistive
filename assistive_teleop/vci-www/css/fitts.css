@@ -4,11 +4,15 @@
     left: 38%;
     width:24%;
     height:8%;
-    top: 46%;
+    bottom: 0%;
 }
 
 .target {
     background-color: red;
+}
+
+form, h2, h3, p {
+    text-align: center;
 }
 
 .sphere {
