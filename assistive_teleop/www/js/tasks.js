@@ -65,7 +65,37 @@ var TaskInterface = function (ros) {
         data: 'reach_initialization'
       });
       taskUI.resetArmPub.publish(msg);
-      var txt = "Resetting arm configuration to be able to reach to task area";
+      var txt = "Resetting arm configurations";
+      assistive_teleop.log(txt);
+    };
+
+    taskUI.startTrackARPub = new taskUI.ros.Topic({
+      name: 'track_ar_ui',
+      messageType: 'std_msgs/Bool'
+    });
+    taskUI.startTrackARPub.advertise();
+
+    taskUI.startTrackAR = function () {
+      var msg = new taskUI.ros.Message({
+        data: true
+      });
+      taskUI.startTrackARPub.publish(msg);
+      var txt = "Start tracking the Bed AR tag";
+      assistive_teleop.log(txt);
+    };
+
+    taskUI.stopTrackARPub = new taskUI.ros.Topic({
+      name: 'track_ar_ui',
+      messageType: 'std_msgs/Bool'
+    });
+    taskUI.stopTrackARPub.advertise();
+
+    taskUI.stopTrackAR = function () {
+      var msg = new taskUI.ros.Message({
+        data: false
+      });
+      taskUI.stopTrackARPub.publish(msg);
+      var txt = "Stop tracking the Bed AR tag";
       assistive_teleop.log(txt);
     };
 }
@@ -85,11 +115,13 @@ var initTaskInterface = function (tabDivId) {
                          '<td id="' + tabDivId + '_R1C1"></td>' +
                          '<td id="' + tabDivId + '_R1C2" colspan="2"></td>' +
                          '<td id="' + tabDivId + '_R1C4" colspan="2"></td>' +
+                         '<td id="' + tabDivId + '_R1C6" colspan="2"></td>' +
                        '</tr>' +
                        '<tr>' +
                          '<td id="' + tabDivId + '_R2C0" colspan="2"></td>' +
                          '<td id="' + tabDivId + '_R2C2" colspan="2"></td>' +
                          '<td id="' + tabDivId + '_R2C4" colspan="2"></td>' +
+                         '<td id="' + tabDivId + '_R2C6" colspan="2"></td>' +
                        '</tr>' +
                      '</table>');
     $(divRef+'_R1C0').append('<select id="task_action_select">' +
@@ -117,6 +149,12 @@ var initTaskInterface = function (tabDivId) {
     $(divRef+'_R1C4').append('<button id="reset_arm"> Reset Arm </button>');
     $("#reset_arm").button()
     $(divRef+'_R1C4').click(assistive_teleop.taskUI.resetArm);
+    $(divRef+'_R1C6').append('<button id="start_track_ar"> Start Track AR </button>');
+    $("#start_track_ar").button()
+    $(divRef+'_R1C6').click(assistive_teleop.taskUI.startTrackAR);
+    $(divRef+'_R2C6').append('<button id="stop_track_ar"> Stop Track AR </button>');
+    $("#stop_track_ar").button()
+    $(divRef+'_R2C6').click(assistive_teleop.taskUI.stopTrackAR);
 
     // Info dialog box -- Pops up with instructions for using the body registration tab
     var INFOTEXT = "The Tasks Tab allows you to command the robot to do various tasks.</br>" +

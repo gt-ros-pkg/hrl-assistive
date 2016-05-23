@@ -1,0 +1,22 @@
+#startButton {
+    display: block;
+    position: relative;
+    left: 38%;
+    width:24%;
+    height:8%;
+    top: 46%;
+}
+
+.target {
+    background-color: red;
+}
+
+.sphere {
+    border-radius:50%;
+}
+
+#testArea{
+    height: 100%;
+    width: 100%;
+    background-color:LightGray;
+}

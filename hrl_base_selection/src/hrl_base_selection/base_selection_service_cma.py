@@ -49,6 +49,7 @@ class BaseSelector(object):
         self.model = model
         self.load = load
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
+        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
@@ -132,7 +133,7 @@ class BaseSelector(object):
         elif load == 'paper':
             if model == 'autobed':
                 # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'face_wiping'] = self.load_task('face_wiping', model, 0)
+                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
@@ -255,7 +256,7 @@ class BaseSelector(object):
             print 'The model in the service request differs from what was given to the service on initialization. As' \
                   'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task:
+            if self.load != task and self.load != 'paper':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
 
@@ -279,6 +280,10 @@ class BaseSelector(object):
                     (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
+                    self.pr2_B_ar = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/autobed/base_link', now)
@@ -593,15 +598,35 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            now = rospy.Time.now()
+            now = rospy.Time.now()
+            self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
+            (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
+            world_B_pr2 = createBMatrix(trans, rot)
+
+            pr2_B_goal_pose = PoseStamped()
+            pr2_B_goal_pose.header.stamp = rospy.Time.now()
+            pr2_B_goal_pose.header.frame_id = 'odom_combined'
+            trans_out, rot_out = Bmat_to_pos_quat(world_B_pr2*pr2_B_goal)
+            pr2_B_goal_pose.pose.position.x = trans_out[0]
+            pr2_B_goal_pose.pose.position.y = trans_out[1]
+            pr2_B_goal_pose.pose.position.z = trans_out[2]
+            pr2_B_goal_pose.pose.orientation.x = rot_out[0]
+            pr2_B_goal_pose.pose.orientation.y = rot_out[1]
+            pr2_B_goal_pose.pose.orientation.z = rot_out[2]
+            pr2_B_goal_pose.pose.orientation.w = rot_out[3]
+            self.goal_viz_publisher.publish(pr2_B_goal_pose)
+            goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
-            pos_goal, ori_goal = Bmat_to_pos_quat(pr2_B_goal)
-            if pr2_B_goal[0,1]<=0:
-                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], m.acos(pr2_B_goal[0, 0])])
-            else:
-                pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
+            pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
+            # if pr2_B_goal[0,1] <= 0:
+            #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], m.acos(pr2_B_goal[0, 0])])
+            # else:
+            #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
+            pr2_base_output.append([pos_goal, ori_goal])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
         print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))

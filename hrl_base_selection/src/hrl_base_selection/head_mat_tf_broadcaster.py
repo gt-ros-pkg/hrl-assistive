@@ -36,10 +36,10 @@ class HeadDetector:
         rospy.sleep(2)
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         self.mat_sampled = False
-        while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))):
+        #while (not self.tf_listener.canTransform('map', 'autobed/head_rest_link', rospy.Time(0))) and not rospy.is_shutdown():
         #while (not self.tf_listener.canTransform('base_link', 'torso_lift_link', rospy.Time(0))):
-            print 'Waiting for head localization in world.'
-            rospy.sleep(1)
+        #    print 'Waiting for head localization in world.'
+        #    rospy.sleep(1)
         #Initialize some constant transforms
         self.head_rest_B_mat = np.eye(4)
         self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
@@ -125,19 +125,20 @@ class HeadDetector:
                 self.mat_sampled = False
                 head_rest_B_head = self.detect_head()
                 if head_rest_B_head is not None:
-                    (newtrans, newrot) = self.tf_listener.lookupTransform('map', \
-                                                                          'autobed/head_rest_link', rospy.Time(0))
+                    # (newtrans, newrot) = self.tf_listener.lookupTransform('autobed/base_link', \
+                    #                                                       'autobed/head_rest_link', rospy.Time(0))
                     #(newtrans, newrot) = self.tf_listener.lookupTransform('base_link', \
                     #                                                      'torso_lift_link', rospy.Time(0))
-                    map_B_head_rest = createBMatrix(newtrans, newrot)
-                    map_B_head = map_B_head_rest*head_rest_B_head
-                    (out_trans, out_rot) = Bmat_to_pos_quat(map_B_head)
+                    # bedbase_B_head_rest = createBMatrix(newtrans, newrot)
+                    # bedbase_B_head = bedbase_B_head_rest*head_rest_B_head
+                    # (out_trans, out_rot) = Bmat_to_pos_quat(bedbase_B_head)
+                    (out_trans, out_rot) = Bmat_to_pos_quat(head_rest_B_head)
                     try:
                         self.tf_broadcaster.sendTransform(out_trans, 
                                                           out_rot,
                                                           rospy.Time.now(),
                                                           'user_head_link',
-                                                          'map')
+                                                          'autobed/head_rest_link')
                                                           #'torso_lift_link')
                     
                     except:
