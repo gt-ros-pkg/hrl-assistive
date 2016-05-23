@@ -41,6 +41,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     ROC_dict = param_dict['ROC']
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = ['single_fit','single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -51,7 +52,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+fit_method+'.pkl')
 
-        if os.path.isfile(roc_data_pkl) is False or renew is True:
+        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
 
             ROC_data = {}
             ROC_data[method] = {}
@@ -90,9 +91,10 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
     fig = plt.figure(1)        
     for fit_method in fit_methods:
-        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+initial_fit+'.pkl')
+        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+fit_method+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-        plotROC(method, nPoints, ROC_data, fig=fig)
+        plotROC(method, nPoints, ROC_data, fit_method=fit_method, fig=fig)
+    plt.legend(loc=4,prop={'size':16})                    
     plt.show()
         
     return
@@ -229,13 +231,15 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
     return raw_data_path, save_data_path, param_dict
 
 
-def plotROC(method, nPoints, ROC_data, fig=None):
+def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     #-------------------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
     elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
     elif method == 'fixed': label='HMMs with a fixed threshold'
     elif method == 'cssvm': label='HMM-CSSVM'
     elif method == 'sgd': label='SGD'
+
+    if fit_method is not None: label = fit_method
 
 
     if False:
@@ -401,13 +405,16 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     else:
         idx_list = range(len(Y_train))
         random.shuffle(idx_list)
-        initial_train_X = []
-        initial_train_Y = [-1, 1]        
+        initial_train_X  = []
+        initial_train_Y  = [-1, 1]
+        initial_idx_list = []
         for idx in idx_list:
             if Y_train[idx] == -1 and len(initial_train_X)==0:
                 initial_train_X.append(X_train_scaled[idx])
+                initial_idx_list.append(idx)
             if Y_train[idx] == 1 and len(initial_train_X)==1:
                 initial_train_X.append(X_train_scaled[idx])        
+                initial_idx_list.append(idx)
 
     X_test = []
     Y_test = [] 
@@ -443,7 +450,14 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             return "Not available method", -1, params
 
         print "Start to train a classifier: ", idx, j, np.shape(initial_train_X), np.shape(initial_train_Y)
-        ret = dtc.fit(initial_train_X, initial_train_Y)            
+        ret = dtc.fit(initial_train_X, initial_train_Y)
+        if fit_method.find('single') >= 0:
+            for idx in idx_list:
+                if idx not in initial_idx_list:
+                    X_ptrain, Y_ptrain = X_train_scaled[idx], Y_train[idx]                    
+                    dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=[1.0]*nLength)
+            
+            
         if ret is False: return 'fit failed', -1
 
         tp_l = []
