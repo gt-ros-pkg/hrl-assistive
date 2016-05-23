@@ -14,6 +14,26 @@
 
 <body onload="FITTS.setup()">
      <div id="testArea">
+           
+        <h2>Fitt's Law Throughput Test</h2>
+        <h3>Instructions</h3>
+        <p>This test measures your use of a virtual pointing device, such as a computer mouse. </br>
+        When the test begins you will see a red circle (a target). </br>
+        Click on the target as quickly and accurately as possible. </br>
+        When you click, a new target will be presented (even if you miss). </br>
+        Click on each new target as quickly and accurately as possible.</br>
+        There will be a few rounds with different size targets, different distances apart.</br>
+        </p>
+        <h3>The complete test should take less than 5 minutes</h3>
+        <p>Once you've completed the test, click the link to download your data, and please e-mail the file to me.
+        </p>
+
+        <h3>If you use a dwell-click device, please enter the delay time (in milliseconds) below:</h3>
+         <form>
+            <label for="dwell_time">Dwell Click Delay (ms):</label>
+            <input id="dwellTimeInput" name="dwell_time" type="number" value="0">
+         </form>
+         <h3>Please click the button below to begin the test</h3>
          <button id="startButton">Click to Begin Test</button>
     </div>
 </body>
