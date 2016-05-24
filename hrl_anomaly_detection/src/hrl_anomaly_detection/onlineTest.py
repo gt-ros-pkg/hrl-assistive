@@ -41,7 +41,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     ROC_dict = param_dict['ROC']
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['single_fit','single_incremental_fit']
+    fit_renew_methods = ['single_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -486,7 +486,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                         sample_weight *= 10.0
 
                         ## print "aaaaaaaaaaaaaaaa ", np.shape(X_ptrain), np.shape(Y_ptrain)
-                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight
+                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
                         ## sys.exit()
             
         if ret is False: return 'fit failed', -1

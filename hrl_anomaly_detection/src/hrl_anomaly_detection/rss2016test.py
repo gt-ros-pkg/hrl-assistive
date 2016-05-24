@@ -994,6 +994,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if method == 'svm':
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
+            print np.shape(X_scaled)
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
