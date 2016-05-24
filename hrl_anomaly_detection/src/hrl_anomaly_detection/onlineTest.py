@@ -473,7 +473,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         ret = dtc.fit(initial_train_X, initial_train_Y)
         ## print initial_idx_list
         if fit_method.find('single') >= 0:
-            for k in range(10):
+            for k in range(20):
                 for idx in train_idx_list:
                     if idx not in initial_idx_list:
                         X_ptrain, Y_ptrain = train_X[idx], train_Y[idx]
