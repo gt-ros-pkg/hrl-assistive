@@ -3,14 +3,16 @@ var FITTS = {
         var startFittsLaw = function () {
             var dwellDelay = $('#dwellTimeInput').val();
             var test = new FittsLawTest({dwellTime: dwellDelay});
-            $('#startButton').remove();
-            $('form').remove();
+            $('#testArea').empty();
+//            $('#startButton').remove();
+ //           $('form').remove();
             test.run();
         }
 
-        $('#startButton').button().on('click', startFittsLaw);
+        $('button.startButton').button().on('click', startFittsLaw);
     }
 };
+
 
 var FittsLawTest = function (options) {
     'use strict';
@@ -18,30 +20,46 @@ var FittsLawTest = function (options) {
     var self = this;
     var dwellTime = options.dwellTime || 0;
     var $targetArea = $('#testArea');
+    var setParameters = [];
     var targetSets = [];
     var targets = [];
     var dataSets = [];
     var data = [];
     var liveTarget = null;
+    var targetDistance = null;
     var endTime;
     var startTime;
+
+    var shuffleArray = function (array) {
+        var currentIndex = array.length;
+        var randInd, tmp;
+        while (0 !== currentIndex) {
+            var randInd = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            tmp = array[currentIndex];
+            array[currentIndex] = array[randInd];
+            array[randInd] = tmp;
+        }
+    };
 
     var sphericalTargets = function () {
         var h = $targetArea.height();
         var w =  $targetArea.width();
         var cx = w/2;
         var cy = h/2;
-        //var widths = [20,50,100];
-        var widths = [100];
+        var widths = [20,60,100];
         var lim = Math.min(h, w)/2 - 0.75*widths[widths.length-1];
-       // var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
-        var ringDiameters = [0.67*lim, lim]; 
+        var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
         var n = 25;
         var targetSets = [];
         for (var iw=0; iw < widths.length; iw +=1) {
             for (var id=0; id < ringDiameters.length; id +=1) {
-                targetSets.push(targetRing(cx, cy, n, ringDiameters[id], widths[iw]));
+                setParameters.push([ringDiameters[id], widths[iw]]);
             }
+        }
+        shuffleArray(setParameters); // Randomize the order of cases
+        for (var i=0; i<setParameters.length; i += 1) {
+            targetSets.push(targetRing(cx, cy, n, setParameters[i][0], setParameters[i][1]));
         }
         return targetSets;
     };
@@ -83,7 +101,8 @@ var FittsLawTest = function (options) {
     var responseCB = function (event) {
         var clickTime = new Date();
         if (liveTarget.fittsData['startTime'] === undefined) { return; } // Probably haven't moved, just ignore the click...
-        liveTarget.fittsData['time'] = timeDifferenceMS(liveTarget.fittsData['startTime'], clickTime);
+        liveTarget.fittsData['endTime'] = clickTime;
+        liveTarget.fittsData['duration'] = timeDifferenceMS(liveTarget.fittsData['startTime'], clickTime);
         liveTarget.fittsData['endXY'] = [event.pageX, event.pageY];
         data.push(liveTarget.fittsData);
         liveTarget.remove(); 
@@ -98,6 +117,7 @@ var FittsLawTest = function (options) {
     var nextTarget = function () {
         if (targets.length <= 0) {
             newTargetSet();    
+            return;
         }
         liveTarget = targets.pop(0);
         liveTarget.fittsData = {};
@@ -120,21 +140,30 @@ var FittsLawTest = function (options) {
             $targetArea.off('mousedown').css({'background-color':'orange'});
             finishAnalysis();
         } else {
+            $targetArea.off('mousedown');
+            $nextRoundButton.show();
             targets = targetSets.pop();
         }
     };
+    
+    var startRound = function () {
+        $nextRoundButton.hide();
+        $targetArea.on('mousedown', responseCB);
+        nextTarget();
+    };
 
-
+    var $nextRoundButton = $('<button class="startButton">Start Next Round</button>').button().on('click', startRound).hide().css({bottom:'initial', top:'50%'});
+    
     self.run = function () {
         targetSets = sphericalTargets(); 
-        nextTarget();
+        targets = targetSets.pop();
+        $targetArea.append($nextRoundButton);
         startTime = new Date();
-        $targetArea.on('mousedown', responseCB);
+        startRound();
     };
 
     var removeOutliers = function (data) {
         var distances = getDistances(data);
-        console.log(distances);
         var times = getTimes(data);
         var timeMean = math.mean(times);
         var timeStd = math.std(times);
@@ -165,16 +194,19 @@ var FittsLawTest = function (options) {
     var getTimes = function (data) {
         var times = [];
         for (var i=0; i < data.length; i += 1) {
-            times.push(data[i]['time']);
+            times.push(data[i]['duration']);
         }
         return times;
+    };
+
+    var distance = function (pt1, pt2) {
+        return math.norm([pt2[0] - pt1[0], pt2[1] - pt1[1]]);
     };
 
     var getDistances = function (data) {
         var distances = [];
         for (var i=0; i < data.length; i += 1) {
-            distances.push(math.norm([data[i].endXY[0] - data[i].startXY[0],
-                                      data[i].endXY[1] - data[i].startXY[1] ]));
+            distances.push(distance(data[i].endXY, data[i].startXY));
         };
         return distances;
     };
@@ -203,31 +235,53 @@ var FittsLawTest = function (options) {
             var MT = math.mean(times);
             MTs.push(MT);
         }
-        var A = [[1,1], IDes];
-        var fittsCoefficients = math.lusolve(A, MTs);
-        var a = math.round(fittsCoefficients[0], 4);
-        var b = math.round(fittsCoefficients[1], 4);
+        var fittsCoefficients = leastSquares(IDes, MTs);
+        var a = math.round(fittsCoefficients.intercept, 4);
+        var b = math.round(fittsCoefficients.slope, 4);
         console.log(fittsCoefficients);
         displayResults(a, b, dataSets);
     };
 
     var displayResults = function (a, b, dataSets) {
-        var html = "Fitts Law Model: MT = " + results[0].toString() + " + " + results[1].toString() + " x IDe";
+        var html = "";
+//        html += "<p>Fitts Law Model: MT = " + a.toString() + " + " + b.toString() + " x IDe</p>";
+        html += "<h2>Please click below to download your results, and e-mail them back to me!</h2>";
         var resultURL = makeResultsFile(a, b, dataSets);
         var time = new Date();
         var dataFileName = "FittsLawResults-"+time.getDate()+'-'+time.getMonth()+'-'+time.getUTCFullYear()+'-'+time.getHours()+'-'+time.getMinutes()+'-'+time.getSeconds();
         $targetArea.css({'background-color':'LightGreen'}).html(html);
-        var $downloadDiv = $('<a download="'+dataFileName+'">Download Results</a>', {id:'downloadResults'}).button().attr('href', resultURL);
+        var $downloadDiv = $('<a class="startButton" download="'+dataFileName+'">Download Results</a>').button().attr('href', resultURL).css({'bottom':'initial', 'top':'50%'}).css({'bottom':'initial', 'top':'50%'});
         $targetArea.append($downloadDiv)
     };
 
+    var leastSquares = function (X,Y) {
+        var sum_x = math.sum(X);
+        var sum_y = math.sum(Y);
+        var sum_xx = 0;
+        var sum_xy = 0;
+        var sum_yy = 0;
+        var N = X.length;
+
+        for (var i=0; i <N; i += 1) {
+            sum_xx += X[i]*X[i];
+            sum_xy += X[i]*Y[i];
+            sum_yy += Y[i]*Y[i];
+        };
+        var slope = (N*sum_xy - sum_x*sum_y) / (N*sum_xx - sum_x*sum_x)
+        var intercept = (sum_y/N) - (slope * sum_x)/N;
+        return {slope:slope, intercept:intercept};
+    };
+
     var resultsFile = null;
-    var makeResultsFile = function (a, b, data, dwellTime) {
-        var contents = new Blob([a.toString(),
-                                 b.toString(),
-                                 dwellTime.toString(),
-                                 JSON.stringify(dataSets)],
-                                {type:'text/plain'});
+    var makeResultsFile = function (a, b, dataSets) {
+        data = {'a': a,
+                'b': b,
+                'dwellTime': dwellTime,
+                'startTime': startTime,
+                'endTime': endTime,
+                'setParameters': setParameters,
+                'dataSets': dataSets}
+        var contents = new Blob([JSON.stringify(data)], {type:'text/plain'});
         if (resultsFile !== null) {
             window.URL.revokeObjectURL(resultsFile);
         };
