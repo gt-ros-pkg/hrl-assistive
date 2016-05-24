@@ -85,7 +85,7 @@
     name="autobed/origin_wall_joint"
     type="fixed">
     <origin
-      xyz="-0.02 0. 0."
+      xyz="-0.12 0. 0."
       rpy="0 0 0" />
     <parent
       link="autobed/base_link" />
@@ -116,7 +116,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/meshes/bed_frame_real_expanded.STL" />
       </geometry>
       <material
         name="">
