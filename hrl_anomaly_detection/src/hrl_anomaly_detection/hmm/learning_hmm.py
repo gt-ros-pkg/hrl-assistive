@@ -539,6 +539,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         l_idx.append( i )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
+        print np.shape( l_likelihood ), logp, i, startIdx, np.shape(X[0]), np.shape(X_test[:i*nEmissionDim])
 
     if bPosterior:
         return idx, l_idx, l_likelihood, l_posterior
