@@ -132,7 +132,7 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
         elif load == 'paper':
             if model == 'autobed':
-                # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
                 self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
@@ -754,7 +754,8 @@ class BaseSelector(object):
         else:
             task_name = 'scratching'
             task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            return load_pickle(file_name)
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
         try:

@@ -41,6 +41,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     ROC_dict = param_dict['ROC']
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = ['single_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -51,7 +52,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+fit_method+'.pkl')
 
-        if os.path.isfile(roc_data_pkl) is False or renew is True:
+        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
 
             ROC_data = {}
             ROC_data[method] = {}
@@ -65,9 +66,9 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
             # parallelization 
             r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, save_data_path, task, \
-                                                                         method, ROC_data, ROC_dict, AE_dict, \
-                                                                         SVM_dict, fit_method=fit_method ) \
-                                                                         for idx in xrange(nFolds) )
+                                                                          method, ROC_data, ROC_dict, AE_dict, \
+                                                                          SVM_dict, fit_method=fit_method ) \
+                                                                          for idx in xrange(nFolds) )
             l_data = r
             for i in xrange(len(l_data)):
                 for j in xrange(nPoints):
@@ -90,9 +91,10 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
     fig = plt.figure(1)        
     for fit_method in fit_methods:
-        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+initial_fit+'.pkl')
+        roc_data_pkl = os.path.join(save_data_path, 'roc_sgd_'+task+'_'+fit_method+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-        plotROC(method, nPoints, ROC_data, fig=fig)
+        plotROC(method, nPoints, ROC_data, fit_method=fit_method, fig=fig)
+    plt.legend(loc=4,prop={'size':16})                    
     plt.show()
         
     return
@@ -229,13 +231,15 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
     return raw_data_path, save_data_path, param_dict
 
 
-def plotROC(method, nPoints, ROC_data, fig=None):
+def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     #-------------------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
     elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
     elif method == 'fixed': label='HMMs with a fixed threshold'
     elif method == 'cssvm': label='HMM-CSSVM'
     elif method == 'sgd': label='SGD'
+
+    if fit_method is not None: label = fit_method
 
 
     if False:
@@ -387,27 +391,50 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     if ROC_data[method]['complete'] == True: return data
 
     #-----------------------------------------------------------------------------------------
-    # data preparation
     if method.find('svm')>=0 or method.find('sgd')>=0:
         scaler = preprocessing.StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
     else:
         X_train_scaled = X_train
-
-    print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)
+    
+    # data preparation
     if fit_method.find('full') >= 0:
+        print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
         initial_train_X = X_train_scaled
         initial_train_Y = Y_train
     else:
-        idx_list = range(len(Y_train))
-        random.shuffle(idx_list)
-        initial_train_X = []
-        initial_train_Y = [-1, 1]        
-        for idx in idx_list:
-            if Y_train[idx] == -1 and len(initial_train_X)==0:
-                initial_train_X.append(X_train_scaled[idx])
-            if Y_train[idx] == 1 and len(initial_train_X)==1:
-                initial_train_X.append(X_train_scaled[idx])        
+        train_X = []
+        train_Y = []
+        print method, " : Before classification : ", np.shape(ll_classifier_train_X), \
+          np.shape(ll_classifier_train_Y)
+        
+        # get single data
+        for j in xrange(len(ll_classifier_train_X)):
+            if method.find('svm')>=0 or method.find('sgd')>=0:
+                X = scaler.transform(ll_classifier_train_X[j])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_train_X[j]
+
+            train_X.append(X)
+            train_Y.append(ll_classifier_train_Y[j])
+        
+        train_idx_list = range(len(train_Y))
+        random.shuffle(train_idx_list)
+        initial_train_X  = []
+        initial_train_Y  = []
+        initial_idx_list = []
+        for idx in train_idx_list:
+            if train_Y[idx][0] == -1 and len(initial_train_X)==0:
+                initial_train_X.append(train_X[idx])
+                initial_train_Y.append([-1]*len(train_X[idx]))
+                initial_idx_list.append(idx)
+            if train_Y[idx][0] == 1 and len(initial_train_X)==1:
+                initial_train_X.append(train_X[idx])        
+                initial_train_Y.append([1]*len(train_X[idx]))
+                initial_idx_list.append(idx)
+
+        initial_train_X, initial_train_Y, _ = flattenSample(initial_train_X, initial_train_Y)
+        print np.shape(initial_train_X), np.shape(initial_train_Y)
 
     X_test = []
     Y_test = [] 
@@ -443,7 +470,25 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             return "Not available method", -1, params
 
         print "Start to train a classifier: ", idx, j, np.shape(initial_train_X), np.shape(initial_train_Y)
-        ret = dtc.fit(initial_train_X, initial_train_Y)            
+        ret = dtc.fit(initial_train_X, initial_train_Y)
+        ## print initial_idx_list
+        if fit_method.find('single') >= 0:
+            for k in range(20):
+                for idx in train_idx_list:
+                    if idx not in initial_idx_list:
+                        X_ptrain, Y_ptrain = train_X[idx], train_Y[idx]
+                        ## sample_weight = [10.0]*nLength
+                        if Y_ptrain == -1:
+                            sample_weight = [1.0]*nLength
+                        else:
+                            sample_weight = np.logspace(1,2.0,nLength )
+                            sample_weight /= np.amax(sample_weight)
+                        sample_weight *= 10.0
+
+                        ## print "aaaaaaaaaaaaaaaa ", np.shape(X_ptrain), np.shape(Y_ptrain)
+                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+                        ## sys.exit()
+            
         if ret is False: return 'fit failed', -1
 
         tp_l = []
@@ -477,14 +522,18 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                     ## sample_weight = np.log10(1.,20.,len(X_ptrain))
                     ## sample_weight  = np.linspace(0.,1.0,len(X_ptrain))
 
+                ## if Y_ptrain == -1:
+                ##     sample_weight = [1.0]*nLength
+                ## else:
+                ##     sample_weight = np.logspace(1,2.0,nLength )
+                ##     sample_weight /= np.amax(sample_weight)
+                    
+
                 # normalize and scaling
                 sample_weight /= np.amax(sample_weight)
                 sample_weight *= 10.0                
                 sample_weight /= float(nSamples + i)
-                
-                ## sample_weight += 0.1
-                ## sample_weight = (sample_weight-np.amin(sample_weight))/(np.amax(sample_weight)-np.amin(sample_weight))
-                dtc.partial_fit(X_ptrain, Y_ptrain, sample_weight=sample_weight)
+                dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
 
             # 2) test classifier
             X_ptest = X_test[i]

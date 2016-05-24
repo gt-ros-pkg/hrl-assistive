@@ -1,8 +1,7 @@
-<?xml version="1.0" ?>
 <robot
-  name="autobed">
+  name="bed_and_body_v3">
   <link
-    name="autobed/base_link">
+    name="base_link">
     <inertial>
       <origin
         xyz="1.07 -1.1433776843867E-16 0.0654891108010717"
@@ -23,7 +22,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -37,12 +36,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
   <link
-    name="autobed/wall_link">
+    name="wall_link">
     <inertial>
       <origin
         xyz="0. 0. 0."
@@ -63,7 +62,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/wall.stl" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/wall.STL" />
       </geometry>
       <material
         name="">
@@ -77,25 +76,25 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/wall.stl" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/wall.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/origin_wall_joint"
+    name="origin_wall_joint"
     type="fixed">
     <origin
-      xyz="-0.12 0. 0."
+      xyz="-0.75 0. 0."
       rpy="0 0 0" />
     <parent
-      link="autobed/base_link" />
+      link="base_link" />
     <child
-      link="autobed/wall_link" />
+      link="wall_link" />
     <axis
       xyz="0 0 0" />
   </joint>
   <link
-    name="autobed/bed_frame_link">
+    name="bed_frame_link">
     <inertial>
       <origin
         xyz="1.0399 -0.27375 0.088166"
@@ -116,7 +115,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/bed_frame_real_expanded.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/bed_frame_link.STL" />
       </geometry>
       <material
         name="">
@@ -130,20 +129,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/bed_frame_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/tele_legs_joint"
+    name="tele_legs_joint"
     type="prismatic">
     <origin
       xyz="-0.02 .27375 0.2805"
       rpy="0 0 0" />
     <parent
-      link="autobed/base_link" />
+      link="base_link" />
     <child
-      link="autobed/bed_frame_link" />
+      link="bed_frame_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -153,7 +152,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_rest_link">
+    name="head_rest_link">
     <inertial>
       <origin
         xyz="0.372569569871449 -0.0933538492374752 -3.9665323774659E-16"
@@ -174,7 +173,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/head_rest_link.STL" />
       </geometry>
       <material
         name="">
@@ -188,20 +187,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/head_rest_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/head_rest_hinge"
+    name="head_rest_hinge"
     type="revolute">
     <origin
       xyz="0.775 -.27375 0.26"
       rpy="1.5708 1.0561E-10 3.1416" />
     <parent
-      link="autobed/bed_frame_link" />
+      link="bed_frame_link" />
     <child
-      link="autobed/head_rest_link" />
+      link="head_rest_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -211,7 +210,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_updown_translation_link">
+    name="head_updown_translation_link">
     <inertial>
       <origin
         xyz="0.102906766161206 -9.91266292424373E-09 -0.0297782124304694"
@@ -228,25 +227,25 @@
     </inertial>
   </link>
   <joint
-    name="autobed/head_bed_updown_joint"
+    name="head_bed_updown_joint"
     type="prismatic">
     <origin
       xyz="0.49949 0.05 0"
       rpy="1.5708 -2.9674E-16 1.5708" />
     <parent
-      link="autobed/head_rest_link" />
+      link="head_rest_link" />
     <child
-      link="autobed/head_updown_translation_link" />
+      link="head_updown_translation_link" />
     <axis
       xyz="0 0 -1" />
     <limit
-      lower="-20."
-      upper="20."
+      lower="-2"
+      upper="2"
       effort="0"
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_leftright_translation_link">
+    name="head_leftright_translation_link">
     <inertial>
       <origin
         xyz="0.102906766161206 0.0297782124304694 -9.912662920814E-09"
@@ -263,15 +262,15 @@
     </inertial>
   </link>
   <joint
-    name="autobed/head_bed_leftright_joint"
+    name="head_bed_leftright_joint"
     type="prismatic">
     <origin
       xyz="0 0 0"
       rpy="-1.5708 -1.0548E-16 7.5835E-18" />
     <parent
-      link="autobed/head_updown_translation_link" />
+      link="head_updown_translation_link" />
     <child
-      link="autobed/head_leftright_translation_link" />
+      link="head_leftright_translation_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -281,7 +280,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_link">
+    name="head_link">
     <inertial>
       <origin
         xyz="0.00931747164111318 -9.91266701204326E-09 0.0105706865051194"
@@ -302,7 +301,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/head_link.STL" />
       </geometry>
       <material
         name="">
@@ -316,25 +315,25 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/head_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/head_contact_to_head_center"
+    name="head_contact_to_head_center"
     type="fixed">
     <origin
       xyz="0.091171 0.037577 0"
       rpy="1.5708 -3.0499E-16 0.2618" />
     <parent
-      link="autobed/head_leftright_translation_link" />
+      link="head_leftright_translation_link" />
     <child
-      link="autobed/head_link" />
+      link="head_link" />
     <axis
       xyz="0 0 0" />
   </joint>
   <link
-    name="autobed/neck_rotation">
+    name="neck_rotation">
     <inertial>
       <origin
         xyz="0.0299911113671753 -1.13479703411912E-09 5.25989263663437E-09"
@@ -355,7 +354,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/neck_rotation.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/neck_rotation.STL" />
       </geometry>
       <material
         name="">
@@ -369,20 +368,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/neck_rotation.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/neck_rotation.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/head_neck_joint1"
+    name="head_neck_joint1"
     type="revolute">
     <origin
       xyz="-0.0254 0 -0.08509"
       rpy="-1.5708 1.1345 -3.1416" />
     <parent
-      link="autobed/head_link" />
+      link="head_link" />
     <child
-      link="autobed/neck_rotation" />
+      link="neck_rotation" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -392,7 +391,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/neck_link">
+    name="neck_link">
     <inertial>
       <origin
         xyz="0.0299911113671752 -1.13479703411912E-09 5.2598925958448E-09"
@@ -413,7 +412,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -427,20 +426,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/head_neck_joint2"
+    name="head_neck_joint2"
     type="revolute">
     <origin
       xyz="0 0 0"
       rpy="0 3.1554E-30 0" />
     <parent
-      link="autobed/neck_rotation" />
+      link="neck_rotation" />
     <child
-      link="autobed/neck_link" />
+      link="neck_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -450,7 +449,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/upper_body_link">
+    name="upper_body_link">
     <inertial>
       <origin
         xyz="0.158709266111028 -2.77439784790445E-06 1.07349517852832E-06"
@@ -471,7 +470,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/upper_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -485,20 +484,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/upper_body_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/neck_body_joint"
+    name="neck_body_joint"
     type="revolute">
     <origin
       xyz="0.07239 0 0"
       rpy="-8.8242E-17 -8.2927E-14 0.66506" />
     <parent
-      link="autobed/neck_link" />
+      link="neck_link" />
     <child
-      link="autobed/upper_body_link" />
+      link="upper_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -508,7 +507,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/mid_body_link">
+    name="mid_body_link">
     <inertial>
       <origin
         xyz="-0.0123598486303793 -2.47973091949127E-07 4.77082923404006E-06"
@@ -529,7 +528,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/mid_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -543,20 +542,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/mid_body_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/upper_mid_body_joint"
+    name="upper_mid_body_joint"
     type="revolute">
     <origin
       xyz="0.35052 0 0"
       rpy="2.8327E-14 7.7949E-14 0.34907" />
     <parent
-      link="autobed/upper_body_link" />
+      link="upper_body_link" />
     <child
-      link="autobed/mid_body_link" />
+      link="mid_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -566,7 +565,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/lower_body_link">
+    name="lower_body_link">
     <inertial>
       <origin
         xyz="-0.0424892964347593 -1.55212564689755E-07 -3.05517167826124E-08"
@@ -587,7 +586,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/lower_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -601,20 +600,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/lower_body_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/mid_lower_body_joint"
+    name="mid_lower_body_joint"
     type="revolute">
     <origin
       xyz="0.15113 0 0"
       rpy="-4.3091E-16 1.669E-15 -0.57779" />
     <parent
-      link="autobed/mid_body_link" />
+      link="mid_body_link" />
     <child
-      link="autobed/lower_body_link" />
+      link="lower_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -624,7 +623,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/quad_left_link">
+    name="quad_left_link">
     <inertial>
       <origin
         xyz="0.135870836223123 0.036406480838746 1.20320420293751E-14"
@@ -645,7 +644,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/quad_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -659,20 +658,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/quad_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/body_quad_left_joint"
+    name="body_quad_left_joint"
     type="revolute">
     <origin
       xyz="0.05207 0 -0.08636"
       rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="autobed/lower_body_link" />
+      link="lower_body_link" />
     <child
-      link="autobed/quad_left_link" />
+      link="quad_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -682,7 +681,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/calf_left_link">
+    name="calf_left_link">
     <inertial>
       <origin
         xyz="-0.180906642816524 -0.0139713255979246 1.60067792354113E-12"
@@ -703,7 +702,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/calf_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -717,20 +716,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/calf_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/quad_calf_left_joint"
+    name="quad_calf_left_joint"
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
       rpy="3.1416 8.5469E-14 -2.8798" />
     <parent
-      link="autobed/quad_left_link" />
+      link="quad_left_link" />
     <child
-      link="autobed/calf_left_link" />
+      link="calf_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -740,7 +739,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/foot_left_link">
+    name="foot_left_link">
     <inertial>
       <origin
         xyz="-0.0475610965067932 0.0816676483447464 -4.16333634234434E-17"
@@ -761,7 +760,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/foot_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -775,20 +774,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/foot_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/calf_foot_left_joint"
+    name="calf_foot_left_joint"
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
       rpy="2.4608E-16 9.411E-16 0.077076" />
     <parent
-      link="autobed/calf_left_link" />
+      link="calf_left_link" />
     <child
-      link="autobed/foot_left_link" />
+      link="foot_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -798,7 +797,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/quad_right_link">
+    name="quad_right_link">
     <inertial>
       <origin
         xyz="0.13587083622245 0.0364064808391208 1.19904086659517E-14"
@@ -819,7 +818,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/quad_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -833,20 +832,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/quad_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/body_quad_right_joint"
+    name="body_quad_right_joint"
     type="revolute">
     <origin
       xyz="0.05207 0 0.08636"
       rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="autobed/lower_body_link" />
+      link="lower_body_link" />
     <child
-      link="autobed/quad_right_link" />
+      link="quad_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -856,7 +855,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/calf_right_link">
+    name="calf_right_link">
     <inertial>
       <origin
         xyz="-0.180906642816537 -0.0139713255970793 1.60067792354113E-12"
@@ -877,7 +876,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/calf_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -891,20 +890,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/calf_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/quad_calf_right_joint"
+    name="quad_calf_right_joint"
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
       rpy="3.1416 8.5225E-14 -2.8798" />
     <parent
-      link="autobed/quad_right_link" />
+      link="quad_right_link" />
     <child
-      link="autobed/calf_right_link" />
+      link="calf_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -914,7 +913,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/foot_right_link">
+    name="foot_right_link">
     <inertial>
       <origin
         xyz="-0.0475610965067859 0.0816676483447651 1.38777878078145E-17"
@@ -935,7 +934,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/foot_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -949,20 +948,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/foot_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/calf_foot_right_joint"
+    name="calf_foot_right_joint"
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
       rpy="3.3137E-27 3.7799E-26 0.077076" />
     <parent
-      link="autobed/calf_right_link" />
+      link="calf_right_link" />
     <child
-      link="autobed/foot_right_link" />
+      link="foot_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -972,7 +971,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/arm_left_link">
+    name="arm_left_link">
     <inertial>
       <origin
         xyz="0.1001623892808 -0.00376860746206564 -0.0415301013139193"
@@ -993,7 +992,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/arm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1007,20 +1006,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/arm_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/body_arm_left_joint"
+    name="body_arm_left_joint"
     type="revolute">
     <origin
       xyz="0.09652 0 -0.17526"
       rpy="2.6872E-15 8.287E-14 0.033074" />
     <parent
-      link="autobed/upper_body_link" />
+      link="upper_body_link" />
     <child
-      link="autobed/arm_left_link" />
+      link="arm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1030,7 +1029,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/forearm_left_link">
+    name="forearm_left_link">
     <inertial>
       <origin
         xyz="0.106228215345525 -1.91191507070698E-12 0"
@@ -1051,7 +1050,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/forearm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1065,20 +1064,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/forearm_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/arm_forearm_left_joint"
+    name="arm_forearm_left_joint"
     type="revolute">
     <origin
       xyz="0.28174 -0.0106 -0.04953"
       rpy="1.1849E-16 -8.3419E-14 -1.6268E-27" />
     <parent
-      link="autobed/arm_left_link" />
+      link="arm_left_link" />
     <child
-      link="autobed/forearm_left_link" />
+      link="forearm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1088,7 +1087,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/hand_left_link">
+    name="hand_left_link">
     <inertial>
       <origin
         xyz="0.0980143408405634 -1.86517468137026E-12 0.0049795365316434"
@@ -1109,7 +1108,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/hand_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1123,20 +1122,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/hand_left_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/forearm_hand_left_joint"
+    name="forearm_hand_left_joint"
     type="revolute">
     <origin
       xyz="0.25146 0 0"
       rpy="1.3447E-16 8.3999E-14 1.6283E-27" />
     <parent
-      link="autobed/forearm_left_link" />
+      link="forearm_left_link" />
     <child
-      link="autobed/hand_left_link" />
+      link="hand_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1146,7 +1145,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/arm_right_link">
+    name="arm_right_link">
     <inertial>
       <origin
         xyz="0.100233262071747 3.52074113196821E-08 0.041530101413327"
@@ -1167,7 +1166,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/arm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1181,20 +1180,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/arm_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/body_arm_right_joint"
+    name="body_arm_right_joint"
     type="revolute">
     <origin
       xyz="0.09652 0 0.17526"
       rpy="-3.0757E-16 8.2843E-14 -0.0045332" />
     <parent
-      link="autobed/upper_body_link" />
+      link="upper_body_link" />
     <child
-      link="autobed/arm_right_link" />
+      link="arm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1204,7 +1203,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/forearm_right_link">
+    name="forearm_right_link">
     <inertial>
       <origin
         xyz="0.106228216482346 -1.30587407554117E-09 -9.51088152678636E-10"
@@ -1225,7 +1224,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/forearm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1239,20 +1238,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/forearm_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/arm_forearm_right_joint"
+    name="arm_forearm_right_joint"
     type="revolute">
     <origin
       xyz="0.28194 0 0.04953"
       rpy="2.6089E-19 -8.3342E-14 0.037607" />
     <parent
-      link="autobed/arm_right_link" />
+      link="arm_right_link" />
     <child
-      link="autobed/forearm_right_link" />
+      link="forearm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1262,7 +1261,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/hand_right_link">
+    name="hand_right_link">
     <inertial>
       <origin
         xyz="0.0980143408405629 -2.15505391309989E-12 -0.00497953653164337"
@@ -1283,7 +1282,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/hand_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1297,20 +1296,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/hand_right_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/forearm_hand_right_joint"
+    name="forearm_hand_right_joint"
     type="revolute">
     <origin
       xyz="0.25146 0 0"
       rpy="1.9364E-14 8.3335E-14 1.6151E-27" />
     <parent
-      link="autobed/forearm_right_link" />
+      link="forearm_right_link" />
     <child
-      link="autobed/hand_right_link" />
+      link="hand_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1320,7 +1319,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/leg_rest_upper_link">
+    name="leg_rest_upper_link">
     <inertial>
       <origin
         xyz="0.184999999999909 0.105000000000441 -2.76269761501025E-16"
@@ -1341,7 +1340,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/leg_rest_upper_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/leg_rest_upper_link.STL" />
       </geometry>
       <material
         name="">
@@ -1355,20 +1354,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/leg_rest_upper_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/leg_rest_upper_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/leg_rest_upper_joint"
+    name="leg_rest_upper_joint"
     type="revolute">
     <origin
       xyz="1.055 -0.27375 0.05"
       rpy="1.5708 2.1987E-11 3.9465E-16" />
     <parent
-      link="autobed/bed_frame_link" />
+      link="bed_frame_link" />
     <child
-      link="autobed/leg_rest_upper_link" />
+      link="leg_rest_upper_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1378,7 +1377,7 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/leg_rest_lower_link">
+    name="leg_rest_lower_link">
     <inertial>
       <origin
         xyz="0.345000000000193 0.10499999999918 -5.70451144183548E-17"
@@ -1399,7 +1398,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/leg_rest_lower_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/leg_rest_lower_link.STL" />
       </geometry>
       <material
         name="">
@@ -1413,20 +1412,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/meshes/leg_rest_lower_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3/meshes/leg_rest_lower_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="autobed/leg_rest_upper_lower_joint"
+    name="leg_rest_upper_lower_joint"
     type="revolute">
     <origin
       xyz="0.37 0 0"
       rpy="-3.7123E-16 5.9121E-16 3.7854E-11" />
     <parent
-      link="autobed/leg_rest_upper_link" />
+      link="leg_rest_upper_link" />
     <child
-      link="autobed/leg_rest_lower_link" />
+      link="leg_rest_lower_link" />
     <axis
       xyz="0 0 1" />
     <limit
