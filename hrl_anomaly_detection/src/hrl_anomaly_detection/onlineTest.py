@@ -473,16 +473,17 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         ret = dtc.fit(initial_train_X, initial_train_Y)
         ## print initial_idx_list
         if fit_method.find('single') >= 0:
-            for k in range(20):
+            for k in range(10):
                 for idx in train_idx_list:
                     if idx not in initial_idx_list:
                         X_ptrain, Y_ptrain = train_X[idx], train_Y[idx]
-                        sample_weight = [10.0]*nLength
-                        ## if Y_ptrain == -1:
-                        ##     sample_weight = [1.0]*nLength
-                        ## else:
-                        ##     sample_weight = np.logspace(1,2.0,nLength )
-                        ##     sample_weight /= np.amax(sample_weight)
+                        ## sample_weight = [10.0]*nLength
+                        if Y_ptrain == -1:
+                            sample_weight = [1.0]*nLength
+                        else:
+                            sample_weight = np.logspace(1,2.0,nLength )
+                            sample_weight /= np.amax(sample_weight)
+                        sample_weight *= 10.0
 
                         ## print "aaaaaaaaaaaaaaaa ", np.shape(X_ptrain), np.shape(Y_ptrain)
                         ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight
