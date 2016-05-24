@@ -51,7 +51,7 @@ class AR_Tag_Tracking(object):
 
         self.autobed_sub = None
 
-        self.hist_size = 30
+        self.hist_size = 10
         self.ar_count = 0
         self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -98,7 +98,7 @@ class AR_Tag_Tracking(object):
                 false_out = Bool()
                 false_out.data = False
                 self.AR_tag_acquired.publish(false_out)
-                self.hist_size = 30
+                self.hist_size = 10
                 self.ar_count = 0
                 self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
                 self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -234,7 +234,7 @@ class AR_Tag_Tracking(object):
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time.now(),
                                                self.out_frame,
-                                               'base_link')
+                                               'base_footprint')
             # if self.currently_tracking_AR:
                 #print 'broadcast transform'
             rate.sleep()
@@ -243,14 +243,14 @@ class AR_Tag_Tracking(object):
         self.tag_id = 4  # 9
 
         # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        self.tag_side_length = 0.067  # 0.053  # 0.033
+        self.tag_side_length = 0.15  # 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.01, 0.00, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.02, 0.00, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
@@ -318,12 +318,12 @@ class AR_Tag_Tracking(object):
                     else:
                         # median
                         positions = np.sort(positions, axis=0)
-                        pos_int = positions[len(positions)/2-3:len(positions)/2+3]
+                        pos_int = positions[len(positions)/2-1:len(positions)/2+1]
                         pos = np.sum(pos_int, axis=0)
                         pos /= float(len(pos_int))
 
                         quaternions = np.sort(quaternions, axis=0)
-                        quat_int = quaternions[len(quaternions)/2-3:len(quaternions)/2+3]
+                        quat_int = quaternions[len(quaternions)/2-1:len(quaternions)/2+1]
                         quat = np.sum(quat_int, axis=0)
                         quat /= float(len(quat_int))
                     self.map_B_ar_pos = pos
