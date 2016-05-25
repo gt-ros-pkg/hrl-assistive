@@ -41,7 +41,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     ROC_dict = param_dict['ROC']
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['full_incremental_fit']
+    fit_renew_methods = ['single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -66,9 +66,9 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
             # parallelization 
             r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, save_data_path, task, \
-                                                                          method, ROC_data, ROC_dict, AE_dict, \
-                                                                          SVM_dict, fit_method=fit_method ) \
-                                                                          for idx in xrange(nFolds) )
+                                                                         method, ROC_data, ROC_dict, AE_dict, \
+                                                                         SVM_dict, fit_method=fit_method ) \
+                                                                         for idx in xrange(nFolds) )
             l_data = r
             for i in xrange(len(l_data)):
                 for j in xrange(nPoints):
@@ -423,15 +423,17 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         initial_train_X  = []
         initial_train_Y  = []
         initial_idx_list = []
+        abnormal_data=False
         for idx in train_idx_list:
             if train_Y[idx][0] == -1:
                 initial_train_X.append(train_X[idx])
                 initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
-            if train_Y[idx][0] == 1 and len(initial_train_X)==1:
+            if train_Y[idx][0] == 1 and abnormal_data is False:
                 initial_train_X.append(train_X[idx])        
                 initial_train_Y.append([1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
+                abnormal_data = True
 
         initial_train_X, initial_train_Y, _ = flattenSample(initial_train_X, initial_train_Y)
         print np.shape(initial_train_X), np.shape(initial_train_Y)
@@ -472,7 +474,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
         ## print "Start to train a classifier: ", idx, j, np.shape(initial_train_X), np.shape(initial_train_Y)
         ret = dtc.fit(initial_train_X, initial_train_Y)
-        if fit_method.find('single') >= 0:
+        if fit_method.find('single') >= 0 and False:
             for k in range(10):
                 for idx in train_idx_list:
                     if idx not in initial_idx_list:
@@ -507,6 +509,14 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
                 if fit_method == 'single_fit' and False:
                     sample_weight = [1.0]*len(X_ptrain) #np.linspace(1.,2.,len(X_ptrain))**3 #good
+                elif fit_method.find('single') >= 0:
+                    sample_weight = np.array([1.0]*len(X_ptrain)) #np.linspace(1.,2.,len(X_ptrain))**3 #good
+                    ## if Y_ptrain == -1:
+                    ##     sample_weight = [1.0]*nLength
+                    ## else:
+                    ##     sample_weight = np.logspace(1,2.0,nLength )
+                    ##     sample_weight /= np.amax(sample_weight)                    
+                    sample_weight /= float(nSamples + i)
                 else:
                     ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
                     ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
@@ -515,16 +525,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                     sample_weight = np.logspace(1,20,len(X_ptrain) )
                     sample_weight = np.logspace(1,2.0,len(X_ptrain) )
 
-                ## if Y_ptrain == -1:
-                ##     sample_weight = [1.0]*nLength
-                ## else:
-                ##     sample_weight = np.logspace(1,2.0,nLength )
-                ##     sample_weight /= np.amax(sample_weight)
+                    # normalize and scaling
+                    sample_weight /= np.amax(sample_weight)
+                    sample_weight *= 10.0                
+                    sample_weight /= float(nSamples + i)
 
-                # normalize and scaling
-                sample_weight /= np.amax(sample_weight)
-                sample_weight *= 10.0                
-                sample_weight /= float(nSamples + i)
                 dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
 
             # 2) test classifier
