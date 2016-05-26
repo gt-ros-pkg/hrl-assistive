@@ -316,7 +316,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 7.0, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.75, 'scale': 5.5, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 2.7, 'cost': 3.0}
         ## SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 1.89, 'cost': 2.27}
