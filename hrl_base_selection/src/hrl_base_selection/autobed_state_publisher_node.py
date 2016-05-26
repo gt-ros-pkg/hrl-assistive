@@ -51,10 +51,17 @@ class AutobedStatePublisherNode(object):
         rospy.sleep(2)
         init_centered = JointState()
         init_centered.header.stamp = rospy.Time.now()
-        init_centered.name = [None]*(1)
-        init_centered.position = [None]*(1)
+        init_centered.name = [None]*(4)
+        init_centered.position = [None]*(4)
         init_centered.name[0] = "autobed/head_bed_leftright_joint"
+        init_centered.name[1] = "autobed/head_bed_updown_joint"
+        init_centered.name[2] = "autobed/head_bed_to_worldframe_joint"
+        init_centered.name[3] = "autobed/head_bed_to_bedframe_joint"
+
         init_centered.position[0] = 0
+        init_centered.position[1] = 0
+        init_centered.position[2] = 0
+        init_centered.position[3] = 0
         # self.joint_pub.publish(init_centered)
         self.bed_status = None
         rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
