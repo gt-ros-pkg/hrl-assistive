@@ -159,7 +159,9 @@ class AutobedStatePublisherNode(object):
         joint_state_stable = [self.bed_height,
                               self.head_filt_data,
                               0,#self.leg_filt_data
-                              0]# -(1+(4.0/9.0))*self.leg_filt_data
+                              0, # -(1+(4.0/9.0))*self.leg_filt_data
+                              -self.bed_height,
+                              self.bed_height]
 
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
