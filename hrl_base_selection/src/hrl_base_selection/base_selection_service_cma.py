@@ -425,7 +425,7 @@ class BaseSelector(object):
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(5)-2)*.05
+            head_possibilities = (np.arange(11)-5)*.03
             neigh = KNeighborsClassifier(n_neighbors=1)
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
             heady = neigh.predict(model_B_head[1, 3])[0]
