@@ -41,6 +41,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
     ROC_dict = param_dict['ROC']
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = []
     fit_renew_methods = ['single_incremental_fit']
     
     #------------------------------------------
@@ -465,11 +466,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints): 
         dtc.set_params(**SVM_dict)        
-        if method == 'sgd' and fit_method.find('full'):
+        if method == 'sgd' and fit_method.find('full')>=0:
             weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
-        elif method == 'sgd' and fit_method.find('single'):
-            weights = np.logspace(-3.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
+        elif method == 'sgd' and fit_method.find('single')>=0:
+            weights = np.logspace(-4.0, 0.0, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
         else:
             print "Not available method"

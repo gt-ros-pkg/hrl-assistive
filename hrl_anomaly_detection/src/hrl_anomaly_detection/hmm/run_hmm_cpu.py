@@ -215,7 +215,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
 
             from scipy.stats import norm
-            score = 0.0; c1=1.0; c2=5.0; c3=1.e+4
+            score = 0.0; c1=1.0; c2=5.0; c3=1.e+2
             score += c1*l_sig
             score += c2*np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
             score += c3/max_logp
@@ -574,8 +574,8 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(1.0,10.0,10) }
+        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
+                      'cov': np.linspace(1.0,10.0,5) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
