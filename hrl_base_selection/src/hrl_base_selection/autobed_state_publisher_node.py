@@ -171,12 +171,16 @@ class AutobedStatePublisherNode(object):
                 joint_state.name[1] = "autobed/head_rest_hinge"
                 joint_state.name[2] = "autobed/leg_rest_upper_joint"
                 joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
+                joint_state.name[4] = "autobed/head_bed_to_worldframe_joint"
+                joint_state.name[5] = "autobed/head_bed_to_bedframe_joint"
                 # print self.bed_height
                 if not self.bed_status:
                     joint_state.position[0] = self.bed_height
                     joint_state.position[1] = self.head_filt_data
                     joint_state.position[2] = 0  # self.leg_filt_data
                     joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                    joint_state.position[4] = -self.head_filt_data
+                    joint_state.position[5] = self.head_filt_data
                     joint_state_stable = joint_state.position[:]
                 else:
                     joint_state.position = joint_state_stable
@@ -256,6 +260,7 @@ class AutobedStatePublisherNode(object):
                 print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
                 print 'Instead it is: ', bth
                 print 'Raw value (rad): ', headrest_th
+
             human_joint_state.position[15] = 0.
             human_joint_state.position[16] = 0.
             self.joint_pub.publish(human_joint_state)
