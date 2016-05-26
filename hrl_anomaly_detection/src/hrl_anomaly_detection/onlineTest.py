@@ -465,8 +465,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints): 
         dtc.set_params(**SVM_dict)        
-        if method == 'sgd':
+        if method == 'sgd' and fit_method.find('full'):
             weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
+            dtc.set_params( class_weight=weights[j] )
+        elif method == 'sgd' and fit_method.find('single'):
+            weights = np.logspace(-3.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
         else:
             print "Not available method"
@@ -510,12 +513,14 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 if fit_method == 'single_fit' and False:
                     sample_weight = [1.0]*len(X_ptrain) #np.linspace(1.,2.,len(X_ptrain))**3 #good
                 elif fit_method.find('single') >= 0:
-                    sample_weight = np.array([1.0]*len(X_ptrain)) #np.linspace(1.,2.,len(X_ptrain))**3 #good
-                    ## if Y_ptrain == -1:
-                    ##     sample_weight = [1.0]*nLength
-                    ## else:
-                    ##     sample_weight = np.logspace(1,2.0,nLength )
-                    ##     sample_weight /= np.amax(sample_weight)                    
+                    ## sample_weight = np.array([1.0]*len(X_ptrain)) #np.linspace(1.,2.,len(X_ptrain))**3 #good
+                    if Y_ptrain == -1:
+                        sample_weight = np.array([1.0]*nLength)
+                    else:
+                        sample_weight = np.logspace(1,2.0,nLength )
+                        sample_weight /= np.amax(sample_weight)
+                    
+                    sample_weight *= 25.0                
                     sample_weight /= float(nSamples + i)
                 else:
                     ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
