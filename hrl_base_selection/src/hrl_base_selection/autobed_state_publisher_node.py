@@ -165,8 +165,8 @@ class AutobedStatePublisherNode(object):
                 #Filter data
                 self.filter_data()
 
-                joint_state.name = [None]*(4)
-                joint_state.position = [None]*(4)
+                joint_state.name = [None]*(6)
+                joint_state.position = [None]*(6)
                 joint_state.name[0] = "autobed/tele_legs_joint"
                 joint_state.name[1] = "autobed/head_rest_hinge"
                 joint_state.name[2] = "autobed/leg_rest_upper_joint"
