@@ -99,7 +99,7 @@ class AutobedStatePublisherNode(object):
         poses=np.asarray(data.data);
         # print poses
         
-        self.bed_height = ((poses[1]/100) - 0.09) if (((poses[1]/100) - 0.09) 
+        self.bed_height = ((poses[1]/100)) if (((poses[1]/100))
                 > 0) else 0
         if poses[0]<0.02:
             poses[0]=0.02
@@ -160,8 +160,8 @@ class AutobedStatePublisherNode(object):
                               self.head_filt_data,
                               0,#self.leg_filt_data
                               0, # -(1+(4.0/9.0))*self.leg_filt_data
-                              -self.bed_height,
-                              self.bed_height]
+                              -self.head_filt_data,
+                              self.head_filt_data]
 
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
