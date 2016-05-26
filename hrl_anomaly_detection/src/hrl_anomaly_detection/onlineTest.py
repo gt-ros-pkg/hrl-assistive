@@ -470,7 +470,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
-            weights = np.logspace(-4.0, 0.0, nPoints) #ROC_dict['sgd_param_range']
+            weights = np.logspace(-1.0, 2.0, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
         else:
             print "Not available method"
