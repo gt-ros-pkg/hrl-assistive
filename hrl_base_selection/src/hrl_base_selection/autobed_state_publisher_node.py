@@ -186,6 +186,7 @@ class AutobedStatePublisherNode(object):
                     joint_state.position = joint_state_stable
                     
                 self.joint_pub.publish(joint_state)
+                print 'test'
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
                 self.set_autobed_user_configuration(joint_state.position[1], True)
                 rate.sleep()
