@@ -60,9 +60,9 @@
       xyz="-.0925 0. 0"
       rpy="0. 0. 0." />
     <parent
-      link="base_link" />
+      link="autobed/base_link" />
     <child
-      link="wall_link" />
+      link="autobed/wall_link" />
     <axis
       xyz="0 0 0" />
   </joint>
@@ -99,9 +99,9 @@
       xyz="-0.04 0 0.32"
       rpy="0 0 0" />
     <parent
-      link="base_link" />
+      link="autobed/base_link" />
     <child
-      link="bed_frame_link" />
+      link="autobed/bed_frame_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -143,9 +143,9 @@
       xyz="1.075 0 0"
       rpy="1.5708 2.1987E-11 3.9465E-16" />
     <parent
-      link="bed_frame_link" />
+      link="autobed/bed_frame_link" />
     <child
-      link="leg_rest_upper_link" />
+      link="autobed/leg_rest_upper_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -187,9 +187,9 @@
       xyz="0.37 0 0"
       rpy="-3.7123E-16 5.9121E-16 3.7854E-11" />
     <parent
-      link="leg_rest_upper_link" />
+      link="autobed/leg_rest_upper_link" />
     <child
-      link="leg_rest_lower_link" />
+      link="autobed/leg_rest_lower_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -231,9 +231,9 @@
       xyz="0.794999999999999 0 0.21"
       rpy="1.5707963267949 0. 3.14159265358979" />
     <parent
-      link="bed_frame_link" />
+      link="autobed/bed_frame_link" />
     <child
-      link="head_rest_link" />
+      link="autobed/head_rest_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -252,9 +252,9 @@
       xyz="0.49949 0.05 0"
       rpy="0. 0. 0." />
     <parent
-      link="head_rest_link" />
+      link="autobed/head_rest_link" />
     <child
-      link="head_rotated_to_worldframe_link" />
+      link="autobed/head_rotated_to_worldframe_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -273,9 +273,9 @@
       xyz="0.0 0.0 0"
       rpy="0.0 0.0 0.0" />
     <parent
-      link="head_rotated_to_worldframe_link" />
+      link="autobed/head_rotated_to_worldframe_link" />
     <child
-      link="head_updown_translation_link" />
+      link="autobed/head_updown_translation_link" />
     <axis
       xyz="-1 0 0" />
     <limit
@@ -294,9 +294,9 @@
       xyz="0.0 0.0 0"
       rpy="0. 0. 0." />
     <parent
-      link="head_updown_translation_link" />
+      link="autobed/head_updown_translation_link" />
     <child
-      link="head_rotated_to_bedframe_link" />
+      link="autobed/head_rotated_to_bedframe_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -315,9 +315,9 @@
       xyz="0 0 0"
       rpy="0.0 0.0 1.570796" />
     <parent
-      link="head_rotated_to_bedframe_link" />
+      link="autobed/head_rotated_to_bedframe_link" />
     <child
-      link="head_leftright_translation_link" />
+      link="autobed/head_leftright_translation_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -359,9 +359,9 @@
       xyz="0.091171 0.037577 0"
       rpy="1.5708 -3.0499E-16 0.2618" />
     <parent
-      link="head_leftright_translation_link" />
+      link="autobed/head_leftright_translation_link" />
     <child
-      link="head_link" />
+      link="autobed/head_link" />
     <axis
       xyz="0 0 0" />
   </joint>
@@ -398,9 +398,9 @@
       xyz="-0.0254 0 -0.08509"
       rpy="-1.5708 1.1345 -3.1416" />
     <parent
-      link="head_link" />
+      link="autobed/head_link" />
     <child
-      link="neck_rotation" />
+      link="autobed/neck_rotation" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -442,9 +442,9 @@
       xyz="0 0 0"
       rpy="0 3.1554E-30 0" />
     <parent
-      link="neck_rotation" />
+      link="autobed/neck_rotation" />
     <child
-      link="neck_link" />
+      link="autobed/neck_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -486,9 +486,9 @@
       xyz="0.07239 0 0"
       rpy="-8.8242E-17 -8.2927E-14 0.66506" />
     <parent
-      link="neck_link" />
+      link="autobed/neck_link" />
     <child
-      link="upper_body_link" />
+      link="autobed/upper_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -530,9 +530,9 @@
       xyz="0.35052 0 0"
       rpy="2.8327E-14 7.7949E-14 0.34907" />
     <parent
-      link="upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="mid_body_link" />
+      link="autobed/mid_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -574,9 +574,9 @@
       xyz="0.15113 0 0"
       rpy="-4.3091E-16 1.669E-15 -0.57779" />
     <parent
-      link="mid_body_link" />
+      link="autobed/mid_body_link" />
     <child
-      link="lower_body_link" />
+      link="autobed/lower_body_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -618,9 +618,9 @@
       xyz="0.05207 0 -0.08636"
       rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="lower_body_link" />
+      link="autobed/lower_body_link" />
     <child
-      link="quad_left_link" />
+      link="autobed/quad_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -662,9 +662,9 @@
       xyz="0.41218 0.11044 0"
       rpy="3.1416 8.5469E-14 -2.8798" />
     <parent
-      link="quad_left_link" />
+      link="autobed/quad_left_link" />
     <child
-      link="calf_left_link" />
+      link="autobed/calf_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -706,9 +706,9 @@
       xyz="-0.41279 -0.03188 0"
       rpy="2.4608E-16 9.411E-16 0.077076" />
     <parent
-      link="calf_left_link" />
+      link="autobed/calf_left_link" />
     <child
-      link="foot_left_link" />
+      link="autobed/foot_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -750,9 +750,9 @@
       xyz="0.05207 0 0.08636"
       rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="lower_body_link" />
+      link="autobed/lower_body_link" />
     <child
-      link="quad_right_link" />
+      link="autobed/quad_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -794,9 +794,9 @@
       xyz="0.41218 0.11044 0"
       rpy="3.1416 8.5225E-14 -2.8798" />
     <parent
-      link="quad_right_link" />
+      link="autobed/quad_right_link" />
     <child
-      link="calf_right_link" />
+      link="autobed/calf_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -838,9 +838,9 @@
       xyz="-0.41279 -0.03188 0"
       rpy="3.3137E-27 3.7799E-26 0.077076" />
     <parent
-      link="calf_right_link" />
+      link="autobed/calf_right_link" />
     <child
-      link="foot_right_link" />
+      link="autobed/foot_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -882,9 +882,9 @@
       xyz="0.09652 0 -0.17526"
       rpy="2.6872E-15 8.287E-14 0.033074" />
     <parent
-      link="upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="arm_left_link" />
+      link="autobed/arm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -926,9 +926,9 @@
       xyz="0.28174 -0.0106 -0.04953"
       rpy="1.1849E-16 -8.3419E-14 -1.6268E-27" />
     <parent
-      link="arm_left_link" />
+      link="autobed/arm_left_link" />
     <child
-      link="forearm_left_link" />
+      link="autobed/forearm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -970,9 +970,9 @@
       xyz="0.25146 0 0"
       rpy="1.3447E-16 8.3999E-14 1.6283E-27" />
     <parent
-      link="forearm_left_link" />
+      link="autobed/forearm_left_link" />
     <child
-      link="hand_left_link" />
+      link="autobed/hand_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1014,9 +1014,9 @@
       xyz="0.09652 0 0.17526"
       rpy="-3.0757E-16 8.2843E-14 -0.0045332" />
     <parent
-      link="upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="arm_right_link" />
+      link="autobed/arm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1058,9 +1058,9 @@
       xyz="0.28194 0 0.04953"
       rpy="2.6089E-19 -8.3342E-14 0.037607" />
     <parent
-      link="arm_right_link" />
+      link="autobed/arm_right_link" />
     <child
-      link="forearm_right_link" />
+      link="autobed/forearm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -1102,9 +1102,9 @@
       xyz="0.25146 0 0"
       rpy="1.9364E-14 8.3335E-14 1.6151E-27" />
     <parent
-      link="forearm_right_link" />
+      link="autobed/forearm_right_link" />
     <child
-      link="hand_right_link" />
+      link="autobed/hand_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
