@@ -1,0 +1,1265 @@
+<?xml version="1.0"?>
+<robot
+  name="bed_and_body_assembly_expanded">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="1.07 5.0252E-16 0.083792"
+        rpy="0 0 0" />
+      <mass
+        value="6.186" />
+      <inertia
+        ixx="1.2198"
+        ixy="2.4425E-15"
+        ixz="-1.8747E-15"
+        iyy="7.1504"
+        iyz="-6.8431E-16"
+        izz="8.2464" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="bed_frame_link">
+    <inertial>
+      <origin
+        xyz="1.2045 -0.0019774 0.010734"
+        rpy="0 0 0" />
+      <mass
+        value="297.9" />
+      <inertia
+        ixx="25.185"
+        ixy="0.12396"
+        ixz="-6.1391"
+        iyy="160.96"
+        iyz="0.097994"
+        izz="177.86" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/bed_frame_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/bed_frame_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="tele_legs_joint"
+    type="prismatic">
+    <origin
+      xyz="-0.04 0 0.32"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="bed_frame_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="leg_rest_upper">
+    <inertial>
+      <origin
+        xyz="0.185 0.105 -8.8671E-16"
+        rpy="0 0 0" />
+      <mass
+        value="71.096" />
+      <inertia
+        ixx="5.2215"
+        ixy="-8.7391E-17"
+        ixz="3.1436E-16"
+        iyy="5.7713"
+        iyz="-2.8049E-15"
+        izz="1.0724" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/leg_rest_upper.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/leg_rest_upper.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_upper_hinge"
+    type="revolute">
+    <origin
+      xyz="1.075 0 0"
+      rpy="1.5708 -1.8438E-16 7.6543E-16" />
+    <parent
+      link="bed_frame_link" />
+    <child
+      link="leg_rest_upper" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="leg_rest_lower">
+    <inertial>
+      <origin
+        xyz="0.345 0.105 1.5756E-14"
+        rpy="0 0 0" />
+      <mass
+        value="132.58" />
+      <inertia
+        ixx="9.7374"
+        ixy="-3.7969E-17"
+        ixz="-9.6637E-16"
+        iyy="14.51"
+        iyz="1.5379E-16"
+        izz="5.7475" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/leg_rest_lower.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/leg_rest_lower.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_lower_hinge"
+    type="revolute">
+    <origin
+      xyz="0.370000000000001 0 0"
+      rpy="8.46545056276682E-16 -2.4743657509036E-16 -1.8315782125782E-16" />
+    <parent
+      link="leg_rest_upper" />
+    <child
+      link="leg_rest_lower" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="foot_left_link">
+    <inertial>
+      <origin
+        xyz="-0.035192 -6.9389E-17 0.093003"
+        rpy="0 0 0" />
+      <mass
+        value="0.61519" />
+      <inertia
+        ixx="0.0030099"
+        ixy="2.7748E-20"
+        ixz="0.00035551"
+        iyy="0.0033246"
+        iyz="-1.1595E-18"
+        izz="0.00045175" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/foot_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/foot_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="foot_left_bed"
+    type="prismatic">
+    <origin
+      xyz="0.491842403268255 0.23286 -0.0863599999999979"
+      rpy="-1.5707963267949 -5.17993871381823E-16 -1.21947803557184E-18" />
+    <parent
+      link="leg_rest_lower" />
+    <child
+      link="foot_left_link" />
+    <axis
+      xyz="-1 0 0" />
+  </joint>
+  <link
+    name="calf_left_link">
+    <inertial>
+      <origin
+        xyz="0.23257 -4.6131E-11 1.6004E-12"
+        rpy="0 0 0" />
+      <mass
+        value="3.3954" />
+      <inertia
+        ixx="0.0046651"
+        ixy="1.117E-11"
+        ixz="9.3988E-13"
+        iyy="0.048094"
+        iyz="-4.2242E-12"
+        izz="0.047873" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/calf_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/calf_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="foot_calf_left_joint"
+    type="revolute">
+    <origin
+      xyz="-0.0888999999999971 0 0.0152399999999987"
+      rpy="1.5707963267949 -0.077076482636774 -3.14159265358979" />
+    <parent
+      link="foot_left_link" />
+    <child
+      link="calf_left_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="quad_left_link">
+    <inertial>
+      <origin
+        xyz="0.28606 1.1102E-16 -3.3168E-15"
+        rpy="0 0 0" />
+      <mass
+        value="6.8967" />
+      <inertia
+        ixx="0.01681"
+        ixy="3.2331E-18"
+        ixz="7.0728E-18"
+        iyy="0.12585"
+        iyz="-3.1908E-10"
+        izz="0.12602" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/quad_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/quad_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="calf_quad_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.41402 0 0"
+      rpy="5.96700367065148E-16 -1.93594045899927E-15 -0.077076482636774" />
+    <parent
+      link="calf_left_link" />
+    <child
+      link="quad_left_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="lower_body_lleg_link">
+    <inertial>
+      <origin
+        xyz="0.12278 -0.036388 -1.5737E-07"
+        rpy="0 0 0" />
+      <mass
+        value="3.7609" />
+      <inertia
+        ixx="0.015533"
+        ixy="0.0065632"
+        ixz="5.0796E-06"
+        iyy="0.022461"
+        iyz="3.6851E-06"
+        izz="0.02188" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_lleg_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_lleg_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_body_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.426720000000001 0 0"
+      rpy="-1.57079632679486 1.0282170026689 0.261799387799173" />
+    <parent
+      link="quad_left_link" />
+    <child
+      link="lower_body_lleg_link" />
+    <axis
+      xyz="0.856379706337927 0.516346587644932 0" />
+  </joint>
+  <link
+    name="foot_right_link">
+    <inertial>
+      <origin
+        xyz="-0.035192 -1.3878E-17 0.093003"
+        rpy="0 0 0" />
+      <mass
+        value="0.61519" />
+      <inertia
+        ixx="0.0030099"
+        ixy="2.1386E-19"
+        ixz="0.00035551"
+        iyy="0.0033246"
+        iyz="3.7721E-19"
+        izz="0.00045175" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/foot_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/foot_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="foot_right_bed"
+    type="prismatic">
+    <origin
+      xyz="0.491842403268257 0.23286 0.0863600000000018"
+      rpy="-1.5707963267949 -5.17993871381823E-16 -1.21947803557184E-18" />
+    <parent
+      link="leg_rest_lower" />
+    <child
+      link="foot_right_link" />
+    <axis
+      xyz="-1 0 0" />
+  </joint>
+  <link
+    name="calf_right_link">
+    <inertial>
+      <origin
+        xyz="0.23257 -4.6131E-11 1.6004E-12"
+        rpy="0 0 0" />
+      <mass
+        value="3.3954" />
+      <inertia
+        ixx="0.0046651"
+        ixy="1.117E-11"
+        ixz="9.3988E-13"
+        iyy="0.048094"
+        iyz="-4.2242E-12"
+        izz="0.047873" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/calf_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/calf_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="foot_calf_right_joint"
+    type="revolute">
+    <origin
+      xyz="-0.0888999999999995 0 0.015239999999999"
+      rpy="1.5707963267949 -0.0770764826367741 -3.14159265358979" />
+    <parent
+      link="foot_right_link" />
+    <child
+      link="calf_right_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="quad_right_link">
+    <inertial>
+      <origin
+        xyz="0.28606 1.1102E-16 0"
+        rpy="0 0 0" />
+      <mass
+        value="6.8967" />
+      <inertia
+        ixx="0.01681"
+        ixy="-1.503E-18"
+        ixz="-7.1366E-18"
+        iyy="0.12585"
+        iyz="-3.1908E-10"
+        izz="0.12602" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/quad_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/quad_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="calf_quad_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.414019999999999 0 0"
+      rpy="5.40756017854058E-16 -2.01414803957409E-15 -0.0770764826367741" />
+    <parent
+      link="calf_right_link" />
+    <child
+      link="quad_right_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="lower_body_rleg_link">
+    <inertial>
+      <origin
+        xyz="0.12278 0.036388 -1.5737E-07"
+        rpy="0 0 0" />
+      <mass
+        value="3.7609" />
+      <inertia
+        ixx="0.015533"
+        ixy="-0.0065632"
+        ixz="-5.6301E-06"
+        iyy="0.022461"
+        iyz="2.7721E-06"
+        izz="0.02188" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_rleg_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_rleg_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_body_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.426720000000002 0 0"
+      rpy="-1.57079632679486 -1.02821700266891 0.261799387799113" />
+    <parent
+      link="quad_right_link" />
+    <child
+      link="lower_body_rleg_link" />
+    <axis
+      xyz="-0.856379706337932 0.516346587644924 0" />
+  </joint>
+  <link
+    name="head_rest_link">
+    <inertial>
+      <origin
+        xyz="0.37257 0.11665 2.0758E-18"
+        rpy="0 0 0" />
+      <mass
+        value="152.15" />
+      <inertia
+        ixx="11.334"
+        ixy="0.22342"
+        ixz="-1.4643E-15"
+        iyy="16.942"
+        iyz="-3.1712E-15"
+        izz="7.0446" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/head_rest_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/head_rest_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_rest_hinge"
+    type="revolute">
+    <origin
+      xyz="0.794999999999999 0 0"
+      rpy="1.5707963267949 2.84158644671567E-16 -3.14159265358979" />
+    <parent
+      link="bed_frame_link" />
+    <child
+      link="head_rest_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="head_link">
+    <inertial>
+      <origin
+        xyz="0.0093175 -9.9788E-09 -0.0021293"
+        rpy="0 0 0" />
+      <mass
+        value="3.9329" />
+      <inertia
+        ixx="0.016568"
+        ixy="8.6996E-10"
+        ixz="-0.0027683"
+        iyy="0.017702"
+        iyz="-5.4019E-09"
+        izz="0.016605" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_contact"
+    type="fixed">
+    <origin
+      xyz="0.474177635638885 0.354457886552815 0"
+      rpy="1.57079632679489 1.36443115249952E-16 1.83259571459405" />
+    <parent
+      link="head_rest_link" />
+    <child
+      link="head_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="neck_link">
+    <inertial>
+      <origin
+        xyz="0.029991 -1.1348E-09 5.2599E-09"
+        rpy="0 0 0" />
+      <mass
+        value="1.5315" />
+      <inertia
+        ixx="0.0026932"
+        ixy="1.0986E-10"
+        ixz="7.5805E-10"
+        iyy="0.0056452"
+        iyz="9.2184E-09"
+        izz="0.0051113" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/neck_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/neck_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_neck_joint"
+    type="fixed">
+    <origin
+      xyz="-0.0254000000000003 0 -0.0977900000000003"
+      rpy="-1.5707963267949 1.13446401379632 -3.14159265358977" />
+    <parent
+      link="head_link" />
+    <child
+      link="neck_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="upper_body_link">
+    <inertial>
+      <origin
+        xyz="0.15871 -2.7726E-06 1.0734E-06"
+        rpy="0 0 0" />
+      <mass
+        value="10.994" />
+      <inertia
+        ixx="0.098826"
+        ixy="1.3871E-06"
+        ixz="-6.9072E-07"
+        iyy="0.10789"
+        iyz="1.7195E-07"
+        izz="0.077115" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/upper_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/upper_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="neck_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.0723900000000103 0 0"
+      rpy="2.39121197384833E-16 4.83240949885864E-16 0.66505807937968" />
+    <parent
+      link="neck_link" />
+    <child
+      link="upper_body_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="mid_body_link">
+    <inertial>
+      <origin
+        xyz="-0.01236 -2.4797E-07 4.7708E-06"
+        rpy="0 0 0" />
+      <mass
+        value="6.7659" />
+      <inertia
+        ixx="0.050873"
+        ixy="-3.3092E-07"
+        ixz="-1.39E-06"
+        iyy="0.048977"
+        iyz="-1.1227E-05"
+        izz="0.031742" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/mid_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/mid_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="upper_mid_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.35052 0 0"
+      rpy="-1.0447857282116E-16 2.70411350613064E-16 0.349065850398852" />
+    <parent
+      link="upper_body_link" />
+    <child
+      link="mid_body_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="lower_body_link">
+    <inertial>
+      <origin
+        xyz="-0.04249 -1.5737E-07 -5.0367E-08"
+        rpy="0 0 0" />
+      <mass
+        value="3.7609" />
+      <inertia
+        ixx="0.026418"
+        ixy="5.3306E-07"
+        ixz="1.2634E-08"
+        iyy="0.02188"
+        iyz="6.2529E-06"
+        izz="0.011576" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/lower_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="mid_lower_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.151129999999996 0 0"
+      rpy="-4.18872194735651E-16 3.82203889691489E-17 -0.577791616779945" />
+    <parent
+      link="mid_body_link" />
+    <child
+      link="lower_body_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="arm_left_link">
+    <inertial>
+      <origin
+        xyz="0.10591 0.023561 -3.8432E-08"
+        rpy="0 0 0" />
+      <mass
+        value="2.6096" />
+      <inertia
+        ixx="0.0039003"
+        ixy="-0.0014532"
+        ixz="1.036E-09"
+        iyy="0.024429"
+        iyz="4.4565E-09"
+        izz="0.025167" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/arm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/arm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="body_arm_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.0965200000000072 0 -0.175260000000002"
+      rpy="-1.57079632679488 0.173901189137887 -0.00453323162503999" />
+    <parent
+      link="upper_body_link" />
+    <child
+      link="arm_left_link" />
+    <axis
+      xyz="0.17302600448638 0.984917256307087 0" />
+  </joint>
+  <link
+    name="forearm_left_link">
+    <inertial>
+      <origin
+        xyz="0.10623 1.1102E-16 0"
+        rpy="0 0 0" />
+      <mass
+        value="1.3217" />
+      <inertia
+        ixx="0.0011953"
+        ixy="6.7053E-18"
+        ixz="5.3879E-19"
+        iyy="0.0087047"
+        iyz="1.0338E-09"
+        izz="0.008564" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/forearm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/forearm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="arm_forearm_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.286257549245414 0 0"
+      rpy="1.57079632679488 -0.0376068530430936 -0.173901189137886" />
+    <parent
+      link="arm_left_link" />
+    <child
+      link="forearm_left_link" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="hand_left_link">
+    <inertial>
+      <origin
+        xyz="0.098014 0 0.0049795"
+        rpy="0 0 0" />
+      <mass
+        value="1.1356" />
+      <inertia
+        ixx="0.0013106"
+        ixy="8.0676E-19"
+        ixz="-9.6567E-05"
+        iyy="0.003863"
+        iyz="9.8053E-20"
+        izz="0.0034334" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/hand_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/hand_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="forearm_hand_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.251460000000003 0 0"
+      rpy="-1.5158751154727E-25 2.85651263128162E-16 5.23490400584797E-30" />
+    <parent
+      link="forearm_left_link" />
+    <child
+      link="hand_left_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="arm_right_link">
+    <inertial>
+      <origin
+        xyz="0.10591 -0.023561 3.5207E-08"
+        rpy="0 0 0" />
+      <mass
+        value="2.6096" />
+      <inertia
+        ixx="0.0039003"
+        ixy="0.0014532"
+        ixz="-1.5035E-09"
+        iyy="0.024429"
+        iyz="4.1609E-09"
+        izz="0.025167" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/arm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/arm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="body_arm_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.0965200000000072 0 0.175260000000007"
+      rpy="-1.5707963267949 -0.173901189137887 -0.00453323162504033" />
+    <parent
+      link="upper_body_link" />
+    <child
+      link="arm_right_link" />
+    <axis
+      xyz="0.173026004486381 -0.984917256307086 0" />
+  </joint>
+  <link
+    name="forearm_right_link">
+    <inertial>
+      <origin
+        xyz="0.10623 2.6879E-10 -2.5638E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.3217" />
+      <inertia
+        ixx="0.0011953"
+        ixy="-1.1627E-10"
+        ixz="4.1382E-11"
+        iyy="0.0087047"
+        iyz="1.0478E-09"
+        izz="0.008564" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/forearm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/forearm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="arm_forearm_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.286257549245413 0 0"
+      rpy="1.5707963267949 -0.0376068530430905 0.173901189137887" />
+    <parent
+      link="arm_right_link" />
+    <child
+      link="forearm_right_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="hand_right_link">
+    <inertial>
+      <origin
+        xyz="0.098014 1.1102E-16 -0.0049795"
+        rpy="0 0 0" />
+      <mass
+        value="1.1356" />
+      <inertia
+        ixx="0.0013106"
+        ixy="4.4933E-19"
+        ixz="9.6567E-05"
+        iyy="0.003863"
+        iyz="-2.3418E-20"
+        izz="0.0034334" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/hand_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bed_and_body_assembly_expanded/meshes/hand_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="forearm_hand_right_link"
+    type="revolute">
+    <origin
+      xyz="0.251460000000004 0 0"
+      rpy="-7.97385196037543E-16 6.22202571826465E-17 1.14026127524665E-30" />
+    <parent
+      link="forearm_right_link" />
+    <child
+      link="hand_
