@@ -230,7 +230,7 @@ class classifier(learning_base):
             print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, learning_rate='constant',\
-                                    eta0=1e-3, shuffle=True, average=True)
+                                    eta0=1e-2, shuffle=True, average=True)
             self.dt.fit(X_features, y)
 
 
