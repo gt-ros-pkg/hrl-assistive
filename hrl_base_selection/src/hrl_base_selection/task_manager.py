@@ -562,9 +562,9 @@ class BaseSelectionManager(object):
             print log_msg
             self.feedback_pub.publish(String(log_msg))
         elif task == 'wiping_face':
-            goal.pose.position.x = 0.17
+            goal.pose.position.x = 0.21
             goal.pose.position.y = 0.
-            goal.pose.position.z = -0.2
+            goal.pose.position.z = -0.24
             goal.pose.orientation.x = 0.
             goal.pose.orientation.y = 0.
             goal.pose.orientation.z = 1.
