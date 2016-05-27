@@ -864,6 +864,8 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
+            nPartialFit = 2
+
             for idx in range(0,len(X_valid_test),nPartialFit):
                 for k in xrange(nPartialFit):
                     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
