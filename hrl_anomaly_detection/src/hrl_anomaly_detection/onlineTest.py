@@ -882,7 +882,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                     else:
                         sample_weight = np.logspace(1,2.0,nLength )
                         sample_weight /= np.amax(sample_weight)
-                    ## sample_weight *= 20.0
+                    sample_weight *= 100.0
                     ## sample_weight /= (float(nSamples + idx+1))
 
                     ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
