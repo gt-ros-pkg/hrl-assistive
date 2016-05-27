@@ -79,8 +79,8 @@ class HeadDetector:
         #plt.show()
         try:
             blobs = blob_doh(p_map, 
-                             min_sigma=1, 
-                             max_sigma=7, 
+                             min_sigma=4,#1, 
+                             max_sigma=6,#7, 
                              threshold=20,
                              overlap=0.1) 
         except:
