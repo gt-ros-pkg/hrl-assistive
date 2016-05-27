@@ -551,7 +551,7 @@ class BaseSelectionManager(object):
     def reach_arm(self, task):
         goal = PoseStamped()
         if task == 'scratching_knee_left':
-            goal.pose.position.x = -0.10310556
+            goal.pose.position.x = -0.08310556
             goal.pose.position.y = 0.07347758+0.05
             goal.pose.position.z = 0.00485197
             goal.pose.orientation.x = 0.48790861
