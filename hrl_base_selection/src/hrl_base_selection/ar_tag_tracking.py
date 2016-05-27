@@ -24,11 +24,20 @@ class AR_Tag_Tracking(object):
         self.mode = mode
 
         self.find_AR = False
-        self.currently_finding_AR = False
+        self.currently_acquiring_AR_tag = False
+        self.finished_acquiring_AR_tag = False
         self.track_AR = False
         self.servo_base = False
         self.goal_location = None
         self.map_B_ar_pos = None
+
+        self.action_goal = PointHeadActionGoal()
+        self.goal = PointHeadGoal()
+        self.point = PointStamped()
+        self.goal.pointing_frame = 'head_mount_kinect_ir_link'
+        self.point.header.frame_id = 'base_link'
+        self.goal.min_duration = rospy.Duration(0.25)
+        self.currently_tracking_AR = False
 
 
         self.listener = tf.TransformListener()
@@ -42,7 +51,7 @@ class AR_Tag_Tracking(object):
 
         self.autobed_sub = None
 
-        self.hist_size = 30
+        self.hist_size = 10
         self.ar_count = 0
         self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -51,9 +60,9 @@ class AR_Tag_Tracking(object):
         # bed model).
         self.reference_B_ar = np.eye(4)
 
-        while not self.listener.canTransform('base_link', 'odom_combined', rospy.Time(0)) and not rospy.is_shutdown():
-            rospy.sleep(2)
-            print self.mode, ' AR tag waiting for the map transform.'
+        # while not self.listener.canTransform('base_link', 'base_link', rospy.Time(0)) and not rospy.is_shutdown():
+        #     rospy.sleep(2)
+        #     print self.mode, ' AR tag waiting for the map transform.'
 
         if self.mode == 'autobed':
             self.out_frame = 'autobed/base_link'
@@ -66,62 +75,76 @@ class AR_Tag_Tracking(object):
             return
 
         self.start_finding_AR_subscriber = rospy.Subscriber('find_AR_now', Bool, self.start_finding_AR_cb)
-        self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
+        # self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
 
         self.AR_tag_acquired = rospy.Publisher('AR_acquired', Bool, queue_size=1)
 
         self.start_tracking_AR_subscriber = rospy.Subscriber('track_AR_now', Bool, self.start_tracking_AR_cb)
-        self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
+        # self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
         self.head_track_AR_pub = rospy.Publisher('/head_traj_controller/point_head_action/goal', PointHeadActionGoal, queue_size=1)
+
+        self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
 
         # self.servo_base_publisher = rospy.Publisher('/base_controller/command', Twist, queue_size=1)
 
         self.run()
 
     def start_finding_AR_cb(self, msg):
-        if msg.data and not self.currently_finding_AR:
-            self.currently_finding_AR = True
-            self.hist_size = 30
-            self.ar_count = 0
-            self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
-            self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
-            while not self.listener.canTransform('base_link', 'odom_combined', rospy.Time(0)) and not rospy.is_shutdown():
-                rospy.sleep(2)
-                print self.mode, ' AR tag waiting for the map transform.'
-                #now = rospy.Time.now()
-            # self.pose_pub = rospy.Publisher(''.join(['ar_tag_tracking/', self.mode, '_pose']), PoseStamped,
-            #                                 queue_size=1, latch=True)
-            print 'Starting to acquire the AR tag location!'
-            # rospy.sleep(1)
-            self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
-            while self.currently_finding_AR and not rospy.is_shutdown():
-                rospy.sleep(1)
-            self.ar_tag_subscriber.unregister()
-        elif not msg.data:
-            self.currently_finding_AR = False
-            print 'Stopping finding AR tag'
-        else:
-            print 'Asked to find AR tag but already in the process of acquiring AR tag!'
-            # rospy.sleep(5)
+        with self.frame_lock:
+            if msg.data and not self.currently_acquiring_AR_tag:
+                self.currently_acquiring_AR_tag = True
+                self.finished_acquiring_AR_tag = False
+                false_out = Bool()
+                false_out.data = False
+                self.AR_tag_acquired.publish(false_out)
+                self.hist_size = 10
+                self.ar_count = 0
+                self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
+                self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
+                # while not self.listener.canTransform('base_link', 'base_link', rospy.Time(0)) and not rospy.is_shutdown():
+                #     rospy.sleep(2)
+                #     print self.mode, ' AR tag waiting for the map transform.'
+                #     #now = rospy.Time.now()
+                # self.pose_pub = rospy.Publisher(''.join(['ar_tag_tracking/', self.mode, '_pose']), PoseStamped,
+                #                                 queue_size=1, latch=True)
+                print 'Started acquiring the AR tag location!'
+
+                # rospy.sleep(1)
+                # while self.currently_finding_AR and not rospy.is_shutdown():
+                #     rospy.sleep(1)
+                # self.ar_tag_subscriber.unregister()
+            elif not msg.data:
+                self.currently_finding_AR = False
+                self.finished_acquiring_AR_tag = False
+                print 'Stopped finding AR tag'
+                false_out = Bool()
+                false_out.data = False
+                self.AR_tag_acquired.publish(false_out)
+                # self.ar_tag_subscriber.unregister()
+            else:
+                print 'Asked to find AR tag but already in the process of acquiring AR tag!'
+                # rospy.sleep(5)
 
     def start_tracking_AR_cb(self, msg):
-        if msg.data and not self.track_AR:
-            print 'Starting to track the AR tag!'
-            self.track_AR = msg.data
-            self.tracking_AR()
-        elif not msg.data and self.track_AR:
-            print 'Stopping tracking the AR tag!'
-            self.track_AR = msg.data
+        # print msg
+        # print self.track_AR
+        if msg.data and not self.currently_tracking_AR:
+            print 'THINGS AND STUFF Starting to track the AR tag!'
+            # self.track_AR = msg.data
+            # self.tracking_AR()
+        elif not msg.data and self.currently_tracking_AR:
+            print 'THINGS AND STUFF Stopping tracking the AR tag!'
+        self.currently_tracking_AR = msg.data
 
     def tracking_AR(self):
         while self.track_AR and not rospy.is_shutdown() and self.map_B_ar_pos is not None:
-            action_goal = PointHeadActionGoal()
-            goal = PointHeadGoal()
+            self.action_goal = PointHeadActionGoal()
+            self.goal = PointHeadGoal()
 
             # The point to be looking at is expressed in the 'odom_combined' frame
-            point = PointStamped()
-            point.header.frame_id = 'odom_combined'
+            self.point = PointStamped()
+            point.header.frame_id = 'base_link'
             point.point.x = self.map_B_ar_pos[0]
             point.point.y = self.map_B_ar_pos[1]
             point.point.z = self.map_B_ar_pos[2]
@@ -204,14 +227,15 @@ class AR_Tag_Tracking(object):
     '''
 
     def run(self):
-        rate = rospy.Rate(50.0)
+        rate = rospy.Rate(10.0)
         while not rospy.is_shutdown():
             #print self.out_pos, self.out_quat
-            if self.out_pos is not None and self.out_quat is not None:
+            if self.finished_acquiring_AR_tag:
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time.now(),
                                                self.out_frame,
-                                               'odom_combined')
+                                               'base_footprint')
+            # if self.currently_tracking_AR:
                 #print 'broadcast transform'
             rate.sleep()
 
@@ -219,14 +243,14 @@ class AR_Tag_Tracking(object):
         self.tag_id = 4  # 9
 
         # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-        self.tag_side_length = 0.067  # 0.053  # 0.033
+        self.tag_side_length = 0.15  # 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.01, 0.00, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.00, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
@@ -294,25 +318,54 @@ class AR_Tag_Tracking(object):
                     else:
                         # median
                         positions = np.sort(positions, axis=0)
-                        pos = positions[len(positions)/2]
+                        pos_int = positions[len(positions)/2-1:len(positions)/2+1]
+                        pos = np.sum(pos_int, axis=0)
+                        pos /= float(len(pos_int))
 
                         quaternions = np.sort(quaternions, axis=0)
-                        quat = quaternions[len(quaternions)/2]
+                        quat_int = quaternions[len(quaternions)/2-1:len(quaternions)/2+1]
+                        quat = np.sum(quat_int, axis=0)
+                        quat /= float(len(quat_int))
                     self.map_B_ar_pos = pos
-                    if self.currently_finding_AR and self.ar_count <= self.hist_size:
+                    if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
+                    elif self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag:
+                        success = Bool()
+                        success.data = True
+                        self.AR_tag_acquired.publish(success)
+                        self.finished_acquiring_AR_tag = True
+                        self.currently_acquiring_AR_tag = False
+                        print 'Finished acquiring AR tag'
+                    # else:
+                    #     success = Bool()
+                    #     success.data = True
+                    #     self.AR_tag_acquired.publish(success)
+                    #     self.finished_acquiring_AR_tag = True
+                    #     self.currently_acquiring_AR_tag = False
+                    #     print 'Finished acquiring AR tag'
+                    if self.finished_acquiring_AR_tag:
                         map_B_ar = createBMatrix(pos, quat)
 
                         if self.mode == 'autobed':
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-                    else:
-                        success = Bool()
-                        success.data = True
-                        self.AR_tag_acquired.publish(success)
-                        self.currently_finding_AR = False
-                        print 'Stopping finding AR tag'
+
+                    if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
+                        # The point to be looking at is expressed in the 'odom_combined' frame
+                        self.point.point.x = self.map_B_ar_pos[0]
+                        self.point.point.y = self.map_B_ar_pos[1]
+                        self.point.point.z = self.map_B_ar_pos[2]
+                        self.goal.target = self.point
+
+                        # We want the X axis of the camera frame to be pointing at the target
+
+                        self.goal.pointing_axis.x = 1
+                        self.goal.pointing_axis.y = 0
+                        self.goal.pointing_axis.z = 0
+
+                        self.action_goal.goal = self.goal
+                        self.head_track_AR_pub.publish(self.action_goal)
                         # ps = PoseStamped()
                         # ps.header.frame_id = 'torso_lift_link'  # markers[i].pose.header.frame_id
                         # ps.header.stamp = rospy.Time.now()  # markers[i].pose.header.stamp

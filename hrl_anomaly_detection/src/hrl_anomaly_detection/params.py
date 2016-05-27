@@ -295,30 +295,35 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
-            HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 2.0, 'scale': 7.0}
-            ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 3.0, 'scale': 7.0}
-            SVM_param_dict = {'renew': False, 'w_negative': 0.272, 'gamma': 3.67, 'cost': 0.825}
+            HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 5.5, 'scale': 5.5, \
+                              'add_logp_d': True}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.469, 'gamma': 1.44, 'cost': 0.825}
+            ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 2.0, 'scale': 7.0, \
+            ##                   'add_logp_d': True}
+            ## SVM_param_dict = {'renew': False, 'w_negative': 0.6, 'gamma': 4.11, 'cost': 2.275}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -10., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.logspace(-2, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
+                          'svm_param_range': np.logspace(-2.5, 1.2, nPoints)}        
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 7.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 1.89, 'cost': 2.27}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.75, 'scale': 5.5, \
+                          'add_logp_d': True}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 2.7, 'cost': 3.0}
+        ## SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 1.89, 'cost': 2.27}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\

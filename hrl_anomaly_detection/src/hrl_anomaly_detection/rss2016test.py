@@ -476,12 +476,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # AE
     AE_dict     = param_dict['AE']
     # HMM
-    HMM_dict = param_dict['HMM']
-    nState   = HMM_dict['nState']
-    cov      = HMM_dict['cov']
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
-    add_logp_d = SVM_dict.get('add_logp_d', False)
 
     # ROC
     ROC_dict = param_dict['ROC']

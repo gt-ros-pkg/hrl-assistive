@@ -6,6 +6,7 @@ import rospy
 import tf
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from geometry_msgs.msg import PoseStamped
+import threading
 
 
 class AutobedGlobalTFBroadcaster(object):
@@ -13,13 +14,14 @@ class AutobedGlobalTFBroadcaster(object):
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         rospy.sleep(2)
-        rate = rospy.Rate(10.0)
+        self.frame_lock = threading.RLock()
+        rate = rospy.Rate(20.0)
         self.map_B_bed = None
         self.out_trans = None
         self.out_rot = None
         self.ar_tag_autobed_sub = rospy.Subscriber('/ar_tag_tracking/autobed_pose', PoseStamped, self.ar_tag_autobed_cb)
 
-        while (not self.tf_listener.canTransform('odom_combined', 'torso_lift_link', rospy.Time(0))):
+        while (not self.tf_listener.canTransform('map', 'torso_lift_link', rospy.Time(0))):
             try:
                 print 'Waiting for PR2 localization in world.'
                 rospy.sleep(1)

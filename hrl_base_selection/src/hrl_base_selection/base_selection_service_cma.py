@@ -49,6 +49,7 @@ class BaseSelector(object):
         self.model = model
         self.load = load
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
+        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
@@ -131,7 +132,7 @@ class BaseSelector(object):
                 self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
         elif load == 'paper':
             if model == 'autobed':
-                # self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
                 self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
             else:
                 print 'Paper work is only with Autobed. Error!'
@@ -255,7 +256,7 @@ class BaseSelector(object):
             print 'The model in the service request differs from what was given to the service on initialization. As' \
                   'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task:
+            if self.load != task and self.load != 'paper':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
 
@@ -280,8 +281,8 @@ class BaseSelector(object):
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
@@ -424,7 +425,7 @@ class BaseSelector(object):
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(5)-2)*.05
+            head_possibilities = (np.arange(11)-5)*.03
             neigh = KNeighborsClassifier(n_neighbors=1)
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
             heady = neigh.predict(model_B_head[1, 3])[0]
@@ -597,6 +598,24 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
+            now = rospy.Time.now()
+            now = rospy.Time.now()
+            self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
+            (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
+            world_B_pr2 = createBMatrix(trans, rot)
+
+            pr2_B_goal_pose = PoseStamped()
+            pr2_B_goal_pose.header.stamp = rospy.Time.now()
+            pr2_B_goal_pose.header.frame_id = 'odom_combined'
+            trans_out, rot_out = Bmat_to_pos_quat(world_B_pr2*pr2_B_goal)
+            pr2_B_goal_pose.pose.position.x = trans_out[0]
+            pr2_B_goal_pose.pose.position.y = trans_out[1]
+            pr2_B_goal_pose.pose.position.z = trans_out[2]
+            pr2_B_goal_pose.pose.orientation.x = rot_out[0]
+            pr2_B_goal_pose.pose.orientation.y = rot_out[1]
+            pr2_B_goal_pose.pose.orientation.z = rot_out[2]
+            pr2_B_goal_pose.pose.orientation.w = rot_out[3]
+            self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
@@ -735,7 +754,8 @@ class BaseSelector(object):
         else:
             task_name = 'scratching'
             task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            return load_pickle(file_name)
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
         try:

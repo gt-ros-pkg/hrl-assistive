@@ -138,6 +138,8 @@ class BaseSelectionManager(object):
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
+        self.ar_tag_confirmation_publisher = rospy.Publisher('/pr2_ar_servo/tag_confirm', Bool, queue_size=1, latch=True)
+
 
         # rospy.wait_for_service('autobed_occ_status')
         # self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
@@ -175,6 +177,14 @@ class BaseSelectionManager(object):
     #     self.head_pose = msg
 
     def ar_acquired_cb(self, msg):
+        if msg.data:
+            log_msg = 'The AR tag has been acquired and can now be tracked! We can now proceed!!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+        else:
+            log_msg = 'The AR tag is not acquired.'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
         self.ar_acquired = msg.data
 
     def move_base_ui_cb(self, msg):
@@ -200,6 +210,10 @@ class BaseSelectionManager(object):
                 goal.marker_topic = '/ar_pose_marker'
                 goal.tag_goal_pose = self.pr2_goal_pose
                 self.servo_goal_pub.publish(goal)
+                rospy.sleep(2)
+                move = Bool()
+                move.data = True
+                self.ar_tag_confirmation_publisher.publish(move)
         return
 
     def reset_arm_ui_cb(self, msg):
@@ -214,40 +228,44 @@ class BaseSelectionManager(object):
         return
 
     def track_ar_ui_cb(self, msg):
-        out = Bool()
-        out.data = msg.data
+        #out = Bool()
+        #out.data = msg.data
         if msg.data:
             print 'Starting acquiring and tracking AR tag'
             self.ar_acquired = False
-            self.start_finding_AR_publisher.publish(out)
+            self.start_finding_AR_publisher.publish(msg)
             while not self.ar_acquired and not rospy.is_shutdown():
                 rospy.sleep(.5)
             self.ar_tracking = True
         else:
             print 'Stopping tracking AR tag'
-            self.start_finding_AR_publisher.publish(out)
+            self.start_finding_AR_publisher.publish(msg)
             self.ar_tracking = False
-        self.start_tracking_AR_publisher.publish(out)
+        self.start_tracking_AR_publisher.publish(msg)
         return
 
     def move_arm_ui_cb(self, msg):
-        print 'Moving arm for task: ', msg.data
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print 'Moving arm for task: ', self.task
         print self.reach_arm(self.task)
         return
 
     def start_task_ui_cb(self, msg):
-        print 'My task is: ', msg.data
+        # print 'My task is: ', msg.data
+        move = Bool()
+        move.data = False
+        self.ar_tag_confirmation_publisher.publish(move)
         split_msg = msg.data.split()
         if 'face' in split_msg:
             self.task = ''.join([split_msg[0], '_', split_msg[2]])
-            self.task = ''.join([split_msg[2], '_', split_msg[0]])
+            # self.task = ''.join([split_msg[2], '_', split_msg[0]])
         else:
             self.task = ''.join([split_msg[0], '_', split_msg[2], '_', split_msg[1]])
+        print 'My task is: ', self.task
         # if self.send_task_count > 1 and self.base_selection_complete:
         #     self.base_selection_complete = False
         #     self.send_task_count = 0
@@ -260,6 +278,11 @@ class BaseSelectionManager(object):
         # self.head_pose = self.world_B_head
         # self.head_pose =
 
+        if not self.ar_tracking:
+            log_msg = 'AR tag must be tracked to start the task and do base movement! Do this now!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            return
         if not self.get_head_pose():
             log_msg = "Head not currently found. Please look at the head."
             self.feedback_pub.publish(String(log_msg))
@@ -396,8 +419,8 @@ class BaseSelectionManager(object):
             self.pr2_goal_pose = PoseStamped()
             self.pr2_goal_pose.header.stamp = rospy.Time.now()
             self.pr2_goal_pose.header.frame_id = 'base_footprint'
-            trans_out = base_goals[0][0]
-            rot_out = base_goals[0][1]
+            trans_out = base_goals[:3]
+            rot_out = base_goals[3:]
             self.pr2_goal_pose.pose.position.x = trans_out[0]
             self.pr2_goal_pose.pose.position.y = trans_out[1]
             self.pr2_goal_pose.pose.position.z = trans_out[2]
@@ -408,6 +431,8 @@ class BaseSelectionManager(object):
             rospy.loginfo('Ready to move! Click to move PR2 base!')
             rospy.loginfo('Remember: The AR tag must be tracked before moving!')
             print 'Ready to move! Click to move PR2 base!'
+
+
 
         if self.mode == 'ar_tag':
             self.pr2_goal_pose = PoseStamped()
@@ -491,7 +516,7 @@ class BaseSelectionManager(object):
 
     def define_reset(self):
         r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., 0., 0.0]
+        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1.5, 0.0]
 
         r_reset_traj_point.velocities = [0.0]*7
         r_reset_traj_point.accelerations = [0.0]*7
@@ -525,7 +550,7 @@ class BaseSelectionManager(object):
     def reach_arm(self, task):
         goal = PoseStamped()
         if task == 'scratching_knee_left':
-            goal.pose.position.x = -0.04310556
+            goal.pose.position.x = -0.10310556
             goal.pose.position.y = 0.07347758+0.05
             goal.pose.position.z = 0.00485197
             goal.pose.orientation.x = 0.48790861
@@ -534,6 +559,18 @@ class BaseSelectionManager(object):
             goal.pose.orientation.w = -0.4907122
             goal.header.frame_id = '/autobed/calf_left_link'
             log_msg = 'Reaching to left knee!'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+        elif task == 'wiping_face':
+            goal.pose.position.x = 0.21
+            goal.pose.position.y = 0.
+            goal.pose.position.z = -0.24
+            goal.pose.orientation.x = 0.
+            goal.pose.orientation.y = 0.
+            goal.pose.orientation.z = 1.
+            goal.pose.orientation.w = 0.
+            goal.header.frame_id = '/autobed/head_link'
+            log_msg = 'Reaching to mouth!'
             print log_msg
             self.feedback_pub.publish(String(log_msg))
         else:

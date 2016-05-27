@@ -229,11 +229,12 @@ class classifier(learning_base):
             # fitting
             print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
-            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter)
+            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, shuffle=True,\
+                                    average=True)
             self.dt.fit(X_features, y)
 
 
-    def partial_fit(self, X, y, sample_weight=None):
+    def partial_fit(self, X, y, classes=None, sample_weight=None):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -241,7 +242,7 @@ class classifier(learning_base):
 
         if self.method == 'sgd':
             X_features       = self.rbf_feature.transform(X)
-            self.dt.partial_fit(X_features,y, sample_weight=sample_weight)
+            self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
         else:
             print "Not available method, ", self.method
             sys.exit()

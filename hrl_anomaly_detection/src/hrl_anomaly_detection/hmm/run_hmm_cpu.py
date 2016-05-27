@@ -177,7 +177,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                                     np.ones(len(abnormalTrainData[0])) ])
 
-            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+            # compute last three indices only
+            r = Parallel(n_jobs=1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=nLength-3, \
@@ -200,22 +201,37 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if len(logps) == 0:
                 scores.append(-100000)
                 continue
-            if np.mean(norm_logp) < 0:
+            if np.mean(norm_logp) < 0 or np.amin(norm_logp) < 0:
                 continue
-                
-            max_logp = np.amax(logps) 
-            norm_logp /= max_logp
+
+            # normalization
+            max_logp     = np.amax(logps) 
+            norm_logp   /= max_logp
             abnorm_logp /= max_logp
 
-            diff_vals = -abnorm_logp + np.mean(norm_logp)
-            diff_list = []
-            for v in diff_vals:
-                if v is np.nan or v is np.inf: continue
-                diff_list.append(v)
+            # mu, sig
+            l_mu  = np.mean(norm_logp)
+            l_sig = np.std(norm_logp)
+            new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
 
-            if len(diff_list)==0: continue
+            from scipy.stats import norm
+            score = 0.0; c1=1.0; c2=5.0; c3=1.e+2
+            score += c1*l_sig
+            score += c2*np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
+            score += c3/max_logp
+
+            ## # score 1 - 
+            ## diff_vals = -abnorm_logp + np.mean(norm_logp)
+            ## diff_list = []
+            ## for v in diff_vals:
+            ##     if v is np.nan or v is np.inf: continue
+            ##     diff_list.append(v)
+
+            ## if len(diff_list)==0: continue
+            ## score = np.median(diff_list)
+            
             ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            scores.append( np.median(diff_list) )
+            scores.append( 1.0/score )
 
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
@@ -558,8 +574,8 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(1.0,10.0,10) }
+        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
+                      'cov': np.linspace(1.0,10.0,5) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
