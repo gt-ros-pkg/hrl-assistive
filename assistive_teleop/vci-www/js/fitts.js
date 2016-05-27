@@ -27,7 +27,7 @@ var FittsLawTest = function (options) {
     var endTime;
     var startTime;
 
-    var shuffleArray = function (array) {
+/*    var shuffleArray = function (array) {
         var currentIndex = array.length;
         var randInd, tmp;
         while (0 !== currentIndex) {
@@ -38,13 +38,47 @@ var FittsLawTest = function (options) {
             array[randInd] = tmp;
         }
     };
+    var shuffleArray = function (array) {
+        var newOrder = [];
+        var ind = 0;
+        var step = 3;
+        var total = array.length;
+        while (array.length > 0) {
+            while (ind < array.length) {
+                newOrder.push(array.splice(ind, 1)[0]); 
+                ind += step;
+            }
+            ind = ind % array.length;
+        };
+        return newOrder;
+    };
+*/
+
+    var shuffleArray = function (array) {
+        var newArray = [];
+        while (array.length > 0) {
+            // Take first element
+            if (array.length>0){
+                newArray.push(array.splice(0,1)[0])
+            }
+            // Take last element
+            if (array.length>0){
+                newArray.push(array.splice(array.length-1,1)[0])
+            }
+            // Take middle element
+            if (array.length>0){
+                newArray.push(array.splice(Math.round(array.length/2),1)[0])
+            }
+        }
+        return newArray;
+    };
 
     var sphericalTargets = function () {
         var h = $targetArea.height();
         var w =  $targetArea.width();
         var cx = w/2;
         var cy = h/2;
-        var widths = [20,40,80, 120];
+        var widths = [20,40,80, 160];
         var lim = Math.min(h, w)/2 - 0.75*widths[widths.length-1];
         var ringDiameters = [0.25*lim, 0.5*lim, 0.75*lim, lim]; 
         var n = 25;
@@ -54,7 +88,7 @@ var FittsLawTest = function (options) {
                 setParameters.push([ringDiameters[id], widths[iw]]);
             }
         }
-        shuffleArray(setParameters); // Randomize the order of cases
+        setParameters = shuffleArray(setParameters); // Randomize the order of cases
         for (var i=0; i<setParameters.length; i += 1) {
             targetSets.push(targetRing(cx, cy, n, setParameters[i][0], setParameters[i][1]));
         }
@@ -248,10 +282,12 @@ var FittsLawTest = function (options) {
         html += "<h3>Fitts Law Model: <span style='color:red'>MT = " + a.toString() + " + " + b.toString() + " x IDe</span></h3>";
         html += "<h3>Throughput: <span style='color:red'>"+TP+"</span></h3>";
         html += "<h3>Please click below to download your results, and e-mail them back to me!</h3>";
+        html += "<p>For more information, check out the <a href='https://en.wikipedia.org/wiki/Fitts%27s_law'>Wikipedia entry on Fitt's Law</a></p>";
+        $targetArea.css({'background-color':'LightGreen'}).html(html);
+
         var resultURL = makeResultsFile(a, b, TP, dataSets);
         var time = new Date();
         var dataFileName = "FittsLawResults-"+time.getDate()+'-'+(time.getMonth()+1).toString()+'-'+time.getUTCFullYear()+'-'+time.getHours()+'-'+time.getMinutes()+'-'+time.getSeconds()+'.txt';
-        $targetArea.css({'background-color':'LightGreen'}).html(html);
         var $downloadDiv = $('<a class="startButton" download="'+dataFileName+'">Download Results</a>').button().attr('href', resultURL);
         $targetArea.append($downloadDiv)
     };
