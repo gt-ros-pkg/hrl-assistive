@@ -862,7 +862,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
             dtc.set_params( class_weight=weights[j] )
-            dtc.set_params( class_weight=weights[j], sgd_n_iter=20 )
+            dtc.set_params( class_weight=weights[j], sgd_n_iter=10 )
         else:
             print "Not available method"
             return "Not available method", -1, params
