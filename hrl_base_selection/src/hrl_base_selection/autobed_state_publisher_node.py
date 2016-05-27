@@ -51,10 +51,17 @@ class AutobedStatePublisherNode(object):
         rospy.sleep(2)
         init_centered = JointState()
         init_centered.header.stamp = rospy.Time.now()
-        init_centered.name = [None]*(1)
-        init_centered.position = [None]*(1)
+        init_centered.name = [None]*(4)
+        init_centered.position = [None]*(4)
         init_centered.name[0] = "autobed/head_bed_leftright_joint"
+        init_centered.name[1] = "autobed/head_bed_updown_joint"
+        init_centered.name[2] = "autobed/head_bed_to_worldframe_joint"
+        init_centered.name[3] = "autobed/head_bed_to_bedframe_joint"
+
         init_centered.position[0] = 0
+        init_centered.position[1] = 0
+        init_centered.position[2] = 0
+        init_centered.position[3] = 0
         # self.joint_pub.publish(init_centered)
         self.bed_status = None
         rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
@@ -92,7 +99,7 @@ class AutobedStatePublisherNode(object):
         poses=np.asarray(data.data);
         # print poses
         
-        self.bed_height = ((poses[1]/100) - 0.09) if (((poses[1]/100) - 0.09) 
+        self.bed_height = ((poses[1]/100)) if (((poses[1]/100))
                 > 0) else 0
         if poses[0]<0.02:
             poses[0]=0.02
@@ -152,7 +159,9 @@ class AutobedStatePublisherNode(object):
         joint_state_stable = [self.bed_height,
                               self.head_filt_data,
                               0,#self.leg_filt_data
-                              0]# -(1+(4.0/9.0))*self.leg_filt_data
+                              0, # -(1+(4.0/9.0))*self.leg_filt_data
+                              -self.head_filt_data,
+                              self.head_filt_data]
 
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
@@ -165,23 +174,28 @@ class AutobedStatePublisherNode(object):
                 #Filter data
                 self.filter_data()
 
-                joint_state.name = [None]*(4)
-                joint_state.position = [None]*(4)
+                joint_state.name = [None]*(6)
+                joint_state.position = [None]*(6)
                 joint_state.name[0] = "autobed/tele_legs_joint"
                 joint_state.name[1] = "autobed/head_rest_hinge"
                 joint_state.name[2] = "autobed/leg_rest_upper_joint"
                 joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
+                joint_state.name[4] = "autobed/head_bed_to_worldframe_joint"
+                joint_state.name[5] = "autobed/head_bed_to_bedframe_joint"
                 # print self.bed_height
                 if not self.bed_status:
                     joint_state.position[0] = self.bed_height
                     joint_state.position[1] = self.head_filt_data
                     joint_state.position[2] = 0  # self.leg_filt_data
                     joint_state.position[3] = 0  # -(1+(4.0/9.0))*self.leg_filt_data
+                    joint_state.position[4] = -self.head_filt_data
+                    joint_state.position[5] = self.head_filt_data
                     joint_state_stable = joint_state.position[:]
                 else:
                     joint_state.position = joint_state_stable
                     
                 self.joint_pub.publish(joint_state)
+                # print 'test'
                 # self.set_autobed_user_configuration(self.head_filt_data, AutobedOcc().data)
                 self.set_autobed_user_configuration(joint_state.position[1], True)
                 rate.sleep()
@@ -256,6 +270,7 @@ class AutobedStatePublisherNode(object):
                 print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
                 print 'Instead it is: ', bth
                 print 'Raw value (rad): ', headrest_th
+
             human_joint_state.position[15] = 0.
             human_joint_state.position[16] = 0.
             self.joint_pub.publish(human_joint_state)
