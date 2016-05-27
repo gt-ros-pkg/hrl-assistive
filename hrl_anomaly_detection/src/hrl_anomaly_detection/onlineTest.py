@@ -206,6 +206,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 5
     nValidData   = 10
+    nPartialFit  = 2
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -215,18 +216,23 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data = {}
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-            ROC_data[method]['result'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                           for j in xrange(nPoints) ]
 
             # parallelization 
             r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
                                                ( idx, save_data_path, task, \
                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                  SVM_dict, fit_method=fit_method,\
-                                                nValidData=nValidData) \
+                                                nValidData=nValidData, nPartialFit=nPartialFit) \
                                                 for idx in xrange(nFolds) )
             l_data = r
             for i in xrange(len(l_data)): # each fold
@@ -236,7 +242,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                     except:
                         print l_data[i]
                         sys.exit()
-                    for k in xrange(nValidData):
+                    for k in xrange(nValidData/nPartialFit):
                         ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
                         ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
                         ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
@@ -478,7 +484,7 @@ def plotPLR(method, nPoints, nValidData, ROC_data, fit_method=None, fig=None):
         plr_l = []
 
         for i in xrange(nPoints):
-            print i,j, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
+            print j,i, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
             tpr_l.append( float(np.sum(tp_ll[i][j]))/float(np.sum(tp_ll[i][j])+np.sum(fn_ll[i][j]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i][j]))/float(np.sum(fp_ll[i][j])+np.sum(tn_ll[i][j]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
@@ -729,11 +735,11 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     return data
 
 def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
-                                fit_method='full_fit', nValidData=10):
+                                fit_method='full_fit', nValidData=10, nPartialFit = 2):
 
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
     nPoints = ROC_dict['nPoints']
-
+    
     if method == 'sgd' and fit_method.find('full')>=0:
         weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
@@ -760,11 +766,11 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     data = {}
     # pass method if there is existing result
     data[method] = {}
-    data[method]['tp_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
-    data[method]['result'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
+    data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
     
     if ROC_data[method]['complete'] == True: return data
 
@@ -864,8 +870,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
-            nPartialFit = 2
-
             for idx in range(0,len(X_valid_test),nPartialFit):
                 for k in xrange(nPartialFit):
                     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
