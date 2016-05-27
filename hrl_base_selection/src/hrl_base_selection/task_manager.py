@@ -406,8 +406,9 @@ class BaseSelectionManager(object):
             #     configuration_goals[0] += 0.02
             autobed_goal.data = [configuration_goals[2], configuration_goals[1], self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals[1]
-            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
+            print 'The autobed should be set to a height of: ', configuration_goals[1], ' cm'
+            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2], 'degrees'
+            print 'The PR2 spine should be set to a height of: ', configuration_goals[0]*100., 'cm'
 
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         # msg.tag_goal_pose.header.frame_id
