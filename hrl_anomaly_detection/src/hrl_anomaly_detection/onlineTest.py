@@ -222,7 +222,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data[method]['result'] = [ [ [] for i in xrange(nValidData) ] for j in xrange(nPoints) ]
 
             # parallelization 
-            r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_incremental)\
+            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
                                                ( idx, save_data_path, task, \
                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                  SVM_dict, fit_method=fit_method,\
@@ -737,7 +737,8 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     if method == 'sgd' and fit_method.find('full')>=0:
         weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
-        weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-0.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
+        ## weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
     
 
     print "start to load hmm data, ", modeling_pkl
@@ -803,7 +804,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         normal_data=False
         abnormal_data=False
         for idx in train_idx_list:
-            if train_Y[idx][0] == -1 and normal_data is False:
+            if train_Y[idx][0] == -1: # and normal_data is False:
                 initial_train_X.append(train_X[idx])
                 initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
@@ -863,18 +864,19 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
-            for idx in xrange(len(X_valid_test)):
-                X_ptrain, Y_ptrain = X_valid_test[idx], Y_valid_test[idx]
-                sample_weight = [1.0]*nLength
-                ## if Y_ptrain == -1:
-                ##     sample_weight = [1.0]*nLength
-                ## else:
-                ##     sample_weight = np.logspace(1,2.0,nLength )
-                ##     sample_weight /= np.amax(sample_weight)
-                ## sample_weight *= 20.0
-                ## sample_weight /= (float(nSamples + idx+1))
+            for idx in range(0,len(X_valid_test),nPartialFit):
+                for k in xrange(nPartialFit):
+                    X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
+                    ## sample_weight = [1.0]*nLength
+                    if Y_ptrain == -1:
+                        sample_weight = [1.0]*nLength
+                    else:
+                        sample_weight = np.logspace(1,2.0,nLength )
+                        sample_weight /= np.amax(sample_weight)
+                    sample_weight *= 10.0
+                    ## sample_weight /= (float(nSamples + idx+1))
 
-                ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight)
 
                 tp_l = []
                 fp_l = []
