@@ -920,11 +920,11 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
                     result_list.append([tp,fn,fp,tn])
 
-                data[method]['tp_l'][j][idx] += tp_l
-                data[method]['fp_l'][j][idx] += fp_l
-                data[method]['fn_l'][j][idx] += fn_l
-                data[method]['tn_l'][j][idx] += tn_l
-                data[method]['result'][j][idx].append(result_list)
+                data[method]['tp_l'][j][idx/nPartialFit] += tp_l
+                data[method]['fp_l'][j][idx/nPartialFit] += fp_l
+                data[method]['fn_l'][j][idx/nPartialFit] += fn_l
+                data[method]['tn_l'][j][idx/nPartialFit] += tn_l
+                data[method]['result'][j][idx/nPartialFit].append(result_list)
 
                 print j, idx, " = ",  np.sum(tp_l),  np.sum(fp_l),  np.sum(fn_l),  np.sum(tn_l)
 
