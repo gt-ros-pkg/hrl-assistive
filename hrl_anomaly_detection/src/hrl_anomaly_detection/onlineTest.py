@@ -205,8 +205,8 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 5
-    nValidData   = 10
-    nPartialFit  = 2
+    nValidData   = 20
+    nPartialFit  = 4
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
