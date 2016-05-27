@@ -109,7 +109,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 4:
@@ -126,14 +126,15 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 5.5}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','sgd' ],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','sgd','osvm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -10., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.logspace(-2, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:

@@ -809,7 +809,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         initial_train_Y  = []
         initial_idx_list = []
         normal_data=False
-        abnormal_data=False
+        abnormal_data=True
         for idx in train_idx_list:
             if train_Y[idx][0] == -1: # and normal_data is False:
                 initial_train_X.append(train_X[idx])
@@ -868,7 +868,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             return "Not available method", -1, params
 
         # Training fit
-        ## ret = dtc.fit(initial_train_X, initial_train_Y)
+        ret = dtc.fit(initial_train_X, initial_train_Y)
         ## if ret is False: return 'fit failed', -1
 
         new_initial_train_X = copy.copy(initial_train_X)
@@ -877,26 +877,25 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         # Incremental fit
         if fit_method.find('incremental') >= 0:
             for idx in range(0,len(X_valid_test),nPartialFit):
-                for k in xrange(nPartialFit):
-                    X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
-                    new_initial_train_X = np.vstack([new_initial_train_X, X_ptrain])
-                    new_initial_train_Y = np.hstack([new_initial_train_Y, Y_ptrain])
-                    
-                ret = dtc.fit(new_initial_train_X, new_initial_train_Y)
-                    
                 ## for k in xrange(nPartialFit):
                 ##     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
-                ##     ## sample_weight = [1.0]*nLength
-                ##     if Y_ptrain == -1:
-                ##         sample_weight = [1.0]*nLength
-                ##     else:
-                ##         sample_weight = np.linspace(0,1.0,nLength )
-                ##         ## sample_weight = np.logspace(1,2.0,nLength )
-                ##         sample_weight /= np.amax(sample_weight)
-                ##     sample_weight *= 1000.0
-                ##     ## sample_weight /= (float(nSamples + idx+1))
+                ##     new_initial_train_X = np.vstack([new_initial_train_X, X_ptrain])
+                ##     new_initial_train_Y = np.hstack([new_initial_train_Y, Y_ptrain])                    
+                ## ret = dtc.fit(new_initial_train_X, new_initial_train_Y)
+                    
+                for k in xrange(nPartialFit):
+                    X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
+                    ## sample_weight = [1.0]*nLength
+                    if Y_ptrain == -1:
+                        sample_weight = [1.0]*nLength
+                    else:
+                        sample_weight = np.linspace(0,1.0,nLength )
+                        ## sample_weight = np.logspace(1,2.0,nLength )
+                        sample_weight /= np.amax(sample_weight)
+                    sample_weight *= 1000.0
+                    ## sample_weight /= (float(nSamples + idx+1))
 
-                ##     ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
 
                 tp_l = []
                 fp_l = []

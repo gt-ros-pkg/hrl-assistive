@@ -117,8 +117,7 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
-            
-            
+                        
         learning_base.__init__(self)
 
     def fit(self, X, y, ll_idx=None, parallel=True):
