@@ -809,7 +809,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         initial_train_Y  = []
         initial_idx_list = []
         normal_data=False
-        abnormal_data=True
+        abnormal_data=False
         for idx in train_idx_list:
             if train_Y[idx][0] == -1: # and normal_data is False:
                 initial_train_X.append(train_X[idx])
@@ -895,6 +895,9 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                     sample_weight *= 1000.0
                     ## sample_weight /= (float(nSamples + idx+1))
 
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
                     ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
 
                 tp_l = []
