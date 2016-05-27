@@ -813,7 +813,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 abnormal_data = True
 
         initial_train_X, initial_train_Y, _ = flattenSample(initial_train_X, initial_train_Y)
-        print np.shape(initial_train_X), np.shape(initial_train_Y)
+        ## print np.shape(initial_train_X), np.shape(initial_train_Y)
 
     ## validation set (incremental fitting) and test set
     X_test = []
@@ -879,7 +879,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 tn_l = []
                 fn_l = []
                 result_list = []
-                nSamples = len(initial_train_Y)
 
                 # incremental learning and classification
                 for i in xrange(len(X_eval_test)):
@@ -918,7 +917,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 data[method]['tn_l'][j][idx] += tn_l
                 data[method]['result'][j][idx].append(result_list)
 
-                print j, idx, data[method]['tp_l'][j][idx], data[method]['fp_l'][j][idx], data[method]['fn_l'][j][idx],data[method]['tn_l'][j][idx]
+                print j, idx, " = ",  np.sum(tp_l),  np.sum(fp_l),  np.sum(fn_l),  np.sum(tn_l)
 
         else:
             idx  = 0
