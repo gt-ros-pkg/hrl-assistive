@@ -4,15 +4,12 @@ var FITTS = {
             var dwellDelay = $('#dwellTimeInput').val();
             var test = new FittsLawTest({dwellTime: dwellDelay});
             $('#testArea').empty();
-//            $('#startButton').remove();
- //           $('form').remove();
             test.run();
         }
 
         $('button.startButton').button().on('click', startFittsLaw);
     }
 };
-
 
 var FittsLawTest = function (options) {
     'use strict';
@@ -47,9 +44,9 @@ var FittsLawTest = function (options) {
         var w =  $targetArea.width();
         var cx = w/2;
         var cy = h/2;
-        var widths = [20,60,100];
+        var widths = [20,40,80, 120];
         var lim = Math.min(h, w)/2 - 0.75*widths[widths.length-1];
-        var ringDiameters = [0.33*lim, 0.67*lim, lim]; 
+        var ringDiameters = [0.25*lim, 0.5*lim, 0.75*lim, lim]; 
         var n = 25;
         var targetSets = [];
         for (var iw=0; iw < widths.length; iw +=1) {
@@ -223,10 +220,11 @@ var FittsLawTest = function (options) {
             for (var j=0; j<data.length; j +=1) {
                var Vse = [ data[j].endXY[0] - data[j].startXY[0], data[j].endXY[1] - data[j].startXY[1] ];
                var Vsg = [ data[j].goalXY[0] - data[j].startXY[0], data[j].goalXY[1] - data[j].startXY[1] ];
-               var err = ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vsg) ) - math.norm(Vsg);
+               var err = math.norm(Vsg) - ( ( math.dot(Vse, Vsg) / math.dot(Vsg, Vsg) ) * math.norm(Vsg) );
                directionalErrors.push(err);
             }
-            var We = 4.133*math.std(directionalErrors);
+            var err_std = math.std(directionalErrors);
+            var We = 4.133*err_std;
             var dists = getDistances(data);
             var De = math.mean(dists);
             var IDe = math.log((De/We)+1 , 2);
@@ -235,47 +233,53 @@ var FittsLawTest = function (options) {
             var MT = math.mean(times);
             MTs.push(MT);
         }
+        console.log("MTs: ", MTs);
+        console.log("IDes: ", IDes);
+        var TP = math.round(throughput(MTs, IDes), 3);
         var fittsCoefficients = leastSquares(IDes, MTs);
         var a = math.round(fittsCoefficients.intercept, 4);
         var b = math.round(fittsCoefficients.slope, 4);
-        console.log(fittsCoefficients);
-        displayResults(a, b, dataSets);
+        displayResults(a, b, TP,  dataSets);
     };
 
-    var displayResults = function (a, b, dataSets) {
+    var displayResults = function (a, b, TP, dataSets) {
         var html = "";
-//        html += "<p>Fitts Law Model: MT = " + a.toString() + " + " + b.toString() + " x IDe</p>";
-        html += "<h2>Please click below to download your results, and e-mail them back to me!</h2>";
-        var resultURL = makeResultsFile(a, b, dataSets);
+        html += "<h2>Fitt's Law Throughput Test Results</h2>";
+        html += "<h3>Fitts Law Model: <span style='color:red'>MT = " + a.toString() + " + " + b.toString() + " x IDe</span></h3>";
+        html += "<h3>Throughput: <span style='color:red'>"+TP+"</span></h3>";
+        html += "<h3>Please click below to download your results, and e-mail them back to me!</h3>";
+        var resultURL = makeResultsFile(a, b, TP, dataSets);
         var time = new Date();
-        var dataFileName = "FittsLawResults-"+time.getDate()+'-'+time.getMonth()+'-'+time.getUTCFullYear()+'-'+time.getHours()+'-'+time.getMinutes()+'-'+time.getSeconds();
+        var dataFileName = "FittsLawResults-"+time.getDate()+'-'+(time.getMonth()+1).toString()+'-'+time.getUTCFullYear()+'-'+time.getHours()+'-'+time.getMinutes()+'-'+time.getSeconds()+'.txt';
         $targetArea.css({'background-color':'LightGreen'}).html(html);
-        var $downloadDiv = $('<a class="startButton" download="'+dataFileName+'">Download Results</a>').button().attr('href', resultURL).css({'bottom':'initial', 'top':'50%'}).css({'bottom':'initial', 'top':'50%'});
+        var $downloadDiv = $('<a class="startButton" download="'+dataFileName+'">Download Results</a>').button().attr('href', resultURL);
         $targetArea.append($downloadDiv)
     };
 
     var leastSquares = function (X,Y) {
         var sum_x = math.sum(X);
         var sum_y = math.sum(Y);
-        var sum_xx = 0;
-        var sum_xy = 0;
-        var sum_yy = 0;
+        var sum_xx = math.dot(X,X);
+        var sum_xy = math.dot(X,Y);
         var N = X.length;
-
-        for (var i=0; i <N; i += 1) {
-            sum_xx += X[i]*X[i];
-            sum_xy += X[i]*Y[i];
-            sum_yy += Y[i]*Y[i];
-        };
         var slope = (N*sum_xy - sum_x*sum_y) / (N*sum_xx - sum_x*sum_x)
-        var intercept = (sum_y/N) - (slope * sum_x)/N;
+        var intercept = (sum_y/N) - slope * (sum_x/N);
         return {slope:slope, intercept:intercept};
     };
 
+    var throughput = function (MTlist, IDlist) {
+        var tp = 0;
+        for (var i=0; i<MTlist.length; i += 1) {
+            tp += (IDlist[i] / MTlist[i])
+        }
+        return 1000 * (tp / MTlist.length); // time in ms. 1000 gives bits/second.
+    };
+
     var resultsFile = null;
-    var makeResultsFile = function (a, b, dataSets) {
+    var makeResultsFile = function (a, b, TP, dataSets) {
         data = {'a': a,
                 'b': b,
+                'throughput': TP,
                 'dwellTime': dwellTime,
                 'startTime': startTime,
                 'endTime': endTime,
