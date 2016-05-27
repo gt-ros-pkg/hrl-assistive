@@ -800,12 +800,14 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         initial_train_X  = []
         initial_train_Y  = []
         initial_idx_list = []
+        normal_data=False
         abnormal_data=False
         for idx in train_idx_list:
-            if train_Y[idx][0] == -1:
+            if train_Y[idx][0] == -1 and normal_data is False:
                 initial_train_X.append(train_X[idx])
                 initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
+                normal_data = True
             if train_Y[idx][0] == 1 and abnormal_data is False:
                 initial_train_X.append(train_X[idx])        
                 initial_train_Y.append([1]*len(train_X[idx]))
