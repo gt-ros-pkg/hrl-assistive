@@ -880,7 +880,8 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                     if Y_ptrain == -1:
                         sample_weight = [1.0]*nLength
                     else:
-                        sample_weight = np.logspace(1,2.0,nLength )
+                        sample_weight = np.linspace(0,1.0,nLength )
+                        ## sample_weight = np.logspace(1,2.0,nLength )
                         sample_weight /= np.amax(sample_weight)
                     sample_weight *= 1000.0
                     ## sample_weight /= (float(nSamples + idx+1))
