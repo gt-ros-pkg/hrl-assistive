@@ -871,16 +871,16 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         ## ret = dtc.fit(initial_train_X, initial_train_Y)
         ## if ret is False: return 'fit failed', -1
 
-        new_inital_train_X = copy.copy(initial_train_X)
-        new_inital_train_Y = copy.copy(initial_train_Y)
+        new_initial_train_X = copy.copy(initial_train_X)
+        new_initial_train_Y = copy.copy(initial_train_Y)
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
             for idx in range(0,len(X_valid_test),nPartialFit):
                 for k in xrange(nPartialFit):
                     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
-                    new_inital_train_X = np.vstack([new_inital_train_X, X_ptrain])
-                    new_inital_train_Y = np.vstack([new_inital_train_X, X_ptrain])
+                    new_initial_train_X = np.vstack([new_inital_train_X, X_ptrain])
+                    new_initial_train_Y = np.hstack([new_inital_train_Y, Y_ptrain])
                     
                 ret = dtc.fit(new_initial_train_X, new_initial_train_Y)
                     
