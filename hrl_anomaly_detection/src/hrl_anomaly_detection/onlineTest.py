@@ -260,7 +260,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-        plotPLR(method, nPoints, nValidData, ROC_data, fit_method=fit_method, fig=fig)
+        plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
     plt.legend(loc=4,prop={'size':16})                    
     plt.show()
         
@@ -445,7 +445,7 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     return
 
 
-def plotPLR(method, nPoints, nValidData, ROC_data, fit_method=None, fig=None):
+def plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=None, fig=None):
     #----------------------------------------------------------------------------
     # Plot a positive likelihood ratio graph
     #----------------------------------------------------------------------------
@@ -477,7 +477,7 @@ def plotPLR(method, nPoints, nValidData, ROC_data, fit_method=None, fig=None):
 
     print "--------------------------------"
     print method
-    for j in xrange(nValidData):
+    for j in xrange(nValidData/nPartialFit):
         tpr_l = []
         fpr_l = []
         fnr_l = []
@@ -617,7 +617,8 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         Y_test.append(ll_classifier_test_Y[j])
 
     idx_list = range(len(X_test))
-    new_idx_list = randomList(idx_list)
+    new_idx_list = copy.copy(idx_list) #randomList(idx_list)
+    random.shuffle(new_idx_list)
 
     X_test = [X_test[idx] for idx in new_idx_list]
     Y_test = [Y_test[idx] for idx in new_idx_list]
@@ -843,7 +844,9 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         Y_test.append(ll_classifier_test_Y[j])
 
     idx_list     = range(len(X_test))
-    new_idx_list = randomList(idx_list)
+    new_idx_list = copy.copy(idx_list) #randomList(idx_list)
+    random.shuffle(new_idx_list)
+    
     X_valid_test = [X_test[idx] for idx in new_idx_list[:nValidData]]
     Y_valid_test = [Y_test[idx] for idx in new_idx_list[:nValidData]]
     X_eval_test  = [X_test[idx] for idx in new_idx_list[nValidData:]]
@@ -879,10 +882,10 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                     else:
                         sample_weight = np.logspace(1,2.0,nLength )
                         sample_weight /= np.amax(sample_weight)
-                    sample_weight *= 10.0
+                    sample_weight *= 20.0
                     ## sample_weight /= (float(nSamples + idx+1))
 
-                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight)
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
 
                 tp_l = []
                 fp_l = []
