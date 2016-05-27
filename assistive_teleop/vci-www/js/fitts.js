@@ -27,33 +27,6 @@ var FittsLawTest = function (options) {
     var endTime;
     var startTime;
 
-/*    var shuffleArray = function (array) {
-        var currentIndex = array.length;
-        var randInd, tmp;
-        while (0 !== currentIndex) {
-            var randInd = Math.floor(Math.random() * currentIndex);
-            currentIndex -= 1;
-            tmp = array[currentIndex];
-            array[currentIndex] = array[randInd];
-            array[randInd] = tmp;
-        }
-    };
-    var shuffleArray = function (array) {
-        var newOrder = [];
-        var ind = 0;
-        var step = 3;
-        var total = array.length;
-        while (array.length > 0) {
-            while (ind < array.length) {
-                newOrder.push(array.splice(ind, 1)[0]); 
-                ind += step;
-            }
-            ind = ind % array.length;
-        };
-        return newOrder;
-    };
-*/
-
     var shuffleArray = function (array) {
         var newArray = [];
         while (array.length > 0) {
