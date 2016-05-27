@@ -14,6 +14,7 @@ from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from sklearn import preprocessing
 from joblib import Parallel, delayed
 import random, copy
+from sklearn import metrics
 
 
 import itertools
@@ -408,7 +409,6 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
 
-        from sklearn import metrics
         print "--------------------------------"
         print method
         print tpr_l
@@ -469,11 +469,13 @@ def plotPLR(method, nPoints, nValidData, ROC_data, fit_method=None, fig=None):
     plr_ll = []
 
 
-    tpr_l = []
-    fpr_l = []
-    fnr_l = []
-    plr_l = []
+    print "--------------------------------"
+    print method
     for j in xrange(nValidData):
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        plr_l = []
 
         for i in xrange(nPoints):
             print i,j, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
@@ -483,36 +485,24 @@ def plotPLR(method, nPoints, nValidData, ROC_data, fit_method=None, fig=None):
             ## plr_l.append( tpr_l[-1]/fpr_l[-1] )
             ## print plr_l
 
-    from sklearn import metrics
+        print metrics.auc(fpr_l, tpr_l, True)
+        # visualization
+        color = colors.next()
+        shape = shapes.next()
+        ax1 = fig.add_subplot(111)            
+        plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label+str(j), mec=color, ms=6, mew=2)
+
     print "--------------------------------"
-    print method
-    print tpr_l
-    print fpr_l
-    print metrics.auc(fpr_l, tpr_l, True)
-    print "--------------------------------"
 
+    plt.xlim([-1, 101])
+    plt.ylim([-1, 101])
+    plt.ylabel('True positive rate (percentage)', fontsize=22)
+    plt.xlabel('False positive rate (percentage)', fontsize=22)
+    plt.xticks([0, 50, 100], fontsize=22)
+    plt.yticks([0, 50, 100], fontsize=22)
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    if show_flag: plt.show()
 
-
-    ## # visualization
-    ## color = colors.next()
-    ## shape = shapes.next()
-    ## ax1 = fig.add_subplot(111)            
-    ## plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-    ## plt.xlim([-1, 101])
-    ## plt.ylim([-1, 101])
-    ## plt.ylabel('True positive rate (percentage)', fontsize=22)
-    ## plt.xlabel('False positive rate (percentage)', fontsize=22)
-
-    ## ## font = {'family' : 'normal',
-    ## ##         'weight' : 'bold',
-    ## ##         'size'   : 22}
-    ## ## matplotlib.rc('font', **font)
-    ## ## plt.tick_params(axis='both', which='major', labelsize=12)
-    ## plt.xticks([0, 50, 100], fontsize=22)
-    ## plt.yticks([0, 50, 100], fontsize=22)
-    ## plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-    ## if show_flag: plt.show()
-    
     return
 
 
@@ -745,9 +735,9 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     nPoints = ROC_dict['nPoints']
 
     if method == 'sgd' and fit_method.find('full')>=0:
-        weights = [1.0] #np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
-        weights = [1.0] #np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
     
 
     print "start to load hmm data, ", modeling_pkl
