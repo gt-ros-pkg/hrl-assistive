@@ -204,7 +204,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # get subject1 - task1 's hmm & classifier data
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
-    ROC_dict['nPoints'] = nPoints = 10
+    ROC_dict['nPoints'] = nPoints = 5
     nValidData   = 10
 
     for fit_method in fit_methods:
@@ -223,9 +223,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
 
             # parallelization 
             r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_incremental)\
-                                                ( idx, save_data_path, task, \
-                                                  method, ROC_data, ROC_dict, AE_dict, \
-                                                  SVM_dict, fit_method=fit_method,\
+                                               ( idx, save_data_path, task, \
+                                                 method, ROC_data, ROC_dict, AE_dict, \
+                                                 SVM_dict, fit_method=fit_method,\
                                                 nValidData=nValidData) \
                                                 for idx in xrange(nFolds) )
             l_data = r
@@ -863,16 +863,16 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         if fit_method.find('incremental') >= 0:
             for idx in xrange(len(X_valid_test)):
                 X_ptrain, Y_ptrain = X_valid_test[idx], Y_valid_test[idx]
-                if Y_ptrain == -1:
-                    sample_weight = [1.0]*nLength
-                else:
-                    sample_weight = np.logspace(1,2.0,nLength )
-                    sample_weight /= np.amax(sample_weight)
-                sample_weight *= 20.0
-                sample_weight /= (float(nSamples + idx+1))
+                sample_weight = [1.0]*nLength
+                ## if Y_ptrain == -1:
+                ##     sample_weight = [1.0]*nLength
+                ## else:
+                ##     sample_weight = np.logspace(1,2.0,nLength )
+                ##     sample_weight /= np.amax(sample_weight)
+                ## sample_weight *= 20.0
+                ## sample_weight /= (float(nSamples + idx+1))
 
                 ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
-                if ret is False: return 'fit failed', -1
 
                 tp_l = []
                 fp_l = []
@@ -909,7 +909,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                             tn_l.append(1)
 
                     result_list.append([tp,fn,fp,tn])
-                    ## print tp_l, fn_l, y_est, Y_ptest[0]
 
                 data[method]['tp_l'][j][idx] += tp_l
                 data[method]['fp_l'][j][idx] += fp_l
