@@ -879,8 +879,8 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             for idx in range(0,len(X_valid_test),nPartialFit):
                 for k in xrange(nPartialFit):
                     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
-                    new_initial_train_X = np.vstack([new_inital_train_X, X_ptrain])
-                    new_initial_train_Y = np.hstack([new_inital_train_Y, Y_ptrain])
+                    new_initial_train_X = np.vstack([new_initial_train_X, X_ptrain])
+                    new_initial_train_Y = np.hstack([new_initial_train_Y, Y_ptrain])
                     
                 ret = dtc.fit(new_initial_train_X, new_initial_train_Y)
                     
