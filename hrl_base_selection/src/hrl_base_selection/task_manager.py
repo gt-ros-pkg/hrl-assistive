@@ -406,8 +406,9 @@ class BaseSelectionManager(object):
             #     configuration_goals[0] += 0.02
             autobed_goal.data = [configuration_goals[2], configuration_goals[1], self.bed_state_leg_theta]
             self.autobed_pub.publish(autobed_goal)
-            print 'The autobed should be set to a height of: ', configuration_goals[1]
-            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2]
+            print 'The autobed should be set to a height of: ', configuration_goals[1], ' cm'
+            print 'The autobed should be set to a head rest angle of: ', configuration_goals[2], 'degrees'
+            print 'The PR2 spine should be set to a height of: ', configuration_goals[0]*100., 'cm'
 
         # Here should publish configuration_goal items to robot Z axis and to Autobed.
         # msg.tag_goal_pose.header.frame_id
@@ -550,7 +551,7 @@ class BaseSelectionManager(object):
     def reach_arm(self, task):
         goal = PoseStamped()
         if task == 'scratching_knee_left':
-            goal.pose.position.x = -0.10310556
+            goal.pose.position.x = -0.06310556
             goal.pose.position.y = 0.07347758+0.05
             goal.pose.position.z = 0.00485197
             goal.pose.orientation.x = 0.48790861
@@ -562,9 +563,9 @@ class BaseSelectionManager(object):
             print log_msg
             self.feedback_pub.publish(String(log_msg))
         elif task == 'wiping_face':
-            goal.pose.position.x = 0.21
+            goal.pose.position.x = 0.17
             goal.pose.position.y = 0.
-            goal.pose.position.z = -0.24
+            goal.pose.position.z = -0.16
             goal.pose.orientation.x = 0.
             goal.pose.orientation.y = 0.
             goal.pose.orientation.z = 1.

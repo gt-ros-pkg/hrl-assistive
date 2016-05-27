@@ -14,6 +14,7 @@ from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from sklearn import preprocessing
 from joblib import Parallel, delayed
 import random, copy
+from sklearn import metrics
 
 
 import itertools
@@ -42,7 +43,7 @@ def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, rene
 
     fit_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
     fit_renew_methods = []
-    fit_renew_methods = ['single_incremental_fit']
+    ## fit_renew_methods = ['single_fit','single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -176,6 +177,94 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
 
     return
 
+
+def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False ):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    fit_methods = ['single_incremental_fit']
+    ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = []
+    
+    #------------------------------------------
+    # get subject1 - task1 's hmm & classifier data
+    nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
+    method = 'sgd'
+    ROC_dict['nPoints'] = nPoints = 5
+    nValidData   = 10
+    nPartialFit  = 2
+
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+
+        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
+
+            ROC_data = {}
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                         for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
+                                           for j in xrange(nPoints) ]
+
+            # parallelization 
+            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
+                                               ( idx, save_data_path, task, \
+                                                 method, ROC_data, ROC_dict, AE_dict, \
+                                                 SVM_dict, fit_method=fit_method,\
+                                                nValidData=nValidData, nPartialFit=nPartialFit) \
+                                                for idx in xrange(nFolds) )
+            l_data = r
+            for i in xrange(len(l_data)): # each fold
+                for j in xrange(nPoints):
+                    try:
+                        method = l_data[i].keys()[0]
+                    except:
+                        print l_data[i]
+                        sys.exit()
+                    for k in xrange(nValidData/nPartialFit):
+                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
+                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
+                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
+                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
+                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
+
+            ROC_data[method]['complete'] = True
+            ut.save_pickle(ROC_data, roc_data_pkl)
+
+            print ROC_data[method]['tp_l'][0], ROC_data[method]['fp_l'][0], ROC_data[method]['fn_l'][0],ROC_data[method]['tn_l'][0]
+
+
+
+    fig = plt.figure(1)        
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+        ROC_data = ut.load_pickle(roc_data_pkl)
+        plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
+    plt.legend(loc=4,prop={'size':16})                    
+    plt.show()
+        
+    return
 
 
 
@@ -326,7 +415,6 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
 
-        from sklearn import metrics
         print "--------------------------------"
         print method
         print tpr_l
@@ -355,6 +443,74 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
         if show_flag: plt.show()
     
     return
+
+
+def plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=None, fig=None):
+    #----------------------------------------------------------------------------
+    # Plot a positive likelihood ratio graph
+    #----------------------------------------------------------------------------
+    if method == 'svm': label='HMM-SVM'
+    elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+    elif method == 'fixed': label='HMMs with a fixed threshold'
+    elif method == 'cssvm': label='HMM-CSSVM'
+    elif method == 'sgd': label='SGD'
+
+    if fit_method is not None: label = fit_method
+
+
+    if fig is None:
+        fig = plt.figure(1)
+        show_flag = True
+    else:
+        show_flag = False
+
+    tp_ll = ROC_data[method]['tp_l']
+    fp_ll = ROC_data[method]['fp_l']
+    tn_ll = ROC_data[method]['tn_l']
+    fn_ll = ROC_data[method]['fn_l']
+
+    tpr_ll = []
+    fpr_ll = []
+    fnr_ll = []
+    plr_ll = []
+
+
+    print "--------------------------------"
+    print method
+    for j in xrange(nValidData/nPartialFit):
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        plr_l = []
+
+        for i in xrange(nPoints):
+            print j,i, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
+            tpr_l.append( float(np.sum(tp_ll[i][j]))/float(np.sum(tp_ll[i][j])+np.sum(fn_ll[i][j]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i][j]))/float(np.sum(fp_ll[i][j])+np.sum(tn_ll[i][j]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            ## plr_l.append( tpr_l[-1]/fpr_l[-1] )
+            ## print plr_l
+
+        print metrics.auc(fpr_l, tpr_l, True)
+        # visualization
+        color = colors.next()
+        shape = shapes.next()
+        ax1 = fig.add_subplot(111)            
+        plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label+str(j), mec=color, ms=6, mew=2)
+
+    print "--------------------------------"
+
+    plt.xlim([-1, 101])
+    plt.ylim([-1, 101])
+    plt.ylabel('True positive rate (percentage)', fontsize=22)
+    plt.xlabel('False positive rate (percentage)', fontsize=22)
+    plt.xticks([0, 50, 100], fontsize=22)
+    plt.yticks([0, 50, 100], fontsize=22)
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    if show_flag: plt.show()
+
+    return
+
 
 
 def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
@@ -398,7 +554,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     else:
         X_train_scaled = X_train
     
-    # data preparation
+    # training set
     if fit_method.find('full') >= 0:
         print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
         initial_train_X = X_train_scaled
@@ -435,11 +591,14 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 initial_train_Y.append([1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
                 abnormal_data = True
+            ## else:
+            ##     initial_eval_X.append(train_X[idx])
+            ##     initial_eval_Y.append([1]*len(train_X[idx]))
 
         initial_train_X, initial_train_Y, _ = flattenSample(initial_train_X, initial_train_Y)
         print np.shape(initial_train_X), np.shape(initial_train_Y)
 
-
+    # test set
     X_test = []
     Y_test = [] 
     for j in xrange(len(ll_classifier_test_X)):
@@ -458,7 +617,9 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         Y_test.append(ll_classifier_test_Y[j])
 
     idx_list = range(len(X_test))
-    new_idx_list = randomList(idx_list)
+    new_idx_list = copy.copy(idx_list) #randomList(idx_list)
+    random.shuffle(new_idx_list)
+
     X_test = [X_test[idx] for idx in new_idx_list]
     Y_test = [Y_test[idx] for idx in new_idx_list]
 
@@ -470,8 +631,9 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
-            weights = np.logspace(-1.0, 2.0, nPoints) #ROC_dict['sgd_param_range']
+            weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
+            dtc.set_params( class_weight=weights[j], sgd_n_iter=20 )
         else:
             print "Not available method"
             return "Not available method", -1, params
@@ -492,7 +654,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                         sample_weight /= 10.0
 
                         ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight)
-            
+                        
         if ret is False: return 'fit failed', -1
 
         tp_l = []
@@ -521,8 +683,8 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                         sample_weight = np.logspace(1,2.0,nLength )
                         sample_weight /= np.amax(sample_weight)
                     
-                    sample_weight *= 25.0                
-                    sample_weight /= float(nSamples + i)
+                    sample_weight *= 20.0                
+                    sample_weight /= (float(nSamples + i))
                 else:
                     ## sample_weight = np.log10( np.linspace(1.,10.,len(X_ptrain)) )
                     ## sample_weight = np.linspace(1.,2.,len(X_ptrain))**3 #good
@@ -564,19 +726,6 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
 
             result_list.append([tp,fn,fp,tn])
 
-            ## if decision_boundary_viz:
-            ##     fig = plt.figure()
-            ##     min_logp = 0.0
-            ##     max_logp = 0.0
-
-            ##     plt.ylim([min_logp, max_logp])
-            ##     if save_pdf == True:
-            ##         fig.savefig('test.pdf')
-            ##         fig.savefig('test.png')
-            ##         os.system('cp test.p* ~/Dropbox/HRL/')
-            ##     else:
-            ##         plt.show()        
-
         data[method]['tp_l'][j] += tp_l
         data[method]['fp_l'][j] += fp_l
         data[method]['fn_l'][j] += fn_l
@@ -585,6 +734,250 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         ROC_data[method]['result'][j].append(result_list)
 
     return data
+
+def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
+                                fit_method='full_fit', nValidData=10, nPartialFit = 2):
+
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+    nPoints = ROC_dict['nPoints']
+    
+    if method == 'sgd' and fit_method.find('full')>=0:
+        weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
+    elif method == 'sgd' and fit_method.find('single')>=0:
+        weights = np.logspace(-0.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
+        ## weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
+    
+
+    print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    nState       = d['nState']        
+    ll_classifier_train_X   = d['ll_classifier_train_X']
+    ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+    ll_classifier_train_idx = d['ll_classifier_train_idx']
+    ll_classifier_test_X    = d['ll_classifier_test_X']  
+    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ll_classifier_test_idx  = d['ll_classifier_test_idx']
+    nLength = d['nLength']
+
+    #-----------------------------------------------------------------------------------------
+    X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
+                                                ll_classifier_train_Y, \
+                                                ll_classifier_train_idx)
+
+    data = {}
+    # pass method if there is existing result
+    data[method] = {}
+    data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    
+    if ROC_data[method]['complete'] == True: return data
+
+    #-----------------------------------------------------------------------------------------
+    if method.find('svm')>=0 or method.find('sgd')>=0:
+        scaler = preprocessing.StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+    else:
+        X_train_scaled = X_train
+    
+    # training set
+    if fit_method.find('full') >= 0:
+        print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
+        initial_train_X = X_train_scaled
+        initial_train_Y = Y_train
+    else:
+        train_X = []
+        train_Y = []
+        print method, " : Before classification : ", np.shape(ll_classifier_train_X), \
+          np.shape(ll_classifier_train_Y)
+        
+        # get single data
+        for j in xrange(len(ll_classifier_train_X)):
+            if method.find('svm')>=0 or method.find('sgd')>=0:
+                X = scaler.transform(ll_classifier_train_X[j])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_train_X[j]
+
+            train_X.append(X)
+            train_Y.append(ll_classifier_train_Y[j])
+        
+        train_idx_list = range(len(train_Y))
+        random.shuffle(train_idx_list)
+        initial_train_X  = []
+        initial_train_Y  = []
+        initial_idx_list = []
+        normal_data=False
+        abnormal_data=False
+        for idx in train_idx_list:
+            if train_Y[idx][0] == -1: # and normal_data is False:
+                initial_train_X.append(train_X[idx])
+                initial_train_Y.append([-1]*len(train_X[idx]))
+                initial_idx_list.append(idx)
+                normal_data = True
+            if train_Y[idx][0] == 1 and abnormal_data is False:
+                initial_train_X.append(train_X[idx])        
+                initial_train_Y.append([1]*len(train_X[idx]))
+                initial_idx_list.append(idx)
+                abnormal_data = True
+
+        initial_train_X, initial_train_Y, _ = flattenSample(initial_train_X, initial_train_Y)
+        ## print np.shape(initial_train_X), np.shape(initial_train_Y)
+
+    ## validation set (incremental fitting) and test set
+    X_test = []
+    Y_test = [] 
+    for j in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_X[j])==0: continue
+
+        try:
+            if method.find('svm')>=0 or method.find('sgd')>=0:
+                X = scaler.transform(ll_classifier_test_X[j])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_test_X[j]
+        except:
+            print ll_classifier_test_X[j]
+            continue
+            
+        X_test.append(X)
+        Y_test.append(ll_classifier_test_Y[j])
+
+    idx_list     = range(len(X_test))
+    new_idx_list = copy.copy(idx_list) #randomList(idx_list)
+    random.shuffle(new_idx_list)
+    
+    X_valid_test = [X_test[idx] for idx in new_idx_list[:nValidData]]
+    Y_valid_test = [Y_test[idx] for idx in new_idx_list[:nValidData]]
+    X_eval_test  = [X_test[idx] for idx in new_idx_list[nValidData:]]
+    Y_eval_test  = [Y_test[idx] for idx in new_idx_list[nValidData:]]
+    ## print np.shape(X_test), np.shape(X_valid_test), np.shape(X_eval_test)
+
+    #-----------------------------------------------------------------------------------------
+    nSamples = len(initial_train_Y)
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    for j in xrange(nPoints): 
+        dtc.set_params(**SVM_dict)        
+        if method == 'sgd' and fit_method.find('full')>=0:
+            dtc.set_params( class_weight=weights[j] )
+        elif method == 'sgd' and fit_method.find('single')>=0:
+            dtc.set_params( class_weight=weights[j] )
+            dtc.set_params( class_weight=weights[j], sgd_n_iter=20 )
+        else:
+            print "Not available method"
+            return "Not available method", -1, params
+
+        # Training fit
+        ret = dtc.fit(initial_train_X, initial_train_Y)
+        if ret is False: return 'fit failed', -1
+
+        # Incremental fit
+        if fit_method.find('incremental') >= 0:
+            for idx in range(0,len(X_valid_test),nPartialFit):
+                for k in xrange(nPartialFit):
+                    X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
+                    ## sample_weight = [1.0]*nLength
+                    if Y_ptrain == -1:
+                        sample_weight = [1.0]*nLength
+                    else:
+                        sample_weight = np.logspace(1,2.0,nLength )
+                        sample_weight /= np.amax(sample_weight)
+                    sample_weight *= 20.0
+                    ## sample_weight /= (float(nSamples + idx+1))
+
+                    ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1], sample_weight=sample_weight)
+
+                tp_l = []
+                fp_l = []
+                tn_l = []
+                fn_l = []
+                result_list = []
+
+                # incremental learning and classification
+                for i in xrange(len(X_eval_test)):
+                    if len(Y_eval_test[i])==0: continue
+
+                    # 2) test classifier
+                    X_ptest = X_eval_test[i]
+                    Y_ptest = Y_eval_test[i]
+                    Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                    for k, y_est in enumerate(Y_est):
+                        if y_est > 0:
+                            break
+
+                    tp=0; fp=0; tn=0; fn=0
+                    if Y_ptest[0] > 0:
+                        if y_est > 0:
+                            tp = 1
+                            tp_l.append(1)
+                        else:
+                            fn = 1
+                            fn_l.append(1)
+                    elif Y_ptest[0] <= 0:
+                        if y_est > 0:
+                            fp = 1
+                            fp_l.append(1)
+                        else:
+                            tn = 1
+                            tn_l.append(1)
+
+                    result_list.append([tp,fn,fp,tn])
+
+                data[method]['tp_l'][j][idx/nPartialFit] += tp_l
+                data[method]['fp_l'][j][idx/nPartialFit] += fp_l
+                data[method]['fn_l'][j][idx/nPartialFit] += fn_l
+                data[method]['tn_l'][j][idx/nPartialFit] += tn_l
+                data[method]['result'][j][idx/nPartialFit].append(result_list)
+
+                print j, idx, " = ",  np.sum(tp_l),  np.sum(fp_l),  np.sum(fn_l),  np.sum(tn_l)
+
+        else:
+            idx  = 0
+            tp_l = []
+            fp_l = []
+            tn_l = []
+            fn_l = []
+            result_list = []
+            nSamples = len(initial_train_Y)
+
+            # incremental learning and classification
+            for i in xrange(len(X_eval_test)):
+                if len(Y_eval_test[i])==0: continue
+
+                # 2) test classifier
+                X_ptest = X_eval_test[i]
+                Y_ptest = Y_eval_test[i]
+                Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                for k, y_est in enumerate(Y_est):
+                    if y_est > 0:
+                        break
+
+                tp=0; fp=0; tn=0; fn=0
+                if Y_ptest[0] > 0:
+                    if y_est > 0:
+                        tp = 1
+                        tp_l.append(1)
+                    else:
+                        fn = 1
+                        fn_l.append(1)
+                elif Y_ptest[0] <= 0:
+                    if y_est > 0:
+                        fp = 1
+                        fp_l.append(1)
+                    else:
+                        tn = 1
+                        tn_l.append(1)
+
+                result_list.append([tp,fn,fp,tn])
+
+            data[method]['tp_l'][j][idx] += tp_l
+            data[method]['fp_l'][j][idx] += fp_l
+            data[method]['fn_l'][j][idx] += fn_l
+            data[method]['tn_l'][j][idx] += tn_l
+            data[method]['result'][j][idx].append(result_list)
+
+    return data
+
 
 
 def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, \
@@ -1213,7 +1606,8 @@ if __name__ == '__main__':
     else:
         raw_data_path, save_data_path, param_dict = \
           getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
+        onlineEvaluationSingleIncremental(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
+        ## onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
             
 
 

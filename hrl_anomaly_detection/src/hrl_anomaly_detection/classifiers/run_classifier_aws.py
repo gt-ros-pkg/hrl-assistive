@@ -226,15 +226,15 @@ def disp_score(results, method, nPoints):
         print "fpr: ", fpr_l
 
         # get AUC
-        ## score_list.append( [getAUC(fpr_l, tpr_l), ret_params] )
+        from sklearn import metrics        
+        score_list.append( [metrics.auc(fpr_l, tpr_l, True), ret_params] )
 
-        ## plt.plot(fpr_l, tpr_l, '-')            
         # get max tp in fpr (0~20)
-        max_tp = 0
-        for i, fp in enumerate(fpr_l):
-            if fp < 20.0:
-                if tpr_l[i] > max_tp: max_tp = tpr_l[i]
-        score_list.append( [max_tp, ret_params] )
+        ## max_tp = 0
+        ## for i, fp in enumerate(fpr_l):
+        ##     if fp < 20.0:
+        ##         if tpr_l[i] > max_tp: max_tp = tpr_l[i]
+        ## score_list.append( [max_tp, ret_params] )
 
     ## plt.show()
     # Get sorted results
