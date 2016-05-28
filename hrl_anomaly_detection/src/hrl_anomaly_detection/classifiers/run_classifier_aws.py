@@ -168,12 +168,6 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         if len(Y_test[ii])==0: continue
         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
-        ## # temp
-        ## if Y_test[ii][0] < 1.0:
-        ##     print est_y
-        ##     sys.exit()
-            
-
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:                
                 try:
