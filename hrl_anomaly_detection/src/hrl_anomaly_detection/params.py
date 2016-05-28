@@ -125,9 +125,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5}
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 5.5}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','sgd','osvm' ],\
-                          'update_list': [],\
+        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , ,'osvm'
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','sgd' ],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -10., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
