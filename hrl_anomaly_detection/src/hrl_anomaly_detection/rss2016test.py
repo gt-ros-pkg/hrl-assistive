@@ -800,7 +800,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     # parallelization 
-    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict, data_pkl=crossVal_pkl) \
                                                                  for idx in xrange(len(kFold_list)) \
