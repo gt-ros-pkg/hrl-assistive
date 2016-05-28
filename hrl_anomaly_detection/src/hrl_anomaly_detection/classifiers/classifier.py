@@ -130,20 +130,16 @@ class classifier(learning_base):
         ##     ## y_train=y
         ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
-        if self.method == 'svm':
+        if self.method == 'svm' or self.method == 'osvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
-            ## print svm.__file__
 
-            ## X[:,0] *= 1.5            
             if type(X) is not list: X=X.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
-              ## +' -t 4'
                             
-            ## try: self.dt = svm.svm_train(y, [list(row) for row in K_train], commands )
             try: self.dt = svm.svm_train(y, X, commands )
             except: return False
             return True
@@ -253,10 +249,11 @@ class classifier(learning_base):
         return predicted values (not necessarily binaries)
         '''
 
-        if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm':
+        if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm' or \
+          self.method == 'osvm':
             ## K_test = custom_kernel(X, self.X_train, gamma=self.gamma)
             
-            if self.method == 'svm':
+            if self.method == 'svm' or self.method == 'osvm':
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
             else:
@@ -268,10 +265,8 @@ class classifier(learning_base):
 
             if type(X) is not list: X=X.tolist()
             if y is not None:
-                ## p_labels, _, p_vals = svm.svm_predict(y, [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
-                ## p_labels, _, p_vals = svm.svm_predict([0]*len(X), [list(row) for row in K_test], self.dt)
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         
