@@ -1603,7 +1603,10 @@ def getEstTruePositive(X):
     elif len(np.shape(X))==2:
         for j in xrange(0, len(X)-2):
             if X[j+2][0]-X[j+1][0] < 0 and X[j+1][0]-X[j][0] < 0:
-                flatten_X += X[j:]
+                if type(X[j:]) is list:
+                    flatten_X += X[j:]
+                else:
+                    flatten_X += X[j:].tolist()
                 break
     else:
         warnings.warn("Not available dimension of data X")
@@ -1625,8 +1628,12 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
         l_idx = []
         for i in xrange(len(ll_X)):
             if ll_Y[i][0] < 0:
-                l_X += ll_X[i]
-                l_Y += ll_Y[i]
+                if type(ll_X[i]) is list:
+                    l_X += ll_X[i]
+                    l_Y += ll_Y[i]
+                else:
+                    l_X += ll_X[i].tolist()
+                    l_Y += ll_Y[i]                    
             else:
                 X,Y = getEstTruePositive(ll_X[i])
                 l_X += X

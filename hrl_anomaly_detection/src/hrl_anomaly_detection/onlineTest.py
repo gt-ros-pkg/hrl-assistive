@@ -806,33 +806,28 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         
         train_idx_list = range(len(train_Y))
         random.shuffle(train_idx_list)
-        initial_neg_train_X  = []
-        initial_neg_train_Y  = []
-        initial_pos_train_X  = []
-        initial_pos_train_Y  = []
+        initial_train_X  = []
+        initial_train_Y  = []
         initial_idx_list = []
         normal_data=False
         abnormal_data=False
         for idx in train_idx_list:
             if train_Y[idx][0] == -1: # and normal_data is False:
-                initial_neg_train_X.append(train_X[idx])
-                initial_neg_train_Y.append([-1]*len(train_X[idx]))
+                initial_train_X.append(train_X[idx])
+                initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
                 normal_data = True
-        initial_train_X, initial_train_Y, _ = flattenSample(initial_neg_train_X, initial_neg_train_Y)
-
-                
-        for idx in train_idx_list:
             if train_Y[idx][0] == 1 and abnormal_data is False:
-                initial_pos_train_X.append(train_X[idx])        
-                initial_pos_train_Y.append([1]*len(train_X[idx]))
+                initial_train_X.append(train_X[idx])        
+                initial_train_Y.append([1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
                 abnormal_data = True
 
-        initial_pos_train_X, initial_pos_train_Y = dm.getEstTruePositive(initial_pos_train_X)
-        initial_train_X = np.vstack([initial_train_X, initial_pos_train_X])
-        initial_train_Y = np.hstack([initial_train_Y, initial_pos_train_Y])
-        ## print np.shape(initial_train_X), np.shape(initial_train_Y)
+        print np.shape(initial_train_X), np.shape(initial_train_Y)
+        initial_train_X, initial_train_Y, _ = dm.flattenSample(initial_train_X, initial_train_Y,\
+                                                               remove_fp=True)
+        print np.shape(initial_train_X), np.shape(initial_train_Y)
+                
 
     ## validation set (incremental fitting) and test set
     X_test = []
