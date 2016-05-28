@@ -800,7 +800,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     # parallelization 
-    r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                                  SVM_dict, data_pkl=crossVal_pkl) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -912,7 +912,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     from hrl_anomaly_detection.classifiers import classifier as cb
     from sklearn import preprocessing
 
-    if method.find('osvm')>0:
+    if method.find('osvm')>=0:
         d = ut.load_pickle(data_pkl)
         kFold_list  = d['kFoldList']
         successData = d['successData']
@@ -968,6 +968,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
                                                                    ll_classifier_train_Y, \
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
+                                                                   
 
     nPoints     = ROC_dict['nPoints']
 
@@ -987,6 +988,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
     # pass method if there is existing result
+    print np.shape(X_train_org)
+    sys.exit()
 
     # data preparation
     if method.find('svm')>=0 or method.find('sgd')>=0:

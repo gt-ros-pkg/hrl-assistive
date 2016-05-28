@@ -31,6 +31,7 @@
 # system
 import os, sys, copy
 import random
+import warnings
 
 # util
 import numpy as np
@@ -1597,13 +1598,15 @@ def getEstTruePositive(X):
         for i in xrange(len(X)):
             for j in xrange(0, len(X[i])-2):
                 if X[i][j+2][0]-X[i][j+1][0] < 0 and X[i][j+1][0]-X[i][j][0] < 0:
-                    flatten_X.append(X[i][j])
+                    flatten_X += X[i][j:]
+                    break
     elif len(np.shape(X))==2:
         for j in xrange(0, len(X)-2):
             if X[j+2][0]-X[j+1][0] < 0 and X[j+1][0]-X[j][0] < 0:
-                flatten_X.append(X[j])
+                flatten_X += X[j:]
+                break
     else:
-        raise Warning("Not available dimension of data X")
+        warnings.warn("Not available dimension of data X")
                 
     flatten_Y = [1]*len(flatten_X)
     
@@ -1621,14 +1624,17 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
         l_Y = []
         l_idx = []
         for i in xrange(len(ll_X)):
-
-            if ll_X[i][0][0] < 0:
-                l_X.append(ll_X[i][j])
-                l_Y.append(ll_Y[i][j])
+            if ll_Y[i][0] < 0:
+                l_X += ll_X[i]
+                l_Y += ll_Y[i]
             else:
                 X,Y = getEstTruePositive(ll_X[i])
-                l_X.append(X)
-                l_Y.append(Y)
+                l_X += X
+                l_Y += Y
+        if len(np.shape(l_X))==1:
+            warnings.warn("wrong size vector in flatten function")
+            sys.exit()
+                
     else:
         l_X = []
         l_Y = []
