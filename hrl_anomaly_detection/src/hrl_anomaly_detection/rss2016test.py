@@ -964,10 +964,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         # flatten the data
         if method.find('svm')>=0: remove_fp=True
         else: remove_fp = False
-        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
-                                                                ll_classifier_train_Y, \
-                                                                ll_classifier_train_idx,\
-                                                                remove_fp=remove_fp)
+        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+                                                                   ll_classifier_train_Y, \
+                                                                   ll_classifier_train_idx,\
+                                                                   remove_fp=remove_fp)
 
     nPoints     = ROC_dict['nPoints']
 
