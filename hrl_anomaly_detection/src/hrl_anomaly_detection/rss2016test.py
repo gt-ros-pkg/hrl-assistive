@@ -988,9 +988,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
     # pass method if there is existing result
-    print np.shape(X_train_org)
-    sys.exit()
-
     # data preparation
     if method.find('svm')>=0 or method.find('sgd')>=0:
         scaler = preprocessing.StandardScaler()
