@@ -576,13 +576,13 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             train_Y.append(ll_classifier_train_Y[j])
         
         train_idx_list = range(len(train_Y))
-        random.shuffle(train_idx_list)
+        ## random.shuffle(train_idx_list)
         initial_train_X  = []
         initial_train_Y  = []
         initial_idx_list = []
         abnormal_data=False
         for idx in train_idx_list:
-            if train_Y[idx][0] == -1:
+            if train_Y[idx][0] == -1 and len(initial_train_X)<5:
                 initial_train_X.append(train_X[idx])
                 initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
@@ -745,7 +745,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
         ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
-        weights = np.logspace(-0.2, 1.0, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
         ## weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
     
 
