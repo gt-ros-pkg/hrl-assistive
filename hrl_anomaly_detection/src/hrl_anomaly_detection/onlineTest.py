@@ -142,7 +142,7 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
         ROC_data[method]['result'] = [ [] for j in xrange(nPoints) ]
 
         # parallelization 
-        r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_diff)( idx,
+        r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_diff)( idx,
                                                                           task, raw_data_path, \
                                                                           save_data_path,\
                                                                           param_dict, \
@@ -204,9 +204,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # get subject1 - task1 's hmm & classifier data
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
-    ROC_dict['nPoints'] = nPoints = 5
-    nValidData   = 10
-    nPartialFit  = 2
+    ROC_dict['nPoints'] = nPoints = 3
+    nValidData   = 16
+    nPartialFit  = 4
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -228,7 +228,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                                            for j in xrange(nPoints) ]
 
             # parallelization 
-            r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers_incremental)\
+            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
                                                ( idx, save_data_path, task, \
                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                  SVM_dict, fit_method=fit_method,\
@@ -745,7 +745,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
         ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
-        weights = np.logspace(-1.0, 2.0, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-0.2, 1.0, nPoints) #ROC_dict['sgd_param_range']
         ## weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
     
 
@@ -823,11 +823,10 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 initial_idx_list.append(idx)
                 abnormal_data = True
 
-        print np.shape(initial_train_X), np.shape(initial_train_Y)
+        ## print np.shape(initial_train_X), np.shape(initial_train_Y)
         initial_train_X, initial_train_Y, _ = dm.flattenSample(initial_train_X, initial_train_Y,\
                                                                remove_fp=True)
         print np.shape(initial_train_X), np.shape(initial_train_Y)
-                
 
     ## validation set (incremental fitting) and test set
     X_test = []
@@ -951,8 +950,9 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
                 ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
-                ## dtc.set_params( learning_rate='constant' )
-                ## dtc.set_params( eta0=1.0/(float(nSamples + idx+1)) )
+                dtc.set_params( learning_rate='constant' )
+                dtc.set_params( eta0=1.0/(float(nSamples + idx+1))/100.0 )
+                #print "aaaaaaaaaaaa=>", dtc.get_params( learning_rate )
                 ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1]) #, sample_weight=p_train_W)
 
                 tp_l = []
