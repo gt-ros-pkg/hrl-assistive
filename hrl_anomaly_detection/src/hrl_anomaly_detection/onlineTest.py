@@ -42,9 +42,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # ROC
     ROC_dict = param_dict['ROC']
 
-    fit_methods = ['full_fit','single_incremental_fit']
+    fit_methods = ['single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['full_fit']
+    fit_renew_methods = ['single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -52,7 +52,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 3
     ## nValidData   = 16
-    nPartialFit  = 4
+    nPartialFit  = 15
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -90,16 +90,14 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                 
                 for j in xrange(nPoints):
 
-                    if len(ROC_data[method]['tp_l'][j]) == 0:
-                        n = len(l_data[i][method]['tp_l'][j])
-                        ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
-
                     for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
-                        print np.shape(l_data[i][method]['tp_l'][j]), k
+                        if len(ROC_data[method]['tp_l'][j]) < len(l_data[i][method]['tp_l'][j]):
+                            ROC_data[method]['tp_l'][j].append([])
+                            ROC_data[method]['fp_l'][j].append([])
+                            ROC_data[method]['tn_l'][j].append([])
+                            ROC_data[method]['fn_l'][j].append([])
+                            ROC_data[method]['result'][j].append([])
+                        
                         ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
                         ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
                         ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
@@ -758,8 +756,8 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
     elif method == 'sgd' and fit_method.find('single')>=0:
         ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
-        weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
-        ## weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
+        ## weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-2.5, -1.0, nPoints) #ROC_dict['sgd_param_range']
     
 
     print "start to load hmm data, ", modeling_pkl
@@ -820,7 +818,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         normal_data=False
         abnormal_data=False
         for idx in train_idx_list:
-            if ll_classifier_train_Y[idx][0] == -1: # and normal_data is False:
+            if ll_classifier_train_Y[idx][0] == -1 and normal_data is False:
                 X_train.append(ll_classifier_train_X[idx])
                 Y_train.append([-1]*len(ll_classifier_train_X[idx]))
                 idx_train.append(idx)
@@ -894,36 +892,40 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 if idx+nPartialFit > len(X_valid_scaled): continue
                 for k in xrange(nPartialFit):
                     X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
-                    X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
+                    if Y_ptrain[0] > 0:
+                        X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
                     
                     ## sample_weight = np.array([1.0]*len(Y_ptrain))
-                    ## if Y_ptrain == -1:
-                    ##     sample_weight = [1.0]*len(X_ptrain)
-                    ## else:
-                    ##     sample_weight = np.linspace(0,1.0,len(X_ptrain) )+1.0
-                    ##     ## sample_weight = np.logspace(1,2.0,nLength )
-                    ##     sample_weight /= np.amax(sample_weight)
-                    ## ## sample_weight *= float(nSamples) #50.0
-                    ## ## sample_weight /= (float(nSamples + idx+1))
+                    if Y_ptrain == -1:
+                        sample_weight = [1.0]*len(X_ptrain)
+                    else:
+                        sample_weight = [weights[j]]*len(X_ptrain)
+                        ## sample_weight = np.linspace(0,1.0,len(X_ptrain) )
+                        ## sample_weight /= np.amax(sample_weight)
+                    ## sample_weight *= float(nSamples) #50.0
+                    ## sample_weight /= (float(nSamples + idx+1))
 
                     if k==0:
                         p_train_X = X_ptrain
                         p_train_Y = Y_ptrain
-                        ## p_train_W = sample_weight
+                        p_train_W = sample_weight
                     else:
                         p_train_X = np.vstack([p_train_X, X_ptrain])
                         p_train_Y = np.hstack([p_train_Y, Y_ptrain])
-                        ## p_train_W = np.hstack([p_train_W, sample_weight])
+                        p_train_W = np.hstack([p_train_W, sample_weight])
 
                 p_idx_list = range(len(p_train_X))
                 random.shuffle(p_idx_list)
                 p_train_X = [p_train_X[ii] for ii in p_idx_list]
                 p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
-                ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
+                p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
-                dtc.set_params( learning_rate='constant' )
-                dtc.set_params( eta0=1.0/(float(nSamples + idx+1))/5.0 )
-                ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1]) #, sample_weight=p_train_W)
+                ## dtc.set_params( learning_rate='constant' )
+                ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
+                ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
+                ## for kkk in xrange(10):
+                ##     ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
+                ret = dtc.fit(p_train_X, p_train_Y)
 
                 tp_l = []
                 fp_l = []

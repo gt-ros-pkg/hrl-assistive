@@ -1593,16 +1593,17 @@ def getEstTruePositive(X):
     '''
 
     flatten_X = []
+    nOffset   = 5
     
     if len(np.shape(X))==3:
         for i in xrange(len(X)):
-            for j in xrange(0, len(X[i])-2):
-                if X[i][j+2][0]-X[i][j+1][0] < 0 and X[i][j+1][0]-X[i][j][0] < 0:
+            for j in xrange(0, len(X[i])-nOffset):
+                if X[i][j+nOffset][0]-X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
                     flatten_X += X[i][j:]
                     break
     elif len(np.shape(X))==2:
-        for j in xrange(0, len(X)-2):
-            if X[j+2][0]-X[j+1][0] < 0 and X[j+1][0]-X[j][0] < 0:
+        for j in xrange(0, len(X)-nOffset):
+            if X[j+nOffset][0]-X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(X[j:]) is list:
                     flatten_X += X[j:]
                 else:
