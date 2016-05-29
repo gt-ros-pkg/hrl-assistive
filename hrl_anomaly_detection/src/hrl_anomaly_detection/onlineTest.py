@@ -198,7 +198,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
 
     fit_methods = ['single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = []
+    fit_renew_methods = ['full_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -222,6 +222,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
             ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
 
+            nFolds=2
             # parallelization 
             l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
                                                      ( idx, save_data_path, task, \
@@ -240,28 +241,22 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                 
                 for j in xrange(nPoints):
 
-                    if fit_method.find('single')>=0:
-                        if len(ROC_data[method]['tp_l'][j])==[]:
-                            n = len(l_data[i][method]['tp_l'][j])
-                            for k in xrange(len(l_data[i][method]['tp_l'][j])):
-                                ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
-                                ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
-                                ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
-                                ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
-                                ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
+                    print i, j, np.shape(ROC_data[method]['tp_l'][j]), np.shape(l_data[i][method]['tp_l'][j])
+                    if ROC_data[method]['tp_l'][j] is []:
+                        n = len(l_data[i][method]['tp_l'][j])
+                        for k in xrange(len(l_data[i][method]['tp_l'][j])):
+                            ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
 
-                        for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
-                            ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
-                            ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
-                            ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
-                            ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
-                            ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
-                    else:
-                        ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-                        ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-                        ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-                        ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-                        ROC_data[method]['result'][j].append(l_data[i][method]['result'][j]
+                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
+                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
+                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
+                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
+                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
+                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
 
 
             ROC_data[method]['complete'] = True
@@ -983,7 +978,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             result_list = []
             nSamples = len(Y_train)
 
-            # incremental learning and classification
+            # classification
             for i in xrange(len(X_test)):
                 if len(Y_test[i])==0: continue
 
