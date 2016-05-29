@@ -940,6 +940,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         # flatten the data
         X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
                                                     ll_classifier_train_Y)
+        nState = 0
     else:
         if AE_dict['switch'] and AE_dict['add_option'] is not None:
             tag = ''
