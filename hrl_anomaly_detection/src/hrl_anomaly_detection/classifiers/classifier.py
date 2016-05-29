@@ -79,7 +79,7 @@ class classifier(learning_base):
         self.dt     = None
         self.verbose = verbose
 
-        if self.method == 'svm':
+        if self.method == 'svm' or self.method == 'osvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
