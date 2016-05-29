@@ -196,7 +196,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # ROC
     ROC_dict = param_dict['ROC']
 
-    fit_methods = ['single_incremental_fit', 'full_fit']
+    fit_methods = ['full_fit','single_incremental_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
     fit_renew_methods = ['full_fit']
     
@@ -222,7 +222,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
             ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
 
-            nFolds=2
+
             # parallelization 
             l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
                                                      ( idx, save_data_path, task, \
@@ -230,6 +230,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                                                        SVM_dict, fit_method=fit_method,\
                                                      nPartialFit=nPartialFit) \
                                                      for idx in xrange(nFolds) )
+
+            ## ut.save_pickle(l_data, 'temp.pkl')
+            ## l_data = ut.load_pickle('temp.pkl')
 
             for i in xrange(len(l_data)): # each fold
 
@@ -241,15 +244,13 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                 
                 for j in xrange(nPoints):
 
-                    print i, j, np.shape(ROC_data[method]['tp_l'][j]), np.shape(l_data[i][method]['tp_l'][j])
-                    if ROC_data[method]['tp_l'][j] is []:
+                    if len(ROC_data[method]['tp_l'][j]) == 0:
                         n = len(l_data[i][method]['tp_l'][j])
-                        for k in xrange(len(l_data[i][method]['tp_l'][j])):
-                            ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
+                        ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
 
                     for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
                         ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
@@ -258,10 +259,8 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                         ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
                         ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
 
-
             ROC_data[method]['complete'] = True
             ut.save_pickle(ROC_data, roc_data_pkl)
-
             print ROC_data[method]['tp_l'][0], ROC_data[method]['fp_l'][0], ROC_data[method]['fn_l'][0],ROC_data[method]['tn_l'][0]
 
 

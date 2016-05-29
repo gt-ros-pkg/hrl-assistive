@@ -178,7 +178,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                     np.ones(len(abnormalTrainData[0])) ])
 
             # compute last three indices only
-            r = Parallel(n_jobs=1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=nLength-3, \
