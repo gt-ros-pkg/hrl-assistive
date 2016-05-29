@@ -44,15 +44,15 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
 
     fit_methods = ['single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['single_incremental_fit']
+    fit_renew_methods = ['full_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
-    ROC_dict['nPoints'] = nPoints = 3
+    ROC_dict['nPoints'] = nPoints = 10
     ## nValidData   = 16
-    nPartialFit  = 15
+    nPartialFit  = 5
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -488,7 +488,10 @@ def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     print "--------------------------------"
     print method, fit_method
     print np.shape(tp_ll),np.shape(fp_ll),np.shape(tn_ll),np.shape(fn_ll)
-    for j in xrange(len(tp_ll[0])):
+    n = len(tp_ll[0])
+    if n >5: n=5
+   
+    for j in xrange(n):
         tpr_l = []
         fpr_l = []
         fnr_l = []
@@ -757,7 +760,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     elif method == 'sgd' and fit_method.find('single')>=0:
         ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
         ## weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
-        weights = np.logspace(-2.5, -1.0, nPoints) #ROC_dict['sgd_param_range']
+        weights = np.logspace(-2.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
     
 
     print "start to load hmm data, ", modeling_pkl
@@ -923,9 +926,9 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 ## dtc.set_params( learning_rate='constant' )
                 ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
                 ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
-                ## for kkk in xrange(10):
-                ##     ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
-                ret = dtc.fit(p_train_X, p_train_Y)
+                for kkk in xrange(1):
+                    ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
+                ## ret = dtc.fit(p_train_X, p_train_Y)
 
                 tp_l = []
                 fp_l = []
