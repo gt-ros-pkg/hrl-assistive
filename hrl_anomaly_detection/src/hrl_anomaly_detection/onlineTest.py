@@ -23,6 +23,106 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
 
+
+def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False ):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    fit_methods = ['full_fit','single_incremental_fit']
+    ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = ['full_fit']
+    
+    #------------------------------------------
+    # get subject1 - task1 's hmm & classifier data
+    nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
+    method = 'sgd'
+    ROC_dict['nPoints'] = nPoints = 3
+    ## nValidData   = 16
+    nPartialFit  = 4
+
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+
+        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
+
+            ROC_data = {}
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
+
+
+            # parallelization 
+            l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
+                                                     ( idx, save_data_path, task, \
+                                                       method, ROC_data, ROC_dict, AE_dict, \
+                                                       SVM_dict, fit_method=fit_method,\
+                                                     nPartialFit=nPartialFit) \
+                                                     for idx in xrange(nFolds) )
+
+            ut.save_pickle(l_data, 'temp.pkl')
+            ## l_data = ut.load_pickle('temp.pkl')
+
+            for i in xrange(len(l_data)): # each fold
+
+                try:
+                    method = l_data[i].keys()[0]
+                except:
+                    print l_data[i]
+                    sys.exit()
+                
+                for j in xrange(nPoints):
+
+                    if len(ROC_data[method]['tp_l'][j]) == 0:
+                        n = len(l_data[i][method]['tp_l'][j])
+                        ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
+                        ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
+
+                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
+                        print np.shape(l_data[i][method]['tp_l'][j]), k
+                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
+                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
+                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
+                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
+                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
+
+            ROC_data[method]['complete'] = True
+            ut.save_pickle(ROC_data, roc_data_pkl)
+            print ROC_data[method]['tp_l'][0], ROC_data[method]['fp_l'][0], ROC_data[method]['fn_l'][0],ROC_data[method]['tn_l'][0]
+
+
+
+    fig = plt.figure(1)        
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+        ROC_data = ut.load_pickle(roc_data_pkl)
+        plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
+    plt.legend(loc=4,prop={'size':16})                    
+    plt.show()
+        
+    return
+
+
 def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, renew=False ):
 
     ## Parameters
@@ -177,103 +277,6 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
 
     return
 
-
-def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False ):
-
-    ## Parameters
-    # data
-    data_dict  = param_dict['data_param']
-    data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
-    # HMM
-    HMM_dict = param_dict['HMM']
-    nState   = HMM_dict['nState']
-    cov      = HMM_dict['cov']
-    # SVM
-    SVM_dict = param_dict['SVM']
-
-    # ROC
-    ROC_dict = param_dict['ROC']
-
-    fit_methods = ['full_fit','single_incremental_fit']
-    ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['full_fit']
-    
-    #------------------------------------------
-    # get subject1 - task1 's hmm & classifier data
-    nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
-    method = 'sgd'
-    ROC_dict['nPoints'] = nPoints = 3
-    ## nValidData   = 16
-    nPartialFit  = 4
-
-    for fit_method in fit_methods:
-        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
-
-        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
-
-            ROC_data = {}
-            ROC_data[method] = {}
-            ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
-            ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
-
-
-            # parallelization 
-            l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
-                                                     ( idx, save_data_path, task, \
-                                                       method, ROC_data, ROC_dict, AE_dict, \
-                                                       SVM_dict, fit_method=fit_method,\
-                                                     nPartialFit=nPartialFit) \
-                                                     for idx in xrange(nFolds) )
-
-            ## ut.save_pickle(l_data, 'temp.pkl')
-            ## l_data = ut.load_pickle('temp.pkl')
-
-            for i in xrange(len(l_data)): # each fold
-
-                try:
-                    method = l_data[i].keys()[0]
-                except:
-                    print l_data[i]
-                    sys.exit()
-                
-                for j in xrange(nPoints):
-
-                    if len(ROC_data[method]['tp_l'][j]) == 0:
-                        n = len(l_data[i][method]['tp_l'][j])
-                        ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
-                        ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
-
-                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
-                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
-                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
-                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
-                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
-                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
-
-            ROC_data[method]['complete'] = True
-            ut.save_pickle(ROC_data, roc_data_pkl)
-            print ROC_data[method]['tp_l'][0], ROC_data[method]['fp_l'][0], ROC_data[method]['fn_l'][0],ROC_data[method]['tn_l'][0]
-
-
-
-    fig = plt.figure(1)        
-    for fit_method in fit_methods:
-        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
-        ROC_data = ut.load_pickle(roc_data_pkl)
-        plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
-    plt.legend(loc=4,prop={'size':16})                    
-    plt.show()
-        
-    return
 
 
 
