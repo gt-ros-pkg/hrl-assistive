@@ -231,28 +231,38 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                                                      for idx in xrange(nFolds) )
 
             for i in xrange(len(l_data)): # each fold
-                for j in xrange(nPoints):
-                    try:
-                        method = l_data[i].keys()[0]
-                    except:
-                        print l_data[i]
-                        sys.exit()
 
-                    if len(ROC_data[method]['tp_l'][j])==[]:
-                        n = len(l_data[i][method]['tp_l'][j])
-                        for k in xrange(len(l_data[i][method]['tp_l'][j])):
-                            ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
-                            ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
-                        
-                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
-                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
-                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
-                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
-                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
-                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
+                try:
+                    method = l_data[i].keys()[0]
+                except:
+                    print l_data[i]
+                    sys.exit()
+                
+                for j in xrange(nPoints):
+
+                    if fit_method.find('single')>=0:
+                        if len(ROC_data[method]['tp_l'][j])==[]:
+                            n = len(l_data[i][method]['tp_l'][j])
+                            for k in xrange(len(l_data[i][method]['tp_l'][j])):
+                                ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
+                                ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
+                                ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
+                                ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
+                                ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
+
+                        for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
+                            ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
+                            ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
+                            ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
+                            ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
+                            ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
+                    else:
+                        ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+                        ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+                        ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+                        ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+                        ROC_data[method]['result'][j].append(l_data[i][method]['result'][j]
+
 
             ROC_data[method]['complete'] = True
             ut.save_pickle(ROC_data, roc_data_pkl)
@@ -481,8 +491,9 @@ def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
 
 
     print "--------------------------------"
-    print method
-    for j in xrange(nValidData/nPartialFit):
+    print method, fit_method
+    print np.shape(tp_ll),np.shape(fp_ll),np.shape(tn_ll),np.shape(fn_ll)
+    for j in xrange(len(tp_ll[0])):
         tpr_l = []
         fpr_l = []
         fnr_l = []

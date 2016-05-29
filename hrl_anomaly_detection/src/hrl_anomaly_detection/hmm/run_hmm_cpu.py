@@ -574,8 +574,8 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(1.0,10.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(1.0,10.0,10) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
