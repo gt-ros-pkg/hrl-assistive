@@ -223,13 +223,13 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
 
             # parallelization 
-            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
-                                                ( idx, save_data_path, task, \
-                                                  method, ROC_data, ROC_dict, AE_dict, \
-                                                 SVM_dict, fit_method=fit_method,\
-                                               nPartialFit=nPartialFit) \
-                                               for idx in xrange(nFolds) )
-            l_data = r
+            l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
+                                                     ( idx, save_data_path, task, \
+                                                       method, ROC_data, ROC_dict, AE_dict, \
+                                                       SVM_dict, fit_method=fit_method,\
+                                                     nPartialFit=nPartialFit) \
+                                                     for idx in xrange(nFolds) )
+
             for i in xrange(len(l_data)): # each fold
                 for j in xrange(nPoints):
                     try:
@@ -237,7 +237,17 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                     except:
                         print l_data[i]
                         sys.exit()
-                    for k in xrange(len(l_data[i][method]['tp_l'][j])):
+
+                    if len(ROC_data[method]['tp_l'][j])==[]:
+                        n = len(l_data[i][method]['tp_l'][j])
+                        for k in xrange(len(l_data[i][method]['tp_l'][j])):
+                            ROC_data[method]['tp_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['fp_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['tn_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['fn_l'][j]  = [[] for kk in xrange(n)]
+                            ROC_data[method]['result'][j]= [[] for kk in xrange(n)]
+                        
+                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
                         ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
                         ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
                         ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
