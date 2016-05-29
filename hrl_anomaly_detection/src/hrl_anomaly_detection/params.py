@@ -298,7 +298,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 5.5, 'scale': 5.5, \
                               'add_logp_d': True}
-            SVM_param_dict = {'renew': False, 'w_negative': 0.337, 'gamma': 2.33, 'cost': 0.825}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 2.77, 'cost': 0.825}
             ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 2.0, 'scale': 7.0, \
             ##                   'add_logp_d': True}
             ## SVM_param_dict = {'renew': False, 'w_negative': 0.6, 'gamma': 4.11, 'cost': 2.275}

@@ -196,7 +196,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # ROC
     ROC_dict = param_dict['ROC']
 
-    fit_methods = ['single_incremental_fit']
+    fit_methods = ['single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
     fit_renew_methods = []
     
@@ -205,7 +205,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     nFolds = data_dict['nNormalFold'] * data_dict['nAbnormalFold']
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 3
-    nValidData   = 16
+    ## nValidData   = 16
     nPartialFit  = 4
 
     for fit_method in fit_methods:
@@ -216,24 +216,19 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
             ROC_data = {}
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
-                                         for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
-                                         for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
-                                         for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
-                                         for j in xrange(nPoints) ]
-            ROC_data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] \
-                                           for j in xrange(nPoints) ]
+            ROC_data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
 
             # parallelization 
             r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental)\
-                                               ( idx, save_data_path, task, \
-                                                 method, ROC_data, ROC_dict, AE_dict, \
+                                                ( idx, save_data_path, task, \
+                                                  method, ROC_data, ROC_dict, AE_dict, \
                                                  SVM_dict, fit_method=fit_method,\
-                                                nValidData=nValidData, nPartialFit=nPartialFit) \
-                                                for idx in xrange(nFolds) )
+                                               nPartialFit=nPartialFit) \
+                                               for idx in xrange(nFolds) )
             l_data = r
             for i in xrange(len(l_data)): # each fold
                 for j in xrange(nPoints):
@@ -242,7 +237,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
                     except:
                         print l_data[i]
                         sys.exit()
-                    for k in xrange(nValidData/nPartialFit):
+                    for k in xrange(len(l_data[i][method]['tp_l'][j])):
                         ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
                         ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
                         ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
@@ -260,7 +255,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-        plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
+        plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
     plt.legend(loc=4,prop={'size':16})                    
     plt.show()
         
@@ -445,7 +440,7 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     return
 
 
-def plotPLR(method, nPoints, nValidData, nPartialFit, ROC_data, fit_method=None, fig=None):
+def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     #----------------------------------------------------------------------------
     # Plot a positive likelihood ratio graph
     #----------------------------------------------------------------------------
@@ -582,7 +577,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         initial_idx_list = []
         abnormal_data=False
         for idx in train_idx_list:
-            if train_Y[idx][0] == -1 and len(initial_train_X)<5:
+            if train_Y[idx][0] == -1 and len(initial_train_X)<3:
                 initial_train_X.append(train_X[idx])
                 initial_train_Y.append([-1]*len(train_X[idx]))
                 initial_idx_list.append(idx)
@@ -736,7 +731,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     return data
 
 def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
-                                fit_method='full_fit', nValidData=10, nPartialFit = 2):
+                                fit_method='full_fit', nPartialFit = 2):
 
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
     nPoints = ROC_dict['nPoints']
@@ -761,72 +756,78 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     nLength = d['nLength']
 
     #-----------------------------------------------------------------------------------------
-    X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
-                                                ll_classifier_train_Y, \
-                                                ll_classifier_train_idx)
 
     data = {}
     # pass method if there is existing result
     data[method] = {}
-    data[method]['tp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
-    data[method]['result'] = [ [ [] for i in xrange(nValidData/nPartialFit) ] for j in xrange(nPoints) ]
+    data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
     
     if ROC_data[method]['complete'] == True: return data
 
     #-----------------------------------------------------------------------------------------
-    if method.find('svm')>=0 or method.find('sgd')>=0:
-        scaler = preprocessing.StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-    else:
-        X_train_scaled = X_train
-    
     # training set
     if fit_method.find('full') >= 0:
-        print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
-        initial_train_X = X_train_scaled
-        initial_train_Y = Y_train
+        ## print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
+        X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
+                                                    ll_classifier_train_Y, \
+                                                    ll_classifier_train_idx)
     else:
-        train_X = []
-        train_Y = []
-        print method, " : Before classification : ", np.shape(ll_classifier_train_X), \
-          np.shape(ll_classifier_train_Y)
+        ## train_X = []
+        ## train_Y = []
+        ## ## print method, " : Before classification : ", np.shape(ll_classifier_train_X), \
+        ##   ## np.shape(ll_classifier_train_Y)
         
-        # get single data
-        for j in xrange(len(ll_classifier_train_X)):
-            if method.find('svm')>=0 or method.find('sgd')>=0:
-                X = scaler.transform(ll_classifier_train_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
-                X = ll_classifier_train_X[j]
+        ## # get single data
+        ## for j in xrange(len(ll_classifier_train_X)):
+        ##     if method.find('svm')>=0 or method.find('sgd')>=0:
+        ##         X = scaler.transform(ll_classifier_train_X[j])                                
+        ##     elif method == 'progress_time_cluster' or method == 'fixed':
+        ##         X = ll_classifier_train_X[j]
 
-            train_X.append(X)
-            train_Y.append(ll_classifier_train_Y[j])
+        ##     train_X.append(X)
+        ##     train_Y.append(ll_classifier_train_Y[j])
+
+        X_train   = []
+        Y_train   = []
+        idx_train = []
+        X_valid   = []
+        Y_valid   = []
         
-        train_idx_list = range(len(train_Y))
+        train_idx_list = range(len(ll_classifier_train_X))
         random.shuffle(train_idx_list)
-        initial_train_X  = []
-        initial_train_Y  = []
-        initial_idx_list = []
         normal_data=False
         abnormal_data=False
         for idx in train_idx_list:
-            if train_Y[idx][0] == -1: # and normal_data is False:
-                initial_train_X.append(train_X[idx])
-                initial_train_Y.append([-1]*len(train_X[idx]))
-                initial_idx_list.append(idx)
+            if ll_classifier_train_Y[idx][0] == -1: # and normal_data is False:
+                X_train.append(ll_classifier_train_X[idx])
+                Y_train.append([-1]*len(ll_classifier_train_X[idx]))
+                idx_train.append(idx)
                 normal_data = True
-            if train_Y[idx][0] == 1 and abnormal_data is False:
-                initial_train_X.append(train_X[idx])        
-                initial_train_Y.append([1]*len(train_X[idx]))
-                initial_idx_list.append(idx)
+            elif ll_classifier_train_Y[idx][0] == 1 and abnormal_data is False:
+                X_train.append(ll_classifier_train_X[idx])        
+                Y_train.append([1]*len(ll_classifier_train_X[idx]))
+                idx_train.append(idx)
                 abnormal_data = True
+            else:
+                X_valid.append(ll_classifier_train_X[idx])
+                Y_valid.append([ll_classifier_train_Y[idx][0]]*len(ll_classifier_train_X[idx]))
 
         ## print np.shape(initial_train_X), np.shape(initial_train_Y)
-        initial_train_X, initial_train_Y, _ = dm.flattenSample(initial_train_X, initial_train_Y,\
-                                                               remove_fp=True)
-        print np.shape(initial_train_X), np.shape(initial_train_Y)
+        X_train, Y_train, _ = dm.flattenSample(X_train, Y_train, remove_fp=True)
+
+    #-----------------------------------------------------------------------------------------
+    scaler = preprocessing.StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    if not (fit_method.find('full') >= 0):
+        X_valid_scaled = []
+        for i in xrange(len(X_valid)):
+            X_valid_scaled.append( scaler.transform(X_valid[i]) )
+    ## print np.shape(X_train), np.shape(X_train_scaled), " - " , np.shape(X_valid), np.shape(X_valid_scaled)
 
     ## validation set (incremental fitting) and test set
     X_test = []
@@ -849,15 +850,11 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     idx_list     = range(len(X_test))
     new_idx_list = copy.copy(idx_list) #randomList(idx_list)
     random.shuffle(new_idx_list)
-    
-    X_valid_test = [X_test[idx] for idx in new_idx_list[:nValidData]]
-    Y_valid_test = [Y_test[idx] for idx in new_idx_list[:nValidData]]
-    X_eval_test  = [X_test[idx] for idx in new_idx_list[nValidData:]]
-    Y_eval_test  = [Y_test[idx] for idx in new_idx_list[nValidData:]]
-    ## print np.shape(X_test), np.shape(X_valid_test), np.shape(X_eval_test)
+    X_test  = [X_test[idx] for idx in new_idx_list]
+    Y_test  = [Y_test[idx] for idx in new_idx_list]
 
     #-----------------------------------------------------------------------------------------
-    nSamples = len(initial_train_Y)
+    nSamples = len(Y_train)
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints): 
         dtc.set_params(**SVM_dict)        
@@ -871,58 +868,14 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             return "Not available method", -1, params
 
         # Training fit
-        ret = dtc.fit(initial_train_X, initial_train_Y)
-
-        #---------------------------
-        tp_l = []
-        fp_l = []
-        tn_l = []
-        fn_l = []
-
-        # incremental learning and classification -------------------
-        for i in xrange(len(X_eval_test)):
-            if len(Y_eval_test[i])==0: continue
-
-            # 2) test classifier
-            X_ptest = X_eval_test[i]
-            Y_ptest = Y_eval_test[i]
-            Y_est   = dtc.predict(X_ptest, y=Y_ptest)
-            for k, y_est in enumerate(Y_est):
-                if y_est > 0:
-                    break
-
-            tp=0; fp=0; tn=0; fn=0
-            if Y_ptest[0] > 0:
-                if y_est > 0:
-                    tp = 1
-                    tp_l.append(1)
-                else:
-                    fn = 1
-                    fn_l.append(1)
-            elif Y_ptest[0] <= 0:
-                if y_est > 0:
-                    fp = 1
-                    fp_l.append(1)
-                else:
-                    tn = 1
-                    tn_l.append(1)
-
-        tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))
-        fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))
-        print "refer = ",  tpr, fpr, np.sum(tp_l+fn_l+fp_l+tn_l)
-        #--------------------------------------------------------------
+        ret = dtc.fit(X_train_scaled, Y_train)
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
-            for idx in range(0,len(X_valid_test),nPartialFit):
-                ## for k in xrange(nPartialFit):
-                ##     X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
-                ##     new_initial_train_X = np.vstack([new_initial_train_X, X_ptrain])
-                ##     new_initial_train_Y = np.hstack([new_initial_train_Y, Y_ptrain])                    
-                ## ret = dtc.fit(new_initial_train_X, new_initial_train_Y)
-                
+            for idx in range(0,len(X_valid_scaled),nPartialFit):
+                if idx+nPartialFit > len(X_valid_scaled): continue
                 for k in xrange(nPartialFit):
-                    X_ptrain, Y_ptrain = X_valid_test[idx+k], Y_valid_test[idx+k]
+                    X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
                     X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
                     
                     ## sample_weight = np.array([1.0]*len(Y_ptrain))
@@ -951,8 +904,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
                 dtc.set_params( learning_rate='constant' )
-                dtc.set_params( eta0=1.0/(float(nSamples + idx+1))/100.0 )
-                #print "aaaaaaaaaaaa=>", dtc.get_params( learning_rate )
+                dtc.set_params( eta0=1.0/(float(nSamples + idx+1))/5.0 )
                 ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1]) #, sample_weight=p_train_W)
 
                 tp_l = []
@@ -962,12 +914,12 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 result_list = []
 
                 # incremental learning and classification
-                for i in xrange(len(X_eval_test)):
-                    if len(Y_eval_test[i])==0: continue
+                for i in xrange(len(X_test)):
+                    if len(Y_test[i])==0: continue
 
                     # 2) test classifier
-                    X_ptest = X_eval_test[i]
-                    Y_ptest = Y_eval_test[i]
+                    X_ptest = X_test[i]
+                    Y_ptest = Y_test[i]
                     Y_est   = dtc.predict(X_ptest, y=Y_ptest)
                     for k, y_est in enumerate(Y_est):
                         if y_est > 0:
@@ -991,11 +943,11 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
                     result_list.append([tp,fn,fp,tn])
 
-                data[method]['tp_l'][j][idx/nPartialFit] += tp_l
-                data[method]['fp_l'][j][idx/nPartialFit] += fp_l
-                data[method]['fn_l'][j][idx/nPartialFit] += fn_l
-                data[method]['tn_l'][j][idx/nPartialFit] += tn_l
-                data[method]['result'][j][idx/nPartialFit].append(result_list)
+                data[method]['tp_l'][j].append(tp_l)
+                data[method]['fp_l'][j].append(fp_l)
+                data[method]['fn_l'][j].append(fn_l)
+                data[method]['tn_l'][j].append(tn_l)
+                data[method]['result'][j].append(result_list)
 
                 tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))
                 fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))
@@ -1008,15 +960,15 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             tn_l = []
             fn_l = []
             result_list = []
-            nSamples = len(initial_train_Y)
+            nSamples = len(Y_train)
 
             # incremental learning and classification
-            for i in xrange(len(X_eval_test)):
-                if len(Y_eval_test[i])==0: continue
+            for i in xrange(len(X_test)):
+                if len(Y_test[i])==0: continue
 
                 # 2) test classifier
-                X_ptest = X_eval_test[i]
-                Y_ptest = Y_eval_test[i]
+                X_ptest = X_test[i]
+                Y_ptest = Y_test[i]
                 Y_est   = dtc.predict(X_ptest, y=Y_ptest)
                 for k, y_est in enumerate(Y_est):
                     if y_est > 0:
@@ -1040,11 +992,11 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
                 result_list.append([tp,fn,fp,tn])
 
-            data[method]['tp_l'][j][idx] += tp_l
-            data[method]['fp_l'][j][idx] += fp_l
-            data[method]['fn_l'][j][idx] += fn_l
-            data[method]['tn_l'][j][idx] += tn_l
-            data[method]['result'][j][idx].append(result_list)
+            data[method]['tp_l'][j].append( tp_l )
+            data[method]['fp_l'][j].append( fp_l )
+            data[method]['fn_l'][j].append( fn_l )
+            data[method]['tn_l'][j].append( tn_l )
+            data[method]['result'][j].append(result_list)
 
     return data
 
