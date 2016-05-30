@@ -141,7 +141,9 @@ class classifier(learning_base):
               +' -w-1 '+str(self.w_negative)
                             
             try: self.dt = svm.svm_train(y, X, commands )
-            except: return False
+            except:
+                print "svm training failure"
+                sys.exit()
             return True
         elif self.method == 'cssvm_standard':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')

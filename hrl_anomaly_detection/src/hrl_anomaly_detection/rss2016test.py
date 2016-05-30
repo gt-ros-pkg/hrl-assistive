@@ -801,9 +801,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     # parallelization 
-    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
-                                                                 SVM_dict, data_pkl=crossVal_pkl) \
+                                                                 SVM_dict, data_pkl=crossVal_pkl,\
+                                                                 startIdx=startIdx) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
                                                                   
@@ -907,7 +908,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                    
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_dict, AE_dict, SVM_dict,\
-                    data_pkl=None):
+                    data_pkl=None, startIdx=4):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -923,22 +924,34 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
          
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
         # sample x dim x length
-        ll_classifier_train_X   = np.swapaxes(normalTrainData, 0, 1)
-        ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 0, 1)         
-        ll_classifier_test_X    = np.swapaxes(normalTestData, 0, 1)
-        ll_classifier_test_Y    = np.swapaxes(abnormalTestData, 0, 1)
+        normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 0, 1)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
         # sample x length x dim 
-        ll_classifier_train_X   = np.swapaxes(ll_classifier_train_X, 1, 2)
-        ll_classifier_train_Y   = np.swapaxes(ll_classifier_train_Y, 1, 2)         
-        ll_classifier_test_X    = np.swapaxes(ll_classifier_test_X, 1, 2)
-        ll_classifier_test_Y    = np.swapaxes(ll_classifier_test_Y, 1, 2)
+        normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 1, 2)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
 
+        # Training data
+        ll_classifier_train_X = normalTrainData
+        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+
+        # Testing data
+        ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
+        ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
+          [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
+        ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
+          [range(len(abnormalTestData[0]))]*len(abnormalTestData)
+        ll_classifier_test_idx = np.array(ll_classifier_test_idx)+startIdx
+          
         # flatten the data
         X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
                                                     ll_classifier_train_Y)
@@ -1029,14 +1042,14 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'osvm':
             weights = ROC_dict['osvm_param_range']
-            dtc.set_params( svm_type=0 )
+            dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
@@ -1072,8 +1085,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         delay_idx = 0
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
-            X = X_test[ii]                
-            est_y    = dtc.predict(X, y=Y_test[ii])
+            X = X_test[ii]
+            if method == 'osvm':
+                est_y = dtc.predict(X, y=np.array(Y_test[ii])*-1.0)
+                est_y = np.array(est_y)* -1.0
+            else:
+                est_y    = dtc.predict(X, y=Y_test[ii])
 
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
