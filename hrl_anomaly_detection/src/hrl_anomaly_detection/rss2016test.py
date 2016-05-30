@@ -60,6 +60,7 @@ from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from mvpa2.datasets.base import Dataset
 from sklearn import svm
 from joblib import Parallel, delayed
+from sklearn import metrics
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
@@ -863,6 +864,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print method
             print tpr_l
             print fpr_l
+            print metrics.auc(fpr_l, tpr_l, True)
             print "--------------------------------"
 
             if method == 'svm': label='HMM-SVM'

@@ -44,7 +44,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
 
     fit_methods = ['single_fit', 'single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['single_fit']
+    fit_renew_methods = ['single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -52,7 +52,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 10
     ## nValidData   = 16
-    nPartialFit  = 5
+    nPartialFit  = 3
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -489,7 +489,7 @@ def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     print method, fit_method
     print np.shape(tp_ll),np.shape(fp_ll),np.shape(tn_ll),np.shape(fn_ll)
     n = len(tp_ll[0])
-    if n >5: n=5
+    ## if n >5: n=5
    
     for j in xrange(n):
         tpr_l = []
