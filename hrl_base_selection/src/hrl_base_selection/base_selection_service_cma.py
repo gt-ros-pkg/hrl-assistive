@@ -10,7 +10,7 @@ roslib.load_manifest('hrl_base_selection')
 roslib.load_manifest('hrl_haptic_mpc')
 import rospy, rospkg
 import tf
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -49,7 +49,7 @@ class BaseSelector(object):
         self.model = model
         self.load = load
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
-        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseStamped, queue_size=1, latch=True)
+        self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseArray, queue_size=1, latch=True)
 
         self.bed_state_z = 0.
         self.bed_state_head_theta = 0.
@@ -430,7 +430,7 @@ class BaseSelector(object):
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
             heady = neigh.predict(model_B_head[1, 3])[0]
             headx = 0.
-
+            #heady = 0.
             print 'The nearest neighbor to the current head_y position is:', heady
 
             ## This next bit selects what entry in the dictionary of scores to use based on the location of the head
@@ -582,6 +582,11 @@ class BaseSelector(object):
         pr2_base_output = []
         configuration_output = []
 
+        pose_array = PoseArray()
+        pose_array.header.stamp = rospy.Time.now()
+        pose_array.header.frame_id = 'odom_combined'
+
+
         # Outputs the best location for the pr2
         # base and the best "other" configurations in two separate lists.
         # Format of output is:
@@ -604,18 +609,19 @@ class BaseSelector(object):
             (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
             world_B_pr2 = createBMatrix(trans, rot)
 
-            pr2_B_goal_pose = PoseStamped()
-            pr2_B_goal_pose.header.stamp = rospy.Time.now()
-            pr2_B_goal_pose.header.frame_id = 'odom_combined'
+            pr2_B_goal_pose = Pose()
+            # pr2_B_goal_pose.header.stamp = rospy.Time.now()
+            # pr2_B_goal_pose.header.frame_id = 'odom_combined'
             trans_out, rot_out = Bmat_to_pos_quat(world_B_pr2*pr2_B_goal)
-            pr2_B_goal_pose.pose.position.x = trans_out[0]
-            pr2_B_goal_pose.pose.position.y = trans_out[1]
-            pr2_B_goal_pose.pose.position.z = trans_out[2]
-            pr2_B_goal_pose.pose.orientation.x = rot_out[0]
-            pr2_B_goal_pose.pose.orientation.y = rot_out[1]
-            pr2_B_goal_pose.pose.orientation.z = rot_out[2]
-            pr2_B_goal_pose.pose.orientation.w = rot_out[3]
-            self.goal_viz_publisher.publish(pr2_B_goal_pose)
+            pr2_B_goal_pose.position.x = trans_out[0]
+            pr2_B_goal_pose.position.y = trans_out[1]
+            pr2_B_goal_pose.position.z = trans_out[2]
+            pr2_B_goal_pose.orientation.x = rot_out[0]
+            pr2_B_goal_pose.orientation.y = rot_out[1]
+            pr2_B_goal_pose.orientation.z = rot_out[2]
+            pr2_B_goal_pose.orientation.w = rot_out[3]
+            pose_array.poses.append(pr2_B_goal)
+            # self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
@@ -628,6 +634,7 @@ class BaseSelector(object):
             #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
             pr2_base_output.append([pos_goal, ori_goal])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
+        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))
 
@@ -745,7 +752,7 @@ class BaseSelector(object):
     def load_task(self, task, model, subj):
         home = expanduser("~")
         if 'wiping' in task:
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_no_bed_movement_score_data.pkl'])
             return load_pickle(file_name)
 
         elif 'scratching' not in task:
@@ -754,7 +761,7 @@ class BaseSelector(object):
         else:
             task_name = 'scratching'
             task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_no_bed_movement_score_data.pkl'])
             return load_pickle(file_name)
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
