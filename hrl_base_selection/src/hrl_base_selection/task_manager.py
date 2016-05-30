@@ -357,7 +357,7 @@ class BaseSelectionManager(object):
         start_time = rospy.Time.now()
         goal_array, config_array = self.call_base_selection()
         print 'Time to get results back from base_selection: ', (rospy.Time.now() - start_time).to_sec()
-        for item in goal_array[0:3]:
+        for item in goal_array[0:7]:
             base_goals.append(item)
         for item in config_array[0:3]:
             configuration_goals.append(item)
