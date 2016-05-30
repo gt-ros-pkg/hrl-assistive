@@ -42,9 +42,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # ROC
     ROC_dict = param_dict['ROC']
 
-    fit_methods = ['single_incremental_fit', 'full_fit']
+    fit_methods = ['single_fit', 'single_incremental_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['full_fit']
+    fit_renew_methods = ['single_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
