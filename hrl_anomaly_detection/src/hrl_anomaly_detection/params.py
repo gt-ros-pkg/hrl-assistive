@@ -274,7 +274,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 8.0, 'scale': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 5.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.47, 'gamma': 3.22, 'cost': 1.55}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -308,11 +308,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['fixed'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -10., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
-                          'fixed_param_range': np.logspace(-2, 0.0, nPoints)*-5.0,\
+                          'fixed_param_range': np.linspace(-10.0, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'svm_param_range': np.logspace(-2.5, 1.2, nPoints)}        
         

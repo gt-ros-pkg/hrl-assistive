@@ -926,7 +926,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 ## dtc.set_params( learning_rate='constant' )
                 ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
                 ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
-                for kkk in xrange(1):
+                for kkk in xrange(5):
                     ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
                 ## ret = dtc.fit(p_train_X, p_train_Y)
 
