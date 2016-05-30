@@ -613,13 +613,13 @@ class BaseSelector(object):
             # pr2_B_goal_pose.header.stamp = rospy.Time.now()
             # pr2_B_goal_pose.header.frame_id = 'odom_combined'
             trans_out, rot_out = Bmat_to_pos_quat(world_B_pr2*pr2_B_goal)
-            pr2_B_goal_pose.pose.position.x = trans_out[0]
-            pr2_B_goal_pose.pose.position.y = trans_out[1]
-            pr2_B_goal_pose.pose.position.z = trans_out[2]
-            pr2_B_goal_pose.pose.orientation.x = rot_out[0]
-            pr2_B_goal_pose.pose.orientation.y = rot_out[1]
-            pr2_B_goal_pose.pose.orientation.z = rot_out[2]
-            pr2_B_goal_pose.pose.orientation.w = rot_out[3]
+            pr2_B_goal_pose.position.x = trans_out[0]
+            pr2_B_goal_pose.position.y = trans_out[1]
+            pr2_B_goal_pose.position.z = trans_out[2]
+            pr2_B_goal_pose.orientation.x = rot_out[0]
+            pr2_B_goal_pose.orientation.y = rot_out[1]
+            pr2_B_goal_pose.orientation.z = rot_out[2]
+            pr2_B_goal_pose.orientation.w = rot_out[3]
             pose_array.poses.append(pr2_B_goal)
             # self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
