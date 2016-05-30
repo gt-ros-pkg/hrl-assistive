@@ -31,6 +31,7 @@
 # system
 import os, sys, copy
 import random
+import warnings
 
 # util
 import numpy as np
@@ -1583,3 +1584,75 @@ def getTimeDelayData(data, time_window):
             new_data.append( data[i][:,j:j+time_window].flatten() )
 
     return np.array(new_data)
+
+def getEstTruePositive(X):
+    '''
+    Input size is nSamples x length x HMM-induced features
+    Output is nData x HMM-induced features
+    Here the input should be positive data only.
+    '''
+
+    flatten_X = []
+    nOffset   = 5
+    
+    if len(np.shape(X))==3:
+        for i in xrange(len(X)):
+            for j in xrange(0, len(X[i])-nOffset):
+                if X[i][j+nOffset][0]-X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
+                    flatten_X += X[i][j:]
+                    break
+    elif len(np.shape(X))==2:
+        for j in xrange(0, len(X)-nOffset):
+            if X[j+nOffset][0]-X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
+                if type(X[j:]) is list:
+                    flatten_X += X[j:]
+                else:
+                    flatten_X += X[j:].tolist()
+                break
+    else:
+        warnings.warn("Not available dimension of data X")
+                
+    flatten_Y = [1]*len(flatten_X)
+    
+    return flatten_X, flatten_Y
+        
+        
+def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
+    '''
+    ll : sample x length x hmm features
+    l  : sample...  x hmm features
+    '''
+
+    if remove_fp:
+        l_X = []
+        l_Y = []
+        l_idx = []
+        for i in xrange(len(ll_X)):
+            if ll_Y[i][0] < 0:
+                if type(ll_X[i]) is list:
+                    l_X += ll_X[i]
+                    l_Y += ll_Y[i]
+                else:
+                    l_X += ll_X[i].tolist()
+                    l_Y += ll_Y[i]                    
+            else:
+                X,Y = getEstTruePositive(ll_X[i])
+                l_X += X
+                l_Y += Y
+        if len(np.shape(l_X))==1:
+            warnings.warn("wrong size vector in flatten function")
+            sys.exit()
+                
+    else:
+        l_X = []
+        l_Y = []
+        l_idx = []
+        for i in xrange(len(ll_X)):
+            for j in xrange(len(ll_X[i])):
+                l_X.append(ll_X[i][j])
+                l_Y.append(ll_Y[i][j])
+                if ll_idx is not None:
+                    l_idx.append(ll_idx[i][j])
+
+    return l_X, l_Y, l_idx
+    

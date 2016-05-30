@@ -168,12 +168,6 @@ def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
         if len(Y_test[ii])==0: continue
         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
-        ## # temp
-        ## if Y_test[ii][0] < 1.0:
-        ##     print est_y
-        ##     sys.exit()
-            
-
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:                
                 try:
@@ -425,7 +419,7 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
+        nFiles = 4
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -436,7 +430,7 @@ if __name__ == '__main__':
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                       'cost': np.linspace(0.1,3.0,5),\
                       'gamma': np.linspace(1.0,5.0,10), \
-                      'w_negative': np.linspace(0.01,0.6,10) }
+                      'w_negative': np.linspace(0.1,0.6,10) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
         ##               'cost': [1.],\
         ##               'gamma': [1.], \
