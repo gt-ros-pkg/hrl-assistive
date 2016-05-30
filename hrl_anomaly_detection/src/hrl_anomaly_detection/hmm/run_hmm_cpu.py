@@ -178,7 +178,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                     np.ones(len(abnormalTrainData[0])) ])
 
             # compute last three indices only
-            r = Parallel(n_jobs=1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=nLength-3, \
@@ -566,16 +566,16 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(0.1,2.0,4) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(0.1,2.0,10) }
                                                                          
     elif opt.task == 'pushing_microblack':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(1.0,10.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(1.0,10.0,10) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
