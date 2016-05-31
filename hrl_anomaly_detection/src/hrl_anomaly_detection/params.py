@@ -98,7 +98,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.366, 'scale': 5.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.577, 'scale': 4.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2., 'cost': 5.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
