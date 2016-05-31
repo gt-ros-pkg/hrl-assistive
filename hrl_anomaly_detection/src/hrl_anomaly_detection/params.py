@@ -158,7 +158,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 7.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.11, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2.0, 'cost': 5.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
