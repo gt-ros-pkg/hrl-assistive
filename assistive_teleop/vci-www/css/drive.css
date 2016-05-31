@@ -6,7 +6,7 @@ h4.drive-ctrl {
     margin-top:0em;
 }
 
-.drive-look {
+/*.drive-look {
     position: absolute;
     bottom:0%;
     height:13%;
@@ -39,7 +39,7 @@ h4.drive-ctrl {
     right:0em;
     background-image: url('./cursors/eyes/eyes-right.png');
 }
-
+*/
 #drive-lines {
     position: absolute;
     left: 0%;
@@ -78,12 +78,6 @@ h4.drive-ctrl {
     border-bottom:none;
 }
 
-.turn-signal.left {
-    left:calc(8% + 2px);
-    width:21%;
-    border-top-right-radius:1em;
-}
-
 .turn-signal > span.label {
     font-size:1.3em;
     width:100%;
@@ -93,9 +87,17 @@ h4.drive-ctrl {
     pointer-events:none;
 }
 
+.turn-signal.left {
+    left:0%;
+    width:23%;
+    border-left:none;
+    border-top-right-radius:1em;
+}
+
 .turn-signal.right {
-    right:calc(8% + 2px);
-    width:29%;
+    right:0%;
+    width:25%;
+    border-right:none;
     border-top-left-radius:1em;
 }
 
