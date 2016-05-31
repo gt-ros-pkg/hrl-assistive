@@ -224,7 +224,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             score += c2*np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
             score += c3/max_logp
             ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            scores.append( 1.0/score )
+            scores.append( 1000.0/score )
 
             ## # score 1 - c12
             ## diff_vals = -abnorm_logp + np.mean(norm_logp)
