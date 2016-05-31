@@ -1924,7 +1924,7 @@ if __name__ == '__main__':
 
     elif opt.bLikelihoodPlot:
         likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                              decision_boundary_viz=True, \
+                              decision_boundary_viz=False, \
                               useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
