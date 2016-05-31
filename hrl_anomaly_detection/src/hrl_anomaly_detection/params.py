@@ -274,7 +274,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 6.5}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.5, 'scale': 5.5}
         SVM_param_dict = {'renew': False, 'w_negative': 0.6, 'gamma': 1.89, 'cost': 0.825}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -340,8 +340,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.250, 'scale': 6.5}
         SVM_param_dict = {'renew': False, 'w_negative': 0.325, 'gamma': 2.0, 'cost': 5.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 30, 'cov': 1.0, 'scale': 8.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\

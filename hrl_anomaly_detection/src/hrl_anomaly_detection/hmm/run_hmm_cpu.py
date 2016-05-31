@@ -218,23 +218,23 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             score = 0.0; c1=10.0; c2=1.0; c3=500. #1.e+2 c11
             ## score = 0.0; c1=5.0; c2=1.0; c3=500. #1.e+2 ep
             ## score = 0.0; c1=1.0; c2=1.0; c3=500. #1.e+2 pc1
-            ## score = 0.0; c1=0.1; c2=1.0; c3=500. #1.e+2 c8
+            score = 0.0; c1=100.0; c2=1.0; c3=500. #1.e+2 c8
             score += c1*l_sig
             score += c2*np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
             score += c3/max_logp
             ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            ## scores.append( 1.0/score )
+            scores.append( 1.0/score )
 
-            ## # score 1 - 
-            diff_vals = -abnorm_logp + np.mean(norm_logp)
-            diff_list = []
-            for v in diff_vals:
-                if v is np.nan or v is np.inf: continue
-                diff_list.append(v)
+            ## # score 1 - c12
+            ## diff_vals = -abnorm_logp + np.mean(norm_logp)
+            ## diff_list = []
+            ## for v in diff_vals:
+            ##     if v is np.nan or v is np.inf: continue
+            ##     diff_list.append(v)
 
-            if len(diff_list)==0: continue
-            score = np.median(diff_list)
-            scores.append( score )
+            ## if len(diff_list)==0: continue
+            ## score = np.median(diff_list)
+            ## scores.append( score )
             
 
         print np.mean(scores), param
