@@ -13,9 +13,9 @@ RFH.CartesianEEControl = function (options) {
     self.gripper = options.gripper;
     self.eeDisplay = options.eeDisplay;
     self.eeDisplay.hide();
-    self.stepSizes = {'tiny': 0.025,
-        'small': 0.05,
-        'medium': 0.1,
+    self.stepSizes = {'tiny': 0.15,
+        'small': 0.04,
+        'medium': 0.11,
         'large': 0.25};
     self.tfClient = options.tfClient;
     var ros = self.tfClient.ros;
