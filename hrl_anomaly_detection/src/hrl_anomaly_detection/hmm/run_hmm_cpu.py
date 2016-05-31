@@ -215,10 +215,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
 
             from scipy.stats import norm
-            score = 0.0; c1=500.0; c2=1.0; c3=500. #1.e+2 c11
-            ## score = 0.0; c1=100.0; c2=1.0; c3=1500. #1.e+2 ep
-            ## score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
-            ## score = 0.0; c1=100.0; c2=1.0; c3=500. #1.e+2 c8
+            score = 0.0; c1=500.0; c2=1.0; c3=500. #1.e+2 c8
+            score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
+            score = 0.0; c1=500.0; c2=10.0; c3=500. #1.e+2 ep
+            ## score = 0.0; c1=100.0; c2=1.0; c3=500. #1.e+2 c11
             score += c1*l_sig
             score += c2*np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
             score += c3/max_logp
