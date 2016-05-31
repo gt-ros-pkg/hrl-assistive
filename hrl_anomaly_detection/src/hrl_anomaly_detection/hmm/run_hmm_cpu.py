@@ -586,8 +586,8 @@ if __name__ == '__main__':
                                                                        False, False,\
                                                                        rf_center, local_range, \
                                                                        ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [10, 15, 20, 25], 'scale': np.linspace(0.5,10.0,10), \
-                      'cov': np.linspace(0.5,4.0,4) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(0.5,4.0,10) }
 
     ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
     ##               'cov': [2.0, 4.0, 8.0] }
