@@ -13,9 +13,9 @@ RFH.CartesianEEControl = function (options) {
     self.gripper = options.gripper;
     self.eeDisplay = options.eeDisplay;
     self.eeDisplay.hide();
-    self.stepSizes = {'tiny': 0.025,
-        'small': 0.05,
-        'medium': 0.1,
+    self.stepSizes = {'tiny': 0.015,
+        'small': 0.04,
+        'medium': 0.11,
         'large': 0.25};
     self.tfClient = options.tfClient;
     var ros = self.tfClient.ros;
@@ -53,6 +53,8 @@ RFH.CartesianEEControl = function (options) {
         }
         var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false
         $('#armCtrlContainer').hide();
+        self.gripperDisplay.hide();
+        self.eeDisplay.show();
         RFH.kinectHeadPointCloud.setVisible(true);
         RFH.viewer.renderer.setClearColor(0x666666,0.5);
         //$('#mjpeg-image').css('visibility','hidden');
@@ -92,6 +94,8 @@ RFH.CartesianEEControl = function (options) {
             $('#mjpeg-image').css('visibility','visible');
             if (restoreArmContainer) { $('#armCtrlContainer').show(); }
             RFH.kinectHeadPointCloud.locked = false;
+            self.gripperDisplay.show();
+            self.eeDisplay.hide();
         }
 
         // All the points defined, move the camera and render views
@@ -634,7 +638,7 @@ RFH.CartesianEEControl = function (options) {
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $('#speedOptions').show();
         self.gripperDisplay.show();
-        self.eeDisplay.show();
+//        self.eeDisplay.show();
         $('#'+self.side[0]+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);
         $('#ee-mode-set').show();
