@@ -13,7 +13,7 @@ RFH.CartesianEEControl = function (options) {
     self.gripper = options.gripper;
     self.eeDisplay = options.eeDisplay;
     self.eeDisplay.hide();
-    self.stepSizes = {'tiny': 0.15,
+    self.stepSizes = {'tiny': 0.015,
         'small': 0.04,
         'medium': 0.11,
         'large': 0.25};
@@ -637,8 +637,7 @@ RFH.CartesianEEControl = function (options) {
         $('.'+self.side[0]+'-arm-ctrl, .arm-ctrl').show();
         $('#armCtrlContainer, #away-button, #toward-button').show();
         $('#speedOptions').show();
-//        self.gripperDisplay.show();
-        self.gripperDisplay.hide();
+        self.gripperDisplay.show();
 //        self.eeDisplay.show();
         $('#'+self.side[0]+'-posrot-set').show();
         $('#ee-mode-set input').on('click.rfh', self.setEEMode);

@@ -50,10 +50,10 @@ RFH.EERotation = function (options) {
         }
     };
 
-    self.stepSizes = {'tiny': Math.PI/16,
-        'small': Math.PI/8,
-        'medium': Math.PI/6,
-        'large': Math.PI/4};
+    self.stepSizes = {'tiny': Math.PI/18,
+                      'small': Math.PI/10,
+                      'medium': Math.PI/5,
+                      'large': Math.PI/3};
 
     self.getMeshPointedAt = function (event) {
         var mouse = new THREE.Vector2();
