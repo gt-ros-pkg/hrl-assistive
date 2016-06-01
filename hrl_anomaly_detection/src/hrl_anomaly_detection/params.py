@@ -442,7 +442,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.88, 'scale': 4.0}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
-        SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.1, 'cost': 8.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 8.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
                           'update_list': ['svm'],\
@@ -472,7 +472,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.889, 'scale': 5.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.01, 'cost': 8.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 8.0}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
