@@ -385,8 +385,8 @@ if __name__ == '__main__':
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(3.0,8.0,5),\
-                      'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
+                      'cost': np.linspace(1.0,10.0,5),\
+                      'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
                       'w_negative': np.linspace(0.1,3.0,5) }
         ## if opt.dim == 4:
         ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
