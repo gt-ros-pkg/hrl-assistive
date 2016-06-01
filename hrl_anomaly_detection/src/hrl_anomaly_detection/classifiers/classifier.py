@@ -58,6 +58,7 @@ class classifier(learning_base):
                  kernel_type = 2,\
                  degree      = 3,\
                  gamma       = 0.3,\
+                 nu          = 0.5,\
                  cost        = 4.,\
                  w_negative  = 7.0,\
                  # cssvm
@@ -86,7 +87,8 @@ class classifier(learning_base):
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
             self.degree      = degree 
-            self.gamma       = gamma 
+            self.gamma       = gamma
+            self.nu          = nu
             self.cost        = cost 
             self.w_negative  = w_negative             
         elif self.method == 'cssvm':
@@ -137,7 +139,7 @@ class classifier(learning_base):
             if type(X) is not list: X=X.tolist()
             if type(y) is not list: y=y.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
-              +' -g '+str(self.gamma)\
+              +' -g '+str(self.gamma)+' -n '+str(self.nu)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)
                             
