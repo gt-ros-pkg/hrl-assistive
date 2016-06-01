@@ -1045,7 +1045,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         elif method == 'osvm':
             weights = ROC_dict['osvm_param_range']
             dtc.set_params( svm_type=2 )
-            dtc.set_params( kernel_type=2 )
+            dtc.set_params( kernel_type=1 )
             dtc.set_params( nu=weights[j] )
             dtc.set_params( cost=1.0 )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
