@@ -169,7 +169,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'osvm_param_range': np.linspace(0.001, 10.0, nPoints),\
                           'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     rawFeatures = ['relativePose_artag_EE', \
@@ -335,7 +335,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['fixed', 'progress_time_cluster'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\

@@ -1045,7 +1045,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)                
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
@@ -1086,7 +1086,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
             X = X_test[ii]
-            if method == 'osvm':
+            if method == 'osvm' or method == 'cssvm':
                 est_y = dtc.predict(X, y=np.array(Y_test[ii])*-1.0)
                 est_y = np.array(est_y)* -1.0
             else:

@@ -135,6 +135,7 @@ class classifier(learning_base):
             import svmutil as svm
 
             if type(X) is not list: X=X.tolist()
+            if type(y) is not list: y=y.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
