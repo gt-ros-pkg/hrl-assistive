@@ -348,8 +348,8 @@ if __name__ == '__main__':
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(2,15.0,10),\
-                      'gamma': np.linspace(0.01,4.0,10), \
+                      'cost': np.linspace(5,15.0,5),\
+                      'gamma': np.linspace(0.01,2.0,5), \
                       'w_negative': np.linspace(0.2,1.5,5) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
