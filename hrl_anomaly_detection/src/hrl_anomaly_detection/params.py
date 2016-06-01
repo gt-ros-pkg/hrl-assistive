@@ -456,10 +456,10 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 6.0}
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 2.0, 'cost': 2.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 1.66, 'scale': 4.72}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
@@ -471,7 +471,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.61, 'scale': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.889, 'scale': 5.0}
         SVM_param_dict = {'renew': False, 'w_negative': 8.0, 'gamma': 0.01, 'cost': 8.0}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
                           'update_list': ['svm'],\
