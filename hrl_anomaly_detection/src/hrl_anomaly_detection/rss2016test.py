@@ -468,7 +468,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   data_renew=False, save_pdf=False, show_plot=True, verbose=False):
+                   data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False):
 
     ## Parameters
     # data
@@ -800,13 +800,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization 
-    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                  method, ROC_data, ROC_dict, AE_dict, \
-                                                                  SVM_dict, data_pkl=crossVal_pkl,\
-                                                                  startIdx=startIdx) \
-                                                                  for idx in xrange(len(kFold_list)) \
-                                                                  for method in method_list )
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+                                                                 method, ROC_data, ROC_dict, AE_dict, \
+                                                                 SVM_dict, data_pkl=crossVal_pkl,\
+                                                                 startIdx=startIdx) \
+                                                                 for idx in xrange(len(kFold_list)) \
+                                                                 for method in method_list )
                                                                   
     #l_data = zip(*r)
     l_data = r
@@ -1780,6 +1782,8 @@ if __name__ == '__main__':
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
     
+    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
+                 default=False, help='Set debug mode.')
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
@@ -1932,6 +1936,6 @@ if __name__ == '__main__':
                               
     elif opt.bEvaluationAll:                
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose)
+                       verbose=opt.bVerbose, debug=opt.bDebug)
 
 
