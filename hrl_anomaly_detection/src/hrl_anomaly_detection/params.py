@@ -424,9 +424,9 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 3.0}
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 6.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0}
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 15, 'cov': 2.83, 'scale': 4.72}
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'osvm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
