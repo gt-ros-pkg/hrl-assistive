@@ -445,11 +445,11 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 8.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['progress_time_cluster', 'svm', 'fixed'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(0.5, -4., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.8, nPoints),\
-                          'fixed_param_range': np.linspace(-2.0, 1.0, nPoints),\
+                          'progress_param_range':np.linspace(0.1, -6., nPoints), \
+                          'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
+                          'fixed_param_range': np.linspace(-3.0, 0.8, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
