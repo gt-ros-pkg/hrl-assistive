@@ -961,6 +961,13 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         # flatten the data
         X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
                                                     ll_classifier_train_Y)
+
+        # PCA
+        from sklearn.decomposition import KernelPCA
+        ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+                           gamma=0.5)
+        X_train_org = ml_pca.fit_transform(np.array(X_train_org))        
+                                                    
         nState = 0
         nLength = 200
     else:
@@ -1026,6 +1033,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
+            if method.find('osvm')>=0:
+                X_temp = ml_pca.transform(ll_classifier_test_X[j])
+                X      = scaler.transform(X_temp)                                            
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
