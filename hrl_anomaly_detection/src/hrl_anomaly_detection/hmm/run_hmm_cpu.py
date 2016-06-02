@@ -215,7 +215,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             for i in xrange(len(ll_abnorm_logp)):
                 abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
 
-            scores.append( abs(np.mean(norm_dist) - np.mean(abnorm_dist))  )
+            scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))  )
 
 
             #--------------------------------------------------------------
