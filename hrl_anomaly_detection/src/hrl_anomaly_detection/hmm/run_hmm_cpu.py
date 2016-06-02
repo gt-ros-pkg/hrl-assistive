@@ -181,51 +181,74 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
-                                                                    startIdx=nLength-3, \
+                                                                    startIdx=3, \
+                                                                    ## startIdx=nLength-3, \
                                                                     bPosterior=False)
                                                                     for i in xrange(len(testDataX[0])))
-            _, ll_classifier_test_idx, ll_logp = zip(*r)
+            _, _, ll_logp = zip(*r)
 
             norm_logp=[]
             abnorm_logp=[]
+            ll_norm_logp=[]
+            ll_abnorm_logp=[]
             for i in xrange(len(ll_logp)):
 
                 if np.nan in ll_logp[i]: continue                
                 if np.inf in ll_logp[i]: continue
                 if np.isnan(np.mean(ll_logp[i])): continue
                 
-                if testDataY[i] > 0.0: abnorm_logp += ll_logp[i]
-                else:  norm_logp += ll_logp[i]
+                if testDataY[i] > 0.0:
+                    abnorm_logp += ll_logp[i]
+                    ll_abnorm_logp.append(ll_logp[i])
+                else:
+                    norm_logp += ll_logp[i]
+                    ll_norm_logp.append(ll_logp[i])
 
-            logps = norm_logp + abnorm_logp
-            if len(logps) == 0:
-                scores.append(-100000)
-                continue
-            if np.mean(norm_logp) < 0 or np.amin(norm_logp) < 0:
-                continue
 
-            # normalization
-            max_logp     = np.amax(logps) 
-            norm_logp   /= max_logp
-            abnorm_logp /= max_logp
+            #
+            import MDAnalysis.analysis.psa as psa
+            l_mean_logp = np.array([np.mean(ll_norm_logp, axis=0)])
+            norm_dist = []
+            abnorm_dist = []
+            for i in xrange(len(ll_norm_logp)):
+                norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
+            for i in xrange(len(ll_abnorm_logp)):
+                abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
 
-            # mu, sig
-            l_mu  = np.mean(norm_logp)
-            l_sig = np.std(norm_logp)
-            new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
+            scores.append( abs(np.mean(norm_dist) - np.mean(abnorm_dist))  )
 
-            from scipy.stats import norm
-            score = 0.0; c1=300.0; c2=300.0; c3=50. #1.e+2 c8
-            ## score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
-            ## score = 0.0; c1=1000.0; c2=1.0; c3=1000. #1.e+2 c12
-            ## score = 0.0; c1=1000.0; c2=1.0; c3=5000. #1.e+2 c11
-            ## score = 0.0; c1=1000.0; c2=1.0; c3=5. #1.e+2 ep
-            score += c1/l_sig
-            score += c2/np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
-            ## score += c3/max_logp
-            ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            scores.append( 1000.0*score )
 
+            #--------------------------------------------------------------
+            ## logps = norm_logp + abnorm_logp
+            ## if len(logps) == 0:
+            ##     scores.append(-100000)
+            ##     continue
+            ## if np.mean(norm_logp) < 0 or np.amin(norm_logp) < 0:
+            ##     continue
+
+            ## # normalization
+            ## max_logp     = np.amax(logps) 
+            ## norm_logp   /= max_logp
+            ## abnorm_logp /= max_logp
+
+            ## # mu, sig
+            ## l_mu  = np.mean(norm_logp)
+            ## l_sig = np.std(norm_logp)
+            ## new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
+
+            ## from scipy.stats import norm
+            ## score = 0.0; c1=300.0; c2=300.0; c3=50. #1.e+2 c8
+            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
+            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=1000. #1.e+2 c12
+            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5000. #1.e+2 c11
+            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5. #1.e+2 ep
+            ## score += c1/l_sig
+            ## score += c2/np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
+            ## ## score += c3/max_logp
+            ## ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
+            ## scores.append( 1000.0*score )
+
+            #--------------------------------------------------------------
             ## # score 1 - c12
             ## diff_vals = -abnorm_logp + np.mean(norm_logp)
             ## diff_list = []
@@ -235,9 +258,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             ## if len(diff_list)==0: continue
             ## score = np.median(diff_list)
-            ## scores.append( score )
+            ## scores.append( score )                                    
+            print scores
             
-
         print np.mean(scores), param
         mean_list.append( np.mean(scores) )
         std_list.append( np.std(scores) )
@@ -583,7 +606,7 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,5), \
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
                       'cov': np.linspace(1.0,10.0,5) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \

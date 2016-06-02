@@ -967,7 +967,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
                            gamma=0.5)
         X_train_org = ml_pca.fit_transform(np.array(X_train_org))        
-                                                    
+
+        
+        ## for i in np.logspace(-3,2,6):
+            
+
+        
         nState = 0
         nLength = 200
     else:
