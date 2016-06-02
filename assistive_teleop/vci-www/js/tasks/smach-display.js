@@ -313,6 +313,18 @@ RFH.SmachDisplay = function(options) {
         return -1;
     };
 
+    var makeClickCB = function (idx, fn) {
+        var onclickFn = function (event) {
+            var clickedDiv = $('#smach-container > .smach-state').get(idx);
+            if ( $(clickedDiv).hasClass('incomplete') ) {
+                event.stopPropagation();
+            } else {
+               fn(event); 
+            }
+        }
+        return onclickFn;
+    };
+
     self.refreshDisplay = function (){
         var currentIdx = getCurrentActionIndex();
         if (currentIdx < 0) { return; };
@@ -324,7 +336,7 @@ RFH.SmachDisplay = function(options) {
                                 text: actionList[i].label,
                                 title: actionList[i].helpText
                             }
-                     ).on('click.rfh', actionList[i].startFunction);
+                     ).on('click.rfh', makeClickCB(i, actionList[i].startFunction));
             self.$container.append(bubble);
             self.$container.append($('<div>', { class: "smach-state-separator" }));
         }
