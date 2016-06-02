@@ -221,7 +221,7 @@ def disp_score(results, method, nPoints):
 
         # get AUC
         from sklearn import metrics        
-        score_list.append( [metrics.auc(fpr_l, tpr_l, True), ret_params] )
+        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params] )
 
         # get max tp in fpr (0~20)
         ## max_tp = 0

@@ -863,11 +863,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 delay_mean_l.append( np.mean(delay_ll[i]) )
                 delay_std_l.append( np.std(delay_ll[i]) )
 
+            # add edge
+            ## fpr_l = [0] + fpr_l + [100]
+            ## tpr_l = [0] + tpr_l + [100]
+
             print "--------------------------------"
             print method
             print tpr_l
             print fpr_l
-            print metrics.auc(fpr_l, tpr_l, True)
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             print "--------------------------------"
 
             if method == 'svm': label='HMM-SVM'

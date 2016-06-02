@@ -571,9 +571,13 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(0.1,2.0,10) }
-                                                                         
+        if opt.dim == 4:
+            parameters = {'nState': [25], 'scale': np.linspace(2.0,6.0,10), \
+                          'cov': np.linspace(0.1,4.0,10) }
+        else:
+            parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                          'cov': np.linspace(0.1,2.0,10) }
+            
     elif opt.task == 'pushing_microblack':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
                                                                          False, False,\
