@@ -3,6 +3,7 @@ RFH.Drive = function (options) {
     var self = this;
     options = options || {};
     self.name = options.name || 'drivingTask';
+    self.forwardOnly = options.forwardOnly || false;
     var divId = options.targetDiv || 'video-main'; 
     self.showButton = true;
     var head = options.head;
@@ -274,10 +275,13 @@ RFH.Drive = function (options) {
             moveToStop(newStop);
         }
     };
-    $('.drive-look.left').on('click.rfh', toLeft).prop('title', 'Turn head left one step.');
-    $('.drive-look.right').on('click.rfh', toRight).prop('title', 'Turn head right one step.');
+//    $('.drive-look.left').on('click.rfh', toLeft).prop('title', 'Turn head left one step.');
+//    $('.drive-look.right').on('click.rfh', toRight).prop('title', 'Turn head right one step.');
 
     var getNearestStop = function () {
+        if (self.forwardOnly) {
+            return headStops[2];
+        }
         var currentPan = head.getState()[0];
         var nearestStop = 'forward'; //Good default assumption;
         var del = 2*Math.PI; //Initialize too high;
@@ -299,19 +303,23 @@ RFH.Drive = function (options) {
         $('#drive-dir-icon path.'+stopName).css({'fill':'#ffffff'});
         head.setPosition(angs[0], angs[1]);
     };
-
-    var driveDirIcon = new Snap("#drive-dir-icon");
-    Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
-        driveDirIcon.append(icon_svg.select('g'));
-        var wedgeClickCB = function (e) {
-            moveToStop(e.target.classList[0]);
-        };
-        var wedges = driveDirIcon.selectAll('path');
-        for (var i=0; i<wedges.length; i+=1) {
-           wedges[i].click(wedgeClickCB);
-        }
-        console.log("Drive Direction Icon Loaded"); 
-    });
+    
+    if (!self.forwardOnly) {
+        var driveDirIcon = new Snap("#drive-dir-icon");
+        Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
+            driveDirIcon.append(icon_svg.select('g'));
+            var wedgeClickCB = function (e) {
+                moveToStop(e.target.classList[0]);
+            };
+            var wedges = driveDirIcon.selectAll('path');
+            for (var i=0; i<wedges.length; i+=1) {
+               wedges[i].click(wedgeClickCB);
+            }
+            console.log("Drive Direction Icon Loaded"); 
+        });
+    } else {
+        $('#drive-dir-icon').remove();
+    }
 
     var linesSpin = function (cx, cy, dir, hz) {
         var hz = hz || 1500;
