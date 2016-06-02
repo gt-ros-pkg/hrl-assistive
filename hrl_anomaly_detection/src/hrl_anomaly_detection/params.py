@@ -472,7 +472,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.889, 'scale': 5.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 8.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.1, 'cost': 6.75}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'osvm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
