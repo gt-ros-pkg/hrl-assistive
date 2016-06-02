@@ -387,9 +387,9 @@ if __name__ == '__main__':
 
         if opt.dim == 5:
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(9.0,20.0,5),\
-                          'gamma': [0.5, 1.0,2.0,3.0], \
-                          'w_negative': np.linspace(3.0,7.0,5) }
+                          'cost': np.linspace(9.0,15.0,5),\
+                          'gamma': [2.0,3.0,4.0,5.0,6.0], \
+                          'w_negative': np.linspace(5.0,10.0,5) }
         else:
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                           'cost': np.linspace(1.0,10.0,5),\
