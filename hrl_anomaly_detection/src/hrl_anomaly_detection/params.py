@@ -123,7 +123,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.34, 'scale': 4.66}
-            SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 3.0, 'cost': 3.775,\
+            SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.01, 'cost': 7.5,\
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , ,'osvm', 'fixed', 'progress_time_cluster', 'svm','osvm'
