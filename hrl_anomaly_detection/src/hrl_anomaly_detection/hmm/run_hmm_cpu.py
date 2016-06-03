@@ -203,9 +203,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 else:
                     norm_logp += ll_logp[i]
                     ll_norm_logp.append(ll_logp[i])
-
+                    
             max_norm_logp = np.amax(norm_logp)
-            min_norm_logp = np.amax(norm_logp)
+            min_norm_logp = np.amin(norm_logp)
+
             ll_norm_logp   = (np.array(ll_norm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
             ll_abnorm_logp = (np.array(ll_abnorm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
 
@@ -219,6 +220,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             for i in xrange(len(ll_abnorm_logp)):
                 abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
 
+            #if np.mean(norm_dist)
             scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))  )
 
 
