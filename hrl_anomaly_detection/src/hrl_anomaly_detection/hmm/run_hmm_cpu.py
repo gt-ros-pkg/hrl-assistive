@@ -60,7 +60,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list #[:4]
+    kFold_list = kFold_list[:4]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -216,11 +216,14 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             norm_dist = []
             abnorm_dist = []
             for i in xrange(len(ll_norm_logp)):
-                norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
+                norm_dist.append((psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
+                ## norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
             for i in xrange(len(ll_abnorm_logp)):
-                abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
+                abnorm_dist.append((psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
+                ## abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
 
-            #if np.mean(norm_dist)
+            print param['scale'], param['cov'], " : ", np.mean(norm_dist)-np.mean(abnorm_dist), \
+              " : ", np.std(norm_dist)-np.std(abnorm_dist) 
             scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))  )
 
 
