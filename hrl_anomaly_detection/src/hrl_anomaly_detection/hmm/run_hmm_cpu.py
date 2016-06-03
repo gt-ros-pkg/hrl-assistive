@@ -64,7 +64,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list[:4]
+    kFold_list = kFold_list
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
