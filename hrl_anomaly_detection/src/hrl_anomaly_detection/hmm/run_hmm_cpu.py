@@ -73,16 +73,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     for param in param_list:
 
-        tp_l = []
-        fp_l = []
-        tn_l = []
-        fn_l = []
+        tp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
+        fp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
+        tn_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
+        fn_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
 
         scores = []
         # Training HMM, and getting classifier training and testing data
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
-
 
             if AE_dict['switch']:
                 if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
@@ -128,12 +127,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                  add_noise_features=AE_dict['add_noise_option'])
                 abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
                                                  AE_dict['add_option'], d['handFeatureNames'])
-                normalTestData   = combineData( normalTestData, handSuccTeData,\
-                                                AE_dict['add_option'], d['handFeatureNames'])
+                normalTestData    = combineData( normalTestData, handSuccTeData,\
+                                                 AE_dict['add_option'], d['handFeatureNames'])
                 abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
                                                  AE_dict['add_option'], d['handFeatureNames'])
-                ## print np.shape(normalTrainData), np.shape(normalTestData), np.shape(abnormalTestData)
-                ## sys.exit()
 
                 
                 ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
@@ -252,31 +249,23 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 X_test.append(X)
                 Y_test.append(test_Y[j])
 
-            if verbose: print "Run a classifier"
-            dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
-            dtc.set_params( **SVM_dict )
             weights = ROC_dict['svm_param_range']
-            dtc.set_params( class_weight=weights[len(weights)/2] )
-            ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                         X_test, Y_test, \
+                                                                         nEmissionDim, nLength, \
+                                                                         SVM_dict, weight=weights[iii], \
+                                                                         verbose=False)\
+                                                                         for iii in xrange(len(weights)))
+            idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
-            print np.shape(X_test), np.shape(Y_test)
+            print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
 
-            for ii in xrange(len(X_test)):
-                if len(Y_test[ii])==0: continue
-                X = X_test[ii]
-                est_y    = dtc.predict(X, y=Y_test[ii])
-            
-                for jj in xrange(len(est_y)):
-                    if est_y[jj] > 0.0: break        
-
-                if Y_test[ii][0] > 0.0:
-                    if est_y[jj] > 0.0:
-                        tp_l.append(1)
-                    else: fn_l.append(1)
-                elif Y_test[ii][0] <= 0.0:
-                    if est_y[jj] > 0.0: fp_l.append(1)
-                    else: tn_l.append(1)
-
+            for iii, idx_point in enumerate(idx_l):            
+                tp_l[idx_point] += tp_ll[iii]
+                fn_l[idx_point] += fn_ll[iii]
+                fp_l[idx_point] += fp_ll[iii]
+                tn_l[idx_point] += tn_ll[iii]
+                                
             ## max_norm_logp = np.amax(norm_logp)
             ## min_norm_logp = np.amin(norm_logp)
 
@@ -379,6 +368,37 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     ## for i in xrange(len(results)):
     ##     print results[i]
 
+
+def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, SVM_dict, weight, \
+                    verbose=False):
+
+    if verbose: print "Run a classifier"
+    dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
+    dtc.set_params( **SVM_dict )
+    dtc.set_params( class_weight=weight )
+    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+
+    tp_l = []
+    fn_l = []
+    fp_l = []
+    tn_l = []
+    for ii in xrange(len(X_test)):
+        if len(Y_test[ii])==0: continue
+        X = X_test[ii]
+        est_y    = dtc.predict(X, y=Y_test[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0: break        
+
+        if Y_test[ii][0] > 0.0:
+            if est_y[jj] > 0.0:
+                tp_l.append(1)
+            else: fn_l.append(1)
+        elif Y_test[ii][0] <= 0.0:
+            if est_y[jj] > 0.0: fp_l.append(1)
+            else: tn_l.append(1)
+
+    return idx, tp_l, fn_l, fp_l, tn_l
 
 
 def tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True):
