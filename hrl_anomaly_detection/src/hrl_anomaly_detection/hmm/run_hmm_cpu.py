@@ -146,7 +146,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)                
 
             # scaling
-            if verbose: print "scaling data"
+            if verbose: print "scaling data ", idx, " / ", len(kFold_list)
             normalTrainData   *= param['scale']
             abnormalTrainData *= param['scale']
             normalTestData    *= param['scale']
@@ -251,6 +251,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
 
             for ii in xrange(len(X_test)):
+                if len(Y_test[ii])==0: continue
+                X = X_test[ii]
                 est_y    = dtc.predict(X, y=Y_test[ii])
             
                 for jj in xrange(len(est_y)):
