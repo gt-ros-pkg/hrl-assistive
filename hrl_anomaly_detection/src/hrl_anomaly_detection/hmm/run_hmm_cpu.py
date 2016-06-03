@@ -204,6 +204,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                     norm_logp += ll_logp[i]
                     ll_norm_logp.append(ll_logp[i])
 
+            max_norm_logp = np.amax(norm_logp)
+            min_norm_logp = np.amax(norm_logp)
+            ll_norm_logp   = (np.array(ll_norm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
+            ll_abnorm_logp = (np.array(ll_abnorm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
 
             #
             import MDAnalysis.analysis.psa as psa
