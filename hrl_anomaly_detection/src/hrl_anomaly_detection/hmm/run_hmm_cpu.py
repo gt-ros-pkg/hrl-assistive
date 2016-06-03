@@ -258,7 +258,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                          for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
-            print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
+            ## print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
 
             for iii, idx_point in enumerate(idx_l):            
                 tp_l[idx_point] += tp_ll[iii]
@@ -331,26 +331,23 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ## scores.append( score )                                    
             ## print scores
 
-        print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
+        ## print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
-        if np.sum(tp_l)+np.sum(fn_l) == 0 or np.sum(fp_l)+np.sum(tn_l) == 0:
-            mean_list.append(0)
-            std_list.append(0)
-        else:
-            tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 
-            fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
-            if fpr == 0.0:
-                mean_list.append(1000000)
-            else:
-                print tpr/fpr
-                mean_list.append(tpr/fpr)
-            std_list.append(0)
+        tpr_l = []
+        fpr_l = []
+        for i in xrange(ROC_dict['nPoints']):
+            tpr_l.append( float(np.sum(tp_l[i]))/float(np.sum(tp_l[i])+np.sum(fn_l[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_l[i]))/float(np.sum(fp_l[i])+np.sum(tn_l[i]))*100.0 )
+            
+        from sklearn import metrics
+        mean_list.append( metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True) )
+        std_list.append(0)
 
             
         ## print np.mean(scores), param
         ## mean_list.append( np.mean(scores) )
         ## std_list.append( np.std(scores) )
-
+    print "mean: ", mean_list
     score_array = np.array(mean_list) #-np.array(std_list)
     idx_list = np.argsort(score_array)
 
