@@ -349,7 +349,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             std_list.append(0)
         else:
             tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 
-            fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 
+            fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
+            print tpr/fpr
             mean_list.append(tpr/fpr)
             std_list.append(0)
 
