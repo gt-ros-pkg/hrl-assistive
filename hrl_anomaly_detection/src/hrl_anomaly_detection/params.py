@@ -277,7 +277,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 3.5 }
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 5.0 }
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': False, 'w_negative': 1.5, 'gamma': 0.5, 'cost': 2.5}
 
@@ -326,7 +326,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.53, 'scale': 4.25, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 5.0, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.489, 'gamma': 1.0, 'cost': 2.275}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.75, 'scale': 5.5, \

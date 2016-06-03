@@ -229,7 +229,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             print param['scale'], param['cov'], " : ", np.mean(norm_dist)-np.mean(abnorm_dist), \
               " : ", np.std(norm_dist)-np.std(abnorm_dist) 
-            scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))/(8.0+np.std(norm_dist))  )
+            scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))/(1.0 + nEmissionDim*np.std(norm_dist))  )
 
 
             #--------------------------------------------------------------
