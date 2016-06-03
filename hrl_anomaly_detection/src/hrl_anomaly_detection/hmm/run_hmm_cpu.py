@@ -203,6 +203,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 else:
                     norm_logp += ll_logp[i]
                     ll_norm_logp.append(ll_logp[i])
+
+            if len(norm_logp)==0:
+                scores.append(-1.0 * 1e+10)
+                continue
+
                     
             max_norm_logp = np.amax(norm_logp)
             min_norm_logp = np.amin(norm_logp)
