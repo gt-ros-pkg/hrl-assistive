@@ -4,6 +4,7 @@ RFH.GripperDisplay = function (options) {
     var gripper = options.gripper;
     var zeroOffset = options.zeroOffset || 0.0;
     var $div = $('#'+options.divId);
+    var sliderDeadzone = options.deadzone || 0.002;
     var $gripperSlider = $div.find('.gripper-slider').css('zIndex', 10);
     var $grabButton = $div.find('.grab').button();
     var $releaseButton = $div.find('.release').button().hide();
@@ -61,9 +62,9 @@ RFH.GripperDisplay = function (options) {
         var diff = values[1]-values[0];
         var newPos = diff - (handleWidthPct/100)*range;
         var currPos = gripper.getState();
-        if (newPos > currPos + 0.01) { // Add 1cm buffer so we don't react to noise or indecisive commands, only clear instructions
+        if (newPos > currPos + sliderDeadzone) { // Add buffer so we don't react to noise or indecisive commands, only clear instructions
             gripper.open();
-        } else  if (newPos < currPos - 0.01) {
+        } else  if (newPos < currPos - sliderDeadzone) {
             gripper.grab();
         }
     };
@@ -98,7 +99,6 @@ RFH.GripperDisplay = function (options) {
          } else {
             return 2*(handle_position - mid);
          }
-
     };
 
     // Update state display, add to gripper state CB list
