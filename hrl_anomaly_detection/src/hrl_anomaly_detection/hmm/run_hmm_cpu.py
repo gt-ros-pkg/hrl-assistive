@@ -60,7 +60,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list[:4]
+    kFold_list = kFold_list #[:4]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -211,15 +211,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_abnorm_logp = (np.array(ll_abnorm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
 
             #
-            import MDAnalysis.analysis.psa as psa
+            ## import MDAnalysis.analysis.psa as psa
             l_mean_logp = np.array([np.mean(ll_norm_logp, axis=0)])
             norm_dist = []
             abnorm_dist = []
             for i in xrange(len(ll_norm_logp)):
-                norm_dist.append((psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
+                norm_dist.append( np.linalg.norm(l_mean_logp - ll_norm_logp[i:i+1] ) )
                 ## norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
             for i in xrange(len(ll_abnorm_logp)):
-                abnorm_dist.append((psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
+                abnorm_dist.append( np.linalg.norm(l_mean_logp - ll_abnorm_logp[i:i+1] ) )
                 ## abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
 
             print param['scale'], param['cov'], " : ", np.mean(norm_dist)-np.mean(abnorm_dist), \
@@ -615,8 +615,8 @@ if __name__ == '__main__':
                                                                          False, False,\
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
-                      'cov': np.linspace(1.0,10.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(2.0,5.0,5), \
+                      'cov': np.logspace(-2,0.3,5) }
     elif opt.task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
                                                                        False, False,\
