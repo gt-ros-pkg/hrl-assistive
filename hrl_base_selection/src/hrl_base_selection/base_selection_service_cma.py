@@ -634,7 +634,7 @@ class BaseSelector(object):
             #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
             pr2_base_output.append([pos_goal, ori_goal])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
-        self.goal_viz_publisher.publish(pose_array)
+#        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
         return list(flatten(pr2_base_output)), list(flatten(configuration_output))
 
@@ -752,7 +752,7 @@ class BaseSelector(object):
     def load_task(self, task, model, subj):
         home = expanduser("~")
         if 'wiping' in task:
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_no_bed_movement_score_data.pkl'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
             return load_pickle(file_name)
 
         elif 'scratching' not in task:
@@ -761,7 +761,7 @@ class BaseSelector(object):
         else:
             task_name = 'scratching'
             task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_no_bed_movement_score_data.pkl'])
+            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
             return load_pickle(file_name)
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
