@@ -426,14 +426,14 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 3.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 0.1, 'cost': 9.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.733, 'gamma': 0.1, 'cost': 8.5,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0}
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'osvm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['fixed', 'progress_time_cluster', 'svm'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(1., -3., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
-                          'fixed_param_range': np.linspace(2.0, -1.0, nPoints),\
+                          'progress_param_range':np.linspace(0.2, -5., nPoints), \
+                          'svm_param_range': np.logspace(-2, 0.5, nPoints),\
+                          'fixed_param_range': np.linspace(0.5, -3.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 4:
