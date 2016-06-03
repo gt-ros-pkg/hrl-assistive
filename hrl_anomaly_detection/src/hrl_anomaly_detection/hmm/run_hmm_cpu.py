@@ -277,9 +277,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                     if est_y[jj] > 0.0: fp_l.append(1)
                     else: tn_l.append(1)
 
-            print tp_l
-            print fn_l 
-                    
             ## max_norm_logp = np.amax(norm_logp)
             ## min_norm_logp = np.amin(norm_logp)
 
@@ -345,8 +342,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ## scores.append( score )                                    
             ## print scores
 
+        print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
-        if np.sum(tp_l)+np.sum(fn_l) == 0 or np.sum(fp_l)+np.sum(tn_l):
+        if np.sum(tp_l)+np.sum(fn_l) == 0 or np.sum(fp_l)+np.sum(tn_l) == 0:
             mean_list.append(0)
             std_list.append(0)
         else:
