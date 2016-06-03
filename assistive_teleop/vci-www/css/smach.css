@@ -26,6 +26,7 @@
     background-color: hsla(130, 100%, 50%, 0.75);
     border-color: hsla(0, 100%, 0%, 0.75);
     color: hsla(0, 0%, 0%, 0.9);
+    cursor: pointer;
 }
 .smach-state.incomplete {
     background-color: hsla(130, 40%, 70%, 0.75);

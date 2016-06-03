@@ -468,7 +468,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   data_renew=False, save_pdf=False, show_plot=True, verbose=False):
+                   data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False):
 
     ## Parameters
     # data
@@ -800,10 +800,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization 
-    r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, ROC_dict, AE_dict, \
-                                                                 SVM_dict, data_pkl=crossVal_pkl) \
+                                                                 SVM_dict, data_pkl=crossVal_pkl,\
+                                                                 startIdx=startIdx) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
                                                                   
@@ -860,11 +863,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 delay_mean_l.append( np.mean(delay_ll[i]) )
                 delay_std_l.append( np.std(delay_ll[i]) )
 
+            # add edge
+            ## fpr_l = [0] + fpr_l + [100]
+            ## tpr_l = [0] + tpr_l + [100]
+
             print "--------------------------------"
             print method
             print tpr_l
             print fpr_l
-            print metrics.auc(fpr_l, tpr_l, True)
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             print "--------------------------------"
 
             if method == 'svm': label='HMM-SVM'
@@ -907,7 +914,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                    
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_dict, AE_dict, SVM_dict,\
-                    data_pkl=None):
+                    data_pkl=None, startIdx=4):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -923,25 +930,49 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
          
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
         # sample x dim x length
-        ll_classifier_train_X   = np.swapaxes(normalTrainData, 0, 1)
-        ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 0, 1)         
-        ll_classifier_test_X    = np.swapaxes(normalTestData, 0, 1)
-        ll_classifier_test_Y    = np.swapaxes(abnormalTestData, 0, 1)
+        normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 0, 1)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
         # sample x length x dim 
-        ll_classifier_train_X   = np.swapaxes(ll_classifier_train_X, 1, 2)
-        ll_classifier_train_Y   = np.swapaxes(ll_classifier_train_Y, 1, 2)         
-        ll_classifier_test_X    = np.swapaxes(ll_classifier_test_X, 1, 2)
-        ll_classifier_test_Y    = np.swapaxes(ll_classifier_test_Y, 1, 2)
+        normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 1, 2)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
 
+        # Training data
+        ll_classifier_train_X = normalTrainData
+        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+
+        # Testing data
+        ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
+        ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
+          [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
+        ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
+          [range(len(abnormalTestData[0]))]*len(abnormalTestData)
+        ll_classifier_test_idx = np.array(ll_classifier_test_idx)+startIdx
+          
         # flatten the data
         X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
                                                     ll_classifier_train_Y)
+
+        # PCA
+        from sklearn.decomposition import KernelPCA
+        ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+                           gamma=0.5)
+        X_train_org = ml_pca.fit_transform(np.array(X_train_org))        
+
+        
+        ## for i in np.logspace(-3,2,6):
+            
+
+        
         nState = 0
         nLength = 200
     else:
@@ -1007,6 +1038,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
+            if method.find('osvm')>=0:
+                X_temp = ml_pca.transform(ll_classifier_test_X[j])
+                X      = scaler.transform(X_temp)                                            
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
@@ -1029,14 +1063,15 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'osvm':
             weights = ROC_dict['osvm_param_range']
-            dtc.set_params( svm_type=0 )
-            dtc.set_params( kernel_type=2 )
-            dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+            dtc.set_params( svm_type=2 )
+            dtc.set_params( kernel_type=1 )
+            dtc.set_params( nu=weights[j] )
+            dtc.set_params( cost=1.0 )
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
@@ -1072,8 +1107,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         delay_idx = 0
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
-            X = X_test[ii]                
-            est_y    = dtc.predict(X, y=Y_test[ii])
+            X = X_test[ii]
+            if method == 'osvm' or method == 'cssvm':
+                est_y = dtc.predict(X, y=np.array(Y_test[ii])*-1.0)
+                est_y = np.array(est_y)* -1.0
+            else:
+                est_y    = dtc.predict(X, y=Y_test[ii])
 
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
@@ -1763,6 +1802,8 @@ if __name__ == '__main__':
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
     
+    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
+                 default=False, help='Set debug mode.')
     p.add_option('--renew', action='store_true', dest='bRenew',
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
@@ -1907,7 +1948,7 @@ if __name__ == '__main__':
 
     elif opt.bLikelihoodPlot:
         likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                              decision_boundary_viz=True, \
+                              decision_boundary_viz=False, \
                               useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
@@ -1915,6 +1956,6 @@ if __name__ == '__main__':
                               
     elif opt.bEvaluationAll:                
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose)
+                       verbose=opt.bVerbose, debug=opt.bDebug)
 
 

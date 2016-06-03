@@ -221,7 +221,7 @@ def disp_score(results, method, nPoints):
 
         # get AUC
         from sklearn import metrics        
-        score_list.append( [metrics.auc(fpr_l, tpr_l, True), ret_params] )
+        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params] )
 
         # get max tp in fpr (0~20)
         ## max_tp = 0
@@ -343,14 +343,14 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
+        nFiles = 5 #9
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
-        parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [3.,4.,5.],\
-                      'gamma': [1.5,2.0,2.5], \
-                      'w_negative': np.linspace(0.2,0.7,5) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': np.linspace(5,15.0,5),\
+                      'gamma': np.linspace(0.01,2.0,5), \
+                      'w_negative': np.linspace(0.2,1.5,5) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
@@ -384,20 +384,28 @@ if __name__ == '__main__':
         ##               'cost': [1.0,2.0,4.0,8.0],\
         ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
         ##               'w_negative': [0.5,3.0,6.0] }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [1.0, 2.0, 4., 6.0, 8.0],\
-        ##               'gamma': [0.001, 0.01, 0.1, 1.0, 2.0], \
-        ##               'w_negative': [2.0, 4.0, 8.0] }
-        if opt.dim == 4:
-            parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cssvm_cost': np.linspace(8.0,15.0,5),\
-                          'cssvm_gamma': [0.01, 0.05, 0.1], \
-                          'cssvm_w_negative': [1.0, 2.0, 3.0] }
-        elif opt.dim == 3:
-            parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cssvm_cost': np.linspace(1.,15.0,10),\
-                          'cssvm_gamma': [2.0], \
-                          'cssvm_w_negative': [2.0] }
+
+        if opt.dim == 5:
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(5.0,12.0,5),\
+                          'gamma': [0.01, 0.1, 1.0], \
+                          'w_negative': np.linspace(0.1,2.0,4) }
+        else:
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(1.0,10.0,5),\
+                          'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
+                          'w_negative': np.linspace(0.1,3.0,5) }
+            
+        ## if opt.dim == 4:
+        ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##                   'cssvm_cost': np.linspace(8.0,15.0,5),\
+        ##                   'cssvm_gamma': [0.01, 0.05, 0.1], \
+        ##                   'cssvm_w_negative': [1.0, 2.0, 3.0] }
+        ## elif opt.dim == 3:
+        ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##                   'cssvm_cost': np.linspace(1.,15.0,10),\
+        ##                   'cssvm_gamma': [2.0], \
+        ##                   'cssvm_w_negative': [2.0] }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
@@ -428,9 +436,9 @@ if __name__ == '__main__':
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.1,3.0,5),\
-                      'gamma': np.linspace(1.0,5.0,10), \
-                      'w_negative': np.linspace(0.1,0.6,10) }
+                      'cost': np.linspace(1.0,4.0,5),\
+                      'gamma': np.linspace(0.1,8.0,10), \
+                      'w_negative': np.linspace(0.1,2.0,5) }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
         ##               'cost': [1.],\
         ##               'gamma': [1.], \

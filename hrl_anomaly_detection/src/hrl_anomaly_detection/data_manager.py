@@ -1631,10 +1631,13 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
             if ll_Y[i][0] < 0:
                 if type(ll_X[i]) is list:
                     l_X += ll_X[i]
-                    l_Y += ll_Y[i]
                 else:
                     l_X += ll_X[i].tolist()
-                    l_Y += ll_Y[i]                    
+
+                if type(ll_Y[i]) is list:
+                    l_Y += ll_Y[i]
+                else:
+                    l_Y += ll_Y[i].tolist()
             else:
                 X,Y = getEstTruePositive(ll_X[i])
                 l_X += X

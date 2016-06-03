@@ -24,7 +24,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
 
 
-def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False ):
+def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False,\
+                                      save_pdf=False):
 
     ## Parameters
     # data
@@ -42,9 +43,9 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     # ROC
     ROC_dict = param_dict['ROC']
 
-    fit_methods = ['single_fit', 'single_incremental_fit', 'full_fit']
+    fit_methods = ['single_incremental_fit', 'single_fit', 'full_fit']
     ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
-    fit_renew_methods = ['single_incremental_fit']
+    fit_renew_methods = []#'single_incremental_fit']
     
     #------------------------------------------
     # get subject1 - task1 's hmm & classifier data
@@ -52,7 +53,7 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     method = 'sgd'
     ROC_dict['nPoints'] = nPoints = 10
     ## nValidData   = 16
-    nPartialFit  = 3
+    nPartialFit  = 5
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -110,13 +111,19 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
 
 
 
-    fig = plt.figure(1)        
+    fig = plt.figure(1)
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
         ROC_data = ut.load_pickle(roc_data_pkl)
-        plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig)
-    plt.legend(loc=4,prop={'size':16})                    
-    plt.show()
+        nData = plotPLR(method, task, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig, )
+    plt.legend(loc=4,prop={'size':16})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
         
     return
 
@@ -455,7 +462,7 @@ def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     return
 
 
-def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
+def plotPLR(method, task, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     #----------------------------------------------------------------------------
     # Plot a positive likelihood ratio graph
     #----------------------------------------------------------------------------
@@ -465,7 +472,17 @@ def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     elif method == 'cssvm': label='HMM-CSSVM'
     elif method == 'sgd': label='SGD'
 
-    if fit_method is not None: label = fit_method
+    if fit_method is not None:
+        if fit_method == 'single_fit':
+            label = 'Batch 2'
+        elif fit_method == 'full_fit':
+            modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(0)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            
+            label = 'Batch '+str(len(ll_classifier_train_X)-2)
+        elif fit_method == 'single_incremental_fit':
+            label = 'Batch 2 + Incremental '
 
 
     if fig is None:
@@ -489,41 +506,83 @@ def plotPLR(method, nPoints, nPartialFit, ROC_data, fit_method=None, fig=None):
     print method, fit_method
     print np.shape(tp_ll),np.shape(fp_ll),np.shape(tn_ll),np.shape(fn_ll)
     n = len(tp_ll[0])
-    ## if n >5: n=5
-   
-    for j in xrange(n):
-        tpr_l = []
-        fpr_l = []
-        fnr_l = []
-        plr_l = []
+    if n >5: n=5
+    ## iter_list = np.linspace(0,n,5)
+    ## iter_list = range(5)
 
-        for i in xrange(nPoints):
-            print j,i, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
-            tpr_l.append( float(np.sum(tp_ll[i][j]))/float(np.sum(tp_ll[i][j])+np.sum(fn_ll[i][j]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i][j]))/float(np.sum(fp_ll[i][j])+np.sum(tn_ll[i][j]))*100.0 )
-            fnr_l.append( 100.0 - tpr_l[-1] )
-            ## plr_l.append( tpr_l[-1]/fpr_l[-1] )
-            ## print plr_l
+    if True:    
+        for j in xrange(n):
+            tpr_l = []
+            fpr_l = []
+            fnr_l = []
+            plr_l = []
 
-        print metrics.auc(fpr_l, tpr_l, True)
+            for i in xrange(nPoints):
+                print j,i, " : ", np.sum(tp_ll[i][j]), np.sum(fp_ll[i][j]), np.sum(tn_ll[i][j]), np.sum(fn_ll[i][j])
+                tpr_l.append( float(np.sum(tp_ll[i][j]))/float(np.sum(tp_ll[i][j])+np.sum(fn_ll[i][j]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i][j]))/float(np.sum(fp_ll[i][j])+np.sum(tn_ll[i][j]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
+                ## plr_l.append( tpr_l[-1]/fpr_l[-1] )
+                ## print plr_l
+
+            print metrics.auc(fpr_l, tpr_l, True)
+
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+            if n == 1:
+                plt.plot(fpr_l, tpr_l, '--'+shape+color, label=label, mec=color, ms=6, mew=2)
+            else:
+                plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label+str(j*nPartialFit), mec=color, ms=6, mew=2)
+
+        print "--------------------------------"
+
+        plt.xlim([-1, 101])
+        plt.ylim([-1, 101])
+        plt.ylabel('True positive rate (percentage)', fontsize=22)
+        plt.xlabel('False positive rate (percentage)', fontsize=22)
+        plt.xticks([0, 50, 100], fontsize=22)
+        plt.yticks([0, 50, 100], fontsize=22)
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    else:       
+        auc_l = []
+        
+        for j in xrange(n):
+            tpr_l = []
+            fpr_l = []
+            fnr_l = []
+            plr_l = []
+
+            for i in xrange(nPoints):
+                tpr_l.append( float(np.sum(tp_ll[i][j]))/float(np.sum(tp_ll[i][j])+np.sum(fn_ll[i][j]))*100.0 )
+                fpr_l.append( float(np.sum(fp_ll[i][j]))/float(np.sum(fp_ll[i][j])+np.sum(tn_ll[i][j]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
+
+            auc_l.append(metrics.auc(fpr_l, tpr_l, True)/100.0)
+
+
         # visualization
         color = colors.next()
         shape = shapes.next()
         ax1 = fig.add_subplot(111)            
-        plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label+str(j), mec=color, ms=6, mew=2)
 
-    print "--------------------------------"
+        if len(auc_l) > 1:
+            plt.plot(auc_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2 )
+            plt.xlim([0, len(auc_l)])
+        else:
+            x = [0,100]
+            y = [auc_l[0], auc_l[0]]
+            plt.plot(x,y, '-'+shape+color, label=label, mec=color, ms=6, mew=2 )
 
-    plt.xlim([-1, 101])
-    plt.ylim([-1, 101])
-    plt.ylabel('True positive rate (percentage)', fontsize=22)
-    plt.xlabel('False positive rate (percentage)', fontsize=22)
-    plt.xticks([0, 50, 100], fontsize=22)
-    plt.yticks([0, 50, 100], fontsize=22)
-    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+        plt.ylim([-1, 101])
+        plt.ylabel('AUC [%]', fontsize=22)
+        plt.xlabel('Number of Incremental Training', fontsize=22)
+            
     if show_flag: plt.show()
+    return 
 
-    return
 
 
 
@@ -790,7 +849,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
     #-----------------------------------------------------------------------------------------
     # training set
     if fit_method.find('full') >= 0:
-        ## print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
+        print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
         X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
                                                     ll_classifier_train_Y, \
                                                     ll_classifier_train_idx)
@@ -874,6 +933,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
     #-----------------------------------------------------------------------------------------
     nSamples = len(Y_train)
+    sgd_n_iter = 10
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints): 
         dtc.set_params(**SVM_dict)        
@@ -881,7 +941,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
             dtc.set_params( class_weight=weights[j] )
-            dtc.set_params( class_weight=weights[j], sgd_n_iter=10 )
+            dtc.set_params( class_weight=weights[j], sgd_n_iter=sgd_n_iter )
         else:
             print "Not available method"
             return "Not available method", -1, params
@@ -891,6 +951,51 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
 
         # Incremental fit
         if fit_method.find('incremental') >= 0:
+
+            tp_l = []
+            fp_l = []
+            tn_l = []
+            fn_l = []
+            result_list = []
+
+            # incremental learning and classification
+            for i in xrange(len(X_test)):
+                if len(Y_test[i])==0: continue
+
+                # 2) test classifier
+                X_ptest = X_test[i]
+                Y_ptest = Y_test[i]
+                Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                for k, y_est in enumerate(Y_est):
+                    if y_est > 0:
+                        break
+
+                tp=0; fp=0; tn=0; fn=0
+                if Y_ptest[0] > 0:
+                    if y_est > 0:
+                        tp = 1
+                        tp_l.append(1)
+                    else:
+                        fn = 1
+                        fn_l.append(1)
+                elif Y_ptest[0] <= 0:
+                    if y_est > 0:
+                        fp = 1
+                        fp_l.append(1)
+                    else:
+                        tn = 1
+                        tn_l.append(1)
+
+                result_list.append([tp,fn,fp,tn])
+
+            data[method]['tp_l'][j].append(tp_l)
+            data[method]['fp_l'][j].append(fp_l)
+            data[method]['fn_l'][j].append(fn_l)
+            data[method]['tn_l'][j].append(tn_l)
+            data[method]['result'][j].append(result_list)
+
+
+            
             for idx in range(0,len(X_valid_scaled),nPartialFit):
                 if idx+nPartialFit > len(X_valid_scaled): continue
                 for k in xrange(nPartialFit):
@@ -926,7 +1031,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                 ## dtc.set_params( learning_rate='constant' )
                 ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
                 ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
-                for kkk in xrange(5):
+                for kkk in xrange(5): #sgd_n_iter):
                     ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
                 ## ret = dtc.fit(p_train_X, p_train_Y)
 
@@ -1612,6 +1717,8 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
     
     opt, args = p.parse_args()
 
@@ -1651,7 +1758,8 @@ if __name__ == '__main__':
     else:
         raw_data_path, save_data_path, param_dict = \
           getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        onlineEvaluationSingleIncremental(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
+        onlineEvaluationSingleIncremental(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew,\
+                                          save_pdf=opt.bSavePdf)
         ## onlineEvaluationSingle(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew)
             
 
