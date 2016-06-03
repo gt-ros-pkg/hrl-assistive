@@ -35,6 +35,7 @@ import numpy as np
 from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import KFold
 import time
+from sklearn import preprocessing
 
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from hrl_anomaly_detection import data_manager as dm
@@ -58,10 +59,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     ## cov      = HMM_dict['cov']
     # SVM
     SVM_dict = param_dict['SVM']
+
+    ROC_dict = param_dict['ROC']
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list #[:4]
+    kFold_list = kFold_list[:4]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -70,10 +73,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     for param in param_list:
 
-        tp_l = [[]*len(kFold_list)]
-        fp_l = [[]*len(kFold_list)]
-        tn_l = [[]*len(kFold_list)]
-        fn_l = [[]*len(kFold_list)]
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []
 
         scores = []
         # Training HMM, and getting classifier training and testing data
@@ -167,6 +170,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ret = ml.fit( normalTrainData, cov_mult=cov_mult )
                 
             if ret == 'Failure':
+                print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
                 break
 
@@ -187,61 +191,66 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
-                                                                    startIdx=3, \
+                                                                    startIdx=4, \
                                                                     ## startIdx=nLength-3, \
-                                                                    bPosterior=False)
+                                                                    bPosterior=True)
                                                                     for i in xrange(len(testDataX[0])))
-            _, _, ll_logp = zip(*r)
+            _, _, ll_logp, ll_post = zip(*r)
 
-            ll_logp_filt = []
-            norm_logp=[]
-            abnorm_logp=[]
-            ll_norm_logp=[]
-            ll_abnorm_logp=[]
+            # nSample x nLength
+            ll_classifier_test_X = []
+            ll_classifier_test_Y = []
+            add_logp_d = True
             for i in xrange(len(ll_logp)):
+                l_X = []
+                l_Y = []
+                for j in xrange(len(ll_logp[i])):
+                    if add_logp_d:                    
+                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
+                                          ll_post[i][j].tolist() )
+                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
 
-                if np.nan in ll_logp[i]: continue                
-                if np.inf in ll_logp[i]: continue
-                if np.isnan(np.mean(ll_logp[i])): continue
-                ll_logp_filt.append(ll_logp[i])
-                ## if testDataY[i] > 0.0:
-                ##     abnorm_logp += ll_logp[i]
-                ##     ll_abnorm_logp.append(ll_logp[i])
-                ## else:
-                ##     norm_logp += ll_logp[i]
-                ##     ll_norm_logp.append(ll_logp[i])
+                    if testDataY[i] > 0.0: l_Y.append(1)
+                    else: l_Y.append(-1)
 
-            if len(norm_logp)==0:
-                scores.append(-1.0 * 1e+10)
-                continue
+                    if np.isnan(ll_logp[i][j]):
+                        print "nan values in ", i, j
+                        print testDataX[0][i]
+                        print ll_logp[i][j], ll_post[i][j]
+                        sys.exit()
+
+                ll_classifier_test_X.append(l_X)
+                ll_classifier_test_Y.append(l_Y)
 
             # split
-            train_idx = random.sample(range(len(ll_logp_filt)), int( 0.7*len(ll_logp_filt)) )
-            test_idx  = [x for x in range(len(ll_logp_filt)) if not x in train_idx]
+            import random
+            train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
+            test_idx  = [x for x in range(len(ll_classifier_test_X)) if not x in train_idx]
             
-            train_X = np.array(ll_logp_filt)[train_idx]
-            train_Y = np.array(testDataY)[train_idx]
-            test_X  = np.array(ll_logp_filt)[test_idx]
-            test_Y  = np.array(testDataY)[test_idx]
-            
+            train_X = np.array(ll_classifier_test_X)[train_idx]
+            train_Y = np.array(ll_classifier_test_Y)[train_idx]
+            test_X  = np.array(ll_classifier_test_X)[test_idx]
+            test_Y  = np.array(ll_classifier_test_Y)[test_idx]
+
             X_train_org, Y_train_org, _ = dm.flattenSample(train_X, \
                                                            train_Y, \
                                                            remove_fp=True)
-            X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
-                                                        test_Y, \
-                                                        remove_fp=False)
+            ## X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
+            ##                                             test_Y, \
+            ##                                             remove_fp=False)
 
             scaler = preprocessing.StandardScaler()
             X_scaled = scaler.fit_transform(X_train_org)
 
             X_test = []
             Y_test = [] 
-            for j in xrange(len(X_test_org)):
-                if len(X_test_org[j])==0: continue
-                X = scaler.transform(X_test_org[j])                                
+            for j in xrange(len(test_X)):
+                if len(test_X[j])==0: continue
+                X = scaler.transform(test_X[j])                                
 
                 X_test.append(X)
-                Y_test.append(Y_test_org[j])
+                Y_test.append(test_Y[j])
 
             if verbose: print "Run a classifier"
             dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
@@ -249,6 +258,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[len(weights)/2] )
             ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+
+            print np.shape(X_test), np.shape(Y_test)
 
             for ii in xrange(len(X_test)):
                 if len(Y_test[ii])==0: continue
@@ -260,11 +271,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 if Y_test[ii][0] > 0.0:
                     if est_y[jj] > 0.0:
-                        tp_l[idx].append(1)
-                    else: fn_l[idx].append(1)
+                        tp_l.append(1)
+                    else: fn_l.append(1)
                 elif Y_test[ii][0] <= 0.0:
-                    if est_y[jj] > 0.0: fp_l[idx].append(1)
-                    else: tn_l[idx].append(1)
+                    if est_y[jj] > 0.0: fp_l.append(1)
+                    else: tn_l.append(1)
 
             print tp_l
             print fn_l 
