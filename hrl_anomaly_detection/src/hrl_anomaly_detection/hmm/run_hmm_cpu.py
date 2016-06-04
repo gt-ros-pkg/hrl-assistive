@@ -373,7 +373,8 @@ def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nL
     dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
     dtc.set_params( **SVM_dict )
     dtc.set_params( class_weight=weight )
-    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
+    if ret is False: return idx, [],[1],[1],[]
 
     tp_l = []
     fn_l = []
