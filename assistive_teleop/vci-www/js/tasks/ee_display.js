@@ -26,6 +26,14 @@ RFH.EEDisplay = function (options) {
         currentGripper.visible = true;
     };
 
+    self.showCurrent = function () {
+        currentGripper.visible = true;
+    };
+
+    self.hideCurrent = function () {
+        currentGripper.visible = false;
+    };
+
     self.hide = function () {
         currentGripper.visible = false;
         previewGripper.visible = false;
@@ -50,11 +58,11 @@ RFH.EEDisplay = function (options) {
     var goalMaterial = gripperMaterial.clone();
     goalMaterial.color.setRGB(0.2, 3.0, 0.2);
 
-    var updateCurrentGripperTF = function (tf) {
-        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
-        currentGripper.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
-    };
+//    var updateCurrentGripperTF = function (tf) {
+//        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+//        currentGripper.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
+//        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+//    };
 
     var updateRightFingerTF = function (tf) {
         for (var i=0; i<allGrippers.length; i += 1){
@@ -113,7 +121,7 @@ RFH.EEDisplay = function (options) {
         palmMesh.material = goalMaterial;
         goalGripper.add(palmMesh.clone());
 
-        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
+//        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
     }
 
     var fingerOnLoad = function (collada) {
@@ -215,4 +223,9 @@ RFH.EEDisplay = function (options) {
         previewGripper.visible = false;
     };
 
+    self.setCurrentPose = function (pose) {
+        currentGripper.position.set(pose.position.x, pose.position.y, pose.position.z);
+        currentGripper.quaternion.set(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+        currentGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
+    };
 }
