@@ -279,7 +279,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 9.0 }
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.5, 'gamma': 0.5, 'cost': 2.5}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 1.85, 'cost': 2.5}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm'],\
@@ -328,7 +328,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 7.0, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.489, 'gamma': 1.0, 'cost': 2.275}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.01, 'cost': 12.5}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.75, 'scale': 5.5, \
         ##                   'add_logp_d': True}
         ## SVM_param_dict = {'renew': False, 'w_negative': 0.534, 'gamma': 1.444, 'cost': 0.825}
