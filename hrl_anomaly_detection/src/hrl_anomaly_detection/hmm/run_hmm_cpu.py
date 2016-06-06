@@ -169,6 +169,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if ret == 'Failure':
                 print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
+                mean_list.append(0)
+                std_list.append(0)
                 break
 
 
