@@ -38,6 +38,9 @@ RFH.CartesianEEControl = function (options) {
     });
 
     $('#touchspot-toggle, #toward-button, #away-button').button();
+    // Clear out text spans, which create some issues with hover for preview gripper.
+    $('#toward-button > span').remove();
+    $('#away-button > span').remove();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
     $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
@@ -146,6 +149,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.getPoseFromDelta = function (xyzrpy) {
         // Get default values for unspecified options
+        console.log("Del:", xyzrpy);
         var x = xyzrpy.x || 0.0;
         var y = xyzrpy.y || 0.0;
         var z = xyzrpy.z || 0.0;
@@ -309,29 +313,29 @@ RFH.CartesianEEControl = function (options) {
 
     self.updatePreview = function () {
         // preview gripper pose = handPose + offset
-        if (!self.preview) {return;};
-        if (self.handDelta === null) {return;};
+        if (!self.preview || self.handDelta === null) {return;};
         var pose = self.getPoseFromDelta(self.handDelta);
         self.eeDisplay.setCurrentPose(pose);
     };
 
     var updateHandDelta = function (e) {
-        var offset;
+        var offset = {};
         switch(e.target.id) {
             case 'ctrl-ring':
                 offset = getDeltaFromEvent(e);
                 break;
             case 'away-button':
-                offset = {z: 1};
+                offset = {'z': 1};
                 break;
             case 'toward-button':
-                offset = {z: -1};
+                offset = {'z': -1};
                 break;
         }
         self.setHandDelta(offset);
     };
 
     self.setHandDelta = function (xyzrpy) {
+        console.log("Set Del: ", xyzrpy);
         self.handDelta = xyzrpy;
     };
 
