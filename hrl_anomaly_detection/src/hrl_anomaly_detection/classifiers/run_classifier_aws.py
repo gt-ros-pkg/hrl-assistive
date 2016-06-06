@@ -355,7 +355,7 @@ if __name__ == '__main__':
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
-        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [1], \
+        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': np.logspace(-2,0.5,10)}
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': np.linspace(5,15.0,5),\
