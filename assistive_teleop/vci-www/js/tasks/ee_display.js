@@ -47,16 +47,20 @@ RFH.EEDisplay = function (options) {
 
     var gripperMaterial = new THREE.MeshBasicMaterial();
     gripperMaterial.transparent = true;
-    gripperMaterial.opacity = 0.4;
-    gripperMaterial.depthTest = true;
+    gripperMaterial.depthTest = false;
     gripperMaterial.depthWrite = false;
-    gripperMaterial.color.setRGB(1.6,1.6,1.6);
+    //gripperMaterial.color.setRGB(1.6,1.6,1.6); // Light gray default
+    gripperMaterial.color.setRGB(2.4,2.4,0.2);
+    gripperMaterial.opacity = 0.55;
 
     var previewMaterial = gripperMaterial.clone();
     previewMaterial.color.setRGB(1,0.5,0);
+    previewMaterial.opacity = 0.4;
 
     var goalMaterial = gripperMaterial.clone();
     goalMaterial.color.setRGB(0.2, 3.0, 0.2);
+    goalMaterial.opacity = 0.4;
+
 
 //    var updateCurrentGripperTF = function (tf) {
 //        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
@@ -226,6 +230,7 @@ RFH.EEDisplay = function (options) {
     self.setCurrentPose = function (pose) {
         currentGripper.position.set(pose.position.x, pose.position.y, pose.position.z);
         currentGripper.quaternion.set(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-        currentGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
+        currentGripper.translateX(-0.18);
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 }

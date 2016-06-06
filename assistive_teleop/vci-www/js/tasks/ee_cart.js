@@ -38,12 +38,14 @@ RFH.CartesianEEControl = function (options) {
     });
 
     $('#touchspot-toggle, #toward-button, #away-button').button();
+    // Clear out text spans, which create some issues with hover for preview gripper.
+    $('#toward-button > span').remove();
+    $('#away-button > span').remove();
     self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
     $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set').buttonset();
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
-
 
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
@@ -147,6 +149,7 @@ RFH.CartesianEEControl = function (options) {
 
     self.getPoseFromDelta = function (xyzrpy) {
         // Get default values for unspecified options
+        console.log("Del:", xyzrpy);
         var x = xyzrpy.x || 0.0;
         var y = xyzrpy.y || 0.0;
         var z = xyzrpy.z || 0.0;
@@ -155,8 +158,15 @@ RFH.CartesianEEControl = function (options) {
         var yaw = xyzrpy.yaw || 0.0;
         var posStep = self.stepSizes[self.getStepSize()];
         var rotStep = self.rotationControl.stepSizes[self.getStepSize()];
-        var handAng, clickAng, goalAng;
-        var dx, dy, dz, dRoll, dPitch, dYaw;
+        var handAng;
+        var clickAng;
+        var goalAng;
+        var dx;
+        var dy;
+        var dz;
+        var dRoll;
+        var dPitch;
+        var dYaw;
 
         if (self.eeTF === null) {
             console.warn("Hand Data not available to send commands.");
@@ -200,7 +210,6 @@ RFH.CartesianEEControl = function (options) {
         return {position: pos,
                 orientation: quat,
                 frame_id: frame};
-
     };
 
     self.eeDeltaCmd = function (xyzrpy) {
@@ -304,24 +313,30 @@ RFH.CartesianEEControl = function (options) {
 
     self.updatePreview = function () {
         // preview gripper pose = handPose + offset
-        if (!self.preview) {return;};
-        if (self.handDelta === null) {return;};
+        if (!self.preview || self.handDelta === null) {return;};
         var pose = self.getPoseFromDelta(self.handDelta);
         self.eeDisplay.setCurrentPose(pose);
     };
 
     var updateHandDelta = function (e) {
+        var offset = {};
         switch(e.target.id) {
             case 'ctrl-ring':
-                self.handDelta = getDeltaFromEvent(e);
+                offset = getDeltaFromEvent(e);
                 break;
             case 'away-button':
-                self.handDelta = {z: 1};
+                offset = {'z': 1};
                 break;
             case 'toward-button':
-                self.handDelta = {z: -1};
+                offset = {'z': -1};
                 break;
         }
+        self.setHandDelta(offset);
+    };
+
+    self.setHandDelta = function (xyzrpy) {
+        console.log("Set Del: ", xyzrpy);
+        self.handDelta = xyzrpy;
     };
 
     self.startPreview = function () {
@@ -463,7 +478,8 @@ RFH.CartesianEEControl = function (options) {
         }
     };
 
-/*    var trajectoryCB = function (msg) { // Define CB for received trajectory from planner
+/*
+    var trajectoryCB = function (msg) { // Define CB for received trajectory from planner
         if (msg.robot_trajectory.joint_trajectory.points.length === 0) {
             console.log("Empty Trajectory Received.");
         } else {
@@ -561,7 +577,7 @@ RFH.CartesianEEControl = function (options) {
                                                'updatePreviewFn': self.updatePreview,
                                                'startPreviewFn': self.startPreview,
                                                'stopPreviewFn': self.stopPreview,
-                                               'previewDelta': self.handDelta});
+                                               'setDeltaFn': self.setHandDelta});
 
     $('#'+self.side[0]+'-posrot-pos').on('click.rfh', self.setPositionCtrls);
     $('#'+self.side[0]+'-posrot-rot').on('click.rfh', self.setRotationCtrls);
