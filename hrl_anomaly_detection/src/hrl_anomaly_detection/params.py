@@ -2,7 +2,8 @@ import os, sys
 import numpy as np
 
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
+def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
+                ae_swtch=False, dim=4):
 
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
@@ -83,10 +84,11 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': False}
+                      'handFeatures_noise': True}
 
     data_param_dict['downSampleSize'] = 200
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
       
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
@@ -352,12 +354,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.25, 'scale': 5.0, \
                               'add_logp_d': True}
             SVM_param_dict = {'renew': False, 'w_negative': 0.155, 'gamma': 2.777, 'cost': 1.55}
-            ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 5.5, 'scale': 5.5, \
-            ##                   'add_logp_d': True}
-            ## SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 2.77, 'cost': 0.825}
-            ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 2.0, 'scale': 7.0, \
-            ##                   'add_logp_d': True}
-            ## SVM_param_dict = {'renew': False, 'w_negative': 0.6, 'gamma': 4.11, 'cost': 2.275}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
