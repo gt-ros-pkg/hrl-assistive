@@ -195,31 +195,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             _, _, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
-            ll_classifier_test_X = []
-            ll_classifier_test_Y = []
-            add_logp_d = True
-            for i in xrange(len(ll_logp)):
-                l_X = []
-                l_Y = []
-                for j in xrange(len(ll_logp[i])):
-                    if add_logp_d:                    
-                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
-                                          ll_post[i][j].tolist() )
-                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                    if testDataY[i] > 0.0: l_Y.append(1)
-                    else: l_Y.append(-1)
-
-                    if np.isnan(ll_logp[i][j]):
-                        print "nan values in ", i, j
-                        print testDataX[0][i]
-                        print ll_logp[i][j], ll_post[i][j]
-                        sys.exit()
-
-                ll_classifier_test_X.append(l_X)
-                ll_classifier_test_Y.append(l_Y)
-
+            ll_classifier_test_X, ll_classifier_test_Y = \
+              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=True)
+            
             # split
             import random
             train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )

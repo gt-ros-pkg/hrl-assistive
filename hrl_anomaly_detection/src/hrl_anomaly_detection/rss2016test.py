@@ -182,10 +182,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
         return (-1,-1,-1,-1)
 
     if decision_boundary_viz:
-        testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
-        testDataX = np.swapaxes(testDataX, 0, 1)
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
+        ## testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
+        ## testDataX = np.swapaxes(testDataX, 0, 1)
+        ## testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+        ##                         np.ones(len(abnormalTrainData[0])) ])
+        testDataX = normalTrainData
+        testDataY = -np.ones(len(normalTrainData[0]))
+                                
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [testDataX[j][i] for j in \
@@ -195,6 +198,52 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                                                                 bPosterior=True)
                                                                 for i in xrange(len(testDataX[0])))
         _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+
+        ## if True:
+        ##     from hrl_anomaly_detection.hmm import learning_util as hmm_util                        
+        ##     ll_classifier_test_X, ll_classifier_test_Y = \
+        ##       hmm.getHMMinducedFeatures(ll_logp, ll_post, c=1.0)
+
+        ##     fig = plt.figure()
+        ##     ax1 = fig.add_subplot(211)
+        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,0], 0,1) )
+        ##     ax1 = fig.add_subplot(212)
+        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,1], 0,1) )
+        ##     plt.show()
+        ##     sys.exit()
+              
+        ##     ll_delta_logp = []
+        ##     ll_delta_post = []
+        ##     ll_delta_logp_post = []
+        ##     ll_delta_logp_post2 = []
+        ##     for i in xrange(len(ll_post)):
+        ##         l_delta_logp = []
+        ##         l_delta_post = []
+        ##         l_delta_logp_post = []
+        ##         for j in xrange(len(ll_post[i])-1):
+        ##             l_delta_logp.append( ll_logp[i][j+1] - ll_logp[i][j] )
+        ##             l_delta_post.append( hmm_util.symmetric_entropy(ll_post[i][j], ll_post[i][j+1]) )
+        ##         ll_delta_logp.append( l_delta_logp )
+        ##         ll_delta_post.append( l_delta_post )
+        ##         ll_delta_logp_post.append( np.array(l_delta_logp)/(np.array(l_delta_post)+0.1) )
+        ##         ll_delta_logp_post2.append( np.array(l_delta_logp)/(np.array(l_delta_post)+1.0) )
+
+
+        ##     fig = plt.figure()
+        ##     ax1 = fig.add_subplot(411)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp,0,1))
+        ##     ax1 = fig.add_subplot(412)            
+        ##     plt.plot(np.swapaxes(ll_delta_post,0,1))
+        ##     ax1 = fig.add_subplot(413)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp_post,0,1))
+        ##     ax1 = fig.add_subplot(414)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp_post2,0,1))
+        ##     ## plt.plot(np.swapaxes(ll_delta_post,0,1))
+        ##     ## plt.plot( np.swapaxes( np.array(ll_delta_logp)/np.array(ll_delta_post), 0,1) )
+        ##     plt.show()
+        ##     sys.exit()
+
 
         ll_classifier_train_X = []
         ll_classifier_train_Y = []
@@ -216,10 +265,13 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
                                                                 ll_classifier_train_idx)
         
         # discriminative classifier
-        if decision_boundary_viz:
-            dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                                 nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
-            dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
+                             nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+
+
+
+
 
     print "----------------------------------------------------------------------------"
     fig = plt.figure()
@@ -678,30 +730,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                 for i in xrange(len(testDataX[0])))
         _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
-        ll_classifier_train_X = []
-        ll_classifier_train_Y = []
-        for i in xrange(len(ll_logp)):
-            l_X = []
-            l_Y = []
-            for j in xrange(len(ll_logp[i])):
-                if add_logp_d:
-                    if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                    else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
-                                      ll_post[i][j].tolist() )
-                else:
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                if testDataY[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-            if np.nan in l_X:
-                print i,j
-                print l_X
-                sys.exit()
-
-            ll_classifier_train_X.append(l_X)
-            ll_classifier_train_Y.append(l_Y)
-
+        ll_classifier_train_X, ll_classifier_train_Y = \
+          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
@@ -724,35 +754,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
         # nSample x nLength
-        ll_classifier_test_X = []
-        ll_classifier_test_Y = []
-        for i in xrange(len(ll_logp)):
-            l_X = []
-            l_Y = []
-            for j in xrange(len(ll_logp[i])):
-                if add_logp_d:                    
-                    if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                    else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
-                                      ll_post[i][j].tolist() )
-                else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                if testDataY[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-                if np.isnan(ll_logp[i][j]):
-                    print "nan values in ", i, j
-                    print testDataX[0][i]
-                    print ll_logp[i][j], ll_post[i][j]
-                    sys.exit()
-
-
-            ll_classifier_test_X.append(l_X)
-            ll_classifier_test_Y.append(l_Y)
-
-            ## if len(l_Y) < 10:
-            ##     print ">> ", np.shape(ll_logp[i]), np.shape(ll_post[i])
-            ##     print i, np.shape(l_X), np.shape(l_Y)
-
+        ll_classifier_test_X, ll_classifier_test_Y = \
+          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}

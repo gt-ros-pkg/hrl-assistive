@@ -457,6 +457,41 @@ class learning_hmm(learning_base):
                 
             
 
+def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp=True):
+    '''
+    Convert a list of logps and posterior distributions to HMM-induced feature vectors.
+    It returns [logp, d_logp/(d_post+c), post].
+    '''
+
+    X = []
+    Y = []
+    for i in xrange(len(ll_logp)):
+        l_X = []
+        l_Y = []
+        for j in xrange(1,len(ll_logp[i])):
+            if add_delta_logp:                    
+                if j == 0:
+                    l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                else:
+                    d_logp = ll_logp[i][j]-ll_logp[i][j-1]
+                    d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
+                    l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
+                                ll_post[i][j].tolist() )
+            else:
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+            if l_labels is not None:
+                if l_labels[i] > 0.0: l_Y.append(1)
+                else: l_Y.append(-1)
+
+            if np.isnan(ll_logp[i][j]):
+                print "nan values in ", i, j
+                sys.exit()
+
+        X.append(l_X)
+        if l_labels is not None: Y.append(l_Y)
+    
+    return X, Y
 
     
 ####################################################################

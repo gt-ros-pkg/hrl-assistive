@@ -3,47 +3,95 @@ import numpy as np
 
 
 def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
-    
-    handFeatures = ['unimodal_audioWristRMS',\
-                    'unimodal_ftForce',\
-                    'crossmodal_targetEEDist', \
-                    'crossmodal_targetEEAng']
+
+    if dim == 4:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng', \
+                        'unimodal_audioWristRMS']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
+        
+        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-0.8, -8., nPoints), \
+                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+        
+    elif dim == 3:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
+
+        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-0.8, -8., nPoints), \
+                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+        
+    elif dim == 2:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist' ]
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
+
+        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-0.8, -8., nPoints), \
+                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+        
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
                    'ft' ]                                
     modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_artag', \
                      'vision_change', 'pps']
-    downSampleSize = 200
-
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/TEST'
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,200], 'nNormalFold':4, 'nAbnormalFold':4,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': False}
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
-                      'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+    AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+                      'layer_sizes':[], 'learning_rate':1e-4, \
+                      'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':True, 'filterDim':4, \
+                      'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
+                      'pca_gamma': 1.0,\
+                      'filter':False, 'filterDim':4, \
                       'nAugment': 1, \
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 0.73, 'scale': 10.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
 
-    nPoints        = 20
-    ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                      'update_list': [],\
-                      'nPoints': nPoints,\
-                      'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                      'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                      'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
-                      'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
+                      'downSampleSize': 200, 'cut_data': None, \
+                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': False}
+
+    data_param_dict['downSampleSize'] = 200
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      str(data_param_dict['downSampleSize'])+'_'+str(dim)
+      
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-
+      
     return raw_data_path, save_data_path, param_dict
 
 
@@ -161,7 +209,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.11, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.7, 'gamma': 2.5, 'cost': 3.0}
 
-        nPoints        = 3 #20  #'fixed', 'progress_time_cluster', 'svm', 
+        nPoints        = 20  #'fixed', 'progress_time_cluster', 'svm', 
         ROC_param_dict = {'methods': [ 'osvm' ],\
                           'update_list': [ 'osvm' ],\
                           'nPoints': nPoints,\
@@ -329,10 +377,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 7.0, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.01, 'cost': 12.5}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 35, 'cov': 7.75, 'scale': 5.5, \
-        ##                   'add_logp_d': True}
-        ## SVM_param_dict = {'renew': False, 'w_negative': 0.534, 'gamma': 1.444, 'cost': 0.825}
-        ## SVM_param_dict = {'renew': False, 'w_negative': 0.27, 'gamma': 1.89, 'cost': 2.27}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
@@ -382,7 +426,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': False}
 
     if AE_param_dict['method']=='pca':
         save_data_path = os.path.expanduser('~')+\
