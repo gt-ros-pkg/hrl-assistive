@@ -25,7 +25,7 @@ var RFH = {
         }
         posx -= offsetLeft;
         posy -= offsetTop;
-        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
+//        console.log('Event at (x='+posx.toString() +', y='+ posy.toString()+') in Element ' + e.target.id);
         return [posx, posy];
     },
 

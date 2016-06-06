@@ -316,17 +316,23 @@ RFH.CartesianEEControl = function (options) {
     };
 
     var updateHandDelta = function (e) {
+        var offset;
         switch(e.target.id) {
             case 'ctrl-ring':
-                self.handDelta = getDeltaFromEvent(e);
+                offset = getDeltaFromEvent(e);
                 break;
             case 'away-button':
-                self.handDelta = {z: 1};
+                offset = {z: 1};
                 break;
             case 'toward-button':
-                self.handDelta = {z: -1};
+                offset = {z: -1};
                 break;
         }
+        self.setHandDelta(offset);
+    };
+
+    self.setHandDelta = function (xyzrpy) {
+        self.handDelta = xyzrpy;
     };
 
     self.startPreview = function () {
@@ -567,7 +573,7 @@ RFH.CartesianEEControl = function (options) {
                                                'updatePreviewFn': self.updatePreview,
                                                'startPreviewFn': self.startPreview,
                                                'stopPreviewFn': self.stopPreview,
-                                               'previewDelta': self.handDelta});
+                                               'setDeltaFn': self.setHandDelta});
 
     $('#'+self.side[0]+'-posrot-pos').on('click.rfh', self.setPositionCtrls);
     $('#'+self.side[0]+'-posrot-rot').on('click.rfh', self.setRotationCtrls);
