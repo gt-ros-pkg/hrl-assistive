@@ -553,6 +553,94 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params):
     return data 
 
 
+def getPCAData(gamma, nFiles, startIdx, data_pkl):
+
+    d = ut.load_pickle(data_pkl)
+    kFold_list  = d['kFoldList']
+    successData = d['successData']
+    failureData = d['failureData']
+
+    # load data and preprocess it
+    print "Start to get data"
+    data = {}
+    for file_idx in xrange(nFiles):
+    
+        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[file_idx]
+
+        # dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] 
+        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        normalTestData    = successData[:, normalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+
+        # sample x dim x length
+        normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 0, 1)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
+
+        # sample x length x dim 
+        normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
+        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        normalTestData    = np.swapaxes(normalTestData, 1, 2)
+        abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
+
+        #--------------------------------------------------------------------------------
+        # Training data
+        ll_classifier_train_X = normalTrainData
+        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+
+        # flatten the data
+        X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
+                                                    ll_classifier_train_Y)
+
+        # scaling
+        from sklearn import preprocessing
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X_train_org)
+
+        # PCA
+        from sklearn.decomposition import KernelPCA
+        ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+                           gamma=gamma)
+        X_scaled = ml_pca.fit_transform(np.array(X_scaled))        
+
+        #--------------------------------------------------------------------------------
+        # Testing data
+        ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
+        ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
+          [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
+        ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
+          [range(len(abnormalTestData[0]))]*len(abnormalTestData)
+        ll_classifier_test_idx = np.array(ll_classifier_test_idx)+startIdx
+
+        # test data preparation
+        X_test = []
+        Y_test = []
+        for ii in xrange(len(ll_classifier_test_X)):
+            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
+              or np.nan in ll_classifier_test_X[ii][0]:
+                continue
+
+            X = scaler.transform(ll_classifier_test_X[ii])
+            X = ml_pca.transform(X)
+            X_test.append(X)
+            Y_test.append(ll_classifier_test_Y[ii])
+
+
+        #--------------------------------------------------------------------------------
+        data[file_idx]={}
+        data[file_idx]['X_scaled']      = X_scaled
+        data[file_idx]['Y_train_org']   = Y_train_org
+        data[file_idx]['idx_train_org'] = None
+        data[file_idx]['X_test']        = X_test
+        data[file_idx]['Y_test']        = Y_test
+        data[file_idx]['idx_test']      = None
+        data[file_idx]['nLength']       = len(normalTrainData[0][0])
+
+    return data 
+    
+
 
 
 def errorPooling(norX, abnorX, param_dict):

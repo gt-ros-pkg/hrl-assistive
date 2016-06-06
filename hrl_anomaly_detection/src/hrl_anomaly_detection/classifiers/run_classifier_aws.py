@@ -101,17 +101,31 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     ROC_data[method]['fn_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
     ROC_data[method]['delay_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_ROC_eval)(j, data[file_idx]['X_scaled'], \
-                                                                  data[file_idx]['Y_train_org'], \
-                                                                  data[file_idx]['idx_train_org'], \
-                                                                  data[file_idx]['X_test'], \
-                                                                  data[file_idx]['Y_test'], \
-                                                                  data[file_idx]['idx_test'], \
-                                                                  method, ROC_dict, \
-                                                                  HMM_dict, custom_params, \
-                                                                  data[file_idx]['nLength'])
-                                                                  for j in xrange(ROC_dict['nPoints'])
-                                                                  for file_idx in xrange(nFiles))
+    from hrl_anomaly_detection.classifiers import classifier as cb
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cb.run_classifier)(j, data[file_idx]['X_scaled'], \
+                                                                       data[file_idx]['Y_train_org'], \
+                                                                       data[file_idx]['idx_train_org'], \
+                                                                       data[file_idx]['X_test'], \
+                                                                       data[file_idx]['Y_test'], \
+                                                                       data[file_idx]['idx_test'], \
+                                                                       method, HMM_dict['nState'], \
+                                                                       data[file_idx]['nLength'], \
+                                                                       ROC_dict['nPoints'],\
+                                                                       custom_params, ROC_dict )
+                                                                       for j in xrange(ROC_dict['nPoints'])
+                                                                       for file_idx in xrange(nFiles))
+
+    ## r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_ROC_eval)(j, data[file_idx]['X_scaled'], \
+    ##                                                               data[file_idx]['Y_train_org'], \
+    ##                                                               data[file_idx]['idx_train_org'], \
+    ##                                                               data[file_idx]['X_test'], \
+    ##                                                               data[file_idx]['Y_test'], \
+    ##                                                               data[file_idx]['idx_test'], \
+    ##                                                               method, ROC_dict, \
+    ##                                                               HMM_dict, custom_params, \
+    ##                                                               data[file_idx]['nLength'])
+    ##                                                               for j in xrange(ROC_dict['nPoints'])
+    ##                                                               for file_idx in xrange(nFiles))
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
     for i, j in enumerate(l_j):        
         ROC_data[method]['tp_l'][j] += l_tp_l[i]
@@ -123,71 +137,71 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     return ROC_data, param_idx, custom_params
 
 
-# classifier
-def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
-                 X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
-    from hrl_anomaly_detection.classifiers import classifier as cb
+## # classifier
+## def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
+##                  X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
+##     from hrl_anomaly_detection.classifiers import classifier as cb
 
-    dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
-    if method == 'svm':
-        weights = ROC_dict['svm_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'cssvm_standard':
-        weights = np.logspace(-2, 0.1, nPoints)
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'cssvm':
-        weights = ROC_dict['cssvm_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'progress_time_cluster':
-        thresholds = ROC_dict['progress_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
-    elif method == 'fixed':
-        thresholds = ROC_dict['fixed_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
-    elif method == 'sgd':
-        weights = ROC_dict['sgd_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    else:
-        print "Not available method"
-        return "Not available method", -1, params
+##     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
+##     if method == 'svm':
+##         weights = ROC_dict['svm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm_standard':
+##         weights = np.logspace(-2, 0.1, nPoints)
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm':
+##         weights = ROC_dict['cssvm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'progress_time_cluster':
+##         thresholds = ROC_dict['progress_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'fixed':
+##         thresholds = ROC_dict['fixed_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'sgd':
+##         weights = ROC_dict['sgd_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     else:
+##         print "Not available method"
+##         return "Not available method", -1, params
 
-    dtc.set_params(**params)
+##     dtc.set_params(**params)
 
-    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-    if ret is False: return 'fit failed', -1
+##     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+##     if ret is False: return 'fit failed', -1
 
-    # evaluate the classifier
-    tp_l = []
-    fp_l = []
-    tn_l = []
-    fn_l = []
-    delay_l = []
-    delay_idx = 0
+##     # evaluate the classifier
+##     tp_l = []
+##     fp_l = []
+##     tn_l = []
+##     fn_l = []
+##     delay_l = []
+##     delay_idx = 0
 
-    for ii in xrange(len(X_test)):
-        if len(Y_test[ii])==0: continue
-        est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+##     for ii in xrange(len(X_test)):
+##         if len(Y_test[ii])==0: continue
+##         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
-        for jj in xrange(len(est_y)):
-            if est_y[jj] > 0.0:                
-                try:
-                    delay_idx = idx_test[ii][jj]
-                except:
-                    print "Error!!!!!!!!!!!!!!!!!!"
-                    print np.shape(idx_test), ii, jj
-                ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-                break        
+##         for jj in xrange(len(est_y)):
+##             if est_y[jj] > 0.0:                
+##                 try:
+##                     delay_idx = idx_test[ii][jj]
+##                 except:
+##                     print "Error!!!!!!!!!!!!!!!!!!"
+##                     print np.shape(idx_test), ii, jj
+##                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+##                 break        
 
-        if Y_test[ii][0] > 0.0:
-            if est_y[jj] > 0.0:
-                tp_l.append(1)
-                delay_l.append(delay_idx)
-            else: fn_l.append(1)
-        elif Y_test[ii][0] <= 0.0:
-            if est_y[jj] > 0.0: fp_l.append(1)
-            else: tn_l.append(1)
+##         if Y_test[ii][0] > 0.0:
+##             if est_y[jj] > 0.0:
+##                 tp_l.append(1)
+##                 delay_l.append(delay_idx)
+##             else: fn_l.append(1)
+##         elif Y_test[ii][0] <= 0.0:
+##             if est_y[jj] > 0.0: fp_l.append(1)
+##             else: tn_l.append(1)
 
-    return j, tp_l, fp_l, fn_l, tn_l, delay_l
+##     return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
 def disp_score(results, method, nPoints):
@@ -290,14 +304,11 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 16
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-        ##               'w_negative': np.arange(1.0, 10.0) }
+        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.5, 2.0, 5).tolist(),\
-                      'gamma': np.linspace(0.01, 0.3, 4).tolist(), \
-                      'w_negative': np.linspace(1.0, 2.0,5).tolist() }
+                      'cost': np.linspace(0.5, 4.0, 5),\
+                      'gamma': np.linspace(0.01, 8.0, 10), \
+                      'w_negative': np.linspace(0.1, 2.0,5) }
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
@@ -332,33 +343,28 @@ if __name__ == '__main__':
                                                                          rf_center, local_range,\
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
-        #temp
         nPoints        = 20
-        ROC_param_dict = {'methods': ['svm'],\
+        ROC_param_dict = {'methods': ['osvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 1.0, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
+        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [1], \
+                      'pca_gamma': np.logspace(-2,0.5,10)}
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': np.linspace(5,15.0,5),\
+        ##               'gamma': np.linspace(0.01,2.0,5), \
+        ##               'w_negative': np.linspace(0.2,1.5,5) }
+                      
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(5,15.0,5),\
-                      'gamma': np.linspace(0.01,2.0,5), \
-                      'w_negative': np.linspace(0.2,1.5,5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [3.,4.,5.],\
-        ##               'gamma': [1.5,2.0,2.5], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
-        ##               'cost': [1.],\
-        ##               'gamma': [1.], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
@@ -478,10 +484,16 @@ if __name__ == '__main__':
 
             ## Custom parameters
             method = parameters['method'][0]
-            data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
+            if method is not 'osvm':
+                data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
     
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
+                if method is 'osvm':
+                    startIdx=4
+                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
+                    data = dm.getPCAData(param['pca_gamma'], nFiles, startIdx, data_pkl)
+                    
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \

@@ -525,3 +525,80 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
     return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
     ## return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
+
+
+def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
+                   method, nState, nLength, nPoints, SVM_dict, ROC_dict):
+
+    # classifier # TODO: need to make it efficient!!
+    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
+    dtc.set_params( **SVM_dict )
+    if method == 'svm':
+        weights = ROC_dict['svm_param_range']
+        dtc.set_params( class_weight=weights[j] )
+        ret = dtc.fit(X_train, Y_train, parallel=False)                
+    elif method == 'osvm':
+        weights = ROC_dict['osvm_param_range']
+        dtc.set_params( svm_type=2 )
+        ## dtc.set_params( kernel_type=1 ) # temp
+        dtc.set_params( nu=weights[j] )
+        dtc.set_params( cost=1.0 )
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+    elif method == 'cssvm':
+        weights = ROC_dict['cssvm_param_range']
+        dtc.set_params( class_weight=weights[j] )
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
+    elif method == 'progress_time_cluster':
+        thresholds = ROC_dict['progress_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    elif method == 'fixed':
+        thresholds = ROC_dict['fixed_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    elif method == 'sgd':
+        weights = ROC_dict['sgd_param_range']
+        dtc.set_params( class_weight=weights[j] )
+        ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    else:
+        print "Not available method"
+        return "Not available method", -1
+
+    if ret is False: return 'fit failed', -1
+
+    # evaluate the classifier
+    tp_l = []
+    fp_l = []
+    tn_l = []
+    fn_l = []
+    delay_l = []
+    delay_idx = 0
+    for ii in xrange(len(X_test)):
+        if len(Y_test[ii])==0: continue
+
+        if method == 'osvm' or method == 'cssvm':
+            est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
+            est_y = np.array(est_y)* -1.0
+        else:
+            est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:
+                if idx_test is not None:
+                    try:
+                        delay_idx = idx_test[ii][jj]
+                    except:
+                        print "Error!!!!!!!!!!!!!!!!!!"
+                        print np.shape(idx_test), ii, jj
+                break        
+
+        if Y_test[ii][0] > 0.0:
+            if est_y[jj] > 0.0:
+                tp_l.append(1)
+                delay_l.append(delay_idx)
+            else: fn_l.append(1)
+        elif Y_test[ii][0] <= 0.0:
+            if est_y[jj] > 0.0: fp_l.append(1)
+            else: tn_l.append(1)
+
+    return j, tp_l, fp_l, fn_l, tn_l, delay_l

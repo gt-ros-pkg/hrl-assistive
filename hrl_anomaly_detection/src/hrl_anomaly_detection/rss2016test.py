@@ -925,56 +925,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     from sklearn import preprocessing
 
     if method.find('osvm')>=0:
-        d = ut.load_pickle(data_pkl)
-        kFold_list  = d['kFoldList']
-        successData = d['successData']
-        failureData = d['failureData']        
-        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[idx]
-         
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-        normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
-
-        # sample x dim x length
-        normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
-        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
-        normalTestData    = np.swapaxes(normalTestData, 0, 1)
-        abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
-
-        # sample x length x dim 
-        normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
-        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
-        normalTestData    = np.swapaxes(normalTestData, 1, 2)
-        abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
-
-        # Training data
-        ll_classifier_train_X = normalTrainData
-        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
-
-        # Testing data
-        ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
-        ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
-          [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
-        ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
-          [range(len(abnormalTestData[0]))]*len(abnormalTestData)
-        ll_classifier_test_idx = np.array(ll_classifier_test_idx)+startIdx
-          
-        # flatten the data
-        X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
-                                                    ll_classifier_train_Y)
-
-        # PCA
-        from sklearn.decomposition import KernelPCA
-        ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
-                           gamma=0.5)
-        X_train_org = ml_pca.fit_transform(np.array(X_train_org))        
-
-        
-        ## for i in np.logspace(-3,2,6):
-            
-
+        X_train_org, Y_train_org, idx_train_org = dm.getPCAData(SVM_dict['pca_gamma'], data_pkl)
         
         nState = 0
         nLength = 200
@@ -1090,16 +1041,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         else:
             print "Not available method"
             return "Not available method", -1, params
-
-        ## X_scaled = scaler.transform(X_test_org)
-        ## est_y = dtc.predict(X_scaled, Y_test_org)
-        ## print est_y[:10]
-
-        ## for jj in xrange(len(ll_classifier_test_X[0])):
-        ##     X = scaler.transform([ll_classifier_test_X[0][jj]])
-        ##     est_y = dtc.predict(X, y=ll_classifier_test_Y[0][jj:jj+1])
-        ##     print est_y
-        ##     if jj>10: break
 
         # evaluate the classifier
         tp_l = []
