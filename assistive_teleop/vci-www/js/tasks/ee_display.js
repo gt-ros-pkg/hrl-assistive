@@ -226,6 +226,7 @@ RFH.EEDisplay = function (options) {
     self.setCurrentPose = function (pose) {
         currentGripper.position.set(pose.position.x, pose.position.y, pose.position.z);
         currentGripper.quaternion.set(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-        currentGripper.translateX(-0.18); // Back up from tool_frame to gripper_palm_link
+        currentGripper.translateX(-0.18);
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
 }

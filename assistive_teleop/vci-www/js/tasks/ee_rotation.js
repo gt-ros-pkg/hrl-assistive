@@ -4,6 +4,10 @@ RFH.EERotation = function (options) {
     self.arm = options.arm;
     self.tfClient = options.tfClient;
     self.eeDeltaCmd = options.eeDeltaCmdFn;
+    self.updatePreview = options.updatePreviewFn;
+    self.startPreview = options.startPreviewFn;
+    self.stopPreview = options.stopPreviewFn;
+    self.handDelta = options.previewDelta;
     self.$viewer = $('#viewer-canvas');
     self.raycaster = new THREE.Raycaster();
     self.hoveredMesh = null;
@@ -106,16 +110,20 @@ RFH.EERotation = function (options) {
             if (self.hoveredMesh !== null){
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = null;
+                self.stopPreview()
             }
         } else {
             if (self.hoveredMesh === null) {
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh = overMesh;
+                self.startPreview();
             } else if (overMesh !== self.hoveredMesh) {
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = overMesh;
             }
+            self.handDelta = overMesh.cbArgs;
+            self.updatePreview();
         }
     };
 
