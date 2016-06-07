@@ -561,6 +561,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         weights = ROC_dict['sgd_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    elif method == 'rfc':
+        weights = ROC_dict['rfc_param_range']
+        dtc.set_params( svm_type=2 )
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
     else:
         print "Not available method"
         return "Not available method", -1
