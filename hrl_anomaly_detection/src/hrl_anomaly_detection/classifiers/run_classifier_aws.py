@@ -359,7 +359,7 @@ if __name__ == '__main__':
         nFiles = 5 #9
         parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': [1.0],
-                      'cost': [10.0],
+                      'cost': [1.0, 5.0, 10.0],
                       'gamma': np.logspace(0,0.5,5)                      
                       }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
