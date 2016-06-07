@@ -127,7 +127,8 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     ##                                                               for j in xrange(ROC_dict['nPoints'])
     ##                                                               for file_idx in xrange(nFiles))
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
-    for i, j in enumerate(l_j):        
+    for i, j in enumerate(l_j):
+        if i == 'fit failed': continue
         ROC_data[method]['tp_l'][j] += l_tp_l[i]
         ROC_data[method]['fp_l'][j] += l_fp_l[i]
         ROC_data[method]['fn_l'][j] += l_fn_l[i]
