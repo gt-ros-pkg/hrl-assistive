@@ -640,8 +640,6 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                 Y_test.append(ll_classifier_test_Y[ii])            
         else:
             ll_classifier_test_X = sampleWithWindow(ll_classifier_test_X, window=window)
-            print np.shape(ll_classifier_test_X)
-            
             for ii in xrange(len(ll_classifier_test_X)):
                 if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
                   or np.nan in ll_classifier_test_X[ii][0]:
