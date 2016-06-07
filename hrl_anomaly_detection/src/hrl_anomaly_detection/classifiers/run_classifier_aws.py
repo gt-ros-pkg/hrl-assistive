@@ -102,7 +102,8 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     ROC_data[method]['delay_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
     from hrl_anomaly_detection.classifiers import classifier as cb
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cb.run_classifier)(j, data[file_idx]['X_scaled'], \
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cb.run_classifier)(j,\
+                                                                       data[file_idx]['X_scaled'], \
                                                                        data[file_idx]['Y_train_org'], \
                                                                        data[file_idx]['idx_train_org'], \
                                                                        data[file_idx]['X_test'], \
