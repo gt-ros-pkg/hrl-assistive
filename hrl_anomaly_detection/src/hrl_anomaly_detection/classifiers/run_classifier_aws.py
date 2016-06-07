@@ -350,12 +350,12 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-3, -1.0, nPoints),\
+                          'osvm_param_range': np.logspace(-3, -0.1, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
-        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [0], \
                       'pca_gamma': np.logspace(-2.0,-0.5,5)}
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': np.linspace(5,15.0,5),\
