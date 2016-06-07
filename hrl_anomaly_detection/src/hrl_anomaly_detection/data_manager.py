@@ -553,7 +553,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params):
     return data 
 
 
-def getPCAData(gamma, nFiles, startIdx, data_pkl):
+def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
@@ -569,30 +569,43 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl):
 
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] 
-        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
         # sample x dim x length
         normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
-        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        abnomalTrainData  = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 0, 1)
         abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
         # sample x length x dim 
         normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
-        ## ll_classifier_train_Y   = np.swapaxes(abnormalTrainData, 1, 2)         
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 1, 2)
         abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
 
         #--------------------------------------------------------------------------------
         # Training data
-        ll_classifier_train_X = normalTrainData
-        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+        if posdata is False:
+            ll_classifier_train_X = normalTrainData
+            ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+        else:
+            ll_classifier_train_X   = np.vstack([normalTrainData, abnormalTrainData])
+            ll_classifier_train_Y   = [[-1]*len(normalTrainData[0])]*len(normalTrainData)+\
+              [[1]*len(abnormalTrainData[0])]*len(abnormalTrainData)
+            
 
         # flatten the data
-        X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
-                                                    ll_classifier_train_Y)
+        if window == 0: sys.exit()
+        elif window==1:
+            X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
+                                                        ll_classifier_train_Y)
+        else:
+            X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
+                                                                  ll_classifier_train_Y, window=window)
+            
+            
 
         # scaling
         from sklearn import preprocessing
@@ -626,6 +639,9 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl):
             ## X = ml_pca.transform(X)
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[ii])
+
+        if window>1:
+            X_test = sampleWithWindow(X_test, window=window)
 
 
         #--------------------------------------------------------------------------------
@@ -1747,3 +1763,58 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
 
     return l_X, l_Y, l_idx
     
+def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
+    '''
+    ll : sample x length x hmm features
+    l  : sample...  x hmm features
+    '''
+
+    if window < 2:
+        print "Wrong window size"
+        sys.exit()
+    
+    l_X = []
+    l_Y = []
+    l_idx = []
+    for i in xrange(len(ll_X)):
+        for j in xrange(len(ll_X[i])):
+
+            X = []
+            for k in range(window,0,-1):
+                if j-k < 0:
+                    X+= ll_X[i][0]
+                else:
+                    X+= ll_X[i][j-k]
+            
+            l_X.append(X)
+            l_Y.append(ll_Y[i][j])
+            if ll_idx is not None:
+                l_idx.append(ll_idx[i][j])
+
+    return l_X, l_Y, l_idx
+
+def sampleWithWindow(ll_X, window=2):
+    '''
+    ll : sample x length x hmm features
+    '''
+    if window < 2:
+        print "Wrong window size"
+        sys.exit()
+
+    ll_X_new = []
+    for i in xrange(len(ll_X)):
+        for j in xrange(len(ll_X[i])):
+
+            X = []
+            for k in range(window,0,-1):
+                if j-k < 0:
+                    X+= ll_X[i][0]
+                else:
+                    X+= ll_X[i][j-k]
+
+            ll_X_new.append(X)
+
+    return ll_X_new
+
+
+
