@@ -540,7 +540,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     elif method == 'osvm':
         weights = ROC_dict['osvm_param_range']
         dtc.set_params( svm_type=2 )
-        ## dtc.set_params( kernel_type=1 ) # temp
+        dtc.set_params( kernel_type=0 ) # temp
         dtc.set_params( nu=weights[j] )
         dtc.set_params( cost=1.0 )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
