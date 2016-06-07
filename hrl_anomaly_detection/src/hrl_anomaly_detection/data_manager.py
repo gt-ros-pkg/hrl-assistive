@@ -594,8 +594,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
             ll_classifier_train_X   = np.vstack([normalTrainData, abnormalTrainData])
             ll_classifier_train_Y   = [[-1]*len(normalTrainData[0])]*len(normalTrainData)+\
               [[1]*len(abnormalTrainData[0])]*len(abnormalTrainData)
-            
-
+                    
         # flatten the data
         if window == 0: sys.exit()
         elif window==1:
@@ -604,14 +603,12 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         else:
             X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
                                                                   ll_classifier_train_Y, window=window)
-            
-            
-
+                                                                  
         # scaling
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X_train_org)
-
+                       
         # PCA
         ## from sklearn.decomposition import KernelPCA
         ## ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
@@ -630,19 +627,30 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         # test data preparation
         X_test = []
         Y_test = []
-        for ii in xrange(len(ll_classifier_test_X)):
-            if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
-              or np.nan in ll_classifier_test_X[ii][0]:
-                continue
 
-            X = scaler.transform(ll_classifier_test_X[ii])
-            ## X = ml_pca.transform(X)
-            X_test.append(X)
-            Y_test.append(ll_classifier_test_Y[ii])
+        if window==1:
+            for ii in xrange(len(ll_classifier_test_X)):
+                if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
+                  or np.nan in ll_classifier_test_X[ii][0]:
+                    continue
 
-        if window>1:
-            X_test = sampleWithWindow(X_test, window=window)
+                X = scaler.transform(ll_classifier_test_X[ii])
+                ## X = ml_pca.transform(X)
+                X_test.append(X)
+                Y_test.append(ll_classifier_test_Y[ii])            
+        else:
+            ll_classifier_test_X = sampleWithWindow(ll_classifier_test_X, window=window)
+            print np.shape(ll_classifier_test_X)
+            
+            for ii in xrange(len(ll_classifier_test_X)):
+                if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
+                  or np.nan in ll_classifier_test_X[ii][0]:
+                    continue
 
+                X = scaler.transform(ll_classifier_test_X[ii])
+                ## X = ml_pca.transform(X)
+                X_test.append(X)
+                Y_test.append(ll_classifier_test_Y[ii])
 
         #--------------------------------------------------------------------------------
         data[file_idx]={}
@@ -1765,14 +1773,14 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
     
 def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
     '''
-    ll : sample x length x hmm features
-    l  : sample...  x hmm features
+    ll : sample x length x features
+    l  : sample...  x features
     '''
 
     if window < 2:
         print "Wrong window size"
         sys.exit()
-    
+
     l_X = []
     l_Y = []
     l_idx = []
@@ -1782,10 +1790,10 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
             X = []
             for k in range(window,0,-1):
                 if j-k < 0:
-                    X+= ll_X[i][0]
+                    X += ll_X[i][0].tolist()
                 else:
-                    X+= ll_X[i][j-k]
-            
+                    X += ll_X[i][j-k].tolist()
+
             l_X.append(X)
             l_Y.append(ll_Y[i][j])
             if ll_idx is not None:
@@ -1803,16 +1811,18 @@ def sampleWithWindow(ll_X, window=2):
 
     ll_X_new = []
     for i in xrange(len(ll_X)):
+        l_X_new = []
         for j in xrange(len(ll_X[i])):
 
             X = []
             for k in range(window,0,-1):
                 if j-k < 0:
-                    X+= ll_X[i][0]
+                    X+= ll_X[i][0].tolist()
                 else:
-                    X+= ll_X[i][j-k]
+                    X+= ll_X[i][j-k].tolist()
 
-            ll_X_new.append(X)
+            l_X_new.append(X)
+        ll_X_new.append(l_X_new)
 
     return ll_X_new
 
