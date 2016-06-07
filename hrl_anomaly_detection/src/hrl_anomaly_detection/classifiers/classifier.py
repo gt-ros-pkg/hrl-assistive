@@ -569,7 +569,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         print "Not available method"
         return "Not available method", -1
 
-    if ret is False: return 'fit failed', [],[],[],[],[]
+    if ret is False:
+        print "fit failed"
+        return 'fit failed', [],[],[],[],[]
 
     # evaluate the classifier
     tp_l = []
