@@ -600,10 +600,10 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl):
         X_scaled = scaler.fit_transform(X_train_org)
 
         # PCA
-        from sklearn.decomposition import KernelPCA
-        ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
-                           gamma=gamma)
-        X_scaled = ml_pca.fit_transform(np.array(X_scaled))        
+        ## from sklearn.decomposition import KernelPCA
+        ## ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+        ##                    gamma=gamma)
+        ## X_scaled = ml_pca.fit_transform(np.array(X_scaled))        
 
         #--------------------------------------------------------------------------------
         # Testing data
@@ -623,7 +623,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl):
                 continue
 
             X = scaler.transform(ll_classifier_test_X[ii])
-            X = ml_pca.transform(X)
+            ## X = ml_pca.transform(X)
             X_test.append(X)
             Y_test.append(ll_classifier_test_Y[ii])
 
