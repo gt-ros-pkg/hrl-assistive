@@ -169,8 +169,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if ret == 'Failure':
                 print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
-                mean_list.append(0)
-                std_list.append(0)
                 break
 
 
@@ -313,15 +311,19 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
         ## print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
-        tpr_l = []
-        fpr_l = []
-        for i in xrange(ROC_dict['nPoints']):
-            tpr_l.append( float(np.sum(tp_l[i]))/float(np.sum(tp_l[i])+np.sum(fn_l[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_l[i]))/float(np.sum(fp_l[i])+np.sum(tn_l[i]))*100.0 )
-            
-        from sklearn import metrics
-        mean_list.append( metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True) )
-        std_list.append(0)
+        if ret == 'Failure':
+            mean_list.append(0)
+            std_list.append(0)
+        else:
+            tpr_l = []
+            fpr_l = []
+            for i in xrange(ROC_dict['nPoints']):
+                tpr_l.append( float(np.sum(tp_l[i]))/float(np.sum(tp_l[i])+np.sum(fn_l[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_l[i]))/float(np.sum(fp_l[i])+np.sum(tn_l[i]))*100.0 )
+
+            from sklearn import metrics
+            mean_list.append( metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True) )
+            std_list.append(0)
 
             
         ## print np.mean(scores), param
