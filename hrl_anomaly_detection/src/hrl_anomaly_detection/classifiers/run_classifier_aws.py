@@ -360,7 +360,7 @@ if __name__ == '__main__':
         parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': [1.0],
                       'cost': [10.0],
-                      'gamma': np.logspace(-0,2.0,5)                      
+                      'gamma': np.logspace(0,0.5,5)                      
                       }
         ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
         ##               'cost': np.linspace(5,15.0,5),\
