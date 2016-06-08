@@ -225,13 +225,16 @@ def disp_score(results, method, nPoints):
 
         tpr_l = []
         fpr_l = []
-        try:
-            for j in xrange(nPoints):
+        for j in xrange(nPoints):
+            try:
                 tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
                 fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
-        except:
-            print "failed to get TPR and FPR"
-            break
+            except:
+                tpr_l.append(0.0)
+                fpr_l.append(0.0)
+                print j, np.shape(tp_ll[j]), np.shape(fn_ll[j]), np.shape(fp_ll[j]), np.shape(tn_ll[j])
+                print "failed to get TPR and FPR"
+            ## break
         print "tpr: ", tpr_l
         print "fpr: ", fpr_l
 
