@@ -616,9 +616,9 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         X_scaled = scaler.fit_transform(X_train_org)
                        
         # PCA
-        ## from sklearn.decomposition import KernelPCA
-        ## ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
-        ##                    gamma=gamma)
+        from sklearn.decomposition import KernelPCA
+        ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+                           gamma=gamma)
         # LLE
         ## from sklearn.manifold import LocallyLinearEmbedding
         ## ml = LocallyLinearEmbedding(5,2, reg=gamma)
@@ -645,7 +645,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml.transform(X)
+                X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])            
         else:
@@ -656,7 +656,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml.transform(X)
+                X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])
 
