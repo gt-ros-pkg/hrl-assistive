@@ -593,7 +593,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
-                print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
+                ## if Y_test[ii] < 0:
+                ##     print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
                 if idx_test is not None:
                     try:
                         delay_idx = idx_test[ii][jj]

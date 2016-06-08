@@ -506,7 +506,7 @@ if __name__ == '__main__':
                 if method is 'osvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(param['pca_gamma'], nFiles, startIdx, data_pkl, window=1, posdata=False)
+                    data = dm.getPCAData(param['pca_gamma'], nFiles, startIdx, data_pkl, window=10, posdata=False)
                 elif method is 'rfc':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )

@@ -34,7 +34,7 @@ import random
 import warnings
 
 import matplotlib
-matplotlib.use('Agg')
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -617,14 +617,13 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                        
         # PCA
         from sklearn.decomposition import KernelPCA
-        ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+        ml = KernelPCA(n_components=2, kernel="poly", fit_inverse_transform=False, \
                            gamma=gamma)
         X_scaled = ml.fit_transform(np.array(X_scaled))
 
         # LLE
         ## from sklearn.manifold import LocallyLinearEmbedding
-        ## ml = LocallyLinearEmbedding(5,2, reg=gamma)
-        #
+        ## ml = LocallyLinearEmbedding(5,2, reg=gamma)        
         ## X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
@@ -663,15 +662,15 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                 Y_test.append(ll_classifier_test_Y[ii])
 
         
-        ## fig = plt.figure(1)
-        ## plt.scatter(X_scaled[:,0], X_scaled[:,1], c='blue')
-        ## for i in xrange(len(X_test)):
-        ##     if Y_test[i][0] == -1: continue
-        ##     plt.scatter(np.array(X_test)[i,:,0], np.array(X_test)[i,:,1], c='red', marker='x')
+        fig = plt.figure(1)
+        plt.scatter(X_scaled[:,0], X_scaled[:,1], c='blue')
+        for i in xrange(len(X_test)):
+            if Y_test[i][0] == -1: continue
+            plt.scatter(np.array(X_test)[i,:,0], np.array(X_test)[i,:,1], c='red', marker='x')
         
-        ## plt.axis('tight')
+        plt.axis('tight')
         
-        ## plt.show()
+        plt.show()
         ## fig.savefig('test'+str(file_idx)+'.pdf')
         ## fig.savefig('test'+str(file_idx)+'.png')
         ## os.system('mv test*.png ~/Dropbox/HRL/')
