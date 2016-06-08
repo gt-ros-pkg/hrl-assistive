@@ -33,6 +33,12 @@ import os, sys, copy
 import random
 import warnings
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
+
 # util
 import numpy as np
 import scipy
@@ -611,9 +617,13 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                        
         # PCA
         ## from sklearn.decomposition import KernelPCA
-        ## ml_pca = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+        ## ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
         ##                    gamma=gamma)
-        ## X_scaled = ml_pca.fit_transform(np.array(X_scaled))        
+        # LLE
+        ## from sklearn.manifold import LocallyLinearEmbedding
+        ## ml = LocallyLinearEmbedding(5,2, reg=gamma)
+        #
+        ## X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
         # Testing data
@@ -635,7 +645,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml_pca.transform(X)
+                ## X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])            
         else:
@@ -646,9 +656,23 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml_pca.transform(X)
+                ## X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])
+
+        
+        ## fig = plt.figure(1)
+        ## plt.scatter(X_scaled[:,0], X_scaled[:,1], c='blue')
+        ## for i in xrange(len(X_test)):
+        ##     if Y_test[i][0] == -1: continue
+        ##     plt.scatter(np.array(X_test)[i,:,0], np.array(X_test)[i,:,1], c='red', marker='x')
+        
+        ## plt.axis('tight')
+        
+        ## plt.show()
+        ## fig.savefig('test'+str(file_idx)+'.pdf')
+        ## fig.savefig('test'+str(file_idx)+'.png')
+        ## os.system('mv test*.png ~/Dropbox/HRL/')
 
         #--------------------------------------------------------------------------------
         data[file_idx]={}
