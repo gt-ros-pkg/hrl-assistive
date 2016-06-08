@@ -352,7 +352,7 @@ if __name__ == '__main__':
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         nPoints        = 20
-        ROC_param_dict = {'methods': ['osvm'],\
+        ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
@@ -371,10 +371,10 @@ if __name__ == '__main__':
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),
             
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': np.linspace(5,15.0,5),\
-        ##               'gamma': np.linspace(0.01,2.0,5), \
-        ##               'w_negative': np.linspace(0.2,1.5,5) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': np.linspace(5,15.0,5),\
+                      'gamma': np.linspace(0.01,2.0,5), \
+                      'w_negative': np.linspace(0.2,1.5,5) }
                       
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
