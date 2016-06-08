@@ -545,6 +545,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( gamma=weights[j] )
         ## dtc.set_params( cost=1.0 )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        print "Train: ", X_train[0]
     elif method == 'cssvm':
         weights = ROC_dict['cssvm_param_range']
         dtc.set_params( class_weight=weights[j] )
@@ -592,6 +593,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
+                print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
                 if idx_test is not None:
                     try:
                         delay_idx = idx_test[ii][jj]

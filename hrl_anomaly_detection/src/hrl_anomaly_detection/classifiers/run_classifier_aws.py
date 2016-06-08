@@ -358,15 +358,15 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.linspace(0.0001, 30., nPoints),\
+                          'osvm_param_range': np.linspace(1, 30., nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
-        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                      'pca_gamma': [1],
-                      'cost': [1.0, 10.0],
-                      'gamma': np.logspace(-1,1,5)
+        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [0], \
+                      'pca_gamma': np.logspace(-1,1,5),
+                      'cost': [10.0],
+                      'gamma': [1.0]
                       }
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),
@@ -506,7 +506,7 @@ if __name__ == '__main__':
                 if method is 'osvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(param['pca_gamma'], nFiles, startIdx, data_pkl, window=5, posdata=False)
+                    data = dm.getPCAData(param['pca_gamma'], nFiles, startIdx, data_pkl, window=1, posdata=False)
                 elif method is 'rfc':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
@@ -516,7 +516,7 @@ if __name__ == '__main__':
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                data, param_dict, param, \
-                                                                               n_jobs=1)
+                                                                               n_jobs=-1)
                 end = time.time()
                 print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start

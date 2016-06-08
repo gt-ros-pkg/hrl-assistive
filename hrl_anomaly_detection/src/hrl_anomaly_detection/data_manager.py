@@ -619,11 +619,13 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         from sklearn.decomposition import KernelPCA
         ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
                            gamma=gamma)
+        X_scaled = ml.fit_transform(np.array(X_scaled))
+
         # LLE
         ## from sklearn.manifold import LocallyLinearEmbedding
         ## ml = LocallyLinearEmbedding(5,2, reg=gamma)
         #
-        X_scaled = ml.fit_transform(np.array(X_scaled))
+        ## X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
         # Testing data
@@ -632,7 +634,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
           [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
         ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
           [range(len(abnormalTestData[0]))]*len(abnormalTestData)
-        ll_classifier_test_idx = np.array(ll_classifier_test_idx)+startIdx
+        ll_classifier_test_idx = np.array(ll_classifier_test_idx)
 
         # test data preparation
         X_test = []
