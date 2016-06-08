@@ -570,7 +570,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         return "Not available method", -1
 
     if ret is False:
-        print "fit failed"
+        print "fit failed, ", weights[j]
         sys.exit()
         return 'fit failed', [],[],[],[],[]
 
