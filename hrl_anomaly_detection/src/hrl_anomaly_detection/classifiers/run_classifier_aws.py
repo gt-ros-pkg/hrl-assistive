@@ -129,7 +129,9 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     ##                                                               for file_idx in xrange(nFiles))
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
     for i, j in enumerate(l_j):
-        if j == 'fit failed': continue
+        if j == 'fit failed':
+            print i,j
+            continue
         ROC_data[method]['tp_l'][j] += l_tp_l[i]
         ROC_data[method]['fp_l'][j] += l_fp_l[i]
         ROC_data[method]['fn_l'][j] += l_fn_l[i]
@@ -234,6 +236,7 @@ def disp_score(results, method, nPoints):
                 fpr_l.append(0.0)
                 print j, np.shape(tp_ll[j]), np.shape(fn_ll[j]), np.shape(fp_ll[j]), np.shape(tn_ll[j])
                 print "failed to get TPR and FPR"
+                sys.exit()
             ## break
         print "tpr: ", tpr_l
         print "fpr: ", fpr_l
@@ -355,7 +358,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-1, 1., nPoints),\
+                          'osvm_param_range': np.logspace(-2, 3., nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 

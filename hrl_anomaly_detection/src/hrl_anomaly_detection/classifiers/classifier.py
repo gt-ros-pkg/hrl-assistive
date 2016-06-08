@@ -571,6 +571,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
     if ret is False:
         print "fit failed"
+        sys.exit()
         return 'fit failed', [],[],[],[],[]
 
     # evaluate the classifier
