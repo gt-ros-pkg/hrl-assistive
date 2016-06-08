@@ -623,7 +623,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         ## from sklearn.manifold import LocallyLinearEmbedding
         ## ml = LocallyLinearEmbedding(5,2, reg=gamma)
         #
-        ## X_scaled = ml.fit_transform(np.array(X_scaled))
+        X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
         # Testing data
