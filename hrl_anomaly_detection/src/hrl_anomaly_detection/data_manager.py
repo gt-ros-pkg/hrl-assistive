@@ -448,7 +448,7 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
 
 
 
-def getHMMData(method, nFiles, processed_data_path, task_name, default_params):
+def getHMMData(method, nFiles, processed_data_path, task_name, default_params, negTrain=False):
     import os
     from sklearn import preprocessing
 
@@ -509,17 +509,14 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params):
         test_Y  = np.array(ll_classifier_train_Y)[test_idx]
         test_idx = np.array(ll_classifier_train_idx)[test_idx]
 
+        if negTrain:
+            normal_idx = [x for x in range(len(train_X)) if train_Y[x][0]<0 ]
+            train_X = train_X[normal_idx]
+            train_Y = train_Y[normal_idx]
+            train_idx = train_idx[normal_idx]
 
         # flatten the data
-        X_train_org = []
-        Y_train_org = []
-        idx_train_org = []
-
-        for i in xrange(len(train_X)):
-            for j in xrange(len(train_X[i])):                
-                X_train_org.append(train_X[i][j])
-                Y_train_org.append(train_Y[i][j])
-                idx_train_org.append(train_idx[i][j])
+        X_train_org, Y_train_org, idx_train_org = flattenSample(train_X, train_Y, train_idx)
 
         # training data preparation
         if 'svm' in method or 'sgd' in method:

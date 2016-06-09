@@ -80,7 +80,7 @@ class classifier(learning_base):
         self.dt     = None
         self.verbose = verbose
 
-        if self.method == 'svm' or self.method == 'osvm':
+        if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
@@ -132,7 +132,7 @@ class classifier(learning_base):
         ##     ## y_train=y
         ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
-        if self.method == 'svm' or self.method == 'osvm':
+        if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
 
@@ -255,10 +255,10 @@ class classifier(learning_base):
         '''
 
         if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm' or \
-          self.method == 'osvm':
+          self.method == 'osvm' or self.method == 'hmmosvm':
             ## K_test = custom_kernel(X, self.X_train, gamma=self.gamma)
             
-            if self.method == 'svm' or self.method == 'osvm':
+            if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm':
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
             else:
@@ -363,7 +363,7 @@ class classifier(learning_base):
         return 
         
     def score(self, X, y):
-        if self.method == 'svm':
+        if self.method == 'svm' or self.method == 'hmmosvm':
             return self.dt.score(X,y)
         else:
             print "Not implemented funciton Score"
@@ -536,10 +536,18 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if method == 'svm':
         weights = ROC_dict['svm_param_range']
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train, parallel=False)                
+        ret = dtc.fit(X_train, Y_train, parallel=False)
+    elif method == 'hmmosvm':
+        weights = ROC_dict['hmmosvm_param_range']
+        dtc.set_params( svm_type=2 )
+        ## dtc.set_params( kernel_type=0 ) # temp
+        ## dtc.set_params( nu=weights[j] )
+        dtc.set_params( gamma=weights[j] )
+        ## dtc.set_params( cost=1.0 )
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
     elif method == 'osvm':
         weights = ROC_dict['osvm_param_range']
-        ## dtc.set_params( svm_type=2 )
+        dtc.set_params( svm_type=2 )
         ## dtc.set_params( kernel_type=0 ) # temp
         ## dtc.set_params( nu=weights[j] )
         dtc.set_params( gamma=weights[j] )
@@ -585,7 +593,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     for ii in xrange(len(X_test)):
         if len(Y_test[ii])==0: continue
 
-        if method == 'osvm' or method == 'cssvm':
+        if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
             est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
             est_y = np.array(est_y)* -1.0
         else:

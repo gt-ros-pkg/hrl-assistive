@@ -366,8 +366,8 @@ if __name__ == '__main__':
         parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': [1.0],
                       'cost': [10.0],
-                      'gamma': [1.0/40.0, 0.25],
-                      'class_weight': [0.1,0.5,2.0,10.0]
+                      'gamma': np.logspace(-2,2,5),
+                      'class_weight': [1]
                       }
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),
@@ -444,6 +444,7 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-2, 0.1, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
@@ -456,14 +457,12 @@ if __name__ == '__main__':
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(1.0,4.0,5),\
-                      'gamma': np.linspace(0.1,8.0,10), \
-                      'w_negative': np.logspace(-2, 0.5, 5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
-        ##               'cost': [1.],\
-        ##               'gamma': [1.], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': np.linspace(1.0,4.0,5),\
+        ##               'gamma': np.linspace(0.1,8.0,10), \
+        ##               'w_negative': np.logspace(-2, 0.5, 5) }
+        parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                      'gamma': np.linspace(0.1,8.0,10) }
                           
 
     else:
@@ -500,7 +499,10 @@ if __name__ == '__main__':
             ## Custom parameters
             method = parameters['method'][0]
             if method is not 'osvm':
-                data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
+                if method is 'hmmosvm':
+                    data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict, negTrain=True)
+                else:
+                    data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
     
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
