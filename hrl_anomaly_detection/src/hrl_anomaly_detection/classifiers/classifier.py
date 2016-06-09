@@ -600,29 +600,36 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         else:
             est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
+        positive = False
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
+                
                 if method == 'osvm' or method == 'hmmosvm':
-                    if jj < len(est_y)-5:
-                        if np.sum(est_y[jj:jj+5])>=5: break
-                        
-                ## if Y_test[ii] < 0:
-                ##     print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
+                    if jj < len(est_y)-10:
+                        if np.sum(est_y[jj:jj+10])>=10:
+                            positive = True                            
+                            break
+                    continue                        
+
+                ## if Y_test[ii][0] < 0:
+                ##     print jj, est_y[jj], Y_test[ii][0] #, " - ", X_test[ii][jj]
+                    
                 if idx_test is not None:
                     try:
                         delay_idx = idx_test[ii][jj]
                     except:
                         print "Error!!!!!!!!!!!!!!!!!!"
                         print np.shape(idx_test), ii, jj
+                positive = True                            
                 break        
 
         if Y_test[ii][0] > 0.0:
-            if est_y[jj] > 0.0:
+            if positive:
                 tp_l.append(1)
                 delay_l.append(delay_idx)
             else: fn_l.append(1)
         elif Y_test[ii][0] <= 0.0:
-            if est_y[jj] > 0.0: fp_l.append(1)
+            if positive: fp_l.append(1)
             else: tn_l.append(1)
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l

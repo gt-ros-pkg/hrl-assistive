@@ -444,7 +444,7 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(2, 4, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-2.5, 0.5, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
@@ -461,12 +461,16 @@ if __name__ == '__main__':
         ##               'cost': np.linspace(1.0,4.0,5),\
         ##               'gamma': np.linspace(0.1,8.0,10), \
         ##               'w_negative': np.logspace(-2, 0.5, 5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': [2.27],
-                      'w_negative': [0.225],
-                      'gamma': [1.0],
-                      'nu': [0.001]
+        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+        ##               'cost': [2.27],
+        ##               'w_negative': [0.225],
+        ##               'gamma': [1.0],
+        ##               'nu': [0.001]
+        ##               }
+        parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                      'nu': np.linspace(0.03,0.06,5)
                       }
+                      ## 'class_weight': [0.27],
                           
 
     else:
