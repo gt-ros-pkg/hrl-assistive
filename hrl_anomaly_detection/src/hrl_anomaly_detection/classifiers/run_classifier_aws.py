@@ -351,22 +351,23 @@ if __name__ == '__main__':
                                                                          rf_center, local_range,\
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
-        nPoints        = 20
+        nPoints        = 10 #20
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.linspace(1, 30., nPoints),\
+                          'osvm_param_range': np.linspace(1., 30., nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
-        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [0], \
-                      'pca_gamma': np.logspace(-1,1,5),
+        parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                      'pca_gamma': [1.0],
                       'cost': [10.0],
-                      'gamma': [1.0]
+                      'gamma': [1.0/40.0, 0.25],
+                      'class_weight': [0.1,0.5,2.0,10.0]
                       }
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),

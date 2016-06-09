@@ -618,7 +618,7 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         # PCA
         from sklearn.decomposition import KernelPCA
         ml = KernelPCA(n_components=2, kernel="poly", fit_inverse_transform=False, \
-                           gamma=gamma)
+                           gamma=gamma, degree=5)
         X_scaled = ml.fit_transform(np.array(X_scaled))
 
         # LLE
@@ -638,7 +638,6 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
         # test data preparation
         X_test = []
         Y_test = []
-
         if window==1:
             for ii in xrange(len(ll_classifier_test_X)):
                 if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
@@ -662,15 +661,13 @@ def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
                 Y_test.append(ll_classifier_test_Y[ii])
 
         
-        fig = plt.figure(1)
-        plt.scatter(X_scaled[:,0], X_scaled[:,1], c='blue')
-        for i in xrange(len(X_test)):
-            if Y_test[i][0] == -1: continue
-            plt.scatter(np.array(X_test)[i,:,0], np.array(X_test)[i,:,1], c='red', marker='x')
-        
-        plt.axis('tight')
-        
-        plt.show()
+        ## fig = plt.figure(1)
+        ## plt.scatter(X_scaled[:,0], X_scaled[:,1], c='blue')
+        ## for i in xrange(len(X_test)):
+        ##     if Y_test[i][0] == -1: continue
+        ##     plt.scatter(np.array(X_test)[i,:,0], np.array(X_test)[i,:,1], c='red', marker='x')        
+        ## plt.axis('tight')        
+        ## plt.show()
         ## fig.savefig('test'+str(file_idx)+'.pdf')
         ## fig.savefig('test'+str(file_idx)+'.png')
         ## os.system('mv test*.png ~/Dropbox/HRL/')

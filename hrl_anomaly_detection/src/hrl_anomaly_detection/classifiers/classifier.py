@@ -593,6 +593,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
+                if method == 'osvm':
+                    if jj < len(est_y)-3:
+                        if est_y[jj+1] > 0 and est_y[jj+2] >0: break
+                        
                 ## if Y_test[ii] < 0:
                 ##     print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
                 if idx_test is not None:
