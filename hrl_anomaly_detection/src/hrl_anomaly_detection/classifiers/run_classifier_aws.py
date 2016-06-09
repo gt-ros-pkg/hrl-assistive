@@ -314,9 +314,9 @@ if __name__ == '__main__':
 
         nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.5, 4.0, 5),\
-                      'gamma': np.linspace(0.01, 8.0, 10), \
-                      'w_negative': np.linspace(0.1, 2.0,5) }
+                      'cost': np.linspace(2.0, 4.0, 5),\
+                      'gamma': np.logspace(-3, 0.5, 10), \
+                      'w_negative': np.linspace(0.1, 3.0,5) }
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
