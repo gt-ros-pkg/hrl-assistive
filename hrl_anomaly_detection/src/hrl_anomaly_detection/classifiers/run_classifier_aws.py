@@ -466,7 +466,7 @@ if __name__ == '__main__':
         ##               'nu': [0.001]
         ##               }
         parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                      'nu': np.linspace(0.012,0.02,5)
+                      'nu': np.linspace(0.009,0.016,5)
                       }
                       ## 'class_weight': [0.27],
                           

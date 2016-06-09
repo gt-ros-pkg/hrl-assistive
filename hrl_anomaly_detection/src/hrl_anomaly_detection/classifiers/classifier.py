@@ -603,8 +603,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         positive = False
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
-                
-                if method == 'osvm' or method == 'hmmosvm':
+
+                #method == 'osvm'
+                if method == 'hmmosvm':
                     if jj < len(est_y)-6:
                         if np.sum(est_y[jj:jj+6])>=6:
                             positive = True                            
