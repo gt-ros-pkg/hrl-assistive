@@ -555,10 +555,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     elif method == 'hmmosvm':
         weights = ROC_dict['hmmosvm_param_range']
         dtc.set_params( svm_type=2 )
-        ## dtc.set_params( kernel_type=0 ) # temp
         dtc.set_params( gamma=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
-        #ret = dtc.fit(X_train, np.array(Y_train), parallel=False)
     elif method == 'osvm':
         weights = ROC_dict['osvm_param_range']
         dtc.set_params( svm_type=2 )
@@ -618,9 +616,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             if est_y[jj] > 0.0:
 
                 if method == 'hmmosvm':
-                    window_size = 10
-                    if jj < len(est_y)-window_size:
-                        if np.sum(est_y[jj:jj+window_size])>=window_size:
+                    window_size = 50
+                    if jj >= window_size:
+                        if np.sum(est_y[jj-window_size:jj])>=window_size:
                             anomaly = True                            
                             break
                     continue                        
