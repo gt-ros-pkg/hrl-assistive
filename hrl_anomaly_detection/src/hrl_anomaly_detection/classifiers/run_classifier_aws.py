@@ -470,10 +470,8 @@ if __name__ == '__main__':
                       }
                       ## 'class_weight': [0.27],
 
-        if opt.dim == 4:
+        if opt.dim > 2:
             ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 2.5, nPoints)
-        elif opt.dim == 3:
-            ROC_param_dict['hmmosvm_param_range'] = np.logspace(-4, 2.5, nPoints)
         elif opt.dim == 2:
             ROC_param_dict['hmmosvm_param_range'] = np.logspace(-4, 1.5, nPoints)
 

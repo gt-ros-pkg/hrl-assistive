@@ -353,16 +353,18 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.25, 'scale': 5.0, \
                               'add_logp_d': True}
-            SVM_param_dict = {'renew': False, 'w_negative': 0.155, 'gamma': 2.777, 'cost': 1.55}
+            SVM_param_dict = {'renew': False, 'w_negative': 0.155, 'gamma': 2.777, 'cost': 1.55,\
+                              'hmmosvm_nu': 0.00316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
-                          'update_list': [ ],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
+                          'update_list': [ 'hmmosvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': (-np.logspace(0.0,1.,nPoints)**2)/10.0+0.4,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
+                          'hmmosvm_param_range': np.logspace(-2.0, 2.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'svm_param_range': np.logspace(-2.5, 1.2, nPoints)}        
         
