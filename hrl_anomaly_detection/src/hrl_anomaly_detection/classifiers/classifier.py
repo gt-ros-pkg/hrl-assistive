@@ -60,6 +60,7 @@ class classifier(learning_base):
                  gamma       = 0.3,\
                  nu          = 0.5,\
                  cost        = 4.,\
+                 coef0       = 0.,\
                  w_negative  = 7.0,\
                  # cssvm
                  cssvm_degree      = 3,\
@@ -89,7 +90,8 @@ class classifier(learning_base):
             self.degree      = degree 
             self.gamma       = gamma
             self.nu          = nu
-            self.cost        = cost 
+            self.cost        = cost
+            self.coef0       = coef0
             self.w_negative  = w_negative             
         elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
@@ -141,7 +143,7 @@ class classifier(learning_base):
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
               +' -g '+str(self.gamma)+' -n '+str(self.nu)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.w_negative)
+              +' -w-1 '+str(self.w_negative)+' -r '+str(self.coef0)
                             
             try: self.dt = svm.svm_train(y, X, commands )
             except:
@@ -541,10 +543,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         weights = ROC_dict['hmmosvm_param_range']
         dtc.set_params( svm_type=2 )
         ## dtc.set_params( kernel_type=0 ) # temp
-        ## dtc.set_params( nu=weights[j] )
         dtc.set_params( gamma=weights[j] )
-        ## dtc.set_params( cost=1.0 )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        #ret = dtc.fit(X_train, np.array(Y_train), parallel=False)
     elif method == 'osvm':
         weights = ROC_dict['osvm_param_range']
         dtc.set_params( svm_type=2 )
@@ -601,9 +602,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
-                if method == 'osvm':
-                    if jj < len(est_y)-3:
-                        if est_y[jj+1] > 0 and est_y[jj+2] >0: break
+                if method == 'osvm' or method == 'hmmosvm':
+                    if jj < len(est_y)-5:
+                        if np.sum(est_y[jj:jj+5])>=5: break
                         
                 ## if Y_test[ii] < 0:
                 ##     print jj, est_y[jj], Y_test[ii][0], " - ", X_test[ii][jj]
