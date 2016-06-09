@@ -882,6 +882,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             elif method == 'fixed': label='HMMs with a fixed threshold'
             elif method == 'cssvm': label='HMM-CSSVM'
             elif method == 'sgd': label='SGD'
+            elif method == 'hmmosvm': label='HMM-OneClassSVM'
                 
             # visualization
             color = colors.next()
@@ -952,9 +953,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
         if method == 'hmmosvm':
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
-            ll_classifier_train_X = ll_classifier_train_X[normal_idx]
-            ll_classifier_train_Y = ll_classifier_train_Y[normal_idx]
-            ll_classifier_train_idx = ll_classifier_train_idx[normal_idx]
+            ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
+            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
 
         # flatten the data
         if method.find('svm')>=0: remove_fp=True
