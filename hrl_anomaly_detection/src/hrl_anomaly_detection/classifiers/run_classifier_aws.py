@@ -469,7 +469,13 @@ if __name__ == '__main__':
                       'nu': np.linspace(0.001,0.1,10)
                       }
                       ## 'class_weight': [0.27],
-                          
+
+        if opt.dim == 4:
+            ROC_param_dict['hmmosvm_param_range'] = np.logspace(0.1, 2.5, nPoints)
+        elif opt.dim == 3:
+            ROC_param_dict['hmmosvm_param_range'] = np.logspace(0.1, 2.5, nPoints)
+        elif opt.dim == 2:
+            ROC_param_dict['hmmosvm_param_range'] = np.logspace(0.1, 2.0, nPoints)
 
     else:
         print "Selected task name is not available."
