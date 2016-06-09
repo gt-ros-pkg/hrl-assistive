@@ -475,7 +475,7 @@ if __name__ == '__main__':
         elif opt.dim == 3:
             ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 2.5, nPoints)
         elif opt.dim == 2:
-            ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 2.0, nPoints)
+            ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 1.5, nPoints)
 
     else:
         print "Selected task name is not available."
