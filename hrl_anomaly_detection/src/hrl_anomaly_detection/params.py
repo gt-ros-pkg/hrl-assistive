@@ -11,7 +11,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.83, 'scale': 2.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 3.125}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\

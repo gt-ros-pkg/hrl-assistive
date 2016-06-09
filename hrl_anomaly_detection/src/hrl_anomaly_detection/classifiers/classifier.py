@@ -617,10 +617,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
 
-                #method == 'osvm'
                 if method == 'hmmosvm':
-                    if jj < len(est_y)-5:
-                        if np.sum(est_y[jj:jj+5])>=5:
+                    window_size = 3
+                    if jj < len(est_y)-window_size:
+                        if np.sum(est_y[jj:jj+window_size])>=window_size:
                             anomaly = True                            
                             break
                     continue                        
