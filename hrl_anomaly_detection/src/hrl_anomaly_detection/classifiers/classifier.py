@@ -62,6 +62,8 @@ class classifier(learning_base):
                  cost        = 4.,\
                  coef0       = 0.,\
                  w_negative  = 7.0,\
+                 # hmmosvm
+                 hmmosvm_nu  = 0.5,\
                  # cssvm
                  cssvm_degree      = 3,\
                  cssvm_gamma       = 0.3,\
@@ -89,10 +91,12 @@ class classifier(learning_base):
             self.kernel_type = kernel_type
             self.degree      = degree 
             self.gamma       = gamma
-            self.nu          = nu
             self.cost        = cost
             self.coef0       = coef0
-            self.w_negative  = w_negative             
+            self.w_negative  = w_negative
+            self.hmmosvm_nu  = hmmosvm_nu
+            self.osvm_nu     = osvm_nu
+            self.nu          = nu
         elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
@@ -141,9 +145,16 @@ class classifier(learning_base):
             if type(X) is not list: X=X.tolist()
             if type(y) is not list: y=y.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
-              +' -g '+str(self.gamma)+' -n '+str(self.nu)\
+              +' -g '+str(self.gamma)\
               +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
               +' -w-1 '+str(self.w_negative)+' -r '+str(self.coef0)
+
+            if self.method == 'osvm':
+                commands = commands+' -n '+str(self.osvm_nu)
+            elif self.method == 'hmmosvm':
+                commands = commands+' -n '+str(self.hmmosvm_nu)
+            else:
+                commands = commands+' -n '+str(self.nu)
                             
             try: self.dt = svm.svm_train(y, X, commands )
             except:
