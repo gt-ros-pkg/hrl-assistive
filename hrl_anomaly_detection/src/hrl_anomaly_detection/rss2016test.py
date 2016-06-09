@@ -924,8 +924,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     from hrl_anomaly_detection.classifiers import classifier as cb
     from sklearn import preprocessing
 
-    if method.find('osvm')>=0:
-        X_train_org, Y_train_org, idx_train_org = dm.getPCAData(SVM_dict['pca_gamma'], data_pkl)
+    if method == 'osvm':
+        X_train_org, Y_train_org, idx_train_org = dm.getPCAData(data_pkl)
         
         nState = 0
         nLength = 200
