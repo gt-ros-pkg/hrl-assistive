@@ -605,8 +605,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             if est_y[jj] > 0.0:
                 
                 if method == 'osvm' or method == 'hmmosvm':
-                    if jj < len(est_y)-10:
-                        if np.sum(est_y[jj:jj+10])>=10:
+                    if jj < len(est_y)-5:
+                        if np.sum(est_y[jj:jj+5])>=5:
                             positive = True                            
                             break
                     continue                        
