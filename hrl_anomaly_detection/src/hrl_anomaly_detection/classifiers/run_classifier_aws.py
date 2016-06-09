@@ -365,7 +365,7 @@ if __name__ == '__main__':
         nFiles = 5 #9
         parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': [1.0],
-                      'nu': np.logspace(-4,-1,5),
+                      'nu': np.logspace(-3,-2,5),
                       }
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),
@@ -466,7 +466,7 @@ if __name__ == '__main__':
         ##               'nu': [0.001]
         ##               }
         parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                      'nu': np.linspace(0.01,0.015,2)
+                      'nu': np.linspace(0.005,0.015,5)
                       }
                       ## 'class_weight': [0.27],
                           
