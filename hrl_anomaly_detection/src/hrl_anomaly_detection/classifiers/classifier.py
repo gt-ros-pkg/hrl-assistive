@@ -618,7 +618,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                 if method == 'hmmosvm':
                     window_size = 5
                     if jj >= window_size:
-                        if np.sum(est_y[jj-window_size:jj])>=window_size-2:
+                        if np.sum(est_y[jj-window_size:jj])>=window_size:
                             anomaly = True                            
                             break
                     continue                        
