@@ -999,10 +999,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method.find('osvm')>=0:
+            if method == 'osvm':
                 X_temp = ml_pca.transform(ll_classifier_test_X[j])
                 X      = scaler.transform(X_temp)                                            
-            if method.find('svm')>=0 or method.find('hmmosvm')>=0 or method.find('sgd')>=0:
+            elif method.find('svm')>=0 or method == 'hmmosvm' or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
