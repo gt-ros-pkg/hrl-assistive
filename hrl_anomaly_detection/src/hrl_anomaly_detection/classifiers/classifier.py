@@ -606,8 +606,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
                 #method == 'osvm'
                 if method == 'hmmosvm':
-                    if jj < len(est_y)-7:
-                        if np.sum(est_y[jj:jj+7])>=7:
+                    if jj < len(est_y)-5:
+                        if np.sum(est_y[jj:jj+5])>=5:
                             positive = True                            
                             break
                     continue                        
