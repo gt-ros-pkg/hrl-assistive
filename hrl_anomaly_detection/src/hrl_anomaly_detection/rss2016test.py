@@ -950,6 +950,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
         nLength      = d['nLength']
 
+        if method == 'hmmosvm':
+            normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
+            ll_classifier_train_X = ll_classifier_train_X[normal_idx]
+            ll_classifier_train_Y = ll_classifier_train_Y[normal_idx]
+            ll_classifier_train_idx = ll_classifier_train_idx[normal_idx]
+
         # flatten the data
         if method.find('svm')>=0: remove_fp=True
         else: remove_fp = False
@@ -995,12 +1001,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             if method.find('osvm')>=0:
                 X_temp = ml_pca.transform(ll_classifier_test_X[j])
                 X      = scaler.transform(X_temp)                                            
-            if method.find('svm')>=0 or method.find('sgd')>=0:
+            if method.find('svm')>=0 or method.find('hmmosvm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
         except:
-            print ll_classifier_test_X[j]
+            print np.shape(ll_classifier_test_X[j])
             continue
             
         X_test.append(X)
@@ -1015,12 +1021,15 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             weights = ROC_dict['svm_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'hmmosvm':
+            weights = ROC_dict['hmmosvm_param_range']
+            dtc.set_params( svm_type=2 )
+            dtc.set_params( gamma=weights[j] )
+            ret = dtc.fit(X_train, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'osvm':
             weights = ROC_dict['osvm_param_range']
             dtc.set_params( svm_type=2 )
-            dtc.set_params( kernel_type=1 )
-            dtc.set_params( nu=weights[j] )
-            dtc.set_params( cost=1.0 )
+            dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'cssvm':
             weights = ROC_dict['cssvm_param_range']
@@ -1051,29 +1060,39 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         delay_idx = 0
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
-            X = X_test[ii]
-            if method == 'osvm' or method == 'cssvm':
-                est_y = dtc.predict(X, y=np.array(Y_test[ii])*-1.0)
+
+            if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
+                est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                 est_y = np.array(est_y)* -1.0
             else:
-                est_y    = dtc.predict(X, y=Y_test[ii])
+                est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
+            anomaly = False
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
+
+                    if method == 'hmmosvm':
+                        if jj < len(est_y)-5:
+                            if np.sum(est_y[jj:jj+5])>=5:
+                                anomaly = True                            
+                                break
+                        continue                        
+                    
                     try:
                         delay_idx = ll_classifier_test_idx[ii][jj]
                     except:
                         print np.shape(ll_classifier_test_idx), ii, jj
                     #print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+                    anomaly = True                            
                     break        
 
             if Y_test[ii][0] > 0.0:
-                if est_y[jj] > 0.0:
+                if anomaly:
                     tp_l.append(1)
                     delay_l.append(delay_idx)
                 else: fn_l.append(1)
             elif Y_test[ii][0] <= 0.0:
-                if est_y[jj] > 0.0: fp_l.append(1)
+                if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
 
         data[method]['tp_l'][j] += tp_l

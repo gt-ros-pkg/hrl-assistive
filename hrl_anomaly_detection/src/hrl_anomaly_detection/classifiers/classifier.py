@@ -64,6 +64,8 @@ class classifier(learning_base):
                  w_negative  = 7.0,\
                  # hmmosvm
                  hmmosvm_nu  = 0.5,\
+                 # osvm
+                 osvm_nu     = 0.5,\
                  # cssvm
                  cssvm_degree      = 3,\
                  cssvm_gamma       = 0.3,\
@@ -611,7 +613,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         else:
             est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
 
-        positive = False
+        anomaly = False
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
 
@@ -619,7 +621,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                 if method == 'hmmosvm':
                     if jj < len(est_y)-5:
                         if np.sum(est_y[jj:jj+5])>=5:
-                            positive = True                            
+                            anomaly = True                            
                             break
                     continue                        
 
@@ -632,16 +634,16 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                     except:
                         print "Error!!!!!!!!!!!!!!!!!!"
                         print np.shape(idx_test), ii, jj
-                positive = True                            
+                anomaly = True                            
                 break        
 
         if Y_test[ii][0] > 0.0:
-            if positive:
+            if anomaly:
                 tp_l.append(1)
                 delay_l.append(delay_idx)
             else: fn_l.append(1)
         elif Y_test[ii][0] <= 0.0:
-            if positive: fp_l.append(1)
+            if anomaly: fp_l.append(1)
             else: tn_l.append(1)
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l
