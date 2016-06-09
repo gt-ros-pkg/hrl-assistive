@@ -358,14 +358,14 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-3., 0.5, nPoints),\
+                          'osvm_param_range': np.logspace(-3., 0.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 5 #9
         parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                       'pca_gamma': [1.0],
-                      'nu': np.logspace(-2,0,5),
+                      'nu': np.logspace(-4,-1,5),
                       }
             ## 
             ## 'pca_gamma': np.logspace(-4,-1,5),
@@ -466,7 +466,7 @@ if __name__ == '__main__':
         ##               'nu': [0.001]
         ##               }
         parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                      'nu': np.linspace(0.015,0.025,5)
+                      'nu': np.linspace(0.012,0.02,5)
                       }
                       ## 'class_weight': [0.27],
                           
