@@ -177,7 +177,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.34, 'scale': 4.66}
             SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.01, 'cost': 7.5,\
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                              'hmmosvm_nu': 0.001}
+                              'hmmosvm_nu': 0.00316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , ,'osvm', 'fixed', 'progress_time_cluster', 'svm','osvm'
         ROC_param_dict = {'methods': [ 'progress_time_cluster','fixed' , 'svm' , 'hmmosvm' ],\
@@ -201,8 +201,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmosvm_nu': 0.00316}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','osvm' ],\
-                          'update_list': [],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
+                          'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
@@ -218,9 +218,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.7, 'gamma': 2.5, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        nPoints        = 4 #20  #'fixed', 'progress_time_cluster', 'svm', 
-        ROC_param_dict = {'methods': [ 'osvm', 'hmm_osvm' ],\
-                          'update_list': [ 'osvm' ],\
+        nPoints        = 20  #'fixed', 'progress_time_cluster', 'svm', 
+        ROC_param_dict = {'methods': [ 'hmmosvm' ],\
+                          'update_list': [ 'hmmosvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
