@@ -556,7 +556,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(gamma, nFiles, startIdx, data_pkl, window=1, posdata=False):
+def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1.):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
