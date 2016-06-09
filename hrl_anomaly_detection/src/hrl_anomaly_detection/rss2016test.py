@@ -1075,7 +1075,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
                     if method == 'hmmosvm':
                         window_size = 3
                         if jj < len(est_y)-window_size:
-                            if np.sum(est_y[jj:jj+window_size])>=window_size
+                            if np.sum(est_y[jj:jj+window_size])>=window_size:
                                 anomaly = True                            
                                 break
                         continue                        
