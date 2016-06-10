@@ -363,7 +363,7 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
+        nFiles = 4 #9
         ## parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
         ##               'pca_gamma': [1.0],
         ##               'nu': np.logspace(-3,-2,5),
@@ -376,10 +376,10 @@ if __name__ == '__main__':
                       }
             
             
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': np.linspace(5,15.0,5),\
-        ##               'gamma': np.linspace(0.01,2.0,5), \
-        ##               'w_negative': np.linspace(0.2,1.5,5) }
+        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                      'cost': np.linspace(5,15.0,5),\
+                      'gamma': np.linspace(0.01,2.0,5), \
+                      'w_negative': np.linspace(0.2,1.5,5) }
                       
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
