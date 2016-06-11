@@ -22,6 +22,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
@@ -41,6 +42,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
@@ -59,6 +61,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
