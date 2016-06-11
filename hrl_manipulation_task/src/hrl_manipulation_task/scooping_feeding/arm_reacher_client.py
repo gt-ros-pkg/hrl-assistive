@@ -194,7 +194,7 @@ if __name__ == '__main__':
     print 'Completed - left arm init #2, time:', time.time() - t1
     print 'Beginning - scooping'
     t1 = time.time()
-    client.armReachActionLeft('runScoopingCenter')
+    client.armReachActionLeft('runScooping')
     # client.armReachActionLeft('runScoopingRight')
     print 'Completed - scooping, time:', time.time() - t1
 

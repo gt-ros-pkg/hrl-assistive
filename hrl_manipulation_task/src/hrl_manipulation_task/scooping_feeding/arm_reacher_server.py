@@ -149,8 +149,7 @@ class armReachAction(mpcBaseAction):
         # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground), whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
         # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)] (represents positive values)
         self.motions['initScooping1'] = {}
-        # self.motions['initScooping1']['left'] = [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 5.0]]
-        self.motions['initScooping1']['left'] = [['MOVEJ', '[0.4447, 0.1256, 1, 2.12, -1, 1.5, 1]', 5.0]]
+        self.motions['initScooping1']['left'] = [['MOVEJ', '[0.4447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 5.0]]
         self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0]]
           #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
@@ -166,25 +165,14 @@ class armReachAction(mpcBaseAction):
           [['MOVES', '[0.7+random.uniform(-0.1, 0.1), -0.15+random.uniform(-0.1, 0.1),-0.1+random.uniform(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],]
 
         # [Y (from center of bowl away from Pr2, X (towards right gripper), Z (towards floor) , roll?, pitch (tilt downwards), yaw?]
-        self.motions['runScoopingCenter'] = {}
+        self.motions['runScooping'] = {}
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
-        self.motions['runScoopingCenter']['left'] = \
-          [['MOVES', '[-0.05, 0.01,  0.06, 0, 0.5, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.0, 0.01,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
-           ## ['MOVES', '[ 0.03, 0.0,  0.06, 0, 1.3, 0]', 4, 'self.bowl_frame'], #adjusted
-           # ['MOVES', '[ 0.0,  0.01, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame']]
-        self.motions['runScoopingRight']['left'] = \
-          [['MOVES', '[-0.05, 0.01,  0.06, 0, 0.7, -1.3]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.03, 0.01,  0.03, 0, 1.3, -1.3]', 4, 'self.bowl_frame'],
-           ## ['MOVES', '[ 0.03, 0.0,  0.06, 0, 1.3, 0]', 4, 'self.bowl_frame'], #adjusted
-           ['MOVES', '[ 0.0,  0.01, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame']]
-        self.motions['runScoopingLeft']['left'] = \
-          [['MOVES', '[-0.05, 0.01,  0.06, -1.5, 1.0, 0]', 4, 'self.bowl_frame'],
-           ['MOVES', '[ 0.03, 0.01,  0.03, 0, 1.0, 0]', 4, 'self.bowl_frame'],
-           ## ['MOVES', '[ 0.03, 0.0,  0.06, 0, 1.3, 0]', 4, 'self.bowl_frame'], #adjusted
-           ['MOVES', '[ 0.0,  0.01, -0.1, 0, 1.3, 0]', 4, 'self.bowl_frame']]
-        # self.motions['runScooping']['right'] = []
+        self.motions['runScooping']['left'] = \
+          [['MOVES', '[-0.05, -0.03,  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.01,  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.01,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+           # ['MOVES', '[ 0.05, -0.03,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
