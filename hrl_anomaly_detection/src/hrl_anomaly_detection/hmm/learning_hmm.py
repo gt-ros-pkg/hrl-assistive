@@ -486,7 +486,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
 
             if np.isnan(ll_logp[i][j]):
                 print "nan values in ", i, j
-                sys.exit()
+                return [],[]
+                ## sys.exit()
 
         X.append(l_X)
         if l_labels is not None: Y.append(l_Y)

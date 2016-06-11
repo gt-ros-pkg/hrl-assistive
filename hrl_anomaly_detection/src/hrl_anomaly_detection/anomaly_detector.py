@@ -102,6 +102,7 @@ class anomaly_detector:
             self.nState = rospy.get_param('/hrl_anomaly_detection/'+self.task_name+'/states')
             self.cov    = rospy.get_param('/hrl_anomaly_detection/'+self.task_name+'/cov_mult')
             self.scale  = rospy.get_param('/hrl_anomaly_detection/'+self.task_name+'/scale')
+            self.add_logp_d = True
 
             self.SVM_dict = None
         else:
@@ -116,12 +117,13 @@ class anomaly_detector:
             self.nState = self.param_dict['HMM']['nState']
             self.cov    = self.param_dict['HMM']['cov']
             self.scale  = self.param_dict['HMM']['scale']
+            self.add_logp_d = self.param_dict['HMM']['add_logp_d']
 
             self.SVM_dict  = self.param_dict['SVM']
 
-            if 'svm' in self.classifier_method:
-                self.w_max = self.param_dict['ROC']['svm_param_range'][-1]
-                self.w_min = self.param_dict['ROC']['svm_param_range'][0]
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
+                self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
             elif self.classifier_method == 'progress_time_cluster':                    
                 self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
                 self.w_min = self.param_dict['ROC']['progress_param_range'][0]
@@ -238,20 +240,8 @@ class anomaly_detector:
             _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
-            ll_classifier_test_X = []
-            ll_classifier_test_Y = []
-            for i in xrange(len(ll_logp)):
-                l_X = []
-                l_Y = []
-                for j in xrange(len(ll_logp[i])):        
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                    if testDataY[i] > 0.0: l_Y.append(1)
-                    else: l_Y.append(-1)
-
-                ll_classifier_test_X.append(l_X)
-                ll_classifier_test_Y.append(l_Y)
-
+            ll_classifier_test_X, ll_classifier_test_Y = \
+              learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
             # flatten the data
             X_test_org = []
@@ -292,10 +282,10 @@ class anomaly_detector:
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
                                         nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
-        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
+        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org, parallel=False)
         print "Finished to train SVM"
 
-        if 'svm' in self.classifier_method:
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
             sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
         elif self.classifier_method == 'progress_time_cluster':                    
             sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
@@ -608,6 +598,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--task', action='store', dest='task', type='string', default='scooping',
                  help='type the desired task name')
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+                 help='type the method name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+                 help='type the desired dimension')
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
 
@@ -617,25 +611,35 @@ if __name__ == '__main__':
     local_range   = 10.0    
 
     if opt.task == 'scooping':
-    
-        subject_names     = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2']
+        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry',         
         raw_data_path, _, param_dict = getScooping(opt.task, False, \
                                                    False, False,\
-                                                   rf_center, local_range)
-        check_method      = 'svm' # cssvm
+                                                   rf_center, local_range, dim=opt.dim)
+        check_method      = opt.method # cssvm
         save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
         param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
                              'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
     elif opt.task == 'feeding':
-        subject_names  = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']        
         raw_data_path, _, param_dict = getFeeding(opt.task, False, \
                                                   False, False,\
-                                                  rf_center, local_range)
-        check_method      = 'svm' #'progress_time_cluster' # cssvm
+                                                  rf_center, local_range, dim=opt.dim)
+        check_method      = opt.method # cssvm
         save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
         param_dict['SVM'] = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
                              'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
+
+    elif opt.task == 'pushing_microwhite':
+        subjects = ['gatsbii']        
+        raw_data_path, _, param_dict = getPushingMicroWhite(opt.task, False, \
+                                                            False, False,\
+                                                            rf_center, local_range, dim=opt.dim)
+        check_method      = opt.method # cssvm
+        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                             'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+                             
     else:
         sys.exit()
 

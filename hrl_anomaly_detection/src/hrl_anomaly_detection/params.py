@@ -11,11 +11,11 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.83, 'scale': 2.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 3.125}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.0147, 'cost': 2.5}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm' ],\
-                          'update_list': [],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm' ],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -8., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
@@ -89,7 +89,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True}
 
-    data_param_dict['downSampleSize'] = 200
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
@@ -101,24 +100,82 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
 
 
 def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
-    handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
-                    'crossmodal_artagEEDist', 'crossmodal_artagEEAng'] 
+
+    if dim == 5:
+
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+                        'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+
+    elif dim == 4:
+
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+                        'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+    elif dim == 3:
+
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+                        'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+    elif dim == 2:
+
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+                        'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
+
+        nPoints        = 20
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+                          'update_list': [],\
+                          'nPoints': nPoints,\
+                          'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+
+        
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
                    'ft' ]
                    #'relativePose_artag_EE', \
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_artag']
-    downSampleSize = 200
-
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/TEST'
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': downSampleSize, 'cut_data': [0,200], \
-                      'nNormalFold':4, 'nAbnormalFold':4,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -126,17 +183,17 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                       'filter':True, 'filterDim':4,\
                       'add_option': None, 'rawFeatures': rawFeatures,\
                       'add_noise_option': [], 'preTrainModel': None}                      
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
-    SVM_param_dict = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0}
 
-    nPoints        = 20
-    ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
-                      'update_list': [],\
-                      'nPoints': nPoints,\
-                      'progress_param_range': -np.logspace(0., 1.5, nPoints),\
-                      'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
-                      'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                      'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
+                      'downSampleSize': 200, 'cut_data': None, \
+                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': True}
+
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      str(data_param_dict['downSampleSize'])+'_'+str(dim)
+
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 

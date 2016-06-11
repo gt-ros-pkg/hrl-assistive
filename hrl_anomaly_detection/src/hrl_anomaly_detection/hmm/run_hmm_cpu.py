@@ -197,6 +197,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             # nSample x nLength
             ll_classifier_test_X, ll_classifier_test_Y = \
               hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=True)
+            if ll_classifier_test_X == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                break
+                
             
             # split
             import random
@@ -683,8 +688,8 @@ if __name__ == '__main__':
                                                                False, False,\
                                                                rf_center, local_range, \
                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(0.1,2.0,4) }
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(0.1,4.0,10) }
 
     elif opt.task == 'pushing_microwhite':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \

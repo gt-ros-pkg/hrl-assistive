@@ -281,6 +281,8 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+                 help='type the method name')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
 
@@ -358,28 +360,26 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-3., 0.2, nPoints),\
+                          'osvm_param_range': np.logspace(-4., 1.5, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = 4 #9
-        ## parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-        ##               'pca_gamma': [1.0],
-        ##               'nu': np.logspace(-3,-2,5),
-        ##               }
-            ## 
-            ## 'pca_gamma': np.logspace(-4,-1,5),
-
-        ## parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-        ##               'hmmosvm_nu': np.logspace(-4,-2.,5)
-        ##               }
-            
-            
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(5,15.0,5),\
-                      'gamma': np.linspace(0.01,2.0,5), \
-                      'w_negative': np.linspace(0.2,1.5,5) }
+        if opt.method == 'svm':
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(5,15.0,5),\
+                          'gamma': np.linspace(0.01,2.0,5), \
+                          'w_negative': np.linspace(0.2,1.5,5) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                          }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-4,-2,5),
+                          }
+                
                       
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
@@ -462,16 +462,17 @@ if __name__ == '__main__':
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(1.0,4.0,5),\
-                      'gamma': np.linspace(0.1,8.0,10), \
-                      'w_negative': np.logspace(-2, 0.5, 5) }
+       if opt.method == 'svm':
+           parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                         'cost': np.linspace(1.0,4.0,5),\
+                         'gamma': np.linspace(0.1,8.0,10), \
+                         'w_negative': np.logspace(-2, 0.5, 5) }
+       elif opt.method == 'hmmosvm':
+           parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                         'hmmosvm_nu': np.logspace(-4,-2.,5)
+                         }
+ 
 
-        
-        ## parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-        ##               'hmmosvm_nu': np.logspace(-4,-2.,5)
-        ##               }
-        ##               ## 'class_weight': [0.27],
         ## if opt.dim > 2:
         ##     ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 2.5, nPoints)
         ## elif opt.dim == 2:
