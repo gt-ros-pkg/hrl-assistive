@@ -462,14 +462,14 @@ if __name__ == '__main__':
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
-       if opt.method == 'svm':
-           parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                         'cost': np.linspace(1.0,4.0,5),\
-                         'gamma': np.linspace(0.1,8.0,10), \
-                         'w_negative': np.logspace(-2, 0.5, 5) }
-       elif opt.method == 'hmmosvm':
-           parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                         'hmmosvm_nu': np.logspace(-4,-2.,5)
+        if opt.method == 'svm':
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(1.0,4.0,5),\
+                          'gamma': np.linspace(0.1,8.0,10), \
+                          'w_negative': np.logspace(-2, 0.5, 5) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
                          }
  
 
