@@ -883,6 +883,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             elif method == 'cssvm': label='HMM-CSSVM'
             elif method == 'sgd': label='SGD'
             elif method == 'hmmosvm': label='HMM-OneClassSVM'
+            elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
                 
             # visualization
             color = colors.next()
@@ -1002,7 +1003,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             if method == 'osvm':
                 X_temp = ml_pca.transform(ll_classifier_test_X[j])
                 X      = scaler.transform(X_temp)                                            
-            elif method.find('svm')>=0 or method == 'hmmosvm' or method.find('sgd')>=0:
+            elif method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             elif method == 'progress_time_cluster' or method == 'fixed':
                 X = ll_classifier_test_X[j]
@@ -1018,22 +1019,22 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
     for j in xrange(nPoints):
         dtc.set_params( **SVM_dict )
+        weights = ROC_dict[method+'_param_range']
         if method == 'svm':
-            weights = ROC_dict['svm_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'hmmsvm_diag':
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'hmmosvm':
-            weights = ROC_dict['hmmosvm_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'osvm':
-            weights = ROC_dict['osvm_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'cssvm':
-            weights = ROC_dict['cssvm_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress_time_cluster':
@@ -1045,7 +1046,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'sgd':
-            weights = ROC_dict['sgd_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         else:

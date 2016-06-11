@@ -171,7 +171,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 break
 
-
             #-----------------------------------------------------------------------------------------
             # Classifier train data
             #-----------------------------------------------------------------------------------------

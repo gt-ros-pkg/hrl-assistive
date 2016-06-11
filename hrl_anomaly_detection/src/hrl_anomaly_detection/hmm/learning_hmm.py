@@ -82,7 +82,7 @@ class learning_hmm(learning_base):
 
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False):
+            ml_pkl=None, use_pkl=False, cov_type='full'):
         '''
         Input :
         - xData: dimension x sample x length
@@ -125,7 +125,7 @@ class learning_hmm(learning_base):
                 if self.verbose: print "Generating a new B matrix"
                 # We should think about multivariate Gaussian pdf.  
 
-                mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim)
+                mus, cov = util.vectors_to_mean_cov(X, self.nState, self.nEmissionDim, cov_type=cov_type)
                 ## print np.shape(mus), np.shape(cov)
 
                 # cov: state x dim x dim

@@ -261,9 +261,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.7, 'gamma': 2.5, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        nPoints        = 20  #'fixed', 'progress_time_cluster', 'svm', 
-        ROC_param_dict = {'methods': [ 'hmmosvm' ],\
-                          'update_list': [ 'hmmosvm' ],\
+        nPoints        = 20  #'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'
+        ROC_param_dict = {'methods': [ 'hmmsvm_diag' ],\
+                          'update_list': [ 'hmmsvm_diag' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0, nPoints),\
@@ -271,6 +271,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 1.0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\        
                           'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     rawFeatures = ['relativePose_artag_EE', \
