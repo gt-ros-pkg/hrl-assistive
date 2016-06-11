@@ -271,7 +271,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 1.0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\        
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     rawFeatures = ['relativePose_artag_EE', \
