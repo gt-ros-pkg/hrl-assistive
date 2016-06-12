@@ -47,12 +47,13 @@ from sklearn import preprocessing
 from joblib import Parallel, delayed
 
 # msg
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 
 from hrl_anomaly_detection.params import *
 
+QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
@@ -117,7 +118,7 @@ class anomaly_detector:
             self.nState = self.param_dict['HMM']['nState']
             self.cov    = self.param_dict['HMM']['cov']
             self.scale  = self.param_dict['HMM']['scale']
-            self.add_logp_d = self.param_dict['HMM']['add_logp_d']
+            self.add_logp_d = self.param_dict['HMM'].get('add_logp_d', False)
 
             self.SVM_dict  = self.param_dict['SVM']
 
@@ -324,7 +325,7 @@ class anomaly_detector:
             singleData = dm.getData(fileName, self.rf_center, self.local_range,\
                                     self.handFeatureParams,\
                                     downSampleSize = self.downSampleSize, \
-                                    cut_data       = self.cut_data\
+                                    cut_data       = self.cut_data,\
                                     handFeatures   = self.handFeatures)
             print np.shape(singleData)
 
@@ -611,7 +612,7 @@ if __name__ == '__main__':
     local_range   = 10.0    
 
     if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry',         
+        subject_names = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry',         
         raw_data_path, _, param_dict = getScooping(opt.task, False, \
                                                    False, False,\
                                                    rf_center, local_range, dim=opt.dim)
@@ -621,7 +622,7 @@ if __name__ == '__main__':
                              'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
     elif opt.task == 'feeding':
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']        
+        subject_names = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']        
         raw_data_path, _, param_dict = getFeeding(opt.task, False, \
                                                   False, False,\
                                                   rf_center, local_range, dim=opt.dim)
@@ -631,7 +632,7 @@ if __name__ == '__main__':
                              'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
 
     elif opt.task == 'pushing_microwhite':
-        subjects = ['gatsbii']        
+        subject_names = ['gatsbii']        
         raw_data_path, _, param_dict = getPushingMicroWhite(opt.task, False, \
                                                             False, False,\
                                                             rf_center, local_range, dim=opt.dim)
