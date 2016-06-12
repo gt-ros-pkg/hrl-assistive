@@ -242,7 +242,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             err_flag = False
             for iii, idx_point in enumerate(idx_l):
-                if np.isnan(tp_ll[iii]):
+                if np.nan in tp_ll[iii]:
                     err_flag = True
                     break
 
