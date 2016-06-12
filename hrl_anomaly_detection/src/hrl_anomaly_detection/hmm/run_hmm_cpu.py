@@ -240,7 +240,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                              for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
-            ## print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
+            if np.isnan(tp_ll): 
+                scores.append(-1.0 * 1e+10)
+                break
 
             for iii, idx_point in enumerate(idx_l):            
                 tp_l[idx_point] += tp_ll[iii]
@@ -328,11 +330,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             from sklearn import metrics
             mean_list.append( metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True) )
             std_list.append(0)
-
             
         ## print np.mean(scores), param
         ## mean_list.append( np.mean(scores) )
         ## std_list.append( np.std(scores) )
+        
     print "mean: ", mean_list
     score_array = np.array(mean_list) #-np.array(std_list)
     idx_list = np.argsort(score_array)
@@ -342,7 +344,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             
         print("%0.3f : %0.3f (+/-%0.03f) for %r"
               % (score_array[i], mean_list[i], std_list[i], param_list[i]))
-
 
     ## # Get sorted results
     ## from operator import itemgetter
@@ -360,7 +361,9 @@ def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nL
     dtc.set_params( **SVM_dict )
     dtc.set_params( class_weight=weight )
     ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
-    if ret is False: return idx, [],[1],[0],[1]
+    if ret is False:
+        print "SVM fitting failure!!"
+        return idx, np.nan, np.nan, np.nan, np.nan
 
     tp_l = []
     fn_l = []
