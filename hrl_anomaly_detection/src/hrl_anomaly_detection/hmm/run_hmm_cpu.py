@@ -46,7 +46,7 @@ from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1):
 
     ## Parameters
     # data
