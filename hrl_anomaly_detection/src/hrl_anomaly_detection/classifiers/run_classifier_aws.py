@@ -42,7 +42,7 @@ from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection.params import *
 
 # AWS
-## from hrl_anomaly_detection.aws.cloud_search import CloudSearch
+from hrl_anomaly_detection.aws.cloud_search import CloudSearch
 
 import matplotlib
 #matplotlib.use('Agg')
