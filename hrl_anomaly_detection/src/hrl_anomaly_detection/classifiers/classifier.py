@@ -62,8 +62,11 @@ class classifier(learning_base):
                  cost        = 4.,\
                  coef0       = 0.,\
                  w_negative  = 7.0,\
-                 # hmmosvm
+                 # hmmsvm
                  hmmsvm_diag_nu = 0.5,\
+                 hmmsvm_diag_w_negative  = 7.0,\
+                 hmmsvm_diag_cost        = 4.,\
+                 hmmsvm_diag_gamma       = 0.3,\
                  # hmmosvm
                  hmmosvm_nu  = 0.5,\
                  # osvm
@@ -100,6 +103,9 @@ class classifier(learning_base):
             self.coef0       = coef0
             self.w_negative  = w_negative
             self.hmmsvm_diag_nu = hmmsvm_diag_nu
+            self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative,\
+            self.hmmsvm_diag_cost       = hmmsvm_diag_cost,\
+            self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma,\            
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
@@ -152,18 +158,21 @@ class classifier(learning_base):
             if type(X) is not list: X=X.tolist()
             if type(y) is not list: y=y.tolist()
             commands = '-q -s '+str(self.svm_type)+' -t '+str(self.kernel_type)+' -d '+str(self.degree)\
-              +' -g '+str(self.gamma)\
-              +' -c '+str(self.cost)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.w_negative)+' -r '+str(self.coef0)
+              +' -w1 '+str(self.class_weight)\
+              +' -r '+str(self.coef0)
 
             if self.method == 'osvm':
-                commands = commands+' -n '+str(self.osvm_nu)
+                commands = commands+' -n '+str(self.osvm_nu)+' -g '+str(self.gamma)\
+                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
             elif self.method == 'hmmosvm':
-                commands = commands+' -n '+str(self.hmmosvm_nu)
+                commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
+                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
             elif self.method == 'hmmsvm_diag':
-                commands = commands+' -n '+str(self.hmmsvm_diag_nu)
+                commands = commands+' -n '+str(self.hmmsvm_diag_nu)+' -g '+str(self.hmmsvm_diag_gamma)\
+                  +' -w-1 '+str(self.hmmsvm_diag_w_negative)+' -c '+str(self.hmmsvm_diag_cost)
             else:
-                commands = commands+' -n '+str(self.nu)
+                commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
+                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
                             
             try: self.dt = svm.svm_train(y, X, commands )
             except:
