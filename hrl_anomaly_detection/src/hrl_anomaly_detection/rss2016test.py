@@ -1022,22 +1022,26 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         
         dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
         dtc.set_params( **SVM_dict )
-        weights = ROC_dict[method+'_param_range']
         if method == 'svm':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'hmmsvm_diag':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'hmmosvm':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'osvm':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'cssvm':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress_time_cluster':
@@ -1049,6 +1053,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'sgd':
+            weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         else:

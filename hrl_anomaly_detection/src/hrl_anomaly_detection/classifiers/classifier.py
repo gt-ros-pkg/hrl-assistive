@@ -556,15 +556,17 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     # classifier # TODO: need to make it efficient!!
     dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    weights = ROC_dict[method+'_param_range']
     if method == 'svm' or method == 'hmmsvm_diag':
+        weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'hmmosvm' or method == 'osvm':
+        weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
         dtc.set_params( gamma=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
     elif method == 'cssvm':
+        weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
     elif method == 'progress_time_cluster':
@@ -576,9 +578,11 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
     elif method == 'sgd':
+        weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
     elif method == 'rfc':
+        weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
     else:
