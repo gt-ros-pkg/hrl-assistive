@@ -363,12 +363,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     ##     SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
     ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 2.0}
 
-
-
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
-
-
 
     return raw_data_path, save_data_path, param_dict
 

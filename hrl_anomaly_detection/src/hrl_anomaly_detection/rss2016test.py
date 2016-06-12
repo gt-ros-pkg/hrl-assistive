@@ -1016,8 +1016,11 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
 
 
     # classifier # TODO: need to make it efficient!!
-    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
     for j in xrange(nPoints):
+
+        ## cb.run_classifier(j)
+        
+        dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )        
         dtc.set_params( **SVM_dict )
         weights = ROC_dict[method+'_param_range']
         if method == 'svm':
