@@ -283,6 +283,8 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
                  help='type the method name')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
 
@@ -539,7 +541,7 @@ if __name__ == '__main__':
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                data, param_dict, param, \
-                                                                               n_jobs=-1)
+                                                                               n_jobs=opt.n_jobs)
                 end = time.time()
                 print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start
