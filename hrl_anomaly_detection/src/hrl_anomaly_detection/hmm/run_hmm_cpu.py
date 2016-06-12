@@ -369,7 +369,7 @@ def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nL
     ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
     if ret is False:
         print "SVM fitting failure!!"
-        return idx, np.nan, np.nan, np.nan, np.nan
+        return idx, [np.nan], [np.nan], [np.nan], [np.nan]
 
     tp_l = []
     fn_l = []
