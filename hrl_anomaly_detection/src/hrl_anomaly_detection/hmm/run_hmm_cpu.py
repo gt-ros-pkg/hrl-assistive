@@ -199,6 +199,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             if ll_classifier_test_X == []:
                 print "HMM-induced vector is wrong", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
                 break
                 
             
@@ -253,6 +254,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             if err_flag:
                 scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
                 break
 
                                 

@@ -103,9 +103,9 @@ class classifier(learning_base):
             self.coef0       = coef0
             self.w_negative  = w_negative
             self.hmmsvm_diag_nu = hmmsvm_diag_nu
-            self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative,\
-            self.hmmsvm_diag_cost       = hmmsvm_diag_cost,\
-            self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma,\            
+            self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
+            self.hmmsvm_diag_cost       = hmmsvm_diag_cost
+            self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
