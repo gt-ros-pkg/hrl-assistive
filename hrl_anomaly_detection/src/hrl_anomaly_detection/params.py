@@ -31,7 +31,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.266, 'scale': 3.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.106, 'cost': 2.0}
+        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm'],\
