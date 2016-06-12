@@ -460,10 +460,11 @@ if __name__ == '__main__':
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
+        nFiles = 4
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -480,6 +481,12 @@ if __name__ == '__main__':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-4,-2.,5)
                          }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          opt.method+'_cost': np.linspace(5,15.0,5),\
+                          opt.method+'_gamma': np.linspace(0.01,2.0,5), \
+                          opt.method+'_w_negative': np.linspace(0.2,1.5,5)
+                          }
  
 
         ## if opt.dim > 2:
