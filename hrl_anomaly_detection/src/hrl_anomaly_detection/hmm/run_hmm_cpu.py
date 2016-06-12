@@ -184,7 +184,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                     np.ones(len(abnormalTrainData[0])) ])
 
             # compute last three indices only
-            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+            r = Parallel(n_jobs=n_jobs)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=4, \
@@ -232,12 +232,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 Y_test.append(test_Y[j])
 
             weights = ROC_dict['svm_param_range']
-            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
-                                                                         X_test, Y_test, \
-                                                                         nEmissionDim, nLength, \
-                                                                         SVM_dict, weight=weights[iii], \
-                                                                         verbose=False)\
-                                                                         for iii in xrange(len(weights)))
+            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                             X_test, Y_test, \
+                                                                             nEmissionDim, nLength, \
+                                                                             SVM_dict, weight=weights[iii], \
+                                                                             verbose=False)\
+                                                                             for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
             ## print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
@@ -667,6 +667,8 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
     opt, args = p.parse_args()
@@ -731,5 +733,5 @@ if __name__ == '__main__':
         print "no existing data file, ", crossVal_pkl
         sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
