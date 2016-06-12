@@ -240,15 +240,21 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                              for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
-            if np.isnan(tp_ll): 
-                scores.append(-1.0 * 1e+10)
-                break
+            err_flag = False
+            for iii, idx_point in enumerate(idx_l):
+                if np.isnan(tp_ll[iii]):
+                    err_flag = True
+                    break
 
-            for iii, idx_point in enumerate(idx_l):            
                 tp_l[idx_point] += tp_ll[iii]
                 fn_l[idx_point] += fn_ll[iii]
                 fp_l[idx_point] += fp_ll[iii]
                 tn_l[idx_point] += tn_ll[iii]
+
+            if err_flag:
+                scores.append(-1.0 * 1e+10)
+                break
+
                                 
             ## max_norm_logp = np.amax(norm_logp)
             ## min_norm_logp = np.amin(norm_logp)
