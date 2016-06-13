@@ -880,6 +880,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             if method == 'svm': label='HMM-SVM'
             elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
             elif method == 'fixed': label='HMMs with a fixed threshold'
+            elif method == 'change': label='HMMs with change detection'
             elif method == 'cssvm': label='HMM-CSSVM'
             elif method == 'sgd': label='SGD'
             elif method == 'hmmosvm': label='HMM-OneClassSVM'
@@ -1005,7 +1006,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
                 X      = scaler.transform(X_temp)                                            
             elif method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            else:
                 X = ll_classifier_test_X[j]
         except:
             print np.shape(ll_classifier_test_X[j])
@@ -1047,8 +1048,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'fixed':
-            thresholds = ROC_dict['fixed_param_range']
+        elif method == 'fixed' or method == 'change':
+            thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'sgd':

@@ -228,12 +228,13 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_gamma': 0.50749}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , ,'osvm', 'fixed', 'progress_time_cluster', 'svm','osvm'
-        ROC_param_dict = {'methods': [ 'progress_time_cluster','fixed' , 'svm' , 'hmmosvm', 'hmmsvm_diag' ],\
-                          'update_list': [ 'hmmsvm_diag' ],\
+        ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
+                                       'hmmsvm_diag' ],\
+                          'update_list': [ 'change' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-4.0, 0, nPoints),\
-                          'change_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
+                          'change_param_range': np.logspace(-1, 0.0, nPoints)*-1.0,\
                           'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\

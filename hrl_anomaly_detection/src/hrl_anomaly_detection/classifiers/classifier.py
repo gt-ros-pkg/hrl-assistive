@@ -238,6 +238,14 @@ class classifier(learning_base):
             self.mu  = np.mean(ll_logp)
             self.std = np.std(ll_logp)
             return True
+
+        elif self.method == 'change':
+            if type(X) == list: X = np.array(X)
+            ll_logp = X[:,0:1]
+
+            print np.shape(X)
+            sys.exit()
+        
                 
         elif self.method == 'sgd':
 
