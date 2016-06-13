@@ -340,11 +340,11 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']/2
         parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(1.0,15.0,10),\
-                      'gamma': np.linspace(0.001, 0.015, 4).tolist(), \
-                      'w_negative': np.linspace(0.01, 1.3, 5) }
+                      'cost': np.linspace(5,15.0,5),\
+                      'gamma': np.linspace(0.01,2.0,5), \
+                      'w_negative': np.linspace(0.2,1.5,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
