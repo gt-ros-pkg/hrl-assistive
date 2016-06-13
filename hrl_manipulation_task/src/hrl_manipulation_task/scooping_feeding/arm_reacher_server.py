@@ -169,9 +169,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.01,  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.01,  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.01,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+          [['MOVES', '[-0.05, 0.0,  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0,  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
            # ['MOVES', '[ 0.05, -0.03,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
         
         ## Feeding motoins --------------------------------------------------------

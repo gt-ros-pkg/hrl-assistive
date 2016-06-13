@@ -31,6 +31,8 @@
 # system library
 import time
 import random
+import numpy as np
+import multiprocessing
 
 # ROS library
 import rospy, roslib
@@ -41,11 +43,10 @@ import PyKDL
 from hrl_srvs.srv import String_String, String_StringRequest
 
 from tf import TransformListener
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, CameraInfo
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, PoseStamped, TransformStamped, PointStamped
-import multiprocessing
-import numpy as np
+import image_geometry
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
 try :
@@ -54,73 +55,81 @@ except:
     import point_cloud2 as pc2
 
 class ArmReacherClient:
-    def __init__(self, isScooping=True):
+    def __init__(self, isScooping=True, verbose=True):
         rospy.init_node('feed_client')
         self.tf = TransformListener()
 
         self.isScooping = isScooping
+        self.verbose = verbose
         self.points3D = None
         self.highestBowlPoint = None
         self.initialized = False
-        self.bowlPos = None
+        self.bowlRawPos = None
+        self.bowlCenter = None
+        self.pinholeCamera = None
+        self.cameraWidth = None
+        self.cameraHeight = None
         # self.torso_frame = rospy.get_param('haptic_mpc/pr2/torso_frame')
 
         # ROS publisher for data points
-        self.publisher = rospy.Publisher('visualization_marker', Marker)
+        self.publisher = rospy.Publisher('visualization_marker', Marker, queue_size=100)
 
         # Connect to point cloud from Kinect
-        self.cloudSub = rospy.Subscriber('/head_mount_kinect/qhd/points', PointCloud2, self.cloudCallback)
-        print 'Connected to Kinect depth'
+        self.cloudSub = rospy.Subscriber('/head_mount_kinect/sd/points', PointCloud2, self.cloudCallback)
+        if self.verbose: print 'Connected to Kinect depth'
+        self.cameraSub = rospy.Subscriber('/head_mount_kinect/sd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        if self.verbose: print 'Connected to Kinect camera info'
 
         # Connect to bowl center location
         self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/bowl_cen_pose', PoseStamped, self.bowlCallback)
-        print 'Connected to bowl center location'
+        if self.verbose: print 'Connected to bowl center location'
 
         # Connect to both PR2 arms
         if isScooping:
-            print 'waiting for /arm_reach_enable'
+            if self.verbose: print 'waiting for /arm_reach_enable'
             rospy.wait_for_service("/arm_reach_enable")
             self.armReachActionLeft  = rospy.ServiceProxy('/arm_reach_enable', String_String)
-            print 'waiting for /right/arm_reach_enable'
+            if self.verbose: print 'waiting for /right/arm_reach_enable'
             self.armReachActionRight = rospy.ServiceProxy('/right/arm_reach_enable', String_String)
-            print 'Connected to both services'
-
-        print 'Waiting for tf to gripper'
-        self.tf.waitForTransform('head_mount_kinect_rgb_optical_frame', 'r_gripper_tool_frame', rospy.Time(0), rospy.Duration(60.0))
-        print 'Received tf to gripper'
-        [self.trans, self.rot] = self.tf.lookupTransform('head_mount_kinect_rgb_optical_frame', 'r_gripper_tool_frame', rospy.Time(0))
+            if self.verbose: print 'Connected to both services'
 
     def cancel(self):
         self.cloudSub.unregister()
+        self.cameraSub.unregister()
         self.bowlSub.unregister()
 
     def initScooping(self):
-        print 'Initializing arm joints for scooping'
+        if self.verbose: print 'Initializing arm joints for scooping'
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping1',))
-        print 'Beginning - left arm init #1'
-        t1 = time.time()
+        if self.verbose:
+            print 'Beginning - left arm init #1'
+            t = time.time()
         leftProc.start()
-        print 'Beginning - right arm init #1'
-        t2 = time.time()
+        if self.verbose:
+            print 'Beginning - right arm init #1'
+            t2 = time.time()
         rightProc.start()
         leftProc.join()
-        print 'Completed - left arm init #1, time:', time.time() - t1
+        if self.verbose: print 'Completed - left arm init #1, time:', time.time() - t
         rightProc.join()
-        print 'Completed - right arm init #1, time:', time.time() - t2
+        if self.verbose: print 'Completed - right arm init #1, time:', time.time() - t2
 
-        print 'Beginning - right arm (bowl holding arm) init #2'
-        t1 = time.time()
+        if self.verbose:
+            print 'Beginning - right arm (bowl holding arm) init #2'
+            t = time.time()
         self.armReachActionRight('initScooping2')
-        print 'Completed - right arm (bowl holding arm) init #2, time:', time.time() - t1
-        print 'Beginning - getBowPos'
-        t1 = time.time()
+        if self.verbose:
+            print 'Completed - right arm (bowl holding arm) init #2, time:', time.time() - t
+            print 'Beginning - getBowPos'
+            t = time.time()
         self.armReachActionLeft('getBowlPos')
-        print 'Completed - getBowPos, time:', time.time() - t1
-        print 'Beginning - lookAtBowl'
-        t1 = time.time()
+        if self.verbose:
+            print 'Completed - getBowPos, time:', time.time() - t
+            print 'Beginning - lookAtBowl'
+            t = time.time()
         self.armReachActionLeft('lookAtBowl')
-        print 'Completed - lookAtBowl, time:', time.time() - t1
+        if self.verbose: print 'Completed - lookAtBowl, time:', time.time() - t
 
         self.initialized = True
 
@@ -131,9 +140,9 @@ class ArmReacherClient:
 
         time.sleep(5)
 
-        print 'Beginning to scoop!'
-        print self.armReachActionLeft('initScooping2')
-        print self.armReachActionLeft('runScooping')
+        if self.verbose: print 'Beginning to scoop!'
+        self.armReachActionLeft('initScooping2')
+        self.armReachActionLeft('runScooping')
 
         return True
 
@@ -144,13 +153,20 @@ class ArmReacherClient:
         self.armReachActionRight(action)
 
     def getHeadPos(self):
-        print self.armReachActionLeft('lookAtMouth')
-        print self.armReachActionLeft('getHeadPos')
+        self.armReachActionLeft('lookAtMouth')
+        self.armReachActionLeft('getHeadPos')
 
     def bowlCallback(self, data):
-        # print 'bowl::', data
-        self.bowlPos = data.pose.position
-        print 'bowlCallback with bowl position:', self.bowlPos
+        bowlPosePos = data.pose.position
+        # Account for the fact  that the bowl center position is not directly in the center
+        self.bowlRawPos = [bowlPosePos.x + 0.02, bowlPosePos.y + 0.02, bowlPosePos.z]
+
+    def cameraRGBInfoCallback(self, data):
+        if self.pinholeCamera is None:
+            self.cameraWidth = data.width
+            self.cameraHeight = data.height
+            self.pinholeCamera = image_geometry.PinholeCameraModel()
+            self.pinholeCamera.fromCameraInfo(data)
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
@@ -162,61 +178,55 @@ class ArmReacherClient:
 
         pointCloud = data
 
-        if self.bowlPos is not None:
-            print 'Received Bowl Position from self.bowlPos:', self.bowlPos
-            point = PointStamped()
-            point.header.frame_id = 'torso_lift_link'
-            point.point.x = self.bowlPos.x
-            point.point.y = self.bowlPos.y
-            point.point.z = self.bowlPos.z
-            self.publishPoints('bowlCenterPre', [[self.bowlPos.x, self.bowlPos.y, self.bowlPos.z]], g=1.0, frame='torso_lift_link')
-            print 'bowl point after transform:', point
-            point = self.tf.transformPoint('head_mount_kinect_rgb_optical_frame', point)
-            print 'bowl point after transform:', point
-            bowlXY = np.array([point.point.x, point.point.y])
-            bowlZ = point.point.z
+        # Transform the raw bowl center to the Kinect frame
+        if self.bowlCenter is None:
+            if self.bowlRawPos is not None:
+                if self.verbose: print 'Using self.bowlPosePos'
+                point = PointStamped()
+                point.header.frame_id = 'torso_lift_link'
+                point.point.x = self.bowlRawPos[0]
+                point.point.y = self.bowlRawPos[1]
+                point.point.z = self.bowlRawPos[2]
+                # self.publishPoints('bowlCenterPre', [], g=1.0, frame='torso_lift_link')
+                point = self.tf.transformPoint('head_mount_kinect_ir_optical_frame', point)
+                self.bowlCenter = np.array([point.point.x, point.point.y, point.point.z])
+            else:
+                if self.verbose: print 'Using self.getBowlFrame()'
+                # bowlPos = self.armReachActionLeft('returnBowlPos')
+                bowlPos = self.getBowlFrame()
+                self.bowlCenter = np.array([bowlPos.p.x(), bowlPos.p.y(), bowlPos.p.z()])
+            self.publishPoints('bowlCenterPost', [self.bowlCenter], r=1.0)
 
-            self.publishPoints('bowlCenterPost', [[bowlXY[0], bowlXY[1], bowlZ]], r=1.0, frame='head_mount_kinect_rgb_optical_frame')
-        else:
-            # bowlPos = self.armReachActionLeft('returnBowlPos')
-            bowlPos = self.getBowlFrame()
-            print 'Received Bowl Position from self.getBowlFrame():', bowlPos
-            bowlXY = np.array([bowlPos.p.x(), bowlPos.p.y()])
-            bowlZ = bowlPos.p.z()
-
-
-        # pointCloud = self.tf.transformPointCloud('r_gripper_tool_frame', pointCloud)
-
-        # transform = TransformStamped()
-        # transform.header.frame_id = 'head_mount_kinect_rgb_optical_frame'
-        # transform.child_frame_id = 'r_gripper_tool_frame'
-        # transform.transform.translation.x = self.trans[0]
-        # transform.transform.translation.y = self.trans[1]
-        # transform.transform.translation.z = self.trans[2]
-        # transform.transform.rotation.x = self.rot[0]
-        # transform.transform.rotation.y = self.rot[1]
-        # transform.transform.rotation.z = self.rot[2]
-        # transform.transform.rotation.w = self.rot[3]
-        # transform.header.stamp = rospy.Time.now()
-        # pointCloud = do_transform_cloud(pointCloud, transform)
-
-        # points2D = [[x, y] for y in xrange(lowY, highY) for x in xrange(lowX, highX)]
+        # Project bowl position to 2D pixel location to narrow search for bowl points (use point projected to kinect frame)
+        bowlProjX, bowlProjY = [int(x) for x in self.pinholeCamera.project3dToPixel(self.bowlCenter)]
+        print '3D bowl point:', self.bowlCenter, 'Projected X, Y:', bowlProjX, bowlProjY, 'Camera width, height:', self.cameraWidth, self.cameraHeight
+        points2D = [[x, y] for y in xrange(bowlProjY-50, bowlProjY+50) for x in xrange(bowlProjX-50, bowlProjX+50)]
+        print 'points2D'
+        print np.shape(points2D)
         try:
-            points3D = pc2.read_points(pointCloud, field_names=('x', 'y', 'z'), skip_nans=True) # uvs=points2D
+            points3D = pc2.read_points(pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
         except:
             print 'Unable to unpack from PointCloud2!'
             return
 
+        # print 'points3D'
+        # print np.shape([x for x in points3D])
+        t = time.time()
+
         # X, Y Positions must be within a radius of 5 cm from the bowl center, and Z positions must be within 4 cm of center
         # TODO: This could be sped up by restricting to a 2D window in the point cloud (uvs=points2D)
-        self.points3D = np.array([point for point in points3D if np.linalg.norm(bowlXY - np.array(point[:2])) < 0.05 and abs(bowlZ - point[2]) < 0.04])
+        self.points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.04 and abs(self.bowlCenter[2] - point[2]) < 0.04])
+        # self.points3D = np.array([point for point in points3D])
 
-        # Find the highest point (based on Z axis value) that is within the bowl
-        maxIndex = self.points3D[:, 2].argmax()
+        print 'Time to determine points near bowl center:', time.time() - t
+
+        # Find the highest point (based on Z axis value) that is within the bowl. Positive Z is facing towards the floor, so find the min Z value
+        if self.verbose: print 'points3D:', np.shape(self.points3D)
+        maxIndex = self.points3D[:, 2].argmin()
         self.highestBowlPoint = self.points3D[maxIndex]
 
         # Publish highest bowl point and all 3D points in bowl
-        self.publishPoints('highestPoint', [self.highestBowlPoint], g=1.0)
+        self.publishPoints('highestPoint', [self.highestBowlPoint], size=0.004, r=.5, b=.5)
         self.publishPoints('allPoints', self.points3D, g=0.6, b=1.0)
 
     def getBowlFrame(self):
@@ -238,11 +248,11 @@ class ArmReacherClient:
         M.DoRotY(orient_offset['ry'])
         M.DoRotZ(orient_offset['rz'])
 
-        print 'Bowl frame:', p
+        if self.verbose: print 'Bowl frame:', p
 
         return PyKDL.Frame(M, p)
 
-    def publishPoints(self, name, points, size=0.01, r=0.0, g=0.0, b=0.0, a=1.0, frame='r_gripper_tool_frame'):
+    def publishPoints(self, name, points, size=0.002, r=0.0, g=0.0, b=0.0, a=1.0, frame='head_mount_kinect_ir_optical_frame'):
         marker = Marker()
         marker.header.frame_id = frame
         marker.ns = name
@@ -263,7 +273,7 @@ class ArmReacherClient:
 
 if __name__ == '__main__':
     scooping = False
-    client = ArmReacherClient(scooping)
+    client = ArmReacherClient(scooping, verbose=True)
 
     if scooping:
         client.initScooping()
