@@ -107,7 +107,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 8.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 1.5, 'cost': 5.0,\
-                          'hmmosvm_nu': 0.00316}
+                          'hmmosvm_nu': 0.00316,\                          
+                          'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
+                          'hmmsvm_diag_gamma': 1.5}
 
         nPoints        = 20
         ROC_param_dict = {'methods': ['hmmsvm_diag','progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
@@ -235,7 +237,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-4.0, 0, nPoints),\
-                          'change_param_range': np.logspace(-1, 0.0, nPoints)*-2.0,\
+                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -421,12 +423,13 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_gamma': 0.01}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm' ],\
-                          'update_list': [ 'svm', 'hmmsvm_diag' ],\
+        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm' ],\
+                          'update_list': [ 'change', 'svm', 'hmmsvm_diag' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.5, -0.8, nPoints),\
                           'fixed_param_range': (-np.logspace(0.0,1.,nPoints)**2)/10.0+0.4,\
+                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.5, nPoints),\
