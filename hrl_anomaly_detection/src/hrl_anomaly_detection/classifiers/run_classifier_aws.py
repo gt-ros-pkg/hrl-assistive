@@ -414,23 +414,30 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
-        ## if opt.dim == 5:
-        ##     parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##                   'cost': np.linspace(5.0,12.0,5),\
-        ##                   'gamma': [0.01, 0.1, 1.0], \
-        ##                   'w_negative': np.linspace(0.1,2.0,4) }
-        ## else:
-        ##     parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##                   'cost': np.linspace(1.0,10.0,5),\
-        ##                   'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
-        ##                   'w_negative': np.linspace(0.1,3.0,5) }
+        nFiles = 4 #9
 
-        parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                      'hmmosvm_nu': np.logspace(-4,-2.,5)
-                      }
-
-                          
+        if opt.method == 'svm':        
+            if opt.dim == 5:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(5.0,12.0,5),\
+                              'gamma': [0.01, 0.1, 1.0], \
+                              'w_negative': np.linspace(0.1,2.0,4) }
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,10.0,5),\
+                              'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
+                              'w_negative': np.linspace(0.1,3.0,5) }
+        elif opt.method == 'hmmosvm'
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                          }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(5,15.0,5),\
+                          'gamma': np.linspace(0.01,2.0,5), \
+                          'w_negative': np.linspace(0.2,1.5,5)
+                          }
+            
         ## if opt.dim == 4:
         ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
         ##                   'cssvm_cost': np.linspace(8.0,15.0,5),\
