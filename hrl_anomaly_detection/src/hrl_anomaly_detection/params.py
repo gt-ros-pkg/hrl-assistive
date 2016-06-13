@@ -11,11 +11,14 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.83, 'scale': 6.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.0147, 'cost': 2.5}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.0147, 'cost': 2.5,\
+                          'hmmosvm_nu': 0.00316,\
+                          'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
+                          'hmmsvm_diag_gamma': 1.5}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -8., nPoints), \
                           'svm_param_range': np.logspace(-2.9, 1.0, nPoints),\
@@ -23,6 +26,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
