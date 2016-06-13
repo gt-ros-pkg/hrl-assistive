@@ -427,7 +427,7 @@ if __name__ == '__main__':
                               'cost': np.linspace(1.0,10.0,5),\
                               'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
                               'w_negative': np.linspace(0.1,3.0,5) }
-        elif opt.method == 'hmmosvm'
+        elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-4,-2.,5)
                           }
