@@ -51,7 +51,7 @@ class MouthPoseDetector:
         self.bridge = CvBridge()
         self.previous_face = []
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/catkin_ws/src/hrl-assistive/hrl_manipulation_task/src/hrl_manipulation_task/sensor/landmark_detector/shape_predictor_68_face_landmarks.dat')
+        self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/Desktop/shape_predictor_68_face_landmarks.dat')
         
         #publishers
         self.mouth_pub = rospy.Publisher('/kinect_pose/mouth_pnp', PoseStamped, queue_size=10)
@@ -215,7 +215,7 @@ class MouthPoseDetector:
                         orientation = tft.unit_vector(orientation)
                         position = self.pose_to_tuple(pose)[0]
                         if self.display_3d:
-                            self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link))
+                            self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
                         temp_pose = self.make_pose(position, orientation=orientation)
                         orientation = tft.quaternion_from_matrix(pnp_trans)
                         pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
@@ -916,11 +916,14 @@ if __name__ == '__main__':
     p.add_option("-R", "--rgb_info", dest="rgb_info",
                  default="/camera/rgb/camera_info",
                  help="rgb camera info to get calibrations")
-    p.add_option("-D", "--depth_info", dest="depth_info", 
+    p.add_option("-D", "--depth_info", dest="depth_info",
                  default="/camera/depth_registered/camera_info",
                  help="rgb camera info to get calibrations")
+    p.add_option("--display_2d", dest="display_2d", action="store_true", default=False)
+    p.add_option("--display_3d", dest="display_3d", action="store_true", default=False)
     (options, args) = p.parse_args()
     detector = MouthPoseDetector(options.rgb_camera_link, options.rgb_image,
                                  options.depth_image, options.rgb_info, 
-                                 options.depth_info, False, False)
+                                 options.depth_info, options.display_2d, 
+                                 options.display_3d)
     rospy.spin()
