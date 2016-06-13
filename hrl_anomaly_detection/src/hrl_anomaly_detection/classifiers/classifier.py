@@ -230,6 +230,9 @@ class classifier(learning_base):
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
 
+                print len(self.l_statePosterior)
+                print self.nPosteriors
+
             return True
 
         elif self.method == 'fixed':
