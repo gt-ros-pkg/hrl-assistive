@@ -131,6 +131,10 @@ class classifier(learning_base):
             self.mu  = 0.0
             self.std = 0.0
             self.ths_mult = ths_mult
+        elif self.method == 'change':
+            self.nLength   = nLength
+            self.mu  = 0.0
+            self.std = 0.0
         elif self.method == 'sgd':
             self.class_weight = class_weight
             self.sgd_w_negative = sgd_w_negative             
@@ -241,11 +245,16 @@ class classifier(learning_base):
 
         elif self.method == 'change':
             if type(X) == list: X = np.array(X)
-            ll_logp = X[:,0:1]
 
-            print np.shape(X)
-            sys.exit()
-        
+            l_idx = range(len(X))
+            l_idx = [ i for i in l_idx if y[i][0]<0 ]
+
+            X_logp    = X[l_idx,:,0:1]
+            X_logp_d = X_logp[:,1:,0]-X_logp[:,:-1,0]
+
+            self.mu  = np.mean(X_logp_d)
+            self.std = np.std(X_logp_d)
+            return True
                 
         elif self.method == 'sgd':
 
@@ -349,6 +358,17 @@ class classifier(learning_base):
             for i in xrange(len(X)):
                 logp = X[i][0]
                 err = self.mu + self.ths_mult * self.std - logp
+                l_err.append(err)
+            return l_err
+
+        elif self.method == 'change':
+            if len(np.shape(X))==1: X = [X]
+                
+            l_err = []
+            for i in xrange(len(X)):
+                if i==0: logp_d = 0.0
+                else:    logp_d = X[i][0]-X[i-1][0]
+                err = self.mu + self.ths_mult * self.std - logp_d
                 l_err.append(err)
             return l_err
 

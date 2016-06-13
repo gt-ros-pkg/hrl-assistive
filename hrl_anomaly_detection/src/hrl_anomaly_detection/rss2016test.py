@@ -1015,7 +1015,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
 
-
     # classifier # TODO: need to make it efficient!!
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )            
     for j in xrange(nPoints):
@@ -1048,10 +1047,14 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
             thresholds = ROC_dict['progress_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'fixed' or method == 'change':
+        elif method == 'fixed':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+        elif method == 'change':
+            thresholds = ROC_dict[method+'_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
         elif method == 'sgd':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )

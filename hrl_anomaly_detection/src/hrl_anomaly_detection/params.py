@@ -122,7 +122,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.36, 'scale': 10.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.97, 'scale': 2.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.1, 'cost': 4.0,\
                           'hmmosvm_nu': 0.003}
 
@@ -234,7 +234,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-4.0, 0, nPoints),\
-                          'change_param_range': np.logspace(-1, 0.0, nPoints)*-1.0,\
+                          'change_param_range': np.logspace(-1, 0.0, nPoints)*-2.0,\
                           'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
