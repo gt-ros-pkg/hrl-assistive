@@ -232,6 +232,7 @@ class classifier(learning_base):
 
                 print len(self.l_statePosterior)
                 print self.nPosteriors
+                print self.l_statePosterior[0]
 
             return True
 
