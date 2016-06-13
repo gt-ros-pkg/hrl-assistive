@@ -573,7 +573,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
                           'fixed_param_range': np.linspace(-3.0, 0.8, nPoints),\
-                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
+                          'change_param_range': np.logspace(-0.2, 1.5, nPoints)*-1.0,\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
