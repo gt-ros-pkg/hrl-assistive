@@ -25,6 +25,7 @@ class MouthPoseDetector:
 
         #camera informateions
         self.camera_link  = camera_link
+        self.frame_ready  = False
         
         #for initializing frontal face data
         self.first             = True
@@ -70,7 +71,7 @@ class MouthPoseDetector:
 
     def callback(self, data, depth_data):
         #if data is not recent enough, reject
-        if data.header.stamp.to_sec() - rospy.get_time() < -.1:
+        if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
 
         #get rgb and depth image
@@ -113,8 +114,7 @@ class MouthPoseDetector:
                                 self.object_points.append([0.0, 0.0, 0.0])
                         self.object_points = np.asarray(self.object_points)
                         self.object_points = self.object_points.astype('float32')
-                    cam_matrix =  np.asarray([[float(525.0), float(0.0), float(319.5)], [float(0.0), float(525.0), float(239.5)],[float(0.0), float(0.0), float(1.0)]]).astype('float32')
-                    pnp_trans = self.use_pnp_ransac(landmarks, cam_matrix)
+                    pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
 
                     if self.first:
                         #register values for frontal face
@@ -171,7 +171,7 @@ class MouthPoseDetector:
                         vector = []
                         vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
                         vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
-                        norm_vect = self.vector_perp(vector)
+                        norm_vect = tft.unit_vector(np.cross(vector[0], vector[1]))
                         orientation = self.get_quaternion2(vector[0], vector[1])
                         orientation = tuple(tft.unit_vector(orientation))
                         self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, (0.0, 0.0, 1.0, 0.0)]))
@@ -208,7 +208,7 @@ class MouthPoseDetector:
                         vector = []
                         vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
                         vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
-                        norm_vect = self.vector_perp(vector)
+                        norm_vect = tft.unit_vector(np.cross(vector[0], vector[1]))
                         orientation = self.get_quaternion2(vector[0], vector[1])
                         orientation = tft.unit_vector(orientation)
                         orientation = tft.quaternion_multiply(orientation, self.relation)
@@ -219,9 +219,9 @@ class MouthPoseDetector:
                         temp_pose = self.make_pose(position, orientation=orientation)
                         orientation = tft.quaternion_from_matrix(pnp_trans)
                         pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
-                        pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id="/camera_rgb_optical_frame")
+                        pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
                         if self.display_3d:
-                            self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", "/camera_rgb_optical_frame")
+                            self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
                         poly = PolygonStamped()
                         poly.header.frame_id=self.camera_link
                         poly.polygon.points = points
@@ -238,13 +238,15 @@ class MouthPoseDetector:
                     print ("serv caused an error " + str(exc))
 
     def initialize_frames(self, rgb_info, depth_info):
-        self.rgb_f = (rgb_info.P[0], rgb_info.P[5])
-        self.rgb_c = (rgb_info.P[2], rgb_info.P[6])
+        self.rgb_f   = (rgb_info.P[0], rgb_info.P[5])
+        self.rgb_c   = (rgb_info.P[2], rgb_info.P[6])
         self.depth_f = (depth_info.P[0], depth_info.P[5])
         self.depth_c = (depth_info.P[2], depth_info.P[6])
-        self.info_ts = None
+        self.info_ts        = None
         self.depth_info_sub = None
-        self.rgb_info_sub = None
+        self.rgb_info_sub   = None
+        self.cam_matrix =  np.asarray(rgb_info.K).reshape((3,3)).astype('float32')
+        self.frame_ready = True
 
     def use_pnp_ransac(self, landmarks, cam_matrix, distortion=None, tvec=None):
         marks = []
@@ -458,7 +460,7 @@ class MouthPoseDetector:
         
     #gives quaternion matrix from vector[1] to vector[0]
     def get_quaternion(self, vectors):
-        axis = np.cross(vectors[0], vectors[1])
+        axis = tft.unit_vector(np.cross(vectors[0], vectors[1]))
         quaterion = [axis[0], axis[1], axis[2]]
         quaterion.append((np.dot(vectors[0], vectors[0]) ** 0.5) * (np.dot(vectors[1], vectors[1]) ** 0.5) + np.dot(vectors[0], vectors[1]))
         return quaterion
@@ -512,7 +514,7 @@ class MouthPoseDetector:
         used_points = [points[0]]
         used_half = []
         for point in points:
-            if np.allclose((point.x, point.y, point.z), (0.0, 0.0, 0.0)):
+            if np.allclose((point.x, point.y, point.z), (0.0, 0.0, 0.0)):# or np.isnan(point.x):
                 pose = PoseStamped()
                 pose.header.frame_id=self.camera_link
                 return pose
@@ -522,71 +524,27 @@ class MouthPoseDetector:
             half_dist_diff = [(act_dist[0] - half_dist[2][1][0]) / half_dist[2][1][0], (act_dist[1] - half_dist[2][1][1]) / half_dist[2][1][1]]
             if dist_diff[0] > 0.3:
                 used_half.append(False)
-                direction = (points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z)
-                direction = self.vector_unit(direction)
-                direction = (points[0].x + (direction[0] * dist[1][0]), points[0].y + (direction[1] * dist[1][0]), points[0].z + (direction[2] * dist[1][0]))
-                estimate_point = self.get_2d_pixel(direction)
-                if np.isinf(estimate_point[0]) or np.isinf(estimate_point[1]):
-                    estimate_point = (0.0, 0.0, 0.0)
-                else:
-                    estimate_point = self.get_3d_pixel(int(estimate_point[0]), int(estimate_point[1]), depth)
-                if (abs((self.get_dist(estimate_point, points[0].get_tuple()) - dist[1][0]) / dist[1][0]) - abs(dist_diff[0])) < -0.1 and abs((self.get_dist(estimate_point, points[0].get_tuple()) - dist[1][0]) / dist[1][0]) < 0.3:
-                    used_points.append(Point(estimate_point))
-                else:
-                    used_points.append(points[1])
+                used_points.append(self.get_better_estimate(points[0], points[1], dist[1][0], dist_diff[0], depth)[0])
             elif dist_diff[0] < -0.3:
-                direction = (points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z)
-                direction = self.vector_unit(direction)
-                direction = (points[0].x + (direction[0] * half_dist[2][1][0]), points[0].y + (direction[1] * half_dist[2][1][0]), points[0].z + (direction[2] * half_dist[2][1][0]))
-                estimate_point = self.get_2d_pixel(direction)
-                if np.isinf(estimate_point[0]) or np.isinf(estimate_point[1]):
-                    estimate_point = (0.0, 0.0, 0.0)
-                else:
-                    estimate_point = self.get_3d_pixel(int(estimate_point[0]), int(estimate_point[1]), depth)
-                if abs((self.get_dist(estimate_point, points[0].get_tuple()) - half_dist[2][1][0]) / half_dist[2][1][0]) - abs(half_dist_diff[0]) < -0.1 and abs((self.get_dist(estimate_point, points[0].get_tuple()) - half_dist[2][1][0]) / half_dist[2][1][0]) < 0.3:
-                    used_points.append(Point(estimate_point))
+                estimate_point, changed = self.get_better_estimate(points[0], points[1], half_dist[2][1][0], half_dist_diff[0], depth)
+                used_points.append(estimate_point)
+                if changed:
                     used_half.append(True)
                 else:
-                    used_points.append(points[1])
-                    if half_dist_diff[0] < dist_diff[0]:
-                        used_half.append(True)
-                    else:
-                        used_half.append(False)
+                    used_half.append(half_dist_diff[0] < dist_diff[0])
             else:
                 used_points.append(points[1])
                 used_half.append(False)
             if dist_diff[1] > 0.3:
                 used_half.append(False)
-                direction = (points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z)
-                direction = self.vector_unit(direction)
-                direction = (points[0].x + (direction[0] * dist[1][1]), points[0].y + (direction[1] * dist[1][1]), points[0].z + (direction[2] * dist[1][1]))
-                estimate_point = self.get_2d_pixel(direction)
-                if np.isinf(estimate_point[0]) or np.isinf(estimate_point[1]):
-                    estimate_point = (0.0, 0.0, 0.0)
-                else:
-                    estimate_point = self.get_3d_pixel(int(estimate_point[0]), int(estimate_point[1]), depth)
-                if (abs((self.get_dist(estimate_point, points[0].get_tuple()) - dist[1][1]) / dist[1][1]) - abs(dist_diff[1])) < -0.1 and abs((self.get_dist(estimate_point, points[0].get_tuple()) - dist[1][1]) / dist[1][1]) < 0.3:
-                    used_points.append(Point(estimate_point))
-                else:
-                    used_points.append(points[2])
+                used_points.append(self.get_better_estimate(points[0], points[2], dist[1][1], dist_diff[1], depth)[0])
             elif dist_diff[1] < -0.3:
-                direction = (points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z)
-                direction = self.vector_unit(direction)
-                direction = (points[0].x + (direction[0] * half_dist[2][1][1]), points[0].y + (direction[1] * half_dist[2][1][1]), points[0].z + (direction[2] * half_dist[2][1][1]))
-                estimate_point = self.get_2d_pixel(direction)
-                if np.isinf(estimate_point[0]) or np.isinf(estimate_point[1]):
-                    estimate_point = (0.0, 0.0, 0.0)
-                else:
-                    estimate_point = self.get_3d_pixel(int(estimate_point[0]), int(estimate_point[1]), depth)
-                if abs((self.get_dist(estimate_point, points[0].get_tuple()) - half_dist[2][1][1]) / half_dist[2][1][1]) - abs(half_dist_diff[1]) < -0.1 and abs((self.get_dist(estimate_point, points[0].get_tuple()) - half_dist[2][1][1]) / half_dist[2][1][1]) < 0.3:
-                    used_points.append(Point(estimate_point))
+                estimate_point, changed = self.get_better_estimate(points[0], points[2], half_dist[2][1][1], half_dist_diff[1], depth)
+                used_points.append(estimate_point)
+                if changed:
                     used_half.append(True)
                 else:
-                    used_points.append(points[2])
-                    if half_dist_diff[1] < dist_diff[1]:
-                        used_half.append(True)
-                    else:
-                        used_half.append(False)
+                    used_half.append(half_dist_diff[1]<dist_diff[1])
             else:
                 used_points.append(points[2])
                 used_half.append(False)
@@ -614,9 +572,9 @@ class MouthPoseDetector:
         offset = (0, 0, 0)
         offset = self.vector_add(offset,base)
         for i, vect in enumerate(u):
-            offset = self.vector_add(offset, self.vector_mult_const(self.vector_unit(u[i]), used_dist[i]))
-        offset = self.vector_add(offset, self.vector_mult_const(self.vector_perp(u[0:2]), used_dist[-1]))
-        orientation = self.vector_perp(vector)
+            offset = self.vector_add(offset, self.vector_mult_const(tft.unit_vector(u[i]), used_dist[i]))
+        offset = self.vector_add(offset, self.vector_mult_const(tft.unit_vector(np.cross(u[0], u[1])), used_dist[-1]))
+        orientation = tft.unit_vector(np.cross(vector[0], vector[1]))
         pose = PoseStamped()
         pose.header.frame_id = self.camera_link
         pose.pose.position.x = offset[0]
@@ -624,12 +582,30 @@ class MouthPoseDetector:
         pose.pose.position.z = offset[2]
         return pose
 
+    def get_better_estimate(self, fixed_point, varied_point, expected_dist, original_dist, depth):
+        if np.isnan(expected_dist):
+            return varied_point, False
+        direction = (varied_point.x - fixed_point.x, varied_point.y - fixed_point.y, varied_point.z - fixed_point.z)
+        if np.allclose(direction, (0.0, 0.0, 0.0)):
+            return varied_point, False
+        direction = tft.unit_vector(direction)
+        direction = (fixed_point.x + (direction[0] * expected_dist), fixed_point.y + (direction[1] * expected_dist), fixed_point.z + (direction[2] * expected_dist))
+        estimate_point = self.get_2d_pixel(direction)
+        if np.isinf(estimate_point[0]) or np.isinf(estimate_point[1]):
+            estimate_point = (0.0, 0.0, 0.0)
+        else:
+            estimate_point = self.get_3d_pixel(int(estimate_point[0]), int(estimate_point[1]), depth)
+        if (abs((self.get_dist(estimate_point, fixed_point.get_tuple()) - expected_dist) / expected_dist) - abs(original_dist)) < -0.1 and abs((self.get_dist(estimate_point, fixed_point.get_tuple()) - expected_dist) / expected_dist) < 0.3:
+            return Point(estimate_point), True
+        else:
+            return varied_point, False
+
     def get_quaternion2(self, vector1, vector2):
         u = []
-        norm_vect = self.vector_perp([vector1, vector2])
+        norm_vect = tft.unit_vector(np.cross(vector1, vector2))
         u.append(norm_vect)
-        u.append(self.vector_perp([vector1, norm_vect]))
-        u.append(self.vector_unit(vector1))
+        u.append(tft.unit_vector(np.cross(vector1, norm_vect)))
+        u.append(tft.unit_vector(vector1))
         matrix = [[], [], []]
         for vect in u:
             matrix[0].append(vect[0])
@@ -641,33 +617,6 @@ class MouthPoseDetector:
         matrix.append([0, 0, 0, 1])
         return tft.quaternion_from_matrix(matrix)
 
-    def vector_perp(self, vectors):
-        temp = []
-        temp.append(vectors[0][1] * vectors[1][2] - vectors[0][2] * vectors[1][1])
-        temp.append(vectors[0][2] * vectors[1][0] - vectors[0][0] * vectors[1][2])
-        temp.append(vectors[0][0] * vectors[1][1] - vectors[0][1] * vectors[1][0])
-        return self.vector_unit(tuple(temp))
-
-    def orientation_estimator(self, pose, relation):
-        orientation = pose.pose.orientation
-        orientation = tft.unit_vector([orientation.x, orientation.y, orientation.z, orientation.w])
-        return tft.quaternion_multiply(orientation, relation)
-
-    def score(self, orientation, position, poses, valid, threshold, threshold_radius):
-        count = 0
-        matches =[]
-        avg_angle = 0
-        avg_dist = 0
-        for i, pose in enumerate(poses):
-            if valid[i]:
-                est_position = pose.pose.position
-                est_position = (est_position.x, est_position.y, est_position.z)
-                dist = 0
-                for j,  val in enumerate(est_position):
-                    dist = dist + (val - position[j])**2
-                dist = dist **0.5
-                avg_dist = avg_dist + dist / len(poses)
-        return 0.05 / avg_dist
 
     def diff_ori(self, ori1, ori2):
         a = np.dot(tft.unit_vector(ori1), tft.unit_vector(ori2)) ** 2
@@ -757,9 +706,9 @@ class MouthPoseDetector:
                 proj = self.projection(vector[j+1], vect)
                 u_temp = self.vector_sub(u_temp, proj)
                 if vector[j + 1] is vector[-1]:
-                    dist.append(self.vector_divide(proj, self.vector_unit(vect)))
+                    dist.append(self.vector_divide(proj, tft.unit_vector(vect)))
             u.append(u_temp)
-        dist.append(self.vector_divide(u[-1], self.vector_unit(self.vector_perp(u[0:2]))))
+        dist.append(self.vector_divide(u[-1], tft.unit_vector(np.cross(u[0], u[1]))))
         return tuple(dist), act_dist
 
     def find_half_dist(self, points, depth):
@@ -785,20 +734,8 @@ class MouthPoseDetector:
         y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[0])
         return (x, y)
 
-    def vector_unit(self, vector):
-        temp = 0
-        for val in vector:
-            temp = temp + val**2
-        temp = temp ** 0.5
-        if temp == 0:
-            temp = 1
-        vect = []
-        for val in vector:
-            vect.append(val / temp)
-        return tuple(vect)
-
     def vector_divide(self, vect1, vect2):
-        a = (self.vector_inner_product(vect1,vect1)/ self.vector_inner_product(vect2, vect2))**0.5
+        a = (np.dot(vect1,vect1)/ np.dot(vect2, vect2))**0.5
         if np.sign(vect1[0]) != np.sign(vect2[0]):
             a = a * -1.0
         return a
@@ -821,17 +758,11 @@ class MouthPoseDetector:
             temp.append(val * c)
         return tuple(temp)
    
-    def vector_inner_product(self, vect1, vect2):
-        temp = 0
-        for i, val in enumerate(vect1):
-            temp = temp + (vect1[i] * vect2[i])
-        return temp
-
     def projection(self, vector, base):
-        temp = self.vector_inner_product(base, base)
+        temp = np.dot(base, base)# ** .5
         if temp == 0:
             temp = 1
-        temp = self.vector_inner_product(vector, base) / temp
+        temp = np.dot(vector, base) / temp
         vect = []
         for i, val in enumerate(base):
             vect.append(val * temp)
@@ -873,7 +804,7 @@ class MouthPoseDetector:
                         app_rgb_y = z_metric * (rgb_y - rgb_c[1]) * (1.0 / rgb_f[1]) + offset[2]
                         projection = self.projection((approx_x+offset[1], approx_y, z_metric), (app_rgb_x+offset[1], app_rgb_y, z_metric))
                         norm = self.vector_sub((approx_x+offset[1], approx_y, z_metric), projection)
-                        distance = self.vector_inner_product(norm, norm)
+                        distance = np.dot(norm, norm)
                         if best_val > distance:
                             best_val = distance
                             best = (app_rgb_x, app_rgb_y, z_metric)
