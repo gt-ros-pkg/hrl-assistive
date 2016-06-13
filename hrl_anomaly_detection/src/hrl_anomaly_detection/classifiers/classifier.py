@@ -316,7 +316,12 @@ class classifier(learning_base):
                 post = X[i][-self.nPosteriors:]
 
                 # Find the best posterior distribution
-                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                try:
+                    min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                except:
+                    print i
+                    print self.l_statePosterior
+                    sys.exit()
                 nState = len(post)
                 ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
                 ## c_time = np.logspace(0,-0.9,nState)[min_index]
