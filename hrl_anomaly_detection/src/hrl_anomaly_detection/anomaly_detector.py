@@ -29,6 +29,7 @@
 import rospy
 import random
 import os, sys, threading
+from joblib import Parallel, delayed
 
 # util
 import numpy as np
@@ -40,16 +41,15 @@ import hrl_lib.util as ut
 
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm
+from sklearn import preprocessing
 
 # Classifier
 from hrl_anomaly_detection.classifiers import classifier as cb
-from sklearn import preprocessing
-from joblib import Parallel, delayed
 
 # msg
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None
 
 from hrl_anomaly_detection.params import *
 

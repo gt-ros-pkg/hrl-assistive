@@ -23,6 +23,9 @@ float64[] ft_torque
 float64[] vision_artag_pos
 float64[] vision_artag_quat
 
+float64[] vision_landmark_pos
+float64[] vision_landmark_quat
+
 float64[] vision_change_centers_x
 float64[] vision_change_centers_y
 float64[] vision_change_centers_z

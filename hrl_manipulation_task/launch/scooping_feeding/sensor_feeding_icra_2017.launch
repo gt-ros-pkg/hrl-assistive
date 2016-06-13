@@ -18,12 +18,12 @@
         <!-- Launch Realsense Camera -->
 
         <!-- Head conversion -->  
-        <node name="findMouth" pkg="hrl_manipulation_task" type="findMouthLandmark.py" respawn="false" output="screen" />
+        <!--node name="findMouth" pkg="hrl_manipulation_task" type="findMouthLandmark.py" respawn="false" output="screen" /-->
 
         <!-- F/T sensor -->
         <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
         
         <!-- Audio (wrist) -->
-        <node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen" args="--t $(arg task_name)" />
+        <!--node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen"  /-->
 
 </launch>
