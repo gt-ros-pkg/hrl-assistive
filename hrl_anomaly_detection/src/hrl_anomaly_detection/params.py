@@ -22,7 +22,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
                           'svm_param_range': np.logspace(-2.9, 1.0, nPoints),\
-                          'fixed_param_range': np.logspace(-1, 0.5, nPoints)*-1.0-1.0,\
+                          'fixed_param_range': np.logspace(-1, 1.0, nPoints)*-1.0+1.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
