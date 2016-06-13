@@ -331,20 +331,28 @@ if __name__ == '__main__':
                                                                rf_center, local_range,\
                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
         nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed','hmmsvm_diag'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\                          
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']/2
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(5,15.0,5),\
-                      'gamma': np.linspace(0.01,2.0,5), \
-                      'w_negative': np.linspace(0.2,1.5,5) }
+        if opt.method == 'svm':
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(5,15.0,5),\
+                          'gamma': np.linspace(0.01,2.0,5), \
+                          'w_negative': np.linspace(0.2,1.5,5) }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
+                          }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
@@ -384,9 +392,9 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(5,15.0,5),\
-                          'gamma': np.linspace(0.01,2.0,5), \
-                          'w_negative': np.linspace(0.2,1.5,5)
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
                           }
                 
                       
@@ -434,9 +442,9 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(5,15.0,5),\
-                          'gamma': np.linspace(0.01,2.0,5), \
-                          'w_negative': np.linspace(0.2,1.5,5)
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
                           }
             
         ## if opt.dim == 4:
