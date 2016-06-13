@@ -307,20 +307,27 @@ if __name__ == '__main__':
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
 
         nPoints        = 20
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
         nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(2.0, 4.0, 5),\
-                      'gamma': np.logspace(-3, 0.5, 10), \
-                      'w_negative': np.linspace(0.1, 3.0,5) }
+        if opt.method == 'svm':
+            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'cost': np.linspace(2.0, 4.0, 5),\
+                          'gamma': np.logspace(-3, 0.5, 10), \
+                          'w_negative': np.linspace(0.1, 3.0,5) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                          }
+                      
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
