@@ -1037,25 +1037,20 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         Y_test.append(ll_classifier_test_Y[j])
 
     # classifier # TODO: need to make it efficient!!
-    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )            
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints):
+        ## _, tp_l, fp_l, fn_l, tn_l, delay_l = cb.run_classifier(j, X_scaled, Y_train_org, idx_train_org,\
+        ##                                                        X_test, Y_test, ll_classifier_test_idx,\
+        ##                                                        method, nState, nLength, nPoints, \
+        ##                                                        SVM_dict, ROC_dict, dtc=dtc)
 
         ## cb.run_classifier(j)
         dtc.set_params( **SVM_dict )
-        if method == 'svm':
+        if method == 'svm' or method == 'hmmsvm_diag':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'hmmsvm_diag':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'hmmosvm':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( svm_type=2 )
-            dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
-        elif method == 'osvm':
+        elif method == 'hmmosvm' or method == 'osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )
@@ -1110,21 +1105,20 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                 if est_y[jj] > 0.0:
 
                     if method == 'hmmosvm':
-                        window_size = 3
+                        window_size = 5 #3
                         if jj < len(est_y)-window_size:
                             if np.sum(est_y[jj:jj+window_size])>=window_size:
                                 anomaly = True                            
                                 break
                         continue                        
                     
-                    anomaly = True                            
-                    try:
-                        delay_idx = ll_classifier_test_idx[ii][jj]
-                    except:
-                        delay_idx = 0
-                        break
-                        print np.shape(ll_classifier_test_idx), ii, jj
-                    #print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+                    if ll_classifier_test_idx is not None:
+                        try:
+                            delay_idx = ll_classifier_test_idx[ii][jj]
+                        except:
+                            print "Error!!!!!!!!!!!!!!!!!!"
+                            print np.shape(ll_classifier_test_idx), ii, jj
+                    anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:

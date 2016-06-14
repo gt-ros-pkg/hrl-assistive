@@ -359,7 +359,7 @@ if __name__ == '__main__':
         if opt.method == 'svm':
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                           'cost': np.linspace(1,6.0,5),\
-                          'gamma': np.linspace(0.1,3.0,10), \
+                          'gamma': np.linspace(0.1,5.0,10), \
                           'w_negative': np.linspace(0.1,3.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
