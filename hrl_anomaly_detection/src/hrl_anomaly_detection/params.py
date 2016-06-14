@@ -70,7 +70,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
@@ -135,7 +135,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.3, 'scale': 9.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 1.0, 'cost': 4.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.5, 'cost': 5.0,\
                           'hmmosvm_nu': 0.00316}
 
         nPoints        = 20 #'svm','hmmosvm'
