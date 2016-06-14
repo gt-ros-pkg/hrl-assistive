@@ -29,10 +29,10 @@ class MouthPoseDetector:
         
         #for initializing frontal face data
         self.first             = True
+        self.relation          = None
         self.dist              = []
         self.reverse_dist      = []
         self.half_dist         = []
-        self.relation          = []
         self.point_set         = []
         self.current_positions = []
         self.object_points     = []
@@ -127,13 +127,9 @@ class MouthPoseDetector:
                         special_points = [mouth, second_point, third_point]
 
                         #initialize variables to hold informations
-                        special_points2 = []
-                        special_poses = []
                         for i in xrange(len(special_points)):
                             self.dist.append([])
                             self.half_dist.append([])
-                            special_points2.append([])
-                        current_sizes = []
 
                         #find relation to retrieve special points from 3 point sets, and their expected size (of 3d triangle)
                         for points in point_set:
@@ -141,96 +137,30 @@ class MouthPoseDetector:
                                 points_and_point = points + [Point(special_points[i])]
                                 self.dist[i].append(self.find_dist(points_and_point))
                                 self.half_dist[i].append(self.find_half_dist(points_and_point, depth))
-                            new_points = []
-                            for new_point in points:
-                                point_tuple = (new_point.x, new_point.y, new_point.z)
-                                new_points.append(point_tuple)
-                            current_sizes.append(self.find_size(new_points))
 
                         #retrieve points for checking
-                        for i, points in enumerate(point_set):
-                            for j in xrange(len(special_points)):
-                                special_points2[j].append(self.find_using_ratios(points, self.dist[j][i], self.half_dist[j][i], depth, 1.0, True)) 
                         for i in xrange(len(special_points)):
-                            self.current_positions.append(self.pose_to_tuple(special_points2[i][0])[0])
-                            special_poses.append(self.retrieve_special_point(special_points2[i], current_sizes, self.current_positions[i]))
-                        self.current_positions = []
-                        for i in xrange(len(special_points)):
-                            self.current_positions.append(self.pose_to_tuple(special_poses[i])[0])
-                        poses = special_poses
-                        pose = special_poses[0]
-                        points = []
-                        pose_points = []
-                        for ind_pose in poses:
-                            position = self.pose_to_tuple(ind_pose)[0]
-                            new_point = self.make_point(position)
-                            points.append(new_point)
-                            pose_points.append(Point(position))
-
-                        #find relation between the orientation from special points to head pose
-                        vector = []
-                        vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
-                        vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
-                        norm_vect = tft.unit_vector(np.cross(vector[0], vector[1]))
-                        orientation = self.get_quaternion2(vector[0], vector[1])
-                        orientation = tuple(tft.unit_vector(orientation))
+                            self.current_positions.append((0.0, 0.0, 0.0))
+                        pose = self.retrieve_special_pose(point_set, depth)
+                        orientation = self.pose_to_tuple(pose)[1]
                         self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, (0.0, 0.0, 1.0, 0.0)]))
                         self.first = False 
                     else:
-                        special_points=[]
-                        special_poses = []
-                        current_sizes = []
-                        for i in xrange(len(self.dist)):
-                            special_points.append([])
-                        for i, points in enumerate(point_set):
-                            for j in xrange(len(self.dist)):
-                                special_points[j].append(self.find_using_ratios(points, self.dist[j][i], self.half_dist[j][i], depth, 1.0, True))
-                            new_points = []
-                            for new_point in points:
-                                point_tuple = (new_point.x, new_point.y, new_point.z)
-                                new_points.append(point_tuple)
-                            current_sizes.append(self.find_size(new_points))
-                        for i in xrange(len(self.dist)):
-                            special_poses.append(self.retrieve_special_point(special_points[i], current_sizes, self.current_positions[i]))
-                        poses = special_poses
-                        pose = poses[0]
-                        points = []
-                        pose_points = []
-                        current_positions = []
-                        for ind_pose in poses:
-                            position=self.pose_to_tuple(ind_pose)[0]
-                            new_point = self.make_point(position)
-                            points.append(new_point)
-                            current_positions.append(position)
-                            pose_points.append(Point(position))
-                        if not np.isnan(current_positions[0][0]) and not np.allclose(current_positions[0], (0.0, 0.0, 0.0)):
-                            self.current_positions = current_positions
-                        vector = []
-                        vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
-                        vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
-                        norm_vect = tft.unit_vector(np.cross(vector[0], vector[1]))
-                        orientation = self.get_quaternion2(vector[0], vector[1])
-                        orientation = tft.unit_vector(orientation)
-                        orientation = tft.quaternion_multiply(orientation, self.relation)
-                        orientation = tft.unit_vector(orientation)
-                        position = self.pose_to_tuple(pose)[0]
+                        #retrieve points and make pose
+                        pose = self.retrieve_special_pose(point_set, depth)
+                        position, orientation = self.pose_to_tuple(pose)
+
+                        #display frame
                         if self.display_3d:
                             self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
+                        
+                        #publish
                         temp_pose = self.make_pose(position, orientation=orientation)
                         orientation = tft.quaternion_from_matrix(pnp_trans)
                         pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
                         pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
                         if self.display_3d:
                             self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
-                        poly = PolygonStamped()
-                        poly.header.frame_id=self.camera_link
-                        poly.polygon.points = points
-                        nose_poly = []
-                        for nose_point in [points_ordered[33], points_ordered[27], points_ordered[38]]:
-                            point = self.make_point(nose_point)
-                            nose_poly.append(point)
-                        if self.display_3d:
-                            self.poly_pub[-1].publish(poly)
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
                             self.mouth_calc_pub.publish(temp_pose)
                         self.mouth_pub.publish(pnp_pose)
@@ -633,6 +563,54 @@ class MouthPoseDetector:
             return 9999
         return 1-a
 
+    def retrieve_special_pose(self, point_set, depth):
+        special_points=[]
+        special_poses = []
+        current_sizes = []
+        for i in xrange(len(self.dist)):
+            special_points.append([])
+        for i, points in enumerate(point_set):
+            for j in xrange(len(self.dist)):
+                special_points[j].append(self.find_using_ratios(points, self.dist[j][i], self.half_dist[j][i], depth, 1.0, True))
+            new_points = []
+            for new_point in points:
+                point_tuple = (new_point.x, new_point.y, new_point.z)
+                new_points.append(point_tuple)
+            current_sizes.append(self.find_size(new_points))
+        #print current_sizes
+        for i in xrange(len(self.dist)):
+            special_poses.append(self.retrieve_special_point(special_points[i], current_sizes, self.current_positions[i]))
+        poses = special_poses
+        pose = poses[0]
+        points = []
+        pose_points = []
+        current_positions = []
+        for ind_pose in poses:
+            position=self.pose_to_tuple(ind_pose)[0]
+            new_point = self.make_point(position)
+            points.append(new_point)
+            current_positions.append(position)
+            pose_points.append(Point(position))
+        if not np.isnan(current_positions[0][0]) and not np.allclose(current_positions[0], (0.0, 0.0, 0.0)):
+            self.current_positions = current_positions
+        vector = []
+        vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
+        vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
+        norm_vect = tft.unit_vector(np.cross(vector[0], vector[1]))
+        orientation = self.get_quaternion2(vector[0], vector[1])
+        orientation = tft.unit_vector(orientation)
+        if not self.relation is None:
+            orientation = tft.quaternion_multiply(orientation, self.relation)
+            orientation = tft.unit_vector(orientation)
+        position = self.pose_to_tuple(pose)[0]
+        if self.display_3d:
+            poly = PolygonStamped()
+            poly.header.frame_id=self.camera_link
+            poly.polygon.points = points
+            self.poly_pub[-1].publish(poly)
+        return self.make_pose(position, orientation=orientation)
+        
+
     def retrieve_special_point(self, poses, current_sizes, current_pos, threshold=15, threshold_radius=0.2, n=-1):
         best_ori = None
         best_pos = None
@@ -647,7 +625,7 @@ class MouthPoseDetector:
             position = poses[r].pose.position
             position = [position.x, position.y, position.z]
             dist = self.get_dist(current_pos, position)
-            if np.allclose(position, [0.0,0.0,0.0]) or abs(self.sizes[i-1] - current_sizes[i])/self.sizes[i-1] > .5 or dist > 0.2:
+            if np.allclose(position, [0.0,0.0,0.0]) or np.isnan(position[0]) or abs(self.sizes[i-1] - current_sizes[i])/self.sizes[i-1] > .5 or dist > 0.2:
                 valid.append(False)
             else:
                 valid.append(True)
@@ -670,7 +648,7 @@ class MouthPoseDetector:
             poses_arr.append(new_pose)
             position = poses[r].pose.position
             position = [position.x, position.y, position.z]
-            if not valid[i]:
+            if not valid[i] or np.isnan(position[0]):
                 invalid_cnt = invalid_cnt + 1
             else:
                 orientation = 0
@@ -685,10 +663,11 @@ class MouthPoseDetector:
             pose.pose.position.x = best_pos[0] / (len(poses) - invalid_cnt)
             pose.pose.position.y = best_pos[1] / (len(poses) - invalid_cnt)
             pose.pose.position.z = best_pos[2] / (len(poses) - invalid_cnt)
-            if np.allclose(best_pos, (0.0, 0.0, 0.0)):
+            if np.allclose(best_pos, (0.0, 0.0, 0.0)) or np.isnan(pose.pose.position.x):
                 pose.pose.position.x = current_pos[0]
                 pose.pose.position.y = current_pos[1]
                 pose.pose.position.z = current_pos[2]
+        print pose
         return pose
 
     def find_dist(self, points):
