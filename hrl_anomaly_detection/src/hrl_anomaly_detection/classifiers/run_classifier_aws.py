@@ -390,7 +390,7 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
+        nFiles = 4 #9
         if opt.method == 'svm':
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                           'cost': np.linspace(5,15.0,5),\
