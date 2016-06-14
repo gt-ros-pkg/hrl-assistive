@@ -1029,7 +1029,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             else:
                 X = ll_classifier_test_X[j]
         except:
-            print np.shape(ll_classifier_test_X[j])
+            print "failed to scale ", np.shape(ll_classifier_test_X[j])
             continue
             
         X_test.append(X)
