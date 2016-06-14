@@ -238,6 +238,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.000215,
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.50749,\
+                              'osvm_nu': 0.000215,\                              
                               'osvm_window_size': 10}
 
         nPoints        = 20  

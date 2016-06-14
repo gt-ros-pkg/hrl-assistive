@@ -810,7 +810,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                   window=SVM_dict['osvm_window_size'], \
                                   posdata=False)
-
     else:
         osvm_data = None
         
@@ -822,7 +821,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, osvm_data=osvm_data,\
-                                                                 startIdx=startIdx) \
+                                                                 startIdx=startIdx, nState=nState) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
                                                                   
@@ -936,7 +935,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     ROC_dict, AE_dict, SVM_dict,\
-                    osvm_data=None, startIdx=4):
+                    osvm_data=None, startIdx=4, nState=25):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -951,7 +950,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         ll_classifier_test_Y    = osvm_data[idx]['Y_test']
         ll_classifier_test_idx  = osvm_data[idx]['idx_test']
 
-        nState = 0
         nLength = 200
     else:
         if AE_dict['switch'] and AE_dict['add_option'] is not None:
@@ -1036,6 +1034,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
 
+
     # classifier # TODO: need to make it efficient!!
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints):
@@ -1083,7 +1082,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             print "fit failed, ", weights[j]
             sys.exit()
             return 'fit failed', [],[],[],[],[]
-
+        
         # evaluate the classifier
         tp_l = []
         fp_l = []

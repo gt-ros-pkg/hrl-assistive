@@ -594,7 +594,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                    method, nState, nLength, nPoints, param_dict, ROC_dict, dtc=None):
-
+                   
     # classifier # TODO: need to make it efficient!!
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
