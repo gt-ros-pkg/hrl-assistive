@@ -444,7 +444,7 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #9
+        nFiles = 9
 
         if opt.method == 'svm':        
             if opt.dim == 5:
@@ -469,7 +469,7 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-8.0,-5.0,10),
+                          'osvm_nu': np.logspace(-7.0,-4.0,20),
                           }
             
         ## if opt.dim == 4:
