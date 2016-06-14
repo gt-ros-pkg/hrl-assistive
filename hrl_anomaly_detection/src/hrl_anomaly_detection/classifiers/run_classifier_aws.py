@@ -489,6 +489,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
+                          'osvm_param_range': np.logspace(-4., 1.5, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
@@ -507,6 +508,10 @@ if __name__ == '__main__':
                           'cost': np.linspace(1.0,4.0,5),\
                           'gamma': np.linspace(0.1,8.0,10), \
                           'w_negative': np.logspace(-2, 0.5, 5) }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-4,-2,5),
+                          }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-4,-2.,5)
