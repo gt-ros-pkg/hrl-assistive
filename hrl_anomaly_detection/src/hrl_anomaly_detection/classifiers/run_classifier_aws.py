@@ -384,7 +384,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-4., 1.5, nPoints),\
+                          'osvm_param_range': np.logspace(-6., 1.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
