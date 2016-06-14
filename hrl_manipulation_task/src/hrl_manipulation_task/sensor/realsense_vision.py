@@ -65,7 +65,7 @@ class realsense_vision():
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "Realsense Vision>> Initialized pusblishers and subscribers"
-        rospy.Subscriber('/hrl_manipulation_task/mouth', PoseStamped, self.mouthPoseCallback)        
+        rospy.Subscriber('/hrl_manipulation_task/mouth_pose', PoseStamped, self.mouthPoseCallback)        
 
     def initParams(self):
         '''

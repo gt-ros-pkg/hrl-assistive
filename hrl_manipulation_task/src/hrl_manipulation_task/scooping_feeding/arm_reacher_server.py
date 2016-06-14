@@ -60,7 +60,7 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
 
         self.bowl_frame_kinect  = None
-        self.mouth_frame_kinect = None
+        self.mouth_frame_vision = None
         self.bowl_frame         = None
         self.mouth_frame        = None
         self.default_frame      = PyKDL.Frame()
@@ -87,21 +87,21 @@ class armReachAction(mpcBaseAction):
                             
     def initCommsForArmReach(self):
 
-        # publishers and subscribers
+        # publishers
         self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped,
                                         queue_size=QUEUE_SIZE, latch=True)
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped,
                                          queue_size=QUEUE_SIZE, latch=True)
-        
+
+        # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
         ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
         ##                  PoseStamped, self.bowlPoseCallback)
-        rospy.Subscriber('/ar_track_alvar/mouth_pose',
+        rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
         
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
-        ## self.scoopingStepsClient = rospy.ServiceProxy('/scooping_steps_service', None_Bool)
 
         if self.verbose: rospy.loginfo("ROS-based communications are set up .")
                                     
@@ -219,8 +219,8 @@ class armReachAction(mpcBaseAction):
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame(addNoise=True))
                 return "Choose bowl position from kinematics using tf"                
         elif task == "getHeadPos":
-            if self.mouth_frame_kinect is not None:
-                self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
+            if self.mouth_frame_vision is not None:
+                self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
                 return "Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
@@ -262,7 +262,7 @@ class armReachAction(mpcBaseAction):
         mouth_x = PyKDL.Vector(0.0, 0.0, 1.0)
         mouth_y = mouth_z * mouth_x
         M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
-        self.mouth_frame_kinect = PyKDL.Frame(M,p)
+        self.mouth_frame_vision = PyKDL.Frame(M,p)
 
         # 4. (optional) publish pose for visualization        
         ps = PoseStamped()
@@ -380,7 +380,7 @@ class armReachAction(mpcBaseAction):
         if target is None:
             ## tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
 
-            while not rospy.is_shutdown() and self.mouth_frame_kinect is None:
+            while not rospy.is_shutdown() and self.mouth_frame_vision is None:
                 rospy.loginfo("Search "+tag_base+" tag")
              
                 pos.x = 0.8
@@ -394,7 +394,7 @@ class armReachAction(mpcBaseAction):
                 headClient.wait_for_result()
                 # rospy.sleep(2.0)
             
-            self.mouth_frame = copy.deepcopy(self.mouth_frame_kinect)
+            self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
             target = self.mouth_frame
 
                    
