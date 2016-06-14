@@ -897,6 +897,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         elif method == 'sgd': label='SGD'
         elif method == 'hmmosvm': label='HMM-OneClassSVM'
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='Kernel-SVM'
 
         if no_plot is False:
             # visualization
