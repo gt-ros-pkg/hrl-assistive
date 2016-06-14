@@ -13,8 +13,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.83, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.0147, 'cost': 2.5,\
                           'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
-                          'hmmsvm_diag_gamma': 1.5}
+                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
+                          'hmmsvm_diag_gamma': 0.01}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm' ],\
