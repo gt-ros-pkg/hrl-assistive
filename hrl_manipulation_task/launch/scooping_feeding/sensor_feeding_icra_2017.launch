@@ -7,13 +7,12 @@
 	<arg name="max_new_marker_error" default="0.02" />
 	<arg name="max_track_error" default="0.1" />
 
-	<!--arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" /-->
-	<!--arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" /-->		
 	<arg name="cam_image_topic" default="/head_mount_kinect/hd/points" />
 	<arg name="cam_info_topic" default="/head_mount_kinect/hd/camera_info" />		
 	<arg name="output_frame" default="/torso_lift_link" />        
 
         <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
+
 
         <!-- Launch Realsense Camera -->
 
