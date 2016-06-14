@@ -107,7 +107,7 @@ if __name__ == '__main__':
     rospy.init_node('realsense_vision')
 
     kv = realsense_vision()
-    kv.test(True)
+    ## kv.test(True)
 
 
         

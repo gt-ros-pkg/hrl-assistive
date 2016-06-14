@@ -601,7 +601,7 @@ if __name__ == '__main__':
 
     rospy.init_node('record_data')
     log = logger(ft=True, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
-                 vision_landmark=False, vision_change=False, \
+                 vision_landmark=True, vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
                  data_pub=data_pub, detector=detector)
 
