@@ -918,7 +918,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-    elif: no_plot is False
+    elif no_plot is False:
         plt.show()
                    
 
