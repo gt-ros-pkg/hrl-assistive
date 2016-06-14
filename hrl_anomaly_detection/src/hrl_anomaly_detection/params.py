@@ -134,7 +134,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.13, 'scale': 5.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.3, 'scale': 9.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 1.0, 'cost': 4.0,\
                           'hmmosvm_nu': 0.003}
 
@@ -143,7 +143,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
-                          'svm_param_range': np.logspace(-1.8, 0.25, nPoints),\
+                          'svm_param_range': np.logspace(-2.0, 0.25, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
