@@ -377,7 +377,7 @@ if __name__ == '__main__':
                                                                          rf_center, local_range,\
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
-        nPoints        = 10 #20
+        nPoints        = 20
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -402,7 +402,7 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-6,-2,5),
+                          'osvm_nu': np.logspace(-5,-3,10),
                           }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
@@ -489,7 +489,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
-                          'osvm_param_range': np.logspace(-6., 1.5, nPoints),\
+                          'osvm_param_range': np.logspace(-6., 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
