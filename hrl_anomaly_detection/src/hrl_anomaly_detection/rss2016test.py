@@ -594,6 +594,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
       in enumerate(kFold_list):
 
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
+            
 
         if AE_dict['switch'] and AE_dict['add_option'] is not None:
             tag = ''
@@ -804,12 +805,22 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
+    if 'osvm' in method_list:
+        nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
+        osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+                                  window=SVM_dict['osvm_window_size'], \
+                                  posdata=False)
+    else:
+        osvm_data = None
+        
+    
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                 method, ROC_data, ROC_dict, AE_dict, \
-                                                                 SVM_dict, data_pkl=crossVal_pkl,\
+                                                                 method, ROC_data, \
+                                                                 data_dict, ROC_dict, AE_dict, \
+                                                                 SVM_dict, osvm_data=osvm_data,\
                                                                  startIdx=startIdx) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -922,8 +933,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         plt.show()
                    
 
-def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_dict, AE_dict, SVM_dict,\
-                    data_pkl=None, startIdx=4):
+def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
+                    data_dict, ROC_dict, AE_dict, SVM_dict,\
+                    osvm_data=None, startIdx=4):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -931,7 +943,12 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_d
     from sklearn import preprocessing
 
     if method == 'osvm':
-        X_train_org, Y_train_org, idx_train_org = dm.getPCAData(data_pkl)
+        X_train_org = osvm_data[idx]['X_scaled']
+        Y_train_org = osvm_data[idx]['Y_train_org']
+        idx_train_org = osvm_data[idx]['idx_train_org']
+        ll_classifier_test_X    = osvm_data[idx]['X_test']
+        ll_classifier_test_Y    = osvm_data[idx]['Y_test']
+        ll_classifier_test_idx  = osvm_data[idx]['idx_test']
         
         nState = 0
         nLength = 200

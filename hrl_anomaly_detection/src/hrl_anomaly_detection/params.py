@@ -233,7 +233,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                               'hmmosvm_nu': 0.000215,
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
-                              'hmmsvm_diag_gamma': 0.50749}
+                              'hmmsvm_diag_gamma': 0.50749,\
+                              'osvm_window_size': 10}
 
         nPoints        = 20  
         ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
@@ -249,7 +250,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
