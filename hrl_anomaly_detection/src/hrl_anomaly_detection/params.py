@@ -147,7 +147,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.266, 'scale': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 8.0}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 0.1, 'cost': 3.5,\
                           'hmmosvm_nu': 0.00316}
 
