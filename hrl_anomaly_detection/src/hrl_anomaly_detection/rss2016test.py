@@ -520,7 +520,8 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False):
+                   data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
+                   no_plot=False):
 
     ## Parameters
     # data
@@ -839,53 +840,54 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
     
-    if True:
-        print "Start to visualize ROC curves!!!"
-        ROC_data = ut.load_pickle(roc_pkl)        
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)        
 
+    if no_plot is False:
         fig = plt.figure()
 
-        for method in method_list:
+    for method in method_list:
 
-            tp_ll = ROC_data[method]['tp_l']
-            fp_ll = ROC_data[method]['fp_l']
-            tn_ll = ROC_data[method]['tn_l']
-            fn_ll = ROC_data[method]['fn_l']
-            delay_ll = ROC_data[method]['delay_l']
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
 
-            tpr_l = []
-            fpr_l = []
-            fnr_l = []
-            delay_mean_l = []
-            delay_std_l  = []
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
 
-            for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-                fnr_l.append( 100.0 - tpr_l[-1] )
-                delay_mean_l.append( np.mean(delay_ll[i]) )
-                delay_std_l.append( np.std(delay_ll[i]) )
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            delay_mean_l.append( np.mean(delay_ll[i]) )
+            delay_std_l.append( np.std(delay_ll[i]) )
 
-            # add edge
-            ## fpr_l = [0] + fpr_l + [100]
-            ## tpr_l = [0] + tpr_l + [100]
+        # add edge
+        ## fpr_l = [0] + fpr_l + [100]
+        ## tpr_l = [0] + tpr_l + [100]
 
-            print "--------------------------------"
-            print method
-            print tpr_l
-            print fpr_l
-            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-            print "--------------------------------"
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
 
-            if method == 'svm': label='HMM-SVM'
-            elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
-            elif method == 'fixed': label='HMMs with a fixed threshold'
-            elif method == 'change': label='HMMs with change detection'
-            elif method == 'cssvm': label='HMM-CSSVM'
-            elif method == 'sgd': label='SGD'
-            elif method == 'hmmosvm': label='HMM-OneClassSVM'
-            elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-                
+        if method == 'svm': label='HMM-SVM'
+        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+        elif method == 'fixed': label='HMMs with a fixed threshold'
+        elif method == 'change': label='HMMs with change detection'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+
+        if no_plot is False:
             # visualization
             color = colors.next()
             shape = shapes.next()
@@ -904,19 +906,20 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             plt.xticks([0, 50, 100], fontsize=22)
             plt.yticks([0, 50, 100], fontsize=22)
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-            
+
             ## x = range(len(delay_mean_l))
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
+    if no_plot is False:
         plt.legend(loc='lower right', prop={'size':20})
 
-        if save_pdf:
-            fig.savefig('test.pdf')
-            fig.savefig('test.png')
-            os.system('cp test.p* ~/Dropbox/HRL/')        
-        else:
-            plt.show()
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif: no_plot is False
+        plt.show()
                    
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, ROC_dict, AE_dict, SVM_dict,\
@@ -1784,6 +1787,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
+                 default=False, help='No Plot.')    
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out.')
 
@@ -1932,6 +1937,6 @@ if __name__ == '__main__':
                               
     elif opt.bEvaluationAll:                
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose, debug=opt.bDebug)
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
 
