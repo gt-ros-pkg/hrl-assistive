@@ -810,6 +810,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                   window=SVM_dict['osvm_window_size'], \
                                   posdata=False)
+
     else:
         osvm_data = None
         
@@ -819,7 +820,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 data_dict, ROC_dict, AE_dict, \
+                                                                 ROC_dict, AE_dict, \
                                                                  SVM_dict, osvm_data=osvm_data,\
                                                                  startIdx=startIdx) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -934,7 +935,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                    
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
-                    data_dict, ROC_dict, AE_dict, SVM_dict,\
+                    ROC_dict, AE_dict, SVM_dict,\
                     osvm_data=None, startIdx=4):
 
     ## print idx, " : training classifier and evaluate testing data"
@@ -949,7 +950,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         ll_classifier_test_X    = osvm_data[idx]['X_test']
         ll_classifier_test_Y    = osvm_data[idx]['Y_test']
         ll_classifier_test_idx  = osvm_data[idx]['idx_test']
-        
+
         nState = 0
         nLength = 200
     else:
@@ -1007,9 +1008,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
     # Generate parameter list for ROC curve
     # pass method if there is existing result
     # data preparation
-    if method.find('svm')>=0 or method.find('sgd')>=0:
+    if method == 'osvm':
+        X_scaled = X_train_org
+    elif method.find('svm')>=0 or method.find('sgd')>=0:
         scaler = preprocessing.StandardScaler()
-        ## scaler = preprocessing.scale()
         X_scaled = scaler.fit_transform(X_train_org)
     else:
         X_scaled = X_train_org
@@ -1021,7 +1023,9 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method.find('svm')>=0 or method.find('sgd')>=0:
+            if method == 'osvm':
+                X = ll_classifier_test_X[j]
+            elif method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             else:
                 X = ll_classifier_test_X[j]
@@ -1080,6 +1084,11 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             print "Not available method"
             return "Not available method", -1, params
 
+        if ret is False:
+            print "fit failed, ", weights[j]
+            sys.exit()
+            return 'fit failed', [],[],[],[],[]
+
         # evaluate the classifier
         tp_l = []
         fp_l = []
@@ -1108,12 +1117,14 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                                 break
                         continue                        
                     
+                    anomaly = True                            
                     try:
                         delay_idx = ll_classifier_test_idx[ii][jj]
                     except:
+                        delay_idx = 0
+                        break
                         print np.shape(ll_classifier_test_idx), ii, jj
                     #print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-                    anomaly = True                            
                     break        
 
             if Y_test[ii][0] > 0.0:
