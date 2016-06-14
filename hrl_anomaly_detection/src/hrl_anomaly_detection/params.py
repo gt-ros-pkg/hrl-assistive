@@ -111,14 +111,14 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.13, 'scale': 2.0}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.0, 'cost': 2.25,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 5.0, 'cost': 6.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
                           'hmmsvm_diag_gamma': 1.5}
 
         nPoints        = 20
-        ROC_param_dict = {'methods': ['hmmsvm_diag','progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
-                          'update_list': [],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm','hmmsvm_diag'],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 1.5, nPoints),\
