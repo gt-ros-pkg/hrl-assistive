@@ -1021,10 +1021,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method == 'osvm':
-                X_temp = ml_pca.transform(ll_classifier_test_X[j])
-                X      = scaler.transform(X_temp)                                            
-            elif method.find('svm')>=0 or method.find('sgd')>=0:
+            if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
             else:
                 X = ll_classifier_test_X[j]
