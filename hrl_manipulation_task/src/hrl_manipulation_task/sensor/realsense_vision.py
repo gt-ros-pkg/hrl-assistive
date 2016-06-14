@@ -38,33 +38,22 @@ import PyKDL
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import pyplot as plt
 
-# vision library
-import sensor_msgs.point_cloud2 as pc2
-from sensor_msgs.msg import PointCloud2, PointField
+# msg
+from geometry_msgs.msg import PoseStamped
 
-# ROS message
-import tf
-from pr2_controllers_msgs.msg import JointTrajectoryControllerState
-from hrl_anomaly_detection.msg import pclChange
-
-class realsense_vision(threading.Thread):
+class realsense_vision():
     def __init__(self, verbose=False):
-        super(realsense_vision, self).__init__()        
-        self.daemon = True
-        self.cancelled = False
+
         self.isReset = False
         self.verbose = verbose
        
-        self.enable_log = False
-        self.init_time = 0.0
-        
         # instant data
         self.time     = None
-        self.centers  = None
         
-        # Declare containers
-        self.time_data = []
-
+        # Declare containers        
+        self.landmark_pos  = None
+        self.landmark_quat = None
+        
         self.lock = threading.RLock()
         
         self.initParams()
@@ -76,56 +65,37 @@ class realsense_vision(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         if self.verbose: print "Realsense Vision>> Initialized pusblishers and subscribers"
-        rospy.Subscriber('/hrl_manipulation_task/changes', pclChange, self.changeCallback)        
+        rospy.Subscriber('/hrl_manipulation_task/mouth', PoseStamped, self.mouthPoseCallback)        
 
     def initParams(self):
         '''
         Get parameters
         '''
-        self.torso_frame = 'torso_lift_link'
-
-
-    def changeCallback(self, data):
-        time_stamp = data.header.stamp
+        return
+    
+    def mouthPoseCallback(self, msg):
+        time_stamp = msg.header.stamp
         
         with self.lock:
             self.time = time_stamp.to_sec()             
-            self.centers = np.array([data.centers_x, data.centers_y, data.centers_z]).T # Nx3
+            self.landmark_pos = np.array([msg.pose.pose.position.x,
+                                          msg.pose.pose.position.y,
+                                          msg.pose.pose.position.z]).T
+            self.landmark_quat = np.array([msg.pose.pose.orientation.x,
+                                           msg.pose.pose.orientation.y,
+                                           msg.pose.pose.orientation.z,
+                                           msg.pose.pose.orientation.w]).T
 
-            if self.verbose: print np.shape(self.centers),np.shape(data.centers_x)
+            if self.verbose: print np.shape(self.landmark_pos)
             
-    
-    def test(self, save_pdf=False):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        plt.ion()
-        plt.show()        
-        
-        rate = rospy.Rate(10) # 25Hz, nominally.    
-        while not rospy.is_shutdown():
-            ## print "running test: ", len(self.centers)
-            with self.lock:
-                change_pcl = copy.copy(self.centers)
-                del ax.collections[:] 
-                ax.scatter(change_pcl[:,0], change_pcl[:,1], change_pcl[:,2] )
-                ax.set_xlim([0.3, 1.4])
-                ax.set_ylim([-0.2, 1.0])
-                ax.set_zlim([-0.5, 0.5])
-                plt.draw()
-                
-            rate.sleep()
-        
-        
+            
     def reset(self, init_time):
         self.init_time = init_time
         self.isReset = True
 
-        # Reset containers
-        self.time_data = []
-
         
     def isReady(self):
-        if self.centers is not None:
+        if self.landmark_pos is not None:
           return True
         else:
           return False

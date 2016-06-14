@@ -132,11 +132,18 @@ if __name__ == '__main__':
     ## rospy.sleep(2.0)    
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
+
     
-    log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
-                 pps=True, skin=True, \
-                 subject="gatsbii", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
-                     
+    log = logger(ft=True, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
+                 vision_landmark=False, vision_change=False, \
+                 pps=False, skin=False, \
+                 subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
+    ## log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
+    ##              pps=True, skin=True, \
+    ##              subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
+
+
+                 
     last_trial  = '4'
     last_detect = '2'
                  

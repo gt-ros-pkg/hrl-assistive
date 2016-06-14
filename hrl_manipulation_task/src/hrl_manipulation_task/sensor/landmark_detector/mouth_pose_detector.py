@@ -55,8 +55,8 @@ class MouthPoseDetector:
         self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/Desktop/shape_predictor_68_face_landmarks.dat')
         
         #publishers
-        self.mouth_pub = rospy.Publisher('/kinect_pose/mouth_pnp', PoseStamped, queue_size=10)
-        self.mouth_calc_pub = rospy.Publisher('/kinect_pose/mouth', PoseStamped, queue_size=10)
+        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp', PoseStamped, queue_size=10)
+        self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth', PoseStamped, queue_size=10)
 
         #displays
         self.display_2d = display_2d

@@ -72,8 +72,8 @@ if __name__ == '__main__':
         ## print armReachActionRight("runScoopingRandom")
 
         #ut.get_keystroke('Hit a key to proceed next')        
-        ## print armReachActionLeft("getBowlPos")
-        print armReachActionLeft('lookAtBowl')
+        print armReachActionLeft("getBowlPos")
+        ## print armReachActionLeft('lookAtBowl')
         print armReachActionLeft("initScooping2")
 
         print "Running scooping!"
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         sys.exit()
 
     ## Feeding -----------------------------------
-    if True:
+    if False:
         print "Initializing left arm for feeding"
         print armReachActionLeft("initFeeding")
         print armReachActionRight("initFeeding")

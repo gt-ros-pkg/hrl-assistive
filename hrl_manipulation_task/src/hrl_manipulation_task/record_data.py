@@ -422,10 +422,9 @@ class logger:
                     msg.vision_change_centers_z = np.squeeze(self.vision_change.centers[:,2]).tolist() # 3xN
 
             if self.vision_landmark is not None:
-                if self.vision_landmark.centers is not None:
-                    msg.vision_landmark_centers_x = np.squeeze(self.vision_landmark.centers[:,0]).tolist() # 3xN
-                    msg.vision_landmark_centers_y = np.squeeze(self.vision_landmark.centers[:,1]).tolist() # 3xN
-                    msg.vision_landmark_centers_z = np.squeeze(self.vision_landmark.centers[:,2]).tolist() # 3xN
+                if self.vision_landmark.pos is not None:
+                    msg.vision_landmark_pos  = np.squeeze(self.vision_landmark.landmark_pos.T).tolist()
+                    msg.vision_landmark_quat = np.squeeze(self.vision_landmark.landmark_quat.T).tolist()
                     
             if self.pps_skin is not None:
                 msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()
