@@ -426,7 +426,7 @@ if __name__ == '__main__':
                                                                        ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
-        nPoints        = 10
+        nPoints        = 20
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
