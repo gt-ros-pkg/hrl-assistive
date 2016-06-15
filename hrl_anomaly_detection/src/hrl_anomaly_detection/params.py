@@ -444,7 +444,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.5, nPoints),\
-                          'osvm_param_range': np.logspace(-6., 1.0, nPoints)}        
+                          'osvm_param_range': np.logspace(-6., 0.2, nPoints)}        
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
