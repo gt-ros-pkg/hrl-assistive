@@ -428,7 +428,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.333, \
                               'add_logp_d': True}
             SVM_param_dict = {'renew': False, 'w_negative': 0.177, 'gamma': 0.9777, 'cost': 3.25,\
-                              'hmmosvm_nu': 0.00316,
+                              'hmmosvm_nu': 0.000316,
                               'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 12.5, \
                               'hmmsvm_diag_gamma': 0.507}
 
@@ -443,7 +443,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.5, nPoints),\
-                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints) }        
+                          'osvm_param_range': np.logspace(-6., 1.0, nPoints)}        
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
