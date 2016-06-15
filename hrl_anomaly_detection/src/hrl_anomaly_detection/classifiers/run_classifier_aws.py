@@ -306,7 +306,7 @@ if __name__ == '__main__':
                                                                 rf_center, local_range,\
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
 
-        nPoints        = 20
+        nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
