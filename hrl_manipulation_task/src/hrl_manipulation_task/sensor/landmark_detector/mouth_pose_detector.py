@@ -261,7 +261,7 @@ class MouthPoseDetector:
     def find_best_set(self, landmarks, depth):
         points3d = []
         best_delaunay = []
-        best_delaunay_score = 999
+        best_delaunay_score = 9999999999
         best_2d_3d = []
         invalid_indices = []
         for i, mark in enumerate(landmarks):
@@ -289,6 +289,7 @@ class MouthPoseDetector:
                     points2d.append(point)
                     index2dto3d.append(j)
             tri = Delaunay(np.array(points2d))
+            best_delaunay = tri
             for slice in tri.simplices:
                 point_set = []
                 valid = True
@@ -709,8 +710,12 @@ class MouthPoseDetector:
             new_point = (point.x, point.y, point.z)
         else:
             new_point = point
-        x = self.rgb_c[0] + (self.rgb_f[0] * point[0] / point[0]) 
-        y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[0])
+        if not np.allclose(point, (0.0, 0.0, 0.0)):
+            x = self.rgb_c[0] + (self.rgb_f[0] * point[0] / point[2]) 
+            y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[2])
+        else:
+            x = 0
+            y = 0
         return (x, y)
 
     def vector_divide(self, vect1, vect2):
@@ -762,7 +767,7 @@ class MouthPoseDetector:
     # cx, cy, fx, fy are from Camera_Info of rgb. currently outputs (z, x, y) due to how axis is oriented.
     # assumes no-very little distortions from lens or is taken into account in calibration
     # assumes rgbd is already alligned. (or depth_f ~= rgb_f and offset between two frame is close to 0)
-    def get_3d_pixel(self, rgb_x, rgb_y, depth, offset=(0, 0.0, 0)):
+    def get_3d_pixel(self, rgb_x, rgb_y, depth, offset=(0, 0.0, 0), scale = 0.001):
         best = []
         best_val = 1000.00
         rgb_f   = self.rgb_f
@@ -774,7 +779,7 @@ class MouthPoseDetector:
             for j in [rgb_y-1, rgb_y, rgb_y+1]:
                 if not (i < 0 or i >= shape[1] or j < 0 or j >= shape[0]):
                     if not np.isnan(depth[j][i]) and not np.allclose(depth[j][i], 0):
-                        z_metric = depth[j][i] * 1.0
+                        z_metric = depth[j][i] * scale
                         approx_x = z_metric * (i - depth_c[0]) * (1.0 / depth_f[0])
                         approx_y = z_metric * (j - depth_c[1]) * (1.0 / depth_f[1])
                         translated_x = rgb_c[0] + ((approx_x - offset[1]) * rgb_f[0]) / z_metric
