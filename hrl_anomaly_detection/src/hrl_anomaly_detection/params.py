@@ -14,7 +14,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         SVM_param_dict = {'renew': False, 'w_negative': 2.275, 'gamma': 0.0147, 'cost': 2.5,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
-                          'hmmsvm_diag_gamma': 0.01}
+                          'hmmsvm_diag_gamma': 0.01,\
+                          'osvm_nu': 0.000215,\
+                          'osvm_window_size': 10}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm', 'hmmsvm_diag' ],\
@@ -28,7 +30,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'osvm_param_range': np.logspace(-5., 0.0, nPoints),\                          
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:
