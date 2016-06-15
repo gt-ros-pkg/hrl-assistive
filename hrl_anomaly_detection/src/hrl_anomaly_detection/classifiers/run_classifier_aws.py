@@ -327,7 +327,7 @@ if __name__ == '__main__':
                           'w_negative': np.linspace(0.1, 3.0,5) }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'hmmosvm_nu': np.logspace(-4,1.,5)
+                          'hmmosvm_nu': np.logspace(-2,1.,5)
                           }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
