@@ -469,7 +469,7 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-7.0,-4.0,20),
+                          'osvm_nu': np.logspace(-7.0,-1.0,20),
                           }
             
         ## if opt.dim == 4:
