@@ -506,7 +506,7 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4
+        nFiles = 9 #4
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -521,7 +521,7 @@ if __name__ == '__main__':
                           'w_negative': np.logspace(-2, 0.5, 5) }
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-6,-3,10),
+                          'osvm_nu': np.logspace(-6,-1,10),
                           }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
