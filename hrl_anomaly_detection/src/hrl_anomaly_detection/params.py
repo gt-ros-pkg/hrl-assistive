@@ -575,7 +575,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
-                          'hmmsvm_diag_gamma': 1.5}
+                          'hmmsvm_diag_gamma': 1.5,\
+                          'osvm_window_size': 10}
                           
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm','hmmsvm_diag','change', 'osvm' ],\
                           'update_list': [ 'osvm' ],\
