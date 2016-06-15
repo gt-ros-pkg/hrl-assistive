@@ -437,7 +437,7 @@ if __name__ == '__main__':
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.1, nPoints),\
-                          'osvm_param_range': np.logspace(-4, 0.0, nPoints),\
+                          'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -469,7 +469,7 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-7.0,-1.0,20),
+                          'osvm_nu': np.logspace(-6.5,-2.0,20),
                           }
             
         ## if opt.dim == 4:
