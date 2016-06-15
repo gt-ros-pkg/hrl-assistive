@@ -433,8 +433,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_gamma': 0.507}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm' ],\
-                          'update_list': [ 'svm' ],\
+        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm', 'osvm' ],\
+                          'update_list': [ 'osvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.5, -0.8, nPoints),\
