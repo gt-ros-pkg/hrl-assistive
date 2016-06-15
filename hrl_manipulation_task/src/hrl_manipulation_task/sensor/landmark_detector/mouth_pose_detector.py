@@ -18,7 +18,7 @@ from scipy.spatial import Delaunay
 from cv_bridge import CvBridge, CvBridgeError
 
 class MouthPoseDetector:
-    def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info,
+    def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info, depth_scale,
                  display_2d=True, display_3d=True):
         #for tf processing
         self.br = tf.TransformBroadcaster()        
@@ -26,6 +26,7 @@ class MouthPoseDetector:
         #camera informateions
         self.camera_link  = camera_link
         self.frame_ready  = False
+        self.depth_scale  = depth_scale
         
         #for initializing frontal face data
         self.first             = True
@@ -767,9 +768,10 @@ class MouthPoseDetector:
     # cx, cy, fx, fy are from Camera_Info of rgb. currently outputs (z, x, y) due to how axis is oriented.
     # assumes no-very little distortions from lens or is taken into account in calibration
     # assumes rgbd is already alligned. (or depth_f ~= rgb_f and offset between two frame is close to 0)
-    def get_3d_pixel(self, rgb_x, rgb_y, depth, offset=(0, 0.0, 0), scale = 0.001):
+    def get_3d_pixel(self, rgb_x, rgb_y, depth, offset=(0, 0.0, 0)):
         best = []
         best_val = 1000.00
+        scale   = self.depth_scale
         rgb_f   = self.rgb_f
         rgb_c   = self.rgb_c
         depth_f = self.depth_f
@@ -834,11 +836,13 @@ if __name__ == '__main__':
     p.add_option("-D", "--depth_info", dest="depth_info",
                  default="/camera/depth_registered/camera_info",
                  help="rgb camera info to get calibrations")
+    p.add_option("-s", "--scale", dest="depth_scale", type="float",
+                 default=1.0, help="scale depth to meters")
     p.add_option("--display_2d", dest="display_2d", action="store_true", default=False)
     p.add_option("--display_3d", dest="display_3d", action="store_true", default=False)
     (options, args) = p.parse_args()
     detector = MouthPoseDetector(options.rgb_camera_link, options.rgb_image,
                                  options.depth_image, options.rgb_info, 
-                                 options.depth_info, options.display_2d, 
-                                 options.display_3d)
+                                 options.depth_info, options.depth_scale,
+                                 options.display_2d, options.display_3d)
     rospy.spin()
