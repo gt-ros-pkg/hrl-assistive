@@ -357,6 +357,7 @@ if __name__ == '__main__':
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
+                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
@@ -377,6 +378,10 @@ if __name__ == '__main__':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-4,-2.,5)
                          }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-5,-3,10),
+                          }
                 
 
     #---------------------------------------------------------------------------           
