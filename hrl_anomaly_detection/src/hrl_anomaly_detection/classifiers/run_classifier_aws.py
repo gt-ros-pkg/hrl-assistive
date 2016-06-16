@@ -311,7 +311,7 @@ if __name__ == '__main__':
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-3.5, 0.8, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
