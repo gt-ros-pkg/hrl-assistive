@@ -130,6 +130,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'svm_param_range': np.logspace(-2.2, 0.8, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
     elif dim == 3:
