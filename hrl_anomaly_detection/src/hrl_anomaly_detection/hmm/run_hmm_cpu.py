@@ -727,13 +727,8 @@ if __name__ == '__main__':
                                                                        False, False,\
                                                                        rf_center, local_range, \
                                                                        ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
                       'cov': np.linspace(0.5,4.0,10) }
-
-    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
-    ##               'cov': [2.0, 4.0, 8.0] }
-    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
-    ##               'cov': [4.0, 8.0] }
 
     #--------------------------------------------------------------------------------------
     crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
