@@ -18,14 +18,18 @@ from scipy.spatial import Delaunay
 from cv_bridge import CvBridge, CvBridgeError
 
 class MouthPoseDetector:
-    def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info,
-                 display_2d=True, display_3d=True):
+    def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info, depth_scale, offset,
+                 display_2d=True, display_3d=True, flipped=False, rgb_mode="bgr8"):
         #for tf processing
         self.br = tf.TransformBroadcaster()        
 
         #camera informateions
         self.camera_link  = camera_link
         self.frame_ready  = False
+        self.depth_scale  = depth_scale
+        self.flipped      = flipped
+        self.rgb_mode     = rgb_mode
+        self.offset       = offset
         
         #for initializing frontal face data
         self.first             = True
@@ -71,32 +75,42 @@ class MouthPoseDetector:
 
     def callback(self, data, depth_data):
         #if data is not recent enough, reject
+        print "in callback"
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
 
         #get rgb and depth image
-        img = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        img = self.bridge.imgmsg_to_cv2(data, self.rgb_mode)
+        if self.flipped:
+            img = cv2.flip(img, 1)
+            img = cv2.flip(img, 0)
+        if self.display_2d:
+            self.win.clear_overlay()
+            self.win.set_image(img)
         depth = self.bridge.imgmsg_to_cv2(depth_data, desired_encoding="passthrough")
-
+        
         #detect face in 2d, if not found assume face is in previous location
         faces = self.detector(img)
         if len(faces) < 1:
             faces = self.previous_face
         else:
             self.previous_face = faces
-
+        #print img.shape
         for d in faces:
             x = d.left()
             y = d.top()
             w = d.right() - d.left()
             h = d.bottom() - d.top()
-            if x + (w/2) < img.shape[0] and y + (h/2) < img.shape[1]:
+            if x + (w/2) < img.shape[1] and y + (h/2) < img.shape[0]:
                 #find landmarks
                 shape = self.predictor(img, d)
                 landmarks = shape.parts()
+                if self.flipped:
+                    new_landmarks = []
+                    for mark in landmarks:
+                        new_landmarks.append(Point((img.shape[1] - 1 - mark.x, img.shape[0] - 1 - mark.y, 0)))
+                    landmarks = new_landmarks
                 if self.display_2d:
-                    self.win.clear_overlay()
-                    self.win.set_image(img)
                     self.win.add_overlay(faces)
                     self.win.add_overlay(shape)
                 try:
@@ -115,13 +129,17 @@ class MouthPoseDetector:
                         self.object_points = np.asarray(self.object_points)
                         self.object_points = self.object_points.astype('float32')
                     pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
-
+                    time1 = time.time()
                     if self.first:
                         #register values for frontal face
                         #find special points in 3D
                         mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
-                        second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
-                        third_point = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
+                        if not self.flipped:
+                            second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
+                            third_point  = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
+                        else:
+                            second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
+                            third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
                         fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
                         fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
                         special_points = [mouth, second_point, third_point]
@@ -141,13 +159,48 @@ class MouthPoseDetector:
                         #retrieve points for checking
                         for i in xrange(len(special_points)):
                             self.current_positions.append((0.0, 0.0, 0.0))
-                        pose = self.retrieve_special_pose(point_set, depth)
+                        pose, pose_points = self.retrieve_special_pose(point_set, depth)
+
+                        #find inverse relation to landmark points in case 2d landmark failure
+                        for i in xrange(len(landmarks)):
+                            reverse_point_set = pose_points + [Point(points_ordered[i])]
+                            self.reverse_dist.append([self.find_dist(reverse_point_set), self.find_half_dist(reverse_point_set, depth)])
+                        retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
+                        for i in xrange(len(landmarks)):
+                            prev_point = points_ordered[i]
+                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
+                            #print self.get_dist(prev_point, curr_point)
+
                         orientation = self.pose_to_tuple(pose)[1]
                         self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, (0.0, 0.0, 1.0, 0.0)]))
                         self.first = False 
                     else:
                         #retrieve points and make pose
-                        pose = self.retrieve_special_pose(point_set, depth)
+                        pose, pose_points = self.retrieve_special_pose(point_set, depth)
+                        time2 = time.time()
+                        retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
+                        print "3D pose to 2D: ", time.time()-time2
+                        retrieved_landmarks = dlib.dlib.points()
+                        for i in xrange(len(landmarks)):
+                            prev_point = points_ordered[i]
+                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
+                            #print self.get_dist(prev_point, curr_point)
+                            curr_point_2d = self.get_2d_pixel(curr_point)
+                            #print curr_point, curr_point_2d
+                            retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
+                        time1 = time.time()
+                        new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth)
+                        for i in xrange(len(landmarks)):
+                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
+                            #print self.get_dist(new_points_ordered[i], curr_point)
+                        print "2D->3D:",  time.time() - time1
+                        print "one ransac check in landmarks: ", time2 - time.time()
+                        """
+                        for i in xrange(len(new_points_ordered)):
+                            if not np.allclose(new_points_ordered[i], (0.0, 0.0, 0.0)) and not np.allclose(points_ordered[i], (0.0, 0.0,0.0)):
+                                print self.get_dist(new_points_ordered[i], points_ordered[i])
+                        """
+                        pose, pose_points = self.retrieve_special_pose(new_point_set, depth)
                         position, orientation = self.pose_to_tuple(pose)
 
                         #display frame
@@ -162,8 +215,10 @@ class MouthPoseDetector:
                         if self.display_3d:
                             self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
+                            temp_pose.header.stamp = rospy.Time.now()
                             self.mouth_calc_pub.publish(temp_pose)
                         self.mouth_pub.publish(pnp_pose)
+                    #print time.time() - time1
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))
 
@@ -199,10 +254,15 @@ class MouthPoseDetector:
 
     def retrieve_points(self, landmarks, depth):
         points = []
+        curr_points = []
+        for curr in self.current_positions:
+            curr_points.append(Point(curr))
+        retrieved_previous_points = self.retrieve_points_from_pose(curr_points, depth)
         for i, mark in enumerate(landmarks):
             point = self.get_3d_pixel(mark.x, mark.y, depth)
             if len(self.current_positions) >= 1:
-                if self.get_dist(point, self.current_positions[0]) > .1 and self.get_dist(point, self.current_positions[1]) > .1 and self.get_dist(point, self.current_positions[2]) > .1:
+                if self.get_dist(point, self.current_positions[0]) > .1 and self.get_dist(point, self.current_positions[1]) > .1 and self.get_dist(point, self.current_positions[2]) > .1: 
+                #if self.get_dist(self.pose_to_tuple(retrieved_previous_points[i])[0], point) > 0.03:
                     points.append((0.0, 0.0, 0.0))
                 else:
                     points.append(point)
@@ -514,7 +574,7 @@ class MouthPoseDetector:
         return pose
 
     def get_better_estimate(self, fixed_point, varied_point, expected_dist, original_dist, depth):
-        if np.isnan(expected_dist):
+        if np.isnan(expected_dist) or np.allclose(expected_dist, 0.0):
             return varied_point, False
         direction = (varied_point.x - fixed_point.x, varied_point.y - fixed_point.y, varied_point.z - fixed_point.z)
         if np.allclose(direction, (0.0, 0.0, 0.0)):
@@ -564,22 +624,26 @@ class MouthPoseDetector:
             return 9999
         return 1-a
 
-    def retrieve_special_pose(self, point_set, depth):
+    def retrieve_special_pose(self, point_set, depth, dist=None, half_dist=None):
         special_points=[]
         special_poses = []
         current_sizes = []
-        for i in xrange(len(self.dist)):
+        if dist is None:
+            dist = self.dist
+        if half_dist is None:
+            half_dist = self.half_dist
+        for i in xrange(len(dist)):
             special_points.append([])
         for i, points in enumerate(point_set):
-            for j in xrange(len(self.dist)):
-                special_points[j].append(self.find_using_ratios(points, self.dist[j][i], self.half_dist[j][i], depth, 1.0, True))
+            for j in xrange(len(dist)):
+                special_points[j].append(self.find_using_ratios(points, dist[j][i], half_dist[j][i], depth, 1.0, True))
             new_points = []
             for new_point in points:
                 point_tuple = (new_point.x, new_point.y, new_point.z)
                 new_points.append(point_tuple)
             current_sizes.append(self.find_size(new_points))
         #print current_sizes
-        for i in xrange(len(self.dist)):
+        for i in xrange(len(dist)):
             special_poses.append(self.retrieve_special_point(special_points[i], current_sizes, self.current_positions[i]))
         poses = special_poses
         pose = poses[0]
@@ -609,7 +673,7 @@ class MouthPoseDetector:
             poly.header.frame_id=self.camera_link
             poly.polygon.points = points
             self.poly_pub[-1].publish(poly)
-        return self.make_pose(position, orientation=orientation)
+        return self.make_pose(position, orientation=orientation), pose_points
         
 
     def retrieve_special_point(self, poses, current_sizes, current_pos, threshold=15, threshold_radius=0.2, n=-1):
@@ -649,7 +713,7 @@ class MouthPoseDetector:
             poses_arr.append(new_pose)
             position = poses[r].pose.position
             position = [position.x, position.y, position.z]
-            if not valid[i] or np.isnan(position[0]):
+            if not valid[i] or np.isnan(position[0]) or np.allclose(position, (0.0, 0.0, 0.0)):
                 invalid_cnt = invalid_cnt + 1
             else:
                 orientation = 0
@@ -668,7 +732,6 @@ class MouthPoseDetector:
                 pose.pose.position.x = current_pos[0]
                 pose.pose.position.y = current_pos[1]
                 pose.pose.position.z = current_pos[2]
-        print pose
         return pose
 
     def find_dist(self, points):
@@ -767,33 +830,38 @@ class MouthPoseDetector:
     # cx, cy, fx, fy are from Camera_Info of rgb. currently outputs (z, x, y) due to how axis is oriented.
     # assumes no-very little distortions from lens or is taken into account in calibration
     # assumes rgbd is already alligned. (or depth_f ~= rgb_f and offset between two frame is close to 0)
-    def get_3d_pixel(self, rgb_x, rgb_y, depth, offset=(0, 0.0, 0), scale = 0.001):
+    def get_3d_pixel(self, rgb_x, rgb_y, depth):
         best = []
         best_val = 1000.00
+        scale   = self.depth_scale
         rgb_f   = self.rgb_f
         rgb_c   = self.rgb_c
         depth_f = self.depth_f
         depth_c = self.depth_c
         shape = depth.shape
+        if not (rgb_x < 0 or rgb_x >=shape[1] or rgb_y < 0 or rgb_y >= shape[0]):
+            if not np.isnan(depth[rgb_y][rgb_x]) and not np.allclose(depth[rgb_y][rgb_x], 0.0):
+                z_metric = depth[rgb_y][rgb_x] * scale + self.offset[2]
+                app_rgb_x = z_metric * (rgb_x - rgb_c[0]) * (1.0 / rgb_f[0])
+                app_rgb_y = z_metric * (rgb_y - rgb_c[1]) * (1.0 / rgb_f[1])
+                return (app_rgb_x, app_rgb_y, z_metric)
         for i in [rgb_x -1, rgb_x, rgb_x+1]:
             for j in [rgb_y-1, rgb_y, rgb_y+1]:
                 if not (i < 0 or i >= shape[1] or j < 0 or j >= shape[0]):
-                    if not np.isnan(depth[j][i]) and not np.allclose(depth[j][i], 0):
-                        z_metric = depth[j][i] * scale
+                    if not np.isnan(depth[j][i]) and not np.allclose(depth[j][i], 0.0):
+                        z_metric = depth[j][i] * scale + self.offset[2]
                         approx_x = z_metric * (i - depth_c[0]) * (1.0 / depth_f[0])
                         approx_y = z_metric * (j - depth_c[1]) * (1.0 / depth_f[1])
-                        translated_x = rgb_c[0] + ((approx_x - offset[1]) * rgb_f[0]) / z_metric
-                        translated_y = rgb_c[1] + ((approx_y - offset[2]) * rgb_f[1]) / z_metric
-                        app_rgb_x = z_metric * (rgb_x - rgb_c[0]) * (1.0 / rgb_f[0]) + offset[1]
-                        app_rgb_y = z_metric * (rgb_y - rgb_c[1]) * (1.0 / rgb_f[1]) + offset[2]
-                        projection = self.projection((approx_x+offset[1], approx_y, z_metric), (app_rgb_x+offset[1], app_rgb_y, z_metric))
-                        norm = self.vector_sub((approx_x+offset[1], approx_y, z_metric), projection)
+                        translated_x = rgb_c[0] + ((approx_x) * rgb_f[0]) / z_metric
+                        translated_y = rgb_c[1] + ((approx_y) * rgb_f[1]) / z_metric
+                        app_rgb_x = z_metric * (rgb_x - rgb_c[0]) * (1.0 / rgb_f[0])
+                        app_rgb_y = z_metric * (rgb_y - rgb_c[1]) * (1.0 / rgb_f[1])
+                        projection = self.projection((approx_x, approx_y, z_metric), (app_rgb_x, app_rgb_y, z_metric))
+                        norm = self.vector_sub((approx_x, approx_y, z_metric), projection)
                         distance = np.dot(norm, norm)
                         if best_val > distance:
                             best_val = distance
                             best = (app_rgb_x, app_rgb_y, z_metric)
-                            if i is rgb_x and j is rgb_y:
-                                return tuple(best)
         if len(best) > 1:
             return tuple(best)
         else:
@@ -834,11 +902,18 @@ if __name__ == '__main__':
     p.add_option("-D", "--depth_info", dest="depth_info",
                  default="/camera/depth_registered/camera_info",
                  help="rgb camera info to get calibrations")
+    p.add_option("-s", "--scale", dest="depth_scale", type="float",
+                 default=1.0, help="scale depth to meters")
+    p.add_option("-o", "--offset", dest="offset", type="float", nargs=3, default=(0.0, 0.0, 0.0))
+    p.add_option("--rgb_mode", dest="rgb_mode", default="bgr8", help="rgb format")
+    p.add_option("--flip", dest="flipped", action="store_true", default=False)
     p.add_option("--display_2d", dest="display_2d", action="store_true", default=False)
     p.add_option("--display_3d", dest="display_3d", action="store_true", default=False)
     (options, args) = p.parse_args()
+    print options.offset
     detector = MouthPoseDetector(options.rgb_camera_link, options.rgb_image,
                                  options.depth_image, options.rgb_info, 
-                                 options.depth_info, options.display_2d, 
-                                 options.display_3d)
+                                 options.depth_info, options.depth_scale, options.offset,
+                                 options.display_2d, options.display_3d,
+                                 options.flipped, options.rgb_mode)
     rospy.spin()
