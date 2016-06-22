@@ -24,19 +24,7 @@
   <!-- Manual calibration of a thing -->
   <node pkg="keyboard" type="keyboard" name="keyboard_world_to_thing"/>
   <node pkg="tf_keyboard_cal" type="tf_keyboard_cal" name="tf_keyboard_world_to_thing" output="screen">
-    <rosparam>
-       initial_x: 0.11244
-       initial_y: 0.0
-       initial_z: -0.05513
-       initial_roll: 0.0
-       initial_pitch: 0.0
-       initial_yaw: 0.0
-       from: l_gripper_palm_link
-       to: camera_link
-       file_package: tf_keyboard_cal
-       file_name: tf_keyboard_kinect.yaml
-       topic_name: /keyboard_world_to_thing/keydown
-    </rosparam>
+    <rosparam command="load" file="$(find hrl_realsense_camera)/config/tf_keyboard_gripper_to_SR300.yaml"/>
   </node>
 
 </launch>
