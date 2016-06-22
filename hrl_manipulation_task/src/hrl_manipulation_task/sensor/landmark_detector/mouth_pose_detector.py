@@ -215,6 +215,7 @@ class MouthPoseDetector:
                         if self.display_3d:
                             self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
+                            temp_pose.header.stamp = rospy.Time.now()
                             self.mouth_calc_pub.publish(temp_pose)
                         self.mouth_pub.publish(pnp_pose)
                     #print time.time() - time1
