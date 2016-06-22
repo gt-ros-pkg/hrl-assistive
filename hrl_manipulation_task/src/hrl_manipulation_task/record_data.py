@@ -42,7 +42,7 @@ import hrl_lib.util as ut
 
 # msgs and srvs
 from hrl_anomaly_detection.msg import MultiModality
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneResponse
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None, StringArray_NoneResponse
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
@@ -125,7 +125,7 @@ class logger:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
             self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', String_None)
+            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', StringArray_None)
             print "Detected anomaly detector service"
 
     ##GUI implementation
@@ -146,6 +146,7 @@ class logger:
         Set a current task
         '''
         self.task = task
+        self.initParams()
 
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
@@ -153,7 +154,7 @@ class logger:
         if self.ad_flag:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv   = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
             print "Detected anomaly detector service"
             
         
@@ -276,8 +277,15 @@ class logger:
     def enableDetector(self, enableFlag):
         ret = self.ad_srv(enableFlag)
 
-    def updateDetector(self, fileName):        
-        ret = self.ad_update_srv(fileName)
+    def updateDetector(self):
+
+        fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
+        unused_fileList = [filename for filename in fileList if filename.find('used')<0]
+        
+        ret = self.ad_update_srv(unused_fileList)
+        for f in unused_fileList:
+            name = f.split('.pkl')[0]
+            os.system('mv '+f + ' '+ name+'_used.pkl')
         
         
     def waitForReady(self):
@@ -600,8 +608,8 @@ if __name__ == '__main__':
     detector= False
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
-                 vision_landmark=True, vision_change=False, \
+    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
+                 vision_landmark=False, vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
                  data_pub=data_pub, detector=detector)
 

@@ -120,24 +120,31 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
 
 #-------------------------------------------------------------------------------------------------
-def getData(fileName, rf_center, local_range, param_dict, downSampleSize=200, cut_data=None, \
-            handFeatures=['crossmodal_targetEEDist']):
+def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
+                cut_data=None, \
+                handFeatures=['crossmodal_targetEEDist']):
     '''
-    Load single data
+    Load a list of files and return hand-engineered feature set of each file.
+    The feature is scaled by the param dict.
     '''
-    if os.path.isfile(fileName):
+    
+    for fileName in fileName:
+        if os.path.isfile(fileName) is False:
+            print "Error>> there is no recorded file: ", fileName
+            sys.exit()
 
-        _, data_dict = util.loadData(fileName, isTrainingData=False,
-                                     downSampleSize=downSampleSize,
-                                     local_range=local_range, rf_center=rf_center)
-
-        data, _ = extractHandFeature(data_dict, handFeatures, \
+    _, data_dict = util.loadData(fileNames, isTrainingData=False,
+                                 downSampleSize=downSampleSize,
+                                 local_range=local_range, rf_center=rf_center)
+   
+    features, _ = extractHandFeature(data_dict, handFeatures, \
                                      param_dict=param_dict, cut_data=cut_data)
 
-        return 
+    return features
 
 
-def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, local_range, \
+def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
+               local_range, \
                downSampleSize=200, scale=1.0, ae_data=False, \
                cut_data=None, init_param_dict=None, \
                success_viz=False, failure_viz=False, \
@@ -150,7 +157,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+str(local_range) )
+    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+\
+                            str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is False:
         print "--------------------------------------"
@@ -1206,16 +1214,15 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
         print "Before scaling, max is: ", param_dict['feature_max']
         print "Before scaling, min is: ", param_dict['feature_min']
-        
-        
+                
     scaled_features = []
     for i, feature in enumerate(features):
 
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
-            scaled_features.append( scale* ( np.array(feature) - param_dict['feature_min'][i] )\
-                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+            scaled_features.append( scale*( np.array(feature) - param_dict['feature_min'][i] )\
+                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]))
 
     return scaled_features, param_dict
 

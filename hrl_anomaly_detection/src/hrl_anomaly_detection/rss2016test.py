@@ -980,7 +980,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
 
         # flatten the data
-        if method.find('svm')>=0: remove_fp=True
+        if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                    ll_classifier_train_Y, \
