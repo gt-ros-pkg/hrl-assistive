@@ -322,9 +322,9 @@ if __name__ == '__main__':
         nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(2.0, 5.0, 5),\
-                          'gamma': np.logspace(-3, 0.7, 10), \
-                          'w_negative': np.linspace(0.01, 3.0,10) }
+                          'cost': np.linspace(3.0, 7.0, 6),\
+                          'gamma': np.logspace(-2, 0.7, 10), \
+                          'w_negative': np.linspace(1.0, 4.0,10) }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-5,0.,5)
