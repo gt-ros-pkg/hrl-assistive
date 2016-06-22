@@ -88,6 +88,25 @@ class realsense_vision():
 
             if self.verbose: print np.shape(self.landmark_pos)
             
+    def test(self, save_pdf=False):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        plt.ion()
+        plt.show()        
+        
+        rate = rospy.Rate(10) # 25Hz, nominally.    
+        while not rospy.is_shutdown():
+            ## print "running test: ", len(self.centers)
+            with self.lock:
+                del ax.collections[:] 
+                ax.scatter(self.landmark_pos[0], self.landmark_pos[1],\
+                           self.landmark_pos[2] )
+                ax.set_xlim([0.3, 1.4])
+                ax.set_ylim([-0.2, 1.0])
+                ax.set_zlim([-0.5, 0.5])
+                plt.draw()
+                
+            rate.sleep()
             
     def reset(self, init_time):
         self.init_time = init_time
@@ -107,7 +126,7 @@ if __name__ == '__main__':
     rospy.init_node('realsense_vision')
 
     kv = realsense_vision()
-    ## kv.test(True)
+    kv.test(True)
 
 
         

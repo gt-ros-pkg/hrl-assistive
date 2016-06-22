@@ -21,7 +21,10 @@ class MouthPoseDetector:
     def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info, depth_scale, offset,
                  display_2d=True, display_3d=True, flipped=False, rgb_mode="bgr8"):
         #for tf processing
-        self.br = tf.TransformBroadcaster()        
+        if display_3d:
+            self.br = tf.TransformBroadcaster()      
+        self.tf_listnr = tf.TransformListener()
+        self.gripper_to_sensor = None
 
         #camera informateions
         self.camera_link  = camera_link
@@ -30,6 +33,7 @@ class MouthPoseDetector:
         self.flipped      = flipped
         self.rgb_mode     = rgb_mode
         self.offset       = offset
+        gripper           = "/right/haptic_mpc/gripper_pose"
         
         #for initializing frontal face data
         self.first             = True
@@ -45,11 +49,12 @@ class MouthPoseDetector:
         #subscribers
         self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=10)
         self.depth_sub      = message_filters.Subscriber(depth_image, Image, queue_size=10)
+        self.gripper_sub    = message_filters.Subscriber(gripper, PoseStamped, queue_size=10)
         self.rgb_info_sub   = message_filters.Subscriber(rgb_info, CameraInfo, queue_size=10)
         self.depth_info_sub = message_filters.Subscriber(depth_info, CameraInfo, queue_size=10)
         self.info_ts        = message_filters.ApproximateTimeSynchronizer([self.rgb_info_sub,  self.depth_info_sub], 10, 100)
         self.info_ts.registerCallback(self.initialize_frames)
-        self.ts             = message_filters.ApproximateTimeSynchronizer([self.image_sub, self.depth_sub], 10, 100)
+        self.ts             = message_filters.ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.gripper_sub], 10, 100)
         self.ts.registerCallback(self.callback)
         
         #for image processings
@@ -60,7 +65,7 @@ class MouthPoseDetector:
         
         #publishers
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
-        self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped, queue_size=10)
+        self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
 
         #displays
         self.display_2d = display_2d
@@ -73,12 +78,15 @@ class MouthPoseDetector:
                 self.poly_pub.append(rospy.Publisher('/poly_pub' + str(i), PolygonStamped, queue_size=10))        
 
 
-    def callback(self, data, depth_data):
+    def callback(self, data, depth_data, gripper_pose):
         #if data is not recent enough, reject
-        print "in callback"
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
-
+        
+        position, orientation = self.pose_to_tuple(gripper_pose)
+        base_to_gripper = tft.quaternion_matrix(orientation)
+        for i in xrange(3):
+            base_to_gripper[i][3] = position[i]
         #get rgb and depth image
         img = self.bridge.imgmsg_to_cv2(data, self.rgb_mode)
         if self.flipped:
@@ -131,6 +139,13 @@ class MouthPoseDetector:
                     pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
                     time1 = time.time()
                     if self.first:
+                        self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
+                        self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
+                        print self.gripper_to_sensor
+                        matrix_form = tft.quaternion_matrix(self.gripper_to_sensor[1])
+                        for i in xrange(3):
+                            matrix_form[i][3] = self.gripper_to_sensor[0][i]
+                        self.gripper_to_sensor = matrix_form #
                         #register values for frontal face
                         #find special points in 3D
                         mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
@@ -172,22 +187,24 @@ class MouthPoseDetector:
                             #print self.get_dist(prev_point, curr_point)
 
                         orientation = self.pose_to_tuple(pose)[1]
-                        self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, (0.0, 0.0, 1.0, 0.0)]))
+                        self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, tuple(tft.quaternion_from_euler(0, 0, np.math.pi/2))]))#(0.0, 0.0, 1.0, 0.0)]))
                         self.first = False 
                     else:
                         #retrieve points and make pose
                         pose, pose_points = self.retrieve_special_pose(point_set, depth)
+                        """
                         time2 = time.time()
                         retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
                         print "3D pose to 2D: ", time.time()-time2
                         retrieved_landmarks = dlib.dlib.points()
+
                         for i in xrange(len(landmarks)):
                             prev_point = points_ordered[i]
                             curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
                             #print self.get_dist(prev_point, curr_point)
                             curr_point_2d = self.get_2d_pixel(curr_point)
                             #print curr_point, curr_point_2d
-                            retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
+                            #retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
                         time1 = time.time()
                         new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth)
                         for i in xrange(len(landmarks)):
@@ -196,11 +213,12 @@ class MouthPoseDetector:
                         print "2D->3D:",  time.time() - time1
                         print "one ransac check in landmarks: ", time2 - time.time()
                         """
+                        """
                         for i in xrange(len(new_points_ordered)):
                             if not np.allclose(new_points_ordered[i], (0.0, 0.0, 0.0)) and not np.allclose(points_ordered[i], (0.0, 0.0,0.0)):
                                 print self.get_dist(new_points_ordered[i], points_ordered[i])
-                        """
                         pose, pose_points = self.retrieve_special_pose(new_point_set, depth)
+                        """
                         position, orientation = self.pose_to_tuple(pose)
 
                         #display frame
@@ -208,16 +226,29 @@ class MouthPoseDetector:
                             self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
                         
                         #publish
-                        temp_pose = self.make_pose(position, orientation=orientation)
-                        orientation = tft.quaternion_from_matrix(pnp_trans)
-                        pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
-                        pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
-                        if self.display_3d:
-                            self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
+                        #temp_pose = self.make_pose(position, orientation=orientation)
+                        temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
+                        for i in xrange(3):
+                            temp_pose[i][3] = position[i]
+                        temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
+                        ## temp_pose = np.multiply(self.gripper_to_sensor, temp_pose)
+                        temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
+                        ## temp_pose = tft.concatanate_matrices(base_to_gripper, temp_pose)
+                        temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
+                        ## orientation = tft.quaternion_from_matrix(pnp_trans)
+                        ## pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
+                        ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
+                        ## if self.display_3d:
+                        ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
-                            temp_pose.header.stamp = rospy.Time.now()
-                            self.mouth_calc_pub.publish(temp_pose)
-                        self.mouth_pub.publish(pnp_pose)
+                            try:
+                                temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
+                                temp_pose.header.frame_id = "torso_lift_link"
+                                #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
+                                self.mouth_calc_pub.publish(temp_pose)
+                            except:
+                                print "failed"
+                        ## self.mouth_pub.publish(pnp_pose)
                     #print time.time() - time1
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))

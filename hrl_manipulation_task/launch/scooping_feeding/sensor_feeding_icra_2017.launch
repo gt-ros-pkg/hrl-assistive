@@ -15,12 +15,15 @@
 
 
         <!-- Launch Realsense Camera -->
+        <include file='$(find hrl_realsense_camera)/launch/front_mount_frame.launch'/>
+        <node name="mouth_relay_node" pkg="topic_tools" type="relay"
+              args="/hrl_manipulation_task/mouth_pose_backpack /hrl_manipulation_task/mouth_pose" output="screen" />
 
         <!-- Head conversion -->  
         <!--node name="findMouth" pkg="hrl_manipulation_task" type="findMouthLandmark.py" respawn="false" output="screen" /-->
 
         <!-- F/T sensor -->
-        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
+        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="false" />
         
         <!-- Audio (wrist) -->
         <!--node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen"  /-->

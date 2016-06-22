@@ -1,0 +1,17 @@
+<launch>
+
+	<node name="findMouth" pkg="hrl_manipulation_task"
+              type="mouth_pose_detector.py" args="-l
+                                                  /SR300_rgb_optical_frame
+                                                  -r
+                                                  /SR300/rgb/image_raw
+                                                  -d
+                                                  /SR300/camera/depth_registered/image
+                                                  -R
+                                                  /SR300/rgb/camera_info
+                                                  -D
+                                                  /SR300/camera/depth_registered/camera_info
+                                                  -s 0.001 --flip
+                                                  --rgb_mode rgb8" output="screen"/>
+
+</launch>

@@ -88,9 +88,9 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers
-        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/bowl_cen_pose', PoseStamped,
+        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped,
                                         queue_size=QUEUE_SIZE, latch=True)
-        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose', PoseStamped,
+        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,
                                          queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
