@@ -49,7 +49,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 # msg
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
 
 from hrl_anomaly_detection.params import *
 
@@ -153,7 +153,7 @@ class anomaly_detector:
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
-        self.update_service    = rospy.Service('anomaly_detector_update', String_None, self.updateCallback)
+        self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
 
     def initDetector(self):
         
@@ -192,14 +192,22 @@ class anomaly_detector:
             # Task-oriented hand-crafted features        
             kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
                                                   self.nNormalFold, self.nAbnormalFold )
+            # Select the first fold as the training data (need to fix?)
             (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
 
 
             # dim x sample x length # TODO: what is the best selection?
-            normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
-            abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
-            normalTestData    = dd['successData'][:, normalTestIdx, :] * self.scale
-            abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :] * self.scale
+            if self.check_method.find('svm')>=0:
+                normalTrainData   = dd['successData'][:, normalTrainIdx, :]   * self.scale
+                abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
+                normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
+                abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
+            elif self.check_method.find('sgd')>=0:
+                normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
+                normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
+                abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
+
+                
 
             # training hmm
             self.nEmissionDim   = len(normalTrainData)
@@ -254,7 +262,6 @@ class anomaly_detector:
                     Y_test_org.append(ll_classifier_test_Y[i][j])
                     idx_test_org.append(ll_classifier_test_idx[i][j])
 
-
             d = {}
             d['A']  = self.ml.A
             d['B']  = self.ml.B
@@ -287,6 +294,7 @@ class anomaly_detector:
         print "Finished to train SVM"
 
         if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            # may be we have to manually set or adjust it through the GUI
             sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
         elif self.classifier_method == 'progress_time_cluster':                    
             sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
@@ -295,7 +303,6 @@ class anomaly_detector:
         print "Current sensitivity is ", sensitivity
         
         return
-
 
         
     def enablerCallback(self, msg):
@@ -313,41 +320,46 @@ class anomaly_detector:
 
 
     def updateCallback(self, msg):
-        fileName = msg.data
-        if os.path.isfile(fileName):
-            print "Start to update detector using ", fileName
+        fileNames = msg.data
 
-            # Get label
-            if 'success' in fileName: self.Y_test_org.append(0)
+        if len(fileNames) == 0 or os.path.isfile(fileName) is False:
+            print "Warning>> there is no recorded file"
+            return StringArray_NoneResponse()
+              
+        print "Start to update detector using ", fileName
+
+        # Get label
+        for f in fileNames:
+            if 'success' in f: self.Y_test_org.append(0)
             else: Y_test_org.append(1)
 
-            # Preprocessing
-            singleData = dm.getData(fileName, self.rf_center, self.local_range,\
-                                    self.handFeatureParams,\
-                                    downSampleSize = self.downSampleSize, \
-                                    cut_data       = self.cut_data,\
-                                    handFeatures   = self.handFeatures)
-            print np.shape(singleData)
+        # Preprocessing
+        trainData,_ = dm.getDataList(fileNames, self.rf_center, self.local_range,\
+                                     self.handFeatureParams,\
+                                     downSampleSize = self.downSampleSize, \
+                                     cut_data       = self.cut_data,\
+                                     handFeatures   = self.handFeatures)
+        print "Preprocessing: ", np.shape(trainData), np.shape(Y_test_org)
 
-            ## HMM
-            l_logp, l_post = self.ml.loglikelihoods(singleData, bPosterior=True)
-            X = []
-            for logp, post in zip(l_logp, l_post):
-                X.append([logp]+post.tolist())
+        ## HMM
+        ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
+        X, Y = getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
+        print "Features: ", np.shape(X), np.shape(Y)
 
-            ## Scaling
-            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
-                self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X) ])
-            else:
-                self.X_scaled = np.vstack([ self.X_scaled, X ])
-                
-            # Run SGD? or SVM?
-            if self.classifier_method.find('svm'):
-                self.classifier.fit(self.X_scaled, self.Y_test_org)
-            else:
-                print "Not available update method"
+        ## Remove unseparable region and scaling it
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+            self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+        else:
+            self.X_scaled = np.vstack([ self.X_scaled, X ])
+
+        # Run SGD? or SVM?
+        if self.classifier_method.find('svm'):
+            self.classifier.fit(self.X_scaled, self.Y_test_org)
+        else:
+            print "Not available update method"
             
-        return String_NoneResponse()
+        return StringArray_NoneResponse()
         
 
     def rawDataCallback(self, msg):

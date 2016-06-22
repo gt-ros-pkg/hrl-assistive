@@ -42,7 +42,8 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 
 
-def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False, abnormal=False):
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False, \
+             rndPose=False):
 
     log.task = 'scooping'
     log.initParams()
@@ -55,7 +56,7 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     #ut.get_keystroke('Hit a key to proceed next')
     if train: 
         print armReachActionRight("initScooping2Random")
-        if abnormal:
+        if rndPose:
             print armReachActionLeft("getBowlPosRandom")
         else:
             print armReachActionLeft("getBowlPos")            
@@ -78,8 +79,7 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     
 def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
 
-    log.task = 'feeding'
-    log.initParams()
+    log.setTask('feeding')
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
@@ -105,6 +105,12 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     print "Finish to log!"    
     log.close_log_file()
     
+def updateSGDClassifier(task):
+    log.setTask(task)
+    log.updateDetector()
+
+    return
+
     
 if __name__ == '__main__':
     
@@ -114,6 +120,8 @@ if __name__ == '__main__':
                  default=False, help='Continuously publish data.')
     p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
                  default=False, help='Enable anomaly detector.')
+    p.add_option('--en_random_pose', '--rnd', action='store_true', dest='bRandPose',
+                 default=False, help='Enable randomness in a target pose.')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -134,7 +142,7 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
 
     
-    log = logger(ft=True, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
+    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
                  pps=False, skin=False, \
                  subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
@@ -145,16 +153,16 @@ if __name__ == '__main__':
 
                  
     last_trial  = '4'
-    last_detect = '2'
+    last_detect = '2'    
                  
     while not rospy.is_shutdown():
 
         detection_flag = False
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingNormalTrain, 5:scoopingAbnormalTrain, else: exit): ')
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingNormalTrain, 5:scoopingSGDUpdate else: exit): ')
         if trial=='': trial=last_trial
             
-        if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
+        if trial is '1' or trial is '2' or trial is '3' or trial is '4' :
             detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
             if detect == '1': detection_flag = True
@@ -162,14 +170,15 @@ if __name__ == '__main__':
             if trial == '1':
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
             elif trial == '4':
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True)
-            elif trial == '5':
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True, abnormal=True)
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag,
+                         train=True, rndPose=opt.bRandPose)
             elif trial == '2':
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
             else:
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+        elif trial is '5':
+            updateSGDClassifier('scooping')
         else:
             break
 

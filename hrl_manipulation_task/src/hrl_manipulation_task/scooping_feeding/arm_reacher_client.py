@@ -61,7 +61,7 @@ if __name__ == '__main__':
     
     
     ## Scooping -----------------------------------    
-    if True:
+    if False:
         print "Initializing left arm for scooping"
         print armReachActionLeft("initScooping1")
         print armReachActionRight("initScooping1")
@@ -81,15 +81,15 @@ if __name__ == '__main__':
         sys.exit()
 
     ## Feeding -----------------------------------
-    if False:
+    if True:
         print "Initializing left arm for feeding"
         print armReachActionLeft("initFeeding")
         print armReachActionRight("initFeeding")
 
         print "Detect ar tag on the head"
-        print armReachActionLeft('lookAtMouth')
+        #print armReachActionLeft('lookAtMouth')
         print armReachActionLeft("getHeadPos")
-        ut.get_keystroke('Hit a key to proceed next')        
+        #ut.get_keystroke('Hit a key to proceed next')        
 
         print "Running feeding!"
         print armReachActionLeft("runFeeding1")
