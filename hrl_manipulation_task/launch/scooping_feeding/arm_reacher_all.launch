@@ -11,7 +11,7 @@
   <node name="arm_reacher_server_left" pkg="hrl_manipulation_task"
         type="arm_reacher_server.py" args="-a $(arg arm1)"
         output="screen">
-    <!--remap from="/ar_track_alvar/mouth_pose" to="/hrl_manipulation_task/mouth_pose" -->
+    <remap from="/ar_track_alvar/mouth_pose" to="/hrl_manipulation_task/mouth_pose" />
   </node>
 
   

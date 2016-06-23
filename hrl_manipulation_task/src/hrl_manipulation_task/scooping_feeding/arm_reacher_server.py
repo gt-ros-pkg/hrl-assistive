@@ -179,14 +179,16 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = [['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
            ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0]]
-        self.motions['initFeeding']['right'] = [['MOVEJ', '[-1.0, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0],]
+        self.motions['initFeeding']['right'] = [['MOVET', '[0.,0.1,-0.25,0.,-0.23,-0.1]', 5.0],
+                                                ['PAUSE', 1.0]]
+        ## self.motions['initFeeding']['right'] = [['MOVEJ', '[-1.0, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0],]
 
         self.motions['runFeeding1'] = {}
-        self.motions['runFeeding1']['left'] = [['MOVES', '[0.0, 0.02, -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 1.0]]
+        self.motions['runFeeding1']['left'] = [['MOVES', '[0.0, 0.0, -0.07, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 1.0]]
 
         self.motions['runFeeding2'] = {}
-        self.motions['runFeeding2']['left'] = [['MOVES', '[0.0, 0.02, 0.02, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 0.5],
-           ['MOVES', '[0.0, 0.02, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],]
+        self.motions['runFeeding2']['left'] = [['MOVES', '[0.0, 0.0, 0.02, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 0.5],
+           ['MOVES', '[0.0, 0.0, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],]
           
         rospy.loginfo("Parameters are loaded.")
 
@@ -194,10 +196,9 @@ class armReachAction(mpcBaseAction):
         task = req.data
         self.stop_motion = False
 
-        print req
-
         if task == 'returnBowlPos':
             return self.bowl_frame
+        
         if task == "getBowlPos":
             print '\n\n----getBowlPos called!-----\n\n'
             if self.bowl_frame_kinect is not None:
@@ -209,15 +210,17 @@ class armReachAction(mpcBaseAction):
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame())
                 return "Choose bowl position from kinematics using tf"                
             else:
-                return "No kinect head position available! \n Code won't work! \n \
+                return "No kinect position available! \n Code won't work! \n \
                 Provide head position and try again!"
+                
         elif task == "getBowlPosRandom":
             if self.bowl_frame_kinect is not None:
                 self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)                
                 return "Choose kinect bowl position"
             elif self.bowl_frame_kinect is None:
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame(addNoise=True))
-                return "Choose bowl position from kinematics using tf"                
+                return "Choose bowl position from kinematics using tf"
+            
         elif task == "getHeadPos":
             if self.mouth_frame_vision is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
@@ -225,12 +228,15 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
+                
         elif task == "lookAtBowl":
             self.lookAt(self.bowl_frame)
             return "Completed to move head"
+        
         elif task == "lookAtMouth":
             self.lookAt(self.mouth_frame, tag_base='head')                            
             return "Completed to move head"
+        
         else:
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task 
