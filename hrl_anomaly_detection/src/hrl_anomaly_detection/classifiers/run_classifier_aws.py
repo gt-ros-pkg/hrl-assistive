@@ -410,9 +410,9 @@ if __name__ == '__main__':
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(1,8.0,5),\
-                              'gamma': np.linspace(1.0,4.0,5), \
-                              'w_negative': np.logspace(-1,0,5) }
+                              'cost': np.linspace(0.5,6.0,5),\
+                              'gamma': np.linspace(2.0,6.0,5), \
+                              'w_negative': np.logspace(-1,0.5,5) }
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(5,15.0,5),\
@@ -468,6 +468,11 @@ if __name__ == '__main__':
                               'cost': np.linspace(5.0,12.0,5),\
                               'gamma': [0.01, 0.1, 1.0], \
                               'w_negative': np.linspace(0.1,2.0,4) }
+            elif opt.dim == 3:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,5.0,5),\
+                              'gamma': [0.05, 0.1, 0.2, 0.4, 0.8], \
+                              'w_negative': np.linspace(1.0,3.0,5) }
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,10.0,5),\
