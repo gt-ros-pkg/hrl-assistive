@@ -45,6 +45,8 @@ class MouthPoseDetector:
         self.current_positions = []
         self.object_points     = []
         self.sizes             = []
+        self.previous_position = (0.0, 0.0, 0.0)
+        self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
 
         #subscribers
         self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=10)
@@ -102,8 +104,10 @@ class MouthPoseDetector:
         faces = self.detector(img)
         if len(faces) < 1:
             faces = self.previous_face
+            self.face_detected = False
         else:
             self.previous_face = faces
+            self.face_detected = True
         #print img.shape
         for d in faces:
             x = d.left()
@@ -221,7 +225,19 @@ class MouthPoseDetector:
                         pose, pose_points = self.retrieve_special_pose(new_point_set, depth)
                         """
                         position, orientation = self.pose_to_tuple(pose)
-
+                        current_positions = []
+                        for pose_point in pose_points:
+                            current_positions.append(pose_point.get_tuple())
+                        no_jump = True
+                        if not self.face_detected:
+                            for i in xrange(len(current_positions)):
+                                if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
+                                    no_jump = False
+                        if no_jump:
+                            self.current_positions = current_positions
+                            self.previous_position, self.previous_orientation = position, orientation
+                        else:
+                            position, orientation = self.previous_position, self.previous_orientation
                         #display frame
                         if self.display_3d:
                             self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
@@ -247,6 +263,7 @@ class MouthPoseDetector:
                                 #temp_pose.header.frame_id = "torso_lift_link"
                                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
                                 self.mouth_calc_pub.publish(temp_pose)
+
                             except:
                                 print "failed"
                         ## self.mouth_pub.publish(pnp_pose)
@@ -689,8 +706,10 @@ class MouthPoseDetector:
             points.append(new_point)
             current_positions.append(position)
             pose_points.append(Point(position))
+        """
         if not np.isnan(current_positions[0][0]) and not np.allclose(current_positions[0], (0.0, 0.0, 0.0)):
             self.current_positions = current_positions
+        """
         vector = []
         vector.append((points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[0].z))
         vector.append((points[2].x - points[0].x, points[2].y - points[0].y, points[2].z - points[0].z))
