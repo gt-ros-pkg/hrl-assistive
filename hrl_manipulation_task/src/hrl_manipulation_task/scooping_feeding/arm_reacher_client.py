@@ -31,6 +31,7 @@
 # system library
 import time, sys
 import datetime
+import multiprocessing
 
 # ROS library
 import rospy, roslib
@@ -38,6 +39,12 @@ import rospy, roslib
 # HRL library
 from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
+
+def armReachLeft(self, action):
+    armReachActionLeft(action)
+    
+def armReachRight(self, action):
+    armReachActionRight(action)
 
 if __name__ == '__main__':
 
@@ -47,6 +54,19 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+    # Parallelized scooping
+    if True:
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+        rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+        leftProc.start()
+        rightProc.start()
+        leftProc.join()
+        rightProc.join()
+        self.armReachActionRight('initScooping2')
+        self.armReachActionLeft('getBowlPos')
+        self.armReachActionLeft('lookAtBowl')
+        client.armReachActionLeft('initScooping2')
+        client.armReachActionLeft('runScooping')
     
     if False:
         ## print armReachActionLeft("testingMotion")
@@ -61,7 +81,7 @@ if __name__ == '__main__':
     
     
     ## Scooping -----------------------------------    
-    if True:
+    if False:
         print "Initializing left arm for scooping"
         print armReachActionLeft("initScooping1")
         print armReachActionRight("initScooping1")
