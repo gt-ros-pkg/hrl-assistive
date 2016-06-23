@@ -80,9 +80,10 @@ class MouthPoseDetector:
 
     def callback(self, data, depth_data, gripper_pose):
         #if data is not recent enough, reject
+        time1= time.time()
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
-        
+        #gripper_pose = PoseStamped()
         position, orientation = self.pose_to_tuple(gripper_pose)
         base_to_gripper = tft.quaternion_matrix(orientation)
         for i in xrange(3):
@@ -136,8 +137,7 @@ class MouthPoseDetector:
                                 self.object_points.append([0.0, 0.0, 0.0])
                         self.object_points = np.asarray(self.object_points)
                         self.object_points = self.object_points.astype('float32')
-                    pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
-                    time1 = time.time()
+                    #pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
                     if self.first:
                         self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
                         self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
@@ -192,10 +192,9 @@ class MouthPoseDetector:
                     else:
                         #retrieve points and make pose
                         pose, pose_points = self.retrieve_special_pose(point_set, depth)
-                        """
                         time2 = time.time()
                         retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
-                        print "3D pose to 2D: ", time.time()-time2
+                        #print "3D pose to 2D: ", time.time()-time2
                         retrieved_landmarks = dlib.dlib.points()
 
                         for i in xrange(len(landmarks)):
@@ -204,15 +203,17 @@ class MouthPoseDetector:
                             #print self.get_dist(prev_point, curr_point)
                             curr_point_2d = self.get_2d_pixel(curr_point)
                             #print curr_point, curr_point_2d
-                            #retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
-                        time1 = time.time()
+                            retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
+                        #time1 = time.time()
+                        print "new one"
                         new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth)
+                        count = 0
                         for i in xrange(len(landmarks)):
                             curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-                            #print self.get_dist(new_points_ordered[i], curr_point)
-                        print "2D->3D:",  time.time() - time1
-                        print "one ransac check in landmarks: ", time2 - time.time()
-                        """
+                            if self.get_dist(new_points_ordered[i], curr_point) < 0.005:
+                                count = count + 1
+                        #print "2D->3D:",  time.time() - time1
+                        #print "one ransac check in landmarks: ", time2 - time.time()
                         """
                         for i in xrange(len(new_points_ordered)):
                             if not np.allclose(new_points_ordered[i], (0.0, 0.0, 0.0)) and not np.allclose(points_ordered[i], (0.0, 0.0,0.0)):
@@ -243,13 +244,13 @@ class MouthPoseDetector:
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
                             try:
                                 temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
-                                temp_pose.header.frame_id = "torso_lift_link"
+                                #temp_pose.header.frame_id = "torso_lift_link"
                                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
                                 self.mouth_calc_pub.publish(temp_pose)
                             except:
                                 print "failed"
                         ## self.mouth_pub.publish(pnp_pose)
-                    #print time.time() - time1
+                    print time.time() - time1
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))
 
@@ -292,8 +293,8 @@ class MouthPoseDetector:
         for i, mark in enumerate(landmarks):
             point = self.get_3d_pixel(mark.x, mark.y, depth)
             if len(self.current_positions) >= 1:
-                if self.get_dist(point, self.current_positions[0]) > .1 and self.get_dist(point, self.current_positions[1]) > .1 and self.get_dist(point, self.current_positions[2]) > .1: 
-                #if self.get_dist(self.pose_to_tuple(retrieved_previous_points[i])[0], point) > 0.03:
+                #if self.get_dist(point, self.current_positions[0]) > .1 and self.get_dist(point, self.current_positions[1]) > .1 and self.get_dist(point, self.current_positions[2]) > .1: 
+                if self.get_dist(self.pose_to_tuple(retrieved_previous_points[i])[0], point) > 0.01:
                     points.append((0.0, 0.0, 0.0))
                 else:
                     points.append(point)
@@ -301,9 +302,10 @@ class MouthPoseDetector:
                 points.append(point)
         count = 0
         for i, mark in enumerate(landmarks):
-            if not np.allclose(points[i], (0.0, 0.0, 0.0)):
+            if not np.allclose(points[i], (0.0, 0.0, 0.0)) and not np.isnan(points[i][0]):
                 count = count + 1
-        if count < 5:
+        print "retrieved points valid ", count
+        if count < 20:
             points=[]
             for mark in landmarks:
                 point = self.get_3d_pixel(mark.x, mark.y, depth)
@@ -354,7 +356,7 @@ class MouthPoseDetector:
         best_delaunay = []
         best_delaunay_score = 9999999999
         best_2d_3d = []
-        invalid_indices = []
+        invalid_indices =[]
         for i, mark in enumerate(landmarks):
             point = self.get_3d_pixel(mark.x, mark.y, depth)
             points3d.append(list(point))
@@ -667,7 +669,7 @@ class MouthPoseDetector:
             special_points.append([])
         for i, points in enumerate(point_set):
             for j in xrange(len(dist)):
-                special_points[j].append(self.find_using_ratios(points, dist[j][i], half_dist[j][i], depth, 1.0, True))
+                special_points[j].append(self.find_using_ratios(points, dist[j][i], half_dist[j][i], depth, 1.0, False))
             new_points = []
             for new_point in points:
                 point_tuple = (new_point.x, new_point.y, new_point.z)
@@ -721,7 +723,7 @@ class MouthPoseDetector:
             position = poses[r].pose.position
             position = [position.x, position.y, position.z]
             dist = self.get_dist(current_pos, position)
-            if np.allclose(position, [0.0,0.0,0.0]) or np.isnan(position[0]) or abs(self.sizes[i-1] - current_sizes[i])/self.sizes[i-1] > .5 or dist > 0.2:
+            if np.allclose(position, [0.0,0.0,0.0]) or np.isnan(position[0]) or abs(self.sizes[i-1] - current_sizes[i])/self.sizes[i-1] > .5 or dist > 0.02:
                 valid.append(False)
             else:
                 valid.append(True)
