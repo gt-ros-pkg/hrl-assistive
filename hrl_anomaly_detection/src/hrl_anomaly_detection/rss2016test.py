@@ -978,6 +978,24 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
+        elif method == 'hmmsvm_dL':
+            # replace dL/(ds+e) to dL
+            for i in xrange(len(ll_classifier_train_X)):
+                for j in xrange(len(ll_classifier_train_X[i])):
+                    if j == 0:
+                        ll_classifier_train_X[i][j][1] = 0.0
+                    else:
+                        ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
+                          ll_classifier_train_X[i][j-1][0]
+
+            for i in xrange(len(ll_classifier_test_X)):
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    if j == 0:
+                        ll_classifier_test_X[i][j][1] = 0.0
+                    else:
+                        ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
+                          ll_classifier_test_X[i][j-1][0]
+                          
 
         # flatten the data
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
@@ -1046,7 +1064,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
 
         ## cb.run_classifier(j)
         dtc.set_params( **SVM_dict )
-        if method == 'svm' or method == 'hmmsvm_diag':
+        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                

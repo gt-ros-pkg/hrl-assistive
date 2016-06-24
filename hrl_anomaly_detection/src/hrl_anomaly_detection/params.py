@@ -244,22 +244,25 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.000215,
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.50749,\
-                              'osvm_nu': 0.000215,\
-                              'osvm_window_size': 10}
+                              'osvm_nu': 0.000215, 'osvm_window_size': 10,\
+                              'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
+                              'hmmsvm_dL_gamma': 0.50749,\
+}
 
         nPoints        = 20  
         ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
-                                       'hmmsvm_diag', 'osvm' ],\
-                          'update_list': [ 'osvm' ],\
+                                       'hmmsvm_diag', 'osvm', 'hmmsvm_dL' ],\
+                          'update_list': [ 'hmmsvm_dL' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-4.0, 0, nPoints),\
-                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
-                          'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
+                          'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
+                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
+                          'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         
     elif dim == 3:
