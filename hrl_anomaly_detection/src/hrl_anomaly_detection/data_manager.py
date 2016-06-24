@@ -504,6 +504,16 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         nLength      = d['nLength']
         nPoints      = ROC_dict['nPoints']
 
+        if method == 'hmmsvm_dL':
+            # replace dL/(ds+e) to dL
+            for i in xrange(len(ll_classifier_train_X)):
+                for j in xrange(len(ll_classifier_train_X[i])):
+                    if j == 0:
+                        ll_classifier_train_X[i][j][1] = 0.0
+                    else:
+                        ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
+                          ll_classifier_train_X[i][j-1][0]
+
 
         # divide into training and param estimation set
         import random

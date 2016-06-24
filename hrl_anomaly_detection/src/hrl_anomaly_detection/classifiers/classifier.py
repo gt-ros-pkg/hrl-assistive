@@ -62,11 +62,16 @@ class classifier(learning_base):
                  cost        = 4.,\
                  coef0       = 0.,\
                  w_negative  = 7.0,\
-                 # hmmsvm
+                 # hmmsvm_diag
                  hmmsvm_diag_nu = 0.5,\
                  hmmsvm_diag_w_negative  = 7.0,\
                  hmmsvm_diag_cost        = 4.,\
                  hmmsvm_diag_gamma       = 0.3,\
+                 # hmmsvm
+                 hmmsvm_dL_nu         = 0.5,\
+                 hmmsvm_dL_w_negative = 7.0,\
+                 hmmsvm_dL_cost       = 4.,\
+                 hmmsvm_dL_gamma      = 0.3,\
                  # hmmosvm
                  hmmosvm_nu  = 0.5,\
                  # osvm
@@ -91,7 +96,7 @@ class classifier(learning_base):
         self.verbose = verbose
 
         if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm' or \
-          self.method == 'hmmsvm_diag':
+          self.method == 'hmmsvm_diag' or self.method == 'hmmsvm_dL':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.class_weight = class_weight
@@ -106,6 +111,10 @@ class classifier(learning_base):
             self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
             self.hmmsvm_diag_cost       = hmmsvm_diag_cost
             self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma
+            self.hmmsvm_dL_nu         = hmmsvm_dL_nu
+            self.hmmsvm_dL_w_negative = hmmsvm_dL_w_negative
+            self.hmmsvm_dL_cost       = hmmsvm_dL_cost
+            self.hmmsvm_dL_gamma      = hmmsvm_dL_gamma            
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
@@ -155,7 +164,7 @@ class classifier(learning_base):
         ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
         if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm' or \
-          self.method == 'hmmsvm_diag':
+          self.method == 'hmmsvm_diag' or self.method == 'hmmsvm_dL':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
 
@@ -174,6 +183,9 @@ class classifier(learning_base):
             elif self.method == 'hmmsvm_diag':
                 commands = commands+' -n '+str(self.hmmsvm_diag_nu)+' -g '+str(self.hmmsvm_diag_gamma)\
                   +' -w-1 '+str(self.hmmsvm_diag_w_negative)+' -c '+str(self.hmmsvm_diag_cost)
+            elif self.method == 'hmmsvm_dL':
+                commands = commands+' -n '+str(self.hmmsvm_dL_nu)+' -g '+str(self.hmmsvm_dL_gamma)\
+                  +' -w-1 '+str(self.hmmsvm_dL_w_negative)+' -c '+str(self.hmmsvm_dL_cost)
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
@@ -303,11 +315,12 @@ class classifier(learning_base):
         '''
 
         if self.method == 'cssvm_standard' or self.method == 'cssvm' or self.method == 'svm' or \
-          self.method == 'osvm' or self.method == 'hmmosvm' or self.method == 'hmmsvm_diag':
+          self.method == 'osvm' or self.method == 'hmmosvm' or self.method == 'hmmsvm_diag' or \
+          self.method == 'hmmsvm_dL':
             ## K_test = custom_kernel(X, self.X_train, gamma=self.gamma)
             
             if self.method == 'svm' or self.method == 'osvm' or self.method == 'hmmosvm' or \
-              self.method == 'hmmsvm_diag':
+              self.method == 'hmmsvm_diag' or self.method == 'hmmsvm_dL':
                 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
                 import svmutil as svm
             else:
@@ -416,7 +429,8 @@ class classifier(learning_base):
 
         ## return self.dt.decision_function(X)
         if self.method == 'cssvm_standard' or self.method == 'cssvm' or \
-          self.method == 'fixed' or self.method == 'svm' or self.method == 'hmmsvm_diag':
+          self.method == 'fixed' or self.method == 'svm' or self.method == 'hmmsvm_diag' or \
+          self.method == 'hmmsvm_dL':
             if type(X) is not list:
                 return self.predict(X.tolist())
             else:
@@ -599,7 +613,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag':
+    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
