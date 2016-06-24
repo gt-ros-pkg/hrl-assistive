@@ -493,8 +493,8 @@ if __name__ == '__main__':
             elif opt.dim == 3:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,5.0,5),\
-                              'gamma': [0.05, 0.1, 0.2, 0.4, 0.8], \
-                              'w_negative': np.linspace(1.0,3.0,5) }
+                              'gamma': np.logspace(-2, 0.4, 5), \
+                              'w_negative': np.linspace(1.0,5.0,5) }
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,10.0,5),\
