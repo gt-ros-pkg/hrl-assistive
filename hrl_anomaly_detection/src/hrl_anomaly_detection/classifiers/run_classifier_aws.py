@@ -394,7 +394,7 @@ if __name__ == '__main__':
         elif opt.method == 'hmmsvm_dL':
             parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
                           'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
-                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_gamma': np.linspace(0.01,4.0,5), \
                           'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
                           }
                 

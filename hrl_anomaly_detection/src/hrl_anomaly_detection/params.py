@@ -124,8 +124,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 7.5, \
                           'hmmsvm_diag_gamma': 2.0,\
                           'osvm_window_size': 10,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
-                          'hmmsvm_dL_gamma': 0.50749}
+                          'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 12.5, \
+                          'hmmsvm_dL_gamma': 2.0}
                           
 
         nPoints        = 20 #, 'hmmosvm',
