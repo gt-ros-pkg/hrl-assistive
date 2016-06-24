@@ -1850,7 +1850,7 @@ if __name__ == '__main__':
         
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
                                                                opt.bAERenew, opt.bHMMRenew,\
                                                                rf_center, local_range,\
