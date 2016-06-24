@@ -469,7 +469,7 @@ if __name__ == '__main__':
                                                                        ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         #temp
-        nPoints        = 20
+        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -478,6 +478,7 @@ if __name__ == '__main__':
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
@@ -545,6 +546,7 @@ if __name__ == '__main__':
                           'osvm_param_range': np.logspace(-6., 0.2, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
