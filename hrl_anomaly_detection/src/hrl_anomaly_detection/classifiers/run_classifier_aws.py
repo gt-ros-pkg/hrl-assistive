@@ -307,7 +307,7 @@ if __name__ == '__main__':
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
 
         nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
@@ -358,7 +358,7 @@ if __name__ == '__main__':
                                                                rf_center, local_range,\
                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
         nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed','hmmsvm_diag'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed','hmmsvm_diag', 'hmmsvm_dL'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
