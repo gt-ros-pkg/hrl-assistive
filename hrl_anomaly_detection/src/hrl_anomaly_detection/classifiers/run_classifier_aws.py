@@ -514,6 +514,12 @@ if __name__ == '__main__':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'osvm_nu': np.logspace(-5.5,-3.0,20),
                           }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
             
         ## if opt.dim == 4:
         ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -576,6 +582,12 @@ if __name__ == '__main__':
                           opt.method+'_cost': np.linspace(5,15.0,5),\
                           opt.method+'_gamma': np.linspace(0.01,2.0,5), \
                           opt.method+'_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
                           }
  
 
