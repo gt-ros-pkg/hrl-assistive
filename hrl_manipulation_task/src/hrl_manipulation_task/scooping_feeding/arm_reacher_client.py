@@ -62,11 +62,11 @@ if __name__ == '__main__':
         rightProc.start()
         leftProc.join()
         rightProc.join()
-        self.armReachActionRight('initScooping2')
-        self.armReachActionLeft('getBowlPos')
-        self.armReachActionLeft('lookAtBowl')
-        client.armReachActionLeft('initScooping2')
-        client.armReachActionLeft('runScooping')
+        armReachActionRight('initScooping2')
+        armReachActionLeft('getBowlPos')
+        armReachActionLeft('lookAtBowl')
+        armReachActionLeft('initScooping2')
+        armReachActionLeft('runScooping')
     
     if False:
         ## print armReachActionLeft("testingMotion")
