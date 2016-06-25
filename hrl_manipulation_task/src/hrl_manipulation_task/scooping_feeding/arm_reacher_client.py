@@ -55,6 +55,29 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
+
+    #---------------------------- Face registration ----------------------
+    if False:
+        ## print armReachActionRight("initScooping1")
+        ## print armReachActionRight("initFeeding")
+        print armReachActionLeft("initScooping1")
+        sys.exit()
+
+    # -------------- TEST -----------------------    
+    if True:
+        ## print armReachActionLeft("test")
+        ## print armReachActionLeft("initFeeding")
+        print armReachActionLeft("initScooping1")
+        print armReachActionLeft("getHeadPos")
+        #ut.get_keystroke('Hit a key to proceed next')        
+        print "Running feeding!"
+        print armReachActionLeft("runFeeding1")
+        print armReachActionLeft("runFeeding2")
+        sys.exit()
+
+        
+
+    #---------------------------- New Parallelization ----------------------
     # Parallelized scooping
     if False:
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
@@ -63,24 +86,30 @@ if __name__ == '__main__':
         rightProc.start()
         leftProc.join()
         rightProc.join()
-        ## armReachActionRight('initScooping2')
-        ## armReachActionLeft('getBowlPos')
-        ## armReachActionLeft('lookAtBowl')
-        ## client.armReachActionLeft('initScooping2')
-        ## client.armReachActionLeft('runScooping')
-    
-    if False:
-        ## print armReachActionLeft("testingMotion")
-        print armReachActionRight("initScooping1")
-        print armReachActionLeft("initScooping1")
-        print armReachActionLeft("getBowlPos")
-        print armReachActionLeft('lookAtBowl')
-        print armReachActionRight("initScooping2")
-        print armReachActionLeft("initScooping2")
-        print armReachActionLeft("runScooping")
+        armReachActionRight('initScooping2')
+        armReachActionLeft('getBowlPos')
+        armReachActionLeft('lookAtBowl')
+        armReachActionLeft('initScooping2')
+        armReachActionLeft('runScooping')
         sys.exit()
-    
-    
+
+    # Parallelized scooping
+    if False:
+        print "Initializing left arm for feeding"
+        print armReachActionLeft("initFeeding")
+        ## print armReachActionRight("initScooping1")
+        ## print armReachActionRight("initFeeding")
+
+        print "Detect ar tag on the head"
+        #print armReachActionLeft('lookAtMouth')
+        print armReachActionLeft("getHeadPos")
+        #ut.get_keystroke('Hit a key to proceed next')        
+
+        print "Running feeding!"
+        print armReachActionLeft("runFeeding1")
+        print armReachActionLeft("runFeeding2")
+        
+    # --------------------------- Old --------------------------------------
     ## Scooping -----------------------------------    
     if False:
         print "Initializing left arm for scooping"

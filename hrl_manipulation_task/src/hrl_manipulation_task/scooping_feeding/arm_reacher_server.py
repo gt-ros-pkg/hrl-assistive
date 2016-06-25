@@ -48,6 +48,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as dh
 QUEUE_SIZE = 10
 
 
@@ -68,19 +69,22 @@ class armReachAction(mpcBaseAction):
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
 
-        rate = rospy.Rate(100) # 25Hz, nominally.
+        rate = rospy.Rate(5)
+        print_flag = True
         while not rospy.is_shutdown():
             if self.getJointAngles() != []:
-                if verbose:
+                if verbose and print_flag:
                     print "--------------------------------"
                     print "Current "+self.arm_name+" arm joint angles"
                     print self.getJointAngles()
                     print "Current "+self.arm_name+" arm pose"
-                    print self.getEndeffectorPose(tool=1)
+                    print self.getEndeffectorPose(tool=self.cur_tool)
                     print "Current "+self.arm_name+" arm orientation (w/ euler rpy)"
-                    print self.getEndeffectorRPY(tool=1) #*180.0/np.pi
+                    print self.getEndeffectorRPY(tool=self.cur_tool) #*180.0/np.pi
                     print "--------------------------------"
-                break
+                    print_flag = False
+                ## break
+                self.pubCurEEPose()
             rate.sleep()
             
         rospy.loginfo("Arm Reach Action is initialized.")
@@ -92,6 +96,9 @@ class armReachAction(mpcBaseAction):
                                         queue_size=QUEUE_SIZE, latch=True)
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,
                                          queue_size=QUEUE_SIZE, latch=True)
+        self.ee_pose_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
+                                           '_ee_pose', PoseStamped,
+                                           queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
@@ -115,8 +122,9 @@ class armReachAction(mpcBaseAction):
 
         MOVEP: straight motion without orientation control (ex. MOVEP pos-euler timeout relative_frame)
         MOVES: straight motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
+        MOVEL: straight (linear) motion with orientation control (ex. MOVEL pos-euler timeout relative_frame)
         MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
-        MOVEJ: joint motion (ex. MOVEJ joint timeout)
+        MOVEJ: joint motion (ex. MOVEJ joint timeout)        
         PAUSE: Add pause time between motions (ex. PAUSE duration)
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
@@ -129,6 +137,9 @@ class armReachAction(mpcBaseAction):
         self.motions = {}
 
         self.motions['test'] = {}
+        self.motions['test']['left'] = [['MOVEJ', '[0.33, 0.504, 0.679, -1.665, 1.290, -1.056, 1.88]', 10.],\
+                                        ['MOVEL', '[0.55, 0.348, -0.0, 0.98, -1.565, -2.884]', 10.0] ]
+                                        ## ['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
         self.motions['test']['right'] = [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.], ]
         
         ## Testing Motions ---------------------------------------------------------
@@ -149,7 +160,7 @@ class armReachAction(mpcBaseAction):
         # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground), whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
         # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)] (represents positive values)
         self.motions['initScooping1'] = {}
-        self.motions['initScooping1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.8291]', 5.0]]
+        self.motions['initScooping1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
         self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0]]
           #['MOVEJ', '[-0.649, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0]
           #['MOVEJ', '[-0.848, 0.175, -1.676, -1.627, -0.097, -0.777, -1.704]', 5.0],
@@ -179,16 +190,25 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = [['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
            ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0]]
-        self.motions['initFeeding']['right'] = [['MOVET', '[0.,0.1,-0.25,0.,-0.23,-0.1]', 5.0],
+        self.motions['initFeeding']['right'] = [['MOVEJ', '[-0.312, -0.243, -1.090, -0.520, -0.430, -1.393, -1.107]', 10.0],
+                                                ['MOVES', '[0.75, 0.1, 0.23, -3.14, 0.13, 1.57]', 5.0],
                                                 ['PAUSE', 1.0]]
+        ## self.motions['initFeeding']['right'] = [['MOVET', '[0.1,0.05,-0.25,0.,-0.23,-0.0]', 5.0],
+        ##                                         ['PAUSE', 1.0]]
         ## self.motions['initFeeding']['right'] = [['MOVEJ', '[-1.0, 0.125, -1.715, -1.135, 0.247, -1.128, -1.797]', 5.0],]
 
         self.motions['runFeeding1'] = {}
-        self.motions['runFeeding1']['left'] = [['MOVES', '[0.0, 0.0, -0.07, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 1.0]]
+        ## self.motions['runFeeding1']['left'] = [['MOVES', '[0.0, 0.0, -0.07, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 1.0]]
+
+## ['MOVEJ', '[-0.063, -0.318, -1.335, -0.530, -0.379, -1.178, -1.0568]', 5.0],
+                                                       
+        self.motions['runFeeding1']['left'] = [['MOVET', '[-0.0, 0.0, 0.2, 0., 0., 0.]', 10., 'self.default_frame'],
+                                               ['MOVEL', '[-0.02, 0.0, -0.07, 0., 0., 0.]', 5., 'self.mouth_frame'],
+                                               ['PAUSE', 1.0]]
 
         self.motions['runFeeding2'] = {}
-        self.motions['runFeeding2']['left'] = [['MOVES', '[0.0, 0.0, 0.02, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 0.5],
-           ['MOVES', '[0.0, 0.0, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame'],]
+        self.motions['runFeeding2']['left'] = [['MOVES', '[-0.02, 0.0, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'], ['PAUSE', 0.5],
+           ['MOVES', '[-0.02, 0.0, -0.07, 0., 0., 0.]', 5., 'self.mouth_frame'],]
           
         rospy.loginfo("Parameters are loaded.")
 
@@ -422,10 +442,15 @@ class armReachAction(mpcBaseAction):
 
         return "Success"
         
-    
+    def pubCurEEPose(self):
+        frame = self.getEndeffectorFrame(tool=self.cur_tool)
+        ps = dh.gen_pose_stamped(frame, 'torso_lift_link', stamp = rospy.Time.now())
+        self.ee_pose_pub.publish(ps)
+
 
 if __name__ == '__main__':
 
+    # TODO: optparse should be replaced to our own one.
     import optparse
     p = optparse.OptionParser()
     haptic_mpc_util.initialiseOptParser(p)
@@ -436,9 +461,12 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
-    tool_id    = 1
-    if opt.arm == 'l': verbose = False
-    else: verbose = True
+    if opt.arm == 'l':
+        tool_id = 1
+        verbose = True
+    else:
+        tool_id = 0
+        verbose = False
         
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
