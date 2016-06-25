@@ -311,7 +311,7 @@ if __name__ == '__main__':
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-3.5, 0.8, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -325,7 +325,7 @@ if __name__ == '__main__':
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                           'cost': np.linspace(3.0, 7.0, 6),\
                           'gamma': np.logspace(-2, 0.7, 10), \
-                          'w_negative': np.linspace(1.0, 4.0,10) }
+                          'w_negative': np.linspace(1.0, 6.0,10) }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-5,0.,5)
