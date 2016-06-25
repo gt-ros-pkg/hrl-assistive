@@ -40,10 +40,9 @@ import rospy, roslib
 from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
 
-
 def armReachLeft(action):
     armReachActionLeft(action)
-
+    
 def armReachRight(action):
     armReachActionRight(action)
 

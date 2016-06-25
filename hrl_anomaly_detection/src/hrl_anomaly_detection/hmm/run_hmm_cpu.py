@@ -709,8 +709,8 @@ if __name__ == '__main__':
                                                                          rf_center, local_range, \
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         if opt.dim == 4:
-            parameters = {'nState': [25], 'scale': np.linspace(2.0,6.0,10), \
-                          'cov': np.linspace(0.01,4.0,10) }
+            parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
+                          'cov': np.linspace(0.01,6.0,10) }
         else:
             parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
                           'cov': np.linspace(0.1,2.0,10) }

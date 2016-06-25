@@ -16,12 +16,12 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
                           'osvm_nu': 0.000215, 'osvm_window_size': 10,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
+                          'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749 }
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm', 'hmmsvm_diag', 'osvm' ],\
-                          'update_list': ['svm'],\
+        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL' ],\
+                          'update_list': ['hmmsvm_dL'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
                           'svm_param_range': np.logspace(-2.9, 1.0, nPoints),\
@@ -31,6 +31,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
@@ -244,7 +245,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.33}
-            SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.01, 'cost': 7.5,\
+            SVM_param_dict = {'renew': False, 'w_negative': 0.85, 'gamma': 0.006, 'cost': 12.5,\
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                               'hmmosvm_nu': 0.000215,
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
@@ -256,7 +257,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         nPoints        = 20  
         ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
                                        'hmmsvm_diag', 'osvm', 'hmmsvm_dL' ],\
-                          'update_list': [ 'hmmsvm_dL' ],\
+                          'update_list': [ 'svm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-4.0, 0, nPoints),\
@@ -447,12 +448,12 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.01,\
                               'osvm_window_size': 10,\
-                              'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
+                              'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 5.0, \
                               'hmmsvm_dL_gamma': 0.50749}                              
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm', 'osvm' ],\
-                          'update_list': [ 'hmmsvm_diag' ],\
+        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'hmmsvm_diag', 'hmmosvm', 'osvm', 'hmmsvm_dL' ],\
+                          'update_list': [ 'hmmsvm_dL' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.5, -0.8, nPoints),\
@@ -597,13 +598,13 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
                           'hmmsvm_diag_gamma': 1.5,\
                           'osvm_window_size': 10,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
+                          'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749}
                           
 
                           #'hmmosvm','hmmsvm_diag',
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm' ],\
-                          'update_list': [ 'svm' ],\
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL' ],\
+                          'update_list': [ 'hmmsvm_dL' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
@@ -620,7 +621,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.444, 'scale': 5.667}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.05, 'cost': 4.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 4.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           'hmmosvm_nu': 0.00316}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm' ],\

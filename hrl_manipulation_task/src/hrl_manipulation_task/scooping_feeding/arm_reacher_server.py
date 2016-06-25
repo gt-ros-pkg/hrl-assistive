@@ -59,7 +59,11 @@ class armReachAction(mpcBaseAction):
         #Variables...! #
         self.stop_motion = False
         self.verbose = verbose
+        self.highBowlDiff = np.array([0, 0, 0])
+        self.bowlPosition = np.array([0, 0, 0])
 
+        self.bowl_pub = None
+        self.mouth_pub = None
         self.bowl_frame_kinect  = None
         self.mouth_frame_vision = None
         self.bowl_frame         = None
@@ -102,6 +106,7 @@ class armReachAction(mpcBaseAction):
 
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/hrl_manipulation_task/bowl_highest_point', Point, self.highestBowlPointCallback)
         ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
@@ -175,14 +180,14 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping2Random']['right'] = \
           [['MOVES', '[0.7+random.uniform(-0.1, 0.1), -0.15+random.uniform(-0.1, 0.1),-0.1+random.uniform(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],]
 
-        # [Y (from center of bowl away from Pr2, X (towards right gripper), Z (towards floor) , roll?, pitch (tilt downwards), yaw?]
+        # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) , roll?, pitch (tilt downwards), yaw?]
         self.motions['runScooping'] = {}
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0,  0.04, 0, 0.6, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0,  0.025, 0, 0.8, 0]', 1, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+          [['MOVES', '[-0.05, 0.0+self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0+self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0+self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
            # ['MOVES', '[ 0.05, -0.03,  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
         
         ## Feeding motoins --------------------------------------------------------
@@ -260,7 +265,17 @@ class armReachAction(mpcBaseAction):
         else:
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task 
-        
+
+    def highestBowlPointCallback(self, data):
+        # self.highBowl = np.array([data.x, data.y, data.z]) 
+        # Transform data to orientation of bowl center
+        orient = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset')        
+        f = PyKDL.Frame(PyKDL.Rotation.RPY(orient[0], orient[1], orient[2]), PyKDL.Vector(0, 0, 0))
+        p = PyKDL.Vector(data.x, data.y, data.z)
+        # Perform transformation
+        p = f * p
+        # Find difference between current highest point in bowl and center of bowl  
+        self.highBowlDiff = np.array([p.x, p.y, p.z]) - self.bowlPosition
                 
     def bowlPoseCallback(self, data):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
@@ -341,6 +356,7 @@ class armReachAction(mpcBaseAction):
         # 1. right arm ('r_gripper_tool_frame') from tf
         self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
         [pos, quat] = self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
+
         p = PyKDL.Vector(pos[0],pos[1],pos[2])
         M = PyKDL.Rotation.Quaternion(quat[0], quat[1], quat[2], quat[3])
 
@@ -362,6 +378,8 @@ class armReachAction(mpcBaseAction):
                                  random.uniform(-0.1, 0.1),
                                  random.uniform(-0.1, 0.1))        
         
+        self.bowlPosition = np.array([p[0], p[1], p[2]])
+
         # 4. (optional) publish pose for visualization
         ps = PoseStamped()
         ps.header.frame_id = 'torso_lift_link'
