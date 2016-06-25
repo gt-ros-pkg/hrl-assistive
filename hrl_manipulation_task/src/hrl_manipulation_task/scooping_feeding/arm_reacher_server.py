@@ -134,7 +134,7 @@ class armReachAction(mpcBaseAction):
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
 
-        joint or pose: we use radian and meter unit. The order of euler angle follows original z-y-x order (RPY).
+        joint or pose: we use radian and meter unit. The order of euler angle follows original x-y-z order (RPY).
         timeout or duration: we use second
         relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
         '''
@@ -142,9 +142,9 @@ class armReachAction(mpcBaseAction):
         self.motions = {}
 
         self.motions['test'] = {}
-        self.motions['test']['left'] = [['MOVEJ', '[0.33, 0.504, 0.679, -1.665, 1.290, -1.056, 1.88]', 10.],\
-                                        ['MOVEL', '[0.55, 0.348, -0.0, 0.98, -1.565, -2.884]', 10.0] ]
-                                        ## ['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
+        self.motions['test']['left'] = [['MOVEJ', '[0.051, 0.219, 0.135, -1.615, -3.052, -1.428, -1.64]', 5.0],
+                                        ['MOVET', '[0., 0.0, 0.0, -0.5, 0., 0.]', 10., 'self.default_frame'],\
+                                        ['MOVET', '[0., 0.0, 0.0, 0.5, 0., 0.]', 10., 'self.default_frame'] ]
         self.motions['test']['right'] = [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 5.], ]
         
         ## Testing Motions ---------------------------------------------------------

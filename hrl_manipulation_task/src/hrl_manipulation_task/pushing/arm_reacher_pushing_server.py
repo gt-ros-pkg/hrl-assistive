@@ -113,7 +113,7 @@ class armReachAction(mpcBaseAction):
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
 
-        joint or pose: we use radian and meter unit. The order of euler angle follows original z-y-x order (RPY).
+        joint or pose: we use radian and meter unit. The order of euler angle follows original x-y-z order (RPY).
         timeout or duration: we use second
         relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
         '''

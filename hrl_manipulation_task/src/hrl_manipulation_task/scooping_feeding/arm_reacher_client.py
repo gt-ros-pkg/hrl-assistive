@@ -64,7 +64,8 @@ if __name__ == '__main__':
 
     # -------------- TEST -----------------------    
     if True:
-        ## print armReachActionLeft("test")
+        print armReachActionLeft("test")
+        sys.exit()
         ## print armReachActionLeft("initFeeding")
         print armReachActionLeft("initScooping1")
         print armReachActionLeft("getHeadPos")
