@@ -305,7 +305,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ 'svm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
-                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, -0.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
@@ -414,7 +414,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 9.0 }
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 6.66 }
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 1.85, 'cost': 2.5,\
                           'hmmosvm_nu': 0.00316}
