@@ -15,7 +15,7 @@ haptic_mpc:
     tool_frame: 'l_gripper_spoon_frame'
 
     # Inposition parameter for action and log
-    ee_motion_threshold: 0.02
+    ee_motion_threshold: 0.015
     ee_orient_motion_threshold: 0.05
     jts_motion_threshold: 0.0001
 
