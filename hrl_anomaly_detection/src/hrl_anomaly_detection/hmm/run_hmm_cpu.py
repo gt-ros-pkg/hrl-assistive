@@ -221,7 +221,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ##                                             remove_fp=False)
 
             scaler = preprocessing.StandardScaler()
-            X_scaled = scaler.fit_transform(X_train_org)
+            try:
+                X_scaled = scaler.fit_transform(X_train_org)
+            except:
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
 
             X_test = []
             Y_test = [] 
