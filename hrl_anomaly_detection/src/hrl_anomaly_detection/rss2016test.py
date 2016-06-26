@@ -1850,7 +1850,7 @@ if __name__ == '__main__':
         
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
+        subjects = [ 'Ashwin', 'Song', 'tom' , 'lin', 'wonyoung']
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
                                                                opt.bAERenew, opt.bHMMRenew,\
                                                                rf_center, local_range,\
@@ -1901,7 +1901,7 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         successData = True
-        failureData = True
+        failureData = False
         modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
         
         data_plot(subjects, opt.task, raw_data_path, save_data_path,\
@@ -1917,11 +1917,12 @@ if __name__ == '__main__':
         '''
         ## modality_list   = ['kinematics', 'audioWrist','audio', 'fabric', 'ft', \
         ##                    'vision_artag', 'vision_change', 'pps']
+        modality_list   = ['kinematics', 'ft']
         success_viz = True
-        failure_viz = True
+        failure_viz = False
 
         data_selection(subjects, opt.task, raw_data_path, save_data_path,\
-                       downSampleSize=downSampleSize, \
+                       downSampleSize=param_dict['data_param']['downSampleSize'], \
                        local_range=local_range, rf_center=rf_center, \
                        success_viz=success_viz, failure_viz=failure_viz,\
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
