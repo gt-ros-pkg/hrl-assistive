@@ -565,7 +565,7 @@ if __name__ == '__main__':
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
         if opt.method == 'svm':
-            if opt.dim == 5
+            if opt.dim == 5:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,4.0,5),\
                               'gamma': np.logspace(-1.5,0.5,10), \
