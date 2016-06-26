@@ -602,7 +602,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_dL_gamma': 0.50749}
                           
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag' ],\
-                          'update_list': [ 'hmmsvm_diag' ],\
+                          'update_list': [ 'hmmsvm_dL' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
