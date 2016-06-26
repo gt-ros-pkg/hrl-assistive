@@ -258,13 +258,13 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         nPoints        = 20  
         ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
                                        'hmmsvm_diag', 'osvm', 'hmmsvm_dL' ],\
-                          'update_list': [ 'hmmosvm' ],\
+                          'update_list': [ 'svm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -13., nPoints), \
                           'svm_param_range': np.logspace(-1.5, 0.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-2.0, 1.3, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'fixed_param_range': np.logspace(-1, 0.0, nPoints)*-5.0,\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
@@ -287,7 +287,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-2.0, 1.4, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints)}        
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
