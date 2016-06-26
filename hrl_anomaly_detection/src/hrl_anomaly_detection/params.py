@@ -595,8 +595,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
                           'osvm_nu': 0.00001,\
                           'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 10.0, \
-                          'hmmsvm_diag_gamma': 1.5,\
+                          'hmmsvm_diag_w_negative': 1.175, 'hmmsvm_diag_cost': 12.5, \
+                          'hmmsvm_diag_gamma': 0.5075,\
                           'osvm_window_size': 10,\
                           'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749}
