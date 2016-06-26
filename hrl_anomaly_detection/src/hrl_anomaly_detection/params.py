@@ -232,7 +232,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.3, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
