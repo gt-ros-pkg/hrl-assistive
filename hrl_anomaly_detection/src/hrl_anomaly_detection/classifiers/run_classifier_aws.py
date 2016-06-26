@@ -556,7 +556,7 @@ if __name__ == '__main__':
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9 #4
+        nFiles = 4 #9
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -565,10 +565,16 @@ if __name__ == '__main__':
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
         if opt.method == 'svm':
-            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(1.0,4.0,5),\
-                          'gamma': np.linspace(0.1,8.0,10), \
-                          'w_negative': np.logspace(-2, 0.5, 5) }
+            if opt.dim == 5
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,4.0,5),\
+                              'gamma': np.logspace(-1.5,0.5,10), \
+                              'w_negative': np.logspace(-0.5, 0.5, 5) }
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,4.0,5),\
+                              'gamma': np.linspace(0.1,8.0,10), \
+                              'w_negative': np.logspace(-2, 0.5, 5) }                
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'osvm_nu': np.logspace(-6,-1,10),
