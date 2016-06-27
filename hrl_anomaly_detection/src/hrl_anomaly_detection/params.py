@@ -170,7 +170,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         nPoints        = 20 #, 'hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
-                          'update_list': ['svm'],\
+                          'update_list': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints),\
                           'svm_param_range': np.logspace(-2.0, 0.6, nPoints),\
