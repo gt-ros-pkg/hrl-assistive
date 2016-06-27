@@ -65,9 +65,7 @@ if __name__ == '__main__':
     # -------------- TEST -----------------------    
     if True:
         # Scooping
-        ## print armReachActionRight("initScooping1")
-        ## print armReachActionLeft("initScooping1")
-        ## print armReachActionRight("initScooping2")
+        #print armReachActionRight("initScooping1")
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
         leftProc.start(); rightProc.start()
@@ -76,6 +74,7 @@ if __name__ == '__main__':
         print armReachActionLeft('lookAtBowl')
         print armReachActionLeft('initScooping2')
         print armReachActionLeft('runScooping')
+        sys.exit()
         # feeding start
         ## print armReachActionLeft("initFeeding")    # run it only if there was no scooping  
         ## print armReachActionLeft("initFeeding1")      
