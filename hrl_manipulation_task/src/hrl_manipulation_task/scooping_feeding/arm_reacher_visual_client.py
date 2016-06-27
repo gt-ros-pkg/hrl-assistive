@@ -42,7 +42,8 @@ import PyKDL
 # HRL library
 from hrl_srvs.srv import String_String, String_StringRequest
 
-from tf import TransformListener
+import tf
+#from tf import TransformListener
 from sensor_msgs.msg import PointCloud2, CameraInfo
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, PoseStamped, TransformStamped, PointStamped
@@ -56,7 +57,7 @@ except:
 class ArmReacherClient:
     def __init__(self, isScoopingFeeding=True, verbose=True):
         rospy.init_node('feed_client')
-        self.tf = TransformListener()
+        self.tf = tf.TransformListener()
 
         self.isScoopingFeeding = isScoopingFeeding
         self.verbose = verbose
@@ -224,7 +225,29 @@ class ArmReacherClient:
 
         # Find the highest point (based on Z axis value) that is within the bowl. Positive Z is facing towards the floor, so find the min Z value
         if self.verbose: print 'points3D:', np.shape(self.points3D)
-        maxIndex = self.points3D[:, 2].argmin()
+
+        # Begin transforming each point back into torso_lift_link. This way we can find the highest point in the bowl.
+        # This ir_optical_frame is not fixed and the Z axis is not guaranteed to be pointing upwards
+        t = time.time()
+        self.tf.waitForTransform('torso_lift_link', 'head_mount_kinect_ir_optical_frame', rospy.Time(), rospy.Duration(5))
+        try :
+            translation, rotation = self.tf.lookupTransform('torso_lift_link', 'head_mount_kinect_ir_optical_frame', rospy.Time())
+            transformationMatrix = np.dot(tf.transformations.translation_matrix(translation), tf.transformations.quaternion_matrix(rotation))
+        except tf.ExtrapolationException:
+            print 'Transpose of bowl points failed!'
+            return
+
+        newPoints = np.empty_like(self.points3D)
+        # Append a column of 1's to the points matrix (i.e. at a 1 to each point)
+        self.points3D = np.concatenate((self.points3D, np.ones((len(self.points3D), 1))), axis=1)
+        for i, point in enumerate(self.points3D):
+            newPoints[i] = np.dot(transformationMatrix, point)[:3]
+        self.points3D = newPoints
+
+        print 'Transform time:', time.time() - t
+
+        # Z axis for torso_lift_link frame is towards the sky, thus find max Z value for highest point
+        maxIndex = self.points3D[:, 2].argmax()
         highestBowlPoint = np.array(self.points3D[maxIndex]) #+ np.array([0, 0.25, 0])
 
         # Transform the highest point back to the torso_lift_link frame
