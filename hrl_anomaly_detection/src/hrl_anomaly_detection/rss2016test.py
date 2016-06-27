@@ -995,6 +995,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     else:
                         ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
                           ll_classifier_test_X[i][j-1][0]
+        ## elif method == 'hmmsvm_LSLS':
+            
                           
 
         # flatten the data
