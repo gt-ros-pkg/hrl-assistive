@@ -525,12 +525,12 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             new_x = []
             for i in xrange(len(x)):
                 new_x.append([])
-                for j in xrange(len(x)):
+                for j in xrange(len(x[i])):
                     if j == 0:
                         new_x[i].append( x[i][j]+x[i][j] )
                     else:
                         new_x[i].append( x[i][j-1]+x[i][j] )
-                        
+
             ll_classifier_train_X = new_x
             
 

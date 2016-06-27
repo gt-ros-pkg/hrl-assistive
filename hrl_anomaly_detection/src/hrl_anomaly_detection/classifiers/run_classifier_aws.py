@@ -409,7 +409,7 @@ if __name__ == '__main__':
                                                                          ae_swtch=opt.bAESwitch, dim=opt.dim)
         
         nPoints        = 10
-        ROC_param_dict = {'methods': ['svm'],\
+        ROC_param_dict = {'methods': ['hmmsvm_LSLS'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\

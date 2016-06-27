@@ -441,7 +441,7 @@ class classifier(learning_base):
         return 
         
     def score(self, X, y):
-        if self.method == 'svm' or self.method == 'hmmosvm':
+        if self.method.find('svm')>=0 and self.method is not 'cssvm':
             return self.dt.score(X,y)
         else:
             print "Not implemented funciton Score"
@@ -665,7 +665,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             est_y = np.array(est_y)* -1.0
         else:
             est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
-
+        
         anomaly = False
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
