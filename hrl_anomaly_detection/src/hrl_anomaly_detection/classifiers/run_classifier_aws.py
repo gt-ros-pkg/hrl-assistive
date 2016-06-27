@@ -461,7 +461,7 @@ if __name__ == '__main__':
                           'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
                           }
         elif opt.method == 'hmmsvm_LSLS':
-            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
                           'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
