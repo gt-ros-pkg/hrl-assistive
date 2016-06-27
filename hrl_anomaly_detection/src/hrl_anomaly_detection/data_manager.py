@@ -518,7 +518,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             if type(ll_classifier_train_X) is list:
                 ll_classifier_train_X = np.array(ll_classifier_train_X)
 
-            x = np.hstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
+            x = np.dstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
             x = x.tolist()
             ## ll_classifier_train_X = np.hstack([ x, x ])
 
