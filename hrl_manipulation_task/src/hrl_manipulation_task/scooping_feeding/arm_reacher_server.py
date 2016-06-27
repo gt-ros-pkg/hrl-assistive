@@ -167,11 +167,11 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping1'] = {}
         self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
                                                  ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
-        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0]]
+        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 10.0]]
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
-        self.motions['initScooping2']['right'] = [['MOVES', '[0.7, -0.15, -0.1, -3.1415, 0.0, 1.57]', 2.]]
+        self.motions['initScooping2']['right'] = [['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.57]', 2.]]
 
         # only for training setup
         self.motions['initScooping2Random'] = {}
@@ -191,21 +191,23 @@ class armReachAction(mpcBaseAction):
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
-        self.motions['initFeeding']['left'] = [['MOVEJ', '[0.645, -0.198, 1.118, -2.121, 1.402, -0.242, 0.939]', 10.0],
-                                               ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0]]
-        self.motions['initFeeding']['right'] = [['MOVES', '[0.75, 0.05, 0.23, -3.14, 0.13, 1.57]', 5.0],
-                                                ['PAUSE', 1.0]]
-
+        self.motions['initFeeding']['left'] = [['MOVEJ', '[0.147, 0.383, 0.20, -1.611, 1.425, -1.393, 1.723]', 10.0]]
+                                               ## ['MOVES', '[0.705, 0.348, -0.029, 0.98, -1.565, -2.884]', 10.0]]
+        self.motions['initFeeding']['right'] = [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
+                                                ['PAUSE', 2.0]]
+        ## ['MOVES', '[0.75, 0.05, 0.23, -3.14, 0.13, 1.57]', 5.0],
+                                                
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.1, 0.28, 0., 0., 0., 1.0]', 5., 'self.default_frame']]
+        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.05, 0.15, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
+                                                ['PAUSE', 2.0]]
 
         self.motions['initFeeding2'] = {}
-        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.02, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 2.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['runFeeding']['left'] = [['MOVET', '[0.0, 0.0, 0.14, 0., 0., 0.]', 5.],\
                                               ['PAUSE', 0.5],
-                                              ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
+                                              ['MOVET', '[0.0, 0.0, -0.14, 0., 0., 0.]', 5.]]
           
         rospy.loginfo("Parameters are loaded.")
 
@@ -241,7 +243,7 @@ class armReachAction(mpcBaseAction):
         elif task == "getHeadPos":
             if self.mouth_frame_vision is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
-                return "Chose kinect head position"
+                return self.arm_name+"Chose kinect head position"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
