@@ -76,6 +76,12 @@ class MouthPoseDetector:
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
         self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
 
+        """
+        self.failed_mouth_pub = []
+        for i in xrange(4):
+            self.failed_mouth_pub.append(rospy.Publisher('/mouth_pub' + str(i), PoseStamped, queue_size=10))
+        """
+
         #displays
         self.display_2d = display_2d
         self.display_3d = display_3d
@@ -147,6 +153,12 @@ class MouthPoseDetector:
         #detect face in 2d, if not found assume face is in previous location
         faces = self.detector(img)
         if len(faces) < 1:
+            faces = dlib.dlib.rectangles()
+            """
+            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 10, self.previous_face[0].top(), self.previous_face[0].right()- 10, self.previous_face[0].bottom()))
+            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 10, self.previous_face[0].top(), self.previous_face[0].right()+ 10, self.previous_face[0].bottom()))
+            faces.append(self.previous_face[0])
+            """
             faces = self.previous_face
             self.face_detected = False
         else:
@@ -264,11 +276,36 @@ class MouthPoseDetector:
                             curr_point_2d = self.get_2d_pixel(curr_point)
                             retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
                         new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)
+                        temp_sets = []
+                        """
+                        for i, point_set in enumerate(new_point_set):
+                            if i is 0:
+                                continue
+                            temp_set = []
+                            for point in point_set:
+                                temp_set.append(point.get_tuple())
+                            temp_sets.append((self.find_size(temp_set) - self.sizes[i -1]) / self.sizes[i-1])
+                        """
                         count = 0
                         for i in xrange(len(landmarks)):
                             curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
                             if self.get_dist(new_points_ordered[i], curr_point) < 0.01:
+                                """
+                                avg = 0
+                                cnt = 0
+                                for j, set in enumerate(self.point_set_index[1]):
+                                    if i in set:
+                                        avg = avg + temp_sets[j-1]
+                                        cnt = cnt + 1
+                                if cnt is not 0:
+                                    avg = avg / cnt
+                                else:
+                                    print "huh?"
+                                if avg < 0.3:
+                                    count = count + 1
+                                """
                                 count = count + 1
+                        print count
                         best = count
                         best_pose = pose
                         try:
@@ -277,36 +314,6 @@ class MouthPoseDetector:
                         except:
                             temp_pose = pose
                         temp_pose2 = pose
-                        #print best
-                        """
-                        for i in range(100):
-                            matrix = tft.quaternion_matrix(self.pose_to_tuple(temp_pose)[1])
-                            random_angle = []
-                            for j in xrange(3):
-                                random_angle.append((random.randint(-5,5) * np.math.pi / 180))#random.randint(0,10) * np.math.pi / 180))
-                            random_change = tft.quaternion_matrix(tft.quaternion_from_euler(random_angle[0], random_angle[1], random_angle[2]))
-                            matrix = np.array(np.matrix(random_change)*np.matrix(matrix))
-                            for j, offset in enumerate(self.pose_to_tuple(temp_pose)[0]):
-                                matrix[j][3] = offset + random.randint(-10, 10) / 1000
-                            pose = self.make_pose(tft.translation_from_matrix(matrix), orientation=tft.quaternion_from_matrix(matrix))
-                            retrieved_points = self.retrieve_points_from_orientation(pose)
-                            retrieved_landmarks = dlib.dlib.points()
-                            for j in xrange(len(landmarks)):
-                                prev_point = points_ordered[j]
-                                curr_point = (retrieved_points[j].pose.position.x,  retrieved_points[j].pose.position.y,  retrieved_points[j].pose.position.z)
-                                curr_point_2d = self.get_2d_pixel(curr_point)
-                                retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
-                            new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)
-                            count = 0
-                            for j in xrange(len(landmarks)):
-                                curr_point = (retrieved_points[j].pose.position.x,  retrieved_points[j].pose.position.y,  retrieved_points[j].pose.position.z)
-                                if self.get_dist(new_points_ordered[j], curr_point) < 0.01:
-                                    count = count + 1
-                            print count
-                            if count > best:
-                                best = count
-                                best_pose = pose
-                        """
                         pose = temp_pose2
                         position, orientation = self.pose_to_tuple(pose)
                         current_positions = []
@@ -317,7 +324,7 @@ class MouthPoseDetector:
                             for i in xrange(len(current_positions)):
                                 if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
                                     no_jump = False
-                            if count < 10:
+                            if count < 20:
                                 no_jump = False
                         if no_jump:
                             self.current_positions = current_positions
@@ -410,7 +417,7 @@ class MouthPoseDetector:
         for i, mark in enumerate(landmarks):
             if not np.allclose(points[i], (0.0, 0.0, 0.0)) and not np.isnan(points[i][0]):
                 count = count + 1
-        print "retrieved points valid ", count
+        #print "retrieved points valid ", count
         if count < 20:
             points=[]
             for mark in landmarks:
