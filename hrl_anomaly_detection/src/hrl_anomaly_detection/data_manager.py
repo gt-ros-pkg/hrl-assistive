@@ -513,7 +513,26 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
                     else:
                         ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
                           ll_classifier_train_X[i][j-1][0]
+        elif method == 'hmmsvm_LSLS':
+            # reconstruct data into LS(t-1)+LS(t)
+            if type(ll_classifier_train_X) is list:
+                ll_classifier_train_X = np.array(ll_classifier_train_X)
 
+            x = np.hstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
+            x = x.tolist()
+            ## ll_classifier_train_X = np.hstack([ x, x ])
+
+            new_x = []
+            for i in xrange(len(x)):
+                new_x.append([])
+                for j in xrange(len(x)):
+                    if j == 0:
+                        new_x[i].append( x[i][j]+x[i][j] )
+                    else:
+                        new_x[i].append( x[i][j-1]+x[i][j] )
+                        
+            ll_classifier_train_X = new_x
+            
 
         # divide into training and param estimation set
         import random
