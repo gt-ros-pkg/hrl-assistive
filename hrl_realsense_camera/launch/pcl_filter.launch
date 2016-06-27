@@ -1,0 +1,35 @@
+<launch>
+    <arg name="x_filter_min" default="-0.4"/>
+    <arg name="x_filter_max" default="0.4"/>
+    <arg name="y_filter_min" default="-0.4"/>
+    <arg name="y_filter_max" default="0.4"/>
+    <arg name="z_filter_min" default="0.1"/>
+    <arg name="z_filter_max" default="1.6"/>
+    <arg name="voxel_leaf_size" default="0.0015"/>
+    <arg name="bandwidth" default="300"/>
+
+    <group ns="/pcl_filters">
+    <!-- PCL Manager -->
+    <node pkg="nodelet" type="nodelet" name="box_filter_pcl_manager" args="manager" output="screen"/>
+
+    <node pkg="nodelet" type="nodelet" name="pass_z" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+      <remap from="~input" to="/SR300/depth/points" />
+      <rosparam subst_value="true">
+        filter_field_name: z
+        filter_limit_min: $(arg z_filter_min)
+        filter_limit_max: $(arg z_filter_max)
+      </rosparam>
+    </node>
+
+    <!--node pkg="nodelet" type="nodelet" name="outlierRemoval" args="load pcl/StatisticalOutlierRemoval box_filter_pcl_manager" output="screen">
+      <remap from="~input" to="pass_z/output" />
+      <rosparam>
+        mean_k: 4
+        stddev: 0.8
+      </rosparam>
+    </node-->
+
+    <node pkg="topic_tools" type="throttle" name="pc_filtered_throttle" args="bytes /pcl_filters/pass_z/output $(arg bandwidth) 1.0 peek_points" />
+
+  </group>
+</launch>

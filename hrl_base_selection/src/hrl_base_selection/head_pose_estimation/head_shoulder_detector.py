@@ -102,7 +102,7 @@ class HeadShoulderDetector:
 
     def visualize_detections_by_image(self, bboxes, test_scn_path, feature_params):
         '''Display head location'''
-	test_scenes = pkl.load(open(test_scn_path, 'rb'))
+	    test_scenes = pkl.load(open(test_scn_path, 'rb'))
         fig = plt.gcf()
 
         for i in range(np.shape(test_scenes)[0]):
