@@ -147,7 +147,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 8.777}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.911, 'cost': 2.25,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 4.45, 'cost': 1.0,\
                           'hmmosvm_nu': 0.00316}
 
         nPoints        = 20 #'svm','hmmosvm'
@@ -500,13 +500,13 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
-                          'update_list': ['svm'],\
+                          'update_list': ['fixed', 'progress_time_cluster', 'svm','hmmosvm'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'svm_param_range': np.logspace(-2, 0.5, nPoints),\
+                          'progress_param_range':np.logspace(-0.5, 1.2, nPoints)*-1.0, \
+                          'fixed_param_range': np.linspace(-1.5, -2.1, nPoints),\
+                          'svm_param_range': np.logspace(-2.2, 0.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-2.7, 1.2, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints)
                           }
             
