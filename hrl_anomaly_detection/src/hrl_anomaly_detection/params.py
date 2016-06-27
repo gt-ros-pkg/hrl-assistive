@@ -119,7 +119,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 5.0, 'cost': 3.5,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 4.455, 'cost': 2.25,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 7.5, \
