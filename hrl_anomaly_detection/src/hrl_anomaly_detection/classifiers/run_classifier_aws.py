@@ -359,13 +359,13 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #, 'wonyoung']
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
                                                                False, False,\
                                                                rf_center, local_range,\
                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
         nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed','hmmsvm_diag', 'hmmsvm_dL'],\
+        ROC_param_dict = {'methods': ['svm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
@@ -373,6 +373,7 @@ if __name__ == '__main__':
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -416,6 +417,12 @@ if __name__ == '__main__':
                           'hmmsvm_dL_gamma': np.linspace(0.01,4.0,5), \
                           'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
                 
 
     #---------------------------------------------------------------------------           
@@ -432,6 +439,7 @@ if __name__ == '__main__':
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -484,6 +492,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
                           }
 
                 
@@ -688,6 +702,12 @@ if __name__ == '__main__':
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict, negTrain=True)
                 else:
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
+                    if method is 'bpsvm':
+                        # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
+                        l_idx = dm.getHMMCuttingIdx(data['X_scaled'],
+                                                    data['Y_train_org'],
+                                                    data['idx_train_org'])
+                        
     
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
@@ -695,6 +715,10 @@ if __name__ == '__main__':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     data = dm.getPCAData(nFiles, startIdx, data_pkl, window=10, posdata=False)
+                elif method is 'bpsvm':
+                    startIdx=4
+                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
+                    data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=l_idx)
                 elif method is 'rfc':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )

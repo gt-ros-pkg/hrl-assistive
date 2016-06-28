@@ -62,6 +62,10 @@ class classifier(learning_base):
                  cost        = 4.,\
                  coef0       = 0.,\
                  w_negative  = 7.0,\
+                 # bpsvm
+                 bpsvm_w_negative = 7.0,\
+                 bpsvm_cost       = 4.,\
+                 bpsvm_gamma      = 0.3,\
                  # hmmsvm_diag
                  hmmsvm_diag_nu = 0.5,\
                  hmmsvm_diag_w_negative  = 7.0,\
@@ -111,6 +115,9 @@ class classifier(learning_base):
             self.cost        = cost
             self.coef0       = coef0
             self.w_negative  = w_negative
+            self.bpsvm_w_negative = bpsvm_w_negative
+            self.bpsvm_cost       = bpsvm_cost
+            self.bpsvm_gamma      = bpsvm_gamma                        
             self.hmmsvm_diag_nu = hmmsvm_diag_nu
             self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
             self.hmmsvm_diag_cost       = hmmsvm_diag_cost
@@ -196,6 +203,9 @@ class classifier(learning_base):
             elif self.method == 'hmmsvm_LSLS':
                 commands = commands+' -n '+str(self.hmmsvm_LSLS_nu)+' -g '+str(self.hmmsvm_LSLS_gamma)\
                   +' -w-1 '+str(self.hmmsvm_LSLS_w_negative)+' -c '+str(self.hmmsvm_LSLS_cost)
+            elif self.method == 'bpsvm':
+                commands = commands+' -n '+str(self.nu)+' -g '+str(self.bpsvm_gamma)\
+                  +' -w-1 '+str(self.bpsvm_w_negative)+' -c '+str(self.bpsvm_cost)
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
@@ -612,7 +622,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS':
+    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
+      method == 'bpsvm':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)

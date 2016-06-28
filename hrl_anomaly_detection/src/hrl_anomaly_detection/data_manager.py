@@ -593,7 +593,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1.):
+def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., pos_cut_indices=None):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
@@ -627,13 +627,8 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1.):
 
         #--------------------------------------------------------------------------------
         # Training data
-        if posdata is False:
-            ll_classifier_train_X = normalTrainData
-            ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
-        else:
-            ll_classifier_train_X   = np.vstack([normalTrainData, abnormalTrainData])
-            ll_classifier_train_Y   = [[-1]*len(normalTrainData[0])]*len(normalTrainData)+\
-              [[1]*len(abnormalTrainData[0])]*len(abnormalTrainData)
+        ll_classifier_train_X = normalTrainData
+        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
                     
         # flatten the data
         if window == 0: sys.exit()
@@ -643,6 +638,30 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1.):
         else:
             X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
                                                                   ll_classifier_train_Y, window=window)
+
+        if posdata and pos_cut_indices is not None:
+            abnormalTrainData_X = []
+            abnormalTrainData_Y = []
+            for i, cut_idx in enumerate(pos_cut_indices):
+                abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
+                abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
+                    
+            if window == 0: sys.exit()
+            elif window==1:
+                X_abnorm_train, Y_abnorm_train, _ = flattenSample(abnormalTrainData_X, \
+                                                                  abnormalTrainData_Y)
+            else:
+                X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
+                                                                            abnormalTrainData_Y, window=window)
+
+            print np.shape(X_train_org), np.shape(X_abnorm_train)
+            X_train_org = X_train_org + X_abnorm_train
+            Y_train_org = Y_train_org + Y_abnorm_train
+            print np.shape(X_train_org)
+            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            sys.exit()
+
+
                                                                   
         # scaling
         from sklearn import preprocessing
@@ -719,7 +738,25 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1.):
     return data 
     
 
-
+def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
+    '''
+    ll : sample x length x hmm features
+    It takes only positive data.
+    '''
+    
+    l_X   = []
+    l_Y   = []
+    l_idx = []
+    for i in xrange(len(ll_X)):
+        if ll_Y[i][0] < 0:
+            print "Error: negative data come in."
+            sys.exit()
+        else:
+            _,_,idx = getEstTruePositive(ll_X[i], ll_idx[i])
+            l_idx.append(idx)
+            
+    return l_idx
+    
 
 def errorPooling(norX, abnorX, param_dict):
     '''
@@ -1750,36 +1787,42 @@ def getTimeDelayData(data, time_window):
 
     return np.array(new_data)
 
-def getEstTruePositive(X):
+def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     '''
-    Input size is nSamples x length x HMM-induced features
+    Input size is nSamples x length x HMM-induced features or 
+    Input size is length x HMM-induced features
     Output is nData x HMM-induced features
     Here the input should be positive data only.
     '''
 
-    flatten_X = []
-    nOffset   = 5
+    flatten_X   = []
+    flatten_idx = []
     
-    if len(np.shape(X))==3:
-        for i in xrange(len(X)):
-            for j in xrange(0, len(X[i])-nOffset):
-                if X[i][j+nOffset][0]-X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
-                    flatten_X += X[i][j:]
+    if len(np.shape(ll_X))==3:
+        for i in xrange(len(ll_X)):
+            for j in xrange(0, len(ll_X[i])-nOffset):
+                if ll_X[i][j+nOffset][0]-ll_X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
+                    flatten_X   += ll_X[i][j:]
+                    if ll_idx is not None: flatten_idx += ll_idx[i][j]
                     break
-    elif len(np.shape(X))==2:
-        for j in xrange(0, len(X)-nOffset):
-            if X[j+nOffset][0]-X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
-                if type(X[j:]) is list:
-                    flatten_X += X[j:]
+    elif len(np.shape(ll_X))==2:
+        for j in xrange(0, len(ll_X)-nOffset):
+            if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
+                if type(ll_X[j:]) is list:
+                    flatten_X += ll_X[j:]
                 else:
-                    flatten_X += X[j:].tolist()
+                    flatten_X += ll_X[j:].tolist()
+                if ll_idx is not None: flatten_idx = ll_idx[j]
                 break
     else:
         warnings.warn("Not available dimension of data X")
                 
     flatten_Y = [1]*len(flatten_X)
-    
-    return flatten_X, flatten_Y
+
+    if ll_idx is None:
+        return flatten_X, flatten_Y
+    else:
+        return flatten_X, flatten_Y, flatten_idx        
         
         
 def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
@@ -1789,8 +1832,8 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
     '''
 
     if remove_fp:
-        l_X = []
-        l_Y = []
+        l_X   = []
+        l_Y   = []
         l_idx = []
         for i in xrange(len(ll_X)):
             if ll_Y[i][0] < 0:
