@@ -378,6 +378,12 @@ if __name__ == '__main__':
                               'cost': np.linspace(1,4.0,5),\
                               'gamma': np.linspace(0.1,4.0,5), \
                               'w_negative': np.linspace(0.1,5.0,5) }
+            elif opt.dim == 3:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,6.0,5),\
+                              'gamma': np.linspace(0.1,5.0,10), \
+                              'w_negative': np.linspace(0.1,3.0,5) }
+                param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 0.5, nPoints)
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,6.0,5),\
