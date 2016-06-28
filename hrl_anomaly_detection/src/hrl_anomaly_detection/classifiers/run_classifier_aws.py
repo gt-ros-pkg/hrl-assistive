@@ -721,7 +721,7 @@ if __name__ == '__main__':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     ll_cut_idx = []
                     for i in xrange(nFiles):
-                        ll_cut_idx.append(data[i]['cut_idx'])
+                        ll_cut_idx.append(data[i]['abnormal_train_cut_idx'])
                     data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=ll_cut_idx)
                 elif method is 'rfc':
                     startIdx=4
