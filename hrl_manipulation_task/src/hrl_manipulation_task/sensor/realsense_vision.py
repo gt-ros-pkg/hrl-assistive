@@ -78,17 +78,18 @@ class realsense_vision():
 
         with self.lock:
             self.time = time_stamp.to_sec()             
-            self.landmark_pos = np.array([msg.pose.pose.position.x,
-                                          msg.pose.pose.position.y,
-                                          msg.pose.pose.position.z]).T
-            self.landmark_quat = np.array([msg.pose.pose.orientation.x,
-                                           msg.pose.pose.orientation.y,
-                                           msg.pose.pose.orientation.z,
-                                           msg.pose.pose.orientation.w]).T
+            self.landmark_pos = np.array([msg.pose.position.x,
+                                          msg.pose.position.y,
+                                          msg.pose.position.z]).T
+            self.landmark_quat = np.array([msg.pose.orientation.x,
+                                           msg.pose.orientation.y,
+                                           msg.pose.orientation.z,
+                                           msg.pose.orientation.w]).T
 
             if self.verbose: print np.shape(self.landmark_pos)
             
     def test(self, save_pdf=False):
+        
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         plt.ion()
@@ -96,6 +97,10 @@ class realsense_vision():
         
         rate = rospy.Rate(10) # 25Hz, nominally.    
         while not rospy.is_shutdown():
+            if self.landmark_pos is None:
+                rate.sleep()
+                continue
+            
             ## print "running test: ", len(self.centers)
             with self.lock:
                 del ax.collections[:] 

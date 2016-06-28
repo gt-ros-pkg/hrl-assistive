@@ -64,15 +64,15 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
     #ut.get_keystroke('Hit a key to proceed next')
+    ## print armReachActionRight("initScooping1")
     
     if train: 
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2Random',))
     else: 
-        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2',))
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
     rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
     leftProc.start(); rightProc.start()
     leftProc.join(); rightProc.join()
-
         
     if rndPose: print armReachActionLeft("getBowlPosRandom")
     else:       print armReachActionLeft("getBowlPos")            
@@ -97,24 +97,26 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
-    rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
-    leftProc.start(); rightProc.start()
-    leftProc.join(); rightProc.join()
-
+    print armReachActionLeft('lookToRight')
     print "Detect ar tag on the head"
+    print armReachActionLeft("getHeadPos")
+    print armReachActionLeft("initFeeding1")  
+    print armReachActionRight("getHeadPos")
+    print armReachActionRight("initFeeding")  
+    
+    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
+    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
+    ## leftProc.start(); rightProc.start()
+    ## leftProc.join(); rightProc.join()
+
     ## print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
-    print "Running feeding1"    
     print armReachActionLeft("initFeeding2")
     
     print "Start to log!"    
     log.log_start()
-    if detection_flag: log.enableDetector(True)
-    
-    print "Running feeding2"    
+    if detection_flag: log.enableDetector(True)    
     print armReachActionLeft("runFeeding")
-
     if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
@@ -161,7 +163,7 @@ if __name__ == '__main__':
     
     log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                  vision_landmark=True, vision_change=False, \
-                 pps=False, skin=False, \
+                 pps=True, skin=False, \
                  subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                  record_root_path=opt.sRecordDataPath, verbose=False)
     ## log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \

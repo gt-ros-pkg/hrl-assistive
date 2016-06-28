@@ -55,11 +55,10 @@ except:
     import point_cloud2 as pc2
 
 class ArmReacherClient:
-    def __init__(self, isScoopingFeeding=True, verbose=True):
+    def __init__(self, verbose=True):
         rospy.init_node('feed_client')
         self.tf = tf.TransformListener()
 
-        self.isScoopingFeeding = isScoopingFeeding
         self.verbose = verbose
         self.points3D = None
         self.highestBowlPoint = None
@@ -85,98 +84,14 @@ class ArmReacherClient:
         self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped, self.bowlCallback)
         if self.verbose: print 'Connected to bowl center location'
 
-        # Connect to both PR2 arms
-        if self.isScoopingFeeding:
-            if self.verbose: print 'waiting for /arm_reach_enable'
-            rospy.wait_for_service("/arm_reach_enable")
-            self.armReachActionLeft = rospy.ServiceProxy('/arm_reach_enable', String_String)
-            if self.verbose: print 'waiting for /right/arm_reach_enable'
-            self.armReachActionRight = rospy.ServiceProxy('/right/arm_reach_enable', String_String)
-            if self.verbose: print 'Connected to both services'
-
     def cancel(self):
         self.cloudSub.unregister()
         self.cameraSub.unregister()
         self.bowlSub.unregister()
 
-    def runScooping(self):
-        # Initialize arms for scooping
-
-        if self.verbose: print 'Initializing arm joints for scooping'
-        self.armReachActionRight("initScooping1")
-        leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
-        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping2',))
-        if self.verbose:
-            print 'Beginning - left arm init #1'
-            t = time.time()
-        leftProc.start()
-        if self.verbose:
-            print 'Beginning - right arm init #1'
-            t2 = time.time()
-        rightProc.start()
-        leftProc.join()
-        if self.verbose: print 'Completed - left arm init #1, time:', time.time() - t
-        rightProc.join()
-        if self.verbose: print 'Completed - right arm init #1, time:', time.time() - t2
-
-        if self.verbose:
-            print 'Beginning - getBowPos'
-            t = time.time()
-        self.armReachActionLeft('getBowlPos')
-        if self.verbose:
-            print 'Completed - getBowPos, time:', time.time() - t
-            print 'Beginning - lookAtBowl'
-            t = time.time()
-        self.armReachActionLeft('lookAtBowl')
-        if self.verbose: print 'Completed - lookAtBowl, time:', time.time() - t
-
+    # Call this right after 'lookAtBowl' and right before 'initScooping2'
+    def initialize():
         self.initialized = True
-
-        # Run scooping
-
-        if self.verbose:
-            print 'Beginning - left arm init #2'
-            t = time.time()
-        self.armReachActionLeft('initScooping2')
-        if self.verbose:
-            print 'Completed - left arm init #2, time:', time.time() - t
-            print 'Beginning - scooping'
-            t = time.time()
-
-        if self.highestBowlPoint is None:
-            print 'No highest point detected within the bowl. Waiting 1 additional second.'
-            time.sleep(1)
-        if self.highestBowlPoint is None:
-            print 'Still no highest point detected. Continuing with a normal scoop.'
-
-        self.armReachActionLeft('runScooping')
-        if self.verbose: print 'Completed - scooping, time:', time.time() - t
-
-    def runFeeding(self):
-        self.armReachActionLeft('lookToRight')
-        print 'Determining head position.'
-        self.armReachActionLeft("initFeeding1")
-        self.armReachActionRight("getHeadPos")
-        print 'Initializing both arms for feeding.'
-        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initFeeding',)) 
-        leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initFeeding1',)) 
-        leftProc.start(); rightProc.start()
-        leftProc.join(); rightProc.join()
-        print 'Determining head position and second stage of initialization.'
-        self.armReachActionLeft("getHeadPos")
-        self.armReachActionLeft("initFeeding2")
-        print 'Performing feeding.'
-        self.armReachActionLeft("runFeeding")
-
-    def armReachLeft(self, action):
-        self.armReachActionLeft(action)
-
-    def armReachRight(self, action):
-        self.armReachActionRight(action)
-
-    def getHeadPos(self):
-        self.armReachActionLeft('lookAtMouth')
-        self.armReachActionLeft('getHeadPos')
 
     def bowlCallback(self, data):
         bowlPosePos = data.pose.position
@@ -196,7 +111,7 @@ class ArmReacherClient:
         # startTime = time.time()
 
         # Wait to obtain cloud data until after arms have been initialized
-        if self.isScoopingFeeding and not self.initialized:
+        if not self.initialized:
             return
 	if self.highestPointPublished:
             return
@@ -239,6 +154,9 @@ class ArmReacherClient:
         self.points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
 
         print 'Time to determine points near bowl center:', time.time() - t
+
+        if len(self.points3D) == 0:
+            print 'No highest point detected within the bowl.'
 
         # Find the highest point (based on Z axis value) that is within the bowl. Positive Z is facing towards the floor, so find the min Z value
         if self.verbose: print 'points3D:', np.shape(self.points3D)
@@ -312,14 +230,10 @@ class ArmReacherClient:
 
 
 if __name__ == '__main__':
-    scoopingFeeding = True
-    client = ArmReacherClient(scoopingFeeding, verbose=True)
+    client = ArmReacherClient(verbose=True)
+    client.initialize()
 
-    if scoopingFeeding:
-        client.runScooping()
-	client.runFeeding()
-
-    time.sleep(5)
+    time.sleep(10)
 
     client.cancel()
 

@@ -425,20 +425,20 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 6.66 }
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 1.85, 'cost': 2.5,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.5623, 'gamma': 0.0527, 'cost': 4.0,\
                           'hmmosvm_nu': 0.000316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
-                          'update_list': ['hmmosvm'],\
+                          'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8., nPoints), \
-                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'svm_param_range': np.logspace(-1.9, -0.1, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints)}        
+                          }        
         
     elif dim == 4:
         handFeatures = ['unimodal_ftForce',\
@@ -613,10 +613,14 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_gamma': 0.5075,\
                           'osvm_window_size': 10,\
                           'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
-                          'hmmsvm_dL_gamma': 0.50749}
+                          'hmmsvm_dL_gamma': 0.50749,\
+                          'hmmsvm_LSLS_cost': 10.0,\
+                          'hmmsvm_LSLS_gamma': 0.01, \
+                          'hmmsvm_LSLS_w_negative': 1.5
+                          }
                           
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag' ],\
-                          'update_list': [ 'hmmsvm_diag' ],\
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS' ],\
+                          'update_list': [ 'hmmsvm_LSLS' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
@@ -624,6 +628,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'change_param_range': np.logspace(-0.2, 1.5, nPoints)*-1.0,\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
