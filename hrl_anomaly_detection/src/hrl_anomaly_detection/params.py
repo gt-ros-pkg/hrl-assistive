@@ -434,7 +434,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8., nPoints), \
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'svm_param_range': np.logspace(-2, 0.2, nPoints),\
+                          'svm_param_range': np.logspace(-1.6, 0., nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
