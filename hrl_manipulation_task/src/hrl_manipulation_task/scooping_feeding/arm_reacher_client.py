@@ -56,9 +56,9 @@ if __name__ == '__main__':
 
 
     #---------------------------- Face registration ----------------------
-    if False:
+    if True:
         print armReachActionRight("initScooping1")
-        ## print armReachActionRight("initFeeding")
+        print armReachActionRight("initScooping2")
         print armReachActionLeft("initScooping1")
         sys.exit()
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         ## leftProc.join(); rightProc.join()
         
         print armReachActionRight("initFeeding")
-        print armReachActionLeft("initFeeding1")
+        ## print armReachActionLeft("initFeeding1")
         print armReachActionLeft("getHeadPos")
         print armReachActionLeft("initFeeding2")
         print armReachActionLeft("runFeeding")

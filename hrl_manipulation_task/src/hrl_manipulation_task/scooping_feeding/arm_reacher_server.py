@@ -46,7 +46,7 @@ import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath 
 from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
-# Personal library
+# Personal library - need to move neccessary libraries to a new package
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
 import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as dh
 QUEUE_SIZE = 10
@@ -72,6 +72,7 @@ class armReachAction(mpcBaseAction):
 
         self.initCommsForArmReach()                            
         self.initParamsForArmReach()
+        self.setMotions()
 
         rate = rospy.Rate(5)
         print_flag = True
@@ -116,8 +117,15 @@ class armReachAction(mpcBaseAction):
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
 
         if self.verbose: rospy.loginfo("ROS-based communications are set up .")
-                                    
+
     def initParamsForArmReach(self):
+
+        ## Off set : 11 cm x direction, - 5 cm z direction. 
+        self.bowl_pos_offset    = rospy.get_param('/hrl_manipulation_task/sub_ee_pos_offset')        
+        self.bowl_orient_offset = rospy.get_param('/hrl_manipulation_task/sub_ee_orient_offset')        
+
+            
+    def setMotions(self):
         '''
         Industrial movment commands generally follows following format, 
         
@@ -171,7 +179,8 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
-        self.motions['initScooping2']['right'] = [['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.57]', 2.]]
+        self.motions['initScooping2']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 10.0],
+                                                  ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.57]', 2.]]
 
         # only for training setup
         self.motions['initScooping2Random'] = {}
@@ -198,16 +207,17 @@ class armReachAction(mpcBaseAction):
         ## ['MOVES', '[0.75, 0.05, 0.23, -3.14, 0.13, 1.57]', 5.0],
                                                 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.1, 0.2, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
-                                                ['PAUSE', 10.0]]
-
+        self.motions['initFeeding1']['left'] = [['MOVEL', '[ -0.1, -0.1, -0.3, -0.8, 0., 0.]', 7., 'self.mouth_frame'],
+                                                ['PAUSE', 2.0]]
+        ## ['MOVET', '[ -0.1, 0.2, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
+    
         self.motions['initFeeding2'] = {}
-        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 7., 'self.mouth_frame'],\
                                               ['PAUSE', 2.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVET', '[0.0, 0.0, 0.15, 0., 0., 0.]', 5.],\
+        self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.04, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 0.5],
-                                              ['MOVET', '[0.0, 0.0, -0.15, 0., 0., 0.]', 5.]]
+                                              ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
           
         rospy.loginfo("Parameters are loaded.")
 
@@ -243,7 +253,7 @@ class armReachAction(mpcBaseAction):
         elif task == "getHeadPos":
             if self.mouth_frame_vision is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
-                return self.arm_name+"Chose kinect head position"
+                return self.arm_name+"Chose head position from vision"
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
@@ -304,18 +314,8 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
-        # 4. (optional) publish pose for visualization        
-        ps = PoseStamped()
-        ps.header.frame_id = 'torso_lift_link'
-        ps.header.stamp = rospy.Time.now()
-        ps.pose.position.x = p[0]
-        ps.pose.position.y = p[1]
-        ps.pose.position.z = p[2]
-        
-        ps.pose.orientation.x = M.GetQuaternion()[0]
-        ps.pose.orientation.y = M.GetQuaternion()[1]
-        ps.pose.orientation.z = M.GetQuaternion()[2]
-        ps.pose.orientation.w = M.GetQuaternion()[3]                
+        # (optional) publish pose for visualization
+        ps = dh.gen_pose_stamped(self.mouth_frame_vision, 'torso_lift_link', rospy.Time.now() )
         self.mouth_pub.publish(ps)
         
     def stopCallback(self, msg):
@@ -360,15 +360,14 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation.Quaternion(quat[0], quat[1], quat[2], quat[3])
 
         # 2. add offset to called TF value. Make sure Orientation is up right. 
-        ## Off set : 11 cm x direction, - 5 cm z direction. 
-        pos_offset  = rospy.get_param('hrl_manipulation_task/sub_ee_pos_offset')        
-        orient_offset = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset')        
+        p = p + M*PyKDL.Vector(self.bowl_pos_offset['x'], self.bowl_pos_offset['y'], self.bowl_pos_offset['z'])
+        M.DoRotX(self.bowl_orient_offset['rx'])
+        M.DoRotY(self.bowl_orient_offset['ry'])
+        M.DoRotZ(self.bowl_orient_offset['rz'])
 
-        p = p + M*PyKDL.Vector(pos_offset['x'], pos_offset['y'], pos_offset['z'])
-        M.DoRotX(orient_offset['rx'])
-        M.DoRotY(orient_offset['ry'])
-        M.DoRotZ(orient_offset['rz'])
-
+        print self.bowl_pos_offset
+        print pos
+        print quat
         print 'Bowl frame:', p
 
         # 2.* add noise for random training 
@@ -380,17 +379,7 @@ class armReachAction(mpcBaseAction):
         self.bowlPosition = np.array([p[0], p[1], p[2]])
 
         # 4. (optional) publish pose for visualization
-        ps = PoseStamped()
-        ps.header.frame_id = 'torso_lift_link'
-        ps.header.stamp = rospy.Time.now()
-        ps.pose.position.x = p[0]
-        ps.pose.position.y = p[1]
-        ps.pose.position.z = p[2]
-        
-        ps.pose.orientation.x = M.GetQuaternion()[0]
-        ps.pose.orientation.y = M.GetQuaternion()[1]
-        ps.pose.orientation.z = M.GetQuaternion()[2]
-        ps.pose.orientation.w = M.GetQuaternion()[3]        
+        ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
         self.bowl_pub.publish(ps)
         
         return PyKDL.Frame(M,p)  
@@ -404,8 +393,8 @@ class armReachAction(mpcBaseAction):
         headClient.wait_for_server()
         rospy.logout('Connected to head control server')
 
-        print '1:', time.time() - t
-        t = time.time()
+        ## print '1:', time.time() - t
+        ## t = time.time()
 
         pos = Point()
         
@@ -439,10 +428,9 @@ class armReachAction(mpcBaseAction):
             
             self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
             target = self.mouth_frame
-
                    
-        print '2:', time.time() - t
-        t = time.time()
+        ## print '2:', time.time() - t
+        ## t = time.time()
 
         pos.x = target.p.x()
         pos.y = target.p.y()
@@ -455,7 +443,7 @@ class armReachAction(mpcBaseAction):
         # headClient.wait_for_result() # TODO: This takes about 5 second -- very slow!
         # rospy.sleep(1.0)
 
-        print '3:', time.time() - t
+        ## print '3:', time.time() - t
 
         return "Success"
         
