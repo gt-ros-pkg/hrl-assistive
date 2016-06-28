@@ -551,8 +551,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             train_X = train_X[normal_idx]
             train_Y = train_Y[normal_idx]
             train_idx = train_idx[normal_idx]
-
-        if method is 'bpsvm':
+        elif method is 'bpsvm':
             # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
             l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
 
@@ -748,10 +747,10 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
 
 def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     '''
-    ll : sample x length x hmm features
-    It takes only positive data.
+    ll_X : sample x length x hmm features
+    ll_Y : sample x length 
     '''
-    print np.shape(ll_X), np.shape(ll_Y)
+    print np.shape(ll_X), np.shape(ll_Y), np.shape(ll_idx)
     
     l_X   = []
     l_Y   = []
