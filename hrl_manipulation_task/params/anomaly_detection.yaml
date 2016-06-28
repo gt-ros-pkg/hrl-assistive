@@ -28,7 +28,7 @@ hrl_manipulation_task:
     - l_wrist_flex_joint
     - l_wrist_roll_joint
   
-
+  # bowl center
   sub_ee_frame: r_gripper_tool_frame
   sub_ee_pos_offset:
     x: 0.11
@@ -71,3 +71,8 @@ hrl_manipulation_task:
     #artag_max_id: 18
     #artag_total_tags: 1
     #artag_buf_size: 10
+
+  # Mouth pose limits (wrt torso lift link), xyz order
+  mouth_pos_limits:
+    max: [1.2, 1.0, 0.4]
+    min: [0.5, 0.0, -0.4]
