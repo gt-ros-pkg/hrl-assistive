@@ -369,7 +369,7 @@ if __name__ == '__main__':
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-2, 1.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
@@ -392,7 +392,7 @@ if __name__ == '__main__':
                               'cost': np.linspace(1.0,6.0,5),\
                               'gamma': np.linspace(0.1,5.0,10), \
                               'w_negative': np.linspace(0.1,3.0,5) }
-                param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 0.5, nPoints)
+                param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,6.0,5),\
