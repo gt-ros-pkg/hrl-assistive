@@ -709,16 +709,7 @@ if __name__ == '__main__':
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict, negTrain=True)
                 else:
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
-                    if method is 'bpsvm':
-                        # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
-                        ll_idx = []
-                        for i in xrange(nFiles):
-                            l_idx = dm.getHMMCuttingIdx(data[i]['X_scaled'],
-                                                        data[i]['Y_train_org'],
-                                                        data[i]['idx_train_org'])
-                            ll_idx.append(l_idx)
-                        
-    
+                                                
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 if method is 'osvm':
@@ -728,7 +719,10 @@ if __name__ == '__main__':
                 elif method is 'bpsvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=ll_idx)
+                    ll_cut_idx = []
+                    for i in xrange(nFiles):
+                        ll_cut_idx.append(data[i]['cut_idx'])
+                    data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=ll_cut_idx)
                 elif method is 'rfc':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
