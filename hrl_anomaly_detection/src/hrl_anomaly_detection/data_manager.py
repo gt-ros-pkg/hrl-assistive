@@ -554,6 +554,8 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         elif method is 'bpsvm':
             # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
             l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
+            print np.shape(l_cut_idx)
+            print l_cut_idx
 
 
         # flatten the data
