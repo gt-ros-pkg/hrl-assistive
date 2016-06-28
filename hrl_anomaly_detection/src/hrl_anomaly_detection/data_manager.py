@@ -495,7 +495,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         ## startIdx = d['startIdx']
         
         # sample x length x feature vector
-        ll_classifier_train_X   = d['ll_classifier_train_X']
+        ll_classifier_train_X   = d['ll_classifier_train_X'] # [normal, abnormal]
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
         ll_classifier_train_idx = d['ll_classifier_train_idx']
         ## ll_classifier_test_X    = d['ll_classifier_test_X']  
@@ -552,7 +552,6 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             train_Y = train_Y[normal_idx]
             train_idx = train_idx[normal_idx]
 
-
         if method is 'bpsvm':
             # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
             l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
@@ -596,7 +595,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         data[file_idx]['idx_test'] = idx_test
         data[file_idx]['nLength'] = nLength
         if method is 'bpsvm':
-            data[file_idx]['cut_idx'] = l_cut_idx
+            data[file_idx]['abnormal_train_cut_idx'] = l_cut_idx
 
 
     return data 
@@ -759,8 +758,8 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     l_idx = []
     for i in xrange(len(ll_X)):
         if ll_Y[i][0] < 0:
-            print "Error: negative data come in."
-            sys.exit()
+            ## l_idx.append(ll_idx[i][-1])
+            continue
         else:
             _,_,idx = getEstTruePositive(ll_X[i], ll_idx[i])
             l_idx.append(idx)
