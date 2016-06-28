@@ -743,6 +743,7 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     ll : sample x length x hmm features
     It takes only positive data.
     '''
+    print np.shape(ll_X), np.shape(ll_Y)
     
     l_X   = []
     l_Y   = []
