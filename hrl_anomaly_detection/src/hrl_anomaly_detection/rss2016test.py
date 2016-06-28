@@ -995,7 +995,42 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     else:
                         ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
                           ll_classifier_test_X[i][j-1][0]
-        ## elif method == 'hmmsvm_LSLS':
+        elif method == 'hmmsvm_LSLS':
+            # reconstruct data into LS(t-1)+LS(t)
+            if type(ll_classifier_train_X) is list:
+                ll_classifier_train_X = np.array(ll_classifier_train_X)
+
+            x = np.dstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
+            x = x.tolist()
+
+            new_x = []
+            for i in xrange(len(x)):
+                new_x.append([])
+                for j in xrange(len(x[i])):
+                    if j == 0:
+                        new_x[i].append( x[i][j]+x[i][j] )
+                    else:
+                        new_x[i].append( x[i][j-1]+x[i][j] )
+
+            ll_classifier_train_X = new_x
+
+            # test data
+            if type(ll_classifier_test_X) is list:
+                ll_classifier_test_X = np.array(ll_classifier_test_X)
+
+            x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
+            x = x.tolist()
+
+            new_x = []
+            for i in xrange(len(x)):
+                new_x.append([])
+                for j in xrange(len(x[i])):
+                    if j == 0:
+                        new_x[i].append( x[i][j]+x[i][j] )
+                    else:
+                        new_x[i].append( x[i][j-1]+x[i][j] )
+
+            ll_classifier_test_X = new_x
             
                           
 
@@ -1066,7 +1101,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
 
         ## cb.run_classifier(j)
         dtc.set_params( **SVM_dict )
-        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL':
+        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
