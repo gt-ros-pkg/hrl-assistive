@@ -64,6 +64,7 @@ class ArmReacherClient:
         self.points3D = None
         self.highestBowlPoint = None
         self.initialized = False
+	self.highestPointPublished = False
         self.bowlRawPos = None
         self.bowlCenter = None
         self.pinholeCamera = None
@@ -75,13 +76,13 @@ class ArmReacherClient:
         self.highestBowlPointPublisher = rospy.Publisher('/hrl_manipulation_task/bowl_highest_point', Point, queue_size=10)
 
         # Connect to point cloud from Kinect
-        self.cloudSub = rospy.Subscriber('/head_mount_kinect/sd/points', PointCloud2, self.cloudCallback)
+        self.cloudSub = rospy.Subscriber('/head_mount_kinect/qhd/points', PointCloud2, self.cloudCallback)
         if self.verbose: print 'Connected to Kinect depth'
-        self.cameraSub = rospy.Subscriber('/head_mount_kinect/sd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        self.cameraSub = rospy.Subscriber('/head_mount_kinect/qhd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         if self.verbose: print 'Connected to Kinect camera info'
 
         # Connect to bowl center location
-        self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/bowl_cen_pose', PoseStamped, self.bowlCallback)
+        self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped, self.bowlCallback)
         if self.verbose: print 'Connected to bowl center location'
 
         # Connect to both PR2 arms
@@ -103,7 +104,7 @@ class ArmReacherClient:
 
         if self.verbose: print 'Initializing arm joints for scooping'
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
-        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping1',))
+        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping2',))
         if self.verbose:
             print 'Beginning - left arm init #1'
             t = time.time()
@@ -118,11 +119,6 @@ class ArmReacherClient:
         if self.verbose: print 'Completed - right arm init #1, time:', time.time() - t2
 
         if self.verbose:
-            print 'Beginning - right arm (bowl holding arm) init #2'
-            t = time.time()
-        self.armReachActionRight('initScooping2')
-        if self.verbose:
-            print 'Completed - right arm (bowl holding arm) init #2, time:', time.time() - t
             print 'Beginning - getBowPos'
             t = time.time()
         self.armReachActionLeft('getBowlPos')
@@ -168,7 +164,7 @@ class ArmReacherClient:
     def bowlCallback(self, data):
         bowlPosePos = data.pose.position
         # Account for the fact  that the bowl center position is not directly in the center
-        self.bowlRawPos = [bowlPosePos.x + 0.02, bowlPosePos.y + 0.02, bowlPosePos.z]
+        self.bowlRawPos = [bowlPosePos.x + 0.015, bowlPosePos.y + 0.01, bowlPosePos.z]
         if self.verbose: print 'Bowl position:', self.bowlRawPos
 
     def cameraRGBInfoCallback(self, data):
@@ -185,6 +181,8 @@ class ArmReacherClient:
         # Wait to obtain cloud data until after arms have been initialized
         if self.isScoopingFeeding and not self.initialized:
             return
+	if self.highestPointPublished:
+	    return
 
         pointCloud = data
 
@@ -214,12 +212,14 @@ class ArmReacherClient:
         except:
             print 'Unable to unpack from PointCloud2!'
             return
+	
+	points3D = [x for x in points3D]
+	if self.verbose: self.publishPoints('allDepthPoints', points3D, r=0.5, g=0.5)
 
         t = time.time()
 
         # X, Y Positions must be within a radius of 5 cm from the bowl center, and Z positions must be within 4 cm of center
-        # TODO: This could be sped up by restricting to a 2D window in the point cloud (uvs=points2D)
-        self.points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.04 and abs(self.bowlCenter[2] - point[2]) < 0.04])
+        self.points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
 
         print 'Time to determine points near bowl center:', time.time() - t
 
@@ -248,22 +248,27 @@ class ArmReacherClient:
 
         # Z axis for torso_lift_link frame is towards the sky, thus find max Z value for highest point
         maxIndex = self.points3D[:, 2].argmax()
-        highestBowlPoint = np.array(self.points3D[maxIndex]) #+ np.array([0, 0.25, 0])
+        # maxIndex = self.points3D[:, 2].argmin()
+        self.highestBowlPoint = np.array(self.points3D[maxIndex]) #+ np.array([0, 0.25, 0])
 
         # Transform the highest point back to the torso_lift_link frame
-        point = PointStamped()
-        point.header.frame_id = 'head_mount_kinect_ir_optical_frame'
-        point.point.x = highestBowlPoint[0]
-        point.point.y = highestBowlPoint[1]
-        point.point.z = highestBowlPoint[2]
-        point = self.tf.transformPoint('torso_lift_link', point)
-        self.highestBowlPoint = np.array([point.point.x, point.point.y, point.point.z])
+        # point = PointStamped()
+        # point.header.frame_id = 'head_mount_kinect_ir_optical_frame'
+        # point.point.x = highestBowlPoint[0]
+        # point.point.y = highestBowlPoint[1]
+        # point.point.z = highestBowlPoint[2]
+        # point = self.tf.transformPoint('torso_lift_link', point)
+        # self.highestBowlPoint = np.array([point.point.x, point.point.y, point.point.z])
         if self.verbose: print 'Highest bowl point:', self.highestBowlPoint
+
+	self.publishHighestBowlPoint()
+	# We only want to publish the highest point once.
+	self.highestPointPublished = True
 
         # Publish highest bowl point and all 3D points in bowl
         if self.verbose:
             self.publishPoints('highestPoint', [self.highestBowlPoint], size=0.008, r=.5, b=.5, frame='torso_lift_link')
-            self.publishPoints('allPoints', self.points3D, g=0.6, b=1.0)
+            self.publishPoints('allPoints', self.points3D, g=0.6, b=1.0, frame='torso_lift_link')
 
     def publishHighestBowlPoint(self):
         p = Point()
@@ -290,7 +295,7 @@ class ArmReacherClient:
 
 
 if __name__ == '__main__':
-    scoopingFeeding = False
+    scoopingFeeding = True
     client = ArmReacherClient(scoopingFeeding, verbose=True)
 
     if scoopingFeeding:

@@ -148,7 +148,7 @@ class armReachAction(mpcBaseAction):
         ## self.motions['test']['left'] = [['MOVEJ', '[0.051, 0.219, 0.135, -1.615, -3.052, -1.428, -1.64]', 5.0],
         ##                                 ['MOVET', '[0., 0.0, 0.0, -0.5, 0., 0.]', 10., 'self.default_frame'],\
         ##                                 ['MOVET', '[0., 0.0, 0.0, 0.5, 0., 0.]', 10., 'self.default_frame'] ]
-        self.motions['test']['left'] = [['MOVES', '[ 0.05, 0.0+self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],
+        self.motions['test']['left'] = [['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],
                                         ['PAUSE', 2.0]]
         
         self.motions['testingMotion'] = {}
@@ -184,9 +184,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0+self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0+self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0+self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
         
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -261,15 +261,16 @@ class armReachAction(mpcBaseAction):
             return "Completed to execute "+task 
 
     def highestBowlPointCallback(self, data):
-        # self.highBowl = np.array([data.x, data.y, data.z]) 
-        # Transform data to orientation of bowl center
-        orient = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset')        
-        f = PyKDL.Frame(PyKDL.Rotation.RPY(orient[0], orient[1], orient[2]), PyKDL.Vector(0, 0, 0))
-        p = PyKDL.Vector(data.x, data.y, data.z)
-        # Perform transformation
-        p = f * p
-        # Find difference between current highest point in bowl and center of bowl  
-        self.highBowlDiff = np.array([p.x, p.y, p.z]) - self.bowlPosition
+        if not self.arm_name == 'left':
+            return
+        # Find difference between current highest point in bowl and center of bowl
+        print 'Highest Point original position:', [data.x, data.y, data.z]
+        print 'Bowl Position:', self.bowlPosition
+	# Subtract 0.01 to account for the bowl center position being slightly off center
+        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.01 
+        print '-'*25
+        print 'Highest bowl point difference:', self.highBowlDiff
+        print '-'*25
                 
     def bowlPoseCallback(self, data):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
