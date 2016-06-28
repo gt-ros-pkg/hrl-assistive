@@ -148,11 +148,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 8.777}
         SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 5.0, 'cost': 3.5,\
-                          'hmmosvm_nu': 0.001}
+                          'hmmosvm_nu': 0.00031}
 
         nPoints        = 20 #'svm','hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
-                          'update_list': ['svm'],\
+                          'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
                           'svm_param_range': np.logspace(-1.5, 0.25, nPoints),\
