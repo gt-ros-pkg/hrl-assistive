@@ -198,7 +198,7 @@ class armReachAction(mpcBaseAction):
         ## ['MOVES', '[0.75, 0.05, 0.23, -3.14, 0.13, 1.57]', 5.0],
                                                 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.05, 0.15, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
+        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.1, 0.2, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
                                                 ['PAUSE', 2.0]]
 
         self.motions['initFeeding2'] = {}
