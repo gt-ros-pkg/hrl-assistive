@@ -151,6 +151,21 @@ class ArmReacherClient:
         client.armReachActionLeft('runScooping')
         if self.verbose: print 'Completed - scooping, time:', time.time() - t
 
+    def runFeeding(self):
+	print 'Determining head position.'
+	self.armReachActionLeft("initFeeding1")
+        self.armReachActionRight("getHeadPos")
+	print 'Initializing both arms for feeding.'
+        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initFeeding',)) 
+        leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initFeeding1',)) 
+        leftProc.start(); rightProc.start()
+        leftProc.join(); rightProc.join()
+	print 'Determining head position and second stage of initialization.'
+        self.armReachActionLeft("getHeadPos")
+        self.armReachActionLeft("initFeeding2")
+	print 'Performing feeding.'
+        self.armReachActionLeft("runFeeding")
+
     def armReachLeft(self, action):
         self.armReachActionLeft(action)
 
@@ -300,8 +315,9 @@ if __name__ == '__main__':
 
     if scoopingFeeding:
         client.runScooping()
+	client.runFeeding()
 
-    time.sleep(60)
+    time.sleep(5)
 
     client.cancel()
 
