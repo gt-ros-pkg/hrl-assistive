@@ -125,18 +125,23 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 2.0,\
                           'osvm_window_size': 10,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 12.5, \
-                          'hmmsvm_dL_gamma': 4.0}
+                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
+                          'hmmsvm_dL_gamma': 4.0,\
+                          'hmmsvm_LSLS_cost': 15.0,\
+                          'hmmsvm_LSLS_gamma': 0.01, \
+                          'hmmsvm_LSLS_w_negative': 1.5
+                          }
                           
 
         nPoints        = 20 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm' ],\
-                          'update_list': ['hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS' ],\
+                          'update_list': ['hmmosvm', 'hmmsvm_dL'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
