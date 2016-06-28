@@ -153,6 +153,7 @@ class ArmReacherClient:
         if self.verbose: print 'Completed - scooping, time:', time.time() - t
 
     def runFeeding(self):
+        self.armReachActionLeft('lookToRight')
         print 'Determining head position.'
         self.armReachActionLeft("initFeeding1")
         self.armReachActionRight("getHeadPos")
