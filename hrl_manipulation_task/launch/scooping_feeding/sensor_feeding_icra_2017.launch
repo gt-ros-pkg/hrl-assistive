@@ -13,7 +13,7 @@
         <!-- Launch Realsense Camera -->
         <include file='$(find hrl_realsense_camera)/launch/front_mount_frame.launch'/>
         <node name="mouth_relay_node" pkg="topic_tools" type="relay"
-              args="/hrl_manipulation_task/mouth_pose_backpack /hrl_manipulation_task/visual/mouth_pose" output="screen" />
+              args="/hrl_manipulation_task/mouth_pose_backpack /hrl_manipulation_task/mouth_pose" output="screen" />
         <node name="image_relay_node" pkg="topic_tools" type="relay"
               args="/SR300/rgb/image_raw /SR300/rgb/image_raw_relay" output="screen" />
 

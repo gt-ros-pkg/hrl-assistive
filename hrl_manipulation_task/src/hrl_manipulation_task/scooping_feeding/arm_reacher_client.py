@@ -58,14 +58,14 @@ if __name__ == '__main__':
     #---------------------------- Face registration ----------------------
     if False:
         print armReachActionRight("initScooping1")
-        print armReachActionRight("initFeeding")
+        ## print armReachActionRight("initFeeding")
         print armReachActionLeft("initScooping1")
         sys.exit()
 
     # -------------- TEST -----------------------    
     if True:
         # Scooping
-        #print armReachActionRight("initScooping1")
+        print armReachActionRight("initScooping1")
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
         leftProc.start(); rightProc.start()
@@ -74,21 +74,21 @@ if __name__ == '__main__':
         print armReachActionLeft('lookAtBowl')
         print armReachActionLeft('initScooping2')
         print armReachActionLeft('runScooping')
-        sys.exit()
+        ## sys.exit()
         # feeding start
-        ## print armReachActionLeft("initFeeding")    # run it only if there was no scooping  
-        ## print armReachActionLeft("initFeeding1")      
-        ## print armReachActionRight("initFeeding")
-        leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
+        #print armReachActionLeft("initFeeding")    # run it only if there was no scooping  
+        print armReachActionLeft("initFeeding1")  
+        print armReachActionRight("getHeadPos")
         rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
         leftProc.start(); rightProc.start()
-        leftProc.join(); rightProc.join()
-        
+        leftProc.join(); rightProc.join()        
+        ## print armReachActionRight("initFeeding")
+        ## print armReachActionLeft("initFeeding1")
         print armReachActionLeft("getHeadPos")
         print armReachActionLeft("initFeeding2")
         print armReachActionLeft("runFeeding")
-        # returning motion?
-        
+        # returning motion?        
         sys.exit()
 
         

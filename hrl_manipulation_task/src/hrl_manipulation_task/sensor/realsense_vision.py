@@ -75,7 +75,7 @@ class realsense_vision():
     
     def mouthPoseCallback(self, msg):
         time_stamp = msg.header.stamp
-        
+
         with self.lock:
             self.time = time_stamp.to_sec()             
             self.landmark_pos = np.array([msg.pose.pose.position.x,

@@ -423,17 +423,17 @@ class logger:
                     msg.vision_artag_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
                     msg.vision_artag_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
 
+            if self.vision_landmark is not None:
+                if self.vision_landmark.pos is not None:
+                    msg.vision_landmark_pos  = np.squeeze(self.vision_landmark.landmark_pos.T).tolist()
+                    msg.vision_landmark_quat = np.squeeze(self.vision_landmark.landmark_quat.T).tolist()
+                    
             if self.vision_change is not None:
                 if self.vision_change.centers is not None:
                     msg.vision_change_centers_x = np.squeeze(self.vision_change.centers[:,0]).tolist() # 3xN
                     msg.vision_change_centers_y = np.squeeze(self.vision_change.centers[:,1]).tolist() # 3xN
                     msg.vision_change_centers_z = np.squeeze(self.vision_change.centers[:,2]).tolist() # 3xN
 
-            if self.vision_landmark is not None:
-                if self.vision_landmark.pos is not None:
-                    msg.vision_landmark_pos  = np.squeeze(self.vision_landmark.landmark_pos.T).tolist()
-                    msg.vision_landmark_quat = np.squeeze(self.vision_landmark.landmark_quat.T).tolist()
-                    
             if self.pps_skin is not None:
                 msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()
                 msg.pps_skin_right = np.squeeze(self.pps_skin.data_right.T).tolist()
@@ -606,12 +606,13 @@ if __name__ == '__main__':
     verbose = True
     data_pub= True
     detector= False
+    record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
+    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
-                 data_pub=data_pub, detector=detector)
+                 data_pub=data_pub, detector=detector, record_root_path=record_root_path)
 
     rospy.sleep(1.0)
     log.run()

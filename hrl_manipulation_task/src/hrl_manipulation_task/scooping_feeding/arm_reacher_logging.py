@@ -31,16 +31,29 @@
 # system library
 import time
 import datetime
+import multiprocessing
 
 # ROS library
 import rospy, roslib
 
 # HRL library
-from hrl_srvs.srv import String_String
+from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
 
 from hrl_manipulation_task.record_data import logger
 
+def armReachLeft(action):
+    armReachActionLeft(action)
+    
+def armReachRight(action):
+    armReachActionRight(action)
+
+def initTask(armReachActionLeft, armReachActionRight):
+    
+    print "Initializing both arms"
+    print armReachActionRight("initScooping1")
+    print armReachActionLeft("initScooping1")
+    
 
 def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False, \
              rndPose=False):
@@ -50,18 +63,19 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping1")
-    print armReachActionRight("initScooping1")
-    
     #ut.get_keystroke('Hit a key to proceed next')
+    
     if train: 
-        print armReachActionRight("initScooping2Random")
-        if rndPose:
-            print armReachActionLeft("getBowlPosRandom")
-        else:
-            print armReachActionLeft("getBowlPos")            
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2Random',))
     else: 
-        print armReachActionRight("initScooping2")
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2',))
+    rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
+    leftProc.start(); rightProc.start()
+    leftProc.join(); rightProc.join()
+
+        
+    if rndPose: print armReachActionLeft("getBowlPosRandom")
+    else:       print armReachActionLeft("getBowlPos")            
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping2")
         
@@ -83,23 +97,23 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    print armReachActionLeft("initFeeding")
-    print armReachActionRight("initFeeding")
+    leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
+    rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
+    leftProc.start(); rightProc.start()
+    leftProc.join(); rightProc.join()
 
     print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
+    ## print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
-
     print "Running feeding1"    
-    print armReachActionLeft("runFeeding1")
+    print armReachActionLeft("initFeeding2")
     
     print "Start to log!"    
     log.log_start()
     if detection_flag: log.enableDetector(True)
     
     print "Running feeding2"    
-    print armReachActionLeft("runFeeding2")
+    print armReachActionLeft("runFeeding")
 
     if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
@@ -122,6 +136,9 @@ if __name__ == '__main__':
                  default=False, help='Enable anomaly detector.')
     p.add_option('--en_random_pose', '--rnd', action='store_true', dest='bRandPose',
                  default=False, help='Enable randomness in a target pose.')
+    p.add_option('--data_path', action='store', dest='sRecordDataPath',
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
+                 help='Enter a record data path')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -142,10 +159,11 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
 
     
-    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
-                 vision_landmark=False, vision_change=False, \
+    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+                 vision_landmark=True, vision_change=False, \
                  pps=False, skin=False, \
-                 subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
+                 subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                 record_root_path=opt.sRecordDataPath, verbose=False)
     ## log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
     ##              pps=True, skin=True, \
     ##              subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
