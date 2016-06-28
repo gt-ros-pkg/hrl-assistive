@@ -103,6 +103,7 @@ class ArmReacherClient:
         # Initialize arms for scooping
 
         if self.verbose: print 'Initializing arm joints for scooping'
+        print self.armReachRight("initScooping1")
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping2',))
         if self.verbose:
@@ -152,18 +153,18 @@ class ArmReacherClient:
         if self.verbose: print 'Completed - scooping, time:', time.time() - t
 
     def runFeeding(self):
-	print 'Determining head position.'
-	self.armReachActionLeft("initFeeding1")
+        print 'Determining head position.'
+        self.armReachActionLeft("initFeeding1")
         self.armReachActionRight("getHeadPos")
-	print 'Initializing both arms for feeding.'
+        print 'Initializing both arms for feeding.'
         rightProc = multiprocessing.Process(target=self.armReachRight, args=('initFeeding',)) 
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initFeeding1',)) 
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
-	print 'Determining head position and second stage of initialization.'
+        print 'Determining head position and second stage of initialization.'
         self.armReachActionLeft("getHeadPos")
         self.armReachActionLeft("initFeeding2")
-	print 'Performing feeding.'
+        print 'Performing feeding.'
         self.armReachActionLeft("runFeeding")
 
     def armReachLeft(self, action):
