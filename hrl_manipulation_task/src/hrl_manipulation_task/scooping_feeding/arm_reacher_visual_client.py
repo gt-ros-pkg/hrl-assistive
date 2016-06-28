@@ -103,7 +103,7 @@ class ArmReacherClient:
         # Initialize arms for scooping
 
         if self.verbose: print 'Initializing arm joints for scooping'
-        print self.armReachRight("initScooping1")
+        self.armReachActionRight("initScooping1")
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping2',))
         if self.verbose:
@@ -137,7 +137,7 @@ class ArmReacherClient:
         if self.verbose:
             print 'Beginning - left arm init #2'
             t = time.time()
-        client.armReachActionLeft('initScooping2')
+        self.armReachActionLeft('initScooping2')
         if self.verbose:
             print 'Completed - left arm init #2, time:', time.time() - t
             print 'Beginning - scooping'
@@ -149,7 +149,7 @@ class ArmReacherClient:
         if self.highestBowlPoint is None:
             print 'Still no highest point detected. Continuing with a normal scoop.'
 
-        client.armReachActionLeft('runScooping')
+        self.armReachActionLeft('runScooping')
         if self.verbose: print 'Completed - scooping, time:', time.time() - t
 
     def runFeeding(self):
