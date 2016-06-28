@@ -613,7 +613,11 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_gamma': 0.5075,\
                           'osvm_window_size': 10,\
                           'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
-                          'hmmsvm_dL_gamma': 0.50749}
+                          'hmmsvm_dL_gamma': 0.50749,\
+                          'hmmsvm_LSLS_cost': 10.0,\
+                          'hmmsvm_LSLS_gamma': 0.01, \
+                          'hmmsvm_LSLS_w_negative': 1.5
+                          }
                           
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag' ],\
                           'update_list': [ 'hmmsvm_diag' ],\
@@ -624,6 +628,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'change_param_range': np.logspace(-0.2, 1.5, nPoints)*-1.0,\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
