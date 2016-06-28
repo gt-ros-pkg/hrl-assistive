@@ -103,6 +103,7 @@ class ArmReacherClient:
         # Initialize arms for scooping
 
         if self.verbose: print 'Initializing arm joints for scooping'
+        self.armReachActionRight("initScooping1")
         leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initScooping1',))
         rightProc = multiprocessing.Process(target=self.armReachRight, args=('initScooping2',))
         if self.verbose:
@@ -136,7 +137,7 @@ class ArmReacherClient:
         if self.verbose:
             print 'Beginning - left arm init #2'
             t = time.time()
-        client.armReachActionLeft('initScooping2')
+        self.armReachActionLeft('initScooping2')
         if self.verbose:
             print 'Completed - left arm init #2, time:', time.time() - t
             print 'Beginning - scooping'
@@ -148,8 +149,24 @@ class ArmReacherClient:
         if self.highestBowlPoint is None:
             print 'Still no highest point detected. Continuing with a normal scoop.'
 
-        client.armReachActionLeft('runScooping')
+        self.armReachActionLeft('runScooping')
         if self.verbose: print 'Completed - scooping, time:', time.time() - t
+
+    def runFeeding(self):
+        self.armReachActionLeft('lookToRight')
+        print 'Determining head position.'
+        self.armReachActionLeft("initFeeding1")
+        self.armReachActionRight("getHeadPos")
+        print 'Initializing both arms for feeding.'
+        rightProc = multiprocessing.Process(target=self.armReachRight, args=('initFeeding',)) 
+        leftProc = multiprocessing.Process(target=self.armReachLeft, args=('initFeeding1',)) 
+        leftProc.start(); rightProc.start()
+        leftProc.join(); rightProc.join()
+        print 'Determining head position and second stage of initialization.'
+        self.armReachActionLeft("getHeadPos")
+        self.armReachActionLeft("initFeeding2")
+        print 'Performing feeding.'
+        self.armReachActionLeft("runFeeding")
 
     def armReachLeft(self, action):
         self.armReachActionLeft(action)
@@ -300,8 +317,9 @@ if __name__ == '__main__':
 
     if scoopingFeeding:
         client.runScooping()
+	client.runFeeding()
 
-    time.sleep(60)
+    time.sleep(5)
 
     client.cancel()
 

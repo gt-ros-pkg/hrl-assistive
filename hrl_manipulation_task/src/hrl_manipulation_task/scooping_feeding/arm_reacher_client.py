@@ -79,12 +79,14 @@ if __name__ == '__main__':
         #print armReachActionLeft("initFeeding")    # run it only if there was no scooping  
         print armReachActionLeft("initFeeding1")  
         print armReachActionRight("getHeadPos")
-        rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
-        leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
-        leftProc.start(); rightProc.start()
-        leftProc.join(); rightProc.join()        
-        ## print armReachActionRight("initFeeding")
-        ## print armReachActionLeft("initFeeding1")
+        
+        ## rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
+        ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
+        ## leftProc.start(); rightProc.start()
+        ## leftProc.join(); rightProc.join()
+        
+        print armReachActionRight("initFeeding")
+        print armReachActionLeft("initFeeding1")
         print armReachActionLeft("getHeadPos")
         print armReachActionLeft("initFeeding2")
         print armReachActionLeft("runFeeding")

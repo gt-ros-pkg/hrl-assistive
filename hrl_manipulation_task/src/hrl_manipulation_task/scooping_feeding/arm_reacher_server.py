@@ -198,16 +198,16 @@ class armReachAction(mpcBaseAction):
         ## ['MOVES', '[0.75, 0.05, 0.23, -3.14, 0.13, 1.57]', 5.0],
                                                 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.05, 0.15, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
-                                                ['PAUSE', 2.0]]
+        self.motions['initFeeding1']['left'] = [['MOVET', '[ -0.1, 0.2, 0., 0., 0., 0.7]', 5., 'self.default_frame'],
+                                                ['PAUSE', 10.0]]
 
         self.motions['initFeeding2'] = {}
         self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 2.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVET', '[0.0, 0.0, 0.14, 0., 0., 0.]', 5.],\
+        self.motions['runFeeding']['left'] = [['MOVET', '[0.0, 0.0, 0.15, 0., 0., 0.]', 5.],\
                                               ['PAUSE', 0.5],
-                                              ['MOVET', '[0.0, 0.0, -0.14, 0., 0., 0.]', 5.]]
+                                              ['MOVET', '[0.0, 0.0, -0.15, 0., 0., 0.]', 5.]]
           
         rospy.loginfo("Parameters are loaded.")
 
@@ -256,6 +256,10 @@ class armReachAction(mpcBaseAction):
             self.lookAt(self.mouth_frame, tag_base='head')                            
             return "Completed to move head"
         
+        elif task == 'lookToRight':
+            self.lookToRightSide()
+            return 'Completed head movement to right'
+
         else:
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task 
@@ -455,6 +459,37 @@ class armReachAction(mpcBaseAction):
 
         return "Success"
         
+    def lookToRightSide(self):
+        t = time.time()
+        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')
+        headClient = actionlib.SimpleActionClient("/head_traj_controller/point_head_action",
+                                                  pr2_controllers_msgs.msg.PointHeadAction)
+        headClient.wait_for_server()
+        rospy.logout('Connected to head control server')
+
+        pos = Point()
+
+        ps  = PointStamped()
+        ps.header.frame_id = self.torso_frame
+
+        head_goal_msg = pr2_controllers_msgs.msg.PointHeadGoal()
+        head_goal_msg.pointing_frame = head_frame
+        head_goal_msg.pointing_axis.x = 1
+        head_goal_msg.pointing_axis.y = 0
+        head_goal_msg.pointing_axis.z = 0
+        head_goal_msg.min_duration = rospy.Duration(1.0)
+        head_goal_msg.max_velocity = 1.0
+
+        pos.x = 0
+        pos.y = -2
+        pos.z = 0
+
+        ps.point = pos
+        head_goal_msg.target = ps
+
+        headClient.send_goal(head_goal_msg)
+        return "Success"
+
     def pubCurEEPose(self):
         frame = self.getEndeffectorFrame(tool=self.cur_tool)
         ps = dh.gen_pose_stamped(frame, 'torso_lift_link', stamp = rospy.Time.now())
