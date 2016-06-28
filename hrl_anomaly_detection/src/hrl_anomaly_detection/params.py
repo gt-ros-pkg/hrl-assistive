@@ -131,7 +131,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         nPoints        = 20 
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm' ],\
-                          'update_list': ['fixed','change', 'hmmosvm'],\
+                          'update_list': ['fixed'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
@@ -140,7 +140,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                          'fixed_param_range': np.linspace(0.1, -0.4, nPoints),\
+                          'fixed_param_range': np.linspace(0.3, -0.3, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
     elif dim == 3:
 
@@ -254,9 +254,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'osvm_nu': 0.000215, 'osvm_window_size': 10,\
                               'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 0.01,\
-                              'hmmsvm_LSLS_cost': 10.0,\
+                              'hmmsvm_LSLS_cost': 15.0,\
                               'hmmsvm_LSLS_gamma': 0.01, \
-                              'hmmsvm_LSLS_w_negative': 0.2
+                              'hmmsvm_LSLS_w_negative': 1.5
                               }
 
         nPoints        = 20   
