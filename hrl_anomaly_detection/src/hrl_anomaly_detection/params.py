@@ -584,9 +584,9 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_nu': 0.00316}
                           
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm' ],\
-                          'update_list': ['hmmosvm'],\
+                          'update_list': ['progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(0.2, -9., nPoints), \
+                          'progress_param_range':np.linspace(0.2, -11., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.5, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
