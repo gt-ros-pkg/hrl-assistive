@@ -642,7 +642,7 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         if posdata and pos_cut_indices is not None:
             abnormalTrainData_X = []
             abnormalTrainData_Y = []
-            for i, cut_idx in enumerate(pos_cut_indices):
+            for i, cut_idx in enumerate(pos_cut_indices[file_idx]):
                 abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
                 abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
                     
