@@ -821,7 +821,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ll_classifier_train_X   = d['ll_classifier_train_X']
             ll_classifier_train_Y   = d['ll_classifier_train_Y']         
             ll_classifier_train_idx = d['ll_classifier_train_idx']
-            l_cut_idx = getHMMCuttingIdx(ll_classifier_train_X, \
+            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
                                          ll_classifier_train_Y, \
                                          ll_classifier_train_idx)
             ll_cut_idx.append(l_cut_idx)
