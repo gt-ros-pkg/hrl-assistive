@@ -1818,7 +1818,8 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
                     break
     elif len(np.shape(ll_X))==2:
         flatten_idx = ll_idx[-1]
-        for j in xrange(0, len(ll_X)-nOffset):            
+        for j in xrange(0, len(ll_X)-nOffset):
+            print j, ll_X[j+nOffset][0]-ll_X[j][0]
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
