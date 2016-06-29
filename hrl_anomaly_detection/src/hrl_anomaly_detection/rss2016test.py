@@ -806,12 +806,30 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     if 'osvm' in method_list:
-        nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
-        osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
-                                  window=SVM_dict['osvm_window_size'], \
+        ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
+        raw_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'], \
                                   posdata=False)
+    elif 'bpsvm' in method_list:
+
+        # get ll_cut_idx only for pos data
+        ll_cut_idx = []
+        for idx in xrange(len(kFoldList)):
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+            ll_classifier_train_idx = d['ll_classifier_train_idx']
+            l_cut_idx = getHMMCuttingIdx(ll_classifier_train_X, \
+                                         ll_classifier_train_Y, \
+                                         ll_classifier_train_idx)
+            ll_cut_idx.append(l_cut_idx)
+                    
+        raw_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'], \
+                                  posdata=True, pos_cut_indices=ll_cut_idx)
     else:
-        osvm_data = None
+        raw_data = None
         
     
     # parallelization
@@ -820,7 +838,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, osvm_data=osvm_data,\
+                                                                 SVM_dict, raw_data=raw_data,\
                                                                  startIdx=startIdx, nState=nState) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -936,20 +954,20 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     ROC_dict, AE_dict, SVM_dict,\
-                    osvm_data=None, startIdx=4, nState=25):
+                    raw_data=None, startIdx=4, nState=25):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
     from sklearn import preprocessing
 
-    if method == 'osvm':
-        X_train_org = osvm_data[idx]['X_scaled']
-        Y_train_org = osvm_data[idx]['Y_train_org']
-        idx_train_org = osvm_data[idx]['idx_train_org']
-        ll_classifier_test_X    = osvm_data[idx]['X_test']
-        ll_classifier_test_Y    = osvm_data[idx]['Y_test']
-        ll_classifier_test_idx  = osvm_data[idx]['idx_test']
+    if method == 'osvm' or method == 'bpsvm':
+        X_train_org = raw_data[idx]['X_scaled']
+        Y_train_org = raw_data[idx]['Y_train_org']
+        idx_train_org = raw_data[idx]['idx_train_org']
+        ll_classifier_test_X    = raw_data[idx]['X_test']
+        ll_classifier_test_Y    = raw_data[idx]['Y_test']
+        ll_classifier_test_idx  = raw_data[idx]['idx_test']
 
         nLength = 200
     else:
@@ -1077,7 +1095,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
         if len(ll_classifier_test_X[j])==0: continue
 
         try:
-            if method == 'osvm':
+            if method == 'osvm' or method == 'bpsvm':
                 X = ll_classifier_test_X[j]
             elif method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
@@ -1101,7 +1119,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
 
         ## cb.run_classifier(j)
         dtc.set_params( **SVM_dict )
-        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS':
+        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
+          method == 'bpsvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                

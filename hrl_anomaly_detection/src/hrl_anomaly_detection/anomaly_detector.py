@@ -51,7 +51,6 @@ from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
 
-from hrl_anomaly_detection.params import *
 
 QUEUE_SIZE = 10
 
@@ -615,6 +614,9 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=4,
                  help='type the desired dimension')
+    p.add_option('--data_path', action='store', dest='sRecordDataPath',
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
+                 help='Enter a record data path')
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
 
@@ -623,38 +625,55 @@ if __name__ == '__main__':
     scale         = 1.0
     local_range   = 10.0    
 
-    if opt.task == 'scooping':
-        subject_names = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry',         
-        raw_data_path, _, param_dict = getScooping(opt.task, False, \
-                                                   False, False,\
-                                                   rf_center, local_range, dim=opt.dim)
-        check_method      = opt.method # cssvm
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
-        param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
-                             'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
-    elif opt.task == 'feeding':
-        subject_names = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']        
-        raw_data_path, _, param_dict = getFeeding(opt.task, False, \
-                                                  False, False,\
-                                                  rf_center, local_range, dim=opt.dim)
-        check_method      = opt.method # cssvm
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
-        param_dict['SVM'] = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
-                             'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
 
-    elif opt.task == 'pushing_microwhite':
-        subject_names = ['gatsbii']        
-        raw_data_path, _, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                            False, False,\
-                                                            rf_center, local_range, dim=opt.dim)
-        check_method      = opt.method # cssvm
-        save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
-        param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
-                             'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
-                             
+    # From ICRA 2016 to TRO2017
+    if False:
+        from hrl_anomaly_detection.params import *
+
+        if opt.task == 'scooping':
+            subject_names = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry',         
+            raw_data_path, _, param_dict = getScooping(opt.task, False, \
+                                                       False, False,\
+                                                       rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method # cssvm
+            save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+            param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+
+        elif opt.task == 'feeding':
+            subject_names = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']        
+            raw_data_path, _, param_dict = getFeeding(opt.task, False, \
+                                                      False, False,\
+                                                      rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method # cssvm
+            save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+            param_dict['SVM'] = {'renew': False, 'w_negative': 1.3, 'gamma': 0.0103, 'cost': 1.0,\
+                                 'class_weight': 0.05, 'logp_offset': 200, 'ths_mult': -2.5}
+
+        elif opt.task == 'pushing_microwhite':
+            subject_names = ['gatsbii']        
+            raw_data_path, _, param_dict = getPushingMicroWhite(opt.task, False, \
+                                                                False, False,\
+                                                                rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method # cssvm
+            save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/demo'
+            param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+
+        else:
+            sys.exit()
     else:
-        sys.exit()
+        
+        if opt.task == 'scooping':
+            subject_names = [] 
+            raw_data_path, _, param_dict = getScooping(opt.task, False, \
+                                                       False, False,\
+                                                       rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method # cssvm
+            save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'+opt.task+'_data/demo'
+            param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
