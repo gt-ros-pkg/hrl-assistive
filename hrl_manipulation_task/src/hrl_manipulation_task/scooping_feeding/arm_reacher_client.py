@@ -57,9 +57,9 @@ if __name__ == '__main__':
 
     #---------------------------- Face registration ----------------------
     if True:
+        print armReachActionLeft("initScooping1")
         print armReachActionRight("initScooping1")
         print armReachActionRight("initScooping2")
-        print armReachActionLeft("initScooping1")
         sys.exit()
 
     # -------------- TEST -----------------------    
