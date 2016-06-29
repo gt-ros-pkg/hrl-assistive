@@ -735,7 +735,6 @@ if __name__ == '__main__':
                         for i in xrange(nFiles):
                             ll_cut_idx.append(data[i]['abnormal_train_cut_idx'])
             
-                                                
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 if method is 'osvm':
