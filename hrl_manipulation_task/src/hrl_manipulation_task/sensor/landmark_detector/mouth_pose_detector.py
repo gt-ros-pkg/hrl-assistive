@@ -360,7 +360,51 @@ class MouthPoseDetector:
                             best_rect = d
                             best_pose_points = pose_points
                         if not self.face_detected:
+<<<<<<< HEAD
                             time.sleep(.5)
+=======
+                            for i in xrange(len(current_positions)):
+                                if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
+                                    no_jump = False
+                            if count < 20:
+                                no_jump = False
+                        if no_jump:
+                            self.current_positions = current_positions
+                            self.previous_position, self.previous_orientation = position, orientation
+                        else:
+                            position, orientation = self.previous_position, self.previous_orientation
+                        #display frame
+                        if self.display_3d:
+                            self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
+                        
+                        #publish
+                        #temp_pose = self.make_pose(position, orientation=orientation)
+                        temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
+                        for i in xrange(3):
+                            temp_pose[i][3] = position[i]
+                        temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
+                        ## temp_pose = np.multiply(self.gripper_to_sensor, temp_pose)
+                        temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
+                        ## temp_pose = tft.concatanate_matrices(base_to_gripper, temp_pose)
+                        temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
+                        ## orientation = tft.quaternion_from_matrix(pnp_trans)
+                        ## pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
+                        ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
+                        ## if self.display_3d:
+                        ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
+                        if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
+                            try:
+                                temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
+                                temp_pose.header.frame_id = "torso_lift_link"
+                                #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
+                                self.mouth_calc_pub.publish(temp_pose)
+                                
+                            except:
+                                print "failed"
+                        self.mouth_pub.publish(best_pose)
+                        ## self.mouth_pub.publish(pnp_pose)
+                    print time.time() - time1
+>>>>>>> ef0ff2d9fcfbd6ae1cace34dc19387020e114c8e
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))
         try:
@@ -991,7 +1035,7 @@ class MouthPoseDetector:
             new_point = (point.x, point.y, point.z)
         else:
             new_point = point
-        if not np.allclose(point, (0.0, 0.0, 0.0)):
+        if not np.allclose(point, (0.0, 0.0, 0.0)) and not np.isnan(point[0]):
             x = self.rgb_c[0] + (self.rgb_f[0] * point[0] / point[2]) 
             y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[2])
         else:

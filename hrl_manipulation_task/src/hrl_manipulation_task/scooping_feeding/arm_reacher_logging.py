@@ -55,8 +55,8 @@ def initTask(armReachActionLeft, armReachActionRight):
     print armReachActionLeft("initScooping1")
     
 
-def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False, \
-             rndPose=False):
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, \
+             rndPose=False, rndVision=False):
 
     log.task = 'scooping'
     log.initParams()
@@ -66,7 +66,7 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     #ut.get_keystroke('Hit a key to proceed next')
     ## print armReachActionRight("initScooping1")
     
-    if train: 
+    if rndPose: 
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2Random',))
     else: 
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
@@ -74,7 +74,7 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     leftProc.start(); rightProc.start()
     leftProc.join(); rightProc.join()
         
-    if rndPose: print armReachActionLeft("getBowlPosRandom")
+    if rndVision: print armReachActionLeft("getBowlPosRandom")
     else:       print armReachActionLeft("getBowlPos")            
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping2")
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
                  default=False, help='Enable anomaly detector.')
     p.add_option('--en_random_pose', '--rnd', action='store_true', dest='bRandPose',
-                 default=False, help='Enable randomness in a target pose.')
+                 default=False, help='Enable randomness in a right arm pose.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
                  default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
                  help='Enter a record data path')
@@ -170,7 +170,6 @@ if __name__ == '__main__':
     ##              pps=True, skin=True, \
     ##              subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
 
-
                  
     last_trial  = '4'
     last_detect = '2'    
@@ -179,7 +178,7 @@ if __name__ == '__main__':
 
         detection_flag = False
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingNormalTrain, 5:scoopingSGDUpdate else: exit): ')
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingRandom, 5:scoopingSGDUpdate else: exit): ')
         if trial=='': trial=last_trial
             
         if trial is '1' or trial is '2' or trial is '3' or trial is '4' :
@@ -191,7 +190,7 @@ if __name__ == '__main__':
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
             elif trial == '4':
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag,
-                         train=True, rndPose=opt.bRandPose)
+                         rndPose=opt.bRandPose, rndVision=False)
             elif trial == '2':
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
             else:

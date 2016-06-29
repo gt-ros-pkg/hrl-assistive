@@ -495,7 +495,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         ## startIdx = d['startIdx']
         
         # sample x length x feature vector
-        ll_classifier_train_X   = d['ll_classifier_train_X']
+        ll_classifier_train_X   = d['ll_classifier_train_X'] # [normal, abnormal]
         ll_classifier_train_Y   = d['ll_classifier_train_Y']         
         ll_classifier_train_idx = d['ll_classifier_train_idx']
         ## ll_classifier_test_X    = d['ll_classifier_test_X']  
@@ -551,6 +551,9 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             train_X = train_X[normal_idx]
             train_Y = train_Y[normal_idx]
             train_idx = train_idx[normal_idx]
+        elif method is 'bpsvm':
+            l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
+            
 
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = flattenSample(train_X, train_Y, train_idx)
@@ -589,6 +592,8 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         data[file_idx]['Y_test']   = Y_test
         data[file_idx]['idx_test'] = idx_test
         data[file_idx]['nLength'] = nLength
+        if method is 'bpsvm':
+            data[file_idx]['abnormal_train_cut_idx'] = l_cut_idx
 
     return data 
 
@@ -611,15 +616,15 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         normalTrainData   = successData[:, normalTrainIdx, :] 
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :]
 
-        # sample x dim x length
+        # dim x sample x length => sample x dim x length
         normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
-        abnomalTrainData  = np.swapaxes(abnormalTrainData, 1, 2)         
+        abnormalTrainData  = np.swapaxes(abnormalTrainData, 0, 1)         
         normalTestData    = np.swapaxes(normalTestData, 0, 1)
         abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
-        # sample x length x dim 
+        # sample x dim x length = > sample x length x dim 
         normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
         abnormalTrainData = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 1, 2)
@@ -642,7 +647,7 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         if posdata and pos_cut_indices is not None:
             abnormalTrainData_X = []
             abnormalTrainData_Y = []
-            for i, cut_idx in enumerate(pos_cut_indices):
+            for i, cut_idx in enumerate(pos_cut_indices[file_idx]):
                 abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
                 abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
                     
@@ -652,16 +657,11 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
                                                                   abnormalTrainData_Y)
             else:
                 X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
-                                                                            abnormalTrainData_Y, window=window)
+                                                                            abnormalTrainData_Y, \
+                                                                            window=window)
 
-            print np.shape(X_train_org), np.shape(X_abnorm_train)
             X_train_org = X_train_org + X_abnorm_train
             Y_train_org = Y_train_org + Y_abnorm_train
-            print np.shape(X_train_org)
-            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            sys.exit()
-
-
                                                                   
         # scaling
         from sklearn import preprocessing
@@ -706,7 +706,8 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             for ii in xrange(len(ll_classifier_test_X)):
                 if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
                   or np.nan in ll_classifier_test_X[ii][0]:
-                    continue
+                  print ii, " : nan in data "
+                  continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
                 ## X = ml.transform(X)
@@ -740,19 +741,23 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
 
 def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     '''
-    ll : sample x length x hmm features
-    It takes only positive data.
+    ll_X : sample x length x hmm features
+    ll_Y : sample x length
+    ll_idx:
     '''
+    ## print np.shape(ll_X), np.shape(ll_Y), np.shape(ll_idx)
+    ## print ll_Y[-1][0], ll_X[-1][:,0]
+    ## sys.exit()
     
     l_X   = []
     l_Y   = []
     l_idx = []
     for i in xrange(len(ll_X)):
         if ll_Y[i][0] < 0:
-            print "Error: negative data come in."
-            sys.exit()
+            ## l_idx.append(ll_idx[i][-1])
+            continue
         else:
-            _,_,idx = getEstTruePositive(ll_X[i], ll_idx[i])
+            _,_,idx = getEstTruePositive(ll_X[i], ll_idx=ll_idx[i])
             l_idx.append(idx)
             
     return l_idx
@@ -1789,7 +1794,7 @@ def getTimeDelayData(data, time_window):
 
 def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     '''
-    Input size is nSamples x length x HMM-induced features or 
+    Input size is Samples x length x HMM-induced features or 
     Input size is length x HMM-induced features
     Output is nData x HMM-induced features
     Here the input should be positive data only.
@@ -1803,10 +1808,12 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
             for j in xrange(0, len(ll_X[i])-nOffset):
                 if ll_X[i][j+nOffset][0]-ll_X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
                     flatten_X   += ll_X[i][j:]
-                    if ll_idx is not None: flatten_idx += ll_idx[i][j]
+                    if ll_idx is not None: flatten_idx += ll_idx[i][j] # if thee is no likelihood drop?
                     break
     elif len(np.shape(ll_X))==2:
+        if ll_idx is not None: flatten_idx = ll_idx[-1]
         for j in xrange(0, len(ll_X)-nOffset):
+            ## print j, ll_X[j+nOffset][0]-ll_X[j][0]
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
@@ -1886,9 +1893,11 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
             X = []
             for k in range(window,0,-1):
                 if j-k < 0:
-                    X += ll_X[i][0].tolist()
+                    if type(ll_X[i][0]) is not list: X += ll_X[i][0].tolist()
+                    else: X += ll_X[i][0]
                 else:
-                    X += ll_X[i][j-k].tolist()
+                    if type(ll_X[i][j-k]) is not list: X += ll_X[i][j-k].tolist()
+                    else: X += ll_X[i][j-k]
 
             l_X.append(X)
             l_Y.append(ll_Y[i][j])
@@ -1899,7 +1908,7 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
 
 def sampleWithWindow(ll_X, window=2):
     '''
-    ll : sample x length x hmm features
+    ll : sample x length x features
     '''
     if window < 2:
         print "Wrong window size"

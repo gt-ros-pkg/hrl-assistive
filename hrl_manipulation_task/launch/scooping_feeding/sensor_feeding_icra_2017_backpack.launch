@@ -1,7 +1,8 @@
 
 <launch>
   <!-- Run this launcher on a machine connected with a camera and a microphone-->
-  
+  <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
+
   <node name="findMouth" pkg="hrl_manipulation_task"
         type="mouth_pose_detector.py" args="-l
                                             /SR300_rgb_optical_frame
