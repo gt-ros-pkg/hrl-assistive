@@ -805,12 +805,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
+    osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list:
         ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
-        raw_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+        osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'], \
                                   posdata=False)
-    elif 'bpsvm' in method_list:
+    if 'bpsvm' in method_list:
 
         # get ll_cut_idx only for pos data
         ll_cut_idx = []
@@ -827,11 +828,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             print l_cut_idx
         sys.exit()
                     
-        raw_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'], \
-                                  posdata=True, pos_cut_indices=ll_cut_idx)
-    else:
-        raw_data = None
+        bpsvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+                                   window=SVM_dict['raw_window_size'], \
+                                   posdata=True, pos_cut_indices=ll_cut_idx)
         
     
     # parallelization
@@ -840,7 +839,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, raw_data=raw_data,\
+                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -965,12 +964,15 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
     from sklearn import preprocessing
 
     if method == 'osvm' or method == 'bpsvm':
-        X_train_org = raw_data[idx]['X_scaled']
-        Y_train_org = raw_data[idx]['Y_train_org']
-        idx_train_org = raw_data[idx]['idx_train_org']
-        ll_classifier_test_X    = raw_data[idx]['X_test']
-        ll_classifier_test_Y    = raw_data[idx]['Y_test']
-        ll_classifier_test_idx  = raw_data[idx]['idx_test']
+        if method == 'osvm': raw_data_idx = 0
+        elif method == 'bpsvm': raw_data_idx = 1
+            
+        X_train_org = raw_data[raw_data_idx][idx]['X_scaled']
+        Y_train_org = raw_data[raw_data_idx][idx]['Y_train_org']
+        idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
+        ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
+        ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
+        ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
 
         nLength = 200
     else:
