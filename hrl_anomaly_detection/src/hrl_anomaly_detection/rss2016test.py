@@ -815,7 +815,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         # get ll_cut_idx only for pos data
         ll_cut_idx = []
-        for idx in xrange(len(kFoldList)):
+        for idx in xrange(len(kFold_list)):
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             d            = ut.load_pickle(modeling_pkl)
             ll_classifier_train_X   = d['ll_classifier_train_X']
@@ -825,8 +825,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                          ll_classifier_train_Y, \
                                          ll_classifier_train_idx)
             ll_cut_idx.append(l_cut_idx)
-            print l_cut_idx
-        sys.exit()
                     
         bpsvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
