@@ -353,6 +353,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          }
                 
                       
 
@@ -529,6 +535,7 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0.1, nPoints),\
                           'osvm_param_range': np.logspace(-4, 1.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -581,6 +588,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          }
             
         ## if opt.dim == 4:
         ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -609,6 +622,7 @@ if __name__ == '__main__':
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
                           'osvm_param_range': np.logspace(-6., 0.2, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -663,6 +677,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
                           }
 
 
