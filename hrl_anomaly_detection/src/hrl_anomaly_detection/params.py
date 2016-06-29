@@ -130,12 +130,15 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_LSLS_cost': 15.0,\
                           'hmmsvm_LSLS_gamma': 0.01, \
                           'hmmsvm_LSLS_w_negative': 1.5
+                          'bpsvm_cost': 15.0,\
+                          'bpsvm_gamma': 1.0, \
+                          'bpsvm_w_negative': 1.5
                           }
                           
 
         nPoints        = 20 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS' ],\
-                          'update_list': ['hmmosvm', 'hmmsvm_dL'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS', 'bpsvm' ],\
+                          'update_list': ['bpsvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
@@ -145,6 +148,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
     elif dim == 3:
@@ -153,7 +157,12 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555}
         SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 5.0, 'cost': 3.5,\
-                          'hmmosvm_nu': 0.00031}
+                          'hmmosvm_nu': 0.00031,\
+                          'hmmsvm_bpsvm_cost': 12.5,\
+                          'hmmsvm_bpsvm_gamma': 0.507, \
+                          'hmmsvm_bpsvm_w_negative': 0.2
+                          }
+                          
 
         nPoints        = 20 #'svm','hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
@@ -161,6 +170,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
                           'svm_param_range': np.logspace(-2.5, -0.25, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.5, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.5, 0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -171,7 +181,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': False, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
-                          'hmmosvm_nu': 0.0001}
+                          'hmmosvm_nu': 0.0001,\
+                          'hmmsvm_bpsvm_cost': 15.0,\
+                          'hmmsvm_bpsvm_gamma': 0.01, \
+                          'hmmsvm_bpsvm_w_negative': 1.5
+                          }
 
         nPoints        = 20 #, 'hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
@@ -181,6 +195,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'svm_param_range': np.logspace(-2.5, 0.7, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.5, -0.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
         
