@@ -1081,7 +1081,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
     # Generate parameter list for ROC curve
     # pass method if there is existing result
     # data preparation
-    if method == 'osvm' and method == 'bpsvm':
+    if method == 'osvm' or method == 'bpsvm':
         X_scaled = X_train_org
     elif method.find('svm')>=0 or method.find('sgd')>=0:
         scaler = preprocessing.StandardScaler()
