@@ -644,7 +644,6 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
                                                                   ll_classifier_train_Y, window=window)
 
-
         if posdata and pos_cut_indices is not None:
             abnormalTrainData_X = []
             abnormalTrainData_Y = []
@@ -1908,7 +1907,7 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
 
 def sampleWithWindow(ll_X, window=2):
     '''
-    ll : sample x length x hmm features
+    ll : sample x length x features
     '''
     if window < 2:
         print "Wrong window size"
