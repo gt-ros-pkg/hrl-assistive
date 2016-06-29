@@ -312,6 +312,7 @@ if __name__ == '__main__':
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
