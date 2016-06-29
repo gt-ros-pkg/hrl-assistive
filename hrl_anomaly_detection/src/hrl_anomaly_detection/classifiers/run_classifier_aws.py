@@ -709,6 +709,11 @@ if __name__ == '__main__':
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict, negTrain=True)
                 else:
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
+                    if method is 'bpsvm':
+                        ll_cut_idx = []
+                        for i in xrange(nFiles):
+                            ll_cut_idx.append(data[i]['abnormal_train_cut_idx'])
+            
                                                 
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
@@ -719,9 +724,6 @@ if __name__ == '__main__':
                 elif method is 'bpsvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    ll_cut_idx = []
-                    for i in xrange(nFiles):
-                        ll_cut_idx.append(data[i]['abnormal_train_cut_idx'])
                     data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=ll_cut_idx)
                 elif method is 'rfc':
                     startIdx=4

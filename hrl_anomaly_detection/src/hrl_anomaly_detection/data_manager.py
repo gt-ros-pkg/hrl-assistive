@@ -554,9 +554,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         elif method is 'bpsvm':
             # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
             l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
-            print np.shape(l_cut_idx)
-            print l_cut_idx[0]
-
+            
 
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = flattenSample(train_X, train_Y, train_idx)
@@ -598,7 +596,6 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         if method is 'bpsvm':
             data[file_idx]['abnormal_train_cut_idx'] = l_cut_idx
 
-
     return data 
 
 
@@ -620,15 +617,15 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         normalTrainData   = successData[:, normalTrainIdx, :] 
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :]
 
-        # sample x dim x length
+        # dim x sample x length => sample x dim x length
         normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
-        abnomalTrainData  = np.swapaxes(abnormalTrainData, 1, 2)         
+        abnormalTrainData  = np.swapaxes(abnormalTrainData, 0, 1)         
         normalTestData    = np.swapaxes(normalTestData, 0, 1)
         abnormalTestData  = np.swapaxes(abnormalTestData, 0, 1)
 
-        # sample x length x dim 
+        # sample x dim x length = > sample x length x dim 
         normalTrainData   = np.swapaxes(normalTrainData, 1, 2)
         abnormalTrainData = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 1, 2)
@@ -648,6 +645,7 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
                                                                   ll_classifier_train_Y, window=window)
 
+
         if posdata and pos_cut_indices is not None:
             abnormalTrainData_X = []
             abnormalTrainData_Y = []
@@ -663,14 +661,8 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
                 X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
                                                                             abnormalTrainData_Y, window=window)
 
-            print np.shape(X_train_org), np.shape(X_abnorm_train)
             X_train_org = X_train_org + X_abnorm_train
             Y_train_org = Y_train_org + Y_abnorm_train
-            print np.shape(X_train_org)
-            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            sys.exit()
-
-
                                                                   
         # scaling
         from sklearn import preprocessing
@@ -750,9 +742,12 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
 def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     '''
     ll_X : sample x length x hmm features
-    ll_Y : sample x length 
+    ll_Y : sample x length
+    ll_idx:
     '''
-    print np.shape(ll_X), np.shape(ll_Y), np.shape(ll_idx)
+    ## print np.shape(ll_X), np.shape(ll_Y), np.shape(ll_idx)
+    ## print ll_Y[-1][0], ll_X[-1][:,0]
+    ## sys.exit()
     
     l_X   = []
     l_Y   = []
@@ -762,10 +757,9 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
             ## l_idx.append(ll_idx[i][-1])
             continue
         else:
-            _,_,idx = getEstTruePositive(ll_X[i], ll_idx[i])
+            _,_,idx = getEstTruePositive(ll_X[i], ll_idx=ll_idx[i])
             l_idx.append(idx)
-
-    print l_idx
+            
     return l_idx
     
 
@@ -1819,7 +1813,7 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     elif len(np.shape(ll_X))==2:
         flatten_idx = ll_idx[-1]
         for j in xrange(0, len(ll_X)-nOffset):
-            print j, ll_X[j+nOffset][0]-ll_X[j][0]
+            ## print j, ll_X[j+nOffset][0]-ll_X[j][0]
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
