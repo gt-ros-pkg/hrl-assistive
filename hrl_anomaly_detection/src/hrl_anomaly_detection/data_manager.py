@@ -553,7 +553,6 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             train_idx = train_idx[normal_idx]
         elif method is 'bpsvm':
             # get cutting idx for pos data # need to fix!!!!!!!!!!!!!!!! TODO
-            print train_idx[0]
             l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
             print np.shape(l_cut_idx)
             print l_cut_idx[0]
@@ -1800,7 +1799,7 @@ def getTimeDelayData(data, time_window):
 
 def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     '''
-    Input size is nSamples x length x HMM-induced features or 
+    Input size is Samples x length x HMM-induced features or 
     Input size is length x HMM-induced features
     Output is nData x HMM-induced features
     Here the input should be positive data only.
@@ -1814,10 +1813,11 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
             for j in xrange(0, len(ll_X[i])-nOffset):
                 if ll_X[i][j+nOffset][0]-ll_X[i][j][0] < 0 : #and X[i][j+1][0]-X[i][j][0] < 0:
                     flatten_X   += ll_X[i][j:]
-                    if ll_idx is not None: flatten_idx += ll_idx[i][j]
+                    if ll_idx is not None: flatten_idx += ll_idx[i][j] # if thee is no likelihood drop?
                     break
     elif len(np.shape(ll_X))==2:
-        for j in xrange(0, len(ll_X)-nOffset):
+        flatten_idx = ll_idx[-1]
+        for j in xrange(0, len(ll_X)-nOffset):            
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
