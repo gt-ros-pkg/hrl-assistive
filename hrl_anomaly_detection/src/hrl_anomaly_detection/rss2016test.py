@@ -824,6 +824,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                          ll_classifier_train_Y, \
                                          ll_classifier_train_idx)
             ll_cut_idx.append(l_cut_idx)
+            print l_cut_idx
+        sys.exit()
                     
         raw_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'], \
