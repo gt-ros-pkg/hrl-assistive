@@ -353,7 +353,7 @@ class MouthPoseDetector:
                         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
                             try:
                                 temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
-                                #temp_pose.header.frame_id = "torso_lift_link"
+                                temp_pose.header.frame_id = "torso_lift_link"
                                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
                                 self.mouth_calc_pub.publish(temp_pose)
                                 
@@ -936,10 +936,13 @@ class MouthPoseDetector:
             new_point = (point.x, point.y, point.z)
         else:
             new_point = point
-        if not np.allclose(point, (0.0, 0.0, 0.0)):
+        if not np.allclose(point, (0.0, 0.0, 0.0)) and not np.isnan(point[0]):
             x = self.rgb_c[0] + (self.rgb_f[0] * point[0] / point[2]) 
             y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[2])
         else:
+            x = 0
+            y = 0
+        if np.isnan(x) or np.isnan(y):
             x = 0
             y = 0
         return (x, y)
