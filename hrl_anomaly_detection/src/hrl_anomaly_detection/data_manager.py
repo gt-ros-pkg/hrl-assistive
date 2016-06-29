@@ -1897,7 +1897,8 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
                     if type(ll_X[i][0]) is not list: X += ll_X[i][0].tolist()
                     else: X += ll_X[i][0]
                 else:
-                    X += ll_X[i][j-k].tolist()
+                    if type(ll_X[i][j-k]) is not list: X += ll_X[i][j-k].tolist()
+                    else: X += ll_X[i][j-k]
 
             l_X.append(X)
             l_Y.append(ll_Y[i][j])
