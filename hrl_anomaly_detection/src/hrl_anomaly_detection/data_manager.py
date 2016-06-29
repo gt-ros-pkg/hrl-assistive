@@ -706,6 +706,7 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             for ii in xrange(len(ll_classifier_test_X)):
                 if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
                   or np.nan in ll_classifier_test_X[ii][0]:
+                  print ii, " : nan in data "
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])

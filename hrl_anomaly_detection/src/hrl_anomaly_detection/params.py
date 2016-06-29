@@ -482,7 +482,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_LSLS_cost': 12.5, \
                               'hmmsvm_LSLS_gamma': 0.01, \
                               'hmmsvm_LSLS_w_negative': 0.525,\
-                              'bpsvm_cost': 5.0,\
+                              'bpsvm_cost': 4.0,\
                               'bpsvm_gamma': 0.5075, \
                               'bpsvm_w_negative': 1.5                              
                               }                              
@@ -492,7 +492,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
-                          'svm_param_range': np.logspace(-2.5, -0.8, nPoints),\
+                          'svm_param_range': np.logspace(-2.5, -0.5, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': (-np.logspace(0.0,1.,nPoints)**2)/10.0+0.4,\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
