@@ -659,7 +659,8 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
                                                                   abnormalTrainData_Y)
             else:
                 X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
-                                                                            abnormalTrainData_Y, window=window)
+                                                                            abnormalTrainData_Y, \
+                                                                            window=window)
 
             X_train_org = X_train_org + X_abnorm_train
             Y_train_org = Y_train_org + Y_abnorm_train
@@ -1893,7 +1894,8 @@ def flattenSampleWithWindow(ll_X, ll_Y, ll_idx=None, window=2):
             X = []
             for k in range(window,0,-1):
                 if j-k < 0:
-                    X += ll_X[i][0].tolist()
+                    if type(ll_X[i][0]) is not list: X += ll_X[i][0].tolist()
+                    else: X += ll_X[i][0]
                 else:
                     X += ll_X[i][j-k].tolist()
 
