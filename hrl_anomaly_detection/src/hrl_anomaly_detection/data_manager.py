@@ -764,7 +764,8 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
         else:
             _,_,idx = getEstTruePositive(ll_X[i], ll_idx[i])
             l_idx.append(idx)
-            
+
+    print l_idx
     return l_idx
     
 
