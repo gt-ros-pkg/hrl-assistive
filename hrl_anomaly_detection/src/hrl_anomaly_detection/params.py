@@ -658,7 +658,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2.5, 0.8, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
