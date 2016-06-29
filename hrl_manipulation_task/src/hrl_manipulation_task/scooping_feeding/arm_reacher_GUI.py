@@ -153,7 +153,8 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Scoop and Feed starting...")
                 self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)               rate.sleep()
+                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+            rate.sleep()
  
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
