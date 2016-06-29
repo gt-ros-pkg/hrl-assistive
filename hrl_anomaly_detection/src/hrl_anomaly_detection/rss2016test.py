@@ -806,10 +806,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     if 'osvm' in method_list:
-        nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
+        ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
-                                  window=SVM_dict['osvm_window_size'], \
+                                  window=SVM_dict['raw_window_size'], \
                                   posdata=False)
+    elif 'bpsvm' in method_list:
+        osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'], \
+                                  posdata=False, pos_cut_indices=ll_cut_idx)
     else:
         osvm_data = None
         

@@ -720,15 +720,14 @@ if __name__ == '__main__':
                 if method is 'osvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, window=10, posdata=False)
+                    data = dm.getPCAData(nFiles, startIdx, data_pkl, \
+                                         window=param_dict['SVM']['raw_window_size'], posdata=False)
                 elif method is 'bpsvm':
                     startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True, pos_cut_indices=ll_cut_idx)
-                elif method is 'rfc':
-                    startIdx=4
-                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, posdata=True)
+                    data = dm.getPCAData(nFiles, startIdx, data_pkl, \
+                                         window=param_dict['SVM']['raw_window_size'],\
+                                         posdata=True, pos_cut_indices=ll_cut_idx)
                     
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
