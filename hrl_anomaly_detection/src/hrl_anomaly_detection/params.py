@@ -135,9 +135,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_LSLS_cost': 15.0,\
                           'hmmsvm_LSLS_gamma': 0.01, \
                           'hmmsvm_LSLS_w_negative': 1.5,
-                          'bpsvm_cost': 15.0,\
-                          'bpsvm_gamma': 1.0, \
-                          'bpsvm_w_negative': 1.5
+                          'bpsvm_cost': 12.5,\
+                          'bpsvm_gamma': 0.01, \
+                          'bpsvm_w_negative': 0.2
                           }
                           
 
