@@ -908,6 +908,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         if method == 'svm': label='HMM-SVM'
         elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+        elif method == 'progress_KNN': label='HMMs with a dynamic threshold + KNN'
         elif method == 'fixed': label='HMMs with a fixed threshold'
         elif method == 'change': label='HMMs with change detection'
         elif method == 'cssvm': label='HMM-CSSVM'
