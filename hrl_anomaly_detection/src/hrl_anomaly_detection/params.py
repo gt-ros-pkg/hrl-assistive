@@ -277,7 +277,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.50749,\
                               'osvm_nu': 0.000215,
-                              'raw_window_size': 5,\
+                              'raw_window_size': 3,\
                               'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_LSLS_cost': 15.0,\
