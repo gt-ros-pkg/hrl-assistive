@@ -112,9 +112,9 @@ class logger:
         '''
         Record data and publish raw data
         '''        
+        ##GUI implementation       
         self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String,
                                                  queue_size=QUEUE_SIZE)
-        ##GUI implementation       
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String,
                                                    self.feedbackCallback)
         

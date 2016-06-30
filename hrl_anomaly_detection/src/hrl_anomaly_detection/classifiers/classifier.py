@@ -209,7 +209,7 @@ class classifier(learning_base):
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
-                            
+
             try: self.dt = svm.svm_train(y, X, commands )
             except:
                 print "svm training failure"

@@ -56,21 +56,25 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
-                 param_dict):
+                 param_dict, hmm_renew=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
-        self.task_name         = task_name
+        self.task_name         = task_name.lower()
         self.raw_data_path     = raw_data_path
         self.save_data_path    = save_data_path
 
         self.enable_detector = False
-        self.soundHandle = SoundClient()
-        self.dataList = []
+        self.cur_task        = None
+        self.soundHandle     = SoundClient()
+        self.dataList        = []
 
         # Params
         self.param_dict = param_dict        
         self.classifier_method = check_method
+        self.startOffsetSize = 4
+        self.exp_sensitivity = True
+        self.nUpdateFreq = 3
         
         self.nEmissionDim = None
         self.ml = None
@@ -81,7 +85,7 @@ class anomaly_detector:
 
         self.initParams()
         self.initComms()
-        self.initDetector()
+        self.initDetector(hmm_renew=hmm_renew)
         self.reset()
 
     '''
@@ -119,9 +123,10 @@ class anomaly_detector:
             self.scale  = self.param_dict['HMM']['scale']
             self.add_logp_d = self.param_dict['HMM'].get('add_logp_d', False)
 
-            self.SVM_dict  = self.param_dict['SVM']
+            self.SVM_dict        = self.param_dict['SVM']
 
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                self.init_w_positive = self.param_dict['AD'][self.classifier_method+'_w_positive']
                 self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
                 self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
             elif self.classifier_method == 'progress_time_cluster':                    
@@ -131,35 +136,44 @@ class anomaly_detector:
                 print "sensitivity info is not available"
                 sys.exit()
 
+            if self.w_min > self.w_max:
+                temp = self.w_min
+                self.w_min = self.w_max
+                self.w_max = temp
+                
+            # we use logarlism for the sensitivity
+            if self.exp_sensitivity:
+                self.w_max = np.log(self.w_max)
+                self.w_min = np.log(self.w_min)
 
-    '''
-    Subscribe raw data
-    '''
+
     def initComms(self):
         # Publisher
         self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String,
                                                        queue_size=QUEUE_SIZE)
         self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String,
                                                        queue_size=QUEUE_SIZE)
-        self.sensitivity_pub         = rospy.Publisher("/manipulation_task/ad_sensitivity_state", \
+        self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
 
-        # Subscriber
+        # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
-        rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
+        ## rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
         rospy.Subscriber('/manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
         self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
+        # NOTE: when and how update?
 
-    def initDetector(self):
+    def initDetector(self, hmm_renew=False):
+        print "Initializing a detector with ", self.classifier_method
         
         train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
         startIdx  = 4
         
-        if os.path.isfile(train_pkl):
+        if os.path.isfile(train_pkl) and hmm_renew is False:
             d = ut.load_pickle(train_pkl)
             # HMM
             self.nEmissionDim = d['nEmissionDim']
@@ -169,9 +183,9 @@ class anomaly_detector:
             self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
             self.ml.set_hmm_object(self.A, self.B, self.pi)
             
-            X_test_org   = d['X_test_org'] 
-            Y_test_org   = d['Y_test_org']
-            idx_test_org = d['idx_test_org']
+            X_train_org   = d['X_train_org'] 
+            Y_train_org   = d['Y_train_org']
+            idx_train_org = d['idx_train_org']
             nLength      = d['nLength']
             self.handFeatureParams = d['param_dict']
 
@@ -188,25 +202,34 @@ class anomaly_detector:
 
             self.handFeatureParams = dd['param_dict']
 
-            # Task-oriented hand-crafted features        
-            kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
-                                                  self.nNormalFold, self.nAbnormalFold )
-            # Select the first fold as the training data (need to fix?)
-            (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
+            # do we need folding????????????????
+            if self.nNormalFold > 1:
+                # Task-oriented hand-crafted features        
+                kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
+                                                      self.nNormalFold, self.nAbnormalFold )
+                # Select the first fold as the training data (need to fix?)
+                (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]
+            else:
+                #TODO?
+                normalTrainIdx   = range(len(dd['successData'][0]))
+                abnormalTrainIdx = range(len(dd['failureData'][0]))
+                normalTestIdx   = None
+                abnormalTestIdx = None
 
 
             # dim x sample x length # TODO: what is the best selection?
-            if self.check_method.find('svm')>=0:
+            if self.classifier_method.find('svm')>=0:
                 normalTrainData   = dd['successData'][:, normalTrainIdx, :]   * self.scale
-                abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale # will not be used...?
-                normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
-                abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
-            elif self.check_method.find('sgd')>=0:
-                normalTrainData   = dd['successData'][:, normalTrainIdx, :] * self.scale
-                normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
-                abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
-
-                
+                abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale 
+                ## if normalTestIdx is not None:
+                ##     normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
+                ##     abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
+            elif self.classifier_method.find('sgd')>=0:
+                normalTrainData   = dd['successData'][:, normalTrainIdx, :]   * self.scale
+                abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale
+                ## if normalTestIdx is not None:
+                ##     normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
+                ##     abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
 
             # training hmm
             self.nEmissionDim   = len(normalTrainData)
@@ -216,10 +239,10 @@ class anomaly_detector:
                 ret = self.ml.fit(normalTrainData+
                                   np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*self.scale, \
                                   cov_mult=[self.cov]*(self.nEmissionDim**2),
-                                  ml_pkl=detection_param_pkl, use_pkl=True)
+                                  ml_pkl=detection_param_pkl, use_pkl=(not hmm_renew))
             else:
                 ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2),
-                                  ml_pkl=detection_param_pkl, use_pkl=True)
+                                  ml_pkl=detection_param_pkl, use_pkl=(not hmm_renew))
 
             if ret == 'Failure':
                 print "-------------------------"
@@ -228,94 +251,211 @@ class anomaly_detector:
                 sys.exit()
 
             #-----------------------------------------------------------------------------------------
-            # Classifier test data
+            # Classifier train data
             #-----------------------------------------------------------------------------------------
-            testDataX = []
-            testDataY = []
+            trainDataX = []
+            trainDataY = []
             for i in xrange(self.nEmissionDim):
-                temp = np.vstack([normalTestData[i], abnormalTestData[i]])
-                testDataX.append( temp )
+                temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+                trainDataX.append( temp )
 
-            testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                    np.ones(len(abnormalTestData[0])) ])
+            trainDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                    np.ones(len(abnormalTrainData[0])) ])
 
             r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, \
                                                                              self.ml.pi, self.ml.F,
-                                                                             [ testDataX[j][i] for j in xrange(self.nEmissionDim) ],
+                                                                             [ trainDataX[j][i] for j in xrange(self.nEmissionDim) ],
                                                                     self.ml.nEmissionDim, self.ml.nState,
                                                                     startIdx=startIdx, bPosterior=True)
-                                                                    for i in xrange(len(testDataX[0])))
-            _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+                                                                    for i in xrange(len(trainDataX[0])))
+            _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
-            ll_classifier_test_X, ll_classifier_test_Y = \
-              learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+            ll_classifier_train_X, ll_classifier_train_Y = \
+              learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, trainDataY, c=1.0, add_delta_logp=self.add_logp_d)
 
             # flatten the data
-            X_test_org = []
-            Y_test_org = []
-            idx_test_org = []
-            for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[i])):
-                    X_test_org.append(ll_classifier_test_X[i][j])
-                    Y_test_org.append(ll_classifier_test_Y[i][j])
-                    idx_test_org.append(ll_classifier_test_idx[i][j])
+            X_train_org = []
+            Y_train_org = []
+            idx_train_org = []
+            for i in xrange(len(ll_classifier_train_X)):
+                for j in xrange(len(ll_classifier_train_X[i])):
+                    X_train_org.append(ll_classifier_train_X[i][j])
+                    Y_train_org.append(ll_classifier_train_Y[i][j])
+                    idx_train_org.append(ll_classifier_train_idx[i][j])
 
             d = {}
             d['A']  = self.ml.A
             d['B']  = self.ml.B
             d['pi'] = self.ml.pi
-            d['nEmissionDim'] = self.nEmissionDim
-            d['X_test_org']   = X_test_org
-            d['Y_test_org']   = Y_test_org
-            d['idx_test_org'] = idx_test_org
-            d['nLength']      = nLength = len(normalTrainData[0][0])
-            d['param_dict']   = self.handFeatureParams
+            d['nEmissionDim']  = self.nEmissionDim
+            d['X_train_org']   = X_train_org
+            d['Y_train_org']   = Y_train_org
+            d['idx_train_org'] = idx_train_org
+            d['nLength']       = nLength = len(normalTrainData[0][0])
+            d['param_dict']    = self.handFeatureParams
             ut.save_pickle(d, train_pkl)
 
         # data preparation
-        self.scaler       = preprocessing.StandardScaler()
-        self.Y_test_org   = Y_test_org
-        self.idx_test_org = idx_test_org
-        if 'svm' in self.classifier_method:
-            self.X_scaled = self.scaler.fit_transform(X_test_org)
+        self.scaler        = preprocessing.StandardScaler()
+        self.Y_train_org   = Y_train_org
+        self.idx_train_org = idx_train_org
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            self.X_scaled = self.scaler.fit_transform(X_train_org)
         else:
-            self.X_scaled = X_test_org
+            self.X_scaled = X_train_org
             
         print self.classifier_method, " : Before classification : ", \
-          np.shape(self.X_scaled), np.shape(self.Y_test_org)
+          np.shape(self.X_scaled), np.shape(self.Y_train_org)
             
         # Fit Classifier
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
                                         nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
-        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org, parallel=False)
+        self.classifier.set_params( class_weight=self.init_w_positive )        # for svm , sgd
+        self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org, parallel=False)
         print "Finished to train SVM"
 
-        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
-            # may be we have to manually set or adjust it through the GUI
-            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
-        elif self.classifier_method == 'progress_time_cluster':                    
-            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
-        self.sensitivity_pub.publish(sensitivity)                                   
-
-        print "Current sensitivity is ", sensitivity
-        
+        self.pubSensitivity()        
         return
 
-        
+
+    #-------------------------- Communication fuctions --------------------------
     def enablerCallback(self, msg):
 
         if msg.data is True:
-            print "anomaly detector enabled"
+            rospy.loginfo("anomaly detector enabled")
             self.enable_detector = True
+            # visualize sensitivity
+            self.pubSensitivity()                    
         else:
-            print "anomaly detector disabled"
+            rospy.loginfo("anomaly detector disabled")
             # Reset detector
             self.enable_detector = False
-            self.reset()
+            self.reset() #TODO: may be it should be removed
 
         return Bool_NoneResponse()
+
+
+    def rawDataCallback(self, msg):
+        '''
+        Subscribe raw data
+        '''
+        
+        self.audio_feature     = msg.audio_feature
+        self.audio_power       = msg.audio_power
+        self.audio_azimuth     = msg.audio_azimuth
+        self.audio_head_joints = msg.audio_head_joints
+        self.audio_cmd         = msg.audio_cmd
+
+        self.audio_wrist_rms   = msg.audio_wrist_rms
+        self.audio_wrist_mfcc  = msg.audio_wrist_mfcc
+
+        self.kinematics_ee_pos      = msg.kinematics_ee_pos
+        self.kinematics_ee_quat     = msg.kinematics_ee_quat
+        self.kinematics_jnt_pos     = msg.kinematics_jnt_pos
+        self.kinematics_jnt_vel     = msg.kinematics_jnt_vel
+        self.kinematics_jnt_eff     = msg.kinematics_jnt_eff
+        self.kinematics_target_pos  = msg.kinematics_target_pos
+        self.kinematics_target_quat = msg.kinematics_target_quat
+
+        self.ft_force  = msg.ft_force
+        self.ft_torque = msg.ft_torque
+
+        self.vision_artag_pos  = msg.vision_artag_pos
+        self.vision_artag_quat = msg.vision_artag_quat
+
+        self.vision_landmark_pos  = msg.vision_landmark_pos
+        self.vision_landmark_quat = msg.vision_landmark_quat
+
+        self.vision_change_centers_x = msg.vision_change_centers_x
+        self.vision_change_centers_y = msg.vision_change_centers_y
+        self.vision_change_centers_z = msg.vision_change_centers_z
+
+        self.pps_skin_left  = msg.pps_skin_left
+        self.pps_skin_right = msg.pps_skin_right
+
+        self.fabric_skin_centers_x = msg.fabric_skin_centers_x
+        self.fabric_skin_centers_y = msg.fabric_skin_centers_y
+        self.fabric_skin_centers_z = msg.fabric_skin_centers_z
+        self.fabric_skin_normals_x = msg.fabric_skin_normals_x
+        self.fabric_skin_normals_y = msg.fabric_skin_normals_y
+        self.fabric_skin_normals_z = msg.fabric_skin_normals_z
+        self.fabric_skin_values_x  = msg.fabric_skin_values_x
+        self.fabric_skin_values_y  = msg.fabric_skin_values_y
+        self.fabric_skin_values_z  = msg.fabric_skin_values_z
+
+        # If detector is disbled, detector does not fill out the dataList.
+        if self.enable_detector is False: return
+        
+        self.lock.acquire()
+        newData = self.extractLocalFeature()
+
+        # get offset
+        if len(self.dataList[0][0]) == self.startOffsetSize:
+            self.offsetData = np.mean(self.dataList, axis=2)/self.scale
+        elif len(self.dataList[0][0]) < self.startOffsetSize:
+            self.offsetData = np.zeros(np.shape(newData))
+        newData -= self.offsetData
+        
+        if len(self.dataList) == 0:
+            self.dataList = (np.array(newData)*self.scale).tolist()
+        else:                
+            ## self.dataList = np.swapaxes(self.dataList, 0,1)
+            for i in xrange(self.nEmissionDim):
+                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
+            ## self.dataList = np.swapaxes(self.dataList, 0,1)
+                       
+        self.lock.release()
+
+
+    def statusCallback(self, msg):
+        '''
+        Subscribe current task 
+        '''
+        self.cur_task = msg.data.lower()
+
+
+    def sensitivityCallback(self, msg):
+        '''
+        Requested value's range is 0~1.
+        Update the classifier only using current training data!!
+        '''
+        if self.cur_task is not self.task_name: return
+        
+        sensitivity_req = msg.data
+        if sensitivity_req > 1.0: sensitivity_req = 1.0
+        if sensitivity_req < 0.0: sensitivity_req = 0.0
+        print "Requested sensitivity is [0~1]: ", sensitivity_req
+
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            if self.exp_sensitivity:
+                sensitivity_des = np.exp(sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            else:
+                sensitivity_des = sensitivity_req*(self.w_max-self.w_min)+self.w_min                
+            self.classifier.set_params(class_weight=sensitivity_des)
+
+            if 'svm' in self.classifier_method:
+                self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
+            elif 'sgd' in self.classifier_method:
+                self.classifier.partial_fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
+            print "Classifier is updated!"
+
+        else:
+            print "not supported method"
+            sys.exit()
+            
+            ## elif self.classifier_method == 'progress_time_cluster':                    
+            ##     self.classifier.set_params(ths_mult=sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            ## elif self.classifier_method == 'progress_time_cluster':                    
+            ##     sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
+            ##     print "Current sensitivity is ", sensitivity, self.classifier.ths_mult
+
+        self.pubSensitivity()
+
+        
+    ## def userfbCallback(self, msg):
+    ##     self.user_feedback = msg.data
 
 
     def updateCallback(self, msg):
@@ -359,109 +499,34 @@ class anomaly_detector:
             print "Not available update method"
             
         return StringArray_NoneResponse()
-        
-
-    def rawDataCallback(self, msg):
-        
-        self.audio_feature     = msg.audio_feature
-        self.audio_power       = msg.audio_power
-        self.audio_azimuth     = msg.audio_azimuth
-        self.audio_head_joints = msg.audio_head_joints
-        self.audio_cmd         = msg.audio_cmd
-
-        self.audio_wrist_rms   = msg.audio_wrist_rms
-        self.audio_wrist_mfcc  = msg.audio_wrist_mfcc
-
-        self.kinematics_ee_pos      = msg.kinematics_ee_pos
-        self.kinematics_ee_quat     = msg.kinematics_ee_quat
-        self.kinematics_jnt_pos     = msg.kinematics_jnt_pos
-        self.kinematics_jnt_vel     = msg.kinematics_jnt_vel
-        self.kinematics_jnt_eff     = msg.kinematics_jnt_eff
-        self.kinematics_target_pos  = msg.kinematics_target_pos
-        self.kinematics_target_quat = msg.kinematics_target_quat
-
-        self.ft_force  = msg.ft_force
-        self.ft_torque = msg.ft_torque
-
-        self.vision_artag_pos  = msg.vision_artag_pos
-        self.vision_artag_quat = msg.vision_artag_quat
-
-        self.vision_change_centers_x = msg.vision_change_centers_x
-        self.vision_change_centers_y = msg.vision_change_centers_y
-        self.vision_change_centers_z = msg.vision_change_centers_z
-
-        self.pps_skin_left  = msg.pps_skin_left
-        self.pps_skin_right = msg.pps_skin_right
-
-        self.fabric_skin_centers_x = msg.fabric_skin_centers_x
-        self.fabric_skin_centers_y = msg.fabric_skin_centers_y
-        self.fabric_skin_centers_z = msg.fabric_skin_centers_z
-        self.fabric_skin_normals_x = msg.fabric_skin_normals_x
-        self.fabric_skin_normals_y = msg.fabric_skin_normals_y
-        self.fabric_skin_normals_z = msg.fabric_skin_normals_z
-        self.fabric_skin_values_x  = msg.fabric_skin_values_x
-        self.fabric_skin_values_y  = msg.fabric_skin_values_y
-        self.fabric_skin_values_z  = msg.fabric_skin_values_z
-
-        # If detector is disbled, detector does not fill out the dataList.
-        if self.enable_detector is False: return
-        
-        self.lock.acquire()
-        newData = self.extractLocalFeature()
-
-        # get offset
-        startOffsetSize = 4
-        if len(self.dataList[0][0]) == startOffsetSize:
-            self.offsetData = np.mean(self.dataList, axis=2)/self.scale
-        elif len(self.dataList[0][0]) < startOffsetSize:
-            self.offsetData = np.zeros(np.shape(newData))
-        newData -= self.offsetData
-        
-        if len(self.dataList) == 0:
-            self.dataList = (np.array(newData)*self.scale).tolist()
-        else:                
-            ## self.dataList = np.swapaxes(self.dataList, 0,1)
-            for i in xrange(self.nEmissionDim):
-                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
-            ## self.dataList = np.swapaxes(self.dataList, 0,1)
-                       
-        self.lock.release()
 
 
-    def statusCallback(self, msg):
-        self.cur_task = msg.data
 
-    def userfbCallback(self, msg):
-        self.user_feedback = msg.data
+    #-------------------------- General fuctions --------------------------
 
-    def sensitivityCallback(self, msg):
-        '''
-        Requested value's range is 0~1.
-        '''
-        self.sensitivity_req = msg.data
-        sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
-        print "Current sensitivity is ", sensitivity
-        print "Requested sensitivity is ", self.sensitivity_req
+    def pubSensitivity(self):
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:        
+            if self.exp_sensitivity:
+                sensitivity = (np.log(self.classifier.class_weight)-self.w_min)/(self.w_max-self.w_min)
+            else:
+                sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
+        else:
+            print self.classifier_method, " is not supported method"
+            sys.exit()
 
-        if 'svm' in self.classifier_method:           
-            self.classifier.set_params(class_weight=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min )
-        elif self.classifier_method == 'progress_time_cluster':                    
-            self.classifier.set_params(ths_mult=self.sensitivity_req*(self.w_max-self.w_min)+self.w_min)
-            
-        self.classifier.fit(self.X_scaled, self.Y_test_org, self.idx_test_org)
-        print "Classifier is updated!"
-
-        if 'svm' in self.classifier_method:
-            sensitivity = (self.classifier.class_weight-self.w_min)/(self.w_max-self.w_min)
-            print "Current sensitivity is ", sensitivity, self.classifier.class_weight
-        elif self.classifier_method == 'progress_time_cluster':                    
-            sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
-            print "Current sensitivity is ", sensitivity, self.classifier.ths_mult
+        ## elif self.classifier_method == 'progress_time_cluster':                    
+        ##     sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
         self.sensitivity_pub.publish(sensitivity)                                   
+        print "Current sensitivity is [0~1]: ", sensitivity, \
+          ', internal weight is ', self.classifier.class_weight
 
-        
-
-                    
+    ## def calSensitivity(self, val):
+    ##     '''
+    ##     Return scaled sensitivity (for visualization)
+    ##     '''
+    ##     if self.exp_sensitivity:
+            
+                                      
     def extractLocalFeature(self):
 
         startOffsetSize = 4
@@ -614,9 +679,10 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=4,
                  help='type the desired dimension')
-    p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
-                 help='Enter a record data path')
+
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
+    
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
 
@@ -664,19 +730,22 @@ if __name__ == '__main__':
         else:
             sys.exit()
     else:
+        from hrl_anomaly_detection.ICRA2017_params import *
         
         if opt.task == 'scooping':
-            subject_names = [] 
-            raw_data_path, _, param_dict = getScooping(opt.task, False, \
-                                                       False, False,\
-                                                       rf_center, local_range, dim=opt.dim)
-            check_method      = opt.method # cssvm
-            save_data_path    = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'+opt.task+'_data/demo'
-            param_dict['SVM'] = {'renew': False, 'w_negative': 3.0, 'gamma': 0.3, 'cost': 6.0, \
+            subject_names = ['test'] 
+            raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
+                                                                    False, False,\
+                                                                    rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method
+            param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
                                  'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+
+            param_dict['data_param']['nNormalFold']   = 1
+            param_dict['data_param']['nAbnormalFold'] = 1
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
-                          param_dict)
+                          param_dict, hmm_renew=opt.bHMMRenew)
     ad.run()
 
