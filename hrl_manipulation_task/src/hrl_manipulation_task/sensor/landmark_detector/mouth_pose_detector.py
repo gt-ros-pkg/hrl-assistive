@@ -318,17 +318,18 @@ class MouthPoseDetector:
                         for i in xrange(30,31):
                             if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
                                 #print self.get_dist(current_lm[i], self.lm_coor[i])
-                                for j in xrange(len(current_lm)):
-                                    if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
-                                        coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
-                                        curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
-                                        dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
-                                        #print dist
-                                        if dist < 0.3:
-                                            valid_amount[0] += 1
-                                            #valid_amount[j] += 1
-                            else:
-                                print "lost i: " + str(i)
+                                if self.get_dist(current_lm[i], self.lm_coor[i]) < 0.05:
+                                    for j in xrange(len(current_lm)):
+                                        if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
+                                            coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
+                                            curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
+                                            dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
+                                            #print dist
+                                            if dist < 0.3:
+                                                valid_amount[0] += 1
+                                                #valid_amount[j] += 1
+                                        else:
+                                            print "lost i: " + str(i)
                         print valid_amount, time.time()-get_lm_time
                         count = 0
                         average = 0
