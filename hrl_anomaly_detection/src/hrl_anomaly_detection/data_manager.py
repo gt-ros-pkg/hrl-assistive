@@ -457,6 +457,10 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
 
 
 def getHMMData(method, nFiles, processed_data_path, task_name, default_params, negTrain=False):
+    '''
+    This should be used only for training not for validation since it decomposes training data into
+    internal training and test set.
+    '''
     import os
     from sklearn import preprocessing
 
@@ -536,25 +540,25 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
 
         # divide into training and param estimation set
         import random
-        train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
-        test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx] 
+        rnd_train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.7*len(ll_classifier_train_X)) )
+        rnd_test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in rnd_train_idx] 
 
-        train_X = np.array(ll_classifier_train_X)[train_idx]
-        train_Y = np.array(ll_classifier_train_Y)[train_idx]
-        train_idx = np.array(ll_classifier_train_idx)[train_idx]
-        test_X  = np.array(ll_classifier_train_X)[test_idx]
-        test_Y  = np.array(ll_classifier_train_Y)[test_idx]
-        test_idx = np.array(ll_classifier_train_idx)[test_idx]
+        train_X = np.array(ll_classifier_train_X)[rnd_train_idx]
+        train_Y = np.array(ll_classifier_train_Y)[rnd_train_idx]
+        train_idx = np.array(ll_classifier_train_idx)[rnd_train_idx]
+        test_X  = np.array(ll_classifier_train_X)[rnd_test_idx]
+        test_Y  = np.array(ll_classifier_train_Y)[rnd_test_idx]
+        test_idx = np.array(ll_classifier_train_idx)[rnd_test_idx]
 
         if negTrain:
             normal_idx = [x for x in range(len(train_X)) if train_Y[x][0]<0 ]
             train_X = train_X[normal_idx]
             train_Y = train_Y[normal_idx]
             train_idx = train_idx[normal_idx]
-        elif method is 'bpsvm':
-            l_cut_idx = getHMMCuttingIdx(train_X, train_Y, train_idx)
-            
-
+        if method is 'bpsvm':
+            l_abnorm_cut_idx = getHMMCuttingIdx(ll_classifier_train_X, ll_classifier_train_Y, \
+                                                ll_classifier_train_idx)
+           
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = flattenSample(train_X, train_Y, train_idx)
 
@@ -593,7 +597,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         data[file_idx]['idx_test'] = idx_test
         data[file_idx]['nLength'] = nLength
         if method is 'bpsvm':
-            data[file_idx]['abnormal_train_cut_idx'] = l_cut_idx
+            data[file_idx]['abnormal_train_cut_idx'] = l_abnorm_cut_idx
 
     return data 
 
@@ -655,7 +659,7 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             for i, cut_idx in enumerate(pos_cut_indices[file_idx]):
                 abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
                 abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
-                    
+
             if window == 0: sys.exit()
             elif window==1:
                 X_abnorm_train, Y_abnorm_train, _ = flattenSample(abnormalTrainData_X, \
