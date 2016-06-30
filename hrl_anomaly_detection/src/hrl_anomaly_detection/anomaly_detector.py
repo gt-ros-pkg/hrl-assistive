@@ -73,6 +73,7 @@ class anomaly_detector:
         self.param_dict = param_dict        
         self.classifier_method = check_method
         self.startOffsetSize = 4
+        self.startCheckIdx   = 10
         self.exp_sensitivity = True
         self.nUpdateFreq = 3
         
@@ -389,7 +390,7 @@ class anomaly_detector:
         if self.enable_detector is False: return
         
         self.lock.acquire()
-        newData = self.extractLocalFeature()
+        newData = self.extractHandFeature()
 
         # get offset
         if len(self.dataList[0][0]) == self.startOffsetSize:
@@ -402,6 +403,7 @@ class anomaly_detector:
             self.dataList = (np.array(newData)*self.scale).tolist()
         else:                
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
+            # dim x sample x length
             for i in xrange(self.nEmissionDim):
                 self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
@@ -527,7 +529,10 @@ class anomaly_detector:
     ##     if self.exp_sensitivity:
             
                                       
-    def extractLocalFeature(self):
+    def extractHandFeature(self):
+        '''
+        Run it on every time step
+        '''
 
         startOffsetSize = 4
         data_dict = {}
@@ -598,9 +603,19 @@ class anomaly_detector:
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
             data_dict['visionArtagQuatList'] = [np.array([self.vision_artag_quat]).T]
 
+        # Crossmodal feature - vision relative dist with main(first) vision target----
+        if 'crossmodal_landmarkEEDist' in self.handFeatures:
+            data_dict['kinEEPosList']     = [np.array([self.kinematics_ee_pos]).T]
+            data_dict['visionLandmarkPosList'] = [np.array([self.vision_landmark_pos]).T]
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_landmarkEEAng' in self.handFeatures:
+            data_dict['kinEEQuatList'] = [np.array([self.kinematics_ee_quat]).T]
+            data_dict['visionLandmarkPosList'] = [np.array([self.vision_landmark_pos]).T]
+            data_dict['visionLandmarkQuatList'] = [np.array([self.vision_landmark_quat]).T]
+
         data, _ = dm.extractHandFeature(data_dict, self.handFeatures, scale=1.0, \
                                         param_dict = self.handFeatureParams)
-
                                         
         return data
 
@@ -621,15 +636,18 @@ class anomaly_detector:
             
             if self.enable_detector is False: 
                 self.dataList = []
+                self.last_l_logp = None
+                self.last_l_post = None
                 continue            
-            if len(self.dataList) == 0 or len(self.dataList[0][0]) < 10: continue
+            if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx: continue
 
             #-----------------------------------------------------------------------
             self.lock.acquire()
             cur_length     = len(self.dataList[0][0])
             l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
-            self.lock.release()            
-            if l_logp == None: 
+            self.lock.release()
+            
+            if l_logp is None: 
                 print "logp is None => anomaly"
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
@@ -638,14 +656,25 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-
             print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1]), \
               " cutoff: ", self.param_dict['HMM']['nState']*0.85
             if np.argmax(l_post[cur_length-1])==0 and l_logp < 0.0: continue
             if np.argmax(l_post[cur_length-1])>self.param_dict['HMM']['nState']*0.85: continue
-            ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist() 
 
-            if 'svm' in self.classifier_method:
+            if self.last_l_logp is None or self.last_l_post is None:
+                self.last_l_logp = l_logp
+                self.last_l_post = l_post
+                continue
+            else:                
+                ## ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist()
+                d_logp = l_logp - self.last_l_logp
+                d_post = util.symmetric_entropy(self.last_l_post, l_post[cur_length-1])
+                ll_classifier_test_X = [l_logp] + [d_logp/(d_post+1.0)] + l_post[cur_length-1].tolist()
+                self.last_l_logp = l_logp
+                self.last_l_post = l_post
+                
+
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                 X = self.scaler.transform([ll_classifier_test_X])
             elif self.classifier_method == 'progress_time_cluster' or \
               self.classifier_method == 'fixed':
