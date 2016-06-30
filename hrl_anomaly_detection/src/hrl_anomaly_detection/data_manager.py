@@ -644,6 +644,11 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
             X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
                                                                   ll_classifier_train_Y, window=window)
 
+        # scaling
+        from sklearn import preprocessing
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X_train_org)
+
         if posdata and pos_cut_indices is not None:
             abnormalTrainData_X = []
             abnormalTrainData_Y = []
@@ -659,14 +664,10 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
                 X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
                                                                             abnormalTrainData_Y, \
                                                                             window=window)
-
-            X_train_org = X_train_org + X_abnorm_train
+           
+            X_scaled = X_scaled.tolist() + scaler.transform(X_abnorm_train).tolist()
             Y_train_org = Y_train_org + Y_abnorm_train
-                                                                  
-        # scaling
-        from sklearn import preprocessing
-        scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X_train_org)
+
                        
         ## # PCA
         ## from sklearn.decomposition import KernelPCA
