@@ -164,12 +164,11 @@ class MouthPoseDetector:
             for i in xrange(4):
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom()))
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom()))
-            """
-            faces.append(self.previous_face[0])
+            #faces.append(self.previous_face[0])
             """
             faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
             faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))
-            """
+
             faces.append(self.previous_face[0])
             #faces = self.previous_face
             self.face_detected = False
@@ -299,61 +298,41 @@ class MouthPoseDetector:
                             curr_point_2d = self.get_2d_pixel(curr_point)
                             retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
                         new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)#point_set, points_ordered#
-                        temp_sets = []
+                        transformation_matrix = tft.quaternion_matrix(self.pose_to_tuple(pose)[1])
+                        for i in xrange(3):
+                            transformation_matrix[i][3] = self.pose_to_tuple(pose)[0][i]
+                        transformation_matrix = tft.inverse_matrix(transformation_matrix)
+                        current_lm = []
+                        for coor in new_points_ordered:
+                            lm_point = tft.translation_matrix(coor)
+                            lm_point = np.array(np.matrix(transformation_matrix)*np.matrix(lm_point))
+                            lm_point = tft.translation_from_matrix(lm_point)
+                            if not np.allclose(coor, (0.0, 0.0, 0.0)):
+                                current_lm.append(lm_point)
+                            else:
+                                current_lm.append((0.0, 0.0, 0.0))
+                        valid_amount = []
+                        for i in xrange(30,31):
+                            valid_amount.append(0)
+                        get_lm_time = time.time()
+                        for i in xrange(30,31):
+                            if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
+                                #print self.get_dist(current_lm[i], self.lm_coor[i])
+                                for j in xrange(len(current_lm)):
+                                    if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
+                                        coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
+                                        curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
+                                        dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
+                                        #print dist
+                                        if dist < 0.3:
+                                            valid_amount[0] += 1
+                                            #valid_amount[j] += 1
+                            else:
+                                print "lost i: " + str(i)
+                        print valid_amount, time.time()-get_lm_time
                         count = 0
-                        occluded = 0
-                        for i, point_set in enumerate(new_point_set):
-                            if i is 0:
-                                continue
-                            temp_set = []
-                            for point in point_set:
-                                temp_set.append(point.get_tuple())
-                            temp_sets.append((self.find_size(temp_set) - self.sizes[i -1]) / self.sizes[i-1])
-                        part_factor = [0, 0, 0, 0, 0, 0, 0]
-                        for i in xrange(len(landmarks)):
-                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-                            if self.get_dist(new_points_ordered[i], curr_point) < 0.03 and not np.allclose(curr_point, (0.0, 0.0, 0.0)) and not np.allclose(self.pose_to_tuple(retrieved_points[i])[0], (0.0, 0.0,0.0)) and self.get_dist((landmarks[i].x, landmarks[i].y, 0), (retrieved_landmarks[i].x, retrieved_landmarks[i].y, 0)) < 3:
-
-                                avg = 0
-                                cnt = 0
-                                for j, set in enumerate(self.point_set_index[1]):
-                                    if i in set:
-                                        avg = avg + abs(temp_sets[j-1])
-                                        cnt = cnt + 1
-                                if cnt is not 0:
-                                    avg = avg / cnt
-                                else:
-                                    print "huh?"
-                                #if avg < 0.3:
-                                #    count = count + 1
-                                print avg
-                                factor = 1
-                                if i >= 0 and i <= 16:
-                                    factor = 1.0 / 17.0
-                                    part_factor[0] = part_factor[0] + factor
-                                if i >= 17 and i <= 21:
-                                    factor = 1.0 / 5.0
-                                    part_factor[1] = part_factor[1] + factor
-                                if i >= 22 and i <= 26:
-                                    factor = 1.0 / 5.0
-                                    part_factor[2] = part_factor[2] + factor
-                                if i >= 27 and i <= 35:
-                                    factor = 1.0 / 8.0
-                                    part_factor[3] = part_factor[3] + factor
-                                if i >= 36 and i <= 41:
-                                    factor = 1.0 / 6.0
-                                    part_factor[4] = part_factor[4] + factor
-                                if i >= 42 and i <= 47:
-                                    factor = 1.0 / 6.0
-                                    part_factor[5] = part_factor[5] + factor
-                                if i >= 48 and i <= 68:
-                                    factor = 1.0 / 22.0
-                                    part_factor[6] = part_factor[6] + factor
-                                count = count + factor
-                            elif self.get_dist(points_ordered[i], curr_point) > 0.3:
-                                occluded = occluded + 1
-                        #count = count * 2 + occluded
-                        print count, occluded, part_factor
+                        average = 0
+                        count = valid_amount[0]
                         if best < count:
                             best = count
                             best_pose = pose
@@ -378,7 +357,7 @@ class MouthPoseDetector:
             for i in xrange(len(current_positions)):
                 if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
                     no_jump = False
-            if best < .2:
+            if best < 0:
                 no_jump = False
         print no_jump
         if no_jump:
@@ -446,6 +425,20 @@ class MouthPoseDetector:
         rot[2].append(tvec[2][0])
         rot.append([0.0, 0.0, 0.0, 1.0])
         return rot
+
+    def find_rect(self, landmark_points, shape):
+        center = (landmark_points[30].x, landmark_points[30].y)
+        half_width  = int(abs(landmark_points[17].x - center[0]))
+        half_height = int(abs(landmark_points[48].y - center[1]) *1.5)
+        if half_width > half_height:
+            half_height = half_width
+        else:
+            half_width = half_height
+        if self.flipped:
+            print "flipped!"
+            return dlib.dlib.rectangle(shape[1]- (center[0]+half_width) - 1, shape[0] - (center[1]+half_height)-1, shape[1] - (center[0]-half_width) - 1, shape[0] - (center[1]-half_height) - 1)
+        else:
+            return dlib.dlib.rectangle(center[0]-half_width, center[1]-half_height, center[0]+half_width, center[1]+half_height)
 
     def retrieve_points(self, landmarks, depth, use_points=True):
         points = []
