@@ -338,8 +338,6 @@ class MouthPoseDetector:
                             best_pose = pose
                             best_rect = d
                             best_pose_points = pose_points
-                        if not self.face_detected:
-                            time.sleep(.5)
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))
         try:
@@ -357,7 +355,7 @@ class MouthPoseDetector:
             for i in xrange(len(current_positions)):
                 if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
                     no_jump = False
-            if best < 0:
+            if best < 15:
                 no_jump = False
         print no_jump
         if no_jump:
