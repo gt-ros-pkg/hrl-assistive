@@ -129,7 +129,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 2.0,\
-                          'raw_window_size': 10,\
+                          'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
                           'hmmsvm_LSLS_cost': 15.0,\
@@ -636,7 +636,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 0.5075,\
-                          'raw_window_size': 10,\
+                          'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,\
                           'hmmsvm_LSLS_cost': 10.0,\
