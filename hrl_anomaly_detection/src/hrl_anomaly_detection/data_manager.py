@@ -597,17 +597,23 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
         data[file_idx]['idx_test'] = idx_test
         data[file_idx]['nLength'] = nLength
         if method is 'bpsvm':
+            data[file_idx]['rnd_train_idx'] = rnd_train_idx
+            data[file_idx]['rnd_test_idx'] = rnd_test_idx
             data[file_idx]['abnormal_train_cut_idx'] = l_abnorm_cut_idx
 
     return data 
 
 
-def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., pos_cut_indices=None):
+def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
     successData = d['successData']
     failureData = d['failureData']
+
+    if window == 0:
+        print "wrong window size"
+        sys.exit()
 
     # load data and preprocess it
     print "Start to get data"
@@ -635,42 +641,132 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
 
         #--------------------------------------------------------------------------------
-        # Training data
-        ll_classifier_train_X = normalTrainData
-        ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
-                    
-        # flatten the data
-        if window == 0: sys.exit()
-        elif window==1:
-            X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
-                                                        ll_classifier_train_Y)
-        else:
-            X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
-                                                                  ll_classifier_train_Y, window=window)
-
-        # scaling
+        # scaler
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X_train_org)
-
-        if posdata and pos_cut_indices is not None:
-            abnormalTrainData_X = []
-            abnormalTrainData_Y = []
-            for i, cut_idx in enumerate(pos_cut_indices[file_idx]):
-                abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
-                abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
-
+            
+        # Training data
+        if use_test:
+            ll_classifier_train_X = normalTrainData
+            ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)
+                    
+            # flatten the data
             if window == 0: sys.exit()
             elif window==1:
-                X_abnorm_train, Y_abnorm_train, _ = flattenSample(abnormalTrainData_X, \
-                                                                  abnormalTrainData_Y)
+                X_train_org, Y_train_org, _ = flattenSample(ll_classifier_train_X, \
+                                                            ll_classifier_train_Y)
             else:
-                X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
-                                                                            abnormalTrainData_Y, \
-                                                                            window=window)
-           
-            X_scaled = X_scaled.tolist() + scaler.transform(X_abnorm_train).tolist()
-            Y_train_org = Y_train_org + Y_abnorm_train
+                X_train_org, Y_train_org, _ = flattenSampleWithWindow(ll_classifier_train_X, \
+                                                                      ll_classifier_train_Y, window=window)
+
+            X_scaled = scaler.fit_transform(X_train_org)
+
+            if pos_dict is not None:
+                abnormalTrainData_X = []
+                abnormalTrainData_Y = []
+                for i, cut_idx in enumerate(pos_dict[file_idx]['abnormal_train_cut_idx']):
+                    abnormalTrainData_X.append( abnormalTrainData[i][cut_idx:].tolist() )
+                    abnormalTrainData_Y.append( [1]*len(abnormalTrainData_X[i]) )
+
+                if window == 0: sys.exit()
+                elif window==1:
+                    X_abnorm_train, Y_abnorm_train, _ = flattenSample(abnormalTrainData_X, \
+                                                                      abnormalTrainData_Y)
+                else:
+                    X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
+                                                                                abnormalTrainData_Y, \
+                                                                                window=window)
+
+                X_scaled = X_scaled.tolist() + scaler.transform(X_abnorm_train).tolist()
+                Y_train_org = Y_train_org + Y_abnorm_train
+
+            # Testing data
+            ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
+            ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
+              [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
+            ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
+              [range(len(abnormalTestData[0]))]*len(abnormalTestData)
+            ll_classifier_test_idx = np.array(ll_classifier_test_idx)
+                
+        else:
+            ll_classifier_train_X = np.vstack([normalTrainData, abnormalTrainData])
+            ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)+\
+              [[1]*len(abnormalTrainData[0])]*len(abnormalTrainData)
+            ll_classifier_train_idx = [range(len(normalTrainData[0]))]*len(normalTrainData) + \
+              [range(len(abnormalTrainData[0]))]*len(abnormalTrainData)
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)
+
+            if pos_dict is None:
+                rnd_train_idx = random.sample(range(len(normalTrainData)), \
+                                              int( 0.7*len(normalTrainData)) )
+                rnd_test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in rnd_train_idx]
+                
+                X_train = np.array(ll_classifier_train_X)[rnd_train_idx]
+                Y_train = np.array(ll_classifier_train_Y)[rnd_train_idx]
+
+                # flatten the data
+                if window==1:
+                    X_train_org, Y_train_org, _ = flattenSample(X_train, Y_train)
+                else:
+                    X_train_org, Y_train_org, _ = flattenSampleWithWindow(X_train, Y_train, window=window)
+
+                ll_classifier_test_X   = np.array(ll_classifier_train_X)[rnd_test_idx]
+                ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[rnd_test_idx]
+                ll_classifier_test_idx = np.array(ll_classifier_train_idx)[rnd_test_idx]
+                    
+            else:
+                rnd_train_idx = pos_dict[file_idx]['rnd_train_idx']
+                rnd_test_idx  = pos_dict[file_idx]['rnd_test_idx']
+            
+                X = np.array(ll_classifier_train_X)[rnd_train_idx]
+                Y = np.array(ll_classifier_train_Y)[rnd_train_idx]
+                ll_classifier_test_X   = np.array(ll_classifier_train_X)[rnd_test_idx]
+                ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[rnd_test_idx]
+                ll_classifier_test_idx = np.array(ll_classifier_train_idx)[rnd_test_idx]
+
+                normalTrainData_X = []
+                normalTrainData_Y = []
+                abnormalTrainData_X = []
+                abnormalTrainData_Y = []
+
+                count = 0
+                for i, x in enumerate(X):
+                    if Y[i] < 0:
+                        normalTrainData_X.append(x)
+                        normalTrainData_Y.append(Y[i])
+                    else:
+                        abnormalTrainData_X.append(x)
+                        abnormalTrainData_Y.append(Y[i])
+
+                if len(pos_dict[file_idx]['abnormal_train_cut_idx'])-len(abnormalTrainData_X) is not 0:
+                    print "wrong number of cutting data"
+                    sys.exit()
+
+                for i, cut_idx in enumerate(pos_dict[file_idx]['abnormal_train_cut_idx']):
+                    abnormalTrainData_X[i] = abnormalTrainData_X[i][cut_idx:].tolist() 
+                    abnormalTrainData_Y[i] = abnormalTrainData_Y[i][cut_idx:].tolist()
+
+                # flatten the data
+                if window==1:
+                    X_train_org, Y_train_org, _ = flattenSample(normalTrainData_X,
+                                                                normalTrainData_Y)
+                    X_abnorm_train, Y_abnorm_train, _ = flattenSample(abnormalTrainData_X, \
+                                                                      abnormalTrainData_Y)
+                else:
+                    X_train_org, Y_train_org, _ = flattenSampleWithWindow(normalTrainData_X,\
+                                                                          normalTrainData_Y,\
+                                                                          window=window)
+                    X_abnorm_train, Y_abnorm_train, _ = flattenSampleWithWindow(abnormalTrainData_X, \
+                                                                                abnormalTrainData_Y, \
+                                                                                window=window)
+
+                X_train_org = X_train_org + X_abnorm_train
+                Y_train_org = Y_train_org + Y_abnorm_train                    
+                
+            X_scaled = scaler.fit_transform(X_train_org)
+
+                
+            
 
                        
         ## # PCA
@@ -685,13 +781,6 @@ def getPCAData(nFiles, startIdx, data_pkl, window=1, posdata=False, gamma=1., po
         ## X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
-        # Testing data
-        ll_classifier_test_X   = np.vstack([normalTestData, abnormalTestData])
-        ll_classifier_test_Y   = [[-1]*len(normalTestData[0])]*len(normalTestData)+\
-          [[1]*len(abnormalTestData[0])]*len(abnormalTestData)
-        ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
-          [range(len(abnormalTestData[0]))]*len(abnormalTestData)
-        ll_classifier_test_idx = np.array(ll_classifier_test_idx)
 
         # test data preparation
         X_test = []

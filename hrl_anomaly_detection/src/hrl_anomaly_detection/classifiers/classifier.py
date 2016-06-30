@@ -675,7 +675,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
             est_y = np.array(est_y)* -1.0
         else:
-            est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+            est_y = dtc.predict(X_test[ii], y=Y_test[ii])
         
         anomaly = False
         for jj in xrange(len(est_y)):
