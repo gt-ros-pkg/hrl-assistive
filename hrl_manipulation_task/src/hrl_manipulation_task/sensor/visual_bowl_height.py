@@ -55,13 +55,11 @@ except:
     import point_cloud2 as pc2
 
 class ArmReacherClient:
-    def __init__(self, verbose=True):
-        rospy.init_node('feed_client')
+    def __init__(self, verbose=False):
+        rospy.init_node('visual_scooping')
         self.tf = tf.TransformListener()
 
         self.verbose = verbose
-        self.points3D = None
-        self.highestBowlPoint = None
         self.initialized = False
 	self.highestPointPublished = False
         self.bowlRawPos = None
@@ -80,6 +78,9 @@ class ArmReacherClient:
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/qhd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         if self.verbose: print 'Connected to Kinect camera info'
 
+        # Connect to arm reacher service
+        self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
+
         # Connect to bowl center location
         self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped, self.bowlCallback)
         if self.verbose: print 'Connected to bowl center location'
@@ -92,6 +93,11 @@ class ArmReacherClient:
     # Call this right after 'lookAtBowl' and right before 'initScooping2'
     def initialize():
         self.initialized = True
+        self.reset()
+
+    def reset(self):
+        self.highestPointPublished = False
+        self.bowlCenter = None
 
     def bowlCallback(self, data):
         bowlPosePos = data.pose.position
@@ -106,14 +112,20 @@ class ArmReacherClient:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
 
+    def serverCallback(self, req):
+        task = req.data
+        if task == 'getBowlPos':
+            self.initialized = False
+            self.reset()
+        elif task == 'lookAtBowl':
+            self.initialized = True
+
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
         # startTime = time.time()
 
         # Wait to obtain cloud data until after arms have been initialized
-        if not self.initialized:
-            return
-	if self.highestPointPublished:
+        if not self.initialized or self.highestPointPublished:
             return
 
         pointCloud = data
@@ -121,7 +133,7 @@ class ArmReacherClient:
         # Transform the raw bowl center to the Kinect frame
         if self.bowlCenter is None:
             if self.bowlRawPos is not None:
-                if self.verbose: print 'Using self.bowlPosePos'
+                if self.verbose: print 'Using self.bowlRawPos'
                 point = PointStamped()
                 point.header.frame_id = 'torso_lift_link'
                 point.point.x = self.bowlRawPos[0]
@@ -151,15 +163,15 @@ class ArmReacherClient:
         t = time.time()
 
         # X, Y Positions must be within a radius of 5 cm from the bowl center, and Z positions must be within 4 cm of center
-        self.points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
+        points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
 
         print 'Time to determine points near bowl center:', time.time() - t
 
-        if len(self.points3D) == 0:
+        if len(points3D) == 0:
             print 'No highest point detected within the bowl.'
 
         # Find the highest point (based on Z axis value) that is within the bowl. Positive Z is facing towards the floor, so find the min Z value
-        if self.verbose: print 'points3D:', np.shape(self.points3D)
+        if self.verbose: print 'points3D:', np.shape(points3D)
 
         # Begin transforming each point back into torso_lift_link. This way we can find the highest point in the bowl.
         # This ir_optical_frame is not fixed and the Z axis is not guaranteed to be pointing upwards
@@ -172,42 +184,33 @@ class ArmReacherClient:
             print 'Transpose of bowl points failed!'
             return
 
-        newPoints = np.empty_like(self.points3D)
+        newPoints = np.empty_like(points3D)
         # Append a column of 1's to the points matrix (i.e. at a 1 to each point)
-        self.points3D = np.concatenate((self.points3D, np.ones((len(self.points3D), 1))), axis=1)
-        for i, point in enumerate(self.points3D):
+        points3D = np.concatenate((points3D, np.ones((len(points3D), 1))), axis=1)
+        for i, point in enumerate(points3D):
             newPoints[i] = np.dot(transformationMatrix, point)[:3]
-        self.points3D = newPoints
+        points3D = newPoints
 
         print 'Transform time:', time.time() - t
 
         # Z axis for torso_lift_link frame is towards the sky, thus find max Z value for highest point
-        maxIndex = self.points3D[:, 2].argmax()
-        # maxIndex = self.points3D[:, 2].argmin()
-        self.highestBowlPoint = np.array(self.points3D[maxIndex]) #+ np.array([0, 0.25, 0])
+        maxIndex = points3D[:, 2].argmax()
+        highestBowlPoint = np.array(points3D[maxIndex]) #+ np.array([0, 0.25, 0])
 
-        # Transform the highest point back to the torso_lift_link frame
-        # point = PointStamped()
-        # point.header.frame_id = 'head_mount_kinect_ir_optical_frame'
-        # point.point.x = highestBowlPoint[0]
-        # point.point.y = highestBowlPoint[1]
-        # point.point.z = highestBowlPoint[2]
-        # point = self.tf.transformPoint('torso_lift_link', point)
-        # self.highestBowlPoint = np.array([point.point.x, point.point.y, point.point.z])
-        if self.verbose: print 'Highest bowl point:', self.highestBowlPoint
+        if self.verbose: print 'Highest bowl point:', highestBowlPoint
 
-	self.publishHighestBowlPoint()
+	self.publishHighestBowlPoint(highestBowlPoint)
 	# We only want to publish the highest point once.
 	self.highestPointPublished = True
 
         # Publish highest bowl point and all 3D points in bowl
         if self.verbose:
-            self.publishPoints('highestPoint', [self.highestBowlPoint], size=0.008, r=.5, b=.5, frame='torso_lift_link')
-            self.publishPoints('allPoints', self.points3D, g=0.6, b=1.0, frame='torso_lift_link')
+            self.publishPoints('highestPoint', [highestBowlPoint], size=0.008, r=.5, b=.5, frame='torso_lift_link')
+            self.publishPoints('allPoints', points3D, g=0.6, b=1.0, frame='torso_lift_link')
 
-    def publishHighestBowlPoint(self):
+    def publishHighestBowlPoint(self, highestBowlPoint):
         p = Point()
-        p.x, p.y, p.z = self.highestBowlPoint
+        p.x, p.y, p.z = highestBowlPoint
         self.highestBowlPointPublisher.publish(p)
 
     def publishPoints(self, name, points, size=0.002, r=0.0, g=0.0, b=0.0, a=1.0, frame='head_mount_kinect_ir_optical_frame'):

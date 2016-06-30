@@ -120,7 +120,7 @@ class ArmReacherClient:
         if self.verbose: print 'Completed - right arm init #1, time:', time.time() - t2
 
         if self.verbose:
-            print 'Beginning - getBowPos'
+            print 'Beginning - getBowlPos'
             t = time.time()
         self.armReachActionLeft('getBowlPos')
         if self.verbose:

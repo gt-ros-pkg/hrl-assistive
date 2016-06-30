@@ -38,6 +38,8 @@ class MouthPoseDetector:
         
         #for initializing frontal face data
         self.save_loc          = save_loc
+        if self.save_loc is not None:
+            self.save_loc = os.path.expanduser('~') + save_loc
         self.first             = True
         self.relation          = None
         self.dist              = []
@@ -53,7 +55,8 @@ class MouthPoseDetector:
         self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
 
         if load_loc is not None:
-            self.load(load_loc)
+            self.load_loc = os.path.expanduser('~') + load_loc
+            self.load(self.load_loc)
 
         #subscribers
         self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=10)
@@ -76,11 +79,6 @@ class MouthPoseDetector:
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
         self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
 
-        """
-        self.failed_mouth_pub = []
-        for i in xrange(4):
-            self.failed_mouth_pub.append(rospy.Publisher('/mouth_pub' + str(i), PoseStamped, queue_size=10))
-        """
 
         #displays
         self.display_2d = display_2d
@@ -149,22 +147,39 @@ class MouthPoseDetector:
             self.win.clear_overlay()
             self.win.set_image(img)
         depth = self.bridge.imgmsg_to_cv2(depth_data, desired_encoding="passthrough")
-        
+        best_pose_points = []
+        if len(self.current_positions) > 1:
+            if type(self.current_positions[0]) is tuple:
+                for position in self.current_positions:
+                    best_pose_points.append(Point(position))
+            else:
+                best_pose_points = self.current_positions
         #detect face in 2d, if not found assume face is in previous location
         faces = self.detector(img)
         if len(faces) < 1:
+            if self.first:
+                return
             faces = dlib.dlib.rectangles()
             """
-            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 10, self.previous_face[0].top(), self.previous_face[0].right()- 10, self.previous_face[0].bottom()))
-            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 10, self.previous_face[0].top(), self.previous_face[0].right()+ 10, self.previous_face[0].bottom()))
+            for i in xrange(4):
+                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom()))
+                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom()))
+            """
             faces.append(self.previous_face[0])
             """
-            faces = self.previous_face
+            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
+            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))
+            """
+            faces.append(self.previous_face[0])
+            #faces = self.previous_face
             self.face_detected = False
         else:
             self.previous_face = faces
             self.face_detected = True
         #print img.shape
+        best = 0
+        best_pose = PoseStamped()
+        best_rect = self.previous_face[0]
         for d in faces:
             x = d.left()
             y = d.top()
@@ -173,6 +188,7 @@ class MouthPoseDetector:
             if x + (w/2) < img.shape[1] and y + (h/2) < img.shape[0]:
                 #find landmarks
                 shape = self.predictor(img, d)
+                print type(shape)
                 landmarks = shape.parts()
                 if self.flipped:
                     new_landmarks = []
@@ -186,7 +202,8 @@ class MouthPoseDetector:
                     if self.first:
                         self.point_set_index=self.find_best_set(landmarks, depth)
                     point_set, points_ordered = self.retrieve_points(landmarks, depth)
-                    
+                    #print points_ordered
+
                     #register values for PnPRansac for comparison
                     if self.first:
                         temp_mouth = points_ordered[62]
@@ -244,7 +261,6 @@ class MouthPoseDetector:
                         for i in xrange(len(landmarks)):
                             prev_point = points_ordered[i]
                             curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-                            #print self.get_dist(prev_point, curr_point)
 
                         orientation = self.pose_to_tuple(pose)[1]
                         self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, tuple(tft.quaternion_from_euler(0, 0, np.math.pi/2))]))
@@ -254,11 +270,15 @@ class MouthPoseDetector:
                         for i, offset in enumerate(self.pose_to_tuple(pose)[0]):
                             transform_matrix[i][3] = offset
                         transform_matrix = tft.inverse_matrix(transform_matrix)
+                        print transform_matrix
                         for point in points_ordered:
                             lm_point = tft.translation_matrix(point)
                             lm_point = np.array(np.matrix(transform_matrix)*np.matrix(lm_point))
                             lm_point = tft.translation_from_matrix(lm_point)
                             self.lm_coor.append(lm_point)
+                            if np.allclose(point, (0.0, 0.0, 0.0)):
+                                print lm_point
+                                self.wrong_coor = lm_point
                         self.first = False 
                         if self.save_loc is not None:
                             self.save(self.save_loc)
@@ -267,17 +287,21 @@ class MouthPoseDetector:
                         pose, pose_points = self.retrieve_special_pose(point_set, depth)
                         time2 = time.time()
                         retrieved_points = self.retrieve_points_from_orientation(pose)
-                        #retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
-
+                        retrieved_points_tuple = []
+                        for ret_point in retrieved_points:
+                            retrieved_points_tuple.append(self.pose_to_tuple(ret_point)[0])
+                        #print retrieved_points_tuple
+                        #print points_ordered
                         retrieved_landmarks = dlib.dlib.points()
                         for i in xrange(len(landmarks)):
                             prev_point = points_ordered[i]
-                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)                     
+                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
                             curr_point_2d = self.get_2d_pixel(curr_point)
                             retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
-                        new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)
+                        new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)#point_set, points_ordered#
                         temp_sets = []
-                        """
+                        count = 0
+                        occluded = 0
                         for i, point_set in enumerate(new_point_set):
                             if i is 0:
                                 continue
@@ -285,85 +309,113 @@ class MouthPoseDetector:
                             for point in point_set:
                                 temp_set.append(point.get_tuple())
                             temp_sets.append((self.find_size(temp_set) - self.sizes[i -1]) / self.sizes[i-1])
-                        """
-                        count = 0
+                        part_factor = [0, 0, 0, 0, 0, 0, 0]
                         for i in xrange(len(landmarks)):
                             curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-                            if self.get_dist(new_points_ordered[i], curr_point) < 0.01:
-                                """
+                            if self.get_dist(new_points_ordered[i], curr_point) < 0.03 and not np.allclose(curr_point, (0.0, 0.0, 0.0)) and not np.allclose(self.pose_to_tuple(retrieved_points[i])[0], (0.0, 0.0,0.0)) and self.get_dist((landmarks[i].x, landmarks[i].y, 0), (retrieved_landmarks[i].x, retrieved_landmarks[i].y, 0)) < 3:
+
                                 avg = 0
                                 cnt = 0
                                 for j, set in enumerate(self.point_set_index[1]):
                                     if i in set:
-                                        avg = avg + temp_sets[j-1]
+                                        avg = avg + abs(temp_sets[j-1])
                                         cnt = cnt + 1
                                 if cnt is not 0:
                                     avg = avg / cnt
                                 else:
                                     print "huh?"
-                                if avg < 0.3:
-                                    count = count + 1
-                                """
-                                count = count + 1
-                        print count
-                        best = count
-                        best_pose = pose
-                        try:
-                            temp_pose = self.make_pose(self.previous_position, orientation=self.previous_orientation)
-                            #print "hello"
-                        except:
-                            temp_pose = pose
-                        temp_pose2 = pose
-                        pose = temp_pose2
-                        position, orientation = self.pose_to_tuple(pose)
-                        current_positions = []
-                        for pose_point in pose_points:
-                            current_positions.append(pose_point.get_tuple())
-                        no_jump = True
+                                #if avg < 0.3:
+                                #    count = count + 1
+                                print avg
+                                factor = 1
+                                if i >= 0 and i <= 16:
+                                    factor = 1.0 / 17.0
+                                    part_factor[0] = part_factor[0] + factor
+                                if i >= 17 and i <= 21:
+                                    factor = 1.0 / 5.0
+                                    part_factor[1] = part_factor[1] + factor
+                                if i >= 22 and i <= 26:
+                                    factor = 1.0 / 5.0
+                                    part_factor[2] = part_factor[2] + factor
+                                if i >= 27 and i <= 35:
+                                    factor = 1.0 / 8.0
+                                    part_factor[3] = part_factor[3] + factor
+                                if i >= 36 and i <= 41:
+                                    factor = 1.0 / 6.0
+                                    part_factor[4] = part_factor[4] + factor
+                                if i >= 42 and i <= 47:
+                                    factor = 1.0 / 6.0
+                                    part_factor[5] = part_factor[5] + factor
+                                if i >= 48 and i <= 68:
+                                    factor = 1.0 / 22.0
+                                    part_factor[6] = part_factor[6] + factor
+                                count = count + factor
+                            elif self.get_dist(points_ordered[i], curr_point) > 0.3:
+                                occluded = occluded + 1
+                        #count = count * 2 + occluded
+                        print count, occluded, part_factor
+                        if best < count:
+                            best = count
+                            best_pose = pose
+                            best_rect = d
+                            best_pose_points = pose_points
                         if not self.face_detected:
-                            for i in xrange(len(current_positions)):
-                                if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
-                                    no_jump = False
-                            if count < 20:
-                                no_jump = False
-                        if no_jump:
-                            self.current_positions = current_positions
-                            self.previous_position, self.previous_orientation = position, orientation
-                        else:
-                            position, orientation = self.previous_position, self.previous_orientation
-                        #display frame
-                        if self.display_3d:
-                            self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
-                        
-                        #publish
-                        #temp_pose = self.make_pose(position, orientation=orientation)
-                        temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
-                        for i in xrange(3):
-                            temp_pose[i][3] = position[i]
-                        temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
-                        ## temp_pose = np.multiply(self.gripper_to_sensor, temp_pose)
-                        temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
-                        ## temp_pose = tft.concatanate_matrices(base_to_gripper, temp_pose)
-                        temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
-                        ## orientation = tft.quaternion_from_matrix(pnp_trans)
-                        ## pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
-                        ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
-                        ## if self.display_3d:
-                        ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
-                        if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
-                            try:
-                                temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
-                                temp_pose.header.frame_id = "torso_lift_link"
-                                #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
-                                self.mouth_calc_pub.publish(temp_pose)
-                                
-                            except:
-                                print "failed"
-                        self.mouth_pub.publish(best_pose)
-                        ## self.mouth_pub.publish(pnp_pose)
-                    print time.time() - time1
+                            time.sleep(.5)
                 except rospy.ServiceException as exc:
                     print ("serv caused an error " + str(exc))
+        try:
+            temp_pose = self.make_pose(self.previous_position, orientation=self.previous_orientation)
+        except:
+            temp_pose = pose
+        position, orientation = self.pose_to_tuple(best_pose)
+        current_positions = []
+        if len(best_pose_points) > 1:
+            pose_points = best_pose_points
+        for pose_point in pose_points:
+            current_positions.append(pose_point.get_tuple())
+        no_jump = True
+        if not self.face_detected:
+            for i in xrange(len(current_positions)):
+                if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
+                    no_jump = False
+            if best < .2:
+                no_jump = False
+        print no_jump
+        if no_jump:
+            self.current_positions = current_positions
+            self.previous_position, self.previous_orientation = position, orientation
+            self.previous_face = dlib.dlib.rectangles()
+            self.previous_face.append(best_rect)
+        else:
+            position, orientation = self.previous_position, self.previous_orientation
+        #display frame
+        if self.display_3d:
+            self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
+                        
+        #publish
+        temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
+        for i in xrange(3):
+            temp_pose[i][3] = position[i]
+        temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
+        temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
+        temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
+        ## orientation = tft.quaternion_from_matrix(pnp_trans)
+        ## pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
+        ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
+        ## if self.display_3d:
+        ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
+        if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
+            try:
+                temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
+                #temp_pose.header.frame_id = "torso_lift_link"
+                #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
+                self.mouth_calc_pub.publish(temp_pose)
+                                
+            except:
+                print "failed"
+        self.mouth_pub.publish(best_pose)
+        ## self.mouth_pub.publish(pnp_pose)
+        print time.time() - time1
 
     def initialize_frames(self, rgb_info, depth_info):
         self.rgb_f   = (rgb_info.P[0], rgb_info.P[5])
@@ -400,10 +452,10 @@ class MouthPoseDetector:
         curr_points = []
         for curr in self.current_positions:
             curr_points.append(Point(curr))
-        if use_points:
-            retrieved_previous_points = self.retrieve_points_from_pose(curr_points, depth)
-        else:
-            retrieved_previous_points = self.retrieve_points_from_orientation(self.make_pose(self.previous_position, self.previous_orientation))
+        #if use_points:
+        #    retrieved_previous_points = self.retrieve_points_from_pose(curr_points, depth)
+        #else:
+        retrieved_previous_points = self.retrieve_points_from_orientation(self.make_pose(self.previous_position, self.previous_orientation))
         for i, mark in enumerate(landmarks):
             point = self.get_3d_pixel(mark.x, mark.y, depth)
             if len(self.current_positions) >= 1:
@@ -469,10 +521,13 @@ class MouthPoseDetector:
             transform[i][3] = offset
         #transform = tft.inverse_matrix(transform)
         for coor in self.lm_coor:
-            lm_point = tft.translation_matrix(coor)
-            lm_point = np.array(np.matrix(transform)*np.matrix(lm_point))#np.dot(transform, lm_point)
-            lm_point = tft.translation_from_matrix(lm_point)
-            lm_points.append(self.make_pose(lm_point))
+            if not np.allclose(coor, self.wrong_coor):
+                lm_point = tft.translation_matrix(coor)
+                lm_point = np.array(np.matrix(transform)*np.matrix(lm_point))#np.dot(transform, lm_point)
+                lm_point = tft.translation_from_matrix(lm_point)
+                lm_points.append(self.make_pose(lm_point))
+            else:
+                lm_points.append(self.make_pose((0.0, 0.0, 0.0)))
         return lm_points
 
     def make_point(self, point):
@@ -484,7 +539,7 @@ class MouthPoseDetector:
         best_delaunay = []
         best_delaunay_score = 9999999999
         best_2d_3d = []
-        invalid_indices =[]
+        invalid_indices = []#[0,1,2,3,4,5,6,7,9,10,11,12,13,14,15,16]
         for i, mark in enumerate(landmarks):
             point = self.get_3d_pixel(mark.x, mark.y, depth)
             points3d.append(list(point))
@@ -936,7 +991,7 @@ class MouthPoseDetector:
             new_point = (point.x, point.y, point.z)
         else:
             new_point = point
-        if not np.allclose(point, (0.0, 0.0, 0.0)) and not np.isnan(point[0]):
+        if not np.allclose(point, (0.0, 0.0, 0.0)):
             x = self.rgb_c[0] + (self.rgb_f[0] * point[0] / point[2]) 
             y = self.rgb_c[1] + (self.rgb_f[1] * point[1] / point[2])
         else:
@@ -993,7 +1048,7 @@ class MouthPoseDetector:
         y = int(y / count)
         return self.get_3d_pixel(x, y, depth)
 
-    # cx, cy, fx, fy are from Camera_Info of rgb. currently outputs (z, x, y) due to how axis is oriented.
+    # cx, cy, fx, fy are from Camera_Info of rgb. 
     # assumes no-very little distortions from lens or is taken into account in calibration
     # assumes rgbd is already alligned. (or depth_f ~= rgb_f and offset between two frame is close to 0)
     def get_3d_pixel(self, rgb_x, rgb_y, depth):
