@@ -326,8 +326,8 @@ if __name__ == '__main__':
         if opt.method == 'svm':
             parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                           'cost': np.linspace(3.0, 7.0, 6),\
-                          'gamma': np.logspace(-2, 0.7, 10), \
-                          'w_negative': np.linspace(1.0, 6.0,10) }
+                          'gamma': np.logspace(-2, 0.7, 5), \
+                          'w_negative': np.linspace(1.0, 6.0,5) }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-5,0.,5)
@@ -731,23 +731,26 @@ if __name__ == '__main__':
                 else:
                     data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
                     if method is 'bpsvm':
-                        ll_cut_idx = []
-                        for i in xrange(nFiles):
-                            ll_cut_idx.append(data[i]['abnormal_train_cut_idx'])
+                        pos_dict=[]
+                        for i in xrange(len(data)):
+                            d = {}
+                            d['rnd_train_idx'] = data[i]['rnd_train_idx']
+                            d['rnd_test_idx']  = data[i]['rnd_test_idx']
+                            d['abnormal_train_cut_idx'] = data[i]['abnormal_train_cut_idx']
+                            pos_dict.append(d)
             
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 if method is 'osvm':
-                    startIdx=4
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, \
-                                         window=param_dict['SVM']['raw_window_size'], posdata=False)
-                elif method is 'bpsvm':
-                    startIdx=4
-                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, startIdx, data_pkl, \
+                    data = dm.getPCAData(nFiles, data_pkl, \
                                          window=param_dict['SVM']['raw_window_size'],\
-                                         posdata=True, pos_cut_indices=ll_cut_idx)
+                                         posdata=False, use_test=False)
+                elif method is 'bpsvm':
+                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
+                    data = dm.getPCAData(nFiles, data_pkl, \
+                                         window=param_dict['SVM']['raw_window_size'],\
+                                         pos_dict=pos_dict)
                     
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
