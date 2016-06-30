@@ -23,6 +23,9 @@
         <!--node name="findBowl" pkg="hrl_manipulation_task" type="findBowl.py" respawn="false" output="screen" /-->
         <node name="findMouth" pkg="hrl_manipulation_task" type="findMouth.py" respawn="false" output="screen" />
 
+        <!-- Visual bowl height -->  
+        <node name="bowlHeight" pkg="hrl_manipulation_task" type="visual_bowl_height.py" respawn="false" output="screen" />
+
         <!-- F/T sensor -->
         <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
         

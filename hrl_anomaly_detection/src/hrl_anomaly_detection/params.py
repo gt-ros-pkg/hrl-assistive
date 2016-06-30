@@ -15,7 +15,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
-                          'osvm_nu': 0.000215, 'raw_window_size': 10,\
+                          'osvm_nu': 0.000215, 'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,
                           'hmmsvm_LSLS_cost': 15.0,\
@@ -129,7 +129,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 2.0,\
-                          'raw_window_size': 10,\
+                          'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
                           'hmmsvm_LSLS_cost': 15.0,\
@@ -276,7 +276,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.01,
                               'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.50749,\
-                              'osvm_nu': 0.000215, 'raw_window_size': 10,\
+                              'osvm_nu': 0.000215,
+                              'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_LSLS_cost': 15.0,\
@@ -476,13 +477,13 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.001,
                               'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.01,\
-                              'raw_window_size': 10,\
+                              'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 5.0, \
                               'hmmsvm_dL_gamma': 0.50749,\
                               'hmmsvm_LSLS_cost': 12.5, \
                               'hmmsvm_LSLS_gamma': 0.01, \
                               'hmmsvm_LSLS_w_negative': 0.525,\
-                              'bpsvm_cost': 5.0,\
+                              'bpsvm_cost': 4.0,\
                               'bpsvm_gamma': 0.5075, \
                               'bpsvm_w_negative': 1.5                              
                               }                              
@@ -492,8 +493,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.5, nPoints)*-1.0, \
-                          'svm_param_range': np.logspace(-2.5, -0.8, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-2.5, -0.5, nPoints),\
+                          'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': (-np.logspace(0.0,1.,nPoints)**2)/10.0+0.4,\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
@@ -635,7 +636,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 0.5075,\
-                          'raw_window_size': 10,\
+                          'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 1.175, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,\
                           'hmmsvm_LSLS_cost': 10.0,\
@@ -658,7 +659,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2.5, 2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
