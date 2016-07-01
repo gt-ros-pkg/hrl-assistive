@@ -63,7 +63,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
+        AD_param_dict = {'svm_w_positive': 0.1, 'sgd_w_positive': 1.0}
         
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
@@ -223,7 +223,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                    #'relativePose_landmark_EE', \
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017/'
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
@@ -240,7 +241,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                       'handFeatures_noise': True}
 
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \

@@ -1356,6 +1356,50 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             if 'subArtagEEAng' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('subArtagEEAng')
 
+
+        # Crossmodal feature - vision relative dist with main(first) vision target----
+        if 'crossmodal_landmarkEEDist' in feature_list:
+            kinEEPos  = d['kinEEPosList'][idx]
+            visionLandmarkPos = d['visionLandmarkPosList'][idx][:3] # originally length x 3*tags
+
+            dist = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
+            
+            crossmodal_landmarkEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_landmarkEEDist.append(dist[time_idx])
+
+            if dataSample is None: dataSample = np.array(crossmodal_landmarkEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEDist])
+            if 'landmarkEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('landmarkEEDist')
+
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_landmarkEEAng' in feature_list:
+            kinEEQuat    = d['kinEEQuatList'][idx]
+            visionLandmarkQuat = d['visionLandmarkQuatList'][idx][:4]
+
+            crossmodal_landmarkEEAng = []
+            for time_idx in xrange(len(timeList)):
+
+                startQuat = kinEEQuat[:,time_idx]
+                endQuat   = visionLandmarkQuat[:,time_idx]
+
+                diff_ang = qt.quat_angle(startQuat, endQuat)
+                crossmodal_landmarkEEAng.append( abs(diff_ang) )
+
+            crossmodal_landmarkEEAng = np.array(crossmodal_landmarkEEAng)
+            if offset_flag:
+                crossmodal_landmarkEEAng -= np.mean(crossmodal_landmarkEEAng[:startOffsetSize])
+
+            if dataSample is None: dataSample = np.array(crossmodal_landmarkEEAng)
+            else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEAng])
+            if 'landmarkEEAng' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('landmarkEEAng')
+
+
         # ----------------------------------------------------------------
         dataList.append(dataSample)
 

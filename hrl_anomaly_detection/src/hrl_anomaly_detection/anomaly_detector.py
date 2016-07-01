@@ -73,7 +73,7 @@ class anomaly_detector:
         self.param_dict = param_dict        
         self.classifier_method = check_method
         self.startOffsetSize = 4
-        self.startCheckIdx   = 10
+        self.startCheckIdx   = 20
         self.exp_sensitivity = True
         self.nUpdateFreq = 3
         
@@ -88,7 +88,9 @@ class anomaly_detector:
         self.initComms()
         self.initDetector(hmm_renew=hmm_renew)
         self.reset()
-        print "Current task: ", self.task_name
+        print "=========================================================="
+        print "Initialization completed!! : ", self.task_name
+        print "=========================================================="
 
     '''
     Load feature list
@@ -587,6 +589,10 @@ class anomaly_detector:
             data_dict['kinEEPosList']     = [np.array([self.kinematics_ee_pos]).T]
             data_dict['kinTargetPosList'] = [np.array([self.kinematics_target_pos]).T]
 
+        # Crossmodal feature - relative Velocity --------------------------
+        if 'crossmodal_targetEEVel' in self.handFeatures:
+            print "Not available"            
+
         # Crossmodal feature - relative angle --------------------------
         if 'crossmodal_targetEEAng' in self.handFeatures:
             data_dict['kinEEQuatList'] = [np.array([self.kinematics_ee_quat]).T]
@@ -602,6 +608,14 @@ class anomaly_detector:
             data_dict['kinEEQuatList'] = [np.array([self.kinematics_ee_quat]).T]
             data_dict['visionArtagPosList'] = [np.array([self.vision_artag_pos]).T]
             data_dict['visionArtagQuatList'] = [np.array([self.vision_artag_quat]).T]
+
+        # Crossmodal feature - vision relative dist with sub vision target----
+        if 'crossmodal_subArtagEEDist' in self.handFeatures:
+            print "Not available"            
+
+        # Crossmodal feature - vision relative angle --------------------------
+        if 'crossmodal_subArtagEEAng' in self.handFeatures:                
+            print "Not available"            
 
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_landmarkEEDist' in self.handFeatures:
@@ -631,7 +645,7 @@ class anomaly_detector:
     '''
     def run(self):
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
-        rate = rospy.Rate(20) # 25Hz, nominally.
+        rate = rospy.Rate(5) # 25Hz, nominally.
         while not rospy.is_shutdown():
             
             if self.enable_detector is False: 

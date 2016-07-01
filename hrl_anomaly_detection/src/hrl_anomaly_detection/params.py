@@ -10,7 +10,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.33, 'scale': 6.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.33, 'scale': 6.0,
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 4.75, 'gamma': 5.01, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
@@ -43,7 +44,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 3.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 3.0, \
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
@@ -65,7 +67,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist' ]
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0,
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
@@ -122,7 +125,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111, \
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 4.455, 'cost': 2.25,\
                           'hmmosvm_nu': 0.000316,\
@@ -160,7 +164,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555, \
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 12.5,\
@@ -183,7 +188,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444, \
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': False, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
                           'hmmosvm_nu': 0.0001,\
@@ -244,7 +250,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.577, 'scale': 4.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.577, 'scale': 4.0, \
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.56, 'gamma': 0.0527, 'cost': 1.75,\
                           'hmmosvm_nu': 0.01}
 
@@ -270,7 +277,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.73, 'scale': 5.5}
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
-            HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.341, 'scale': 7.33}
+            HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.341, 'scale': 7.33, \
+                              'add_logp_d': True}
             SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.006, 'cost': 5.,\
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                               'hmmosvm_nu': 0.01,
@@ -307,7 +315,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.57, 'scale': 8.}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.57, 'scale': 8.,\
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.85, 'gamma': 0.006, 'cost':15.0,\
                           'hmmosvm_nu': 0.00316}
         
@@ -324,7 +333,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 10.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 10.0,\
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.11, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.293, 'gamma': 4.0, 'cost': 3.83,\
                           'hmmosvm_nu': 0.00316,
@@ -445,7 +455,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 6.66 }
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 6.66,\
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': False, 'w_negative': 0.5623, 'gamma': 0.0527, 'cost': 4.0,\
                           'hmmosvm_nu': 0.000316}
@@ -531,7 +542,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.5, 'scale': 2.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.5, 'scale': 2.0,\
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.1778, 'gamma': 8.0, 'cost': 1.75,\
                           'hmmosvm_nu': 0.00316}
 
@@ -611,7 +623,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEAng',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.61, 'scale': 8.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.61, 'scale': 8.0, \
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.01, 'cost': 8.5,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           'hmmosvm_nu': 0.00316}
@@ -630,7 +643,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.278, 'scale': 4.11}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.278, 'scale': 4.11, \
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 0.1, 'cost': 10.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
@@ -667,7 +681,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.444, 'scale': 5.667}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.444, 'scale': 5.667, \
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
         SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 4.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
@@ -684,7 +699,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 2.555}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 2.555, \
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 0.1, 'cost': 7.75,\
                           'hmmosvm_nu': 0.001}                          
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm' ],\

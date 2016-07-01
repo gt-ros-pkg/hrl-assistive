@@ -334,7 +334,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             log_ll.append([])
             ## exp_log_ll.append([])
             for j in range(startIdx, len(normalTestData[0][i])):
-                X = [x[i,:j] for x in normalTestData]                
+                X = [x[i,:j] for x in normalTestData] # by dim
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
 
