@@ -711,10 +711,9 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             if anomaly: fp_l.append(1)
             else: tn_l.append(1)
 
-        print jj, est_y[jj], Y_test[ii][0], " - ", anomaly
+    ##     print jj, est_y[jj], Y_test[ii][0], " - ", anomaly
 
-    if np.sum(tp_l)+np.sum(fn_l) > 0 and np.sum(fp_l)+np.sum(tn_l)>0:
-        print "tpr, fpr: ", float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0, float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
-
+    ## if np.sum(tp_l)+np.sum(fn_l) > 0 and np.sum(fp_l)+np.sum(tn_l)>0:
+    ##     print "tpr, fpr: ", float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0, float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l

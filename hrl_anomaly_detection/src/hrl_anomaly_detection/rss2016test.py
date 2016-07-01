@@ -809,12 +809,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     if 'osvm' in method_list:
         ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'], \
-                                  posdata=False)
+                                  window=SVM_dict['raw_window_size'])
     if 'bpsvm' in method_list:
 
         # get ll_cut_idx only for pos data
-        ll_cut_idx = []
+        pos_dict = []
         for idx in xrange(len(kFold_list)):
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             d            = ut.load_pickle(modeling_pkl)
@@ -824,11 +823,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
                                          ll_classifier_train_Y, \
                                          ll_classifier_train_idx)
-            ll_cut_idx.append(l_cut_idx)
+            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
+            pos_dict.append(idx_dict)
                     
         bpsvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
-                                   posdata=True, pos_cut_indices=ll_cut_idx)
+                                   pos_dict=pos_dict)
         
     
     # parallelization
