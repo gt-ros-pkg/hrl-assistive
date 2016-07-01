@@ -604,12 +604,12 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True):
+def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
     successData = d['successData']
-    failureData = d['failureData']
+    failureData = d['failureData']    
 
     if window == 0:
         print "wrong window size"
@@ -765,15 +765,13 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
                 
             X_scaled = scaler.fit_transform(X_train_org)
 
-                
-            
-
                        
         ## # PCA
-        ## from sklearn.decomposition import KernelPCA
-        ## ml = KernelPCA(n_components=2, kernel="poly", fit_inverse_transform=False, \
-        ##                    gamma=gamma, degree=5)
-        ## X_scaled = ml.fit_transform(np.array(X_scaled))
+        if use_pca:
+            from sklearn.decomposition import KernelPCA
+            ml = KernelPCA(n_components=2, kernel="poly", fit_inverse_transform=False, \
+                           gamma=gamma, degree=5)
+            X_scaled = ml.fit_transform(np.array(X_scaled))
 
         # LLE
         ## from sklearn.manifold import LocallyLinearEmbedding
@@ -792,7 +790,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
                     continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml.transform(X)
+                if use_pca: X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])            
         else:
@@ -804,7 +802,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
                   continue
 
                 X = scaler.transform(ll_classifier_test_X[ii])
-                ## X = ml.transform(X)
+                if use_pca: X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])
 

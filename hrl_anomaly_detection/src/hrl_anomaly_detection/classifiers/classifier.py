@@ -622,9 +622,13 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-      method == 'bpsvm':
+    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS':
         weights = ROC_dict[method+'_param_range']
+        dtc.set_params( class_weight=weights[j] )
+        ret = dtc.fit(X_train, Y_train, parallel=False)
+    elif method == 'bpsvm':
+        weights = ROC_dict[method+'_param_range']
+        dtc.set_params( kernel_type=0 )
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'hmmosvm' or method == 'osvm':
