@@ -808,7 +808,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list:
         ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
-        osvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'])
     if 'bpsvm' in method_list:
 
@@ -826,7 +826,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             idx_dict={'abnormal_train_cut_idx': l_cut_idx}
             pos_dict.append(idx_dict)
                     
-        bpsvm_data = dm.getPCAData(len(kFold_list), startIdx, crossVal_pkl, \
+        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict)
         
