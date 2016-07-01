@@ -682,16 +682,16 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
         elif opt.method == 'bpsvm':
-            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'bpsvm_cost': np.linspace(8,15.0,5),\
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
-                          'pca_gamma': np.linspace(0.1,3, 5)
-                          }
             ## parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
             ##               'bpsvm_cost': np.linspace(8,15.0,5),\
-            ##               'bpsvm_gamma': np.linspace(0.01,2.0,5), \
-            ##               'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+            ##               'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
+            ##               'pca_gamma': np.linspace(0.1,3, 5)
             ##               }
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(8,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          }
                 
 
 
