@@ -13,7 +13,7 @@ for ((I=2;I<=5;I++)); do
     echo ${I}
     if [ $I -eq 5 ]; then 
         if ["$1" -eq "scooping"] || ["$1" -eq "feeding"]; then
-            return;;
+            return
         fi 
     fi
 
