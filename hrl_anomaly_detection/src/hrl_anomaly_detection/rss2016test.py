@@ -2037,7 +2037,9 @@ if __name__ == '__main__':
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                               verbose=opt.bVerbose)
                               
-    elif opt.bEvaluationAll:                
+    elif opt.bEvaluationAll:
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster', 'change']
+        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 

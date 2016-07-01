@@ -209,7 +209,7 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
 ##     return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
-def disp_score(results, method, nPoints):
+def disp_score(results, method, nPoints, savefile=None, dim=0):
 
     score_list = []
     for result in results:
@@ -220,6 +220,7 @@ def disp_score(results, method, nPoints):
         if ret_param_idx == -1:
             score_list.append([0, ret_params])
             continue
+
         tp_ll = ret_ROC_data[method]['tp_l']
         fp_ll = ret_ROC_data[method]['fp_l']
         tn_ll = ret_ROC_data[method]['tn_l']
@@ -261,7 +262,17 @@ def disp_score(results, method, nPoints):
     for i in xrange(len(score_list)):
         print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
 
-    
+    if savefile is not None:
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+                file.write( "%0.3f for %r" % (score_list[-1][0], score_list[-1][1])+'\n\n' )
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+                file.write( "%0.3f for %r" % (score_list[-1][0], score_list[-1][1])+'\n\n' )
 
 
 def getAUC(fpr_l, tpr_l):
@@ -286,6 +297,8 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
                  help='number of processes for multi processing')
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
 
@@ -723,8 +736,9 @@ if __name__ == '__main__':
     elif AE_param_dict['switch'] == True:
         result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw_'+str(opt.dim)+'.pkl')
     else:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'.pkl')
-        
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
+
+
     ##################################################################################################
     # cpu version
     if opt.bCPU:
@@ -734,7 +748,6 @@ if __name__ == '__main__':
         ##               'cost': [1.0, 3.], 'w_negative': [3.0]}
         
         if os.path.isfile(result_pkl) is False or opt.bRenew is True:
-
             ## Custom parameters
             method = parameters['method'][0]
             if method is not 'osvm':
@@ -828,9 +841,19 @@ if __name__ == '__main__':
         print "Finished"
 
     # 000000000000000000000000000000000000000000000000000000000000000000
-    disp_score(results, method, nPoints)
+    if opt.bSave:
+        savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
+        disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)
+    else:
+        disp_score(results, method, nPoints)
 
-
+    ## if opt.bSave:
+    ##     method  = parameters['method'][0]
+    ##     results = ut.load_pickle('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/pushing_toolcase_data/AE200_4/result_pushing_toolcase_4.pkl')
+    ##     savefile = os.path.join(save_data_path,'../','result_run_classifier_'+method+'.txt')
+    ##     disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)
+    ##     sys.exit()        
+        
 
 
 ## def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params, n_jobs=-1):
