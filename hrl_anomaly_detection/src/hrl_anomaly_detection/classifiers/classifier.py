@@ -617,7 +617,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                    method, nState, nLength, nPoints, param_dict, ROC_dict, dtc=None):
-                   
+
     # classifier # TODO: need to make it efficient!!
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
@@ -690,7 +690,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                     continue                        
 
                 ## if Y_test[ii][0] < 0:
-                ##     print jj, est_y[jj], Y_test[ii][0] #, " - ", X_test[ii][jj]
+                ## print jj, est_y[jj], Y_test[ii][0] #, " - ", X_test[ii][jj]
                     
                 if idx_test is not None:
                     try:
@@ -701,6 +701,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                 anomaly = True                            
                 break        
 
+        ## print jj, est_y[jj], Y_test[ii][0], " - ", np.unique(Y_test[ii])
         if Y_test[ii][0] > 0.0:
             if anomaly:
                 tp_l.append(1)
@@ -709,5 +710,11 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         elif Y_test[ii][0] <= 0.0:
             if anomaly: fp_l.append(1)
             else: tn_l.append(1)
+
+        print jj, est_y[jj], Y_test[ii][0], " - ", anomaly
+
+        if np.sum(tp_ll[j])+np.sum(fn_ll[j]) > 0 and np.sum(fp_ll[j])+np.sum(tn_ll[j])>0:
+            print "tpr, fpr: ", float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0, float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0
+
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l

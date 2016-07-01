@@ -130,7 +130,8 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
     for i, j in enumerate(l_j):
         if j == 'fit failed':
-            print i,j
+            print i,j, 'fit failed'
+            sys.exit()
             continue
         ROC_data[method]['tp_l'][j] += l_tp_l[i]
         ROC_data[method]['fp_l'][j] += l_fp_l[i]
@@ -681,7 +682,7 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_cost': np.linspace(8,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
                           'bpsvm_w_negative': np.linspace(0.2,1.5,5)
                           }
