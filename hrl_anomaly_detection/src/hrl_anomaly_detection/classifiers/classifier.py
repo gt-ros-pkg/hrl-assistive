@@ -271,7 +271,6 @@ class classifier(learning_base):
             # extract only negatives
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-            print np.shape(ll_logp), np.shape(ll_post)
             
             ## init_center = np.eye(self.nPosteriors, self.nPosteriors)
             ## self.dt     = KMeans(self.nPosteriors, init=init_center)
@@ -283,7 +282,7 @@ class classifier(learning_base):
             self.dt = NearestNeighbors(n_neighbors=self.progress_neighbors, metric=symmetric_entropy)
             self.dt.fit(ll_post)
             
-            self.ll_logp = ll_logp
+            self.ll_logp = np.array(ll_logp)
             
             ## # mean and variance of likelihoods
             ## l = []
@@ -422,8 +421,9 @@ class classifier(learning_base):
                 logp = X[i][0]
                 post = X[i][-self.nPosteriors:]
 
-                l_idx = self.dt.kneighbors(post)
-                l_logp= self.ll_logp[l_idx]
+                _, l_idx = self.dt.kneighbors(post)
+
+                l_logp= self.ll_logp[l_idx[0]]
                 err = np.mean(l_logp) + self.ths_mult*np.std(l_logp) - logp - self.logp_offset
                 l_err.append(err)
 
@@ -699,6 +699,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
     elif method == 'progress_time_cluster':
         thresholds = ROC_dict['progress_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    elif method == 'progress_state':
+        thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
     elif method == 'fixed':
