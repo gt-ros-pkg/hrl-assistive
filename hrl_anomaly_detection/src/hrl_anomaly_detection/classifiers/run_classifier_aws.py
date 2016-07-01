@@ -682,11 +682,11 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
         elif opt.method == 'bpsvm':
-            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'bpsvm_cost': np.linspace(8,15.0,5),\
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
-                          'pca_gamma': np.linspace(0.1,3, 5)
-                          }
+            ## parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+            ##               'bpsvm_cost': np.linspace(8,15.0,5),\
+            ##               'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
+            ##               'pca_gamma': np.linspace(0.1,3, 5)
+            ##               }
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(8,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
@@ -759,7 +759,7 @@ if __name__ == '__main__':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     data = dm.getPCAData(nFiles, data_pkl, gamma=param['pca_gamma'],\
                                          window=param_dict['SVM']['raw_window_size'],\
-                                         pos_dict=pos_dict, use_test=False, use_pca=True)
+                                         pos_dict=pos_dict, use_test=False, use_pca=False)
                     
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
