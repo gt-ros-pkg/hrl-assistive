@@ -359,7 +359,7 @@ if __name__ == '__main__':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
                           'pca_gamma': [1.0]                          
                           }
                 
@@ -437,7 +437,7 @@ if __name__ == '__main__':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
                           'pca_gamma': [1.0]                          
                           }
                 
@@ -597,7 +597,7 @@ if __name__ == '__main__':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
                           'pca_gamma': [1.0]                          
                           }
             
