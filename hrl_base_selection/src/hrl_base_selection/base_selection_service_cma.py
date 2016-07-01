@@ -376,7 +376,7 @@ class BaseSelector(object):
                 self.bed_pose_sub = rospy.Subscriber('/haptic_mpc/bed_pose', PoseStamped, self.bed_pose_cb)
             self.model_B_ar = np.eye(4)
 
-        # print 'The homogeneous transform from PR2 base link to head: \n', self.pr2_B_head
+        #print 'The homogeneous transform from PR2 base link to head: \n',# self.pr2_B_head
 
         # I now project the head pose onto the ground plane to mitigate potential problems with poorly registered head
         # pose.
@@ -398,6 +398,7 @@ class BaseSelector(object):
 
         headx = 0
         heady = 0
+        
         # Sets the location of the robot with respect to the person based using a few homogeneous transforms.
         if model == 'chair':
             self.origin_B_pr2 = copy.copy(self.pr2_B_headfloor.I)
@@ -415,7 +416,6 @@ class BaseSelector(object):
                                                    [-m.sin(an2),  0., m.cos(an2),     0.],
                                                    [         0.,  0.,         0.,     1.]])
             self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
-
         # Slightly more complicated for autobed because the person can move around on the bed.
         elif model == 'autobed':
             
@@ -425,10 +425,11 @@ class BaseSelector(object):
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(11)-5)*.03
+            head_possibilities = (np.arange(11)-5)*30
             neigh = KNeighborsClassifier(n_neighbors=1)
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
-            heady = neigh.predict(model_B_head[1, 3])[0]
+            heady = neigh.predict(int(model_B_head[1, 3]*1000))[0]*.00
+
             headx = 0.
             #heady = 0.
             print 'The nearest neighbor to the current head_y position is:', heady
