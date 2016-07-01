@@ -99,6 +99,7 @@ class armReacherGUI:
             self.ScoopNumber = 0
             self.FeedNumber = 0
 
+
     def emergencyCallback(self, data):
         #Emergency status button.
         self.emergencyStatus = True
@@ -314,7 +315,7 @@ if __name__ == '__main__':
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
     
-    if opt.bLog:
+    if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=False, vision_change=False, pps=True, skin=False, \
                      subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \

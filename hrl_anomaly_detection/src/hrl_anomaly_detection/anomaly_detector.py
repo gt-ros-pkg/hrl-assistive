@@ -88,6 +88,7 @@ class anomaly_detector:
         self.initComms()
         self.initDetector(hmm_renew=hmm_renew)
         self.reset()
+        print "Current task: ", self.task_name
 
     '''
     Load feature list
@@ -161,7 +162,7 @@ class anomaly_detector:
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
         ## rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
-        rospy.Subscriber('/manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
+        rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
@@ -393,10 +394,10 @@ class anomaly_detector:
         newData = self.extractHandFeature()
 
         # get offset
-        if len(self.dataList[0][0]) == self.startOffsetSize:
+        if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
+            self.offsetData = np.zeros(np.shape(newData))            
+        elif len(self.dataList[0][0]) == self.startOffsetSize:
             self.offsetData = np.mean(self.dataList, axis=2)/self.scale
-        elif len(self.dataList[0][0]) < self.startOffsetSize:
-            self.offsetData = np.zeros(np.shape(newData))
         newData -= self.offsetData
         
         if len(self.dataList) == 0:
@@ -423,7 +424,6 @@ class anomaly_detector:
         Requested value's range is 0~1.
         Update the classifier only using current training data!!
         '''
-        if self.cur_task is not self.task_name: return
         
         sensitivity_req = msg.data
         if sensitivity_req > 1.0: sensitivity_req = 1.0
@@ -624,7 +624,7 @@ class anomaly_detector:
     '''
     def reset(self):
         self.dataList = []
-        self.enableDetector = False
+        self.enable_detector = False
 
     '''
     Run detector
@@ -646,7 +646,9 @@ class anomaly_detector:
             cur_length     = len(self.dataList[0][0])
             l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
             self.lock.release()
-            
+
+            print np.shape(self.dataList), l_logp
+
             if l_logp is None: 
                 print "logp is None => anomaly"
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
@@ -764,6 +766,18 @@ if __name__ == '__main__':
         if opt.task == 'scooping':
             subject_names = ['test'] 
             raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
+                                                                    False, False,\
+                                                                    rf_center, local_range, dim=opt.dim)
+            check_method      = opt.method
+            param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
+                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+
+            param_dict['data_param']['nNormalFold']   = 1
+            param_dict['data_param']['nAbnormalFold'] = 1
+
+        elif opt.task == 'feeding':
+            subject_names = ['test'] 
+            raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
                                                                     False, False,\
                                                                     rf_center, local_range, dim=opt.dim)
             check_method      = opt.method

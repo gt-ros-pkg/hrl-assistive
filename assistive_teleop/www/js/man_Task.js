@@ -31,7 +31,7 @@ var ManipulationTask = function (ros) {
 
     manTask.both = function () {
         var msg = new manTask.ros.Message({
-          data: 'Both'
+          data: 'Init'
         });
         assistive_teleop.log('Please, follow the step 2 to select the action.');
         manTask.statusPub.publish(msg);
@@ -125,7 +125,7 @@ var ManipulationTask = function (ros) {
         //assistive_teleop.log("worked?");
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","1.0");
@@ -136,7 +136,7 @@ var ManipulationTask = function (ros) {
 
         $('#man_task_Scooping').css("pointer-events","none");
         $('#man_task_Feeding').css("pointer-events","none");
-        $('#man_task_Both').css("pointer-events","none");
+        $('#man_task_Init').css("pointer-events","none");
         $('#man_task_stop').css("pointer-events","none");
         $('#man_task_Continue').css("pointer-events","none");
         $('#man_task_start').css("pointer-events","none");
@@ -154,7 +154,7 @@ var ManipulationTask = function (ros) {
 
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_Init').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","1.0");
         $('#man_task_success').css("opacity","0.6");
@@ -166,12 +166,19 @@ var ManipulationTask = function (ros) {
         $('#man_task_start').css("pointer-events","auto");
         $('#man_task_stop').css("pointer-events","none");
  
-        $('#ad_sense_min').css("pointer-events","auto");
-        $('#ad_sense_max').css("pointer-events","auto");
-        $('#ad_slider').css("pointer-events","auto");
-        $('#ad_sense_min').css("opacity","1.0");
-        $('#ad_sense_max').css("opacity","1.0");
-        $('#ad_slider').css("opacity","1.0");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","1.0");
+        $('#ad_scooping_sense_max').css("opacity","1.0");
+        $('#ad_scooping_slider').css("opacity","1.0");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","1.0");
+        $('#ad_feeding_sense_max').css("opacity","1.0");
+        $('#ad_feeding_slider').css("opacity","1.0");
 
         }
 
@@ -190,7 +197,7 @@ var initManTaskTab = function() {
         assistive_teleop.manTask.scoop();
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -207,7 +214,7 @@ var initManTaskTab = function() {
         assistive_teleop.manTask.feed();
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -219,11 +226,11 @@ var initManTaskTab = function() {
         $('#man_task_start').css("pointer-events","auto"); 
 
     });
-    $('#man_task_Both').click(function(){
+    $('#man_task_Init').click(function(){
         assistive_teleop.manTask.both();
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_stop').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -239,7 +246,7 @@ var initManTaskTab = function() {
         assistive_teleop.manTask.start();
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -251,13 +258,19 @@ var initManTaskTab = function() {
         $('#man_task_start').css("pointer-events","none");
         $('#man_task_stop').css("pointer-events","auto"); 
 
-        $('#ad_sense_min').css("pointer-events","none");
-        $('#ad_sense_max').css("pointer-events","none");
-        $('#ad_slider').css("pointer-events","none");
-        $('#ad_sense_min').css("opacity","0.6");
-        $('#ad_sense_max').css("opacity","0.6");
-        $('#ad_slider').css("opacity","0.6");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","0.6");
+        $('#ad_scooping_sense_max').css("opacity","0.6");
+        $('#ad_scooping_slider').css("opacity","0.6");
 
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","0.6");
+        $('#ad_feeding_sense_max').css("opacity","0.6");
+        $('#ad_feeding_slider').css("opacity","0.6");
 
 
     });
@@ -265,7 +278,7 @@ var initManTaskTab = function() {
         assistive_teleop.manTask.stop();
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_Init').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","1.0");
         $('#man_task_success').css("opacity","0.6");
@@ -277,19 +290,26 @@ var initManTaskTab = function() {
         $('#man_task_start').css("pointer-events","auto");
         $('#man_task_stop').css("pointer-events","none");
 
-        $('#ad_sense_min').css("pointer-events","auto");
-        $('#ad_sense_max').css("pointer-events","auto");
-        $('#ad_slider').css("pointer-events","auto");
-        $('#ad_sense_min').css("opacity","1.0");
-        $('#ad_sense_max').css("opacity","1.0");
-        $('#ad_slider').css("opacity","1.0");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","1.0");
+        $('#ad_scooping_sense_max').css("opacity","1.0");
+        $('#ad_scooping_slider').css("opacity","1.0");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","1.0");
+        $('#ad_feeding_sense_max').css("opacity","1.0");
+        $('#ad_feeding_slider').css("opacity","1.0");
  
     });
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
         $('#man_task_Scooping').css("opacity","0.6");
         $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Both').css("opacity","0.6");
+        $('#man_task_Init').css("opacity","0.6");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -301,19 +321,26 @@ var initManTaskTab = function() {
         $('#man_task_start').css("pointer-events","none");
         $('#man_task_stop').css("pointer-events","auto");
 
-        $('#ad_sense_min').css("pointer-events","none");
-        $('#ad_sense_max').css("pointer-events","none");
-        $('#ad_slider').css("pointer-events","none");
-        $('#ad_sense_min').css("opacity","0.6");
-        $('#ad_sense_max').css("opacity","0.6");
-        $('#ad_slider').css("opacity","0.6");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","0.6");
+        $('#ad_scooping_sense_max').css("opacity","0.6");
+        $('#ad_scooping_slider').css("opacity","0.6");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","0.6");
+        $('#ad_feeding_sense_max').css("opacity","0.6");
+        $('#ad_feeding_slider').css("opacity","0.6");
  
     });
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_Init').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -324,24 +351,31 @@ var initManTaskTab = function() {
     //re-enable click
         $('#man_task_Scooping').css("pointer-events","auto");
         $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Both').css("pointer-events","auto");
+        $('#man_task_Init').css("pointer-events","auto");
         $('#man_task_stop').css("pointer-events","auto");
         $('#man_task_Continue').css("pointer-events","auto");
         $('#man_task_start').css("pointer-events","auto");
 
-        $('#ad_sense_min').css("pointer-events","auto");
-        $('#ad_sense_max').css("pointer-events","auto");
-        $('#ad_slider').css("pointer-events","auto");
-        $('#ad_sense_min').css("opacity","1.0");
-        $('#ad_sense_max').css("opacity","1.0");
-        $('#ad_slider').css("opacity","1.0");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","1.0");
+        $('#ad_scooping_sense_max').css("opacity","1.0");
+        $('#ad_scooping_slider').css("opacity","1.0");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","1.0");
+        $('#ad_feeding_sense_max').css("opacity","1.0");
+        $('#ad_feeding_slider').css("opacity","1.0");
 
     });
     $('#man_task_Fail').click(function(){
         assistive_teleop.manTask.failure();
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_Init').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -352,17 +386,24 @@ var initManTaskTab = function() {
     //re-enable click
         $('#man_task_Scooping').css("pointer-events","auto");
         $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Both').css("pointer-events","auto");
+        $('#man_task_Init').css("pointer-events","auto");
         $('#man_task_stop').css("pointer-events","auto");
         $('#man_task_Continue').css("pointer-events","auto");
         $('#man_task_start').css("pointer-events","auto");
 
-        $('#ad_sense_min').css("pointer-events","auto");
-        $('#ad_sense_max').css("pointer-events","auto");
-        $('#ad_slider').css("pointer-events","auto");
-        $('#ad_sense_min').css("opacity","1.0");
-        $('#ad_sense_max').css("opacity","1.0");
-        $('#ad_slider').css("opacity","1.0");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","1.0");
+        $('#ad_scooping_sense_max').css("opacity","1.0");
+        $('#ad_scooping_slider').css("opacity","1.0");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","1.0");
+        $('#ad_feeding_sense_max').css("opacity","1.0");
+        $('#ad_feeding_slider').css("opacity","1.0");
 
     });
 
@@ -370,7 +411,7 @@ var initManTaskTab = function() {
         assistive_teleop.manTask.skip();
         $('#man_task_Scooping').css("opacity","1.0");
         $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Both').css("opacity","1.0");
+        $('#man_task_Init').css("opacity","1.0");
         $('#man_task_start').css("opacity","0.6");
         $('#man_task_Continue').css("opacity","0.6");
         $('#man_task_success').css("opacity","0.6");
@@ -380,17 +421,24 @@ var initManTaskTab = function() {
     //re-enable click
         $('#man_task_Scooping').css("pointer-events","auto");
         $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Both').css("pointer-events","auto");
+        $('#man_task_Init').css("pointer-events","auto");
         $('#man_task_stop').css("pointer-events","auto");
         $('#man_task_Continue').css("pointer-events","auto");
         $('#man_task_start').css("pointer-events","auto");
 
-        $('#ad_sense_min').css("pointer-events","auto");
-        $('#ad_sense_max').css("pointer-events","auto");
-        $('#ad_slider').css("pointer-events","auto");
-        $('#ad_sense_min').css("opacity","1.0");
-        $('#ad_sense_max').css("opacity","1.0");
-        $('#ad_slider').css("opacity","1.0");
+        $('#ad_scooping_sense_min').css("pointer-events","auto");
+        $('#ad_scooping_sense_max').css("pointer-events","auto");
+        $('#ad_scooping_slider').css("pointer-events","auto");
+        $('#ad_scooping_sense_min').css("opacity","1.0");
+        $('#ad_scooping_sense_max').css("opacity","1.0");
+        $('#ad_scooping_slider').css("opacity","1.0");
+
+        $('#ad_feeding_sense_min').css("pointer-events","auto");
+        $('#ad_feeding_sense_max').css("pointer-events","auto");
+        $('#ad_feeding_slider').css("pointer-events","auto");
+        $('#ad_feeding_sense_min').css("opacity","1.0");
+        $('#ad_feeding_sense_max').css("opacity","1.0");
+        $('#ad_feeding_slider').css("opacity","1.0");
 
     });
 
