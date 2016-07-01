@@ -360,6 +360,7 @@ if __name__ == '__main__':
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
                           'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'pca_gamma': [1.0]                          
                           }
                 
                       
@@ -437,6 +438,7 @@ if __name__ == '__main__':
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
                           'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'pca_gamma': [1.0]                          
                           }
                 
 
@@ -596,6 +598,7 @@ if __name__ == '__main__':
                           'bpsvm_cost': np.linspace(5,15.0,5),\
                           'bpsvm_gamma': np.linspace(0.01,2.0,5), \
                           'bpsvm_w_negative': np.linspace(0.2,1.5,5)
+                          'pca_gamma': [1.0]                          
                           }
             
         ## if opt.dim == 4:
