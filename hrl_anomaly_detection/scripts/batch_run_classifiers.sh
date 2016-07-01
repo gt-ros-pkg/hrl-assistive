@@ -11,7 +11,7 @@
 
 for ((I=2;I<=5;I++)); do
     echo ${I}
-    #python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --ea --hr --np;
+    python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --ea --hr --np;
 
     if [ $I -eq 2 ]; then
         METHOD=('svm' 'hmmosvm');
