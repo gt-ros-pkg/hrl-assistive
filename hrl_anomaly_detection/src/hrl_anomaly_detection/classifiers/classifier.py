@@ -685,7 +685,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'bpsvm':
         weights = ROC_dict[method+'_param_range']
-        dtc.set_params( kernel_type=0 )
+        ## dtc.set_params( kernel_type=0 )
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'hmmosvm' or method == 'osvm':
