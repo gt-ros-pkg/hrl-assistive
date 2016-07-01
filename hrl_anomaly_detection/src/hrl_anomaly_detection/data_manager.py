@@ -556,8 +556,8 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
             train_Y = train_Y[normal_idx]
             train_idx = train_idx[normal_idx]
         if method is 'bpsvm':
-            l_abnorm_cut_idx = getHMMCuttingIdx(ll_classifier_train_X, ll_classifier_train_Y, \
-                                                ll_classifier_train_idx)
+            l_abnorm_cut_idx = getHMMCuttingIdx(train_X, train_Y, \
+                                                train_idx)
            
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = flattenSample(train_X, train_Y, train_idx)
@@ -731,7 +731,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
 
                 count = 0
                 for i, x in enumerate(X):
-                    if Y[i] < 0:
+                    if Y[i][0] < 0:
                         normalTrainData_X.append(x)
                         normalTrainData_Y.append(Y[i])
                     else:
@@ -769,8 +769,8 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         ## # PCA
         if use_pca:
             from sklearn.decomposition import KernelPCA
-            ml = KernelPCA(n_components=2, kernel="poly", fit_inverse_transform=False, \
-                           gamma=gamma, degree=5)
+            ml = KernelPCA(n_components=2, kernel="rbf", fit_inverse_transform=False, \
+                           gamma=gamma, degree=3)
             X_scaled = ml.fit_transform(np.array(X_scaled))
 
         # LLE

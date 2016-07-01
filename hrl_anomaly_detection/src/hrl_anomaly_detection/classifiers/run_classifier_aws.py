@@ -758,7 +758,7 @@ if __name__ == '__main__':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     data = dm.getPCAData(nFiles, data_pkl, gamma=param['pca_gamma'],\
                                          window=param_dict['SVM']['raw_window_size'],\
-                                         pos_dict=pos_dict, use_pca=True)
+                                         pos_dict=pos_dict, use_test=False, use_pca=False)
                     
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
