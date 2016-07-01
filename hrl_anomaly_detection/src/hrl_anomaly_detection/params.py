@@ -478,15 +478,15 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.001,
                               'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.01,\
-                              'raw_window_size': 1,\
+                              'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 5.0, \
                               'hmmsvm_dL_gamma': 0.50749,\
                               'hmmsvm_LSLS_cost': 12.5, \
                               'hmmsvm_LSLS_gamma': 0.01, \
                               'hmmsvm_LSLS_w_negative': 0.525,\
-                              'bpsvm_cost': 7.5,\
+                              'bpsvm_cost': 5.,\
                               'bpsvm_gamma': 0.5075, \
-                              'bpsvm_w_negative': 1.5                              
+                              'bpsvm_w_negative': 0.525                              
                               }                              
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
