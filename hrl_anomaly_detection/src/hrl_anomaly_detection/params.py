@@ -478,7 +478,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.001,
                               'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.01,\
-                              'raw_window_size': 5,\
+                              'raw_window_size': 10,\
                               'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 5.0, \
                               'hmmsvm_dL_gamma': 0.50749,\
                               'hmmsvm_LSLS_cost': 12.5, \
