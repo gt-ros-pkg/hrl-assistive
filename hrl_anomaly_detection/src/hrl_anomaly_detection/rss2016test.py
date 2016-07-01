@@ -334,7 +334,7 @@ def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_dat
             log_ll.append([])
             ## exp_log_ll.append([])
             for j in range(startIdx, len(normalTestData[0][i])):
-                X = [x[i,:j] for x in normalTestData]                
+                X = [x[i,:j] for x in normalTestData] # by dim
                 logp = ml.loglikelihood(X)
                 log_ll[i].append(logp)
 
@@ -908,7 +908,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         if method == 'svm': label='HMM-SVM'
         elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
-        elif method == 'progress_KNN': label='HMMs with a dynamic threshold + KNN'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
         elif method == 'fixed': label='HMMs with a fixed threshold'
         elif method == 'change': label='HMMs with change detection'
         elif method == 'cssvm': label='HMM-CSSVM'
@@ -1139,6 +1139,10 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress_time_cluster':
             thresholds = ROC_dict['progress_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'progress_state':
+            thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
         elif method == 'fixed':

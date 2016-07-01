@@ -73,6 +73,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
+                'visionLandmarkTimesList', 'visionLandmarkPosList', 'visionLandmarkQuatList', \
                 'visionChangeTimesList', 'visionChangeCentersList', 'visionChangeMagList', \
                 'ppsTimesList', 'ppsLeftList', 'ppsRightList',\
                 'fabricTimesList', 'fabricCenterList', 'fabricNormalList', 'fabricValueList', 'fabricMagList' ]
@@ -374,6 +375,30 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['visionArtagPosList'].append(vision_pos_array)                                         
             vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times)
             data_dict['visionArtagQuatList'].append(vision_quat_array)                                         
+
+
+        # vision landmark -------------------------------------------------------------
+        if 'vision_landmark_time' in d.keys():
+            vision_time = (np.array(d['vision_landmark_time']) - init_time).tolist()
+            vision_pos  = d['vision_landmark_pos'] 
+            vision_quat = d['vision_landmark_quat']
+
+            if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
+                vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
+
+            # extract local feature
+            data_set = [vision_time, vision_pos, vision_quat]
+            local_vision_pos  = vision_pos
+            local_vision_quat = vision_quat
+
+            raw_data_dict['visionLandmarkTimesList'].append(vision_time)
+            raw_data_dict['visionLandmarkPosList'].append(local_vision_pos)
+            raw_data_dict['visionLandmarkQuatList'].append(local_vision_quat)
+
+            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
+            data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
+            vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times)
+            data_dict['visionLandmarkQuatList'].append(vision_quat_array)                                         
 
 
         # vision change -----------------------------------------------------------

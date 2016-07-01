@@ -50,7 +50,7 @@ from sklearn import metrics
 
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
-                 #progress
+                 #progress time or state?
                  logp_offset = 0.0,\
                  # svm
                  class_weight=1.0, \
@@ -143,7 +143,7 @@ class classifier(learning_base):
             self.cssvm_gamma      = cssvm_gamma 
             self.cssvm_cost       = cssvm_cost 
             self.cssvm_w_negative = cssvm_w_negative 
-        elif self.method == 'progress_time_cluster':
+        elif self.method == 'progress_time_cluster' or self.method == 'progress_state':
             self.nLength   = nLength
             self.std_coff  = 1.0
             self.nPosteriors = nPosteriors
@@ -262,6 +262,44 @@ class classifier(learning_base):
 
             return True
 
+        elif self.method == 'progress_state':
+            '''
+            state-based clustering using knn
+            '''
+            if type(X) == list: X = np.array(X)
+
+            # extract only negatives
+            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
+            
+            ## init_center = np.eye(self.nPosteriors, self.nPosteriors)
+            ## self.dt     = KMeans(self.nPosteriors, init=init_center)
+            ## idx_list    = self.km.fit_predict(state_mat.transpose())
+            self.progress_neighbors = 10
+            
+            from sklearn.neighbors import NearestNeighbors
+            from hrl_anomaly_detection.hmm.learning_util import symmetric_entropy
+            self.dt = NearestNeighbors(n_neighbors=self.progress_neighbors, metric=symmetric_entropy)
+            self.dt.fit(ll_post)
+            
+            self.ll_logp = np.array(ll_logp)
+            
+            ## # mean and variance of likelihoods
+            ## l = []
+            ## for i in xrange(self.nPosteriors):
+            ##     l.append([])
+
+            ## for i, idx in enumerate(idx_list):
+            ##     l[idx].append(likelihood_mat[0][i]) 
+
+            ## self.ll_mu = []
+            ## self.ll_std = []
+            ## for i in xrange(self.nState):
+            ##     self.ll_mu.append( np.mean(l[i]) )
+            ##     self.ll_std.append( np.std(l[i]) )
+            
+            return True
+        
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
             ll_logp = X[:,0:1]
@@ -374,7 +412,23 @@ class classifier(learning_base):
                     err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
                 l_err.append(err)
             return l_err
-        
+
+        elif self.method == 'progress_state':
+            if len(np.shape(X))==1: X = [X]
+
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                post = X[i][-self.nPosteriors:]
+
+                _, l_idx = self.dt.kneighbors(post)
+
+                l_logp= self.ll_logp[l_idx[0]]
+                err = np.mean(l_logp) + self.ths_mult*np.std(l_logp) - logp - self.logp_offset
+                l_err.append(err)
+
+            return l_err            
+                
         elif self.method == 'fixed':
             if len(np.shape(X))==1: X = [X]
                 
@@ -614,6 +668,9 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
     ## return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
 
+## def learn_state_clustering(i, ll_logp, ll_post, g_mu, g_sig, nState):
+##     return i, 
+
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
                    method, nState, nLength, nPoints, param_dict, ROC_dict, dtc=None):
@@ -628,7 +685,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'bpsvm':
         weights = ROC_dict[method+'_param_range']
-        dtc.set_params( kernel_type=0 )
+        ## dtc.set_params( kernel_type=0 )
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'hmmosvm' or method == 'osvm':
@@ -642,6 +699,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
     elif method == 'progress_time_cluster':
         thresholds = ROC_dict['progress_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+    elif method == 'progress_state':
+        thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
     elif method == 'fixed':

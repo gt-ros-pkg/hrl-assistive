@@ -25,6 +25,9 @@
             type="findMouthLandmark.py" respawn="false"
             output="screen" /-->
 
+        <!-- Visual bowl height -->  
+        <!--node name="bowlHeight" pkg="hrl_manipulation_task" type="visual_bowl_height.py" respawn="false" output="screen" /-->
+
 </launch>
 
 

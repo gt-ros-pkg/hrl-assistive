@@ -329,7 +329,7 @@ class learning_hmm(learning_base):
             logp = self.ml.loglikelihood(final_ts_obj)
             if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
         except:
-            print 'Likelihood error!!!!'
+            print 'Likelihood error!!!!'          
             if bPosterior: return None, None
             return None
 
