@@ -37,7 +37,7 @@ import numpy as np
 import rospy, roslib
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
-from std_msgs.msg import String
+from std_msgs.msg import String, Empty
 import pr2_controllers_msgs.msg
 import actionlib
 
@@ -104,6 +104,8 @@ class armReachAction(mpcBaseAction):
         self.ee_pose_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
                                            '_ee_pose', PoseStamped,
                                            queue_size=QUEUE_SIZE, latch=True)
+        self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
+                                        queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
@@ -260,6 +262,9 @@ class armReachAction(mpcBaseAction):
                 
         elif task == "lookAtBowl":
             self.lookAt(self.bowl_frame)
+	    # Account for the time it takes to turn the head
+	    rospy.sleep(2)
+ 	    self.bowl_height_init_pub.publish(Empty())
             return "Completed to move head"
         
         elif task == "lookAtMouth":

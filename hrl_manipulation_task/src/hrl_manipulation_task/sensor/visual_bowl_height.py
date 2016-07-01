@@ -47,6 +47,7 @@ import tf
 from sensor_msgs.msg import PointCloud2, CameraInfo
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, PoseStamped, TransformStamped, PointStamped
+from std_msgs.msg import Empty
 import image_geometry
 
 try :
@@ -78,8 +79,8 @@ class ArmReacherClient:
         self.cameraSub = rospy.Subscriber('/head_mount_kinect/qhd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         if self.verbose: print 'Connected to Kinect camera info'
 
-        # Connect to arm reacher service
-        self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
+        # Connect to arm reacher
+        self.initSub = rospy.Subscriber('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty, self.initCallback)
 
         # Connect to bowl center location
         self.bowlSub = rospy.Subscriber('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped, self.bowlCallback)
@@ -91,9 +92,9 @@ class ArmReacherClient:
         self.bowlSub.unregister()
 
     # Call this right after 'lookAtBowl' and right before 'initScooping2'
-    def initialize():
-        self.initialized = True
+    def initialize(self):
         self.reset()
+        self.initialized = True
 
     def reset(self):
         self.highestPointPublished = False
@@ -112,13 +113,9 @@ class ArmReacherClient:
             self.pinholeCamera = image_geometry.PinholeCameraModel()
             self.pinholeCamera.fromCameraInfo(data)
 
-    def serverCallback(self, req):
-        task = req.data
-        if task == 'getBowlPos':
-            self.initialized = False
-            self.reset()
-        elif task == 'lookAtBowl':
-            self.initialized = True
+    def initCallback(self, req):
+	self.initialize()
+	print 'Initialize Callback'
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
@@ -234,9 +231,11 @@ class ArmReacherClient:
 
 if __name__ == '__main__':
     client = ArmReacherClient(verbose=True)
-    client.initialize()
+    # client.initialize()
 
-    time.sleep(10)
+    rate = rospy.Rate(10) # 25Hz, nominally.
+    while not rospy.is_shutdown():
+        rate.sleep()
 
     client.cancel()
 
