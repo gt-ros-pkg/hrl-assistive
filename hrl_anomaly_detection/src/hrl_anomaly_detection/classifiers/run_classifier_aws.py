@@ -775,7 +775,7 @@ if __name__ == '__main__':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     data = dm.getPCAData(nFiles, data_pkl, \
                                          window=param_dict['SVM']['raw_window_size'],\
-                                         posdata=False, use_test=False)
+                                         pos_dict=None, use_test=False)
                 elif method is 'bpsvm':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
                     data = dm.getPCAData(nFiles, data_pkl, gamma=param['pca_gamma'],\
