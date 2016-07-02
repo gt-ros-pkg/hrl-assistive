@@ -149,8 +149,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
 
         nPoints        = 20 #, 'osvm' 'bpsvm', 'progress_state' 'progress_time_cluster', 'svm','fixed', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS'
-        ROC_param_dict = {'methods': ['osvm'],\
-                          'update_list': ['osvm'],\
+        ROC_param_dict = {'methods': ['osvm', 'progress_state'],\
+                          'update_list': ['osvm', 'progress_state'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'progress_state_param_range':np.linspace(-1, -13., nPoints), \
