@@ -290,7 +290,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_LSLS_cost': 15.0,\
                               'hmmsvm_LSLS_gamma': 0.01, \
-                              'hmmsvm_LSLS_w_negative': 1.5
+                              'hmmsvm_LSLS_w_negative': 1.5,\
                               'bpsvm_cost': 5.0,\
                               'bpsvm_gamma': 0.507, \
                               'bpsvm_w_negative': 1.5,\
