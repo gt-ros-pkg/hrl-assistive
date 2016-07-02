@@ -397,7 +397,7 @@ if __name__ == '__main__':
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
+                          'osvm_param_range': np.logspace(-4, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
