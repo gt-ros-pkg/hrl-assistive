@@ -29,7 +29,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'update_list': ['osvm', 'progress_state'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
-                          'progress_state_param_range':np.linspace(-1, -13., nPoints), \
+                          'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
@@ -38,7 +38,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
+                          'osvm_param_range': np.logspace(-3., 0.5, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:
