@@ -678,7 +678,7 @@ if __name__ == '__main__':
                               'w_negative': np.logspace(-2, 0.5, 5) }                
         elif opt.method == 'osvm':
             parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
-                          'osvm_nu': np.logspace(-4,0,10),
+                          'osvm_nu': np.logspace(-6,-1,10),
                           }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
