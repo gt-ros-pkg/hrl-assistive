@@ -558,19 +558,24 @@ class anomaly_detector:
 
         ## HMM
         ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
-        X, Y = getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
+        X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org, c=1.0, add_delta_logp=self.add_logp_d)
         print "Features: ", np.shape(X), np.shape(Y)
 
         ## Remove unseparable region and scaling it
-        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
-            X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+        X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+        if 'svm' in self.classifier_method:
             self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+        elif 'sgd' in self.classifier_method:
+            self.X_scaled = self.scaler.transform(X_train_org)
         else:
-            self.X_scaled = np.vstack([ self.X_scaled, X ])
+            print "Not available method"
+            sys.exit()
 
         # Run SGD? or SVM?
-        if self.classifier_method.find('svm'):
+        if self.classifier_method.find('svm') >= 0:
             self.classifier.fit(self.X_scaled, self.Y_test_org)
+        elif self.classifier_method.find('svm') >= 0:
+            self.classifier.partial_fit(self.X_scaled, self.Y_test_org, classes=[-1,1])            
         else:
             print "Not available update method"
             
