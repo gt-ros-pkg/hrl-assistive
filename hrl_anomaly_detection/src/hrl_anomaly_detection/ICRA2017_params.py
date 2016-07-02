@@ -10,7 +10,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 1.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 1.0,
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 4.59,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
@@ -45,7 +46,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 3.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 3.0,\
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
@@ -68,7 +70,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist' ]
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0,\
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
@@ -126,7 +129,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111,\
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 4.455, 'cost': 2.25,\
                           'hmmosvm_nu': 0.000316,\
@@ -167,7 +171,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555,\
+                          'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 12.5,\
@@ -194,7 +199,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         ## handFeatures = ['unimodal_ftForce', \
         ##                 'crossmodal_landmarkEEDist']
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444}
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444,\
+                          'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': False, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
                           'hmmosvm_nu': 0.0001,\

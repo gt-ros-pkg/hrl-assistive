@@ -51,12 +51,15 @@ from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
 
+#
+from matplotlib import pyplot as plt
+
 
 QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
-                 param_dict, hmm_renew=False):
+                 param_dict, hmm_renew=False, viz=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
@@ -81,12 +84,21 @@ class anomaly_detector:
         self.ml = None
         self.classifier = None
 
+
         # Comms
         self.lock = threading.Lock()        
 
         self.initParams()
         self.initComms()
         self.initDetector(hmm_renew=hmm_renew)
+
+        self.viz = viz
+        if viz:
+            print "Visualization enabled!!!"
+            self.figure_flag = False
+            ## import hrl_lib.circular_buffer as cb
+            ## self.feature_buf = cb.CircularBuffer(100, (self.nEmissionDim,))
+        
         self.reset()
         print "=========================================================="
         print "Initialization completed!! : ", self.task_name
@@ -125,7 +137,7 @@ class anomaly_detector:
             self.nState = self.param_dict['HMM']['nState']
             self.cov    = self.param_dict['HMM']['cov']
             self.scale  = self.param_dict['HMM']['scale']
-            self.add_logp_d = self.param_dict['HMM'].get('add_logp_d', False)
+            self.add_logp_d = self.param_dict['HMM'].get('add_logp_d', True)
 
             self.SVM_dict        = self.param_dict['SVM']
 
@@ -318,7 +330,7 @@ class anomaly_detector:
         self.classifier.set_params(**self.SVM_dict)
         self.classifier.set_params( class_weight=self.init_w_positive )        # for svm , sgd
         self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org, parallel=False)
-        print "Finished to train SVM"
+        print "Finished to train "+self.classifier_method
 
         self.pubSensitivity()        
         return
@@ -647,12 +659,17 @@ class anomaly_detector:
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
         rate = rospy.Rate(5) # 25Hz, nominally.
         while not rospy.is_shutdown():
+
+            if len(self.dataList) >0 and self.viz:
+                self.visualization()
             
             if self.enable_detector is False: 
                 self.dataList = []
                 self.last_l_logp = None
                 self.last_l_post = None
-                continue            
+                self.figure_flag = False
+                continue
+            
             if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx: continue
 
             #-----------------------------------------------------------------------
@@ -714,6 +731,25 @@ class anomaly_detector:
 
             rate.sleep()
 
+    def visualization(self):
+        if self.figure_flag is False:
+            fig = plt.figure()
+            for i in xrange(self.nEmissionDim):
+                self.ax = fig.add_subplot(100*self.nEmissionDim+10+i+1)
+            plt.ion()
+            plt.show()
+            self.figure_flag = True
+
+        del self.ax.collections[:]
+        for i in xrange(self.nEmissionDim):
+            self.ax = plt.subplot(self.nEmissionDim,1,i+1)
+            self.ax.plot(self.dataList[i][0])            
+            ## ax.set_xlim([0.3, 1.4])
+            self.ax.set_ylim([-1.0, 2.0])
+        plt.draw()
+        
+        
+
 if __name__ == '__main__':
 
     import optparse
@@ -727,6 +763,8 @@ if __name__ == '__main__':
 
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
+    p.add_option('--viz', action='store_true', dest='bViz',
+                 default=False, help='Visualize data.')
     
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
@@ -784,7 +822,7 @@ if __name__ == '__main__':
                                                                     rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
-                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0}
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1
@@ -796,13 +834,13 @@ if __name__ == '__main__':
                                                                     rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
-                                 'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
+                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0}
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
-                          param_dict, hmm_renew=opt.bHMMRenew)
+                          param_dict, hmm_renew=opt.bHMMRenew, viz=opt.bViz)
     ad.run()
 
