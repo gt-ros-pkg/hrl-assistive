@@ -662,13 +662,13 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_LSLS_cost': 10.0,\
                           'hmmsvm_LSLS_gamma': 0.01, \
                           'hmmsvm_LSLS_w_negative': 1.5,\
-                          'bpsvm_cost': 5.0,\
-                          'bpsvm_gamma': 0.5075, \
-                          'bpsvm_w_negative': 0.2                                                        
+                          'bpsvm_cost': 15.25,\
+                          'bpsvm_gamma': 1.0, \
+                          'bpsvm_w_negative': 1.2589
                           }
                           
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'osvm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'bpsvm' ],\
-                          'update_list': [ 'bpsvm', 'osvm' ],\
+                          'update_list': [ 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
