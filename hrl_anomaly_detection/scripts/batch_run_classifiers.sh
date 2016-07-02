@@ -5,19 +5,30 @@
 
 #SAVE_PATH=N1=/home/$USER/hrl_file_server/dpark_data/
 
-#if [ "$1" -eq "renew" ] ; then
-    
+#if [ "$1" -eq "renew" ] ; then    
 #fi
+
+if [ $# -lt 2 ]; then
+    HMM_RENEW=0
+elif [ "$2" = "hmm_renew" ]; then
+    HMM_RENEW=1
+else
+    HMM_RENEW=0
+fi
+echo "HMM renew is " $HMM_RENEW
+#exit 2
 
 for ((I=2;I<=5;I++)); do
     echo ${I}
     if [ $I -eq 5 ]; then 
-        if ["$1" -eq "scooping"] || ["$1" -eq "feeding"]; then
+        if ["$1" = "scooping"] || ["$1" = "feeding"]; then
             return
         fi 
     fi
 
-    python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --ea --hr --np;
+    if [ $HMM_RENEW -eq 1 ]; then
+        python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --ea --hr --np;
+    fi
 
     if [ $I -eq 2 ]; then
         METHOD=('svm' 'hmmosvm');

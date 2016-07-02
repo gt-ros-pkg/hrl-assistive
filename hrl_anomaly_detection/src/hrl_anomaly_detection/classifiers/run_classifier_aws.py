@@ -575,6 +575,11 @@ if __name__ == '__main__':
                               'cost': np.linspace(1.0,5.0,5),\
                               'gamma': np.logspace(-2, 0.4, 5), \
                               'w_negative': np.linspace(1.0,5.0,5) }
+            elif opt.dim == 2:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(4.0,9.0,5),\
+                              'gamma': [0.01, 0.1, 0.5, 1.0, 2.0], \
+                              'w_negative': np.linspace(0.1,2.0,5) }
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(1.0,10.0,5),\
@@ -608,9 +613,9 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'bpsvm_cost': np.linspace(5,15.0,5),\
-                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
-                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
+                          'bpsvm_cost': np.linspace(7,18.0,5),\
+                          'bpsvm_gamma': np.linspace(1.0,4.0,5), \
+                          'bpsvm_w_negative': np.logspace(-1.5,0.1,5),
                           'pca_gamma': [1.0]                          
                           }
             
@@ -790,8 +795,12 @@ if __name__ == '__main__':
                 disp_score(results, method, nPoints)
 
             ut.save_pickle(results, result_pkl)
+            if opt.bSave:
+                savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
+                disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)            
         else:
             results = ut.load_pickle(result_pkl)
+            disp_score(results, method, nPoints)
 
     else:
 
@@ -841,11 +850,6 @@ if __name__ == '__main__':
         print "Finished"
 
     # 000000000000000000000000000000000000000000000000000000000000000000
-    if opt.bSave:
-        savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
-        disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)
-    else:
-        disp_score(results, method, nPoints)
 
     ## if opt.bSave:
     ##     method  = parameters['method'][0]
