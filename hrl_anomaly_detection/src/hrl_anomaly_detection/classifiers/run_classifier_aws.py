@@ -795,8 +795,12 @@ if __name__ == '__main__':
                 disp_score(results, method, nPoints)
 
             ut.save_pickle(results, result_pkl)
+            if opt.bSave:
+                savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
+                disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)            
         else:
             results = ut.load_pickle(result_pkl)
+            disp_score(results, method, nPoints)
 
     else:
 
@@ -846,11 +850,6 @@ if __name__ == '__main__':
         print "Finished"
 
     # 000000000000000000000000000000000000000000000000000000000000000000
-    if opt.bSave:
-        savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
-        disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)
-    else:
-        disp_score(results, method, nPoints)
 
     ## if opt.bSave:
     ##     method  = parameters['method'][0]
