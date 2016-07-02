@@ -41,6 +41,7 @@ import hrl_lib.util as ut
 
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm
+from hrl_anomaly_detection.hmm import learning_util as hmm_util
 from sklearn import preprocessing
 
 # Classifier
@@ -59,7 +60,7 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
-                 param_dict, hmm_renew=False, viz=False):
+                 param_dict, hmm_renew=False, viz=False, auto_update=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names     = subject_names
@@ -71,6 +72,7 @@ class anomaly_detector:
         self.cur_task        = None
         self.soundHandle     = SoundClient()
         self.dataList        = []
+        self.auto_update     = auto_update
 
         # Params
         self.param_dict = param_dict        
@@ -175,7 +177,7 @@ class anomaly_detector:
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
-        ## rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
+        rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
@@ -188,6 +190,8 @@ class anomaly_detector:
         
         train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
         startIdx  = 4
+        self.used_file_list = util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+
         
         if os.path.isfile(train_pkl) and hmm_renew is False:
             d = ut.load_pickle(train_pkl)
@@ -202,8 +206,9 @@ class anomaly_detector:
             X_train_org   = d['X_train_org'] 
             Y_train_org   = d['Y_train_org']
             idx_train_org = d['idx_train_org']
-            nLength      = d['nLength']
+            nLength      = d['nLength']            
             self.handFeatureParams = d['param_dict']
+            self.normalTrainData   = d.get('normalTrainData', None)
 
         else:
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
@@ -310,6 +315,7 @@ class anomaly_detector:
             d['idx_train_org'] = idx_train_org
             d['nLength']       = nLength = len(normalTrainData[0][0])
             d['param_dict']    = self.handFeatureParams
+            d['normalTrainData'] = self.normalTrainData = normalTrainData
             ut.save_pickle(d, train_pkl)
 
         # data preparation
@@ -405,22 +411,28 @@ class anomaly_detector:
         if self.enable_detector is False: return
         
         self.lock.acquire()
-        newData = self.extractHandFeature()
+        newData = np.array(self.extractHandFeature()) * self.scale #array
 
         # get offset
         if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
             self.offsetData = np.zeros(np.shape(newData))            
         elif len(self.dataList[0][0]) == self.startOffsetSize:
-            self.offsetData = np.mean(self.dataList, axis=2)/self.scale
-        newData -= self.offsetData
+            refData = np.reshape( np.mean(self.normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
+                                  (self.nEmissionDim,1,1) ) # 4,1,1
+            curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
+            self.offsetData = refData - curData
+                                  
+            for i in xrange(self.nEmissionDim):
+                self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
+        newData += self.offsetData
         
         if len(self.dataList) == 0:
-            self.dataList = (np.array(newData)*self.scale).tolist()
+            self.dataList = np.array(newData).tolist()
         else:                
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
             # dim x sample x length
             for i in xrange(self.nEmissionDim):
-                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]*self.scale]
+                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]]
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
                        
         self.lock.release()
@@ -470,9 +482,57 @@ class anomaly_detector:
         self.pubSensitivity()
 
         
-    ## def userfbCallback(self, msg):
-    ##     self.user_feedback = msg.data
+    def userfbCallback(self, msg):
+        user_feedback = msg.data
 
+        print "Logger feedback received"
+        if (user_feedback == "SUCCESS" or user_feedback == "FAIL") and self.auto_update:
+            # check unused data
+            fileList = util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+            unused_fileList = [filename for filename in fileList if filename not in self.used_file_list]
+
+            Y_test_org = []
+
+            # check if both success and failure data exists
+            s_flag = 0
+            f_flag = 0
+            for f in unused_fileList:
+                if f.find("success")>=0:
+                    s_flag = 1
+                    Y_test_org.append(-1)
+                elif f.find("failure")>=0:
+                    f_flag = 1
+                    Y_test_org.append(1)
+            if s_flag*f_flag == 0: return
+            
+            trainData, _ = dm.getDataList(unused_fileList, self.rf_center, self.local_range,\
+                                          self.handFeatureParams,\
+                                          downSampleSize = self.downSampleSize, \
+                                          cut_data       = self.cut_data,\
+                                          handFeatures   = self.handFeatures)
+
+            # update
+            ## HMM
+            ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
+            X, Y = getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
+            print "Features: ", np.shape(X), np.shape(Y)
+
+            ## Remove unseparable region and scaling it
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+                self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+            else:
+                self.X_scaled = np.vstack([ self.X_scaled, X ])
+
+            # Run SGD? or SVM?
+            if self.classifier_method.find('svm'):
+                self.classifier.fit(self.X_scaled, self.Y_test_org)
+            else:
+                print "Not available update method"
+            
+            
+
+            
 
     def updateCallback(self, msg):
         fileNames = msg.data
@@ -665,8 +725,8 @@ class anomaly_detector:
             
             if self.enable_detector is False: 
                 self.dataList = []
-                self.last_l_logp = None
-                self.last_l_post = None
+                self.last_logp = None
+                self.last_post = None
                 self.figure_flag = False
                 continue
             
@@ -675,12 +735,12 @@ class anomaly_detector:
             #-----------------------------------------------------------------------
             self.lock.acquire()
             cur_length     = len(self.dataList[0][0])
-            l_logp, l_post = self.ml.loglikelihood(self.dataList, bPosterior=True)
+            logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
             self.lock.release()
 
-            print np.shape(self.dataList), l_logp
+            print np.shape(self.dataList), logp, np.shape(post)
 
-            if l_logp is None: 
+            if logp is None: 
                 print "logp is None => anomaly"
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
@@ -689,22 +749,23 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-            print "logp: ", l_logp, "  state: ", np.argmax(l_post[cur_length-1]), \
+            post = post[cur_length-1]
+            print "logp: ", logp, "  state: ", np.argmax(post), \
               " cutoff: ", self.param_dict['HMM']['nState']*0.85
-            if np.argmax(l_post[cur_length-1])==0 and l_logp < 0.0: continue
-            if np.argmax(l_post[cur_length-1])>self.param_dict['HMM']['nState']*0.85: continue
+            if np.argmax(post)==0 and logp < 0.0: continue
+            if np.argmax(post)>self.param_dict['HMM']['nState']*0.85: continue
 
-            if self.last_l_logp is None or self.last_l_post is None:
-                self.last_l_logp = l_logp
-                self.last_l_post = l_post
+            if self.last_logp is None or self.last_post is None:
+                self.last_logp = logp
+                self.last_post = post
                 continue
             else:                
-                ## ll_classifier_test_X = [l_logp] + l_post[cur_length-1].tolist()
-                d_logp = l_logp - self.last_l_logp
-                d_post = util.symmetric_entropy(self.last_l_post, l_post[cur_length-1])
-                ll_classifier_test_X = [l_logp] + [d_logp/(d_post+1.0)] + l_post[cur_length-1].tolist()
-                self.last_l_logp = l_logp
-                self.last_l_post = l_post
+                d_logp = logp - self.last_logp
+                print np.shape(self.last_post), np.shape(post)
+                d_post = hmm_util.symmetric_entropy(self.last_post, post)
+                ll_classifier_test_X = [logp] + [d_logp/(d_post+1.0)] + post.tolist()
+                self.last_logp = logp
+                self.last_post = post
                 
 
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
@@ -743,7 +804,12 @@ class anomaly_detector:
         del self.ax.collections[:]
         for i in xrange(self.nEmissionDim):
             self.ax = plt.subplot(self.nEmissionDim,1,i+1)
-            self.ax.plot(self.dataList[i][0])            
+            self.ax.plot(self.dataList[i][0], '-r')
+
+            # training data
+            for j in xrange(len(self.normalTrainData[i])):
+                self.ax.plot(self.normalTrainData[i][j],'-b')
+            
             ## ax.set_xlim([0.3, 1.4])
             self.ax.set_ylim([-1.0, 2.0])
         plt.draw()
@@ -760,6 +826,9 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=4,
                  help='type the desired dimension')
+    p.add_option('--auto_update', '--au', action='store_true', dest='bAutoUpdate',
+                 default=False, help='Enable auto update.')
+    
 
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
@@ -841,6 +910,6 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
-                          param_dict, hmm_renew=opt.bHMMRenew, viz=opt.bViz)
+                          param_dict, hmm_renew=opt.bHMMRenew, viz=opt.bViz, auto_update=opt.bAutoUpdate)
     ad.run()
 

@@ -278,6 +278,9 @@ class logger:
         ret = self.ad_srv(enableFlag)
 
     def updateDetector(self):
+        '''
+        It is called by arm_reacher_logging...
+        '''
 
         fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
         unused_fileList = [filename for filename in fileList if filename.find('used')<0]
