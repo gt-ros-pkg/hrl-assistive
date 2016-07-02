@@ -16,7 +16,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
-                          'osvm_nu': 0.000215, 'raw_window_size': 5,\
+                          'osvm_nu': 0.0003, 'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,
                           'hmmsvm_LSLS_cost': 15.0,\
@@ -26,7 +26,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 
         ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'progress_state'],\
-                          'update_list': ['svm', 'progress_state'],\
+                          'update_list': ['osvm', 'svm', 'progress_state'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
                           'progress_state_param_range':np.linspace(-1, -13., nPoints), \
@@ -673,7 +673,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ 'progress_state' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -11., nPoints), \
-                          'progress_state_param_range':np.linspace(-1, -13., nPoints), \
+                          'progress_state_param_range':np.linspace(0, -16., nPoints), \
                           'svm_param_range': np.logspace(-2.5, 0.8, nPoints),\
                           'fixed_param_range': np.linspace(-1.0, 0.8, nPoints),\
                           'change_param_range': np.logspace(-0.2, 1.5, nPoints)*-1.0,\
