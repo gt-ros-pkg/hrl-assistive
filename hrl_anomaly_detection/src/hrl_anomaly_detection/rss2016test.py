@@ -809,7 +809,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     if 'osvm' in method_list:
         ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'])
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False)
     if 'bpsvm' in method_list:
 
         # get ll_cut_idx only for pos data
@@ -828,7 +829,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                     
         bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
-                                   pos_dict=pos_dict)
+                                   pos_dict=pos_dict, use_test=True, use_pca=False)
         
     
     # parallelization
