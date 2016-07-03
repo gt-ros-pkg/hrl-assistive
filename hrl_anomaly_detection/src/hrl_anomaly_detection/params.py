@@ -28,8 +28,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           }
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 
-        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'progress_state', 'bpsvm'],\
-                          'update_list': ['bpsvm'],\
+        ROC_param_dict = {'methods': [ 'change', 'fixed', 'progress_time_cluster', 'svm', 'progress_state', 'bpsvm', 'osvm'],\
+                          'update_list': ['osvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
