@@ -998,7 +998,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
     for idx in xrange(len(kFold_list)):
         modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
-        if os.path.isfile(modeling_noise_pkl): continue
+        ## if os.path.isfile(modeling_noise_pkl): continue
         
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
@@ -1054,7 +1054,10 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         new_test_X = l_normal_test_X + l_abnormal_test_X    
         new_test_Y = l_normal_test_Y + l_abnormal_test_Y
         new_test_idx = l_normal_test_idx + l_abnormal_test_idx
-            
+
+        print np.shape(new_test_X), np.shape(new_test_Y)
+        sys.exit()
+        
         d['ll_classifier_test_X']  = new_test_X
         d['ll_classifier_test_Y']  = new_test_Y
         d['ll_classifier_test_idx']= new_test_idx        
