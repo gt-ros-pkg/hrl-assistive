@@ -2244,6 +2244,6 @@ if __name__ == '__main__':
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
     elif opt.bEvaluationWithNoise:
-
+        param_dict['ROC']['methods'] = ['svm']
         evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
