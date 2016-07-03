@@ -1010,6 +1010,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
 
+        print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_Y)
+
+
         # exclude only normal data
         l_normal_test_X = []
         l_normal_test_Y = []
