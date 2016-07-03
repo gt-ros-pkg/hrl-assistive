@@ -1010,9 +1010,6 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
 
-        print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_Y)
-
-
         # exclude only normal data
         l_normal_test_X = []
         l_normal_test_Y = []
@@ -1023,8 +1020,6 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             l_normal_test_X.append( ll_classifier_test_X[i] )
             l_normal_test_Y.append( ll_classifier_test_Y[i] )
             l_normal_test_idx.append( ll_classifier_test_idx[i] )
-
-        print np.shape(l_normal_test_X), np.shape(l_normal_test_Y)
 
         # get abnormal minimum likelihood
         logp_min = np.amin(np.array(ll_classifier_test_X)[:,:,0])
@@ -1060,9 +1055,6 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         new_test_Y = l_normal_test_Y + l_abnormal_test_Y
         new_test_idx = l_normal_test_idx + l_abnormal_test_idx
 
-        print np.shape(new_test_X), np.shape(new_test_Y)
-        sys.exit()
-        
         d['ll_classifier_test_X']  = new_test_X
         d['ll_classifier_test_Y']  = new_test_Y
         d['ll_classifier_test_idx']= new_test_idx        
