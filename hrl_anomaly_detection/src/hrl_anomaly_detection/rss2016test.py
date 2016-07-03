@@ -997,6 +997,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     # add noise
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
     for idx in xrange(len(kFold_list)):
+        modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
+        if os.path.isfile(modeling_noise_pkl): continue
+        
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
         d = ut.load_pickle(modeling_pkl)
@@ -1007,18 +1010,56 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
 
+        # exclude only normal data
+        l_normal_test_X = []
+        l_normal_test_Y = []
+        l_normal_test_idx = []
+        for i in xrange(len(ll_classifier_test_Y)):
+            if ll_classifier_test_Y[i][0] > 0.0:
+                continue
+            l_normal_test_X.append( ll_classifier_test_X[i] )
+            l_normal_test_Y.append([[-1]*len(ll_classifier_test_Y[i])])
+            l_normal_test_idx.append( ll_classifier_test_idx[i] )
+
+        # get abnormal minimum likelihood
+        logp_min = np.amin(np.array(ll_classifier_test_X)[:,:,0])
+        if logp_min > 0:
+            print "min loglikelihood is positive!!!!!!!!!!!!!!!!!!!!"
+            sys.exit()
+        
+        # add random extreme noise
         # maybe sample x length x features
-        for i in xrange(len(ll_classifier_test_X)):
-            length = len(ll_classifier_test_X[i])
-            rnd_idx = random.randint(0,length-1)
+        offset = 10
+        l_abnormal_test_X = []
+        l_abnormal_test_Y = (np.array(l_normal_test_Y)*-1.0).tolist()
+        l_abnormal_test_idx = copy.deepcopy(l_normal_test_idx)
+        for i in xrange(len(l_normal_test_X)):
+            length = len(l_normal_test_X[i])
+            rnd_idx = random.randint(0+offset,length-1-offset)
 
+            l_x = copy.deepcopy(l_normal_test_X[i])
+            l_x[rnd_idx][0] += random.uniform(logp_min, 10.0*logp_min)
             
-            
-        
-        
-        
-    
+            if add_logp_d:
+                pre_logpd = l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
+                l_x[rnd_idx][1] /= pre_logpd
+                l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
+                pre_logpd = l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
+                l_x[rnd_idx+1][1] /= pre_logpd
+                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0] 
+
+            l_abnormal_test_X.append(l_x)
+            
+        new_test_X = l_normal_test_X + l_abnormal_test_X    
+        new_test_Y = l_normal_test_Y + l_abnormal_test_Y
+        new_test_idx = l_normal_test_idx + l_abnormal_test_idx
+            
+        d['ll_classifier_test_X']  = new_test_X
+        d['ll_classifier_test_Y']  = new_test_Y
+        d['ll_classifier_test_idx']= new_test_idx        
+        ut.save_pickle(d, modeling_noise_pkl)
+                 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_noise_'+task_name+'.pkl')
         

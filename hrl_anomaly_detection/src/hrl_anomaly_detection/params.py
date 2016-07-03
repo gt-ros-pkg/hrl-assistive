@@ -677,16 +677,16 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
 
         # 'bpsvm', 'osvm', 
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state' ],\
-                          'update_list': ['fixed', 'progress_time_cluster', 'change', 'svm', 'hmmsvm_dL', 'hmmsvm_diag', 'hmmsvm_LSLS'],\
+                          'update_list': ['progress_time_cluster', 'change', 'svm', 'hmmsvm_dL', 'hmmsvm_diag', 'hmmsvm_LSLS' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(-0.1, 1.1, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
-                          'svm_param_range': np.linspace(0.005, 7.0, nPoints),\
+                          'svm_param_range': np.linspace(0.001, 3.0, nPoints),\
                           'fixed_param_range': np.linspace(-3.0, -0.3, nPoints),\
-                          'change_param_range': np.logspace(0.1, 1.5, nPoints)*-1.0,\
-                          'hmmsvm_diag_param_range': np.logspace(-3, 0.8, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-3, 0.8, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-3, 0.8, nPoints),\
+                          'change_param_range': np.logspace(0.4, 1.3, nPoints)*-1.0,\
+                          'hmmsvm_diag_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-2.7, 0.5, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-4.0, 0.7, nPoints),\
