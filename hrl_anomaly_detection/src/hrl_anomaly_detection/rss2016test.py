@@ -954,9 +954,138 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         plt.show()
                    
 
+def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                     data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
+                     no_plot=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+    
+    #------------------------------------------
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')    
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        sys.exit()
+        
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    #-----------------------------------------------------------------------------------------
+    # add noise
+    modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
+    
+
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_noise_'+task_name+'.pkl')
+        
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
+        ROC_data = {}
+    else:
+        ROC_data = ut.load_pickle(roc_pkl)
+        
+    for i, method in enumerate(method_list):
+        if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+                                                                      method, ROC_data, \
+                                                                      ROC_dict, AE_dict, \
+                                                                      SVM_dict,\
+                                                                      startIdx=startIdx, nState=nState) \
+                                                                      for idx in xrange(len(kFold_list)) \
+                                                                      for method in method_list )
+    l_data = r
+    print "finished to run run_classifiers"
+
+    for i in xrange(len(l_data)):
+        for j in xrange(nPoints):
+            try:
+                method = l_data[i].keys()[0]
+            except:
+                print l_data[i]
+                sys.exit()
+            if ROC_data[method]['complete'] == True: continue
+            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+
+    for i, method in enumerate(method_list):
+        ROC_data[method]['complete'] = True
+
+    ut.save_pickle(ROC_data, roc_pkl)
+        
+    #-----------------------------------------------------------------------------------------
+    # ---------------- ROC Result ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    for method in method_list:
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            delay_mean_l.append( np.mean(delay_ll[i]) )
+            delay_std_l.append( np.std(delay_ll[i]) )
+
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+
+
+
 def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     ROC_dict, AE_dict, SVM_dict,\
-                    raw_data=None, startIdx=4, nState=25):
+                    raw_data=None, startIdx=4, nState=25, modeling_pkl_prefix=None):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -976,14 +1105,19 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
 
         nLength = 200
     else:
-        if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            tag = ''
-            for ft in AE_dict['add_option']: tag += ft[:2]
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
-        elif AE_dict['switch'] and AE_dict['add_option'] is None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
-        else:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        if modeling_pkl_prefix is not None:
+            modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
+        else:        
+            if AE_dict['switch'] and AE_dict['add_option'] is not None:
+                tag = ''
+                for ft in AE_dict['add_option']: tag += ft[:2]
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+\
+                                            str(idx)+'.pkl')
+            elif AE_dict['switch'] and AE_dict['add_option'] is None:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
+            else:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
         print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
@@ -1882,6 +2016,8 @@ if __name__ == '__main__':
 
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
+                 default=False, help='Evaluate a classifier with cross-validation plus noise.')
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -2044,4 +2180,7 @@ if __name__ == '__main__':
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
+    elif opt.bEvaluationWithNoise:
 
+        evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
