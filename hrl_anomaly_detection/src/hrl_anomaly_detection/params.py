@@ -211,9 +211,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'update_list': ['fixed', 'hmmosvm', 'svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.3,\
-                          'svm_param_range': np.logspace(-1.3, 0.7, nPoints),\
+                          'svm_param_range': np.linspace(0.1, 7.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.3, -0.0, nPoints),\
+                          'fixed_param_range': np.linspace(0.25, 0.05, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
