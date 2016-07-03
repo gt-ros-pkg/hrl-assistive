@@ -680,11 +680,11 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
 
         # 'bpsvm', 'osvm', 
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state' ],\
-                          'update_list': ['change', 'svm'  ],\
+                          'update_list': [ 'svm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
-                          'svm_param_range': np.linspace(0.001, 2.6, nPoints),\
+                          'svm_param_range': np.linspace(0.02, 2.3, nPoints),\
                           'fixed_param_range': np.linspace(-3.0, -0.3, nPoints),\
                           'change_param_range': np.logspace(0.4, 1.7, nPoints)*-1.0,\
                           'hmmsvm_diag_param_range': np.logspace(-3, 0.5, nPoints),\
