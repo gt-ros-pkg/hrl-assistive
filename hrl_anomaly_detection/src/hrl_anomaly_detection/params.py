@@ -152,12 +152,12 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           }
                           
 
-        nPoints        = 20 #, 'osvm' 'bpsvm', 'progress_state' 'progress_time_cluster', 'svm','fixed', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS'
-        ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'hmmosvm', 'svm', 'osvm', 'progress_state'],\
-                          'update_list': ['progress_state'],\
+        nPoints        = 20 #, 'osvm' 'bpsvm', 'progress_state' 'progress_time_cluster', 'svm','fixed', 
+        ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_LSLS'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
-                          'progress_state_param_range':np.linspace(-1, -35., nPoints), \
+                          'progress_state_param_range':np.linspace(-1, -40., nPoints), \
                           'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
