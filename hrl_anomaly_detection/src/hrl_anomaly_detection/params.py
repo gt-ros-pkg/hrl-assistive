@@ -516,19 +516,19 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' ,  'osvm', 'hmmsvm_dL', , 'bpsvm' 'progress_state'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS' ],\
-                          'update_list': [ ],\
+                          'update_list': [ 'hmmsvm_LSLS', 'hmmsvm_diag', 'hmmsvm_dL', 'fixed' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
-                          'svm_param_range': np.logspace(-3.2, 1.0, nPoints),\
+                          'svm_param_range': np.logspace(-2.7, 0.5, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
-                          'fixed_param_range': (-np.logspace(0.0, 1.,nPoints)**2)/10.0+1.0,\
+                          'fixed_param_range': (-np.logspace(0.2, 0.8,nPoints)**2)/10.0+1.0,\
                           'change_param_range': np.logspace(0.0, 1.0, nPoints)*-1.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-3, 0.5, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-3, 0.5, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-2, 0.0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-2, 0.5, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-3, 0.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-2, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-4., 0.0, nPoints)}        
         
     elif dim == 3:
