@@ -159,8 +159,17 @@ class ArmReacherClient:
 
         t = time.time()
 
+        # Define an ellipsoid with dimensional lengths a, b, c, and verify if points are within the ellipsoid when (x/a)^2 + (y/b)^2 + (z/c)^2 < 1
+        # https://www.wikiwand.com/en/Ellipsoid
+        a = 0.045 # width
+        b = 0.03 # depth
+        c = 0.04 # height
+        # Subtract bowl center location since ellipsoid in not at the origin.
+        cx, cy, cz = self.bowlCenter
+        points3D = np.array([(x, y, z) for (x, y, z) in points3D if ((x - cx)/a)**2 + ((y - cy)/b)**2 + ((z - cz)/c)**2 < 1])
+
         # X, Y Positions must be within a radius of 5 cm from the bowl center, and Z positions must be within 4 cm of center
-        points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
+        # points3D = np.array([point for point in points3D if np.linalg.norm(self.bowlCenter[:2] - np.array(point[:2])) < 0.045 and abs(self.bowlCenter[2] - point[2]) < 0.03])
 
         print 'Time to determine points near bowl center:', time.time() - t
 
@@ -190,11 +199,40 @@ class ArmReacherClient:
 
         print 'Transform time:', time.time() - t
 
-        # Z axis for torso_lift_link frame is towards the sky, thus find max Z value for highest point
-        maxIndex = points3D[:, 2].argmax()
-        highestBowlPoint = np.array(points3D[maxIndex]) #+ np.array([0, 0.25, 0])
+        # Use five multivariate (trivariate) Gaussian distributions in the bowl to determine the best scooping location (https://www.wikiwand.com/en/Multivariate_normal_distribution)
+        # Shift bowl center location down to bottom of bowl
+        bowlBottom = self.bowlRawPos + np.array([0, 0, 0.05])
+        # mu (center) locations for Gaussian distributions are as follows: center, left, right, forwards, backwards)
+        muLocations = [bowlBottom, bowlBottom + np.array([0.03, 0, 0]), bowlBottom + np.array([-0.03, 0, 0]), bowlBottom + np.array([0, 0.02, 0]), bowlBottom + np.array([0, -0.02, 0])]
+        if self.verbose: self.publishPoints('muLocations', muLocations, size=0.004, r=1.0, g=1.0, frame='torso_lift_link')
+        n, m = np.shape(points3D)
+        highestBowlPoint = None
+        highestPdfValue = 0
+        for mu in muLocations:
+            sigma = np.zeros((m, m))
+            # Compute sample covariance matrix (https://en.wikipedia.org/wiki/Sample_mean_and_covariance)
+            for j in xrange(m):
+                for k in xrange(m):
+                    sigma[j, k] = 1.0 / (n-1) * np.dot((points3D[:, j] - mu[j]).T, points3D[:, k] - mu[k])
+            # Compute constant portion of distribution
+            constant = 1.0 / np.sqrt((2*np.pi)**m * np.linalg.det(sigma))
+            sigmaInv = np.linalg.inv(sigma)
+            # Evaluate the Probability Density Function for each point and determine a cumulative pdf value
+            pdfValue = 0
+            for point in newPoints:
+                pointMu = point - mu
+                pdfValue += constant * np.exp(-1.0/2.0 * np.dot(np.dot(pointMu.T, sigmaInv), pointMu))
+            # Check if this is the largest pdf value thus far
+            if pdfValue > highestPdfValue:
+                highestBowlPoint = mu
+                highestPdfValue = pdfValue
 
-        if self.verbose: print 'Highest bowl point:', highestBowlPoint
+        if self.verbose: print 'Highest bowl point:', highestBowlPoint, '| Highest pdf value:', highestPdfValue
+
+        # A crude solution is to merely use the tallest point within the bowl as the 
+        # Z axis for torso_lift_link frame is towards the sky, thus find max Z value for highest point
+        # maxIndex = points3D[:, 2].argmax()
+        # highestBowlPoint = np.array(points3D[maxIndex]) #+ np.array([0, 0.25, 0])
 
 	self.publishHighestBowlPoint(highestBowlPoint)
 	# We only want to publish the highest point once.
