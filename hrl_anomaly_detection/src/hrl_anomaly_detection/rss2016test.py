@@ -1085,7 +1085,8 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
                                                                       method, ROC_data, \
                                                                       ROC_dict, AE_dict, \
                                                                       SVM_dict,\
-                                                                      startIdx=startIdx, nState=nState) \
+                                                                      startIdx=startIdx, nState=nState,\
+                                                                      modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                       for idx in xrange(len(kFold_list)) \
                                                                       for method in method_list )
     l_data = r
