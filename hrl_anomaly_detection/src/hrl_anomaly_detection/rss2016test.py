@@ -996,6 +996,27 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     #-----------------------------------------------------------------------------------------
     # add noise
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
+    for idx in xrange(len(kFold_list)):
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        d = ut.load_pickle(modeling_pkl)
+        ll_classifier_train_X   = d['ll_classifier_train_X']
+        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+        ll_classifier_train_idx = d['ll_classifier_train_idx']
+        ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ll_classifier_test_idx  = d['ll_classifier_test_idx']
+
+        # maybe sample x length x features
+        for i in xrange(len(ll_classifier_test_X)):
+            length = len(ll_classifier_test_X[i])
+            rnd_idx = random.randint(0,length-1)
+
+            
+            
+        
+        
+        
     
 
     #-----------------------------------------------------------------------------------------
