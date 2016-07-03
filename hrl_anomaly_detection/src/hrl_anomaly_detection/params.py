@@ -12,16 +12,16 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.33, 'scale': 6.0,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 4.75, 'gamma': 5.01, 'cost': 3.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.01, 'cost': 3.79,\
                           'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
-                          'hmmsvm_diag_gamma': 0.01,\
+                          'hmmsvm_diag_w_negative': 0.525, 'hmmsvm_diag_cost': 12.5, \
+                          'hmmsvm_diag_gamma': 0.507,\
                           'osvm_nu': 0.0003, 'raw_window_size': 5,\
-                          'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
-                          'hmmsvm_dL_gamma': 0.50749,
-                          'hmmsvm_LSLS_cost': 15.0,\
+                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 15.0, \
+                          'hmmsvm_dL_gamma': 2.0,
+                          'hmmsvm_LSLS_cost': 12.5,\
                           'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 0.2,\
+                          'hmmsvm_LSLS_w_negative': 1.5,\
                           'bpsvm_cost': 5.0,\
                           'bpsvm_gamma': 0.507, \
                           'bpsvm_w_negative': 0.2                          
@@ -51,7 +51,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 3.0, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.047, 'cost': 3.799,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
@@ -74,7 +74,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist' ]
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.4, 'scale': 3.0,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.01, 'cost': 6.2,\
                           'hmmosvm_nu': 0.00316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
