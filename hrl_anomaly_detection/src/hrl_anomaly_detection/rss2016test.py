@@ -1021,8 +1021,10 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             if ll_classifier_test_Y[i][0] > 0.0:
                 continue
             l_normal_test_X.append( ll_classifier_test_X[i] )
-            l_normal_test_Y.append([[-1]*len(ll_classifier_test_Y[i])])
+            l_normal_test_Y.append( ll_classifier_test_Y[i] )
             l_normal_test_idx.append( ll_classifier_test_idx[i] )
+
+        print np.shape(l_normal_test_X), np.shape(l_normal_test_Y)
 
         # get abnormal minimum likelihood
         logp_min = np.amin(np.array(ll_classifier_test_X)[:,:,0])
