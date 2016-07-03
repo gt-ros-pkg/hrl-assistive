@@ -58,7 +58,7 @@ from hrl_anomaly_detection.params import *
 ## from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 from mvpa2.datasets.base import Dataset
-from sklearn import svm
+## from sklearn import svm
 from joblib import Parallel, delayed
 from sklearn import metrics
 
