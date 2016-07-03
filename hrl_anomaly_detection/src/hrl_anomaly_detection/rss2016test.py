@@ -1038,15 +1038,13 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             rnd_idx = random.randint(0+offset,length-1-offset)
 
             l_x = copy.deepcopy(l_normal_test_X[i])
-            l_x[rnd_idx][0] += random.uniform(logp_min, 10.0*logp_min)
+            l_x[rnd_idx][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
             
             if add_logp_d:
-                pre_logpd = l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
-                l_x[rnd_idx][1] /= pre_logpd
+                l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
                 l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
-                pre_logpd = l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
-                l_x[rnd_idx+1][1] /= pre_logpd
+                l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
                 l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0] 
 
             l_abnormal_test_X.append(l_x)
@@ -1054,6 +1052,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         new_test_X = l_normal_test_X + l_abnormal_test_X    
         new_test_Y = l_normal_test_Y + l_abnormal_test_Y
         new_test_idx = l_normal_test_idx + l_abnormal_test_idx
+
+        print np.unique(l_normal_test_idx), np.unique(l_abnormal_test_idx)
+        sys.exit()
 
         d['ll_classifier_test_X']  = new_test_X
         d['ll_classifier_test_Y']  = new_test_Y
