@@ -8,13 +8,14 @@
     <group ns="scooping" >
       <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/>
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
-            type="anomaly_detector.py" args="--task scooping --dim 4 --viz" output="screen" />
+            type="anomaly_detector.py" args="--task scooping --dim 4
+                                             --au --viz" output="screen" />
     </group>
 
     <group ns="feeding" >
       <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/>
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
-            type="anomaly_detector.py" args="--task feeding --dim 2 " output="screen" />
+            type="anomaly_detector.py" args="--task feeding --dim 2 " />
     </group>
 
 

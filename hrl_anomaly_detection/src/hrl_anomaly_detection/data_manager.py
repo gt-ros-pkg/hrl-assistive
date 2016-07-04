@@ -128,7 +128,7 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
     The feature is scaled by the param dict.
     '''
     
-    for fileName in fileName:
+    for fileName in fileNames:
         if os.path.isfile(fileName) is False:
             print "Error>> there is no recorded file: ", fileName
             sys.exit()

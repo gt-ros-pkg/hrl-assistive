@@ -73,7 +73,8 @@ class anomaly_detector:
         self.soundHandle     = SoundClient()
         self.dataList        = []
         self.auto_update     = auto_update
-
+        self.used_file_list  = []
+        
         # Params
         self.param_dict = param_dict        
         self.classifier_method = check_method
@@ -182,7 +183,7 @@ class anomaly_detector:
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
-        self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
+        ## self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
         # NOTE: when and how update?
 
     def initDetector(self, hmm_renew=False):
@@ -190,7 +191,9 @@ class anomaly_detector:
         
         train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
         startIdx  = 4
-        self.used_file_list = util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+        (success_list, failure_list) = \
+          util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+        self.used_file_list = success_list+failure_list
 
         
         if os.path.isfile(train_pkl) and hmm_renew is False:
@@ -338,6 +341,8 @@ class anomaly_detector:
         self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org, parallel=False)
         print "Finished to train "+self.classifier_method
 
+        ## print np.shape(self.X_scaled), np.shape(self.Y_train_org)
+
         self.pubSensitivity()        
         return
 
@@ -484,12 +489,30 @@ class anomaly_detector:
         
     def userfbCallback(self, msg):
         user_feedback = msg.data
+        print user_feedback
 
         print "Logger feedback received"
         if (user_feedback == "SUCCESS" or user_feedback == "FAIL") and self.auto_update:
+            if self.used_file_list == []: return
+
+            rospy.sleep(2.0)
+            
             # check unused data
-            fileList = util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
-            unused_fileList = [filename for filename in fileList if filename not in self.used_file_list]
+            (success_list, failure_list) = \
+              util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+            unused_fileList = [filename for filename in success_list if filename not in self.used_file_list]
+            unused_fileList += [filename for filename in failure_list if filename not in self.used_file_list]
+
+            ## print "Used file list ------------------------"
+            ## for f in self.used_file_list:
+            ##     print f
+            
+            print "Unused file list ------------------------"
+            for f in unused_fileList:
+                print os.path.split(f)[1]
+            print "-----------------------------------------"
+            
+            if len(unused_fileList) == 0: return
 
             Y_test_org = []
 
@@ -504,33 +527,38 @@ class anomaly_detector:
                     f_flag = 1
                     Y_test_org.append(1)
             if s_flag*f_flag == 0: return
-            
-            trainData, _ = dm.getDataList(unused_fileList, self.rf_center, self.local_range,\
-                                          self.handFeatureParams,\
-                                          downSampleSize = self.downSampleSize, \
-                                          cut_data       = self.cut_data,\
-                                          handFeatures   = self.handFeatures)
+
+            print "Start to collect #success=",s_flag, " #failure=", f_flag
+            trainData = dm.getDataList(unused_fileList, self.rf_center, self.rf_radius,\
+                                       self.handFeatureParams,\
+                                       downSampleSize = self.downSampleSize, \
+                                       cut_data       = self.cut_data,\
+                                       handFeatures   = self.handFeatures)
 
             # update
             ## HMM
             ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
-            X, Y = getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
+            X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
             print "Features: ", np.shape(X), np.shape(Y)
-
+            print "cur method", self.classifier_method
+            
             ## Remove unseparable region and scaling it
-            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            if self.classifier_method.find('svm')>=0:
                 X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
-                self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+                print np.shape(self.X_scaled), np.shape(self.Y_train_org)                
+                self.X_scaled    = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+                self.Y_train_org = np.hstack([ self.Y_train_org, Y_train_org])
+                print np.shape(self.X_scaled), np.shape(self.Y_train_org)                
+                self.classifier.fit(self.X_scaled, self.Y_train_org)
+            elif self.classifier_method.find('sgd')>=0:
+                X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+                self.classifier.fit(X_train_org, Y_train_org)                
             else:
-                self.X_scaled = np.vstack([ self.X_scaled, X ])
-
-            # Run SGD? or SVM?
-            if self.classifier_method.find('svm'):
-                self.classifier.fit(self.X_scaled, self.Y_test_org)
-            else:
+                ## self.X_scaled = np.vstack([ self.X_scaled, X ])
+                ## self.classifier.fit(self.X_scaled, self.Y_test_org)
                 print "Not available update method"
-            
-            
+                            
+            print "Update completed!!!"
 
             
 
@@ -809,7 +837,8 @@ class anomaly_detector:
         del self.ax.collections[:]
         for i in xrange(self.nEmissionDim):
             self.ax = plt.subplot(self.nEmissionDim,1,i+1)
-            self.ax.plot(self.dataList[i][0], '-r')
+            if len(self.dataList) > 0:
+                self.ax.plot(self.dataList[i][0], '-r')
 
             # training data
             for j in xrange(len(self.normalTrainData[i])):
