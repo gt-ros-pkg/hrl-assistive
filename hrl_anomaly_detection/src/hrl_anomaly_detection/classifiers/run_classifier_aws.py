@@ -325,7 +325,7 @@ if __name__ == '__main__':
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
+                          'svm_param_range': np.logspace(-2.5, 0.6, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
@@ -336,12 +336,18 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
-            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(3.0, 7.0, 6),\
-                          'gamma': np.logspace(-2, 0.7, 5), \
-                          'w_negative': np.linspace(1.0, 6.0,5) }
+            if opt.dim == 4:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(3.0, 6.0, 5),\
+                              'gamma': np.logspace(-1, 0.7, 5), \
+                              'w_negative': np.linspace(0.1, 2.5,5) }
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(3.0, 7.0, 6),\
+                              'gamma': np.logspace(-2, 0.7, 5), \
+                              'w_negative': np.linspace(1.0, 6.0,5) }
         elif opt.method == 'hmmosvm':
             parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
                           'hmmosvm_nu': np.logspace(-5,0.,5)
