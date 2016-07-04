@@ -2091,6 +2091,8 @@ if __name__ == '__main__':
                  default=False, help='Save pdf files.')    
     p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
                  default=False, help='No Plot.')    
+    p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
+                 default=False, help='No update.')    
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out.')
 
@@ -2240,6 +2242,7 @@ if __name__ == '__main__':
                               
     elif opt.bEvaluationAll:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
