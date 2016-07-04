@@ -29,18 +29,18 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state' ],\
-                          'update_list': [ 'hmmsvm_LSLS', 'change', 'fixed', 'svm' ],\
+                          'update_list': [ 'progress_time_cluster', 'fixed', 'hmmsvm_dL', 'hmmsvm_diag', 'hmmsvm_LSLS' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(0.0, -7., nPoints), \
+                          'progress_param_range':np.logspace(-1, 0.9., nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
                           'svm_param_range': np.logspace(-2.5, 0.6, nPoints),\
-                          'change_param_range': np.logspace(-0.3, 1.4, nPoints)*-1.0,\
-                          'fixed_param_range': np.logspace(0.0, 0.1, nPoints)*-1.0+1.3,\
+                          'change_param_range': np.logspace(-0.1, 1.4, nPoints)*-1.0,\
+                          'fixed_param_range': np.logspace(0.0, 0.1, nPoints)*-1.0+1.33,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-3, 1.2, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-3.7, 1.0, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-3.7, 1.0, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-2, 0.5, nPoints),\
                           'osvm_param_range': np.logspace(-4., 0.1, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
