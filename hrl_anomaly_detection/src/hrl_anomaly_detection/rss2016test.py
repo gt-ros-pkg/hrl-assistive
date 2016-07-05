@@ -2081,6 +2081,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation.')
     p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
                  default=False, help='Evaluate a classifier with cross-validation plus noise.')
+    p.add_option('--plot_progress_hmmosvm', '--pph', action='store_true', dest='bPlotProgressVSHMMOSVM',
+                 default=False, help='plot.')
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -2250,3 +2252,12 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['svm']
         evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+
+    elif opt.bPlotProgressVSHMMOSVM:
+        param_dict['ROC']['methods'] = ['hmmosvm', 'progress_time_cluster'] #, 'change']
+        param_dict['ROC']['update_list'] = []
+        param_dict['HMM']['renew'] = False
+        param_dict['SVM']['renew'] = False
+        
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
