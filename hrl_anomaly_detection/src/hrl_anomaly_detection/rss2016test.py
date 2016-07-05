@@ -998,7 +998,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
     for idx in xrange(len(kFold_list)):
         modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
-        ## if os.path.isfile(modeling_noise_pkl): continue
+        if os.path.isfile(modeling_noise_pkl): continue
         
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
