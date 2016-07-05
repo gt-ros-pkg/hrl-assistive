@@ -56,7 +56,7 @@ except:
     import point_cloud2 as pc2
 
 class ArmReacherClient:
-    def __init__(self, verbose=True:
+    def __init__(self, verbose=True):
         rospy.init_node('visual_scooping')
         self.tf = tf.TransformListener()
 
@@ -103,7 +103,7 @@ class ArmReacherClient:
     def bowlCallback(self, data):
         bowlPosePos = data.pose.position
         # Account for the fact  that the bowl center position is not directly in the center
-        self.bowlRawPos = [bowlPosePos.x + 0.015, bowlPosePos.y + 0.01, bowlPosePos.z]
+        self.bowlRawPos = [bowlPosePos.x + 0.015, bowlPosePos.y + 0.02, bowlPosePos.z]
         if self.verbose: print 'Bowl position:', self.bowlRawPos
 
     def cameraRGBInfoCallback(self, data):
@@ -162,7 +162,7 @@ class ArmReacherClient:
         # Define an ellipsoid with dimensional lengths a, b, c, and verify if points are within the ellipsoid when (x/a)^2 + (y/b)^2 + (z/c)^2 < 1
         # https://www.wikiwand.com/en/Ellipsoid
         a = 0.065 # width
-        b = 0.05 # depth
+        b = 0.04 # depth
         c = 0.05 # height
         # Subtract bowl center location since ellipsoid in not at the origin.
         cx, cy, cz = self.bowlCenter
@@ -202,9 +202,9 @@ class ArmReacherClient:
         # Use five multivariate (trivariate) Gaussian distributions in the bowl to determine the best scooping location (https://www.wikiwand.com/en/Multivariate_normal_distribution)
         # Shift bowl center location down to bottom of bowl
 	# Note: This is using torso_lift_link frame
-        bowlBottom = self.bowlRawPos + np.array([0, 0, -0.03])
+        bowlBottom = self.bowlRawPos + np.array([0, 0, 0.0])
         # mu (center) locations for Gaussian distributions are as follows: center, left, right, forwards, backwards)
-        muLocations = [bowlBottom, bowlBottom + np.array([0, 0.05, 0]), bowlBottom + np.array([0, -0.05, 0]), bowlBottom + np.array([0.03, 0, 0]), bowlBottom + np.array([-0.03, 0, 0])]
+        muLocations = [bowlBottom, bowlBottom + np.array([0, 0.03, 0]), bowlBottom + np.array([0, -0.03, 0]), bowlBottom + np.array([0.025, 0, 0]), bowlBottom + np.array([-0.025, 0, 0])]
         if self.verbose: self.publishPoints('muLocations', muLocations, size=0.004, r=1.0, g=1.0, frame='torso_lift_link')
         n, m = np.shape(points3D)
         highestBowlPoint = None
