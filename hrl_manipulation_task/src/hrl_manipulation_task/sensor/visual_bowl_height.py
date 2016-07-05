@@ -56,7 +56,7 @@ except:
     import point_cloud2 as pc2
 
 class ArmReacherClient:
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=True:
         rospy.init_node('visual_scooping')
         self.tf = tf.TransformListener()
 
@@ -147,7 +147,7 @@ class ArmReacherClient:
         # Project bowl position to 2D pixel location to narrow search for bowl points (use point projected to kinect frame)
         bowlProjX, bowlProjY = [int(x) for x in self.pinholeCamera.project3dToPixel(self.bowlCenter)]
         # print '3D bowl point:', self.bowlCenter, 'Projected X, Y:', bowlProjX, bowlProjY, 'Camera width, height:', self.cameraWidth, self.cameraHeight
-        points2D = [[x, y] for y in xrange(bowlProjY-50, bowlProjY+50) for x in xrange(bowlProjX-50, bowlProjX+50)]
+        points2D = [[x, y] for y in xrange(bowlProjY-75, bowlProjY+75) for x in xrange(bowlProjX-75, bowlProjX+75)]
         try:
             points3D = pc2.read_points(pointCloud, field_names=('x', 'y', 'z'), skip_nans=True, uvs=points2D)
         except:
@@ -161,9 +161,9 @@ class ArmReacherClient:
 
         # Define an ellipsoid with dimensional lengths a, b, c, and verify if points are within the ellipsoid when (x/a)^2 + (y/b)^2 + (z/c)^2 < 1
         # https://www.wikiwand.com/en/Ellipsoid
-        a = 0.045 # width
-        b = 0.03 # depth
-        c = 0.04 # height
+        a = 0.065 # width
+        b = 0.05 # depth
+        c = 0.05 # height
         # Subtract bowl center location since ellipsoid in not at the origin.
         cx, cy, cz = self.bowlCenter
         points3D = np.array([(x, y, z) for (x, y, z) in points3D if ((x - cx)/a)**2 + ((y - cy)/b)**2 + ((z - cz)/c)**2 < 1])
@@ -201,9 +201,10 @@ class ArmReacherClient:
 
         # Use five multivariate (trivariate) Gaussian distributions in the bowl to determine the best scooping location (https://www.wikiwand.com/en/Multivariate_normal_distribution)
         # Shift bowl center location down to bottom of bowl
-        bowlBottom = self.bowlRawPos + np.array([0, 0, 0.05])
+	# Note: This is using torso_lift_link frame
+        bowlBottom = self.bowlRawPos + np.array([0, 0, -0.03])
         # mu (center) locations for Gaussian distributions are as follows: center, left, right, forwards, backwards)
-        muLocations = [bowlBottom, bowlBottom + np.array([0.03, 0, 0]), bowlBottom + np.array([-0.03, 0, 0]), bowlBottom + np.array([0, 0.02, 0]), bowlBottom + np.array([0, -0.02, 0])]
+        muLocations = [bowlBottom, bowlBottom + np.array([0, 0.05, 0]), bowlBottom + np.array([0, -0.05, 0]), bowlBottom + np.array([0.03, 0, 0]), bowlBottom + np.array([-0.03, 0, 0])]
         if self.verbose: self.publishPoints('muLocations', muLocations, size=0.004, r=1.0, g=1.0, frame='torso_lift_link')
         n, m = np.shape(points3D)
         highestBowlPoint = None
