@@ -72,12 +72,23 @@ if __name__ == '__main__':
     print np.shape(X), np.shape(y)
 
     # train
-    for gamma in [0.1, 0.5, 1.0]:
-        for w_pos in np.linspace(0.1, 2.0, 4):
-            commands = '-q -s 0 -t 2 -w-1 0.5 -w1 '+str(w_pos)+' -g '+str(gamma)+' -c 10.0'
-            print commands
-            ml = svm.svm_train(y, X.tolist(), commands )            
-            decision_boudnary(y, X, ml)
+    for gamma in [0.2, 0.25,  0.3]:
+        for w_pos in [0.5]:
+            for w_neg in [4.0]:
+                for cost in [1.0]:
+                    for coef in [0]:
+
+                        if True:                
+                            commands = '-q -s 2 -t 2 -w-1 '+str(w_neg)+' -w1 '+str(w_pos)+\
+                              ' -g '+str(gamma)+' -c '+str(cost)+' -r '+str(coef)
+                            ml = svm.svm_train(s_y, s_x.tolist(), commands )
+                        else:
+                            commands = '-q -s 2 -t 2 -w-1 '+str(w_neg)+' -w1 '+str(w_pos)+\
+                              ' -g '+str(gamma)+' -c '+str(cost)+' -r '+str(coef)
+                            ml = svm.svm_train(y, X.tolist(), commands )
+
+                        print commands
+                        decision_boudnary(y, X, ml)
 
 
     # viz
