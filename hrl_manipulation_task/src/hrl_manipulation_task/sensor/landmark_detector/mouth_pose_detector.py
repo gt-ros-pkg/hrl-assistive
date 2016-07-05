@@ -12,6 +12,7 @@ import numpy as np
 import math
 import random
 import hrl_lib.util as ut
+import hrl_lib.quaternion as qt
 from sensor_msgs.msg import CameraInfo, Image, PointCloud2
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose, Point32, PolygonStamped, Vector3
 import matplotlib.pyplot as plt
@@ -21,6 +22,19 @@ from cv_bridge import CvBridge, CvBridgeError
 class MouthPoseDetector:
     def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info, depth_scale, offset,
                  display_2d=True, display_3d=True, flipped=False, rgb_mode="bgr8", save_loc=None, load_loc=None):
+        #display registration
+        self.display_2d = display_2d
+        self.display_3d = display_3d
+        if display_2d:
+            self.win = dlib.image_window()
+
+        #for image processings
+        self.bridge = CvBridge()
+        self.previous_face = []
+        self.detector = dlib.get_frontal_face_detector()
+        self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/Desktop/shape_predictor_68_face_landmarks.dat')
+        self.wrong_coor = (-100, -100, -100)
+
         #for tf processing
         if display_3d:
             self.br = tf.TransformBroadcaster()      
@@ -69,11 +83,6 @@ class MouthPoseDetector:
         self.ts             = message_filters.ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.gripper_sub], 10, 100)
         self.ts.registerCallback(self.callback)
         
-        #for image processings
-        self.bridge = CvBridge()
-        self.previous_face = []
-        self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/Desktop/shape_predictor_68_face_landmarks.dat')
         
         #publishers
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
@@ -81,10 +90,6 @@ class MouthPoseDetector:
 
 
         #displays
-        self.display_2d = display_2d
-        self.display_3d = display_3d
-        if display_2d:
-            self.win = dlib.image_window()
         if display_3d:
             self.poly_pub = []
             for i in xrange(200):
@@ -106,6 +111,7 @@ class MouthPoseDetector:
         self.sizes             = d['sizes']
         self.lm_coor           = d['lm_coor']
         self.gripper_to_sensor = d['gripper_to_sensor']
+        self.wrong_coor        = d['wrong_coor']
         self.previous_position = (0.0, 0.0, 0.0)
         self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
         
@@ -124,6 +130,7 @@ class MouthPoseDetector:
         d['sizes']             = self.sizes
         d['lm_coor']           = self.lm_coor
         d['gripper_to_sensor'] = self.gripper_to_sensor
+        d['wrong_coor']        = self.wrong_coor
         d['previous_position'] = self.previous_position
         d['previous_orientation'] = self.previous_orientation
         ut.save_pickle(d, save_loc)
@@ -133,11 +140,13 @@ class MouthPoseDetector:
         time1= time.time()
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
+
         #gripper_pose = PoseStamped()
         position, orientation = self.pose_to_tuple(gripper_pose)
         base_to_gripper = tft.quaternion_matrix(orientation)
         for i in xrange(3):
             base_to_gripper[i][3] = position[i]
+
         #get rgb and depth image
         img = self.bridge.imgmsg_to_cv2(data, self.rgb_mode)
         if self.flipped:
@@ -154,6 +163,7 @@ class MouthPoseDetector:
                     best_pose_points.append(Point(position))
             else:
                 best_pose_points = self.current_positions
+
         #detect face in 2d, if not found assume face is in previous location
         faces = self.detector(img)
         if len(faces) < 1:
@@ -197,154 +207,160 @@ class MouthPoseDetector:
                 if self.display_2d:
                     self.win.add_overlay(faces)
                     self.win.add_overlay(shape)
-                try:
-                    if self.first:
-                        self.point_set_index=self.find_best_set(landmarks, depth)
-                    point_set, points_ordered = self.retrieve_points(landmarks, depth)
-                    #print points_ordered
+                if self.first:
+                    self.point_set_index=self.find_best_set(landmarks, depth)
+                point_set, points_ordered = self.retrieve_points(landmarks, depth)
+                #print points_ordered
 
-                    #register values for PnPRansac for comparison
-                    if self.first:
-                        temp_mouth = points_ordered[62]
-                        for object_point in points_ordered[17:]:
-                            if not np.allclose(object_point, (0.0, 0.0, 0.0)):
-                                self.object_points.append([(object_point[1]-temp_mouth[1])*-1.0, (object_point[2]-temp_mouth[2]), (object_point[0]-temp_mouth[0]) * -1.0])
-                            else:
-                                self.object_points.append([0.0, 0.0, 0.0])
-                        self.object_points = np.asarray(self.object_points)
-                        self.object_points = self.object_points.astype('float32')
-                    #pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
-                    if self.first:
-                        self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
-                        self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
-                        print self.gripper_to_sensor
-                        matrix_form = tft.quaternion_matrix(self.gripper_to_sensor[1])
-                        for i in xrange(3):
-                            matrix_form[i][3] = self.gripper_to_sensor[0][i]
-                        self.gripper_to_sensor = matrix_form #
-                        #register values for frontal face
-                        #find special points in 3D
-                        mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
-                        if not self.flipped:
-                            second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
-                            third_point  = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
+                #register values for PnPRansac for comparison
+                """
+                if self.first:
+                    temp_mouth = points_ordered[62]
+                    for object_point in points_ordered[17:]:
+                        if not np.allclose(object_point, (0.0, 0.0, 0.0)):
+                            self.object_points.append([(object_point[1]-temp_mouth[1])*-1.0, (object_point[2]-temp_mouth[2]), (object_point[0]-temp_mouth[0]) * -1.0])
                         else:
-                            second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
-                            third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
-                        fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
-                        fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
-                        special_points = [mouth, second_point, third_point]
-
-                        #initialize variables to hold informations
-                        for i in xrange(len(special_points)):
-                            self.dist.append([])
-                            self.half_dist.append([])
-
-                        #find relation to retrieve special points from 3 point sets, and their expected size (of 3d triangle)
-                        for points in point_set:
-                            for i in xrange(len(special_points)):
-                                points_and_point = points + [Point(special_points[i])]
-                                self.dist[i].append(self.find_dist(points_and_point))
-                                self.half_dist[i].append(self.find_half_dist(points_and_point, depth))
-
-                        #retrieve points for checking
-                        for i in xrange(len(special_points)):
-                            self.current_positions.append((0.0, 0.0, 0.0))
-                        pose, pose_points = self.retrieve_special_pose(point_set, depth)
-
-                        #find inverse relation to landmark points in case 2d landmark failure
-                        for i in xrange(len(landmarks)):
-                            reverse_point_set = pose_points + [Point(points_ordered[i])]
-                            self.reverse_dist.append([self.find_dist(reverse_point_set), self.find_half_dist(reverse_point_set, depth)])
-                        retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
-                        for i in xrange(len(landmarks)):
-                            prev_point = points_ordered[i]
-                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-
-                        orientation = self.pose_to_tuple(pose)[1]
-                        self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, tuple(tft.quaternion_from_euler(0, 0, np.math.pi/2))]))
-                        orientation = tft.quaternion_multiply(orientation, self.relation)
-                        orientation = tft.unit_vector(orientation)
-                        transform_matrix = tft.quaternion_matrix(orientation)
-                        for i, offset in enumerate(self.pose_to_tuple(pose)[0]):
-                            transform_matrix[i][3] = offset
-                        transform_matrix = tft.inverse_matrix(transform_matrix)
-                        print transform_matrix
-                        for point in points_ordered:
-                            lm_point = tft.translation_matrix(point)
-                            lm_point = np.array(np.matrix(transform_matrix)*np.matrix(lm_point))
-                            lm_point = tft.translation_from_matrix(lm_point)
-                            self.lm_coor.append(lm_point)
-                            if np.allclose(point, (0.0, 0.0, 0.0)):
-                                print lm_point
-                                self.wrong_coor = lm_point
-                        self.first = False 
-                        if self.save_loc is not None:
-                            self.save(self.save_loc)
+                            self.object_points.append([0.0, 0.0, 0.0])
+                    self.object_points = np.asarray(self.object_points)
+                    self.object_points = self.object_points.astype('float32')
+                pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
+                """
+                if self.first:
+                    mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
+                    if not self.flipped:
+                        second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
+                        third_point  = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
                     else:
-                        #retrieve points and make pose
-                        pose, pose_points = self.retrieve_special_pose(point_set, depth)
-                        time2 = time.time()
-                        retrieved_points = self.retrieve_points_from_orientation(pose)
-                        retrieved_points_tuple = []
-                        for ret_point in retrieved_points:
-                            retrieved_points_tuple.append(self.pose_to_tuple(ret_point)[0])
-                        #print retrieved_points_tuple
-                        #print points_ordered
-                        retrieved_landmarks = dlib.dlib.points()
-                        for i in xrange(len(landmarks)):
-                            prev_point = points_ordered[i]
-                            curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
-                            curr_point_2d = self.get_2d_pixel(curr_point)
-                            retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
-                        new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)#point_set, points_ordered#
-                        transformation_matrix = tft.quaternion_matrix(self.pose_to_tuple(pose)[1])
-                        for i in xrange(3):
-                            transformation_matrix[i][3] = self.pose_to_tuple(pose)[0][i]
-                        transformation_matrix = tft.inverse_matrix(transformation_matrix)
-                        current_lm = []
-                        for coor in new_points_ordered:
-                            lm_point = tft.translation_matrix(coor)
-                            lm_point = np.array(np.matrix(transformation_matrix)*np.matrix(lm_point))
-                            lm_point = tft.translation_from_matrix(lm_point)
-                            if not np.allclose(coor, (0.0, 0.0, 0.0)):
-                                current_lm.append(lm_point)
-                            else:
-                                current_lm.append((0.0, 0.0, 0.0))
-                        valid_amount = []
-                        for i in xrange(30,31):
-                            valid_amount.append(0)
-                        get_lm_time = time.time()
-                        for i in xrange(30,31):
-                            if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
-                                #print self.get_dist(current_lm[i], self.lm_coor[i])
-                                if self.get_dist(current_lm[i], self.lm_coor[i]) < 0.05:
-                                    for j in xrange(len(current_lm)):
-                                        if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
-                                            coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
-                                            curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
-                                            dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
-                                            #print dist
-                                            if dist < 0.3:
-                                                valid_amount[0] += 1
-                                                #valid_amount[j] += 1
-                                        else:
-                                            print "lost i: " + str(i)
-                        print valid_amount, time.time()-get_lm_time
-                        count = 0
-                        average = 0
-                        count = valid_amount[0]
-                        if best < count:
-                            best = count
-                            best_pose = pose
-                            best_rect = d
-                            best_pose_points = pose_points
-                except rospy.ServiceException as exc:
-                    print ("serv caused an error " + str(exc))
-        try:
-            temp_pose = self.make_pose(self.previous_position, orientation=self.previous_orientation)
-        except:
-            temp_pose = pose
+                        second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
+                        third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
+                    #fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
+                    #fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
+                    special_points = [mouth, second_point, third_point]
+                    valid_registration = True
+                    for point in special_points:
+                        if np.allclose(point, (0.0, 0.0, 0.0)):
+                            valid_registration = False
+                    if not valid_registration:
+                        continue
+                    self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
+                    self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
+                    print self.gripper_to_sensor
+                    matrix_form = tft.quaternion_matrix(self.gripper_to_sensor[1])
+                    for i in xrange(3):
+                        matrix_form[i][3] = self.gripper_to_sensor[0][i]
+                    self.gripper_to_sensor = matrix_form #
+                    #register values for frontal face
+                    #find special points in 3D
+
+                    #initialize variables to hold informations
+                    for i in xrange(len(special_points)):
+                        self.dist.append([])
+                        self.half_dist.append([])
+
+                    #find relation to retrieve special points from 3 point sets, and their expected size (of 3d triangle)
+                    for points in point_set:
+                        for i in xrange(len(special_points)):
+                            points_and_point = points + [Point(special_points[i])]
+                            self.dist[i].append(self.find_dist(points_and_point))
+                            self.half_dist[i].append(self.find_half_dist(points_and_point, depth))
+
+                    #retrieve points for checking
+                    for i in xrange(len(special_points)):
+                        self.current_positions.append((0.0, 0.0, 0.0))
+                    pose, pose_points = self.retrieve_special_pose(point_set, depth)
+
+                    #find inverse relation to landmark points in case 2d landmark failure
+                    for i in xrange(len(landmarks)):
+                        reverse_point_set = pose_points + [Point(points_ordered[i])]
+                        self.reverse_dist.append([self.find_dist(reverse_point_set), self.find_half_dist(reverse_point_set, depth)])
+                    retrieved_points = self.retrieve_points_from_pose(pose_points, depth) 
+                    for i in xrange(len(landmarks)):
+                        prev_point = points_ordered[i]
+                        curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
+
+                    orientation = self.pose_to_tuple(pose)[1]
+                    self.relation = tft.unit_vector(self.get_quaternion_relation([orientation, tuple(tft.quaternion_from_euler(0, 0, np.math.pi/2))]))
+                    orientation = tft.quaternion_multiply(orientation, self.relation)
+                    orientation = tft.unit_vector(orientation)
+                    transform_matrix = tft.quaternion_matrix(orientation)
+                    for i, offset in enumerate(self.pose_to_tuple(pose)[0]):
+                        transform_matrix[i][3] = offset
+                    transform_matrix = tft.inverse_matrix(transform_matrix)
+                    print transform_matrix
+                    for point in points_ordered:
+                        lm_point = tft.translation_matrix(point)
+                        lm_point = np.array(np.matrix(transform_matrix)*np.matrix(lm_point))
+                        lm_point = tft.translation_from_matrix(lm_point)
+                        self.lm_coor.append(lm_point)
+                        if np.allclose(point, (0.0, 0.0, 0.0)):
+                            print lm_point
+                            self.wrong_coor = lm_point
+                    self.first = False 
+                    if self.save_loc is not None:
+                        self.save(self.save_loc)
+                else:
+                    #retrieve points and make pose
+                    pose, pose_points = self.retrieve_special_pose(point_set, depth)
+                    valid_pose = not np.allclose(self.pose_to_tuple(pose)[0], (0.0, 0.0, 0.0)) and not np.allclose(self.pose_to_tuple(pose)[1], (0.0, 0.0, 0.0, 0.0))
+                    valid_pose = valid_pose and not np.isnan(self.pose_to_tuple(pose)[0][0]) and not np.isnan(self.pose_to_tuple(pose)[1][0])
+                    if not valid_pose:
+                        continue
+                    time2 = time.time()
+                    retrieved_points = self.retrieve_points_from_orientation(pose)
+                    retrieved_points_tuple = []
+                    for ret_point in retrieved_points:
+                        retrieved_points_tuple.append(self.pose_to_tuple(ret_point)[0])
+                    #print retrieved_points_tuple
+                    #print points_ordered
+                    retrieved_landmarks = dlib.dlib.points()
+                    for i in xrange(len(landmarks)):
+                        prev_point = points_ordered[i]
+                        curr_point = (retrieved_points[i].pose.position.x,  retrieved_points[i].pose.position.y,  retrieved_points[i].pose.position.z)
+                        curr_point_2d = self.get_2d_pixel(curr_point)
+                        retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
+                    new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)#point_set, points_ordered#
+                    print self.pose_to_tuple(pose)
+                    transformation_matrix = tft.quaternion_matrix(self.pose_to_tuple(pose)[1])
+                    for i in xrange(3):
+                        transformation_matrix[i][3] = self.pose_to_tuple(pose)[0][i]
+                    transformation_matrix = tft.inverse_matrix(transformation_matrix)
+                    current_lm = []
+                    for coor in new_points_ordered:
+                        lm_point = tft.translation_matrix(coor)
+                        lm_point = np.array(np.matrix(transformation_matrix)*np.matrix(lm_point))
+                        lm_point = tft.translation_from_matrix(lm_point)
+                        if not np.allclose(coor, (0.0, 0.0, 0.0)):
+                            current_lm.append(lm_point)
+                        else:
+                            current_lm.append((0.0, 0.0, 0.0))
+                    valid_amount = []
+                    for i in xrange(30,31):
+                        valid_amount.append(0)
+                    get_lm_time = time.time()
+                    for i in xrange(30,31):
+                        if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
+                            #print self.get_dist(current_lm[i], self.lm_coor[i])
+                            if self.get_dist(current_lm[i], self.lm_coor[i]) < 0.05:
+                                for j in xrange(len(current_lm)):
+                                    if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
+                                        coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
+                                        curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
+                                        dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
+                                        #print dist
+                                        if dist < 0.3:
+                                            valid_amount[0] += 1
+                                            #valid_amount[j] += 1
+                                    else:
+                                        print "lost i: " + str(i)
+                    print valid_amount, time.time()-get_lm_time
+                    count = 0
+                    average = 0
+                    count = valid_amount[0]
+                    if best < count:
+                        best = count
+                        best_pose = pose
+                        best_rect = d
+                        best_pose_points = pose_points
         position, orientation = self.pose_to_tuple(best_pose)
         current_positions = []
         if len(best_pose_points) > 1:
@@ -369,9 +385,10 @@ class MouthPoseDetector:
         #display frame
         if self.display_3d:
             self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
-                        
         #publish
         temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
+        curr_angle = qt.quat_angle(orientation, tft.quaternion_from_euler(0, 0, np.math.pi/2)) / np.math.pi * 180            
+        print curr_angle
         for i in xrange(3):
             temp_pose[i][3] = position[i]
         temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
@@ -382,7 +399,7 @@ class MouthPoseDetector:
         ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
         ## if self.display_3d:
         ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
-        if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x):
+        if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x) and (curr_angle < 45 or curr_angle > 135):
             try:
                 temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
                 #temp_pose.header.frame_id = "torso_lift_link"
