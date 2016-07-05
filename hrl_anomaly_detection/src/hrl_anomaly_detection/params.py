@@ -160,12 +160,13 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-8.0, 1.0, nPoints),\
+                          'hmmosvm_param_range': np.linspace(0,10.0,nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+                          #np.logspace(-8.0, 1.0, nPoints)
     elif dim == 3:
 
         handFeatures = ['unimodal_ftForce', \
