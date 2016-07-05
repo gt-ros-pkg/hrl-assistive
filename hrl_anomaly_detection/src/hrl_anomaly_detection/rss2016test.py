@@ -1049,9 +1049,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
             l_abnormal_test_X.append(l_x)
             
-        new_test_X = l_normal_test_X + l_abnormal_test_X    
-        new_test_Y = l_normal_test_Y + l_abnormal_test_Y
-        new_test_idx = l_normal_test_idx + l_abnormal_test_idx
+        new_test_X = l_abnormal_test_X    #l_normal_test_X + 
+        new_test_Y = l_abnormal_test_Y #l_normal_test_Y + 
+        new_test_idx = l_abnormal_test_idx # l_normal_test_idx +
 
         print np.unique(l_normal_test_idx), np.unique(l_abnormal_test_idx)
         sys.exit()
