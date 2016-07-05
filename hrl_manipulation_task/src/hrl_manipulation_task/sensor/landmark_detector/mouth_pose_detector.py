@@ -148,10 +148,13 @@ class MouthPoseDetector:
             base_to_gripper[i][3] = position[i]
 
         #get rgb and depth image
+        time_to_gray = time.time()
         img = self.bridge.imgmsg_to_cv2(data, self.rgb_mode)
+        print "time to convert ", time.time()-time_to_gray
         if self.flipped:
             img = cv2.flip(img, 1)
             img = cv2.flip(img, 0)
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         if self.display_2d:
             self.win.clear_overlay()
             self.win.set_image(img)
@@ -208,6 +211,22 @@ class MouthPoseDetector:
                     self.win.add_overlay(faces)
                     self.win.add_overlay(shape)
                 if self.first:
+                    mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
+                    if not self.flipped:
+                        second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
+                        third_point  = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
+                    else:
+                        second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
+                        third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
+                    #fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
+                    #fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
+                    special_points = [mouth, second_point, third_point]
+                    valid_registration = True
+                    for point in special_points:
+                        if np.allclose(point, (0.0, 0.0, 0.0)):
+                            valid_registration = False
+                    if not valid_registration:
+                        continue
                     self.point_set_index=self.find_best_set(landmarks, depth)
                 point_set, points_ordered = self.retrieve_points(landmarks, depth)
                 #print points_ordered
@@ -226,22 +245,6 @@ class MouthPoseDetector:
                 pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
                 """
                 if self.first:
-                    mouth = self.get_3d_pixel(landmarks[62].x, landmarks[62].y, depth)
-                    if not self.flipped:
-                        second_point = self.get_3d_pixel(int(x + (3 * w/ 4)), int (y + (4 * h / 9)), depth)
-                        third_point  = self.get_3d_pixel(int(x + (w / 4)), int (y + (4 * h / 9)), depth)
-                    else:
-                        second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
-                        third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
-                    #fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
-                    #fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
-                    special_points = [mouth, second_point, third_point]
-                    valid_registration = True
-                    for point in special_points:
-                        if np.allclose(point, (0.0, 0.0, 0.0)):
-                            valid_registration = False
-                    if not valid_registration:
-                        continue
                     self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
                     self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
                     print self.gripper_to_sensor
@@ -361,6 +364,8 @@ class MouthPoseDetector:
                         best_pose = pose
                         best_rect = d
                         best_pose_points = pose_points
+        if self.first:
+            return
         position, orientation = self.pose_to_tuple(best_pose)
         current_positions = []
         if len(best_pose_points) > 1:
