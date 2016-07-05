@@ -18,7 +18,7 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 sys.path.insert(0, '/usr/lib/pymodules/python2.7')
 import svmutil as svm
 
-def decision_boudnary(y_train, X_train, ml):
+def decision_boudnary(y_train, X_train, ml, scaler):
     h = 0.02
 
     # create a mesh to plot in
@@ -33,10 +33,11 @@ def decision_boudnary(y_train, X_train, ml):
     ax = fig.add_subplot(111)
 
     ## print np.shape(np.c_[xx.ravel(), yy.ravel()]), np.shape([0]*len(xx.ravel()))
+    X = scaler.transform(np.c_[xx.ravel(), yy.ravel()])
 
     # Plot the decision boundary. For that, we will assign a color to each
     # point in the mesh [x_min, m_max]x[y_min, y_max].
-    Z, _, _ = svm.svm_predict([0]*len(xx.ravel()), np.c_[xx.ravel(), yy.ravel()].tolist(), ml)
+    Z, _, _ = svm.svm_predict([0]*len(xx.ravel()), X.tolist(), ml)
     Z = np.array(Z)
 
     # Put the result into a color plot
@@ -61,34 +62,42 @@ if __name__ == '__main__':
                     [4.0, 0.0]])
     s_y = [-1,-1,-1]
 
-    f_x = np.array([[1.0, 0.0],
-                    [3.0, 0.0],
-                    [5.0, 0.0]])
+    f_x = np.array([[1.0, 0.1],
+                    [3.0, -0.1],
+                    [5.0, 0.1]])
     f_y = [1,1,1]
 
-    X   = np.vstack([s_x, f_x])
-    y   = s_y + f_y
+    oc_flag = False
+    if oc_flag:
+        X   = s_x
+        y   = s_y
+    else:
+        X   = np.vstack([s_x, f_x])
+        y   = s_y + f_y
+
+    from sklearn import preprocessing
+    scaler = preprocessing.StandardScaler()
+    X = scaler.fit_transform(X)
 
     print np.shape(X), np.shape(y)
 
     # train
-    for gamma in [0.2, 0.25,  0.3]:
-        for w_pos in [0.5]:
-            for w_neg in [4.0]:
-                for cost in [1.0]:
+    for gamma in [0.3]:
+        for w_pos in [1.0]:
+            for w_neg in [1.0, 0.5, 0.1]:
+                for cost in [100.0, 10.0, 1.0]:
                     for coef in [0]:
 
-                        if True:                
+                        if oc_flag:                
                             commands = '-q -s 2 -t 2 -w-1 '+str(w_neg)+' -w1 '+str(w_pos)+\
                               ' -g '+str(gamma)+' -c '+str(cost)+' -r '+str(coef)
-                            ml = svm.svm_train(s_y, s_x.tolist(), commands )
                         else:
-                            commands = '-q -s 2 -t 2 -w-1 '+str(w_neg)+' -w1 '+str(w_pos)+\
+                            commands = '-q -s 0 -t 1 -w-1 '+str(w_neg)+' -w1 '+str(w_pos)+\
                               ' -g '+str(gamma)+' -c '+str(cost)+' -r '+str(coef)
-                            ml = svm.svm_train(y, X.tolist(), commands )
+                        ml = svm.svm_train(y, X.tolist(), commands )
 
                         print commands
-                        decision_boudnary(y, X, ml)
+                        decision_boudnary(y, X, ml, scaler)
 
 
     # viz

@@ -998,7 +998,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
     for idx in xrange(len(kFold_list)):
         modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
-        if os.path.isfile(modeling_noise_pkl): continue
+        if os.path.isfile(modeling_noise_pkl) and HMM_dict['renew'] is False: continue
         
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
@@ -1026,10 +1026,13 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         if logp_min > 0:
             print "min loglikelihood is positive!!!!!!!!!!!!!!!!!!!!"
             sys.exit()
+
+        #temp
+        logp_min = -10000000000000000
         
         # add random extreme noise
         # maybe sample x length x features
-        offset = 10
+        offset = 50
         l_abnormal_test_X = []
         l_abnormal_test_Y = (np.array(l_normal_test_Y)*-1.0).tolist()
         l_abnormal_test_idx = copy.deepcopy(l_normal_test_idx)
@@ -1045,7 +1048,8 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
                 l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
                 l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
-                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0] 
+                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
+                print "added random noise!!!"
 
             l_abnormal_test_X.append(l_x)
             
@@ -1065,8 +1069,8 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ROC_data = {}
     else:
         ROC_data = ut.load_pickle(roc_pkl)
-        
-    for i, method in enumerate(method_list):
+
+    for ii, method in enumerate(method_list):
         if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
@@ -1076,33 +1080,34 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization
-    if debug: n_jobs=1
-    else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                      method, ROC_data, \
-                                                                      ROC_dict, AE_dict, \
-                                                                      SVM_dict,\
-                                                                      startIdx=startIdx, nState=nState,\
-                                                                      modeling_pkl_prefix=modeling_pkl_prefix) \
-                                                                      for idx in xrange(len(kFold_list)) \
-                                                                      for method in method_list )
-    l_data = r
-    print "finished to run run_classifiers"
+            # parallelization
+            if debug: n_jobs=1
+            else: n_jobs=-1
+            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, \
+                                                                              task_name, \
+                                                                              method, ROC_data, \
+                                                                              ROC_dict, AE_dict, \
+                                                                              SVM_dict,\
+                                                                              startIdx=startIdx, nState=nState,\
+                                                                              modeling_pkl_prefix=modeling_pkl_prefix) \
+                                                                              for idx in xrange(len(kFold_list)) \
+                                                                              for method in method_list )
+            l_data = r
+            print "finished to run run_classifiers"
 
-    for i in xrange(len(l_data)):
-        for j in xrange(nPoints):
-            try:
-                method = l_data[i].keys()[0]
-            except:
-                print l_data[i]
-                sys.exit()
-            if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+            for i in xrange(len(l_data)):
+                for j in xrange(nPoints):
+                    try:
+                        method = l_data[i].keys()[0]
+                    except:
+                        print l_data[i]
+                        sys.exit()
+                    if ROC_data[method]['complete'] == True: continue
+                    ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+                    ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+                    ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+                    ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+                    ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
@@ -1129,16 +1134,14 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            ## fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
-            delay_mean_l.append( np.mean(delay_ll[i]) )
-            delay_std_l.append( np.std(delay_ll[i]) )
 
         print "--------------------------------"
         print method
         print tpr_l
-        print fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        ## print fpr_l
+        ## print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
 
@@ -1251,7 +1254,6 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             ll_classifier_test_X = new_x
             
                           
-
         # flatten the data
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
