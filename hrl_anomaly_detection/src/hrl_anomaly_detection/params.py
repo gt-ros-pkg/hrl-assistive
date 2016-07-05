@@ -35,7 +35,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
                           'svm_param_range': np.logspace(-2.5, 0.2, nPoints),\
                           'change_param_range': np.logspace(0.1, 1.8, nPoints)*-1.0,\
-                          'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+3.0,\
+                          'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+2.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-3.7, 1.0, nPoints),\
