@@ -1054,8 +1054,8 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
             l_abnormal_test_X.append(l_x)
             
-        new_test_X = l_abnormal_test_X + l_normal_test_X 
-        new_test_Y = l_abnormal_test_Y + l_normal_test_Y  
+        new_test_X   = l_abnormal_test_X + l_normal_test_X 
+        new_test_Y   = l_abnormal_test_Y + l_normal_test_Y  
         new_test_idx = l_abnormal_test_idx + l_normal_test_idx 
 
         d['ll_classifier_test_X']  = new_test_X
@@ -1135,14 +1135,16 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            ## fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            if len(np.unique(ll_classifier_test_Y))==2:
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
 
         print "--------------------------------"
         print method
         print tpr_l
-        ## print fpr_l
-        ## print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        if len(np.unique(ll_classifier_test_Y))==2:
+            print fpr_l
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
 
