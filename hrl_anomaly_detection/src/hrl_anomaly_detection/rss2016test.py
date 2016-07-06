@@ -1054,13 +1054,13 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             ## l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
             ## print l_x[rnd_idx][0], np.shape(l_x)
             
-            if add_logp_d:
-                l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
-                l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
+            ## if add_logp_d:
+            ##     l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
+            ##     l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
-                l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
-                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
-                print "added random noise!!!"
+            ##     l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
+            ##     l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
+            ##     print "added random noise!!!"
 
             l_abnormal_test_X.append(l_x)
             
@@ -1131,6 +1131,8 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     d = ut.load_pickle(modeling_noise_pkl)
     ll_classifier_test_Y    = d['ll_classifier_test_Y']
 
+    if no_plot is False:
+        fig = plt.figure()
     
     print "Start to visualize ROC curves!!!"
     for method in method_list:
@@ -1159,6 +1161,18 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         print "fpr: ", fpr_l
         print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
+
+        if method == 'svm': label='HMM-SVM'
+        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMMs with a fixed threshold'
+        elif method == 'change': label='HMMs with change detection'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'bpsvm': label='Biased penalty SVM'
 
         if no_plot is False:
             # visualization
