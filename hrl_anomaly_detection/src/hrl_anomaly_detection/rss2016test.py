@@ -1013,9 +1013,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
 
-        ## ll_classifier_test_X    = ll_classifier_train_X
-        ## ll_classifier_test_Y    = ll_classifier_train_Y
-        ## ll_classifier_test_idx  = ll_classifier_train_idx
+        ll_classifier_test_X    = ll_classifier_train_X
+        ll_classifier_test_Y    = ll_classifier_train_Y
+        ll_classifier_test_idx  = ll_classifier_train_idx
         
         # exclude only normal data
         l_normal_test_X = []
@@ -1035,7 +1035,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             sys.exit()
 
         #temp
-        logp_min = -500
+        logp_min = -1000
         
         # add random extreme noise
         # maybe sample x length x features
@@ -1050,10 +1050,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             rnd_idx = 50 #temp
 
             l_x = copy.deepcopy(l_normal_test_X[i])
-            l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
-            l_x[rnd_idx+1][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
-            l_x[rnd_idx+2][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
-            l_x[rnd_idx+3][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            l_x = np.array(l_x)
+            l_x[:,0] += logp_min
+            ## l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
             ## print l_x[rnd_idx][0], np.shape(l_x)
             
             ## if add_logp_d:
