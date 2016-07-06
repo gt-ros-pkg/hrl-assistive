@@ -2272,7 +2272,7 @@ if __name__ == '__main__':
         param_dict['ROC']['update_list'] = ['progress_time_cluster']
         param_dict['ROC']['methods'] = ['svm']
         param_dict['ROC']['update_list'] = ['svm']
-        param_dict['ROC']['nPoints'] = 5
+        param_dict['ROC']['nPoints'] = 20
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
         param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., 5)
         
