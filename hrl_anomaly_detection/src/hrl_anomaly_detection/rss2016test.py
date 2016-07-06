@@ -993,6 +993,9 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
+    # temp
+    kFold_list = kFold_list[0:1]
+
     #-----------------------------------------------------------------------------------------
     # add noise
     modeling_pkl_prefix = 'hmm_'+task_name+'_noise'
@@ -1010,6 +1013,10 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ll_classifier_test_idx  = d['ll_classifier_test_idx']
 
+        ## ll_classifier_test_X    = ll_classifier_train_X
+        ## ll_classifier_test_Y    = ll_classifier_train_Y
+        ## ll_classifier_test_idx  = ll_classifier_train_idx
+        
         # exclude only normal data
         l_normal_test_X = []
         l_normal_test_Y = []
@@ -1028,7 +1035,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             sys.exit()
 
         #temp
-        logp_min = -1000
+        logp_min = -500
         
         # add random extreme noise
         # maybe sample x length x features
@@ -1039,24 +1046,28 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         for i in xrange(len(l_normal_test_X)):
             length = len(l_normal_test_X[i])
             rnd_idx = random.randint(0+offset,length-1-offset)
-            rnd_idx = 100
+            rnd_idx = 50 #temp
 
             l_x = copy.deepcopy(l_normal_test_X[i])
             l_x[rnd_idx][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            l_x[rnd_idx+1][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            l_x[rnd_idx+2][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            l_x[rnd_idx+3][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            print l_x[rnd_idx][0], np.shape(l_x)
             
-            if add_logp_d:
-                l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
-                l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
+            ## if add_logp_d:
+            ##     l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
+            ##     l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
-                l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
-                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
-                print "added random noise!!!"
+            ##     l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
+            ##     l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
+            ##     print "added random noise!!!"
 
             l_abnormal_test_X.append(l_x)
             
-        new_test_X   = l_abnormal_test_X + l_normal_test_X 
-        new_test_Y   = l_abnormal_test_Y + l_normal_test_Y  
-        new_test_idx = l_abnormal_test_idx + l_normal_test_idx 
+        new_test_X   = l_normal_test_X + l_abnormal_test_X 
+        new_test_Y   = l_normal_test_Y + l_abnormal_test_Y 
+        new_test_idx = l_normal_test_idx + l_abnormal_test_idx 
 
         d['ll_classifier_test_X']  = new_test_X
         d['ll_classifier_test_Y']  = new_test_Y
@@ -1138,16 +1149,18 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         delay_std_l  = []
 
         for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            if len(np.unique(ll_classifier_test_Y))==2:
+            if 1 in np.unique(ll_classifier_test_Y):            
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            if -1 in np.unique(ll_classifier_test_Y):
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-            fnr_l.append( 100.0 - tpr_l[-1] )
 
         print "--------------------------------"
         print method
-        print tpr_l
-        if len(np.unique(ll_classifier_test_Y))==2:
-            print fpr_l
+        if 1 in np.unique(ll_classifier_test_Y):
+            print "tpr: ", tpr_l
+        if -1 in np.unique(ll_classifier_test_Y):
+            print "fpr: ", fpr_l
+        if len(np.shape(np.unique(ll_classifier_test_Y)))==2:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
@@ -1390,6 +1403,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             anomaly = False
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
+                    print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
 
                     if method == 'hmmosvm':
                         window_size = 5 #3
@@ -2256,10 +2270,11 @@ if __name__ == '__main__':
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods'] = ['svm']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['methods'] = ['progress_time_cluster', 'svm']
+        param_dict['ROC']['update_list'] = ['progress_time_cluster', 'svm']
         param_dict['ROC']['nPoints'] = 5
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
+        param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., 5)
         
         evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
