@@ -1161,7 +1161,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             print "tpr: ", tpr_l
         if -1 in ll_classifier_test_Y:
             print "fpr: ", fpr_l
-        if len(np.shape(np.unique(ll_classifier_test_Y)))==2:
+        if frp_l is not [] and tpr_l is not []:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
@@ -1404,7 +1404,7 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             anomaly = False
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
-                    if Y_test[ii][0] >0:
+                    if Y_test[ii][0] <0:
                         print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
 
                     if method == 'hmmosvm':
