@@ -1051,7 +1051,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
             l_x = copy.deepcopy(l_normal_test_X[i])
             l_x = np.array(l_x)
-            l_x[:,0] += logp_min
+            l_x[100:,0] += logp_min
             ## l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
             ## print l_x[rnd_idx][0], np.shape(l_x)
             
