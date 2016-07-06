@@ -1042,6 +1042,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         offset = 50
         l_abnormal_test_X = []
         l_abnormal_test_Y = (np.array(l_normal_test_Y)*-1.0).tolist()
+        
         l_abnormal_test_idx = copy.deepcopy(l_normal_test_idx)
         for i in xrange(len(l_normal_test_X)):
             length  = len(l_normal_test_X[i])
@@ -1049,11 +1050,11 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             rnd_idx = 50 #temp
 
             l_x = copy.deepcopy(l_normal_test_X[i])
-            l_x[rnd_idx][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
+            l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
             l_x[rnd_idx+1][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
             l_x[rnd_idx+2][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
             l_x[rnd_idx+3][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
-            print l_x[rnd_idx][0], np.shape(l_x)
+            ## print l_x[rnd_idx][0], np.shape(l_x)
             
             ## if add_logp_d:
             ##     l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
@@ -1149,16 +1150,16 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         delay_std_l  = []
 
         for i in xrange(nPoints):
-            if 1 in np.unique(ll_classifier_test_Y):            
+            if 1 in np.unique(ll_classifier_test_Y).tolist():            
                 tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            if -1 in np.unique(ll_classifier_test_Y):
+            if -1 in np.unique(ll_classifier_test_Y).tolist():
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
         print "--------------------------------"
         print method
-        if 1 in np.unique(ll_classifier_test_Y):
+        if 1 in np.unique(ll_classifier_test_Y).tolist():
             print "tpr: ", tpr_l
-        if -1 in np.unique(ll_classifier_test_Y):
+        if -1 in np.unique(ll_classifier_test_Y).tolist():
             print "fpr: ", fpr_l
         if len(np.shape(np.unique(ll_classifier_test_Y)))==2:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
@@ -2270,8 +2271,10 @@ if __name__ == '__main__':
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['update_list'] = ['progress_time_cluster']
+        ## param_dict['ROC']['methods'] = ['progress_time_cluster']
+        ## param_dict['ROC']['update_list'] = ['progress_time_cluster']
+        param_dict['ROC']['methods'] = ['svm']
+        param_dict['ROC']['update_list'] = ['svm']
         param_dict['ROC']['nPoints'] = 5
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
         param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., 5)
