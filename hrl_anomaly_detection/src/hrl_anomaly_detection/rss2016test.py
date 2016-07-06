@@ -1039,6 +1039,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         for i in xrange(len(l_normal_test_X)):
             length = len(l_normal_test_X[i])
             rnd_idx = random.randint(0+offset,length-1-offset)
+            rnd_idx = 100
 
             l_x = copy.deepcopy(l_normal_test_X[i])
             l_x[rnd_idx][0] += random.uniform(10.0*logp_min, 20.0*logp_min)
@@ -2250,6 +2251,9 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['svm']
+        param_dict['ROC']['nPoints'] = 5
+        param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
+        
         evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
