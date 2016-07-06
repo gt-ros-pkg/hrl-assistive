@@ -1404,7 +1404,8 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
             anomaly = False
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
-                    print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
+                    if Y_test[ii][0] >0:
+                        print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
 
                     if method == 'hmmosvm':
                         window_size = 5 #3
