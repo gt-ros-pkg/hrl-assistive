@@ -1039,7 +1039,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         
         # add random extreme noise
         # maybe sample x length x features
-        offset = 50
+        offset = 30
         l_abnormal_test_X = []
         l_abnormal_test_Y = (np.array(l_normal_test_Y)*-1.0).tolist()
         
@@ -1054,13 +1054,13 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             ## l_x[rnd_idx][0]   += random.uniform(10.0*logp_min, 20.0*logp_min)
             ## print l_x[rnd_idx][0], np.shape(l_x)
             
-            ## if add_logp_d:
-            ##     l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
-            ##     l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
+            if add_logp_d:
+                l_x[rnd_idx][1] /= l_normal_test_X[i][rnd_idx][0] - l_normal_test_X[i][rnd_idx-1][0]
+                l_x[rnd_idx][1] *= l_x[rnd_idx][0]-l_x[rnd_idx-1][0] 
 
-            ##     l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
-            ##     l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
-            ##     print "added random noise!!!"
+                l_x[rnd_idx+1][1] /= l_normal_test_X[i][rnd_idx+1][0] - l_normal_test_X[i][rnd_idx][0]
+                l_x[rnd_idx+1][1] *= l_x[rnd_idx+1][0]-l_x[rnd_idx][0]
+                print "added random noise!!!"
 
             l_abnormal_test_X.append(l_x)
             
