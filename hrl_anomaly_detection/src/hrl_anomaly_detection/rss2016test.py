@@ -2273,8 +2273,8 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['svm']
         param_dict['ROC']['update_list'] = ['svm']
         param_dict['ROC']['nPoints'] = 20
-        param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
-        param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., 5)
+        param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, param_dict['ROC']['nPoints'])
+        param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., param_dict['ROC']['nPoints'])
         
         evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
