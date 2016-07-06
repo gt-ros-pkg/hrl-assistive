@@ -1160,6 +1160,35 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)            
+            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+            plt.xlim([-1, 101])
+            plt.ylim([-1, 101])
+            plt.ylabel('True positive rate (percentage)', fontsize=22)
+            plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+            ## font = {'family' : 'normal',
+            ##         'weight' : 'bold',
+            ##         'size'   : 22}
+            ## matplotlib.rc('font', **font)
+            ## plt.tick_params(axis='both', which='major', labelsize=12)
+            plt.xticks([0, 50, 100], fontsize=22)
+            plt.yticks([0, 50, 100], fontsize=22)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    if no_plot is False:
+        plt.legend(loc='lower right', prop={'size':20})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
 
 
 
