@@ -1150,16 +1150,16 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         delay_std_l  = []
 
         for i in xrange(nPoints):
-            if 1 in np.unique(ll_classifier_test_Y).tolist():            
+            if 1 in ll_classifier_test_Y:            
                 tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            if -1 in np.unique(ll_classifier_test_Y).tolist():
+            if -1 in ll_classifier_test_Y:
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
         print "--------------------------------"
         print method
-        if 1 in np.unique(ll_classifier_test_Y).tolist():
+        if 1 in ll_classifier_test_Y:
             print "tpr: ", tpr_l
-        if -1 in np.unique(ll_classifier_test_Y).tolist():
+        if -1 in ll_classifier_test_Y:
             print "fpr: ", fpr_l
         if len(np.shape(np.unique(ll_classifier_test_Y)))==2:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
