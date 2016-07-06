@@ -1028,7 +1028,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             sys.exit()
 
         #temp
-        logp_min = -10000000000000000
+        logp_min = -1000
         
         # add random extreme noise
         # maybe sample x length x features
@@ -1117,6 +1117,10 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Result ----------------------
+    modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
+    d = ut.load_pickle(modeling_noise_pkl)
+    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+
     
     print "Start to visualize ROC curves!!!"
     for method in method_list:
@@ -2253,6 +2257,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['svm']
+        param_dict['ROC']['update_list'] = []
         param_dict['ROC']['nPoints'] = 5
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
         
