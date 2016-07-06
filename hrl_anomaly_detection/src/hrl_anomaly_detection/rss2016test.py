@@ -1161,7 +1161,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             print "tpr: ", tpr_l
         if -1 in ll_classifier_test_Y:
             print "fpr: ", fpr_l
-        if frp_l is not [] and tpr_l is not []:
+        if fpr_l is not [] and tpr_l is not []:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
@@ -2272,10 +2272,10 @@ if __name__ == '__main__':
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
     elif opt.bEvaluationWithNoise:
-        ## param_dict['ROC']['methods'] = ['progress_time_cluster']
-        ## param_dict['ROC']['update_list'] = ['progress_time_cluster']
-        param_dict['ROC']['methods'] = ['svm']
-        param_dict['ROC']['update_list'] = ['svm']
+        param_dict['ROC']['methods'] = ['progress_time_cluster']
+        param_dict['ROC']['update_list'] = ['progress_time_cluster']
+        ## param_dict['ROC']['methods'] = ['svm']
+        ## param_dict['ROC']['update_list'] = ['svm']
         param_dict['ROC']['nPoints'] = 5
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, 5)
         param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., 5)
