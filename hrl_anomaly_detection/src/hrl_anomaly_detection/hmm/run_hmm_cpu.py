@@ -697,7 +697,7 @@ if __name__ == '__main__':
                                                                 False, False,\
                                                                 rf_center, local_range, \
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(0.1,6.0,10), \
+        parameters = {'nState': [25], 'scale': np.linspace(2.0,10.0,10), \
                       'cov': np.linspace(2.,5.0,10) }
 
     elif opt.task == 'feeding':

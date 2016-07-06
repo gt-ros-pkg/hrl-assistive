@@ -10,7 +10,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.33, 'scale': 6.0,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.66, 'scale': 1.41,
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.01, 'cost': 3.79,\
                           'hmmosvm_nu': 0.00316,\
