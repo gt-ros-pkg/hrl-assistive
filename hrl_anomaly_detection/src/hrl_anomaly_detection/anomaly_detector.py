@@ -61,13 +61,15 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
-                 param_dict, hmm_renew=False, viz=False, auto_update=False):
+                 param_dict, data_renew=False, hmm_renew=False, viz=False, auto_update=False, \
+                 debug=False):
         rospy.loginfo('Initializing anomaly detector')
 
-        self.subject_names     = subject_names
-        self.task_name         = task_name.lower()
-        self.raw_data_path     = raw_data_path
-        self.save_data_path    = save_data_path
+        self.subject_names   = subject_names
+        self.task_name       = task_name.lower()
+        self.raw_data_path   = raw_data_path
+        self.save_data_path  = save_data_path
+        self.debug           = debug
 
         self.enable_detector = False
         self.cur_task        = None
@@ -75,6 +77,7 @@ class anomaly_detector:
         self.dataList        = []
         self.auto_update     = auto_update
         self.used_file_list  = []
+        self.figure_flag     = False
         
         # Params
         self.param_dict = param_dict        
@@ -94,7 +97,7 @@ class anomaly_detector:
 
         self.initParams()
         self.initComms()
-        self.initDetector(hmm_renew=hmm_renew)
+        self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew)
 
         self.viz = viz
         if viz:
@@ -187,7 +190,7 @@ class anomaly_detector:
         ## self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
         # NOTE: when and how update?
 
-    def initDetector(self, hmm_renew=False):
+    def initDetector(self, data_renew=False, hmm_renew=False):
         print "Initializing a detector with ", self.classifier_method
         
         train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
@@ -214,6 +217,10 @@ class anomaly_detector:
             self.handFeatureParams = d['param_dict']
             self.normalTrainData   = d.get('normalTrainData', None)
 
+            if self.debug:
+                self.visualization()
+                sys.exit()
+
         else:
             print "Started get data set"
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
@@ -224,7 +231,7 @@ class anomaly_detector:
                                ae_data=False,\
                                handFeatures=self.handFeatures, \
                                cut_data=self.cut_data,\
-                               data_renew=False)
+                               data_renew=data_renew)
 
             self.handFeatureParams = dd['param_dict']
 
@@ -255,6 +262,14 @@ class anomaly_detector:
                 ## if normalTestIdx is not None:
                 ##     normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
                 ##     abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
+
+
+            if self.debug:
+                self.normalTrainData = normalTrainData
+                self.nEmissionDim   = len(normalTrainData)
+                self.visualization()
+                sys.exit()
+
 
             # training hmm
             self.nEmissionDim   = len(normalTrainData)
@@ -846,6 +861,11 @@ class anomaly_detector:
             self.figure_flag = True
 
         del self.ax.collections[:]
+
+        ## normalTrainData = self.scaler.inverse_transform( self.normalTrainData )
+        ## if len(self.dataList) > 0:
+        ##     dataList        = np.squeeze(self.dataList).swapaxes(0,1)
+        ##     dataList        = self.scaler.inverse_transform( )
         for i in xrange(self.nEmissionDim):
             self.ax = plt.subplot(self.nEmissionDim,1,i+1)
             if len(self.dataList) > 0:
@@ -858,6 +878,11 @@ class anomaly_detector:
             ## ax.set_xlim([0.3, 1.4])
             self.ax.set_ylim([-1.0, 2.0])
         plt.draw()
+        
+        if self.debug:
+            rate = rospy.Rate(5) # 25Hz, nominally.            
+            while not rospy.is_shutdown():
+                continue
         
         
 
@@ -873,8 +898,12 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--auto_update', '--au', action='store_true', dest='bAutoUpdate',
                  default=False, help='Enable auto update.')
+    p.add_option('--debug', '--d', action='store_true', dest='bDebug',
+                 default=False, help='Enable debugging mode.')
     
 
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
     p.add_option('--viz', action='store_true', dest='bViz',
@@ -965,6 +994,8 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
-                          param_dict, hmm_renew=opt.bHMMRenew, viz=opt.bViz, auto_update=opt.bAutoUpdate)
+                          param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
+                          viz=opt.bViz, auto_update=opt.bAutoUpdate,\
+                          debug=opt.bDebug)
     ad.run()
 

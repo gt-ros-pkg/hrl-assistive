@@ -373,7 +373,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionArtagPosList'].append(vision_pos_array)                                         
-            vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times)
+            vision_quat_array  = interpolationData(vision_time, local_vision_quat, new_times, True)
             data_dict['visionArtagQuatList'].append(vision_quat_array)                                         
 
 
@@ -397,7 +397,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
-            vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times)
+            vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)                                         
 
 
