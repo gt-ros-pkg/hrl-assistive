@@ -336,7 +336,7 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 4:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
