@@ -184,6 +184,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
 
+        print "start to load data"
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
                                         '_'+str(local_range))
@@ -1074,7 +1075,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
-
+            
             # magnitude
             if len(np.shape(ftForce)) > 1:
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
@@ -1360,8 +1361,11 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_landmarkEEDist' in feature_list:
             kinEEPos  = d['kinEEPosList'][idx]
-            visionLandmarkPos = d['visionLandmarkPosList'][idx][:3] # originally length x 3*tags
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
 
+            if len(np.shape(visionLandmarkPos)) == 1:
+                visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
+                
             dist = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
@@ -1380,6 +1384,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         if 'crossmodal_landmarkEEAng' in feature_list:
             kinEEQuat    = d['kinEEQuatList'][idx]
             visionLandmarkQuat = d['visionLandmarkQuatList'][idx][:4]
+            if len(np.shape(visionLandmarkPos)) == 1:
+                visionLandmarkQuat = np.reshape(visionLandmarkQuat, (4,1))
 
             crossmodal_landmarkEEAng = []
             for time_idx in xrange(len(timeList)):

@@ -10,6 +10,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.params import *
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
+from hrl_anomaly_detection.classifiers.classifier_util import *
 
 from sklearn import preprocessing
 from joblib import Parallel, delayed
@@ -705,7 +706,6 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
             weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
-            dtc.set_params( class_weight=weights[j] )
             dtc.set_params( class_weight=weights[j], sgd_n_iter=20 )
         else:
             print "Not available method"
@@ -718,15 +718,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 for idx in train_idx_list:
                     if idx not in initial_idx_list:
                         X_ptrain, Y_ptrain = train_X[idx], train_Y[idx]
-                        #sample_weight = [10.0]*nLength
-                        if Y_ptrain == -1:
-                            sample_weight = [1.0]*nLength
-                        else:
-                            sample_weight = np.logspace(1,2.0,nLength )
-                            sample_weight /= np.amax(sample_weight)
-                        sample_weight /= 10.0
-
-                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight)
+                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) 
                         
         if ret is False: return 'fit failed', -1
 
@@ -940,7 +932,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         if method == 'sgd' and fit_method.find('full')>=0:
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
-            dtc.set_params( class_weight=weights[j] )
             dtc.set_params( class_weight=weights[j], sgd_n_iter=sgd_n_iter )
         else:
             print "Not available method"
@@ -998,41 +989,40 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             
             for idx in range(0,len(X_valid_scaled),nPartialFit):
                 if idx+nPartialFit > len(X_valid_scaled): continue
-                for k in xrange(nPartialFit):
-                    X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
-                    if Y_ptrain[0] > 0:
-                        X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
+
+                p_train_X, p_train_Y, p_train_W = getProcessSGDdata(X_valid_scaled[idx:idx+nPartialFit], \
+                                                                    Y_valid[idx:idx+nPartialFit], weights[j])
+                
+                ## for k in xrange(nPartialFit):
+                ##     X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
+                ##     if Y_ptrain[0] > 0:
+                ##         X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
                     
-                    ## sample_weight = np.array([1.0]*len(Y_ptrain))
-                    if Y_ptrain == -1:
-                        sample_weight = [1.0]*len(X_ptrain)
-                    else:
-                        sample_weight = [weights[j]]*len(X_ptrain)
-                        ## sample_weight = np.linspace(0,1.0,len(X_ptrain) )
-                        ## sample_weight /= np.amax(sample_weight)
-                    ## sample_weight *= float(nSamples) #50.0
-                    ## sample_weight /= (float(nSamples + idx+1))
+                ##     ## sample_weight = np.array([1.0]*len(Y_ptrain))
+                ##     if Y_ptrain == -1:
+                ##         sample_weight = [1.0]*len(X_ptrain)
+                ##     else:
+                ##         sample_weight = [weights[j]]*len(X_ptrain)
 
-                    if k==0:
-                        p_train_X = X_ptrain
-                        p_train_Y = Y_ptrain
-                        p_train_W = sample_weight
-                    else:
-                        p_train_X = np.vstack([p_train_X, X_ptrain])
-                        p_train_Y = np.hstack([p_train_Y, Y_ptrain])
-                        p_train_W = np.hstack([p_train_W, sample_weight])
+                ##     if k==0:
+                ##         p_train_X = X_ptrain
+                ##         p_train_Y = Y_ptrain
+                ##         p_train_W = sample_weight
+                ##     else:
+                ##         p_train_X = np.vstack([p_train_X, X_ptrain])
+                ##         p_train_Y = np.hstack([p_train_Y, Y_ptrain])
+                ##         p_train_W = np.hstack([p_train_W, sample_weight])
 
-                p_idx_list = range(len(p_train_X))
-                random.shuffle(p_idx_list)
-                p_train_X = [p_train_X[ii] for ii in p_idx_list]
-                p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
-                p_train_W = [p_train_W[ii] for ii in p_idx_list]
+                ## p_idx_list = range(len(p_train_X))
+                ## random.shuffle(p_idx_list)
+                ## p_train_X = [p_train_X[ii] for ii in p_idx_list]
+                ## p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
+                ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
                 ## dtc.set_params( learning_rate='constant' )
                 ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
                 ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
-                for kkk in xrange(5): #sgd_n_iter):
-                    ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
+                ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], n_iter=5)
                 ## ret = dtc.fit(p_train_X, p_train_Y)
 
                 tp_l = []

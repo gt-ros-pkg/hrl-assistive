@@ -46,6 +46,7 @@ from sklearn import preprocessing
 
 # Classifier
 from hrl_anomaly_detection.classifiers import classifier as cb
+from hrl_anomaly_detection.classifiers.classifier_util import *
 
 # msg
 from hrl_anomaly_detection.msg import MultiModality
@@ -214,6 +215,7 @@ class anomaly_detector:
             self.normalTrainData   = d.get('normalTrainData', None)
 
         else:
+            print "Started get data set"
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
                                self.save_data_path, self.rf_center, \
                                self.rf_radius,\
@@ -239,7 +241,6 @@ class anomaly_detector:
                 abnormalTrainIdx = range(len(dd['failureData'][0]))
                 normalTestIdx   = None
                 abnormalTestIdx = None
-
 
             # dim x sample x length # TODO: what is the best selection?
             if self.classifier_method.find('svm')>=0:
@@ -289,9 +290,9 @@ class anomaly_detector:
             r = Parallel(n_jobs=-1)(delayed(learning_hmm.computeLikelihoods)(i, self.ml.A, self.ml.B, \
                                                                              self.ml.pi, self.ml.F,
                                                                              [ trainDataX[j][i] for j in xrange(self.nEmissionDim) ],
-                                                                    self.ml.nEmissionDim, self.ml.nState,
-                                                                    startIdx=startIdx, bPosterior=True)
-                                                                    for i in xrange(len(trainDataX[0])))
+                                                                             self.ml.nEmissionDim, self.ml.nState,
+                                                                             startIdx=startIdx, bPosterior=True)
+                                                                             for i in xrange(len(trainDataX[0])))
             _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
@@ -340,8 +341,6 @@ class anomaly_detector:
         self.classifier.set_params( class_weight=self.init_w_positive )        # for svm , sgd
         self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org, parallel=False)
         print "Finished to train "+self.classifier_method
-
-        ## print np.shape(self.X_scaled), np.shape(self.Y_train_org)
 
         self.pubSensitivity()        
         return
@@ -471,7 +470,7 @@ class anomaly_detector:
             if 'svm' in self.classifier_method:
                 self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
             elif 'sgd' in self.classifier_method:
-                self.classifier.partial_fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
+                self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
             print "Classifier is updated!"
 
         else:
@@ -545,14 +544,24 @@ class anomaly_detector:
             ## Remove unseparable region and scaling it
             if self.classifier_method.find('svm')>=0:
                 X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
-                print np.shape(self.X_scaled), np.shape(self.Y_train_org)                
+                print "Before: ", np.shape(self.X_scaled), np.shape(self.Y_train_org)                
                 self.X_scaled    = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
                 self.Y_train_org = np.hstack([ self.Y_train_org, Y_train_org])
-                print np.shape(self.X_scaled), np.shape(self.Y_train_org)                
+                print "After : ", np.shape(self.X_scaled), np.shape(self.Y_train_org)                
                 self.classifier.fit(self.X_scaled, self.Y_train_org)
             elif self.classifier_method.find('sgd')>=0:
-                X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
-                self.classifier.fit(X_train_org, Y_train_org)                
+                print "Before: ", np.shape(self.X_scaled), np.shape(self.Y_train_org)                
+                p_train_X = []
+                for i in xrange(len(X)):
+                    p_train_X.append( self.scaler.transform(X[i]) )
+                p_train_X, p_train_Y, p_train_W = getProcessSGDdata(p_train_X, Y, \
+                                                                    weight=self.classifier.class_weight )
+                print np.shape(p_train_X), np.shape(p_train_Y)
+                self.classifier.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
+
+                self.X_scaled    = np.vstack([ self.X_scaled, p_train_X ])
+                self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
+                print "After : ", np.shape(self.X_scaled), np.shape(self.Y_train_org)
             else:
                 ## self.X_scaled = np.vstack([ self.X_scaled, X ])
                 ## self.classifier.fit(self.X_scaled, self.Y_test_org)
@@ -603,6 +612,8 @@ class anomaly_detector:
         if self.classifier_method.find('svm') >= 0:
             self.classifier.fit(self.X_scaled, self.Y_test_org)
         elif self.classifier_method.find('svm') >= 0:
+            print "Not available"
+            return StringArray_NoneResponse()
             self.classifier.partial_fit(self.X_scaled, self.Y_test_org, classes=[-1,1])            
         else:
             print "Not available update method"
@@ -784,9 +795,9 @@ class anomaly_detector:
 
             post = post[cur_length-1]
             print "logp: ", logp, "  state: ", np.argmax(post), \
-              " cutoff: ", self.param_dict['HMM']['nState']*0.85
+              " cutoff: ", self.param_dict['HMM']['nState']*0.9
             if np.argmax(post)==0 and logp < 0.0: continue
-            if np.argmax(post)>self.param_dict['HMM']['nState']*0.85: continue
+            if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
             if self.last_logp is None or self.last_post is None:
                 self.last_logp = logp
@@ -794,7 +805,7 @@ class anomaly_detector:
                 continue
             else:                
                 d_logp = logp - self.last_logp
-                print np.shape(self.last_post), np.shape(post)
+                ## print np.shape(self.last_post), np.shape(post)
                 d_post = hmm_util.symmetric_entropy(self.last_post, post)
                 ll_classifier_test_X = [logp] + [d_logp/(d_post+1.0)] + post.tolist()
                 self.last_logp = logp
@@ -914,30 +925,40 @@ if __name__ == '__main__':
                                  'class_weight': 1.5e-2, 'logp_offset': 100, 'ths_mult': -2.0}
 
         else:
+            print "Not supported task"
             sys.exit()
     else:
         from hrl_anomaly_detection.ICRA2017_params import *
+        subject = 'park'
         
         if opt.task == 'scooping':
-            subject_names = ['test'] 
+            ## subject_names = ['test'] 
+            subject_names = ['Zack'] 
             raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
                                                                     False, False,\
                                                                     rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
+            save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+              subject_names[0]+'_'+opt.task+'_data/demo'
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
-                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0}
+                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
+                                 'sgd_gamma':0.32, 'sgd_w_negative':2.5,}
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1
 
         elif opt.task == 'feeding':
-            subject_names = ['test'] 
+            ## subject_names = ['test'] 
+            subject_names = [subject] 
             raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
                                                                     False, False,\
                                                                     rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
+            save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+              subject_names[0]+'_'+opt.task+'_data/demo'
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
-                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0}
+                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
+                                 'sgd_gamma':0.32, 'sgd_w_negative':2.5}
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1

@@ -38,9 +38,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}
+                          'sgd_param_range': np.logspace(-2.5, 1.0, nPoints)}
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
+        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
@@ -163,9 +163,10 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-2.5, 1.0, nPoints)}
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
+        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
                           
     elif dim == 3:
 

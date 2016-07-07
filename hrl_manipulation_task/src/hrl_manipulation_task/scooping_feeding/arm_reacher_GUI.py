@@ -108,15 +108,24 @@ class armReacherGUI:
         if self.emergencyMsg == 'STOP':
             self.emergencyPub.publish("STOP")
         print "Emergency received"
-        if self.recordStatus:    
+
+        if self.recordStatus:
+            self.log.log_stop()
+        
+        print "Wait arm reach service"
+        rospy.wait_for_service("/arm_reach_enable")
+        
+        while not rospy.is_shutdown():
+            print "Waiting aborting Sequence"
+            if self.left_mtx is False and self.right_mtx is False: break
+            
+        self.testing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+
+        if self.recordStatus:
             self.log.close_log_file_GUI()
             self.recordStatus = False
         rospy.sleep(3.0)
 
-        rospy.wait_for_service("/arm_reach_enable")
-        
-        print "Aborting Sequence"
-        self.testing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
 
 
 
@@ -171,7 +180,7 @@ class armReacherGUI:
             if self.ScoopNumber < 1:
                 rospy.loginfo("Initializing arms for scooping")
                 leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
-                rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping2",))
+                rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
                 leftProc.start(); rightProc.start()
                 leftProc.join(); rightProc.join()
                 if self.emergencyStatus: break
@@ -194,9 +203,11 @@ class armReacherGUI:
         
             rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
-            if self.emergencyStatus: break
+            if self.emergencyStatus:
+                if detection_flag: self.log.enableDetector(False)                
+                break
 
-            if self.log == None:
+            if self.log is not None:
                 self.falselogPub.publish("Requesting Feedback!")
     
             if detection_flag: self.log.enableDetector(False)
@@ -220,17 +231,15 @@ class armReacherGUI:
                 rospy.loginfo("Initializing left arm for feeding")
                 self.ServiceCallLeft("lookToRight")
                 if self.emergencyStatus: break
-                self.ServiceCallLeft("getHeadPos")
                 self.ServiceCallLeft("initFeeding1")
                 if self.emergencyStatus: break
                 self.ServiceCallRight("getHeadPos")
-                print armReachActionRight("initFeeding")
+                self.ServiceCallRight("initFeeding")
                 if self.emergencyStatus: break                
                 self.FeedNumber = 1
     
             if self.FeedNumber < 2:
                 rospy.loginfo("Detect a mouth")
-                self.ServiceCallLeft("getHeadPos")
                 self.ServiceCallLeft("getHeadPos")
                 self.FeedNumber = 2
     
@@ -248,9 +257,11 @@ class armReacherGUI:
         
             rospy.loginfo("Running feeding")
             self.ServiceCallLeft("runFeeding")
-            if self.emergencyStatus: break
+            if self.emergencyStatus:
+                if detection_flag: self.log.enableDetector(False)                
+                break
             
-            if self.log == None:
+            if self.log is not None:
                 self.falselogPub.publish("Requesting Feedback!")
     
             if detection_flag: self.log.enableDetector(False)
@@ -258,7 +269,12 @@ class armReacherGUI:
             if self.log != None and self.recordStatus:
                 self.log.close_log_file_GUI()
                 self.recordStatus = False
-            self.ServiceCallLeft("initScooping1")
+
+            # Returning motion
+            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
+            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
+            leftProc.start(); rightProc.start()
+            leftProc.join(); rightProc.join()
             if self.emergencyStatus: break
             self.FeedNumber = 0
             break
@@ -267,30 +283,36 @@ class armReacherGUI:
     def ServiceCallLeft(self, cmd):
         if self.left_mtx is not True:
             self.left_mtx = True
-            self.armReachActionLeft(cmd)            
+            print self.armReachActionLeft(cmd)            
             self.left_mtx = False
+            return True
         else:
             print "Ignore last command...."
+            return False
 
     def ServiceCallRight(self, cmd):
         if self.right_mtx is not True:
             self.right_mtx = True
-            self.armReachActionRight(cmd)            
+            print self.armReachActionRight(cmd)            
             self.right_mtx = False
+            return True
         else:
             print "Ignore last command...."
+            return False
         
             
     def testing(self, armReachActionLeft, armReachActionRight, log, detection_flag):
         if self.FeedNumber<1:
-            self.ScoopNumber = 0         
-            self.ServiceCallLeft("initScooping1")
-            self.ServiceCallRight("initScooping1")
+            self.ScoopNumber = 0
+            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
+            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
+            leftProc.start(); rightProc.start()
+            leftProc.join(); rightProc.join()
         elif self.FeedNumber<2:
-            self.ServiceCallLeft("initFeeding")
+            self.ServiceCallLeft("initFeeding1")
         else: 
             #print self.armReachActionLeft("runFeeding1")
-            self.ServiceCallLeft("initFeeding")
+            self.ServiceCallLeft("initFeeding2")
 
 
  
@@ -317,8 +339,8 @@ if __name__ == '__main__':
     
     if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=False, vision_change=False, pps=True, skin=False, \
-                     subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     vision_landmark=True, vision_change=False, pps=True, skin=False, \
+                     subject="park", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None

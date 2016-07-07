@@ -175,11 +175,16 @@ class logger:
 
         # special treament for audio
         ## self.audio_wrist.log_start()
-                    
+
+
+    def log_stop(self):
+        self.enable_log_thread = False
+        
+        
     def close_log_file(self, bCont=False, last_status='skip'):
 
-        # logging by thread 
-        self.enable_log_thread = False
+        # logging by thread
+        self.log_stop()
         
         if bCont:
             status = last_status
@@ -224,8 +229,8 @@ class logger:
         ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
 
-        # logging by thread 
-        self.enable_log_thread = False
+        # logging by thread
+        self.log_stop()
 
         flag = 0
         self.feedbackStatus = 0
@@ -427,7 +432,7 @@ class logger:
                     msg.vision_artag_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
 
             if self.vision_landmark is not None:
-                if self.vision_landmark.pos is not None:
+                if self.vision_landmark.landmark_pos is not None:
                     msg.vision_landmark_pos  = np.squeeze(self.vision_landmark.landmark_pos.T).tolist()
                     msg.vision_landmark_quat = np.squeeze(self.vision_landmark.landmark_quat.T).tolist()
                     
@@ -537,7 +542,8 @@ class logger:
                     self.data['vision_artag_quat'] = np.hstack([self.data['vision_artag_quat'], \
                                                                 self.vision_artag.artag_quat])
 
-            if self.vision_landmark is not None:                
+            if self.vision_landmark is not None:
+
                 if 'vision_landmark_time' not in self.data.keys():
                     self.data['vision_landmark_time'] = [self.vision_landmark.time]
                     self.data['vision_landmark_pos']  = self.vision_landmark.landmark_pos

@@ -346,15 +346,17 @@ class classifier(learning_base):
             self.dt.fit(X_features, y)
 
 
-    def partial_fit(self, X, y, classes=None, sample_weight=None):
+    def partial_fit(self, X, y, classes=None, sample_weight=None, n_iter=1):
         '''
         X: samples x hmm-feature vec
         y: sample
         '''
 
         if self.method == 'sgd':
-            X_features       = self.rbf_feature.transform(X)
-            self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
+            ## if sample_weight is None: sample_weight = [self.class_weight]*len(X)
+            X_features = self.rbf_feature.transform(X)
+            for i in xrange(n_iter):
+                self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
         else:
             print "Not available method, ", self.method
             sys.exit()

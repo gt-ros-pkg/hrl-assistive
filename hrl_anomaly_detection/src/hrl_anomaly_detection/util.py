@@ -380,7 +380,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # vision landmark -------------------------------------------------------------
         if 'vision_landmark_time' in d.keys():
             vision_time = (np.array(d['vision_landmark_time']) - init_time).tolist()
-            vision_pos  = d['vision_landmark_pos'] 
+            vision_pos  = d['vision_landmark_pos'] #3*timelength
             vision_quat = d['vision_landmark_quat']
 
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
@@ -701,6 +701,7 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
             interp = interpolate.splrep(time_array, target_array[i], s=0)
             interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
         except:
+            print "splrep failed"
             print np.shape(time_array), np.shape(target_array[i]), i,n
             sys.exit()
             

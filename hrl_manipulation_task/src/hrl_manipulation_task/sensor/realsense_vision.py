@@ -80,11 +80,11 @@ class realsense_vision():
             self.time = time_stamp.to_sec()             
             self.landmark_pos = np.array([msg.pose.position.x,
                                           msg.pose.position.y,
-                                          msg.pose.position.z]).T
+                                          msg.pose.position.z]).reshape(3,1)
             self.landmark_quat = np.array([msg.pose.orientation.x,
                                            msg.pose.orientation.y,
                                            msg.pose.orientation.z,
-                                           msg.pose.orientation.w]).T
+                                           msg.pose.orientation.w]).reshape(4,1)
 
             if self.verbose: print np.shape(self.landmark_pos)
             
