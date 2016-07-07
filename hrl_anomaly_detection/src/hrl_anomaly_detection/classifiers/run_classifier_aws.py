@@ -336,13 +336,13 @@ if __name__ == '__main__':
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 4:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                               'cost': np.linspace(3.0, 6.0, 5),\
-                              'gamma': np.logspace(-1, 1.0, 10), \
-                              'w_negative': np.linspace(0.1, 2.5,5) }
+                              'gamma': np.logspace(-2, 1.0, 10), \
+                              'w_negative': np.logspace(-2, 0.3, 10) }
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.5, 0.5, nPoints)
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
