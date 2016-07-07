@@ -994,7 +994,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
     nPoints     = ROC_dict['nPoints']
 
     # temp
-    kFold_list = kFold_list[0:1]
+    ## kFold_list = kFold_list[0:1]
 
     #-----------------------------------------------------------------------------------------
     # add noise
