@@ -27,9 +27,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'bpsvm_w_negative': 0.2                          
                           }
         
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'osvm' ],\
-                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'osvm' ],\
+        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 'svm'
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'osvm' ],\
+                          'update_list': [ 'progress_time_cluster', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'osvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
