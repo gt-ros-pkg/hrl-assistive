@@ -448,19 +448,20 @@ class armReachAction(mpcBaseAction):
             
             self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
             target = self.mouth_frame
-                   
-        ## print '2:', time.time() - t
-        ## t = time.time()
 
+        
         pos.x = target.p.x()
         pos.y = target.p.y()
         pos.z = target.p.z()
+            
+        ## print '2:', time.time() - t
+        ## t = time.time()
                                         
         ps.point = pos
         head_goal_msg.target = ps
         
         headClient.send_goal(head_goal_msg)
-        # headClient.wait_for_result() # TODO: This takes about 5 second -- very slow!
+        ## headClient.wait_for_result() # TODO: This takes about 5 second -- very slow!
         # rospy.sleep(1.0)
 
         ## print '3:', time.time() - t
@@ -496,6 +497,7 @@ class armReachAction(mpcBaseAction):
         head_goal_msg.target = ps
 
         headClient.send_goal(head_goal_msg)
+        ## headClient.wait_for_result() # TODO: This takes about 5 second -- very slow!
         return "Success"
 
     def pubCurEEPose(self):
