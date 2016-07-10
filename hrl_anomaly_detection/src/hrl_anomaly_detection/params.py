@@ -260,7 +260,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.577, 'scale': 4.0, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 1.0, 'cost': 4.0,\
-                          'hmmosvm_nu': 0.00316}
+                          'hmmosvm_nu': 0.001}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
@@ -287,7 +287,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'add_logp_d': True}
             SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.0398, 'cost': 5.,\
                               'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                              'hmmosvm_nu': 0.001,
+                              'hmmosvm_nu': 0.00316,
                               'hmmsvm_diag_w_negative': 0.525, \
                               'hmmsvm_diag_cost': 5.0, \
                               'hmmsvm_diag_gamma': 0.50749,\
@@ -349,7 +349,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.11, 'scale': 6.0}
         SVM_param_dict = {'renew': False, 'w_negative': 0.293, 'gamma': 2.0, 'cost': 3.83,\
-                          'hmmosvm_nu': 0.00316,
+                          'hmmosvm_nu': 0.001,
                           'hmmsvm_diag_w_negative': 1.5, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
                           
