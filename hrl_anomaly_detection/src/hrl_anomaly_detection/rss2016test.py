@@ -1463,13 +1463,13 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     if Y_test[ii][0] <0:
                         print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
 
-                    if method == 'hmmosvm':
-                        window_size = 5 #3
-                        if jj < len(est_y)-window_size:
-                            if np.sum(est_y[jj:jj+window_size])>=window_size:
-                                anomaly = True                            
-                                break
-                        continue                        
+                    ## if method == 'hmmosvm':
+                    ##     window_size = 5 #3
+                    ##     if jj < len(est_y)-window_size:
+                    ##         if np.sum(est_y[jj:jj+window_size])>=window_size:
+                    ##             anomaly = True                            
+                    ##             break
+                    ##     continue                        
                     
                     if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
                         try:

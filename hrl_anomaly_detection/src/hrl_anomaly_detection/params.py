@@ -132,7 +132,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 4.488, 'cost': 2.72,\
-                          'hmmosvm_nu': 0.001,\
+                          'hmmosvm_nu': 0.0001,\
                           'osvm_nu': 0.000359,\
                           'raw_window_size': 5,\
                           'hmmsvm_diag_w_negative': 0.2, \
@@ -174,7 +174,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 0.5,\
-                          'hmmosvm_nu': 0.001,\
+                          'hmmosvm_nu': 0.0003161,\
                           'hmmsvm_bpsvm_cost': 12.5,\
                           'hmmsvm_bpsvm_gamma': 0.507, \
                           'hmmsvm_bpsvm_w_negative': 0.2
@@ -199,7 +199,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': False, 'w_negative': 3.775, 'gamma': 0.1, 'cost': 1.0,\
-                          'hmmosvm_nu': 0.00031,\
+                          'hmmosvm_nu': 0.000316,\
                           'hmmsvm_bpsvm_cost': 15.0,\
                           'hmmsvm_bpsvm_gamma': 0.01, \
                           'hmmsvm_bpsvm_w_negative': 1.5

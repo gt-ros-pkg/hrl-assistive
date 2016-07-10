@@ -39,13 +39,12 @@ for ((I=2;I<=5;I++)); do
     elif [ $I -eq 5 ]; then        
         METHOD=('svm' 'hmmosvm' );
     fi
-    METHOD=('hmmosvm' );
+    #METHOD=('hmmosvm' );
 
 
     for method in "${METHOD[@]}"
     do
-        #python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} \;
-        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} --renew \;
+        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} \;
     done
 
 done
