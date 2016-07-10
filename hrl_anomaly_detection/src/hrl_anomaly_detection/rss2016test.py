@@ -1471,19 +1471,19 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                 break
                         continue                        
                     
-                    if ll_classifier_test_idx is not None:
+                    if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
                         try:
                             delay_idx = ll_classifier_test_idx[ii][jj]
                         except:
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
+                        delay_l.append(delay_idx)
+                            
                     anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:
-                if anomaly:
-                    tp_l.append(1)
-                    delay_l.append(delay_idx)
+                if anomaly: tp_l.append(1)
                 else: fn_l.append(1)
             elif Y_test[ii][0] <= 0.0:
                 if anomaly: fp_l.append(1)
