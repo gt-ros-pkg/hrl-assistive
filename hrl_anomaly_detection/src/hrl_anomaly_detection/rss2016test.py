@@ -521,7 +521,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
-                   no_plot=False):
+                   no_plot=False, delay_plot=True):
 
     ## Parameters
     # data
@@ -586,7 +586,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     param_dict  = d['param_dict']
     aeSuccessData = d.get('aeSuccessData', None)
     aeFailureData = d.get('aeFailureData', None)
-    
+    if 'timeList' in param_dict.keys():
+        timeList    = param_dict['timeList'][startIdx:]
+    else: timeList = None
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -901,6 +903,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ## tpr_l = [0] + tpr_l + [100]
 
         print "--------------------------------"
+        print " AUC and delay "
+        print "--------------------------------"
         print method
         print tpr_l
         print fpr_l
@@ -918,25 +922,38 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
         elif method == 'osvm': label='Kernel-SVM'
         elif method == 'bpsvm': label='Biased penalty SVM'
+        else: label = '???' 
 
         if no_plot is False:
             # visualization
             color = colors.next()
             shape = shapes.next()
-            ax1 = fig.add_subplot(111)            
-            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-            plt.xlim([-1, 101])
-            plt.ylim([-1, 101])
-            plt.ylabel('True positive rate (percentage)', fontsize=22)
-            plt.xlabel('False positive rate (percentage)', fontsize=22)
+            ax1 = fig.add_subplot(111)
 
-            ## font = {'family' : 'normal',
-            ##         'weight' : 'bold',
-            ##         'size'   : 22}
-            ## matplotlib.rc('font', **font)
-            ## plt.tick_params(axis='both', which='major', labelsize=12)
-            plt.xticks([0, 50, 100], fontsize=22)
-            plt.yticks([0, 50, 100], fontsize=22)
+            if delay_plot:
+                plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                plt.xlim([-1, 101])
+                ## plt.ylim([-1, 101])
+                plt.ylabel('Delay Time', fontsize=22)
+                plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+                plt.xticks([0, 50, 100], fontsize=22)
+                ## plt.yticks([0, 50, 100], fontsize=22)
+            else:
+                plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                plt.xlim([-1, 101])
+                plt.ylim([-1, 101])
+                plt.ylabel('True positive rate (percentage)', fontsize=22)
+                plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+                ## font = {'family' : 'normal',
+                ##         'weight' : 'bold',
+                ##         'size'   : 22}
+                ## matplotlib.rc('font', **font)
+                ## plt.tick_params(axis='both', which='major', labelsize=12)
+                plt.xticks([0, 50, 100], fontsize=22)
+                plt.yticks([0, 50, 100], fontsize=22)
+                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
             ## x = range(len(delay_mean_l))
@@ -1206,9 +1223,10 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
 
 
-def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
-                    ROC_dict, AE_dict, SVM_dict,\
-                    raw_data=None, startIdx=4, nState=25, modeling_pkl_prefix=None):
+def run_classifiers(idx, processed_data_path, task_name, method,\
+                    ROC_data, ROC_dict, AE_dict, SVM_dict,\
+                    raw_data=None, startIdx=4, nState=25, \
+                    modeling_pkl_prefix=None):
 
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
@@ -1445,27 +1463,27 @@ def run_classifiers(idx, processed_data_path, task_name, method, ROC_data, \
                     if Y_test[ii][0] <0:
                         print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
 
-                    if method == 'hmmosvm':
-                        window_size = 5 #3
-                        if jj < len(est_y)-window_size:
-                            if np.sum(est_y[jj:jj+window_size])>=window_size:
-                                anomaly = True                            
-                                break
-                        continue                        
+                    ## if method == 'hmmosvm':
+                    ##     window_size = 5 #3
+                    ##     if jj < len(est_y)-window_size:
+                    ##         if np.sum(est_y[jj:jj+window_size])>=window_size:
+                    ##             anomaly = True                            
+                    ##             break
+                    ##     continue                        
                     
-                    if ll_classifier_test_idx is not None:
+                    if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
                         try:
                             delay_idx = ll_classifier_test_idx[ii][jj]
                         except:
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
+                        delay_l.append(delay_idx)
+                            
                     anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:
-                if anomaly:
-                    tp_l.append(1)
-                    delay_l.append(delay_idx)
+                if anomaly: tp_l.append(1)
                 else: fn_l.append(1)
             elif Y_test[ii][0] <= 0.0:
                 if anomaly: fp_l.append(1)
