@@ -748,13 +748,13 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:
 
-                if method == 'hmmosvm':
-                    window_size = 5
-                    if jj >= window_size:
-                        if np.sum(est_y[jj-window_size:jj])>=window_size:
-                            anomaly = True                            
-                            break
-                    continue                        
+                ## if method == 'hmmosvm':
+                ##     window_size = 5
+                ##     if jj >= window_size:
+                ##         if np.sum(est_y[jj-window_size:jj])>=window_size:
+                ##             anomaly = True                            
+                ##             break
+                ##     continue                        
 
                 ## if Y_test[ii][0] < 0:
                 ## print jj, est_y[jj], Y_test[ii][0] #, " - ", X_test[ii][jj]
