@@ -215,6 +215,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'fixed_param_range': np.linspace(0.25, 0.05, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
+    else:
+        print "Not available dimension"
+        sys.exit()
 
         
     rawFeatures = ['relativePose_target_EE', \
@@ -471,7 +474,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': False, 'w_negative': 0.316, 'gamma': 1.136, 'cost': 2.5,\
-                          'hmmosvm_nu': 0.000316}
+                          'hmmosvm_nu': 0.001}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
@@ -498,7 +501,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'add_logp_d': True}
             SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.9777, 'cost': 4.0,\
                               'osvm_nu': 0.01,\
-                              'hmmosvm_nu': 0.01,
+                              'hmmosvm_nu': 0.001,
                               'hmmsvm_diag_w_negative': 1.175, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 0.01,\
                               'raw_window_size': 5,\
@@ -538,7 +541,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 7.0, \
         ##                   'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.1, 'cost': 3.25,\
-                          'hmmosvm_nu': 0.00316}
+                          'hmmosvm_nu': 0.000316}
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
@@ -557,7 +560,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.5, 'scale': 2.0,\
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 3.16, 'gamma': 0.1, 'cost': 3.25,\
-                          'hmmosvm_nu': 0.00316}
+                          'hmmosvm_nu': 0.000316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
@@ -660,7 +663,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.6, 'scale': 0.01}
         SVM_param_dict = {'renew': False, 'w_negative': 2.677, 'gamma': 0.1896, 'cost': 5.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
-                          'osvm_nu': 0.00012,\
+                          'osvm_nu': 0.00316,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 10.0, \
                           'hmmsvm_diag_gamma': 0.5075,\
@@ -700,7 +703,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
         SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 3.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
-                          'hmmosvm_nu': 0.001}
+                          'hmmosvm_nu': 0.000316}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
