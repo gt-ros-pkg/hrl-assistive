@@ -29,7 +29,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS' 'svm'
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'osvm', 'svm' ],\
-                          'update_list': [ 'svm'],\
+                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
@@ -151,8 +151,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
 
         nPoints        = 20 #, 'osvm' 'bpsvm', 'progress_state' 'progress_time_cluster', 'svm','fixed', 
-        ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_LSLS'],\
-                          'update_list': ['hmmosvm'],\
+        ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_LSLS', 'bpsvm'],\
+                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'progress_state_param_range':np.linspace(-1, -40., nPoints), \
@@ -309,8 +309,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20   
         ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
-                                       'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS', 'progress_state' ],\
-                          'update_list': [ ],\
+                                       'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS', 'progress_state',\
+                                       'bpsvm'],\
+                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -16., nPoints), \
                           'progress_state_param_range':np.logspace(-0.6, 3.5, nPoints)*-1.0+0.4, \
@@ -478,7 +479,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
-                          'update_list': [ 'svm', 'fixed'],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.2, 1.2, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(0.8, -1.0, nPoints),\
@@ -516,8 +517,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               }                              
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' ,  'osvm', 'hmmsvm_dL', , 'bpsvm' 'progress_state'
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS' ],\
-                          'update_list': [ 'hmmsvm_LSLS', 'hmmsvm_diag', 'svm', 'fixed' ],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'bpsvm' ],\
+                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
@@ -679,8 +680,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           }
 
         # 'bpsvm', 'osvm', 
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state' ],\
-                          'update_list': [ 'svm', 'hmmsvm_LSLS' ],\
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm' ],\
+                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
