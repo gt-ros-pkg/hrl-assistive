@@ -1031,9 +1031,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     dataList   = []
     for idx in xrange(len(d['timesList'])): # each sample
 
-        param_dict['timeList'] = timesList = d['timesList'][idx]
+        param_dict['timeList'] = timeList = d['timesList'][idx]
         dataSample = None
-        if len(timesList) < 2: offset_flag=False
+        if len(timeList) < 2: offset_flag=False
         else: offset_flag=True
             
 
