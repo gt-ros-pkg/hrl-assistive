@@ -1323,7 +1323,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
         # training hmm
         if verbose: print "start to fit hmm"
         dd = ut.load_pickle(ref_modeling_pkl)
-        nEmissionDim = d['nEmissionDim']
+        nEmissionDim = dd['nEmissionDim']
         A  = dd['A']
         B  = dd['B']
         pi = dd['pi']
