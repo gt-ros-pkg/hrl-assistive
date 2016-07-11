@@ -2496,7 +2496,7 @@ if __name__ == '__main__':
         refSampleSize = param_dict['data_param']['downSampleSize']
         
         
-        for sampleSize in [100, 300]:
+        for sampleSize in [100, 400]:
             print "============================="
             print "Sample Size: ", sampleSize
             print "============================="
