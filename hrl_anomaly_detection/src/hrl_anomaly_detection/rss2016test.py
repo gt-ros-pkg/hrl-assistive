@@ -808,12 +808,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     osvm_data = None ; bpsvm_data = None
-    if 'osvm' in method_list:
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
         ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False)
-    if 'bpsvm' in method_list:
+    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
 
         # get ll_cut_idx only for pos data
         pos_dict = []
@@ -931,6 +931,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ax1 = fig.add_subplot(111)
 
             if delay_plot:
+                if method not in ['svm', 'hmmosvm', 'progress_time_cluster', 'bpsvm']: continue
                 plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
                 plt.xlim([-1, 101])
                 ## plt.ylim([-1, 101])
@@ -939,7 +940,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
                 plt.xticks([0, 50, 100], fontsize=22)
                 ## plt.yticks([0, 50, 100], fontsize=22)
-            else:
+            else:                
                 plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
                 plt.xlim([-1, 101])
                 plt.ylim([-1, 101])
@@ -1228,6 +1229,21 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     raw_data=None, startIdx=4, nState=25, \
                     modeling_pkl_prefix=None):
 
+    #-----------------------------------------------------------------------------------------
+    nPoints     = ROC_dict['nPoints']
+
+    data = {}
+    # pass method if there is existing result
+    data[method] = {}
+    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+    if ROC_data[method]['complete'] == True: return data
+    #-----------------------------------------------------------------------------------------
+
     ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
     from hrl_anomaly_detection.classifiers import classifier as cb
@@ -1340,20 +1356,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    remove_fp=remove_fp)
                                                                    
 
-    nPoints     = ROC_dict['nPoints']
-
-    #-----------------------------------------------------------------------------------------
-
-    data = {}
-    # pass method if there is existing result
-    data[method] = {}
-    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-
-    if ROC_data[method]['complete'] == True: return data
 
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve

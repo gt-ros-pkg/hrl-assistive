@@ -308,10 +308,10 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               }
 
         nPoints        = 20   
-        ROC_param_dict = {'methods': [ 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
+        ROC_param_dict = {'methods': [ 'bpsvm', 'change','progress_time_cluster','fixed' , 'svm' , 'hmmosvm', \
                                        'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'hmmsvm_LSLS', 'progress_state',\
-                                       'bpsvm'],\
-                          'update_list': [ 'progress_time_cluster', 'svm', 'fixed', 'bpsvm'],\
+                                       ],\
+                          'update_list': [ 'bpsvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1, -16., nPoints), \
                           'progress_state_param_range':np.logspace(-0.6, 3.5, nPoints)*-1.0+0.4, \

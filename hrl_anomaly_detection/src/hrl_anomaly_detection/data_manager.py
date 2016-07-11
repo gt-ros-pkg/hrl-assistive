@@ -826,7 +826,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         data[file_idx]['idx_train_org'] = None
         data[file_idx]['X_test']        = X_test
         data[file_idx]['Y_test']        = Y_test
-        data[file_idx]['idx_test']      = None
+        data[file_idx]['idx_test']      = ll_classifier_test_idx
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
 
     return data 
