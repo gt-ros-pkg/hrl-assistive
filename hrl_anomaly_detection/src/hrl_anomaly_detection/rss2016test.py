@@ -1384,14 +1384,12 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     for i, method in enumerate(method_list):
         if method not in ROC_data.keys() or method in ROC_dict['update_list']:            
             ROC_data[method] = {}
-            for j, sampleSize in enumerate(ROC_dict['downSampleSizes']):
-                ROC_data[method][sampleSize] = {}
-                ROC_data[method][sampleSize]['complete'] = False 
-                ROC_data[method][sampleSize]['tp_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method][sampleSize]['fp_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method][sampleSize]['tn_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method][sampleSize]['fn_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method][sampleSize]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     # parallelization
     if debug: n_jobs=1
@@ -1400,10 +1398,8 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, \
-                                                                 startIdx=startIdx, nState=nState, \
-                                                                 testSampleSize=sampleSize) \
+                                                                 startIdx=startIdx, nState=nState) \
                                                                  for idx in xrange(len(kFold_list)) \
-                                                                 for sampleSize in ROC_dict['downSampleSizes'] \
                                                                  for method in method_list )
                                                                   
     l_data = r
@@ -1509,7 +1505,6 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    testSampleSize=None, \
                     modeling_pkl_prefix=None):
 
     #-----------------------------------------------------------------------------------------
