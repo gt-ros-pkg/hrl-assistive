@@ -1247,6 +1247,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
 
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(refSampleSize)+'_4')
+    modeling_pkl_prefix = 'hmm_freq_'+task_name
 
 
     #------------------------------------------
@@ -1308,7 +1309,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
             print "No reference modeling file exists"
             sys.exit()
         
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_freq_'+task_name+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
@@ -1398,7 +1399,8 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, \
-                                                                 startIdx=startIdx, nState=nState) \
+                                                                 startIdx=startIdx, nState=nState,\
+                                                                 modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
                                                                   
