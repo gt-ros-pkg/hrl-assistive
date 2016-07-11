@@ -520,7 +520,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 # ------------------------------------------------------------------------------------
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
+                   data_renew=False, save_pdf=False, verbose=False, debug=False,\
                    no_plot=False, delay_plot=True):
 
     ## Parameters
@@ -870,110 +870,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    
-    print "Start to visualize ROC curves!!!"
-    ## ROC_data = ut.load_pickle(roc_pkl)        
-
-    if no_plot is False:
-        fig = plt.figure()
-
-    for method in method_list:
-
-        tp_ll = ROC_data[method]['tp_l']
-        fp_ll = ROC_data[method]['fp_l']
-        tn_ll = ROC_data[method]['tn_l']
-        fn_ll = ROC_data[method]['fn_l']
-        delay_ll = ROC_data[method]['delay_l']
-
-        tpr_l = []
-        fpr_l = []
-        fnr_l = []
-        delay_mean_l = []
-        delay_std_l  = []
-
-        for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-            fnr_l.append( 100.0 - tpr_l[-1] )
-            delay_mean_l.append( np.mean(delay_ll[i]) )
-            delay_std_l.append( np.std(delay_ll[i]) )
-
-        # add edge
-        ## fpr_l = [0] + fpr_l + [100]
-        ## tpr_l = [0] + tpr_l + [100]
-
-        print "--------------------------------"
-        print " AUC and delay "
-        print "--------------------------------"
-        print method
-        print tpr_l
-        print fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-        print "--------------------------------"
-
-        if method == 'svm': label='HMM-SVM'
-        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
-        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
-        elif method == 'fixed': label='HMMs with a fixed threshold'
-        elif method == 'change': label='HMMs with change detection'
-        elif method == 'cssvm': label='HMM-CSSVM'
-        elif method == 'sgd': label='SGD'
-        elif method == 'hmmosvm': label='HMM-OneClassSVM'
-        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-        elif method == 'osvm': label='Kernel-SVM'
-        elif method == 'bpsvm': label='Biased penalty SVM'
-        else: label = '???' 
-
-        if no_plot is False:
-            # visualization
-            color = colors.next()
-            shape = shapes.next()
-            ax1 = fig.add_subplot(111)
-
-            if delay_plot:
-                if method not in ['svm', 'hmmosvm', 'progress_time_cluster', 'bpsvm']: continue
-                plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-                plt.xlim([-1, 101])
-                ## plt.ylim([-1, 101])
-                plt.ylabel('Delay Time', fontsize=22)
-                plt.xlabel('False positive rate (percentage)', fontsize=22)
-
-                plt.xticks([0, 50, 100], fontsize=22)
-                ## plt.yticks([0, 50, 100], fontsize=22)
-            else:                
-                plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-                plt.xlim([-1, 101])
-                plt.ylim([-1, 101])
-                plt.ylabel('True positive rate (percentage)', fontsize=22)
-                plt.xlabel('False positive rate (percentage)', fontsize=22)
-
-                ## font = {'family' : 'normal',
-                ##         'weight' : 'bold',
-                ##         'size'   : 22}
-                ## matplotlib.rc('font', **font)
-                ## plt.tick_params(axis='both', which='major', labelsize=12)
-                plt.xticks([0, 50, 100], fontsize=22)
-                plt.yticks([0, 50, 100], fontsize=22)
-                
-            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
-            ## x = range(len(delay_mean_l))
-            ## ax1 = fig.add_subplot(122)
-            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
-
-    if no_plot is False:
-        plt.legend(loc='lower right', prop={'size':20})
-
-    if save_pdf:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-    elif no_plot is False:
-        plt.show()
-                   
+    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+                       
 
 def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                     data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
+                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
                      no_plot=False):
 
     ## Parameters
@@ -1145,88 +1046,17 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Result ----------------------
-    modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
-    d = ut.load_pickle(modeling_noise_pkl)
-    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ## modeling_noise_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
+    ## d = ut.load_pickle(modeling_noise_pkl)
+    ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
 
-    if no_plot is False:
-        fig = plt.figure()
-    
-    print "Start to visualize ROC curves!!!"
-    for method in method_list:
-
-        tp_ll = ROC_data[method]['tp_l']
-        fp_ll = ROC_data[method]['fp_l']
-        tn_ll = ROC_data[method]['tn_l']
-        fn_ll = ROC_data[method]['fn_l']
-        delay_ll = ROC_data[method]['delay_l']
-
-        tpr_l = []
-        fpr_l = []
-        fnr_l = []
-        delay_mean_l = []
-        delay_std_l  = []
-
-        for i in xrange(nPoints):
-            if np.sum(tp_ll[i])+np.sum(fn_ll[i]) > 0:            
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            if np.sum(fp_ll[i])+np.sum(tn_ll[i]) > 0:
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-
-        print "--------------------------------"
-        print method
-        print "tpr: ", tpr_l
-        print "fpr: ", fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-        print "--------------------------------"
-
-        if method == 'svm': label='HMM-SVM'
-        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
-        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
-        elif method == 'fixed': label='HMMs with a fixed threshold'
-        elif method == 'change': label='HMMs with change detection'
-        elif method == 'cssvm': label='HMM-CSSVM'
-        elif method == 'sgd': label='SGD'
-        elif method == 'hmmosvm': label='HMM-OneClassSVM'
-        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-        elif method == 'osvm': label='Kernel-SVM'
-        elif method == 'bpsvm': label='Biased penalty SVM'
-
-        if no_plot is False:
-            # visualization
-            color = colors.next()
-            shape = shapes.next()
-            ax1 = fig.add_subplot(111)            
-            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-            plt.xlim([-1, 101])
-            plt.ylim([-1, 101])
-            plt.ylabel('True positive rate (percentage)', fontsize=22)
-            plt.xlabel('False positive rate (percentage)', fontsize=22)
-
-            ## font = {'family' : 'normal',
-            ##         'weight' : 'bold',
-            ##         'size'   : 22}
-            ## matplotlib.rc('font', **font)
-            ## plt.tick_params(axis='both', which='major', labelsize=12)
-            plt.xticks([0, 50, 100], fontsize=22)
-            plt.yticks([0, 50, 100], fontsize=22)
-            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
-    if no_plot is False:
-        plt.legend(loc='lower right', prop={'size':20})
-
-    if save_pdf:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-    elif no_plot is False:
-        plt.show()
 
 
 def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     refSampleSize,\
-                    data_renew=False, save_pdf=False, show_plot=True, verbose=False, debug=False,\
-                    no_plot=False, delay_plot=True):
+                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                    no_plot=False, delay_plot=False):
 
     ## Parameters
     # data
@@ -1428,79 +1258,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    print "Start to visualize ROC curves!!!"
-    if no_plot is False:
-        fig = plt.figure()
-
-    for method in method_list:
-
-        tp_ll = ROC_data[method]['tp_l']
-        fp_ll = ROC_data[method]['fp_l']
-        tn_ll = ROC_data[method]['tn_l']
-        fn_ll = ROC_data[method]['fn_l']
-        delay_ll = ROC_data[method]['delay_l']
-
-        tpr_l = []
-        fpr_l = []
-        fnr_l = []
-        delay_mean_l = []
-        delay_std_l  = []
-
-        for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-            fnr_l.append( 100.0 - tpr_l[-1] )
-            delay_mean_l.append( np.mean(delay_ll[i]) )
-            delay_std_l.append( np.std(delay_ll[i]) )
-
-        print "--------------------------------"
-        print " AUC and delay "
-        print "--------------------------------"
-        print method
-        print tpr_l
-        print fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-        print "--------------------------------"
-
-        if method == 'svm': label='HMM-SVM'
-        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
-        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
-        elif method == 'fixed': label='HMMs with a fixed threshold'
-        elif method == 'change': label='HMMs with change detection'
-        elif method == 'cssvm': label='HMM-CSSVM'
-        elif method == 'sgd': label='SGD'
-        elif method == 'hmmosvm': label='HMM-OneClassSVM'
-        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-        elif method == 'osvm': label='Kernel-SVM'
-        elif method == 'bpsvm': label='Biased penalty SVM'
-        else: label = method
-
-        if no_plot is False:
-            # visualization
-            color = colors.next()
-            shape = shapes.next()
-            ax1 = fig.add_subplot(111)
-
-            plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-            plt.xlim([-1, 101])
-            plt.ylim([-1, 101])
-            plt.ylabel('True positive rate (percentage)', fontsize=22)
-            plt.xlabel('False positive rate (percentage)', fontsize=22)
-
-            plt.xticks([0, 50, 100], fontsize=22)
-            plt.yticks([0, 50, 100], fontsize=22)
-                
-            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
-    if no_plot is False:
-        plt.legend(loc='lower right', prop={'size':20})
-
-    if save_pdf:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-    elif no_plot is False:
-        plt.show()
+    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
 
 
 
@@ -1779,11 +1537,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
     print "finished ", idx, method
     return data
-
-
-    
-    
-                
+                       
         
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               downSampleSize=200, \
@@ -2392,7 +2146,109 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             os.system('mv test.* ~/Dropbox/HRL/')
 
 
+def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False):
+    # ---------------- ROC Visualization ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)        
 
+    if no_plot is False:
+        fig = plt.figure()
+
+    for method in method_list:
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            delay_mean_l.append( np.mean(delay_ll[i]) )
+            delay_std_l.append( np.std(delay_ll[i]) )
+
+        # add edge
+        ## fpr_l = [0] + fpr_l + [100]
+        ## tpr_l = [0] + tpr_l + [100]
+
+        print "--------------------------------"
+        print " AUC and delay "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+        if method == 'svm': label='HMM-SVM'
+        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMMs with a fixed threshold'
+        elif method == 'change': label='HMMs with change detection'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'bpsvm': label='Biased penalty SVM'
+        else: label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            if delay_plot:
+                if method not in ['svm', 'hmmosvm', 'progress_time_cluster', 'bpsvm']: continue
+                plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                plt.xlim([-1, 101])
+                ## plt.ylim([-1, 101])
+                plt.ylabel('Delay Time', fontsize=22)
+                plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+                plt.xticks([0, 50, 100], fontsize=22)
+                ## plt.yticks([0, 50, 100], fontsize=22)
+            else:                
+                plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                plt.xlim([-1, 101])
+                plt.ylim([-1, 101])
+                plt.ylabel('True positive rate (percentage)', fontsize=22)
+                plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+                ## font = {'family' : 'normal',
+                ##         'weight' : 'bold',
+                ##         'size'   : 22}
+                ## matplotlib.rc('font', **font)
+                ## plt.tick_params(axis='both', which='major', labelsize=12)
+                plt.xticks([0, 50, 100], fontsize=22)
+                plt.yticks([0, 50, 100], fontsize=22)
+                
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+            ## x = range(len(delay_mean_l))
+            ## ax1 = fig.add_subplot(122)
+            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+
+    if no_plot is False:
+        plt.legend(loc='lower right', prop={'size':20})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+    
 
 
 
@@ -2639,8 +2495,11 @@ if __name__ == '__main__':
         param_dict['SVM']['renew'] = False
         refSampleSize = param_dict['data_param']['downSampleSize']
         
-        for sampleSize in [50, 100]:
-
+        
+        for sampleSize in [100, 300]:
+            print "============================="
+            print "Sample Size: ", sampleSize
+            print "============================="
             param_dict['data_param']['downSampleSize'] = sampleSize
             save_data_path = os.path.expanduser('~')+\
               '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
@@ -2650,3 +2509,7 @@ if __name__ == '__main__':
                             refSampleSize,\
                             save_pdf=opt.bSavePdf, \
                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+
+        # vis
+        ## targetSampleSizes = [50, 100, 200]
+        
