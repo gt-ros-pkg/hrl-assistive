@@ -2508,7 +2508,8 @@ if __name__ == '__main__':
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
             if sampleSize > 200:
-                ## param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
+                param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
+                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                 if opt.task == "pushing_microblack":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
