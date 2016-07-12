@@ -2528,8 +2528,8 @@ if __name__ == '__main__':
                 if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                 if opt.task == "pushing_microblack":
                     param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-4, 0.0, nPoints)
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 5.0
-                    param_dict['ROC']['svm_param_range'] *= 1.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 3.0
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-3.0, 0.0, nPoints)
                 if opt.task == "pushing_microwhite":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 18.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 15.0
