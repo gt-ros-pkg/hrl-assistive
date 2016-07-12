@@ -2489,7 +2489,7 @@ if __name__ == '__main__':
         '''
         Change into different sampling frequency
         '''
-        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS']
+        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_LSLS']
         param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
         param_dict['SVM']['renew'] = False
