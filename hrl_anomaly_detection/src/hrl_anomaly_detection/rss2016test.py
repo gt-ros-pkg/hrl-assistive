@@ -2522,6 +2522,14 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
                     param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, nPoints)
+                if opt.task == "scooping":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 20.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-1.5, 2.0, nPoints) 
+                if opt.task == "feeding":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
+                    param_dict['ROC']['svm_param_range'] *= 10.0
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
