@@ -2490,7 +2490,7 @@ if __name__ == '__main__':
         Change into different sampling frequency
         '''
         param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_LSLS']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_LSLS']
         param_dict['HMM']['renew'] = False
         param_dict['SVM']['renew'] = False
         refSampleSize = param_dict['data_param']['downSampleSize']
@@ -2506,7 +2506,9 @@ if __name__ == '__main__':
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
             if sampleSize > 200:
-                
+                param_dict['SVM']['hmmsvm_dL_param_range'] *= 15.0
+                param_dict['SVM']['hmmsvm_LSLS_param_range'] *= 15.0
+                param_dict['SVM']['svm_param_range'] *= 15.0
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
