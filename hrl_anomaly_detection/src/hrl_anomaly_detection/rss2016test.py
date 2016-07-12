@@ -2531,6 +2531,8 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
                     param_dict['ROC']['svm_param_range'] *= 10.0
             if sampleSize == 100:
+                param_dict['ROC']['update_list'] = ['svm']
+                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                 if opt.task == "pushing_toolcase":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
