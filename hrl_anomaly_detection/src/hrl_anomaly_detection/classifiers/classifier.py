@@ -81,6 +81,11 @@ class classifier(learning_base):
                  hmmsvm_LSLS_w_negative = 7.0,\
                  hmmsvm_LSLS_cost       = 4.,\
                  hmmsvm_LSLS_gamma      = 0.3,\
+                 # hmmsvm_dL
+                 hmmsvm_no_dL_nu         = 0.5,\
+                 hmmsvm_no_dL_w_negative = 7.0,\
+                 hmmsvm_no_dL_cost       = 4.,\
+                 hmmsvm_no_dL_gamma      = 0.3,\
                  # hmmosvm
                  hmmosvm_nu  = 0.5,\
                  # osvm
@@ -130,6 +135,10 @@ class classifier(learning_base):
             self.hmmsvm_LSLS_w_negative = hmmsvm_LSLS_w_negative
             self.hmmsvm_LSLS_cost       = hmmsvm_LSLS_cost
             self.hmmsvm_LSLS_gamma      = hmmsvm_LSLS_gamma                        
+            self.hmmsvm_no_dL_nu         = hmmsvm_no_dL_nu
+            self.hmmsvm_no_dL_w_negative = hmmsvm_no_dL_w_negative
+            self.hmmsvm_no_dL_cost       = hmmsvm_no_dL_cost
+            self.hmmsvm_no_dL_gamma      = hmmsvm_no_dL_gamma
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
@@ -203,6 +212,9 @@ class classifier(learning_base):
             elif self.method == 'hmmsvm_LSLS':
                 commands = commands+' -n '+str(self.hmmsvm_LSLS_nu)+' -g '+str(self.hmmsvm_LSLS_gamma)\
                   +' -w-1 '+str(self.hmmsvm_LSLS_w_negative)+' -c '+str(self.hmmsvm_LSLS_cost)
+            elif self.method == 'hmmsvm_no_dL':
+                commands = commands+' -n '+str(self.hmmsvm_no_dL_nu)+' -g '+str(self.hmmsvm_no_dL_gamma)\
+                  +' -w-1 '+str(self.hmmsvm_no_dL_w_negative)+' -c '+str(self.hmmsvm_no_dL_cost)
             elif self.method == 'bpsvm':
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.bpsvm_gamma)\
                   +' -w-1 '+str(self.bpsvm_w_negative)+' -c '+str(self.bpsvm_cost)
@@ -681,7 +693,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS':
+    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or\
+      method == 'hmmsvm_no_dL' :
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
@@ -720,7 +733,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( svm_type=2 )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
     else:
-        print "Not available method"
+        print "Not available method: ", method
         return "Not available method", -1
 
     if ret is False:

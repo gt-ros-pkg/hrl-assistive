@@ -321,7 +321,8 @@ if __name__ == '__main__':
                                                                 ae_swtch=opt.bAESwitch, dim=opt.dim)
 
         nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL',\
+                                      'hmmsvm_no_dL'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
@@ -332,6 +333,7 @@ if __name__ == '__main__':
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
@@ -375,6 +377,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
@@ -403,6 +411,7 @@ if __name__ == '__main__':
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'osvm_param_range': np.logspace(-4, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
@@ -453,6 +462,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.01,4.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
@@ -480,6 +495,7 @@ if __name__ == '__main__':
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -530,6 +546,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(5,15.0,5),\
@@ -566,6 +588,7 @@ if __name__ == '__main__':
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
@@ -618,6 +641,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
                           }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
                           'bpsvm_cost': np.linspace(7,18.0,5),\
@@ -660,6 +689,7 @@ if __name__ == '__main__':
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
@@ -708,6 +738,12 @@ if __name__ == '__main__':
                           'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
                           'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
                           'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
                           }
         elif opt.method == 'bpsvm':
             ## parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \

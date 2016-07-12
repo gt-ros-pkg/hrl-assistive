@@ -1383,6 +1383,13 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         new_x[i].append( x[i][j-1]+x[i][j] )
 
             ll_classifier_test_X = new_x
+        elif method == 'hmmsvm_no_dL':
+            # remove dL related things
+            ll_classifier_train_X = np.array(ll_classifier_train_X)
+            ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
+
+            ll_classifier_test_X = np.array(ll_classifier_test_X)
+            ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
             
                           
         # flatten the data
@@ -1439,7 +1446,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ## cb.run_classifier(j)
         dtc.set_params( **SVM_dict )
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-          method == 'bpsvm':
+          method == 'bpsvm' or method == 'hmmsvm_no_dL':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
