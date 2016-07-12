@@ -2515,9 +2515,9 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
                     param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.0, nPoints)
                 if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 20.0
+                    param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 1.0, nPoints) 
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 0.1
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.8, nPoints) 
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.0, nPoints) 
                 if opt.task == "feeding":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 0.8, nPoints)
@@ -2539,7 +2539,7 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4.0, 0.0, nPoints) 
                     param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.2, nPoints)
                 if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 25.0
+                    param_dict['ROC']['hmmsvm_dL_param_range']    = np.logspace(-4.0, 2.7, nPoints) 
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
                     param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.8, nPoints) 
                 if opt.task == "feeding":
