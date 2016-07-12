@@ -220,10 +220,12 @@ class armReachAction(mpcBaseAction):
                                                 ## ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
                                                 ## ['MOVEL', '[ -0.1, -0.1, -0.3, -0.8, 0., 0.]', 7., 'self.mouth_frame'],
                                                 ## ['PAUSE', 2.0]]
-    
+
         self.motions['initFeeding2'] = {}
-        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame'],\
-                                                ['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
+                                                
+        self.motions['initFeeding3'] = {}
+        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\

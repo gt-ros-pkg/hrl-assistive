@@ -54,7 +54,7 @@ class armReacherGUI:
         #variables
         self.emergencyStatus = False
         self.inputStatus = False
-        self.actionStatus = 'Both'
+        self.actionStatus = 'Init'
         self.inputMsg = None
         self.feedbackMsg = None
         self.emergencyMsg = None
@@ -86,24 +86,26 @@ class armReacherGUI:
         self.armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
         
 
-    def inputCallback(self, data):
+    def inputCallback(self, msg):
         #Callback function for input. It communicate with both start and continue button.
         rospy.wait_for_service("/arm_reach_enable")
-        self.inputMSG = data.data
+        self.inputMSG = msg.data
         self.inputStatus = True
         #Maybe had to add if statement.
         self.emergencyStatus = False
         print "Input received"
+
+        # initialize current motion only when Start button is pushed
         if self.inputMSG == 'Start':
             self.ScoopNumber = 0
             self.FeedNumber = 0
 
 
-    def emergencyCallback(self, data):
+    def emergencyCallback(self, msg):
         #Emergency status button.
         self.emergencyStatus = True
         self.inputStatus = False
-        self.emergencyMsg = data.data
+        self.emergencyMsg = msg.data
         if self.emergencyMsg == 'STOP':
             self.emergencyPub.publish("STOP")
         print "Emergency received"
@@ -118,7 +120,7 @@ class armReacherGUI:
             print "Waiting aborting Sequence"
             if self.left_mtx is False and self.right_mtx is False: break
             
-        self.safetyMotion(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+        self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
 
         if self.log != None: self.log.close_log_file_GUI()
         rospy.sleep(2.0)
@@ -126,13 +128,13 @@ class armReacherGUI:
 
 
 
-    def feedbackCallback(self, data):
+    def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
-        self.feedbackMsg = data.data
+        self.feedbackMsg = msg.data
 
-    def statusCallback(self, data):
+    def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
-        self.actionStatus = data.data
+        self.actionStatus = msg.data
         rospy.loginfo("status received")
         if self.log != None:
             if self.actionStatus == "Scooping":
@@ -145,7 +147,7 @@ class armReacherGUI:
 
     # --------------------------------------------------------------------------
     def run(self):
-        print "Continous run function called"
+        rospy.loginfo("Continous run function called")
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if self.inputStatus and self.actionStatus == 'Scooping':
@@ -156,30 +158,34 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Feeding Starting....")
                 self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
-            elif self.inputStatus and self.actionStatus == 'Both':
+            elif self.inputStatus and self.actionStatus == 'Init':
                 self.inputStatus = False
-                rospy.loginfo("Scoop and Feed starting...")
-                self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                rospy.loginfo("Init motion...")
+                self.initMotion(self.armReachActionLeft, self.armReachActionRight)
             rate.sleep()
- 
+
+
+    def initMotion(self, armReachActionLeft, armReachActionRight):
+        rospy.loginfo("Initializing arms")
+        leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
+        rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
+        leftProc.start(); rightProc.start()
+        leftProc.join(); rightProc.join()
+        self.ScoopNumber = 1
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):
-        self.curTask = 'scooping'
         while not self.emergencyStatus and not rospy.is_shutdown():
 
             if self.log != None:
                 self.log.setTask('scooping')
                 self.log.initParams()
             self.FeedNumber = 0
+            
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
                 rospy.loginfo("Initializing arms for scooping")
-                leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
-                rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
-                leftProc.start(); rightProc.start()
-                leftProc.join(); rightProc.join()
+                self.initMotion(armReachActionLeft, armReachActionRight)
                 if self.emergencyStatus: break
                 self.ScoopNumber = 1
         
@@ -187,9 +193,12 @@ class armReacherGUI:
                 self.ServiceCallLeft("getBowlPos")            
                 self.ServiceCallLeft('lookAtBowl')
                 if self.emergencyStatus: break
+                self.ScoopNumber = 2            
+                
+            if self.ScoopNumber < 3:        
                 self.ServiceCallLeft("initScooping2")
                 if self.emergencyStatus: break
-                self.ScoopNumber = 2            
+                self.ScoopNumber = 3            
     
             if self.log is not None:
                 self.log.log_start()
@@ -207,12 +216,10 @@ class armReacherGUI:
                 self.log.close_log_file_GUI()
             self.ScoopNumber = 0
             break
-        self.curTask = None
 
     
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
 
-        self.curTask = 'feeding'
         while not self.emergencyStatus and not rospy.is_shutdown():
             if self.log != None:
                 self.log.setTask('feeding' )
@@ -233,38 +240,39 @@ class armReacherGUI:
             if self.FeedNumber < 2:
                 rospy.loginfo("Detect a mouth")
                 self.ServiceCallLeft("getHeadPos")
+                self.ServiceCallLeft("initFeeding2")
                 self.FeedNumber = 2
     
             if self.FeedNumber < 3:
                 rospy.loginfo("Running init feeding2")
-                self.ServiceCallLeft("initFeeding2")
+                self.ServiceCallLeft("initFeeding3")
                 if self.emergencyStatus: break
                 self.FeedNumber = 3
     
-            if self.log is None:
-                self.log.log_start()
-                if detection_flag: self.log.enableDetector(True)
-        
-            rospy.loginfo("Running feeding")
-            self.ServiceCallLeft("runFeeding")
-            if self.emergencyStatus:
-                if detection_flag: self.log.enableDetector(False)                
-                break
-            
-            if self.log is not None:
-                self.falselogPub.publish("Requesting Feedback!")    
-                if detection_flag: self.log.enableDetector(False)
-                self.log.close_log_file_GUI()
+            if self.FeedNumber < 4:
+                if self.log is None:
+                    self.log.log_start()
+                    if detection_flag: self.log.enableDetector(True)
 
-            # Returning motion
-            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
-            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
-            leftProc.start(); rightProc.start()
-            leftProc.join(); rightProc.join()
-            if self.emergencyStatus: break
-            self.FeedNumber = 0
-            break
-        self.curTask = None
+                rospy.loginfo("Running feeding")
+                self.ServiceCallLeft("runFeeding")
+                if self.emergencyStatus:
+                    if detection_flag: self.log.enableDetector(False)                
+                    break
+
+                if self.log is not None:
+                    self.falselogPub.publish("Requesting Feedback!")    
+                    if detection_flag: self.log.enableDetector(False)
+                    self.log.close_log_file_GUI()
+
+                self.FeedNumber = 4
+                    
+            if self.FeedNumber < 5:
+                # Returning motion
+                self.ServiceCallLeft("initFeeding2")
+                if self.emergencyStatus: break
+                self.FeedNumber = 0
+                break
 
         
     def ServiceCallLeft(self, cmd):
@@ -288,18 +296,30 @@ class armReacherGUI:
             return False
         
             
-    def safetyMotion(self, armReachActionLeft, armReachActionRight, log, detection_flag):
-        if self.FeedNumber<1:
-            self.ScoopNumber = 0
-            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
-            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
-            leftProc.start(); rightProc.start()
-            leftProc.join(); rightProc.join()
-        elif self.FeedNumber<2:
-            self.ServiceCallLeft("initFeeding1")
-        else: 
-            #print self.armReachActionLeft("runFeeding1")
-            self.ServiceCallLeft("initFeeding2")
+    def safetyMotion(self, armReachActionLeft, armReachActionRight):
+
+        if self.actionStatus == 'Scooping':
+            if self.ScoopNumber<3:
+                self.initMotion(armReachActionLeft, armReachActionRight)
+            else:
+                self.ServiceCallLeft("initScooping2")
+
+        elif self.actionStatus == 'Feeding':
+            if self.FeedNumber<1:
+                self.ServiceCallRight("initScooping1")
+            elif self.FeedNumber<2:
+                self.ServiceCallLeft("initFeeding1")
+            elif self.FeedNumber<3:
+                self.ServiceCallLeft("initFeeding2")
+            elif self.FeedNumber<4:
+                self.ServiceCallLeft("initFeeding3")
+            else: 
+                #print self.armReachActionLeft("runFeeding1")
+                self.ServiceCallLeft("initFeeding2")
+                ## self.initMotion(armReachActionLeft, armReachActionRight)
+
+        else:
+            rospy.loginfo("There is no safe motion for Init movement")
 
 
  
