@@ -2506,9 +2506,9 @@ if __name__ == '__main__':
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
             if sampleSize > 200:
-                param_dict['SVM']['hmmsvm_dL_param_range'] *= 15.0
-                param_dict['SVM']['hmmsvm_LSLS_param_range'] *= 15.0
-                param_dict['SVM']['svm_param_range'] *= 15.0
+                param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
+                param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 15.0
+                param_dict['ROC']['svm_param_range'] *= 15.0
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
