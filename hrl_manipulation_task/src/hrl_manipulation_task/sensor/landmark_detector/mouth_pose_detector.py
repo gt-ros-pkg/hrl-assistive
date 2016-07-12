@@ -17,6 +17,7 @@ from sensor_msgs.msg import CameraInfo, Image, PointCloud2
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose, Point32, PolygonStamped, Vector3
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
+from skimage.transform import radon, rescale
 from cv_bridge import CvBridge, CvBridgeError
 
 class MouthPoseDetector:
@@ -34,6 +35,7 @@ class MouthPoseDetector:
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(os.path.expanduser('~') + '/Desktop/shape_predictor_68_face_landmarks.dat')
         self.wrong_coor = (-100, -100, -100)
+        self.eye_detector = cv2.CascadeClassifier(os.path.expanduser('~')+ '/Desktop/haarcascade_eye.xml')
 
         #for tf processing
         if display_3d:
@@ -54,19 +56,24 @@ class MouthPoseDetector:
         self.save_loc          = save_loc
         if self.save_loc is not None:
             self.save_loc = os.path.expanduser('~') + save_loc
-        self.first             = True
-        self.relation          = None
-        self.dist              = []
-        self.reverse_dist      = []
-        self.half_dist         = []
-        self.point_set         = []
-        self.current_positions = []
-        self.object_points     = []
-        self.point_set_index   = []
-        self.sizes             = []
-        self.lm_coor           = []
-        self.previous_position = (0.0, 0.0, 0.0)
-        self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
+        self.first                 = True
+        self.relation              = None
+        self.dist                  = []
+        self.reverse_dist          = []
+        self.half_dist             = []
+        self.point_set             = []
+        self.current_positions     = []
+        self.object_points         = []
+        self.point_set_index       = []
+        self.sizes                 = []
+        self.lm_coor               = []
+        self.registered_eye_vertical   = []
+        self.registered_eye_horizontal = []
+        self.registered_faces      = 0
+        self.min_w                 = 0
+        self.min_h                 = 0
+        self.previous_position     = (0.0, 0.0, 0.0)
+        self.previous_orientation  = (0.0, 0.0, 0.0, 0.0)
 
         if load_loc is not None:
             self.load_loc = os.path.expanduser('~') + load_loc
@@ -83,17 +90,28 @@ class MouthPoseDetector:
         self.ts             = message_filters.ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.gripper_sub], 10, 100)
         self.ts.registerCallback(self.callback)
         
+        self.subscribed_success          = False
+        
         
         #publishers
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
         self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
 
-
+        
         #displays
         if display_3d:
             self.poly_pub = []
             for i in xrange(200):
                 self.poly_pub.append(rospy.Publisher('/poly_pub' + str(i), PolygonStamped, queue_size=10))        
+
+        while not self.subscribed_success or not self.frame_ready:
+            if not self.frame_ready:
+                print "frame data was not registered"
+            if not self.subscribed_success:
+                print "data is either not published or not synchronized"
+                time.sleep(1)
+
+        print "successfully initialized"
 
     def load(self, load_loc):
         if os.path.isfile(load_loc) == False:
@@ -138,9 +156,10 @@ class MouthPoseDetector:
     def callback(self, data, depth_data, gripper_pose):
         #if data is not recent enough, reject
         time1= time.time()
+        self.subscribed_success = True
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
-
+        print "hello world"
         #gripper_pose = PoseStamped()
         position, orientation = self.pose_to_tuple(gripper_pose)
         base_to_gripper = tft.quaternion_matrix(orientation)
@@ -148,13 +167,14 @@ class MouthPoseDetector:
             base_to_gripper[i][3] = position[i]
 
         #get rgb and depth image
-        time_to_gray = time.time()
         img = self.bridge.imgmsg_to_cv2(data, self.rgb_mode)
-        print "time to convert ", time.time()-time_to_gray
         if self.flipped:
             img = cv2.flip(img, 1)
             img = cv2.flip(img, 0)
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img2 = img.copy()
+
+        #radoned  = radon(gray_img, theta=0)
         if self.display_2d:
             self.win.clear_overlay()
             self.win.set_image(img)
@@ -173,24 +193,33 @@ class MouthPoseDetector:
             if self.first:
                 return
             faces = dlib.dlib.rectangles()
-            """
+
             for i in xrange(4):
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom()))
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom()))
+                """
+                for j in xrange(1):
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top() - (5 * (j+1)), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom() - (5 * (j+1))))
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top() - (5 * (j+1)), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom() - (5 * (j+1))))
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top() + (5 * (j+1)), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom() + (5 * (j+1))))
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top() + (5 * (j+1)), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom() + (5 * (j+1))))
+                """
             #faces.append(self.previous_face[0])
             """
             faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
             faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))
-
+            """
             faces.append(self.previous_face[0])
             #faces = self.previous_face
             self.face_detected = False
+            best = 9999
         else:
             self.previous_face = faces
             self.face_detected = True
+            best = 0
         #print img.shape
-        best = 0
         best_pose = PoseStamped()
+        best_point_set = None
         best_rect = self.previous_face[0]
         for d in faces:
             x = d.left()
@@ -200,13 +229,50 @@ class MouthPoseDetector:
             if x + (w/2) < img.shape[1] and y + (h/2) < img.shape[0]:
                 #find landmarks
                 shape = self.predictor(img, d)
-                print type(shape)
                 landmarks = shape.parts()
                 if self.flipped:
                     new_landmarks = []
                     for mark in landmarks:
                         new_landmarks.append(Point((img.shape[1] - 1 - mark.x, img.shape[0] - 1 - mark.y, 0)))
                     landmarks = new_landmarks
+
+                face_img = gray_img[y:y+h, x:x+w]#.astype('uint8')
+                face_img=face_img.astype('uint8')
+
+                theta = [0.0]
+                vertical_integral = radon(face_img, theta=theta).tolist()
+                eye_x, eye_y, eye_w, eye_h = self.find_boundary(landmarks[36:42], img.shape, size_limit=not self.first)
+                if self.first:
+                    self.min_w = int(eye_w)
+                    self.min_h = int(eye_h)
+                    print self.min_w
+                    print self.min_h
+                eye_img = gray_img[eye_y:eye_y+eye_h, eye_x:eye_x+eye_w].astype('uint8')
+                #self.win.set_image(eye_img)
+                theta = [90.0]
+                left_horizontal_integral = radon(eye_img, theta=theta).tolist()
+                theta = [0.0]
+                left_vertical_integral = radon(eye_img, theta=theta).tolist()
+                eye_x, eye_y, eye_w, eye_h = self.find_boundary(landmarks[42:48], img.shape, size_limit=True)
+                eye_img = gray_img[eye_y:eye_y+eye_h, eye_x:eye_x+eye_w].astype('uint8')
+                theta = [90.0]
+                right_horizontal_integral = radon(eye_img, theta=theta).tolist()
+                theta = [0.0]
+                right_vertical_integral = radon(eye_img, theta=theta).tolist()
+                if self.registered_faces < 45 and self.face_detected:
+                    #self.registered_vertical.append(vertical_integral)
+                    self.registered_eye_horizontal.append(left_horizontal_integral)
+                    self.registered_eye_horizontal.append(right_horizontal_integral)
+                    self.registered_eye_vertical.append(left_vertical_integral)
+                    self.registered_eye_vertical.append(right_vertical_integral)
+                    self.registered_faces += 1
+                    if self.registered_faces is 45:
+                        #self.face_vertical_model  = self.find_mean_var(self.registered_vertical)
+                        self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
+                        self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
+                        print self.eye_horizontal_model
+                        #print "finished registering!"
+                        #print self.registered_vertical
                 if self.display_2d:
                     self.win.add_overlay(faces)
                     self.win.add_overlay(shape)
@@ -218,8 +284,6 @@ class MouthPoseDetector:
                     else:
                         second_point = self.get_3d_pixel(int(img.shape[1]- x - 1 - (3 * w/ 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
                         third_point  = self.get_3d_pixel(int(img.shape[1]- x - 1 - (w / 4)), int (img.shape[0]- y - 1 - (4 * h / 9)), depth)
-                    #fourth_point = self.get_3d_pixel(landmarks[36].x, landmarks[36].y, depth)
-                    #fifth_point = self.get_3d_pixel(landmarks[44].x, landmarks[44].y, depth)
                     special_points = [mouth, second_point, third_point]
                     valid_registration = True
                     for point in special_points:
@@ -302,19 +366,41 @@ class MouthPoseDetector:
                     if self.save_loc is not None:
                         self.save(self.save_loc)
                 else:
+                    if self.registered_faces >= 45 and not self.face_detected:
+                        time_to_align = time.time()
+                        left_horizontal_integral  = self.align_integral(left_horizontal_integral, self.eye_horizontal_model)
+                        right_horizontal_integral = self.align_integral(right_horizontal_integral, self.eye_horizontal_model)
+                        left_vertical_integral  = self.align_integral(left_vertical_integral, self.eye_vertical_model)
+                        right_vertical_integral = self.align_integral(right_vertical_integral, self.eye_vertical_model)
+
+                        print "time to align: ", time.time() - time_to_align
+                        #count = left_horizontal_integral[1] + left_vertical_integral[1]
+                        count  = (left_horizontal_integral[1] + right_horizontal_integral[1]) / 4
+                        count += (left_vertical_integral[1] + right_vertical_integral[1]) / 4
+                        """
+                        if left_horizontal_integral[2] > 3.0 or left_vertical_integral[2] > 3.0 or right_horizontal_integral[2] > 3.0 or right_vertical_integral[2] > 3.0:
+                            count += 8.0
+                        """
+                        if best > count:
+                            best_rect = d
+                            best = count
+                            best_point_set = point_set
+                        #time.sleep(2)
+                        continue
                     #retrieve points and make pose
                     pose, pose_points = self.retrieve_special_pose(point_set, depth)
+
+                    #check validity
                     valid_pose = not np.allclose(self.pose_to_tuple(pose)[0], (0.0, 0.0, 0.0)) and not np.allclose(self.pose_to_tuple(pose)[1], (0.0, 0.0, 0.0, 0.0))
                     valid_pose = valid_pose and not np.isnan(self.pose_to_tuple(pose)[0][0]) and not np.isnan(self.pose_to_tuple(pose)[1][0])
                     if not valid_pose:
                         continue
+                        
                     time2 = time.time()
                     retrieved_points = self.retrieve_points_from_orientation(pose)
                     retrieved_points_tuple = []
                     for ret_point in retrieved_points:
                         retrieved_points_tuple.append(self.pose_to_tuple(ret_point)[0])
-                    #print retrieved_points_tuple
-                    #print points_ordered
                     retrieved_landmarks = dlib.dlib.points()
                     for i in xrange(len(landmarks)):
                         prev_point = points_ordered[i]
@@ -339,7 +425,6 @@ class MouthPoseDetector:
                     valid_amount = []
                     for i in xrange(30,31):
                         valid_amount.append(0)
-                    get_lm_time = time.time()
                     for i in xrange(30,31):
                         if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
                             #print self.get_dist(current_lm[i], self.lm_coor[i])
@@ -349,15 +434,8 @@ class MouthPoseDetector:
                                         coor_vect      = tft.unit_vector(self.vector_sub(self.lm_coor[i], self.lm_coor[j]))
                                         curr_coor_vect = tft.unit_vector(self.vector_sub(current_lm[i], current_lm[j]))
                                         dist           = np.linalg.norm(self.vector_sub(coor_vect, curr_coor_vect))
-                                        #print dist
                                         if dist < 0.3:
                                             valid_amount[0] += 1
-                                            #valid_amount[j] += 1
-                                    else:
-                                        print "lost i: " + str(i)
-                    print valid_amount, time.time()-get_lm_time
-                    count = 0
-                    average = 0
                     count = valid_amount[0]
                     if best < count:
                         best = count
@@ -366,6 +444,8 @@ class MouthPoseDetector:
                         best_pose_points = pose_points
         if self.first:
             return
+        if best_point_set is not None:
+            best_pose, best_pose_points = self.retrieve_special_pose(best_point_set, depth)
         position, orientation = self.pose_to_tuple(best_pose)
         current_positions = []
         if len(best_pose_points) > 1:
@@ -377,7 +457,9 @@ class MouthPoseDetector:
             for i in xrange(len(current_positions)):
                 if self.get_dist(current_positions[i], self.current_positions[i]) > 0.05:
                     no_jump = False
-            if best < 15:
+            if best > 5.0 and best_point_set is not None:
+                no_jump = False
+            if best < 15 and best_point_set is None:
                 no_jump = False
         print no_jump
         if no_jump:
@@ -416,6 +498,127 @@ class MouthPoseDetector:
         self.mouth_pub.publish(best_pose)
         ## self.mouth_pub.publish(pnp_pose)
         print time.time() - time1
+
+    def find_boundary(self, marks, shape, size_limit = False):
+        min_x = 999
+        min_y = 999
+        max_x = 0
+        max_y = 0
+        c_x   = 0
+        c_y   = 0
+        for mark in marks:
+            c_x += mark.x
+            c_y += mark.y
+            if mark.x < min_x:
+                min_x = mark.x
+            if mark.y < min_y:
+                min_y = mark.y
+            if mark.x > max_x:
+                max_x = mark.x
+            if mark.y > max_y:
+                max_y = mark.y
+        w  = max_x - min_x
+        h  = max_y - min_y
+        c_x /= len(marks)
+        c_y /= len(marks)
+        if self.flipped:
+            min_x = shape[1] - 1 - max_x
+            min_y = shape[0] - 1 - max_y
+            c_x = shape[1] - 1 - c_x
+            c_y = shape[0] - 1 - c_y
+        if size_limit:
+            w = self.min_w
+            h = self.min_h
+        if w > h:
+            h = w
+        else:
+            w = h
+        return int(c_x - int(w / 2)), int(c_y - int(h / 2)), w, h
+
+    #assuming a (translation in value), b (shear), and c (scale in signal value) are near 0
+    def align_integral(self, integral, model):
+        d_min = -10.0
+        d_max = 10.0
+        e_min = 0.8
+        e_max = 1.2
+        best_set = (0, 0)
+        best_score = -1
+        best_euler = 0 #normalized euler distance
+        best_valid = False
+        for i in xrange(1):
+            d_sample = [0]#np.linspace(d_min, d_max, 3)
+            e_sample = [1]#np.linspace(e_min, e_max, 3)
+            for d in d_sample:
+                for e in e_sample:
+                    dist = 0
+                    euler_dist = 0
+                    cnt  = 0
+                    cnt2 = 0
+                    valid = 0
+                    for j in xrange(len(integral)):
+                        current = (j - d) / e
+                        #print current
+                        #print current >= 0.0 and current < len(model[0]) - 1.0 and current < len(integral) - 1.0
+                        if current >= 0.0 and current < len(model[0]) - 1.0 and current < len(integral) - 1.0:
+                            cnt  += 1
+                            rounded  = int(current)
+                            remainder = current - current
+                            mean = model[0][rounded] * (1 - remainder) + model[0][rounded + 1] * remainder
+                            var  = model[1][rounded] * (1 - remainder) + model[1][rounded + 1] * remainder
+                            val  = integral[rounded][0] * (1 - remainder) + integral[rounded + 1][0] * remainder
+                            #print mean, val, var
+                            if var > 0.1:
+                                cnt2 += 1
+                                dist += ((mean - val) ** 2) / var
+                                euler_dist += (mean - val) ** 2
+                            #else:
+                                #dist += ((mean - val) ** 2) / 1.0
+                    if cnt2 > 0:
+                        dist = dist / cnt2
+                    else:
+                        dist = 99999
+                    valid = float(cnt2)/float(cnt)
+                    if dist < best_score or best_score is -1:
+                        best_score = dist
+                        best_set = (d, e)
+                        best_euler = euler_dist ** 0.5
+                        best_valid = valid
+            if np.allclose(best_set[0], d_min):
+                d_max = d_min + (d_max - d_min) / 4.0
+            elif np.allclose(best_set[0], d_max):
+                d_min = d_max - (d_max - d_min) / 4.0
+            else:
+                temp  = d_min
+                d_min = d_max - (d_max - d_min) / 4.0
+                d_max = temp  + (d_max - temp ) / 4.0
+            if np.allclose(best_set[1], e_min):
+                e_max = e_min + (e_max - e_min) / 4.0
+            elif np.allclose(best_set[1], e_max):
+                e_min = e_max - (e_max - e_min) / 4.0
+            else:
+                temp  = e_min
+                e_min = e_max - (e_max - e_min) / 4.0
+                e_max = temp  + (e_max - temp ) / 4.0
+        print best_score, best_set, best_valid
+        return best_set, best_score
+
+    def find_mean_var(self, datas):
+        mean = []
+        var  = []
+        for i in xrange(len(datas[0])):
+            mean.append(0)
+            var.append(0)
+        for data in datas:
+            for i in xrange(len(data)):
+                mean[i] += data[i][0]
+        for i in xrange(len(datas[0])):
+            mean[i] = mean[i] / len(datas)
+        for data in datas:
+            for i in xrange(len(data)):
+                var[i] += (data[i][0] - mean[i]) ** 2
+        for i in xrange(len(datas[0])):
+            var[i] = (var[i] / len(datas))
+        return mean, var
 
     def initialize_frames(self, rgb_info, depth_info):
         self.rgb_f   = (rgb_info.P[0], rgb_info.P[5])
