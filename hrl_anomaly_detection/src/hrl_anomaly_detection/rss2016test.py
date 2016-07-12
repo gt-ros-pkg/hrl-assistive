@@ -2494,6 +2494,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
         param_dict['SVM']['renew'] = False
+        nPoints = param_dict['ROC']['nPoints']
         refSampleSize = param_dict['data_param']['downSampleSize']
         
         
@@ -2507,7 +2508,7 @@ if __name__ == '__main__':
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
             if sampleSize > 200:
-                param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
+                ## param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
                 if opt.task == "pushing_microblack":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
@@ -2516,6 +2517,10 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 15.0
                     param_dict['ROC']['svm_param_range'] *= 10.0
+                if opt.task == "pushing_toolcase":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
+                    param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, nPoints)
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
