@@ -2505,6 +2505,9 @@ if __name__ == '__main__':
               '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
+            if sampleSize > 200:
+                
+
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
                             save_pdf=opt.bSavePdf, \
