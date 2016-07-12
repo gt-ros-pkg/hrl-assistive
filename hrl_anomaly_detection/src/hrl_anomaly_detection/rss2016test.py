@@ -1501,7 +1501,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
                     if Y_test[ii][0] <0:
-                        print "anomaly idx", jj, " true label: ", Y_test[ii][0], X_test[ii][jj]
+                        print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
 
                     ## if method == 'hmmosvm':
                     ##     window_size = 5 #3
@@ -2491,6 +2491,7 @@ if __name__ == '__main__':
         '''
         param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
         param_dict['ROC']['update_list'] = ['hmmsvm_dL']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
         param_dict['SVM']['renew'] = False
         refSampleSize = param_dict['data_param']['downSampleSize']
