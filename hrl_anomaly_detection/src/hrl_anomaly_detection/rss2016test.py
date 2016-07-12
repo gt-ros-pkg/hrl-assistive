@@ -2520,8 +2520,8 @@ if __name__ == '__main__':
                     param_dict['ROC']['svm_param_range'] *= 10.0
                 if opt.task == "pushing_toolcase":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, nPoints)
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4.0, 0.0, nPoints) 
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.2, nPoints)
                 if opt.task == "scooping":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 20.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
@@ -2530,6 +2530,12 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
                     param_dict['ROC']['svm_param_range'] *= 10.0
+            if sampleSize == 100:
+                if opt.task == "pushing_toolcase":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.0, nPoints)
+                    
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
