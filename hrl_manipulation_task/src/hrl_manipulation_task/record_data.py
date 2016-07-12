@@ -140,7 +140,10 @@ class logger:
         else:
             self.feedbackStatus = '3'
             
-        
+
+    def getLogStatus(self):
+        return self.enable_log_thread
+            
     def setTask(self, task):
         '''
         Set a current task
@@ -159,6 +162,7 @@ class logger:
             
         
     def log_start(self):
+        rospy.loginfo("Start to log!")
         self.init_time = rospy.get_rostime().to_sec()
         self.data = {}
         self.data['init_time'] = self.init_time
@@ -178,10 +182,12 @@ class logger:
 
 
     def log_stop(self):
+        rospy.loginfo("Stop to log!")
         self.enable_log_thread = False
         
         
     def close_log_file(self, bCont=False, last_status='skip'):
+        rospy.loginfo("Saving a file...")
 
         # logging by thread
         self.log_stop()
@@ -224,6 +230,7 @@ class logger:
 
         gc.collect()
         ## rospy.sleep(1.0)
+        rospy.loginfo("Finish to log!")
 
 
         ##GUI section

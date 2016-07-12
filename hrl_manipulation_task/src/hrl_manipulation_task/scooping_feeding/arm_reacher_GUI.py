@@ -64,7 +64,6 @@ class armReacherGUI:
         self.log = log
         self.left_mtx = False
         self.right_mtx = False
-        self.recordStatus = False
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
@@ -109,8 +108,8 @@ class armReacherGUI:
             self.emergencyPub.publish("STOP")
         print "Emergency received"
 
-        if self.recordStatus:
-            self.log.log_stop()
+        if self.log != None:
+            if self.log.getLogStatus(): self.log.log_stop()
         
         print "Wait arm reach service"
         rospy.wait_for_service("/arm_reach_enable")
@@ -119,12 +118,10 @@ class armReacherGUI:
             print "Waiting aborting Sequence"
             if self.left_mtx is False and self.right_mtx is False: break
             
-        self.testing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+        self.safetyMotion(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
 
-        if self.recordStatus:
-            self.log.close_log_file_GUI()
-            self.recordStatus = False
-        rospy.sleep(3.0)
+        if self.log != None: self.log.close_log_file_GUI()
+        rospy.sleep(2.0)
 
 
 
@@ -169,7 +166,7 @@ class armReacherGUI:
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):
-
+        self.curTask = 'scooping'
         while not self.emergencyStatus and not rospy.is_shutdown():
 
             if self.log != None:
@@ -192,14 +189,11 @@ class armReacherGUI:
                 if self.emergencyStatus: break
                 self.ServiceCallLeft("initScooping2")
                 if self.emergencyStatus: break
-                self.ScoopNumber = 2        
+                self.ScoopNumber = 2            
     
-    
-            rospy.loginfo("Start to log!")
-            if self.log != None:
+            if self.log is not None:
                 self.log.log_start()
-                self.recordStatus = True
-            if detection_flag: self.log.enableDetector(True)
+                if detection_flag: self.log.enableDetector(True)
         
             rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
@@ -208,19 +202,17 @@ class armReacherGUI:
                 break
 
             if self.log is not None:
-                self.falselogPub.publish("Requesting Feedback!")
-    
-            if detection_flag: self.log.enableDetector(False)
-            rospy.loginfo("Finish to log!")
-            if self.log != None and self.recordStatus:
+                self.falselogPub.publish("Requesting Feedback!")    
+                if detection_flag: self.log.enableDetector(False)
                 self.log.close_log_file_GUI()
-                self.recordStatus = False 
             self.ScoopNumber = 0
             break
+        self.curTask = None
 
     
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
 
+        self.curTask = 'feeding'
         while not self.emergencyStatus and not rospy.is_shutdown():
             if self.log != None:
                 self.log.setTask('feeding' )
@@ -249,11 +241,9 @@ class armReacherGUI:
                 if self.emergencyStatus: break
                 self.FeedNumber = 3
     
-            rospy.loginfo("Start to log!")
-            if self.log != None:
+            if self.log is None:
                 self.log.log_start()
-                self.recordStatus = True
-            if detection_flag: self.log.enableDetector(True)
+                if detection_flag: self.log.enableDetector(True)
         
             rospy.loginfo("Running feeding")
             self.ServiceCallLeft("runFeeding")
@@ -262,13 +252,9 @@ class armReacherGUI:
                 break
             
             if self.log is not None:
-                self.falselogPub.publish("Requesting Feedback!")
-    
-            if detection_flag: self.log.enableDetector(False)
-            rospy.loginfo("Finish to log!")
-            if self.log != None and self.recordStatus:
+                self.falselogPub.publish("Requesting Feedback!")    
+                if detection_flag: self.log.enableDetector(False)
                 self.log.close_log_file_GUI()
-                self.recordStatus = False
 
             # Returning motion
             leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
@@ -278,6 +264,7 @@ class armReacherGUI:
             if self.emergencyStatus: break
             self.FeedNumber = 0
             break
+        self.curTask = None
 
         
     def ServiceCallLeft(self, cmd):
@@ -301,7 +288,7 @@ class armReacherGUI:
             return False
         
             
-    def testing(self, armReachActionLeft, armReachActionRight, log, detection_flag):
+    def safetyMotion(self, armReachActionLeft, armReachActionRight, log, detection_flag):
         if self.FeedNumber<1:
             self.ScoopNumber = 0
             leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
