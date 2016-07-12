@@ -2507,7 +2507,19 @@ if __name__ == '__main__':
               '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
               str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-            if sampleSize > 200:
+            if sampleSize == 100:
+                param_dict['ROC']['update_list'] = ['hmmsvm_dL', 'hmmsvm_LSLS', 'svm']
+                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+                if opt.task == "pushing_toolcase":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.0, nPoints)
+                if opt.task == "scooping":
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 20.0
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 0.1
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.8, nPoints) 
+                    
+            elif sampleSize > 200:
                 param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
                 if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                 if opt.task == "pushing_microblack":
@@ -2523,21 +2535,13 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4.0, 0.0, nPoints) 
                     param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.2, nPoints)
                 if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 20.0
+                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 25.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-1.5, 2.0, nPoints) 
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.8, nPoints) 
                 if opt.task == "feeding":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 10.0
                     param_dict['ROC']['svm_param_range'] *= 10.0
-            if sampleSize == 100:
-                param_dict['ROC']['update_list'] = ['svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-                if opt.task == "pushing_toolcase":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.0, nPoints)
-                    
 
             evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                             refSampleSize,\
