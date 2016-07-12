@@ -2512,8 +2512,8 @@ if __name__ == '__main__':
                 if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                 if opt.task == "pushing_toolcase":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.0, nPoints)
+                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-1.5, 0.0, nPoints)
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.5, 0.0, nPoints)
                 if opt.task == "scooping":
                     param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 1.0, nPoints) 
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 0.1
@@ -2537,7 +2537,7 @@ if __name__ == '__main__':
                 if opt.task == "pushing_toolcase":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4.0, 0.0, nPoints) 
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.2, nPoints)
+                    param_dict['ROC']['svm_param_range'] = np.logspace(-3.2, 0.2, nPoints)
                 if opt.task == "scooping":
                     param_dict['ROC']['hmmsvm_dL_param_range']    = np.logspace(-4.0, 2.7, nPoints) 
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
