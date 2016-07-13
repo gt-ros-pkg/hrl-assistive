@@ -116,17 +116,6 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
                                                                        for j in xrange(ROC_dict['nPoints'])
                                                                        for file_idx in xrange(nFiles))
 
-    ## r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_ROC_eval)(j, data[file_idx]['X_scaled'], \
-    ##                                                               data[file_idx]['Y_train_org'], \
-    ##                                                               data[file_idx]['idx_train_org'], \
-    ##                                                               data[file_idx]['X_test'], \
-    ##                                                               data[file_idx]['Y_test'], \
-    ##                                                               data[file_idx]['idx_test'], \
-    ##                                                               method, ROC_dict, \
-    ##                                                               HMM_dict, custom_params, \
-    ##                                                               data[file_idx]['nLength'])
-    ##                                                               for j in xrange(ROC_dict['nPoints'])
-    ##                                                               for file_idx in xrange(nFiles))
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
     for i, j in enumerate(l_j):
         if j == 'fit failed':
@@ -142,71 +131,6 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     return ROC_data, param_idx, custom_params
 
 
-## # classifier
-## def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
-##                  X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
-##     from hrl_anomaly_detection.classifiers import classifier as cb
-
-##     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
-##     if method == 'svm':
-##         weights = ROC_dict['svm_param_range']
-##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'cssvm_standard':
-##         weights = np.logspace(-2, 0.1, nPoints)
-##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'cssvm':
-##         weights = ROC_dict['cssvm_param_range']
-##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'progress_time_cluster':
-##         thresholds = ROC_dict['progress_param_range']
-##         dtc.set_params( ths_mult = thresholds[j] )
-##     elif method == 'fixed':
-##         thresholds = ROC_dict['fixed_param_range']
-##         dtc.set_params( ths_mult = thresholds[j] )
-##     elif method == 'sgd':
-##         weights = ROC_dict['sgd_param_range']
-##         dtc.set_params( class_weight=weights[j] )
-##     else:
-##         print "Not available method"
-##         return "Not available method", -1, params
-
-##     dtc.set_params(**params)
-
-##     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-##     if ret is False: return 'fit failed', -1
-
-##     # evaluate the classifier
-##     tp_l = []
-##     fp_l = []
-##     tn_l = []
-##     fn_l = []
-##     delay_l = []
-##     delay_idx = 0
-
-##     for ii in xrange(len(X_test)):
-##         if len(Y_test[ii])==0: continue
-##         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
-
-##         for jj in xrange(len(est_y)):
-##             if est_y[jj] > 0.0:                
-##                 try:
-##                     delay_idx = idx_test[ii][jj]
-##                 except:
-##                     print "Error!!!!!!!!!!!!!!!!!!"
-##                     print np.shape(idx_test), ii, jj
-##                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-##                 break        
-
-##         if Y_test[ii][0] > 0.0:
-##             if est_y[jj] > 0.0:
-##                 tp_l.append(1)
-##                 delay_l.append(delay_idx)
-##             else: fn_l.append(1)
-##         elif Y_test[ii][0] <= 0.0:
-##             if est_y[jj] > 0.0: fp_l.append(1)
-##             else: tn_l.append(1)
-
-##     return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
 def disp_score(results, method, nPoints, savefile=None, dim=0):
@@ -245,7 +169,7 @@ def disp_score(results, method, nPoints, savefile=None, dim=0):
 
         # get AUC
         from sklearn import metrics        
-        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params] )
+        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params, tpr_l, fpr_l] )
 
         # get max tp in fpr (0~20)
         ## max_tp = 0
@@ -261,6 +185,10 @@ def disp_score(results, method, nPoints, savefile=None, dim=0):
 
     for i in xrange(len(score_list)):
         print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
+
+    print "tpr: ", score_list[-1][2]
+    print "fpr: ", score_list[-1][3]
+    
 
     if savefile is not None:
         if os.path.isfile(savefile) is False:
@@ -741,9 +669,9 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'hmmsvm_no_dL':
             parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
-                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
-                          'hmmsvm_no_dL_gamma': np.linspace(0.01,2.0,5), \
-                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          'hmmsvm_no_dL_cost': np.linspace(10,20.0,5),\
+                          'hmmsvm_no_dL_gamma': np.logspace(-3,1.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.8,2.5,5)
                           }
         elif opt.method == 'bpsvm':
             ## parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -998,3 +926,68 @@ if __name__ == '__main__':
 
 ##     return ROC_data, param_idx
 
+## # classifier
+## def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
+##                  X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
+##     from hrl_anomaly_detection.classifiers import classifier as cb
+
+##     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
+##     if method == 'svm':
+##         weights = ROC_dict['svm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm_standard':
+##         weights = np.logspace(-2, 0.1, nPoints)
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm':
+##         weights = ROC_dict['cssvm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'progress_time_cluster':
+##         thresholds = ROC_dict['progress_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'fixed':
+##         thresholds = ROC_dict['fixed_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'sgd':
+##         weights = ROC_dict['sgd_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     else:
+##         print "Not available method"
+##         return "Not available method", -1, params
+
+##     dtc.set_params(**params)
+
+##     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+##     if ret is False: return 'fit failed', -1
+
+##     # evaluate the classifier
+##     tp_l = []
+##     fp_l = []
+##     tn_l = []
+##     fn_l = []
+##     delay_l = []
+##     delay_idx = 0
+
+##     for ii in xrange(len(X_test)):
+##         if len(Y_test[ii])==0: continue
+##         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+
+##         for jj in xrange(len(est_y)):
+##             if est_y[jj] > 0.0:                
+##                 try:
+##                     delay_idx = idx_test[ii][jj]
+##                 except:
+##                     print "Error!!!!!!!!!!!!!!!!!!"
+##                     print np.shape(idx_test), ii, jj
+##                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+##                 break        
+
+##         if Y_test[ii][0] > 0.0:
+##             if est_y[jj] > 0.0:
+##                 tp_l.append(1)
+##                 delay_l.append(delay_idx)
+##             else: fn_l.append(1)
+##         elif Y_test[ii][0] <= 0.0:
+##             if est_y[jj] > 0.0: fp_l.append(1)
+##             else: tn_l.append(1)
+
+##     return j, tp_l, fp_l, fn_l, tn_l, delay_l
