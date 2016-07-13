@@ -97,7 +97,7 @@
   </node>
 -->
 
-  <!--Setup Cartesian Controller for arm movements -->
+  <!--Setup Cartesian Controller for arm movements 
   <group if="$(arg use_cart_ctrl)">
     <arg name="l_cart_step_pose_goal" default="haptic_mpc/goal_pose" />
     <arg name="r_cart_step_pose_goal" default="r_cart/command_pose" />
@@ -115,9 +115,9 @@
       <param name="ee_frame" value="/l_gripper_tool_frame"/>
     </node>
 
-  </group>
+  </group> -->
 
-  <!-- Setup IK-based joint-space controller arm movements 
+  <!-- Setup IK-based joint-space controller arm movements -->
   <group unless="$(arg use_cart_ctrl)">
     <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
       <param name="tip_name" value="l_wrist_roll_link" />
@@ -151,5 +151,4 @@
       <remap from="log_out" to="wt_log_out" />
     </node>
   </group>
-  -->
 </launch>
