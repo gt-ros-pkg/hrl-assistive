@@ -1166,7 +1166,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
             samples.append(sample)
 
         testDataX = np.swapaxes(samples, 0, 1)
-            
+        print np.shape(testDataX)
 
 
 
@@ -1572,11 +1572,16 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_train_X = new_x
 
             # test data
-            if type(ll_classifier_test_X) is list:
-                ll_classifier_test_X = np.array(ll_classifier_test_X)
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.dstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+            else:
+                if type(ll_classifier_test_X) is list:
+                    ll_classifier_test_X = np.array(ll_classifier_test_X)
 
-            x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
-            x = x.tolist()
+                x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
+                x = x.tolist()
 
             new_x = []
             for i in xrange(len(x)):
