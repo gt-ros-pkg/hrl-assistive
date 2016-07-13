@@ -284,7 +284,7 @@ class armReachAction(mpcBaseAction):
             return "Completed to move head"
 
         elif task == 'lookToRight':
-            self.lookToRightSide()
+            # self.lookToRightSide()
             ## rospy.sleep(2.0)
             return 'Completed head movement to right'
 
@@ -292,7 +292,7 @@ class armReachAction(mpcBaseAction):
             if task == 'initScooping1':
                 self.kinect_pause.publish('start')
             elif task == 'initFeeding':
-                self.kinect_pause.publish('start')
+                self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task
 
