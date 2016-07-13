@@ -672,7 +672,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_gamma': 0.5075,\
                           'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 10.0, \
-                          'hmmsvm_dL_gamma': 0.50749,\                          
+                          'hmmsvm_dL_gamma': 0.50749,\
                           'hmmsvm_LSLS_w_negative': 1.175, 'hmmsvm_LSLS_cost': 15.0,\
                           'hmmsvm_LSLS_gamma': 0.01, \
                           'hmmsvm_no_dL_w_negative': 0.85, 'hmmsvm_no_dL_cost': 10.0, \
