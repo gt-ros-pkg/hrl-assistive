@@ -97,7 +97,7 @@
   </node>
 -->
 
-  <!--Setup Cartesian Controller for arm movements 
+  <!--Setup Cartesian Controller for arm movements -->
   <group if="$(arg use_cart_ctrl)">
     <arg name="l_cart_step_pose_goal" default="haptic_mpc/goal_pose" />
     <arg name="r_cart_step_pose_goal" default="r_cart/command_pose" />
@@ -116,7 +116,6 @@
     </node>
 
   </group>
-  -->
 
   <!-- Setup IK-based joint-space controller arm movements 
   <group unless="$(arg use_cart_ctrl)">
