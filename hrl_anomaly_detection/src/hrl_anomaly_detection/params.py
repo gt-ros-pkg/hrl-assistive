@@ -672,18 +672,19 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_gamma': 0.5075,\
                           'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 10.0, \
-                          'hmmsvm_dL_gamma': 0.50749,\
-                          'hmmsvm_LSLS_cost': 15.0,\
+                          'hmmsvm_dL_gamma': 0.50749,\                          
+                          'hmmsvm_LSLS_w_negative': 1.175, 'hmmsvm_LSLS_cost': 15.0,\
                           'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 1.175,\
+                          'hmmsvm_no_dL_w_negative': 0.85, 'hmmsvm_no_dL_cost': 10.0, \
+                          'hmmsvm_no_dL_gamma': 0.50749,\                          
                           'bpsvm_cost': 15.25,\
                           'bpsvm_gamma': 1.0, \
                           'bpsvm_w_negative': 1.2589
                           }
 
         # 'bpsvm', 'osvm', 
-        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm' ],\
-                          'update_list': [ 'hmmosvm' ],\
+        ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_LSLS', 'progress_state', 'bpsvm', 'hmmsvm_no_dL' ],\
+                          'update_list': [ 'hmmsvm_no_dL' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
@@ -693,6 +694,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmsvm_diag_param_range': np.logspace(-3, 0.5, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-3, 0.5, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-2.0, 0.5, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-3, 0.5, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-4.0, 0.7, nPoints),\
