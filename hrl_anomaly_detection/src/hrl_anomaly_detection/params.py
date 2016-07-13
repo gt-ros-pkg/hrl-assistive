@@ -509,9 +509,10 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 1.5024,\
-                              'hmmsvm_LSLS_cost': 5.0, \
+                              'hmmsvm_LSLS_w_negative': 1.175, 'hmmsvm_LSLS_cost': 5.0, \
                               'hmmsvm_LSLS_gamma': 0.01, \
-                              'hmmsvm_LSLS_w_negative': 1.175,\
+                              'hmmsvm_no_dL_w_negative': 0.85, 'hmmsvm_no_dL_cost': 15.0, \
+                              'hmmsvm_no_dL_gamma': 0.01,\
                               'bpsvm_cost': 9.75,\
                               'bpsvm_gamma': 0.5075, \
                               'bpsvm_w_negative': 1.5                              
