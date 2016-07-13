@@ -5,7 +5,7 @@ hrl_manipulation_task:
   arm: l
 
   # For auditory perception
-  head_audio_frame: head_mount_link
+  head_audio_frame: head_mount_kinect_ir_link
 
   # For kinematics perception # never used..
   #end_effector_frame: l_gripper_spoon_frame
