@@ -43,7 +43,7 @@ import actionlib
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
-import hrl_lib.quaternion as quatMath 
+import hrl_lib.quaternion as quatMath
 from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library - need to move neccessary libraries to a new package
@@ -70,7 +70,7 @@ class armReachAction(mpcBaseAction):
         self.mouth_frame        = None
         self.default_frame      = PyKDL.Frame()
 
-        self.initCommsForArmReach()                            
+        self.initCommsForArmReach()
         self.initParamsForArmReach()
         self.setMotions()
 
@@ -91,9 +91,9 @@ class armReachAction(mpcBaseAction):
                 ## break
                 self.pubCurEEPose()
             rate.sleep()
-            
+
         rospy.loginfo("Arm Reach Action is initialized.")
-                            
+
     def initCommsForArmReach(self):
 
         # publishers
@@ -106,6 +106,7 @@ class armReachAction(mpcBaseAction):
                                            queue_size=QUEUE_SIZE, latch=True)
         self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
                                         queue_size=QUEUE_SIZE, latch=True)
+        self.kinect_pause = rospy.Publisher('/pause_kinect', String, queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
@@ -114,7 +115,7 @@ class armReachAction(mpcBaseAction):
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
-        
+
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
 
@@ -122,15 +123,15 @@ class armReachAction(mpcBaseAction):
 
     def initParamsForArmReach(self):
 
-        ## Off set : 11 cm x direction, - 5 cm z direction. 
-        self.bowl_pos_offset    = rospy.get_param('/hrl_manipulation_task/sub_ee_pos_offset')        
-        self.bowl_orient_offset = rospy.get_param('/hrl_manipulation_task/sub_ee_orient_offset')        
+        ## Off set : 11 cm x direction, - 5 cm z direction.
+        self.bowl_pos_offset    = rospy.get_param('/hrl_manipulation_task/sub_ee_pos_offset')
+        self.bowl_orient_offset = rospy.get_param('/hrl_manipulation_task/sub_ee_orient_offset')
 
-            
+
     def setMotions(self):
         '''
-        Industrial movment commands generally follows following format, 
-        
+        Industrial movment commands generally follows following format,
+
                Movement type, joint or pose(pos+euler), timeout, relative_frame, threshold
 
         In this code, we allow to use following movement types,
@@ -139,7 +140,7 @@ class armReachAction(mpcBaseAction):
         MOVES: straight motion with orientation control (ex. MOVES pos-euler timeout relative_frame)
         MOVEL: straight (linear) motion with orientation control (ex. MOVEL pos-euler timeout relative_frame)
         MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
-        MOVEJ: joint motion (ex. MOVEJ joint timeout)        
+        MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
@@ -148,10 +149,10 @@ class armReachAction(mpcBaseAction):
         timeout or duration: we use second
         relative_frame: You can put your custome PyKDL frame variable or you can use 'self.default_frame'
         '''
-        
+
         self.motions = {}
 
-        
+
         ## Testing Motions ---------------------------------------------------------
         # Used to test and find the best optimal procedure to scoop the target.
         self.motions['test'] = {}
@@ -163,7 +164,7 @@ class armReachAction(mpcBaseAction):
         ##                                 ['MOVET', '[0., 0.0, 0.0, 0.5, 0., 0.]', 10., 'self.default_frame'] ]
         ## self.motions['test']['left'] = [['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],
         ##                                 ['PAUSE', 2.0]]
-        
+
         self.motions['testingMotion'] = {}
         self.motions['testingMotion']['left'] = \
           [['MOVEJ', '[0.051, 0.219, 0.135, -2.115, -3.052, -1.928, -1.64]', 2.0],
@@ -177,8 +178,8 @@ class armReachAction(mpcBaseAction):
         self.motions['initArms'] = {}
         self.motions['initArms']['left']  = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
         self.motions['initArms']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 10.0]]
-        
-        
+
+
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame
         # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground), whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
@@ -207,14 +208,14 @@ class armReachAction(mpcBaseAction):
           [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
            ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
            ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
-        
+
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
         self.motions['initFeeding']['left'] = [['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 5.0]]
         self.motions['initFeeding']['right'] = [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
                                                 ['PAUSE', 2.0]]
-                                                
+
         self.motions['initFeeding1'] = {}
         self.motions['initFeeding1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]
                                                 ## ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
@@ -223,7 +224,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding2'] = {}
         self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
-                                                
+
         self.motions['initFeeding3'] = {}
         self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 1.0]]
@@ -231,7 +232,7 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 0.5],
                                               ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
-          
+
         rospy.loginfo("Parameters are loaded.")
 
     def serverCallback(self, req):
@@ -240,7 +241,7 @@ class armReachAction(mpcBaseAction):
 
         if task == 'returnBowlPos':
             return self.bowl_frame
-        
+
         if task == "getBowlPos":
             print '\n\n----getBowlPos called!-----\n\n'
             if self.bowl_frame_kinect is not None:
@@ -250,19 +251,19 @@ class armReachAction(mpcBaseAction):
             elif self.bowl_frame_kinect is None:
                 print 'getBowlPos called 2!'
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame())
-                return "Choose bowl position from kinematics using tf"                
+                return "Choose bowl position from kinematics using tf"
             else:
                 return "No kinect position available! \n Code won't work! \n \
                 Provide head position and try again!"
-                
+
         elif task == "getBowlPosRandom":
             if self.bowl_frame_kinect is not None:
-                self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)                
+                self.bowl_frame = copy.deepcopy(self.bowl_frame_kinect)
                 return "Choose kinect bowl position"
             elif self.bowl_frame_kinect is None:
                 self.bowl_frame = copy.deepcopy(self.getBowlFrame(addNoise=True))
                 return "Choose bowl position from kinematics using tf"
-            
+
         elif task == "getHeadPos":
             if self.mouth_frame_vision is not None:
                 self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
@@ -270,26 +271,30 @@ class armReachAction(mpcBaseAction):
             else:
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
-                
+
         elif task == "lookAtBowl":
             self.lookAt(self.bowl_frame)
-	    # Account for the time it takes to turn the head
-	    rospy.sleep(2)
- 	    self.bowl_height_init_pub.publish(Empty())
+            # Account for the time it takes to turn the head
+            rospy.sleep(2)
+            self.bowl_height_init_pub.publish(Empty())
             return "Completed to move head"
-        
+
         elif task == "lookAtMouth":
-            self.lookAt(self.mouth_frame, tag_base='head')                            
+            self.lookAt(self.mouth_frame, tag_base='head')
             return "Completed to move head"
-        
+
         elif task == 'lookToRight':
             self.lookToRightSide()
             ## rospy.sleep(2.0)
             return 'Completed head movement to right'
 
         else:
+            if task == 'initScooping1':
+                self.kinect_pause.publish('start')
+            elif task == 'initFeeding':
+                self.kinect_pause.publish('start')
             self.parsingMovements(self.motions[task][self.arm_name])
-            return "Completed to execute "+task 
+            return "Completed to execute "+task
 
     def highestBowlPointCallback(self, data):
         if not self.arm_name == 'left':
@@ -298,25 +303,25 @@ class armReachAction(mpcBaseAction):
         print 'Highest Point original position:', [data.x, data.y, data.z]
         print 'Bowl Position:', self.bowlPosition
 	# Subtract 0.01 to account for the bowl center position being slightly off center
-        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.01 
+        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.01
         print '-'*25
         print 'Highest bowl point difference:', self.highBowlDiff
         print '-'*25
-                
+
     def bowlPoseCallback(self, data):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
-        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
+        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y,
                                       data.pose.orientation.z, data.pose.orientation.w)
         self.bowl_frame_kinect = PyKDL.Frame(M,p)
 
-        
+
     def mouthPoseCallback(self, data):
 
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)
-        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y, 
+        M = PyKDL.Rotation.Quaternion(data.pose.orientation.x, data.pose.orientation.y,
                                       data.pose.orientation.z, data.pose.orientation.w)
 
-        # get upright mouth frame        
+        # get upright mouth frame
         tx = PyKDL.Vector(1.0, 0.0, 0.0)
         ty = PyKDL.Vector(0.0, 1.0, 0.0)
 
@@ -334,12 +339,12 @@ class armReachAction(mpcBaseAction):
 
         # fix mouth direction to y-direction of robot frame (temp??)
         mouth_z = PyKDL.Vector(0.0, 1.0, 0.0)
-        mouth_y = mouth_z * mouth_x        
-        
+        mouth_y = mouth_z * mouth_x
+
         M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
-        
+
     def stopCallback(self, msg):
         print '\n\nAction Interrupted! Event Stop\n\n'
         print 'Interrupt Data:', msg.data
@@ -362,7 +367,7 @@ class armReachAction(mpcBaseAction):
         #print "Moving left arm to safe position "
         ## self.parsingMovements(self.motions['initScooping1'][self.arm_name])
         ## ut.get_keystroke('Hit a key to proceed next')
-        
+
         ## if data.data == 'InterruptHead':
         ##     self.feeding([0])
         ##     self.setPostureGoal(self.lInitAngFeeding, 10)
@@ -372,7 +377,7 @@ class armReachAction(mpcBaseAction):
 
 
     def getBowlFrame(self, addNoise=False):
-        # Get frame info from right arm and upate bowl_pos                
+        # Get frame info from right arm and upate bowl_pos
 
         # 1. right arm ('r_gripper_tool_frame') from tf
         self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
@@ -381,7 +386,7 @@ class armReachAction(mpcBaseAction):
         p = PyKDL.Vector(pos[0],pos[1],pos[2])
         M = PyKDL.Rotation.Quaternion(quat[0], quat[1], quat[2], quat[3])
 
-        # 2. add offset to called TF value. Make sure Orientation is up right. 
+        # 2. add offset to called TF value. Make sure Orientation is up right.
         p = p + M*PyKDL.Vector(self.bowl_pos_offset['x'], self.bowl_pos_offset['y'], self.bowl_pos_offset['z'])
         M.DoRotX(self.bowl_orient_offset['rx'])
         M.DoRotY(self.bowl_orient_offset['ry'])
@@ -392,24 +397,24 @@ class armReachAction(mpcBaseAction):
         print quat
         print 'Bowl frame:', p
 
-        # 2.* add noise for random training 
+        # 2.* add noise for random training
         if addNoise:
             p = p + PyKDL.Vector(random.uniform(-0.1, 0.1),
                                  random.uniform(-0.1, 0.1),
-                                 random.uniform(-0.1, 0.1))        
-        
+                                 random.uniform(-0.1, 0.1))
+
         self.bowlPosition = np.array([p[0], p[1], p[2]])
 
         # 4. (optional) publish pose for visualization
         ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
         self.bowl_pub.publish(ps)
-        
-        return PyKDL.Frame(M,p)  
+
+        return PyKDL.Frame(M,p)
 
     def lookAt(self, target, tag_base='head'):
 
         t = time.time()
-        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')        
+        head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')
         headClient = actionlib.SimpleActionClient("/head_traj_controller/point_head_action",
                                                   pr2_controllers_msgs.msg.PointHeadAction)
         headClient.wait_for_server()
@@ -419,10 +424,10 @@ class armReachAction(mpcBaseAction):
         ## t = time.time()
 
         pos = Point()
-        
+
         ps  = PointStamped()
         ps.header.frame_id = self.torso_frame
-        
+
         head_goal_msg = pr2_controllers_msgs.msg.PointHeadGoal()
         head_goal_msg.pointing_frame = head_frame
         head_goal_msg.pointing_axis.x = 1
@@ -430,13 +435,13 @@ class armReachAction(mpcBaseAction):
         head_goal_msg.pointing_axis.z = 0
         head_goal_msg.min_duration = rospy.Duration(1.0)
         head_goal_msg.max_velocity = 1.0
-        
+
         if target is None:
-            ## tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')        
+            ## tag_id = rospy.get_param('hrl_manipulation_task/'+tag_base+'/artag_id')
 
             while not rospy.is_shutdown() and self.mouth_frame_vision is None:
                 rospy.loginfo("Search "+tag_base+" tag")
-             
+
                 pos.x = 0.8
                 pos.y = 0.4
                 pos.z = 0.0
@@ -447,21 +452,21 @@ class armReachAction(mpcBaseAction):
                 headClient.send_goal(head_goal_msg)
                 headClient.wait_for_result()
                 # rospy.sleep(2.0)
-            
+
             self.mouth_frame = copy.deepcopy(self.mouth_frame_vision)
             target = self.mouth_frame
 
-        
+
         pos.x = target.p.x()
         pos.y = target.p.y()
         pos.z = target.p.z()
-            
+
         ## print '2:', time.time() - t
         ## t = time.time()
-                                        
+
         ps.point = pos
         head_goal_msg.target = ps
-        
+
         headClient.send_goal(head_goal_msg)
         ## headClient.wait_for_result() # TODO: This takes about 5 second -- very slow!
         # rospy.sleep(1.0)
@@ -469,7 +474,7 @@ class armReachAction(mpcBaseAction):
         ## print '3:', time.time() - t
 
         return "Success"
-        
+
     def lookToRightSide(self):
         t = time.time()
         head_frame  = rospy.get_param('hrl_manipulation_task/head_audio_frame')
@@ -527,7 +532,7 @@ if __name__ == '__main__':
     else:
         tool_id = 0
         verbose = False
-        
+
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
     ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
