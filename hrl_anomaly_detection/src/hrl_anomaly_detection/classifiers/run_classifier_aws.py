@@ -464,9 +464,9 @@ if __name__ == '__main__':
                           }
         elif opt.method == 'hmmsvm_no_dL':
             parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
-                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
-                          'hmmsvm_no_dL_gamma': np.linspace(0.01,4.0,5), \
-                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          'hmmsvm_no_dL_cost': np.linspace(1,10.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.5,6.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.2,5)
                           }
         elif opt.method == 'bpsvm':
             parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
