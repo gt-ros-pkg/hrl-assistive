@@ -1575,6 +1575,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             if len(np.shape(ll_classifier_test_X))<3:
                 x = []
                 for sample in ll_classifier_test_X:
+                    print np.shape(np.array(sample)[:,:1]), np.shape(np.array(sample)[:,2:])
                     x.append( np.dstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
             else:
                 if type(ll_classifier_test_X) is list:
