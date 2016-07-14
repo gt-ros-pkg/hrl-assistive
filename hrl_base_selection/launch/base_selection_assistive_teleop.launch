@@ -14,7 +14,7 @@
   <arg if="$(arg test)" name="mjpeg_port" default="8080"/>
   <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>
 
-  <arg if="$(arg test)" name="html_port" default="8008"/>
+  <arg if="$(arg test)" name="html_port" default="8000"/>
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
