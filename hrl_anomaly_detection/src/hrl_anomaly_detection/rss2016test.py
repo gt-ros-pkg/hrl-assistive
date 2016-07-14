@@ -1157,7 +1157,11 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         # random drop
         samples = []
         for i in xrange(len(testDataX[0])):
-            rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
+            ## rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
+            start_idx = np.random.randint(0, nLength-1, 1)
+            end_idx   = start_idx+10
+            if end_idx > nLength-1: end_idx = nLength-1
+            rnd_idx_l = range(start_idx, end_idx)
 
             sample = []
             for j in xrange(len(testDataX)):
