@@ -790,24 +790,24 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
             drop_idx_l = test_drop_elements[0]
             drop_length = test_drop_elements[1]
 
-            testDataX = np.swapaxes(testDataX, 1,2) # sample x dim x length            
-            nLength = len(testDataX[0][0])
+            ll_classifier_test_X = np.swapaxes(ll_classifier_test_X, 1,2) # sample x dim x length            
+            nLength = len(ll_classifier_test_X[0][0])
 
             samples = []
-            for i in xrange(len(testDataX)):
+            for i in xrange(len(ll_classifier_test_X)):
                 start_idx = drop_idx_l[i]
                 end_idx   = start_idx+drop_length
                 if end_idx > nLength-1: end_idx = nLength-1
                 rnd_idx_l = range(start_idx, end_idx)
 
                 sample = []
-                for j in xrange(len(testDataX[i])):
-                    sample.append( np.delete( testDataX[i][j], rnd_idx_l ) )
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    sample.append( np.delete( ll_classifier_test_X[i][j], rnd_idx_l ) )
 
                 sample = np.swapaxes(sample, 0,1) # length x dim
                 samples.append(sample)
 
-            testDataX = samples
+            ll_classifier_test_X = samples
 
                 
 
