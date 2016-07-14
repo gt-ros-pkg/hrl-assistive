@@ -1230,7 +1230,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         # get ll_cut_idx only for pos data
         pos_dict = []
         for idx in xrange(len(kFold_list)):
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
             d            = ut.load_pickle(modeling_pkl)
             ll_classifier_train_X   = d['ll_classifier_train_X']
             ll_classifier_train_Y   = d['ll_classifier_train_Y']         
