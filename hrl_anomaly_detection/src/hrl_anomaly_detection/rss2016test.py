@@ -1156,10 +1156,12 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
         # random drop
         samples = []
+        drop_idx_l = []
+        drop_length = 10
         for i in xrange(len(testDataX[0])):
             ## rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
             start_idx = np.random.randint(0, nLength-1, 1)
-            end_idx   = start_idx+10
+            end_idx   = start_idx+drop_length
             if end_idx > nLength-1: end_idx = nLength-1
             rnd_idx_l = range(start_idx, end_idx)
 
@@ -1168,11 +1170,8 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
                 sample.append( np.delete( testDataX[j][i], rnd_idx_l ) )
 
             samples.append(sample)
-
+            drop_idx_l.append(start_idx)
         testDataX = np.swapaxes(samples, 0, 1)
-        print np.shape(testDataX)
-
-
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, A, B, pi, F, \
                                                                 [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
@@ -1202,6 +1201,8 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         d['ll_classifier_test_Y']    = ll_classifier_test_Y            
         d['ll_classifier_test_idx']  = ll_classifier_test_idx
         d['nLength']      = nLength
+        d['drop_idx_l']   = drop_idx_l
+        d['drop_length']  = drop_length
         ut.save_pickle(d, modeling_pkl)
 
 
@@ -1222,13 +1223,36 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
+
+    osvm_data = None ; bpsvm_data = None
+    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
+
+        # get ll_cut_idx only for pos data
+        pos_dict = []
+        for idx in xrange(len(kFold_list)):
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+            ll_classifier_train_idx = d['ll_classifier_train_idx']
+            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
+                                         ll_classifier_train_Y, \
+                                         ll_classifier_train_idx)
+            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
+            pos_dict.append(idx_dict)
+                    
+        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                   window=SVM_dict['raw_window_size'], \
+                                   pos_dict=pos_dict, use_test=True, use_pca=False,
+                                   test_drop_elements=(d['drop_idx_l'], d['drop_length']))
+
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, \
+                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -2716,7 +2740,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithDrop:
 
-        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
+        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
         param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 

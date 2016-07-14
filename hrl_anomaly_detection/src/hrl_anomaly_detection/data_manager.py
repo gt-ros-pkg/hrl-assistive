@@ -609,7 +609,8 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True):
+def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
+               test_drop_elements=None):
 
     d = ut.load_pickle(data_pkl)
     kFold_list  = d['kFoldList']
@@ -784,6 +785,31 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         ## X_scaled = ml.fit_transform(np.array(X_scaled))
 
         #--------------------------------------------------------------------------------
+
+        if test_drop_elements is not None:
+            drop_idx_l = test_drop_elements[0]
+            drop_length = test_drop_elements[1]
+
+            testDataX = np.swapaxes(testDataX, 1,2) # sample x dim x length            
+            nLength = len(testDataX[0][0])
+
+            samples = []
+            for i in xrange(len(testDataX)):
+                start_idx = drop_idx_l[i]
+                end_idx   = start_idx+drop_length
+                if end_idx > nLength-1: end_idx = nLength-1
+                rnd_idx_l = range(start_idx, end_idx)
+
+                sample = []
+                for j in xrange(len(testDataX[i])):
+                    sample.append( np.delete( testDataX[i][j], rnd_idx_l ) )
+
+                sample = np.swapaxes(sample, 0,1) # length x dim
+                samples.append(sample)
+
+            testDataX = samples
+
+                
 
         # test data preparation
         X_test = []
