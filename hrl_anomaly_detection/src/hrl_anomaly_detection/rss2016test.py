@@ -575,8 +575,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
 
-    sys.exit()
-
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4

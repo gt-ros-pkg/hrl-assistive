@@ -807,9 +807,13 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
                 sample = np.swapaxes(sample, 0,1) # length x dim
                 samples.append(sample)
 
+                if ll_classifier_test_Y[i][0]>0:
+                    ll_classifier_test_Y[i] = [1]*len(sample)
+                else:
+                    ll_classifier_test_Y[i] = [-1]*len(sample)
+
             ll_classifier_test_X = samples
 
-                
 
         # test data preparation
         X_test = []
