@@ -1156,19 +1156,23 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
         # random drop
         samples = []
+        drop_idx_l = []
+        drop_length = 20
         for i in xrange(len(testDataX[0])):
-            rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
+            ## rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
+            start_idx = np.random.randint(0, nLength-1, 1)[0]
+            if start_idx < startIdx: start_idx=startIdx
+            end_idx   = start_idx+drop_length
+            if end_idx > nLength-1: end_idx = nLength-1
+            rnd_idx_l = range(start_idx, end_idx)
 
             sample = []
             for j in xrange(len(testDataX)):
                 sample.append( np.delete( testDataX[j][i], rnd_idx_l ) )
 
             samples.append(sample)
-
+            drop_idx_l.append(start_idx)
         testDataX = np.swapaxes(samples, 0, 1)
-            
-
-
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, A, B, pi, F, \
                                                                 [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
@@ -1198,7 +1202,25 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         d['ll_classifier_test_Y']    = ll_classifier_test_Y            
         d['ll_classifier_test_idx']  = ll_classifier_test_idx
         d['nLength']      = nLength
+        d['drop_idx_l']   = drop_idx_l
+        d['drop_length']  = drop_length
         ut.save_pickle(d, modeling_pkl)
+
+    ## fig = plt.figure()
+    ## ## modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
+    ## ## modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
+    ## d = ut.load_pickle(modeling_pkl)
+    ## ll_classifier_test_X = d['ll_classifier_test_X']
+    ## ll_classifier_test_Y = d['ll_classifier_test_Y']
+    ## print np.shape(ll_classifier_test_Y)
+    ## for i in xrange(len(ll_classifier_test_X)):        
+    ##     if ll_classifier_test_Y[i][0] > 0: continue
+    ##     print "test normal: ", np.shape(ll_classifier_test_X[i])        
+    ##     x = ll_classifier_test_X[i]
+    ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
+    ## plt.show()
+
+    ## sys.exit()
 
 
     #-----------------------------------------------------------------------------------------
@@ -1218,13 +1240,38 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
+
+    osvm_data = None ; bpsvm_data = None
+    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
+
+        # get ll_cut_idx only for pos data
+        pos_dict  = []
+        drop_dict = []
+        for idx in xrange(len(kFold_list)):
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+            ll_classifier_train_idx = d['ll_classifier_train_idx']
+            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
+                                         ll_classifier_train_Y, \
+                                         ll_classifier_train_idx)
+            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
+            pos_dict.append(idx_dict)
+            drop_dict.append([d['drop_idx_l'], d['drop_length']])
+                    
+        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                   window=SVM_dict['raw_window_size'], \
+                                   pos_dict=pos_dict, use_test=True, use_pca=False,
+                                   test_drop_elements=drop_dict)
+
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, \
+                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -1572,11 +1619,16 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_train_X = new_x
 
             # test data
-            if type(ll_classifier_test_X) is list:
-                ll_classifier_test_X = np.array(ll_classifier_test_X)
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+            else:
+                if type(ll_classifier_test_X) is list:
+                    ll_classifier_test_X = np.array(ll_classifier_test_X)
 
-            x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
-            x = x.tolist()
+                x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
+                x = x.tolist()
 
             new_x = []
             for i in xrange(len(x)):
@@ -1593,8 +1645,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_train_X = np.array(ll_classifier_train_X)
             ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
 
-            ll_classifier_test_X = np.array(ll_classifier_test_X)
-            ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+                ll_classifier_test_X = x
+            else:
+                ll_classifier_test_X = np.array(ll_classifier_test_X)
+                ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
             
                           
         # flatten the data
@@ -2380,6 +2438,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         fnr_l = []
         delay_mean_l = []
         delay_std_l  = []
+        acc_l = []
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
@@ -2387,6 +2446,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             fnr_l.append( 100.0 - tpr_l[-1] )
             delay_mean_l.append( np.mean(delay_ll[i]) )
             delay_std_l.append( np.std(delay_ll[i]) )
+            acc_l.append( float(np.sum(tp_ll[i])+np.sum(tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
@@ -2421,12 +2481,16 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ax1 = fig.add_subplot(111)
 
             if delay_plot:
-                if method not in ['svm', 'hmmosvm', 'progress_time_cluster', 'bpsvm']: continue
-                plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                ## rate = np.array(tpr_l)/(np.array(fpr_l)+0.001)
+                ## for i in xrange(len(rate)):
+                ##     if rate[i] > 100: rate[i] = 100.0
+                
+                plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
                 plt.xlim([-1, 101])
                 ## plt.ylim([-1, 101])
                 plt.ylabel('Delay Time', fontsize=22)
-                plt.xlabel('False positive rate (percentage)', fontsize=22)
+                plt.xlabel('Accuracy (percentage)', fontsize=22)
 
                 plt.xticks([0, 50, 100], fontsize=22)
                 ## plt.yticks([0, 50, 100], fontsize=22)
@@ -2701,11 +2765,9 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithDrop:
 
-        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
+        param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['HMM']['renew'] = False
-        param_dict['SVM']['renew'] = False
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
