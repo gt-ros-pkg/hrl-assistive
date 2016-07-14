@@ -2741,7 +2741,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationWithDrop:
 
         param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         save_data_path = os.path.expanduser('~')+\
