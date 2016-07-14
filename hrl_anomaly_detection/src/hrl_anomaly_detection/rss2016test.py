@@ -870,7 +870,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
+             timeList=timeList)
                        
 
 def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -2416,14 +2417,20 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             os.system('mv test.* ~/Dropbox/HRL/')
 
 
-def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False):
+def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+             timeList=None):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
     ## ROC_data = ut.load_pickle(roc_pkl)        
 
     if no_plot is False:
-        fig = plt.figure()
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
 
     for method in method_list:
 
@@ -2440,13 +2447,21 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         delay_std_l  = []
         acc_l = []
 
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
+            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
-            delay_mean_l.append( np.mean(delay_ll[i]) )
-            delay_std_l.append( np.std(delay_ll[i]) )
-            acc_l.append( float(np.sum(tp_ll[i])+np.sum(tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+            delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
+            delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
@@ -2461,17 +2476,17 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
-        if method == 'svm': label='HMM-SVM'
-        elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'progress_time_cluster': label='HMM-D'
         elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
-        elif method == 'fixed': label='HMMs with a fixed threshold'
-        elif method == 'change': label='HMMs with change detection'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
         elif method == 'cssvm': label='HMM-CSSVM'
         elif method == 'sgd': label='SGD'
         elif method == 'hmmosvm': label='HMM-OneClassSVM'
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
         elif method == 'osvm': label='Kernel-SVM'
-        elif method == 'bpsvm': label='Biased penalty SVM'
+        elif method == 'bpsvm': label='BPSVM'
         else: label = method
 
         if no_plot is False:
@@ -2482,17 +2497,39 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
             if delay_plot:
                 if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                if method == 'fixed': color = 'y'
+                if method == 'progress_time_cluster': color = 'g'
+                if method == 'svm': color = 'b'
+                plt.plot(acc_l, delay_mean_l, '-'+color, label=label, linewidth=2.0)
+                ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                
                 ## rate = np.array(tpr_l)/(np.array(fpr_l)+0.001)
                 ## for i in xrange(len(rate)):
                 ##     if rate[i] > 100: rate[i] = 100.0
-                
-                plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-                plt.xlim([-1, 101])
-                ## plt.ylim([-1, 101])
-                plt.ylabel('Delay Time', fontsize=22)
-                plt.xlabel('Accuracy (percentage)', fontsize=22)
+                cut_idx = np.argmax(acc_l)
+                if delay_mean_l[0] < delay_mean_l[-1]:
+                    acc_l = acc_l[:cut_idx+1]                
+                    delay_mean_l = np.array(delay_mean_l[:cut_idx+1])
+                    delay_std_l  = np.array(delay_std_l[:cut_idx+1])
+                else:
+                    acc_l = acc_l[cut_idx:]                
+                    delay_mean_l = np.array(delay_mean_l[cut_idx:])
+                    delay_std_l  = np.array(delay_std_l[cut_idx:])
 
-                plt.xticks([0, 50, 100], fontsize=22)
+                ## delay_mean_l = np.array(delay_mean_l)
+                delay_std_l  = np.array(delay_std_l) #*0.674
+                    
+                
+                ## plt.plot(acc_l, delay_mean_l-delay_std_l, '--'+color)
+                ## plt.plot(acc_l, delay_mean_l+delay_std_l, '--'+color)
+                plt.fill_between(acc_l, delay_mean_l-delay_std_l, delay_mean_l+delay_std_l, \
+                                 facecolor=color, alpha=0.15, lw=0.0, interpolate=True)
+                plt.xlim([49, 101])
+                plt.ylim([0, 7.0])
+                plt.ylabel('Detection Time [s]', fontsize=24)
+                plt.xlabel('Accuracy (percentage)', fontsize=24)
+
+                plt.xticks([50, 100], fontsize=22)
                 ## plt.yticks([0, 50, 100], fontsize=22)
             else:                
                 plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
@@ -2515,10 +2552,16 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
-    if no_plot is False:
-        plt.legend(loc='lower right', prop={'size':20})
+    ## if no_plot is False:
+    ##     if delay_plot:
+    ##         plt.legend(loc='upper right', prop={'size':24})
+    ##     else:
+    ##         plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
+        ## task = 'feeding'
+        ## fig.savefig('delay_'+task+'.pdf')
+        ## fig.savefig('delay_'+task+'.png')
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
@@ -2781,7 +2824,7 @@ if __name__ == '__main__':
         '''
         Change into different sampling frequency or sample drop
         '''
-        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL']
+        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
@@ -2790,7 +2833,7 @@ if __name__ == '__main__':
         refSampleSize = param_dict['data_param']['downSampleSize']
         
         
-        for sampleSize in [100, 400]:
+        for sampleSize in [50, 400]:
             print "============================="
             print "Sample Size: ", sampleSize
             print "============================="
