@@ -1157,10 +1157,11 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         # random drop
         samples = []
         drop_idx_l = []
-        drop_length = 10
+        drop_length = 20
         for i in xrange(len(testDataX[0])):
             ## rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
-            start_idx = np.random.randint(0, nLength-1, 1)
+            start_idx = np.random.randint(0, nLength-1, 1)[0]
+            if start_idx < startIdx: start_idx=startIdx
             end_idx   = start_idx+drop_length
             if end_idx > nLength-1: end_idx = nLength-1
             rnd_idx_l = range(start_idx, end_idx)
@@ -1204,6 +1205,22 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         d['drop_idx_l']   = drop_idx_l
         d['drop_length']  = drop_length
         ut.save_pickle(d, modeling_pkl)
+
+    ## fig = plt.figure()
+    ## ## modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
+    ## ## modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
+    ## d = ut.load_pickle(modeling_pkl)
+    ## ll_classifier_test_X = d['ll_classifier_test_X']
+    ## ll_classifier_test_Y = d['ll_classifier_test_Y']
+    ## print np.shape(ll_classifier_test_Y)
+    ## for i in xrange(len(ll_classifier_test_X)):        
+    ##     if ll_classifier_test_Y[i][0] > 0: continue
+    ##     print "test normal: ", np.shape(ll_classifier_test_X[i])        
+    ##     x = ll_classifier_test_X[i]
+    ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
+    ## plt.show()
+
+    ## sys.exit()
 
 
     #-----------------------------------------------------------------------------------------
