@@ -1246,6 +1246,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
         # get ll_cut_idx only for pos data
         pos_dict = []
+        drop_dict = []
         for idx in xrange(len(kFold_list)):
             modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
             d            = ut.load_pickle(modeling_pkl)
@@ -1257,11 +1258,12 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
                                          ll_classifier_train_idx)
             idx_dict={'abnormal_train_cut_idx': l_cut_idx}
             pos_dict.append(idx_dict)
+            drop_dict.append([d['drop_idx_l'], d['drop_length']])
                     
         bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False,
-                                   test_drop_elements=(d['drop_idx_l'], d['drop_length']))
+                                   test_drop_elements=drop_dict)
 
     # parallelization
     if debug: n_jobs=1
