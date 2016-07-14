@@ -792,7 +792,6 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
 
             ll_classifier_test_X = np.swapaxes(ll_classifier_test_X, 1,2) # sample x dim x length            
             nLength = len(ll_classifier_test_X[0][0])
-            print np.shape(drop_idx_l), np.shape(ll_classifier_test_X)
             
             samples = []
             for i in xrange(len(ll_classifier_test_X)):

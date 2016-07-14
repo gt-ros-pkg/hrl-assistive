@@ -575,6 +575,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
 
+    sys.exit()
+
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
@@ -1245,7 +1247,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
 
         # get ll_cut_idx only for pos data
-        pos_dict = []
+        pos_dict  = []
         drop_dict = []
         for idx in xrange(len(kFold_list)):
             modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
@@ -2438,6 +2440,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         fnr_l = []
         delay_mean_l = []
         delay_std_l  = []
+        acc_l = []
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
@@ -2445,6 +2448,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             fnr_l.append( 100.0 - tpr_l[-1] )
             delay_mean_l.append( np.mean(delay_ll[i]) )
             delay_std_l.append( np.std(delay_ll[i]) )
+            acc_l.append( float(np.sum(tp_ll[i])+np.sum(tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
@@ -2479,12 +2483,16 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ax1 = fig.add_subplot(111)
 
             if delay_plot:
-                if method not in ['svm', 'hmmosvm', 'progress_time_cluster', 'bpsvm']: continue
-                plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                ## rate = np.array(tpr_l)/(np.array(fpr_l)+0.001)
+                ## for i in xrange(len(rate)):
+                ##     if rate[i] > 100: rate[i] = 100.0
+                
+                plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
                 plt.xlim([-1, 101])
                 ## plt.ylim([-1, 101])
                 plt.ylabel('Delay Time', fontsize=22)
-                plt.xlabel('False positive rate (percentage)', fontsize=22)
+                plt.xlabel('Accuracy (percentage)', fontsize=22)
 
                 plt.xticks([0, 50, 100], fontsize=22)
                 ## plt.yticks([0, 50, 100], fontsize=22)
