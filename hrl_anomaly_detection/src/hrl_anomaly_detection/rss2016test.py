@@ -1598,8 +1598,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_train_X = np.array(ll_classifier_train_X)
             ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
 
-            ll_classifier_test_X = np.array(ll_classifier_test_X)
-            ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+                ll_classifier_test_X = x
+            else:
+                ll_classifier_test_X = np.array(ll_classifier_test_X)
+                ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
             
                           
         # flatten the data
