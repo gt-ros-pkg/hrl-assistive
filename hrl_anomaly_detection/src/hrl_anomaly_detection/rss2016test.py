@@ -3108,7 +3108,7 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['svm']
         nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
@@ -3116,7 +3116,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
         if opt.task == "pushing_toolcase":
-            param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.15, nPoints) 
+            param_dict['ROC']['svm_param_range'] = np.logspace(-2, 0.15, nPoints) 
         if opt.task == "scooping":
             param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
             param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
