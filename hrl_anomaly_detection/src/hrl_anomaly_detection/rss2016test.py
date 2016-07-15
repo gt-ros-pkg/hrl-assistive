@@ -1699,6 +1699,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         if abs(start_param-end_param) < 0.001: break
 
     min_param = start_param
+    print np.shape(fpr_l), i
     min_fpr_range = [fpr_l[i], fpr_l[i+1]]
 
     # find max param
