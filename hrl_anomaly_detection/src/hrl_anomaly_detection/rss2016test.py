@@ -3111,7 +3111,7 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['svm']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
