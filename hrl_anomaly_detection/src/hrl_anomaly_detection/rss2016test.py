@@ -1661,6 +1661,8 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
             tn_ll += l_data[i][method]['tn_l'][0]
             fn_ll += l_data[i][method]['fn_l'][0]
 
+        tpr_l = []
+        fpr_l = []
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
