@@ -457,9 +457,9 @@ class anomaly_detector:
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
                        
         self.lock.release()
-        self.t2 = datetime.datetime.now()
-        print "time: ", self.t2 - self.t1
-        self.t1 = self.t1
+        ## self.t2 = datetime.datetime.now()
+        ## print "time: ", self.t2 - self.t1
+        ## self.t1 = self.t1
 
 
     def statusCallback(self, msg):
