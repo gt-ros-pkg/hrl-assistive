@@ -840,7 +840,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
+                                                                 SVM_dict, HMM_dict, \
+                                                                 raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -1018,7 +1019,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
                                                                               task_name, \
                                                                               method, ROC_data, \
                                                                               ROC_dict, AE_dict, \
-                                                                              SVM_dict,\
+                                                                              SVM_dict, HMM_dict,\
                                                                               startIdx=startIdx, nState=nState,\
                                                                               modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                               for idx in xrange(len(kFold_list)) \
@@ -1273,7 +1274,8 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
+                                                                 SVM_dict, HMM_dict, \
+                                                                 raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -1503,7 +1505,8 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
-                                                                 SVM_dict, raw_data=(osvm_data,bpsvm_data),\
+                                                                 SVM_dict, HMM_dict, \
+                                                                 raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                  for idx in xrange(len(kFold_list)) \
@@ -1538,12 +1541,14 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
 
 
 def run_classifiers(idx, processed_data_path, task_name, method,\
-                    ROC_data, ROC_dict, AE_dict, SVM_dict,\
+                    ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
                     modeling_pkl_prefix=None):
 
     #-----------------------------------------------------------------------------------------
-    nPoints     = ROC_dict['nPoints']
+    nPoints    = ROC_dict['nPoints']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+
 
     data = {}
     # pass method if there is existing result
@@ -1663,7 +1668,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         new_x[i].append( x[i][j-1]+x[i][j] )
 
             ll_classifier_test_X = new_x
-        elif method == 'hmmsvm_no_dL':
+        elif (method == 'hmmsvm_no_dL' or add_logp_d is False) and \
+          len(ll_classifier_train_X[0][0]) > 1+nState:
             # remove dL related things
             ll_classifier_train_X = np.array(ll_classifier_train_X)
             ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()

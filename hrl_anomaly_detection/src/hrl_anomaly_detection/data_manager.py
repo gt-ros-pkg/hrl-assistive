@@ -537,7 +537,8 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
                         new_x[i].append( x[i][j-1]+x[i][j] )
 
             ll_classifier_train_X = new_x
-        elif method == 'hmmsvm_no_dL':
+        elif (method == 'hmmsvm_no_dL' or HMM_dict['add_logp_d'] is False) and \
+          len(ll_classifier_train_X) > HMM_dict['nState']+1:
             # remove dL/(ds+e)
             ll_classifier_train_X = np.array(ll_classifier_train_X)
             ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
