@@ -1794,13 +1794,13 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     if os.path.isfile(savefile) is False:
         with open(savefile, 'w') as file:
             file.write( "-----------------------------------------\n")
-            file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+            file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
             file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
             file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
     else:
         with open(savefile, 'a') as file:
             file.write( "-----------------------------------------\n")
-            file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+            file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
             file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
             file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
 
@@ -3115,7 +3115,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
         if opt.task == "pushing_toolcase":
-            param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.15, nPoints) 
+            param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.15, nPoints) 
         if opt.task == "scooping":
             param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
             param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
