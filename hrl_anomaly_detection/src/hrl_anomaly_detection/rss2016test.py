@@ -1170,13 +1170,15 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
             ## end_idx   = start_idx+drop_length
             ## if end_idx > nLength-1: end_idx = nLength-1
             ## rnd_idx_l = range(start_idx, end_idx)
+            drop_flag_l = np.random.choice(2, nLength, p=[drop_prop, 1.0-drop_prop])
+            rnd_idx_l = [j for j in xrange(nLength) if drop_flag_l[j] == 0]
 
             sample = []
             for j in xrange(len(testDataX)):
                 sample.append( np.delete( testDataX[j][i], rnd_idx_l ) )
 
             samples.append(sample)
-            drop_idx_l.append(start_idx)
+            drop_idx_l.append(rnd_idx_l)
         testDataX = np.swapaxes(samples, 0, 1)
 
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, A, B, pi, F, \
@@ -2838,8 +2840,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithDrop:
 
-        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
-        param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
+        param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
+        param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         save_data_path = os.path.expanduser('~')+\
@@ -2854,7 +2856,7 @@ if __name__ == '__main__':
         '''
         Change into different sampling frequency or sample drop
         '''
-        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
+        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
