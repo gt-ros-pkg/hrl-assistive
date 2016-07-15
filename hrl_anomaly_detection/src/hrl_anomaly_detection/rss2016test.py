@@ -1606,9 +1606,9 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
 
     ## if nFiles > multiprocessing.cpu_count():
     ##     nFiles = multiprocessing.cpu_count()
-    n_iter = 3
+    n_iter = 10
     nPoints = ROC_dict['nPoints'] = 4
-    nFiles = 2
+    ## nFiles = 2
     org_start_param = ROC_dict[method+'_param_range'][0]
     org_end_param = ROC_dict[method+'_param_range'][-1]
     if org_start_param > org_end_param:
@@ -1693,7 +1693,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                     break
             delta_p /= 2.0
             ratio_p /= 2.0
-            if (fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05) and abs(fpr_l[i]-fpr_l[i+1])<0.5:
+            if (fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05) and abs(fpr_l[i]-fpr_l[i+1])<1.0:
                 break
  
         if abs(start_param-end_param) < 0.001: break
@@ -1778,7 +1778,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                     break
             delta_p /= 2.0
             ratio_p /= 2.0
-            if (fpr_l[i] <= 99.5 and fpr_l[i+1] > 99.5) and abs(fpr_l[i]-fpr_l[i+1])<0.5:
+            if (fpr_l[i] <= 99.5 and fpr_l[i+1] > 99.5) and abs(fpr_l[i]-fpr_l[i+1])<1.0:
                 break
                             
         if abs(start_param-end_param) < 0.05: break
