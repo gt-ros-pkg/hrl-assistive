@@ -3115,7 +3115,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
         if opt.task == "pushing_toolcase":
-            param_dict['ROC']['svm_param_range'] = np.logspace(-4, 1.5, nPoints) 
+            param_dict['ROC']['svm_param_range'] = np.logspace(-4, 0.15, nPoints) 
 
         if opt.task == "scooping":
             param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
