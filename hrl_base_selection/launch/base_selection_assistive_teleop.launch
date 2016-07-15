@@ -7,22 +7,22 @@
   <arg name="kinect_camera" default="/$(arg kinect_ns)/qhd/image_color" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="test" default="true"/>
-  <!-- 
+
   <arg if="$(arg test)" name="ws_port" default="9091"/>
   <arg unless="$(arg test)" name="ws_port" value="9091"/>
 
   <arg if="$(arg test)" name="mjpeg_port" default="8080"/>
-  <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>-->
+  <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>
 
-  <arg if="$(arg test)" name="html_port" default="9000"/>
+  <arg if="$(arg test)" name="html_port" default="8008"/>
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
-  <!-- Rosbridge, Rosapi, Roswww, and web_video_server 
+  <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="$(anon rosbridge)" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
     <param name="port" type="int" value="$(arg ws_port)" />
     <param name="binary_encoder" type="str" value="bson" />
   </node>
-  <node name="$(anon rosapi)" pkg="rosapi" type="rosapi_node" output="screen"/>-->
+  <node name="$(anon rosapi)" pkg="rosapi" type="rosapi_node" output="screen"/>
   <node name="$(anon roswww)" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
   <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
   <!--<node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
