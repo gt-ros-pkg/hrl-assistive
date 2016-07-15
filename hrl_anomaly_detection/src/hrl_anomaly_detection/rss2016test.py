@@ -1158,10 +1158,11 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         # random drop
         samples = []
         drop_idx_l = []
-        drop_length = 20
+        drop_length = 10
         for i in xrange(len(testDataX[0])):
             ## rnd_idx_l = np.unique( np.random.randint(0, nLength-1, 20) )
-            start_idx = np.random.randint(0, nLength-1, 1)[0]
+            ## start_idx = np.random.randint(0, nLength-1, 1)[0]
+            start_idx = np.random.randint(20, 80, 1)[0]
             if start_idx < startIdx: start_idx=startIdx
             end_idx   = start_idx+drop_length
             if end_idx > nLength-1: end_idx = nLength-1
@@ -2865,7 +2866,7 @@ if __name__ == '__main__':
 
             if sampleSize == 50:
                 param_dict['ROC']['update_list'] = ['hmmsvm_no_dL', 'hmmsvm_dL', 'hmmsvm_LSLS', 'svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+                if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['bpsvm']
                 if opt.task == "pushing_microwhite":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
@@ -2879,6 +2880,7 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4, 0.0, nPoints)
                     param_dict['ROC']['svm_param_range'] = np.logspace(-4, -1.5, nPoints) 
                     param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-4.5, -3.0, nPoints)
+                    param_dict['ROC']['bpsvm_param_range'] = np.logspace(-1.6, 2.0, nPoints)
                 if opt.task == "feeding":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 0.8, nPoints)
@@ -2906,7 +2908,7 @@ if __name__ == '__main__':
                     
             elif sampleSize > 200:
                 param_dict['ROC']['update_list'] = ['hmmsvm_no_dL', 'hmmsvm_dL', 'hmmsvm_LSLS' , 'svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+                if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['bpsvm']
                 if opt.task == "pushing_microblack":
                     param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-4, 0.0, nPoints)
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 3.0
@@ -2924,6 +2926,7 @@ if __name__ == '__main__':
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
                     param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.8, nPoints) 
                     param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-1.0, 0.7, nPoints)
+                    param_dict['ROC']['bpsvm_param_range'] = np.logspace(-2.2, 0.5, nPoints)
                 if opt.task == "feeding":
                     param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
                     param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 1.5, nPoints)

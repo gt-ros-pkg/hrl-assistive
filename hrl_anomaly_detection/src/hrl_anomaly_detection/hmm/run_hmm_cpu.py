@@ -694,6 +694,7 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
+
     if opt.task == 'scooping':
         raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
                                                                 False, False,\
