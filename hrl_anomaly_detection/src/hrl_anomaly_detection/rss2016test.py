@@ -1605,6 +1605,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
 
     ## if nFiles > multiprocessing.cpu_count():
     ##     nFiles = multiprocessing.cpu_count()
+    n_iter = 3
     ROC_dict['nPoints'] = 4
     org_start_param = ROC_dict[method+'_param_range'][0]
     org_end_param = ROC_dict[method+'_param_range'][-1]
@@ -1619,7 +1620,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     ratio_p = 5.0
     
     # find min param
-    for run_idx in xrange(10):
+    for run_idx in xrange(n_iter):
 
         print "----------------------------------------"
         print run_idx, ' : ', start_param, end_param
@@ -1698,7 +1699,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     ratio_p = 5.0
     
     # find min param
-    for run_idx in xrange(10):
+    for run_idx in xrange(n_iter):
 
         print "----------------------------------------"
         print run_idx, ' : ', start_param, end_param
