@@ -530,17 +530,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## data_dict['fabricCenterList'].append(center_array)
             ## data_dict['fabricNormalList'].append(normal_array)
             ## data_dict['fabricValueList'].append(value_array)
-
-            ## if np.sum(mag_array)>0.5:
-            ##     fig = plt.figure()
-            ##     plt.plot(fabric_skin_time, fabric_skin_mag, c='k')
-            ##     plt.plot(fabric_skin_time, local_fabric_skin_mag, c='b')
-            ##     plt.plot(new_times, mag_array, c='r')
-            ##     fig.savefig('test.pdf')
-            ##     fig.savefig('test.png')
-            ##     os.system('cp test.p* ~/Dropbox/HRL/')
-            ##     sys.exit()
-
             
         # ----------------------------------------------------------------------
 

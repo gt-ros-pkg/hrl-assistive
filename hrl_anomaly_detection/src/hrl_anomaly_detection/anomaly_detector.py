@@ -30,6 +30,7 @@ import rospy
 import random
 import os, sys, threading
 from joblib import Parallel, delayed
+import datetime
 
 # util
 import numpy as np
@@ -90,6 +91,7 @@ class anomaly_detector:
         self.nEmissionDim = None
         self.ml = None
         self.classifier = None
+        self.t1 = datetime.datetime.now()
 
 
         # Comms
@@ -455,6 +457,9 @@ class anomaly_detector:
             ## self.dataList = np.swapaxes(self.dataList, 0,1)
                        
         self.lock.release()
+        self.t2 = datetime.datetime.now()
+        print "time: ", self.t2 - self.t1
+        self.t1 = self.t1
 
 
     def statusCallback(self, msg):
@@ -774,9 +779,9 @@ class anomaly_detector:
     '''
     Run detector
     '''
-    def run(self):
+    def run(self, freq=20):
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
-        rate = rospy.Rate(5) # 25Hz, nominally.
+        rate = rospy.Rate(freq) # 25Hz, nominally.
         while not rospy.is_shutdown():
 
             if len(self.dataList) >0 and self.viz:
@@ -796,8 +801,6 @@ class anomaly_detector:
             cur_length     = len(self.dataList[0][0])
             logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
             self.lock.release()
-
-            print np.shape(self.dataList), logp, np.shape(post)
 
             if logp is None: 
                 print "logp is None => anomaly"
