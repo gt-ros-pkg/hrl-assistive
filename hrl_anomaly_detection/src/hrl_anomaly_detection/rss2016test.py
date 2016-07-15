@@ -2824,7 +2824,7 @@ if __name__ == '__main__':
         '''
         Change into different sampling frequency or sample drop
         '''
-        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
+        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL', 'bpsvm']
         param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['HMM']['renew'] = False
