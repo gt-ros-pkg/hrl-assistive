@@ -1701,7 +1701,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
 
     min_param = start_param
     print np.shape(fpr_l), i, run_idx
-    if i > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
+    if i+1 > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
     
     min_fpr_range = [fpr_l[i], fpr_l[i+1]]
 
