@@ -1694,12 +1694,15 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
             delta_p /= 2.0
             ratio_p /= 2.0
             if (fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05) and abs(fpr_l[i]-fpr_l[i+1])<1.0:
+                print "Converged!!!!!!!!"
                 break
  
         if abs(start_param-end_param) < 0.001: break
 
     min_param = start_param
-    print np.shape(fpr_l), i
+    print np.shape(fpr_l), i, run_idx
+    if i > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
+    
     min_fpr_range = [fpr_l[i], fpr_l[i+1]]
 
     # find max param
