@@ -1697,6 +1697,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         if abs(start_param-end_param) < 0.001: break
 
     min_param = start_param
+    min_fpr_range = [fpr_l[i], fpr_l[i+1]]
 
     # find max param
     start_param = (org_start_param+org_end_param)/2.0
@@ -1779,6 +1780,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         if abs(start_param-end_param) < 0.05: break
     
     max_param = end_param
+    max_fpr_range = [fpr_l[i], fpr_l[i+1]]
     
     print "----------------------------------------"
     print run_idx, ' : ', min_param, max_param
@@ -1789,12 +1791,14 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         with open(savefile, 'w') as file:
             file.write( "-----------------------------------------\n")
             file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
-            file.write( "%0.3f - %0.3f" % (min_param, max_param)+'\n\n' )
+            file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
+            file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
     else:
         with open(savefile, 'a') as file:
             file.write( "-----------------------------------------\n")
             file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
-            file.write( "%0.3f - %0.3f" % (min_param, max_param)+'\n\n' )
+            file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
+            file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
 
 
 def run_classifiers(idx, processed_data_path, task_name, method,\
