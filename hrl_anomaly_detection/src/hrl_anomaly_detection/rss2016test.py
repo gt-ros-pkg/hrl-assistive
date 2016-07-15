@@ -3132,8 +3132,8 @@ if __name__ == '__main__':
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
 
     elif opt.bFindROCparamRange:
-        param_dict['ROC']['methods']     = ['svm']
-        param_dict['ROC']['update_list'] = ['svm']
+        param_dict['ROC']['methods']     = ['hmmosvm']
+        param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         for method in param_dict['ROC']['methods']:
