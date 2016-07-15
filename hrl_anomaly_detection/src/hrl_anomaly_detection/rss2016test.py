@@ -1649,17 +1649,24 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                                                                           for idx in xrange(nFiles) \
                                                                           )
 
+
         tp_ll = []
         fp_ll = []
         tn_ll = []
         fn_ll = []
+        for j in xrange(nPoints):
+            tp_ll.append([])
+            fp_ll.append([])
+            tn_ll.append([])
+            fn_ll.append([])
 
         l_data = r
         for i in xrange(len(l_data)):
-            tp_ll += l_data[i][method]['tp_l'][0]
-            fp_ll += l_data[i][method]['fp_l'][0]
-            tn_ll += l_data[i][method]['tn_l'][0]
-            fn_ll += l_data[i][method]['fn_l'][0]
+            for j in xrange(nPoints):
+                tp_ll[j] += l_data[i][method]['tp_l'][j]
+                fp_ll[j] += l_data[i][method]['fp_l'][j]
+                tn_ll[j] += l_data[i][method]['tn_l'][j]
+                fn_ll[j] += l_data[i][method]['fn_l'][j]
 
         tpr_l = []
         fpr_l = []
