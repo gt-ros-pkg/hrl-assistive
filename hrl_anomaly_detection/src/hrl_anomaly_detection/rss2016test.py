@@ -1543,6 +1543,249 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
 
 
+def find_ROC_param_range(method, subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=True):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+    
+    #------------------------------------------   
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    #-----------------------------------------------------------------------------------------
+    osvm_data = None ; bpsvm_data = None
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+        osvm_data = dm.getPCAData(nFiles, crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False)
+    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
+
+        # get ll_cut_idx only for pos data
+        pos_dict = []
+        for idx in xrange(nFiles):
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+            ll_classifier_train_idx = d['ll_classifier_train_idx']
+            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
+                                         ll_classifier_train_Y, \
+                                         ll_classifier_train_idx)
+            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
+            pos_dict.append(idx_dict)
+                    
+        bpsvm_data = dm.getPCAData(nFiles, crossVal_pkl, \
+                                   window=SVM_dict['raw_window_size'], \
+                                   pos_dict=pos_dict, use_test=True, use_pca=False)
+        
+
+    ## if nFiles > multiprocessing.cpu_count():
+    ##     nFiles = multiprocessing.cpu_count()
+    ROC_dict['nPoints'] = 4
+    org_start_param = ROC_dict[method+'_param_range'][0]
+    org_end_param = ROC_dict[method+'_param_range'][-1]
+    if org_start_param > org_end_param:
+        temp = org_start_param
+        org_start_param = org_end_param
+        org_end_param = org_start_param
+    
+    start_param = org_start_param    
+    end_param = org_end_param    
+    delta_p = 2.5
+    ratio_p = 5.0
+    
+    # find min param
+    for run_idx in xrange(10):
+
+        print "----------------------------------------"
+        print run_idx, ' : ', start_param, end_param
+        print "----------------------------------------"
+        ROC_dict[method+'_param_range'] = np.linspace(start_param, end_param, ROC_dict['nPoints'])
+        
+
+        ROC_data = {}
+        ROC_data[method] = {}
+        ROC_data[method]['complete'] = False 
+        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+        
+        if debug: n_jobs=1
+        else: n_jobs=-1
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+                                                                          method, ROC_data, \
+                                                                          ROC_dict, AE_dict, \
+                                                                          SVM_dict, HMM_dict, \
+                                                                          raw_data=(osvm_data,bpsvm_data),\
+                                                                          startIdx=startIdx, nState=nState) \
+                                                                          for idx in xrange(nFiles) \
+                                                                          )
+
+        tp_ll = []
+        fp_ll = []
+        tn_ll = []
+        fn_ll = []
+
+        l_data = r
+        for i in xrange(len(l_data)):
+            tp_ll += l_data[i][method]['tp_l'][0]
+            fp_ll += l_data[i][method]['fp_l'][0]
+            tn_ll += l_data[i][method]['tn_l'][0]
+            fn_ll += l_data[i][method]['fn_l'][0]
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+        if np.amin(fpr_l) > 0.5:
+            if 'fixed' in method or 'progress' in method:
+                end_param    = start_param
+                start_param -= delta_p
+            else:
+                end_param    = start_param
+                start_param /= ratio_p
+        elif np.amax(fpr_l) <= 0.05:
+            if 'fixed' in method or 'progress' in method:
+                start_param = end_param
+                end_param   += delta_p
+            else:
+                start_param = end_param
+                end_param  *= ratio_p                        
+        else:
+            for i in xrange(len(fpr_l)-1):
+                if fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05:
+                    start_param = ROC_dict[method+'_param_range'][i]
+                    end_param   = ROC_dict[method+'_param_range'][i+1]
+                    break
+            delta_p /= 2.0
+            ratio_p /= 2.0
+                
+        if abs(start_param-end_param) < 0.001: break
+
+    min_param = start_param
+
+    # find max param
+    start_param = org_start_param    
+    end_param = org_end_param    
+    delta_p = 2.5
+    ratio_p = 5.0
+    
+    # find min param
+    for run_idx in xrange(10):
+
+        print "----------------------------------------"
+        print run_idx, ' : ', start_param, end_param
+        print "----------------------------------------"
+        ROC_dict[method+'_param_range'] = np.linspace(start_param, end_param, ROC_dict['nPoints'])
+        
+
+        ROC_data = {}
+        ROC_data[method] = {}
+        ROC_data[method]['complete'] = False 
+        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+        ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+        
+        if debug: n_jobs=1
+        else: n_jobs=-1
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+                                                                          method, ROC_data, \
+                                                                          ROC_dict, AE_dict, \
+                                                                          SVM_dict, HMM_dict, \
+                                                                          raw_data=(osvm_data,bpsvm_data),\
+                                                                          startIdx=startIdx, nState=nState) \
+                                                                          for idx in xrange(nFiles) \
+                                                                          )
+
+        tp_ll = []
+        fp_ll = []
+        tn_ll = []
+        fn_ll = []
+
+        l_data = r
+        for i in xrange(len(l_data)):
+            tp_ll += l_data[i][method]['tp_l'][0]
+            fp_ll += l_data[i][method]['fp_l'][0]
+            tn_ll += l_data[i][method]['tn_l'][0]
+            fn_ll += l_data[i][method]['fn_l'][0]
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+        if np.amin(fpr_l) > 99.5:
+            if 'fixed' in method or 'progress' in method:
+                end_param    = start_param
+                start_param -= delta_p
+            else:
+                end_param    = start_param
+                start_param /= ratio_p
+        elif np.amax(fpr_l) <= 99.5:
+            if 'fixed' in method or 'progress' in method:
+                start_param = end_param
+                end_param   += delta_p
+            else:
+                start_param = end_param
+                end_param  *= ratio_p                        
+        else:
+            for i in xrange(len(fpr_l)-1):
+                if fpr_l[i] <= 99.5 and fpr_l[i+1] > 99.5:
+                    start_param = ROC_dict[method+'_param_range'][i]
+                    end_param   = ROC_dict[method+'_param_range'][i+1]
+                    break
+            delta_p /= 2.0
+            ratio_p /= 2.0
+                
+        if abs(start_param-end_param) < 0.05: break
+    
+    max_param = end_param
+    
+    print "----------------------------------------"
+    print run_idx, ' : ', min_param, max_param
+    print "----------------------------------------"
+    
+    savefile = os.path.join(processed_data_path,'../','result_find_param_range.txt')
+    if os.path.isfile(savefile) is False:
+        with open(savefile, 'w') as file:
+            file.write( "-----------------------------------------\n")
+            file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+            file.write( "%0.3f - %0.3f" % (min_param, max_param)+'\n\n' )
+    else:
+        with open(savefile, 'a') as file:
+            file.write( "-----------------------------------------\n")
+            file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+            file.write( "%0.3f - %0.3f" % (min_param, max_param)+'\n\n' )
+
 
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
@@ -2656,6 +2899,10 @@ if __name__ == '__main__':
     p.add_option('--evaluation_freq', '--eaf', action='store_true', dest='bEvaluationWithDiffFreq',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
+    p.add_option('--frp', action='store_true', dest='bFindROCparamRange',
+                 default=False, help='Evaluate a classifier with cross-validation and different sampling\
+                 frequency.')
+                 
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -2851,6 +3098,16 @@ if __name__ == '__main__':
         evaluation_drop(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+
+    elif opt.bFindROCparamRange:
+        param_dict['ROC']['methods']     = ['svm']
+        param_dict['ROC']['update_list'] = ['svm']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        for method in param_dict['ROC']['methods']:
+            find_ROC_param_range(method, subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                 verbose=opt.bVerbose, debug=opt.bDebug)
+        
 
     elif opt.bEvaluationWithDiffFreq:
         '''
