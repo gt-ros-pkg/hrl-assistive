@@ -3105,6 +3105,13 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
+        if opt.task == "scooping":
+            param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
+            param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
+            param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4, -2.0, nPoints)
+            param_dict['ROC']['svm_param_range'] = np.logspace(-2.8, 0.2, nPoints) 
+
+
         evaluation_drop(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
