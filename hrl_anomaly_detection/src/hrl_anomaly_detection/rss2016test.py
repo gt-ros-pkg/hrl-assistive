@@ -1551,6 +1551,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
+    dim        = len(data_dict['handFeatures'])
     # AE
     AE_dict     = param_dict['AE']
     # HMM
@@ -1606,7 +1607,8 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     ## if nFiles > multiprocessing.cpu_count():
     ##     nFiles = multiprocessing.cpu_count()
     n_iter = 3
-    ROC_dict['nPoints'] = 4
+    nPoints = ROC_dict['nPoints'] = 4
+    nFiles = 2
     org_start_param = ROC_dict[method+'_param_range'][0]
     org_end_param = ROC_dict[method+'_param_range'][-1]
     if org_start_param > org_end_param:
@@ -1615,7 +1617,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         org_end_param = org_start_param
     
     start_param = org_start_param    
-    end_param = org_end_param    
+    end_param = (org_start_param+org_end_param)/2.0
     delta_p = 2.5
     ratio_p = 5.0
     
@@ -1650,15 +1652,10 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                                                                           )
 
 
-        tp_ll = []
-        fp_ll = []
-        tn_ll = []
-        fn_ll = []
-        for j in xrange(nPoints):
-            tp_ll.append([])
-            fp_ll.append([])
-            tn_ll.append([])
-            fn_ll.append([])
+        tp_ll = [[] for j in xrange(nPoints)]
+        fp_ll = [[] for j in xrange(nPoints)]
+        tn_ll = [[] for j in xrange(nPoints)]
+        fn_ll = [[] for j in xrange(nPoints)]
 
         l_data = r
         for i in xrange(len(l_data)):
@@ -1702,7 +1699,7 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     min_param = start_param
 
     # find max param
-    start_param = org_start_param    
+    start_param = (org_start_param+org_end_param)/2.0
     end_param = org_end_param    
     delta_p = 2.5
     ratio_p = 5.0
@@ -1737,18 +1734,21 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                                                                           for idx in xrange(nFiles) \
                                                                           )
 
-        tp_ll = []
-        fp_ll = []
-        tn_ll = []
-        fn_ll = []
+        tp_ll = [[] for j in xrange(nPoints)]
+        fp_ll = [[] for j in xrange(nPoints)]
+        tn_ll = [[] for j in xrange(nPoints)]
+        fn_ll = [[] for j in xrange(nPoints)]
 
         l_data = r
         for i in xrange(len(l_data)):
-            tp_ll += l_data[i][method]['tp_l'][0]
-            fp_ll += l_data[i][method]['fp_l'][0]
-            tn_ll += l_data[i][method]['tn_l'][0]
-            fn_ll += l_data[i][method]['fn_l'][0]
+            for j in xrange(nPoints):
+                tp_ll[j] += l_data[i][method]['tp_l'][j]
+                fp_ll[j] += l_data[i][method]['fp_l'][j]
+                tn_ll[j] += l_data[i][method]['tn_l'][j]
+                fn_ll[j] += l_data[i][method]['fn_l'][j]
 
+        tpr_l = []
+        fpr_l = []
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
