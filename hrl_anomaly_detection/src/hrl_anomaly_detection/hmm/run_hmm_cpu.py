@@ -685,6 +685,8 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
                  help='number of processes for multi processing')
+    p.add_option('--add_logp_d', '--ld', action='store_false', dest='bAddLogpD',
+                 default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
     opt, args = p.parse_args()
@@ -736,6 +738,9 @@ if __name__ == '__main__':
                       'cov': np.linspace(0.5,4.0,10) }
 
     #--------------------------------------------------------------------------------------
+    # test change of logp
+    param_dict['HMM']['add_logp_d'] = opt.bAddLogpD
+    
     crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
