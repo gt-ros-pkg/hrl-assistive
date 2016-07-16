@@ -823,6 +823,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
     data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
     data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
 
     if ROC_data[method]['complete'] == True: return data
     #-----------------------------------------------------------------------------------------
