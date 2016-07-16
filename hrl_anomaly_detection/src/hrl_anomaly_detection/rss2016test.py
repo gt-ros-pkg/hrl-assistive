@@ -2432,8 +2432,8 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    raw_data_path, save_data_path, param_dict = getParams(task, bDataRenew, \
-                                                          bAERenew, bHMMRenew, opt.dim,\
+    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
+                                                          opt.bAERenew, opt.bHMMRenew, opt.dim,\
                                                           rf_center, local_range, \
                                                           bAESwitch=opt.bAESwitch)
         
