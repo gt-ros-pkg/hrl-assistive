@@ -2,6 +2,50 @@ import os, sys
 import numpy as np
 
 
+def getParms(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center,local_range, bAESwitch=False ):
+
+    #---------------------------------------------------------------------------
+    if task == 'scooping':
+        raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
+                                                                bAERenew, bHMMRenew,\
+                                                                rf_center, local_range,\
+                                                                ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------
+    elif task == 'feeding':
+        raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
+                                                               bAERenew, bHMMRenew,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_microwhite':
+        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task, bDataRenew, \
+                                                                         bAERenew, bHMMRenew,\
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=bAESwitch, dim=dim)
+                                                                         
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_microblack':
+        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(task, bDataRenew, \
+                                                                         bAERenew, bHMMRenew,\
+                                                                         rf_center, local_range, \
+                                                                         ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------           
+    elif task == 'pushing_toolcase':
+        raw_data_path, save_data_path, param_dict = getPushingToolCase(task, bDataRenew, \
+                                                                       bAERenew, bHMMRenew,\
+                                                                       rf_center, local_range, \
+                                                                       ae_swtch=bAESwitch, dim=dim)
+        
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    return raw_data_path, save_data_path, param_dict
+    
+
 def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
                 ae_swtch=False, dim=4):
 

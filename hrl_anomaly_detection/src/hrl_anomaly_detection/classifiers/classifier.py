@@ -1046,6 +1046,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         fn_l = []
         delay_l = []
         delay_idx = 0
+        tp_idx_l = []
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
 
@@ -1058,8 +1059,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             anomaly = False
             for jj in xrange(len(est_y)):
                 if est_y[jj] > 0.0:
-                    if Y_test[ii][0] <0:
-                        print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
+                    ## if Y_test[ii][0] <0:
+                    ##     print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
 
                     if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
                         try:
@@ -1068,6 +1069,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
                         delay_l.append(delay_idx)
+                    if Y_test[ii][0] > 0:
+                        tp_idx_l.append(ii)
                             
                     anomaly = True
                     break        
@@ -1084,6 +1087,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         data[method]['fn_l'][j] += fn_l
         data[method]['tn_l'][j] += tn_l
         data[method]['delay_l'][j] += delay_l
+        data[method]['tp_idx_l'][j] += tp_idx_l
 
     print "finished ", idx, method
     return data

@@ -807,6 +807,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
@@ -871,6 +873,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
             ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
             ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+            
+            ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
+            ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
@@ -2368,6 +2373,8 @@ if __name__ == '__main__':
 
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_delay', '--eadl', action='store_true', dest='bEvaluationDelay',
+                 default=False, help='Evaluate the delay.')
     p.add_option('--evaluation_drop', '--ead', action='store_true', dest='bEvaluationWithDrop',
                  default=False, help='Evaluate a classifier with cross-validation plus drop.')
     p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
@@ -2409,51 +2416,27 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, opt.bDataRenew, \
-                                                                opt.bAERenew, opt.bHMMRenew,\
-                                                                rf_center, local_range,\
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         subjects = [ 'Ashwin', 'Song', 'tom' , 'lin', 'wonyoung']
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, opt.bDataRenew, \
-                                                               opt.bAERenew, opt.bHMMRenew,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, opt.bDataRenew, \
-                                                                         opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-                                                                         
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, opt.bDataRenew, \
-                                                                         opt.bAERenew, opt.bHMMRenew,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, opt.bDataRenew, \
-                                                                       opt.bAERenew, opt.bHMMRenew,\
-                                                                       rf_center, local_range, \
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
     else:
         print "Selected task name is not available."
         sys.exit()
 
-    #---------------------------------------------------------------------------
-    ## if opt.bAEDataAddFeature:
-    ##     param_dict['AE']['add_option'] = ['wristAudio'] #'featureToBottleneck'
-    ##     param_dict['AE']['switch']     = True
+    raw_data_path, save_data_path, param_dict = getParams(task, bDataRenew, \
+                                                          bAERenew, bHMMRenew, opt.dim,\
+                                                          rf_center, local_range, \
+                                                          bAESwitch=opt.bAESwitch)
+        
     
     #---------------------------------------------------------------------------           
     #---------------------------------------------------------------------------           
@@ -2547,7 +2530,10 @@ if __name__ == '__main__':
             param_dict['ROC']['update_list'] = []
             param_dict['HMM']['renew'] = False
             param_dict['SVM']['renew'] = False
-        
+        if opt.bEvaluationDelay:
+            param_dict['ROC']['methods'] = ['svm', 'progress_time_cluster', 'fixed', 'osvm'] 
+            param_dict['ROC']['update_list'] = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
+                    
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=opt.bFindROCparamRange)
@@ -2572,6 +2558,10 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
+
+    
+
+        if opt.task == "pushing_microblack":
 
         if opt.task == "pushing_toolcase":
             param_dict['ROC']['svm_param_range'] = np.logspace(-2, 0.15, nPoints) 
