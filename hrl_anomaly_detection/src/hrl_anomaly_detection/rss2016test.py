@@ -1056,7 +1056,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
 
 def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                    no_plot=False, delay_plot=False):
+                    no_plot=False, delay_plot=False, find_param=False):
 
     ## Parameters
     # data
@@ -1102,9 +1102,9 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
     successData = d['successData']
     failureData = d['failureData']
-    param_dict  = d['param_dict']
-    if 'timeList' in param_dict.keys():
-        timeList = param_dict['timeList'][startIdx:]
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
 
@@ -1271,6 +1271,15 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False,
                                    test_drop_elements=drop_dict)
+
+
+    if find_param:
+        for method in method_list:
+            if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
+            find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
+                                 modeling_pkl_prefix='hmm_drop_'+task_name)
+            
+        sys.exit()
 
     # parallelization
     if debug: n_jobs=1
@@ -1543,9 +1552,8 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
 
 
-def find_ROC_param_range(method, subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                         no_plot=False, delay_plot=True):
+def find_ROC_param_range(method, task_name, processed_data_path, param_dict, debug=False,\
+                         modeling_pkl_prefix=None):
 
     ## Parameters
     # data
@@ -1565,50 +1573,16 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
     # ROC
     ROC_dict = param_dict['ROC']
     
-    #------------------------------------------   
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
-
     nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
 
     #-----------------------------------------------------------------------------------------
     # parameters
     startIdx    = 4
-    method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
     #-----------------------------------------------------------------------------------------
-    osvm_data = None ; bpsvm_data = None
-    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(nFiles, crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'],
-                                  use_test=True, use_pca=False)
-    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
-
-        # get ll_cut_idx only for pos data
-        pos_dict = []
-        for idx in xrange(nFiles):
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-            d            = ut.load_pickle(modeling_pkl)
-            ll_classifier_train_X   = d['ll_classifier_train_X']
-            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-            ll_classifier_train_idx = d['ll_classifier_train_idx']
-            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
-                                         ll_classifier_train_Y, \
-                                         ll_classifier_train_idx)
-            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
-            pos_dict.append(idx_dict)
-                    
-        bpsvm_data = dm.getPCAData(nFiles, crossVal_pkl, \
-                                   window=SVM_dict['raw_window_size'], \
-                                   pos_dict=pos_dict, use_test=True, use_pca=False)
-        
-
-    ## if nFiles > multiprocessing.cpu_count():
-    ##     nFiles = multiprocessing.cpu_count()
     n_iter = 10
     nPoints = ROC_dict['nPoints'] = 4
-    ## nFiles = 2
     org_start_param = ROC_dict[method+'_param_range'][0]
     org_end_param = ROC_dict[method+'_param_range'][-1]
     if org_start_param > org_end_param:
@@ -1646,9 +1620,9 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                                                                           method, ROC_data, \
                                                                           ROC_dict, AE_dict, \
                                                                           SVM_dict, HMM_dict, \
-                                                                          raw_data=(osvm_data,bpsvm_data),\
-                                                                          startIdx=startIdx, nState=nState) \
-                                                                          for idx in xrange(nFiles) \
+                                                                          startIdx=startIdx, nState=nState,\
+                                                                          modeling_pkl_prefix=modeling_pkl_prefix\
+                                                                          )for idx in xrange(nFiles) \
                                                                           )
 
 
@@ -1700,7 +1674,6 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
         if abs(start_param-end_param) < 0.001: break
 
     min_param = start_param
-    print np.shape(fpr_l), i, run_idx
     if i+1 > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
     
     min_fpr_range = [fpr_l[i], fpr_l[i+1]]
@@ -1736,7 +1709,6 @@ def find_ROC_param_range(method, subject_names, task_name, raw_data_path, proces
                                                                           method, ROC_data, \
                                                                           ROC_dict, AE_dict, \
                                                                           SVM_dict, HMM_dict, \
-                                                                          raw_data=(osvm_data,bpsvm_data),\
                                                                           startIdx=startIdx, nState=nState) \
                                                                           for idx in xrange(nFiles) \
                                                                           )
@@ -3123,7 +3095,7 @@ if __name__ == '__main__':
         if opt.task == "scooping":
             param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
             param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
-            param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4, -2.0, nPoints)
+            param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3.2, -1.0, nPoints)
             param_dict['ROC']['svm_param_range'] = np.logspace(-2.8, 0.2, nPoints) 
         if opt.task == "feeding":
             param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-3.7, 0.7, nPoints) 
@@ -3133,7 +3105,8 @@ if __name__ == '__main__':
 
         evaluation_drop(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \
-                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                        find_param=opt.bFindROCparamRange)
 
     elif opt.bFindROCparamRange:
         param_dict['ROC']['methods']     = ['hmmosvm']
@@ -3141,8 +3114,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         for method in param_dict['ROC']['methods']:
-            find_ROC_param_range(method, subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                 verbose=opt.bVerbose, debug=opt.bDebug)
+            find_ROC_param_range(method, opt.task, save_data_path, param_dict, debug=opt.bDebug)
         
 
     elif opt.bEvaluationWithDiffFreq:
