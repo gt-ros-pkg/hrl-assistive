@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 
-def getParms(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center,local_range, bAESwitch=False ):
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center,local_range, bAESwitch=False ):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':
