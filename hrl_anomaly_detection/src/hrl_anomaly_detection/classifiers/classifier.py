@@ -48,6 +48,9 @@ from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 from sklearn import metrics
 
+from hrl_anomaly_detection import data_manager as dm
+
+
 class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
                  #progress time or state?
@@ -225,6 +228,8 @@ class classifier(learning_base):
             try: self.dt = svm.svm_train(y, X, commands )
             except:
                 print "svm training failure"
+                print np.shape(y), np.shape(X)
+                print commands                
                 return False
             return True
         elif self.method == 'cssvm':
@@ -797,3 +802,290 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     ##     print "tpr, fpr: ", float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0, float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
 
     return j, tp_l, fp_l, fn_l, tn_l, delay_l
+
+
+
+def run_classifiers(idx, processed_data_path, task_name, method,\
+                    ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
+                    raw_data=None, startIdx=4, nState=25, \
+                    modeling_pkl_prefix=None):
+
+    #-----------------------------------------------------------------------------------------
+    nPoints    = ROC_dict['nPoints']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+
+
+    data = {}
+    # pass method if there is existing result
+    data[method] = {}
+    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+    if ROC_data[method]['complete'] == True: return data
+    #-----------------------------------------------------------------------------------------
+
+    ## print idx, " : training classifier and evaluate testing data"
+    # train a classifier and evaluate it using test data.
+    from sklearn import preprocessing
+
+    if method == 'osvm' or method == 'bpsvm':
+        if method == 'osvm': raw_data_idx = 0
+        elif method == 'bpsvm': raw_data_idx = 1
+            
+        X_train_org = raw_data[raw_data_idx][idx]['X_scaled']
+        Y_train_org = raw_data[raw_data_idx][idx]['Y_train_org']
+        idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
+        ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
+        ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
+        ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
+
+        nLength = 200
+    else:
+
+        if modeling_pkl_prefix is not None:
+            modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
+        else:        
+            if AE_dict['switch'] and AE_dict['add_option'] is not None:
+                tag = ''
+                for ft in AE_dict['add_option']: tag += ft[:2]
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+\
+                                            str(idx)+'.pkl')
+            elif AE_dict['switch'] and AE_dict['add_option'] is None:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
+            else:
+                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        print "start to load hmm data, ", modeling_pkl
+        d            = ut.load_pickle(modeling_pkl)
+        nState       = d['nState']        
+        ll_classifier_train_X   = d['ll_classifier_train_X']
+        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+        ll_classifier_train_idx = d['ll_classifier_train_idx']
+        ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ll_classifier_test_idx  = d['ll_classifier_test_idx']
+        nLength      = d['nLength']
+
+        if method == 'hmmosvm':
+            normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
+            ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
+            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
+        elif method == 'hmmsvm_dL':
+            # replace dL/(ds+e) to dL
+            for i in xrange(len(ll_classifier_train_X)):
+                for j in xrange(len(ll_classifier_train_X[i])):
+                    if j == 0:
+                        ll_classifier_train_X[i][j][1] = 0.0
+                    else:
+                        ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
+                          ll_classifier_train_X[i][j-1][0]
+
+            for i in xrange(len(ll_classifier_test_X)):
+                for j in xrange(len(ll_classifier_test_X[i])):
+                    if j == 0:
+                        ll_classifier_test_X[i][j][1] = 0.0
+                    else:
+                        ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
+                          ll_classifier_test_X[i][j-1][0]
+        elif method == 'hmmsvm_LSLS':
+            # reconstruct data into LS(t-1)+LS(t)
+            if type(ll_classifier_train_X) is list:
+                ll_classifier_train_X = np.array(ll_classifier_train_X)
+
+            x = np.dstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
+            x = x.tolist()
+
+            new_x = []
+            for i in xrange(len(x)):
+                new_x.append([])
+                for j in xrange(len(x[i])):
+                    if j == 0:
+                        new_x[i].append( x[i][j]+x[i][j] )
+                    else:
+                        new_x[i].append( x[i][j-1]+x[i][j] )
+
+            ll_classifier_train_X = new_x
+
+            # test data
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+            else:
+                if type(ll_classifier_test_X) is list:
+                    ll_classifier_test_X = np.array(ll_classifier_test_X)
+
+                x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
+                x = x.tolist()
+
+            new_x = []
+            for i in xrange(len(x)):
+                new_x.append([])
+                for j in xrange(len(x[i])):
+                    if j == 0:
+                        new_x[i].append( x[i][j]+x[i][j] )
+                    else:
+                        new_x[i].append( x[i][j-1]+x[i][j] )
+
+            ll_classifier_test_X = new_x
+        elif (method == 'hmmsvm_no_dL' or add_logp_d is False) and \
+          len(ll_classifier_train_X[0][0]) > 1+nState:
+            # remove dL related things
+            ll_classifier_train_X = np.array(ll_classifier_train_X)
+            ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
+
+            if len(np.shape(ll_classifier_test_X))<3:
+                x = []
+                for sample in ll_classifier_test_X:
+                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
+                ll_classifier_test_X = x
+            else:
+                ll_classifier_test_X = np.array(ll_classifier_test_X)
+                ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
+            
+                          
+        # flatten the data
+        if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
+        else: remove_fp = False
+        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+                                                                   ll_classifier_train_Y, \
+                                                                   ll_classifier_train_idx,\
+                                                                   remove_fp=remove_fp)
+                                                                   
+
+
+    #-----------------------------------------------------------------------------------------
+    # Generate parameter list for ROC curve
+    # pass method if there is existing result
+    # data preparation
+    if method == 'osvm' or method == 'bpsvm':
+        X_scaled = X_train_org
+    elif method.find('svm')>=0 or method.find('sgd')>=0:
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X_train_org)
+    else:
+        X_scaled = X_train_org
+    print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+
+    X_test = []
+    Y_test = [] 
+    for j in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_X[j])==0: continue
+
+        try:
+            if method == 'osvm' or method == 'bpsvm':
+                X = ll_classifier_test_X[j]
+            elif method.find('svm')>=0 or method.find('sgd')>=0:
+                X = scaler.transform(ll_classifier_test_X[j])                                
+            else:
+                X = ll_classifier_test_X[j]
+        except:
+            print "failed to scale ", np.shape(ll_classifier_test_X[j])
+            continue
+
+        X_test.append(X)
+        Y_test.append(ll_classifier_test_Y[j])
+
+
+    # classifier # TODO: need to make it efficient!!
+    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
+    for j in xrange(nPoints):
+        ## run_classifier(j)
+        dtc.set_params( **SVM_dict )
+        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
+          method == 'bpsvm' or method == 'hmmsvm_no_dL':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+        elif method == 'hmmosvm' or method == 'osvm':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( svm_type=2 )
+            dtc.set_params( gamma=weights[j] )
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
+        elif method == 'cssvm':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
+        elif method == 'progress_time_cluster':
+            thresholds = ROC_dict['progress_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'progress_state':
+            thresholds = ROC_dict[method+'_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        elif method == 'fixed':
+            thresholds = ROC_dict[method+'_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+        elif method == 'change':
+            thresholds = ROC_dict[method+'_param_range']
+            dtc.set_params( ths_mult = thresholds[j] )
+            if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+        elif method == 'sgd':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+        else:
+            print "Not available method"
+            return "Not available method", -1, params
+
+        if ret is False:
+            print "fit failed, ", weights[j]
+            sys.exit()
+            return 'fit failed', [],[],[],[],[]
+        
+        # evaluate the classifier
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []
+        delay_l = []
+        delay_idx = 0
+        for ii in xrange(len(X_test)):
+            if len(Y_test[ii])==0: continue
+
+            if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
+                est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
+                est_y = np.array(est_y)* -1.0
+            else:
+                est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+
+            anomaly = False
+            for jj in xrange(len(est_y)):
+                if est_y[jj] > 0.0:
+                    if Y_test[ii][0] <0:
+                        print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
+
+                    if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
+                        try:
+                            delay_idx = ll_classifier_test_idx[ii][jj]
+                        except:
+                            print "Error!!!!!!!!!!!!!!!!!!"
+                            print np.shape(ll_classifier_test_idx), ii, jj
+                        delay_l.append(delay_idx)
+                            
+                    anomaly = True
+                    break        
+
+            if Y_test[ii][0] > 0.0:
+                if anomaly: tp_l.append(1)
+                else: fn_l.append(1)
+            elif Y_test[ii][0] <= 0.0:
+                if anomaly: fp_l.append(1)
+                else: tn_l.append(1)
+
+        data[method]['tp_l'][j] += tp_l
+        data[method]['fp_l'][j] += fp_l
+        data[method]['fn_l'][j] += fn_l
+        data[method]['tn_l'][j] += tn_l
+        data[method]['delay_l'][j] += delay_l
+
+    print "finished ", idx, method
+    return data
+
+

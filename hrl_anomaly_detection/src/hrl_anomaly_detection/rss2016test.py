@@ -53,6 +53,7 @@ from hrl_anomaly_detection import data_manager as dm
 ## import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 ## import hrl_lib.circular_buffer as cb
 from hrl_anomaly_detection.params import *
+from hrl_anomaly_detection.optimizeParam import *
 
 # learning
 ## from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
@@ -521,7 +522,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True):
+                   no_plot=False, delay_plot=True, find_param=False):
 
     ## Parameters
     # data
@@ -833,18 +834,25 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False)
         
-    
+
+    if find_param:
+        #find the best parameters
+        for method in method_list:
+            if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
+            find_ROC_param_range(method, task_name, processed_data_path, param_dict)            
+        sys.exit()
+                                   
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                 method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
-                                                                 SVM_dict, HMM_dict, \
-                                                                 raw_data=(osvm_data,bpsvm_data),\
-                                                                 startIdx=startIdx, nState=nState) \
-                                                                 for idx in xrange(len(kFold_list)) \
-                                                                 for method in method_list )
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
+                                                                         method, ROC_data, \
+                                                                         ROC_dict, AE_dict, \
+                                                                         SVM_dict, HMM_dict, \
+                                                                         raw_data=(osvm_data,bpsvm_data),\
+                                                                         startIdx=startIdx, nState=nState) \
+                                                                         for idx in xrange(len(kFold_list)) \
+                                                                         for method in method_list )
                                                                   
     #l_data = zip(*r)
     l_data = r
@@ -1015,7 +1023,7 @@ def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_pat
             # parallelization
             if debug: n_jobs=1
             else: n_jobs=-1
-            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, \
+            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
                                                                               ROC_dict, AE_dict, \
@@ -1284,7 +1292,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
@@ -1515,7 +1523,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
@@ -1552,532 +1560,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
 
 
-def find_ROC_param_range(method, task_name, processed_data_path, param_dict, debug=False,\
-                         modeling_pkl_prefix=None):
 
-    ## Parameters
-    # data
-    data_dict  = param_dict['data_param']
-    data_renew = data_dict['renew']
-    dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict     = param_dict['AE']
-    # HMM
-    HMM_dict   = param_dict['HMM']
-    nState     = HMM_dict['nState']
-    cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
-    # SVM
-    SVM_dict   = param_dict['SVM']
-
-    # ROC
-    ROC_dict = param_dict['ROC']
-    
-    nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
-
-    #-----------------------------------------------------------------------------------------
-    # parameters
-    startIdx    = 4
-    nPoints     = ROC_dict['nPoints']
-
-    #-----------------------------------------------------------------------------------------
-    n_iter = 10
-    nPoints = ROC_dict['nPoints'] = 4
-    org_start_param = ROC_dict[method+'_param_range'][0]
-    org_end_param = ROC_dict[method+'_param_range'][-1]
-    if org_start_param > org_end_param:
-        temp = org_start_param
-        org_start_param = org_end_param
-        org_end_param = org_start_param
-    
-    start_param = org_start_param    
-    end_param = (org_start_param+org_end_param)/2.0
-    delta_p = 2.5
-    ratio_p = 5.0
-    
-    # find min param
-    for run_idx in xrange(n_iter):
-
-        print "----------------------------------------"
-        print run_idx, ' : ', start_param, end_param
-        print "----------------------------------------"
-        ROC_dict[method+'_param_range'] = np.linspace(start_param, end_param, ROC_dict['nPoints'])
-        
-
-        ROC_data = {}
-        ROC_data[method] = {}
-        ROC_data[method]['complete'] = False 
-        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-
-        
-        if debug: n_jobs=1
-        else: n_jobs=-1
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                          method, ROC_data, \
-                                                                          ROC_dict, AE_dict, \
-                                                                          SVM_dict, HMM_dict, \
-                                                                          startIdx=startIdx, nState=nState,\
-                                                                          modeling_pkl_prefix=modeling_pkl_prefix\
-                                                                          )for idx in xrange(nFiles) \
-                                                                          )
-
-
-        tp_ll = [[] for j in xrange(nPoints)]
-        fp_ll = [[] for j in xrange(nPoints)]
-        tn_ll = [[] for j in xrange(nPoints)]
-        fn_ll = [[] for j in xrange(nPoints)]
-
-        l_data = r
-        for i in xrange(len(l_data)):
-            for j in xrange(nPoints):
-                tp_ll[j] += l_data[i][method]['tp_l'][j]
-                fp_ll[j] += l_data[i][method]['fp_l'][j]
-                tn_ll[j] += l_data[i][method]['tn_l'][j]
-                fn_ll[j] += l_data[i][method]['fn_l'][j]
-
-        tpr_l = []
-        fpr_l = []
-        for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-
-        if np.amin(fpr_l) > 0.5:
-            if 'fixed' in method or 'progress' in method:
-                end_param    = start_param
-                start_param -= delta_p
-            else:
-                end_param    = start_param
-                start_param /= ratio_p
-        elif np.amax(fpr_l) <= 0.05:
-            if 'fixed' in method or 'progress' in method:
-                start_param = end_param
-                end_param   += delta_p
-            else:
-                start_param = end_param
-                end_param  *= ratio_p                        
-        else:
-            for i in xrange(len(fpr_l)-1):
-                if fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05:
-                    start_param = ROC_dict[method+'_param_range'][i]
-                    end_param   = ROC_dict[method+'_param_range'][i+1]
-                    break
-            delta_p /= 2.0
-            ratio_p /= 2.0
-            if (fpr_l[i] <= 0.05 and fpr_l[i+1] > 0.05) and abs(fpr_l[i]-fpr_l[i+1])<1.0:
-                print "Converged!!!!!!!!"
-                break
- 
-        if abs(start_param-end_param) < 0.001: break
-
-    min_param = start_param
-    if i+1 > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
-    
-    min_fpr_range = [fpr_l[i], fpr_l[i+1]]
-
-    # find max param
-    start_param = (org_start_param+org_end_param)/2.0
-    end_param = org_end_param    
-    delta_p = 2.5
-    ratio_p = 5.0
-    
-    # find min param
-    for run_idx in xrange(n_iter):
-
-        print "----------------------------------------"
-        print run_idx, ' : ', start_param, end_param
-        print "----------------------------------------"
-        ROC_dict[method+'_param_range'] = np.linspace(start_param, end_param, ROC_dict['nPoints'])
-        
-
-        ROC_data = {}
-        ROC_data[method] = {}
-        ROC_data[method]['complete'] = False 
-        ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-        ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-
-        
-        if debug: n_jobs=1
-        else: n_jobs=-1
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
-                                                                          method, ROC_data, \
-                                                                          ROC_dict, AE_dict, \
-                                                                          SVM_dict, HMM_dict, \
-                                                                          startIdx=startIdx, nState=nState,\
-                                                                          modeling_pkl_prefix=modeling_pkl_prefix) \
-                                                                          for idx in xrange(nFiles) \
-                                                                          )
-
-        tp_ll = [[] for j in xrange(nPoints)]
-        fp_ll = [[] for j in xrange(nPoints)]
-        tn_ll = [[] for j in xrange(nPoints)]
-        fn_ll = [[] for j in xrange(nPoints)]
-
-        l_data = r
-        for i in xrange(len(l_data)):
-            for j in xrange(nPoints):
-                tp_ll[j] += l_data[i][method]['tp_l'][j]
-                fp_ll[j] += l_data[i][method]['fp_l'][j]
-                tn_ll[j] += l_data[i][method]['tn_l'][j]
-                fn_ll[j] += l_data[i][method]['fn_l'][j]
-
-        tpr_l = []
-        fpr_l = []
-        for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-
-        if np.amin(fpr_l) > 99.5:
-            if 'fixed' in method or 'progress' in method:
-                end_param    = start_param
-                start_param -= delta_p
-            else:
-                end_param    = start_param
-                start_param /= ratio_p
-        elif np.amax(fpr_l) <= 99.5:
-            if 'fixed' in method or 'progress' in method:
-                start_param = end_param
-                end_param   += delta_p
-            else:
-                start_param = end_param
-                end_param  *= ratio_p                        
-        else:
-            for i in xrange(len(fpr_l)-1):
-                if fpr_l[i] <= 99.5 and fpr_l[i+1] > 99.5:
-                    start_param = ROC_dict[method+'_param_range'][i]
-                    end_param   = ROC_dict[method+'_param_range'][i+1]
-                    break
-            delta_p /= 2.0
-            ratio_p /= 2.0
-            if (fpr_l[i] <= 99.5 and fpr_l[i+1] > 99.5) and abs(fpr_l[i]-fpr_l[i+1])<1.0:
-                break
-                            
-        if abs(start_param-end_param) < 0.05: break
-    
-    max_param = end_param
-    max_fpr_range = [fpr_l[i], fpr_l[i+1]]
-    
-    print "----------------------------------------"
-    print run_idx, ' : ', min_param, max_param
-    print "----------------------------------------"
-    
-    savefile = os.path.join(processed_data_path,'../','result_find_param_range.txt')
-    if os.path.isfile(savefile) is False:
-        with open(savefile, 'w') as file:
-            file.write( "-----------------------------------------\n")
-            file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
-            file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
-            file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
-    else:
-        with open(savefile, 'a') as file:
-            file.write( "-----------------------------------------\n")
-            file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
-            file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
-            file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
-
-
-def run_classifiers(idx, processed_data_path, task_name, method,\
-                    ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
-                    raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None):
-
-    #-----------------------------------------------------------------------------------------
-    nPoints    = ROC_dict['nPoints']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
-
-
-    data = {}
-    # pass method if there is existing result
-    data[method] = {}
-    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-
-    if ROC_data[method]['complete'] == True: return data
-    #-----------------------------------------------------------------------------------------
-
-    ## print idx, " : training classifier and evaluate testing data"
-    # train a classifier and evaluate it using test data.
-    from hrl_anomaly_detection.classifiers import classifier as cb
-    from sklearn import preprocessing
-
-    if method == 'osvm' or method == 'bpsvm':
-        if method == 'osvm': raw_data_idx = 0
-        elif method == 'bpsvm': raw_data_idx = 1
-            
-        X_train_org = raw_data[raw_data_idx][idx]['X_scaled']
-        Y_train_org = raw_data[raw_data_idx][idx]['Y_train_org']
-        idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
-        ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
-        ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
-        ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
-
-        nLength = 200
-    else:
-
-        if modeling_pkl_prefix is not None:
-            modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
-        else:        
-            if AE_dict['switch'] and AE_dict['add_option'] is not None:
-                tag = ''
-                for ft in AE_dict['add_option']: tag += ft[:2]
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+\
-                                            str(idx)+'.pkl')
-            elif AE_dict['switch'] and AE_dict['add_option'] is None:
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
-            else:
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-
-        print "start to load hmm data, ", modeling_pkl
-        d            = ut.load_pickle(modeling_pkl)
-        nState       = d['nState']        
-        ll_classifier_train_X   = d['ll_classifier_train_X']
-        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-        ll_classifier_train_idx = d['ll_classifier_train_idx']
-        ll_classifier_test_X    = d['ll_classifier_test_X']  
-        ll_classifier_test_Y    = d['ll_classifier_test_Y']
-        ll_classifier_test_idx  = d['ll_classifier_test_idx']
-        nLength      = d['nLength']
-
-        if method == 'hmmosvm':
-            normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
-            ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
-            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
-        elif method == 'hmmsvm_dL':
-            # replace dL/(ds+e) to dL
-            for i in xrange(len(ll_classifier_train_X)):
-                for j in xrange(len(ll_classifier_train_X[i])):
-                    if j == 0:
-                        ll_classifier_train_X[i][j][1] = 0.0
-                    else:
-                        ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
-                          ll_classifier_train_X[i][j-1][0]
-
-            for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[i])):
-                    if j == 0:
-                        ll_classifier_test_X[i][j][1] = 0.0
-                    else:
-                        ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
-                          ll_classifier_test_X[i][j-1][0]
-        elif method == 'hmmsvm_LSLS':
-            # reconstruct data into LS(t-1)+LS(t)
-            if type(ll_classifier_train_X) is list:
-                ll_classifier_train_X = np.array(ll_classifier_train_X)
-
-            x = np.dstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
-            x = x.tolist()
-
-            new_x = []
-            for i in xrange(len(x)):
-                new_x.append([])
-                for j in xrange(len(x[i])):
-                    if j == 0:
-                        new_x[i].append( x[i][j]+x[i][j] )
-                    else:
-                        new_x[i].append( x[i][j-1]+x[i][j] )
-
-            ll_classifier_train_X = new_x
-
-            # test data
-            if len(np.shape(ll_classifier_test_X))<3:
-                x = []
-                for sample in ll_classifier_test_X:
-                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
-            else:
-                if type(ll_classifier_test_X) is list:
-                    ll_classifier_test_X = np.array(ll_classifier_test_X)
-
-                x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
-                x = x.tolist()
-
-            new_x = []
-            for i in xrange(len(x)):
-                new_x.append([])
-                for j in xrange(len(x[i])):
-                    if j == 0:
-                        new_x[i].append( x[i][j]+x[i][j] )
-                    else:
-                        new_x[i].append( x[i][j-1]+x[i][j] )
-
-            ll_classifier_test_X = new_x
-        elif (method == 'hmmsvm_no_dL' or add_logp_d is False) and \
-          len(ll_classifier_train_X[0][0]) > 1+nState:
-            # remove dL related things
-            ll_classifier_train_X = np.array(ll_classifier_train_X)
-            ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
-
-            if len(np.shape(ll_classifier_test_X))<3:
-                x = []
-                for sample in ll_classifier_test_X:
-                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
-                ll_classifier_test_X = x
-            else:
-                ll_classifier_test_X = np.array(ll_classifier_test_X)
-                ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
-            
-                          
-        # flatten the data
-        if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
-        else: remove_fp = False
-        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
-                                                                   ll_classifier_train_Y, \
-                                                                   ll_classifier_train_idx,\
-                                                                   remove_fp=remove_fp)
-                                                                   
-
-
-    #-----------------------------------------------------------------------------------------
-    # Generate parameter list for ROC curve
-    # pass method if there is existing result
-    # data preparation
-    if method == 'osvm' or method == 'bpsvm':
-        X_scaled = X_train_org
-    elif method.find('svm')>=0 or method.find('sgd')>=0:
-        scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X_train_org)
-    else:
-        X_scaled = X_train_org
-    print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
-
-    X_test = []
-    Y_test = [] 
-    for j in xrange(len(ll_classifier_test_X)):
-        if len(ll_classifier_test_X[j])==0: continue
-
-        try:
-            if method == 'osvm' or method == 'bpsvm':
-                X = ll_classifier_test_X[j]
-            elif method.find('svm')>=0 or method.find('sgd')>=0:
-                X = scaler.transform(ll_classifier_test_X[j])                                
-            else:
-                X = ll_classifier_test_X[j]
-        except:
-            print "failed to scale ", np.shape(ll_classifier_test_X[j])
-            continue
-
-        X_test.append(X)
-        Y_test.append(ll_classifier_test_Y[j])
-
-
-    # classifier # TODO: need to make it efficient!!
-    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
-    for j in xrange(nPoints):
-        ## _, tp_l, fp_l, fn_l, tn_l, delay_l = cb.run_classifier(j, X_scaled, Y_train_org, idx_train_org,\
-        ##                                                        X_test, Y_test, ll_classifier_test_idx,\
-        ##                                                        method, nState, nLength, nPoints, \
-        ##                                                        SVM_dict, ROC_dict, dtc=dtc)
-
-        ## cb.run_classifier(j)
-        dtc.set_params( **SVM_dict )
-        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-          method == 'bpsvm' or method == 'hmmsvm_no_dL':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'hmmosvm' or method == 'osvm':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( svm_type=2 )
-            dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
-        elif method == 'cssvm':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
-        elif method == 'progress_time_cluster':
-            thresholds = ROC_dict['progress_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'progress_state':
-            thresholds = ROC_dict[method+'_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        elif method == 'fixed':
-            thresholds = ROC_dict[method+'_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
-        elif method == 'change':
-            thresholds = ROC_dict[method+'_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
-        elif method == 'sgd':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
-        else:
-            print "Not available method"
-            return "Not available method", -1, params
-
-        if ret is False:
-            print "fit failed, ", weights[j]
-            sys.exit()
-            return 'fit failed', [],[],[],[],[]
-        
-        # evaluate the classifier
-        tp_l = []
-        fp_l = []
-        tn_l = []
-        fn_l = []
-        delay_l = []
-        delay_idx = 0
-        for ii in xrange(len(X_test)):
-            if len(Y_test[ii])==0: continue
-
-            if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
-                est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
-                est_y = np.array(est_y)* -1.0
-            else:
-                est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
-
-            anomaly = False
-            for jj in xrange(len(est_y)):
-                if est_y[jj] > 0.0:
-                    if Y_test[ii][0] <0:
-                        print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
-
-                    ## if method == 'hmmosvm':
-                    ##     window_size = 5 #3
-                    ##     if jj < len(est_y)-window_size:
-                    ##         if np.sum(est_y[jj:jj+window_size])>=window_size:
-                    ##             anomaly = True                            
-                    ##             break
-                    ##     continue                        
-                    
-                    if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
-                        try:
-                            delay_idx = ll_classifier_test_idx[ii][jj]
-                        except:
-                            print "Error!!!!!!!!!!!!!!!!!!"
-                            print np.shape(ll_classifier_test_idx), ii, jj
-                        delay_l.append(delay_idx)
-                            
-                    anomaly = True
-                    break        
-
-            if Y_test[ii][0] > 0.0:
-                if anomaly: tp_l.append(1)
-                else: fn_l.append(1)
-            elif Y_test[ii][0] <= 0.0:
-                if anomaly: fp_l.append(1)
-                else: tn_l.append(1)
-
-        data[method]['tp_l'][j] += tp_l
-        data[method]['fp_l'][j] += fp_l
-        data[method]['fn_l'][j] += fn_l
-        data[method]['tn_l'][j] += tn_l
-        data[method]['delay_l'][j] += delay_l
-
-    print "finished ", idx, method
-    return data
                        
         
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
@@ -3066,11 +2549,10 @@ if __name__ == '__main__':
             param_dict['SVM']['renew'] = False
         
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                       find_param=opt.bFindROCparamRange)
 
     elif opt.bEvaluationWithNoise:
-        ## param_dict['ROC']['methods'] = ['progress_time_cluster']
-        ## param_dict['ROC']['update_list'] = ['progress_time_cluster']
         param_dict['ROC']['methods']     = ['svm']
         param_dict['ROC']['update_list'] = []
         param_dict['ROC']['nPoints']     = 20
@@ -3110,8 +2592,8 @@ if __name__ == '__main__':
                         find_param=opt.bFindROCparamRange)
 
     elif opt.bFindROCparamRange:
-        param_dict['ROC']['methods']     = ['hmmosvm']
-        param_dict['ROC']['update_list'] = ['hmmosvm']
+        param_dict['ROC']['methods']     = ['svm']
+        param_dict['ROC']['update_list'] = ['svm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         for method in param_dict['ROC']['methods']:
