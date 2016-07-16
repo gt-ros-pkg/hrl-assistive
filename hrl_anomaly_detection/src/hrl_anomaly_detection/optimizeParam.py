@@ -223,7 +223,7 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
         
         if debug: n_jobs=1
         else: n_jobs=-1
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)( idx, processed_data_path, task_name, \
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                           method, ROC_data, \
                                                                           ROC_dict, AE_dict, \
                                                                           SVM_dict, HMM_dict, \
