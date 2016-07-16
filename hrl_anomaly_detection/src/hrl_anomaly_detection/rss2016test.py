@@ -2559,10 +2559,6 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
-    
-
-        if opt.task == "pushing_microblack":
-
         if opt.task == "pushing_toolcase":
             param_dict['ROC']['svm_param_range'] = np.logspace(-2, 0.15, nPoints) 
         if opt.task == "scooping":
