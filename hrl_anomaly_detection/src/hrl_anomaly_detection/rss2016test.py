@@ -1710,7 +1710,7 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
                                                                           ROC_dict, AE_dict, \
                                                                           SVM_dict, HMM_dict, \
                                                                           startIdx=startIdx, nState=nState,\
-                                                                          modeling_pkl_prefix=modeling_pkl_prefix\) \
+                                                                          modeling_pkl_prefix=modeling_pkl_prefix) \
                                                                           for idx in xrange(nFiles) \
                                                                           )
 
