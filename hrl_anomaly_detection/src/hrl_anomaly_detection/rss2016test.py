@@ -808,7 +808,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
@@ -2559,18 +2559,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_drop'
 
-        if opt.task == "pushing_toolcase":
-            param_dict['ROC']['svm_param_range'] = np.logspace(-2, 0.15, nPoints) 
-        if opt.task == "scooping":
-            param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-3.5, 0.0, nPoints) 
-            param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
-            param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3.2, -1.0, nPoints)
-            param_dict['ROC']['svm_param_range'] = np.logspace(-2.8, 0.2, nPoints) 
-        if opt.task == "feeding":
-            param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-3.7, 0.7, nPoints) 
-            param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 1.2, nPoints)
-            param_dict['ROC']['svm_param_range'] = np.logspace(1.0, -2.4, nPoints) 
-
+        import hrl_anomaly_detection.params_eval_drop as ped
+        param_dict = ped.getParams(opt.task, param_dict)
 
         evaluation_drop(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \
