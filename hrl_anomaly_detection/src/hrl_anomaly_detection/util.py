@@ -44,6 +44,8 @@ from sklearn.decomposition import PCA
 import matplotlib
 ## matplotlib.use('pdf')
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
 ## import data_viz
 
 def extrapolateData(data, maxsize):
@@ -1238,3 +1240,165 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ##         X = np.vstack([ X, np.vstack([ X1[i], X2[i] ]) ])
         
         ## return X
+
+def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+             timeList=None):
+    # ---------------- ROC Visualization ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+
+    if no_plot is False:
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
+
+    for method in method_list:
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+        acc_l = []
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
+            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+
+            delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
+            delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        # add edge
+        ## fpr_l = [0] + fpr_l + [100]
+        ## tpr_l = [0] + tpr_l + [100]
+
+        print "--------------------------------"
+        print " AUC and delay "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'progress_time_cluster': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            if delay_plot:
+                if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                if method == 'fixed': color = 'y'
+                if method == 'progress_time_cluster': color = 'g'
+                if method == 'svm': color = 'b'
+                plt.plot(acc_l, delay_mean_l, '-'+color, label=label, linewidth=2.0)
+                ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                
+                ## rate = np.array(tpr_l)/(np.array(fpr_l)+0.001)
+                ## for i in xrange(len(rate)):
+                ##     if rate[i] > 100: rate[i] = 100.0
+                cut_idx = np.argmax(acc_l)
+                if delay_mean_l[0] < delay_mean_l[-1]:
+                    acc_l = acc_l[:cut_idx+1]                
+                    delay_mean_l = np.array(delay_mean_l[:cut_idx+1])
+                    delay_std_l  = np.array(delay_std_l[:cut_idx+1])
+                else:
+                    acc_l = acc_l[cut_idx:]                
+                    delay_mean_l = np.array(delay_mean_l[cut_idx:])
+                    delay_std_l  = np.array(delay_std_l[cut_idx:])
+
+                ## delay_mean_l = np.array(delay_mean_l)
+                delay_std_l  = np.array(delay_std_l) #*0.674
+                    
+                
+                ## plt.plot(acc_l, delay_mean_l-delay_std_l, '--'+color)
+                ## plt.plot(acc_l, delay_mean_l+delay_std_l, '--'+color)
+                plt.fill_between(acc_l, delay_mean_l-delay_std_l, delay_mean_l+delay_std_l, \
+                                 facecolor=color, alpha=0.15, lw=0.0, interpolate=True)
+                plt.xlim([49, 101])
+                plt.ylim([0, 7.0])
+                plt.ylabel('Detection Time [s]', fontsize=24)
+                plt.xlabel('Accuracy (percentage)', fontsize=24)
+
+                plt.xticks([50, 100], fontsize=22)
+                ## plt.yticks([0, 50, 100], fontsize=22)
+            else:                
+                plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
+                plt.xlim([-1, 101])
+                plt.ylim([-1, 101])
+                plt.ylabel('True positive rate (percentage)', fontsize=22)
+                plt.xlabel('False positive rate (percentage)', fontsize=22)
+
+                ## font = {'family' : 'normal',
+                ##         'weight' : 'bold',
+                ##         'size'   : 22}
+                ## matplotlib.rc('font', **font)
+                ## plt.tick_params(axis='both', which='major', labelsize=12)
+                plt.xticks([0, 50, 100], fontsize=22)
+                plt.yticks([0, 50, 100], fontsize=22)
+                
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+            ## x = range(len(delay_mean_l))
+            ## ax1 = fig.add_subplot(122)
+            ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
+
+    ## if no_plot is False:
+    ##     if delay_plot:
+    ##         plt.legend(loc='upper right', prop={'size':24})
+    ##     else:
+    ##         plt.legend(loc='lower right', prop={'size':24})
+
+    if save_pdf:
+        ## task = 'feeding'
+        ## fig.savefig('delay_'+task+'.pdf')
+        ## fig.savefig('delay_'+task+'.png')
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+    
+
+
+
