@@ -1298,6 +1298,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
 
+        from sklearn import metrics
         print "--------------------------------"
         print " AUC and delay "
         print "--------------------------------"

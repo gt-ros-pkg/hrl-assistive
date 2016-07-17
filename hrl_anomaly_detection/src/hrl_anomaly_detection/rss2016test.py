@@ -2176,7 +2176,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
 def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
 
-    task_list = ['pushing_microblack', 'pushing_microwhite','pushing_toolcase','scooping', 'feeding']
+    # 'pushing_microwhite',
+    task_list = ['pushing_microblack', 'pushing_toolcase','scooping', 'feeding']
     method_list = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
     ref_method = 'svm'
 
@@ -2185,8 +2186,7 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
     for task in task_list:
         delay_dict[task] = {}
         acc_dict[task]   = {}        
-        for method in method_list:
-            if method is ref_method: continue
+        for method in method_list:            
             delay_dict[task][method] = []
             acc_dict[task][method]   = []
 
@@ -2243,9 +2243,7 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
             max_acc_dict[method] = [[],[]]
             max_acc_dict[method][0] = tp_idx_ll[max_point_idx]
             max_acc_dict[method][1] = tp_delay_ll[max_point_idx]
-            ## print np.shape(max_acc_dict[method][0]), np.shape(max_acc_dict[method][1])
-            if method is not ref_method:
-                acc_dict[task][method] = np.amax(acc_l)
+            acc_dict[task][method] = np.amax(acc_l)
             
         # compare idx and take time only
         for method in method_list:
@@ -2263,27 +2261,35 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
                     delay_l += (tgt_delay_l-ref_delay_l).tolist()
 
                 delay_dict[task][method] += delay_l
+            else:
+                delay_dict[task][method] = [0.0]
 
 
     fig = plt.figure(1)
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
-    shapes = itertools.cycle(['x','v', 'o', '+', '*'])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
     
     for method in method_list:
-        if method is ref_method: continue        
         color = colors.next()
         for task in task_list:
             shape = shapes.next()
             plt.scatter(acc_dict[task][method], np.mean(delay_dict[task][method]), c=color, \
-                        marker=shape)
+                        marker=shape, s=124)
                 
             print task, method, " : ", acc_dict[task][method], np.mean(delay_dict[task][method]), \
               np.std(delay_dict[task][method])
 
-
+    colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
+    classes = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding']
+    count = 0
+    for method in method_list:
+        
+        recs.append(mpatches.Rectangle((0,0),1,1,fc=colors[count]))
+    plt.legend(recs,classes,loc=4)
+        
     ## plt.legend(lines, labels, loc=4, prop={'size':12})
-    plt.ylabel("Accuracy [Percentage]", fontsize=22)
-    plt.xlabel("Detection Time [sec]", fontsize=22)
+    plt.xlabel("Accuracy [Percentage]", fontsize=22)
+    plt.ylabel("Detection Time [sec]", fontsize=22)
 
     if save_pdf is False:
         plt.show()
