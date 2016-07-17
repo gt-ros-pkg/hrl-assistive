@@ -2181,7 +2181,7 @@ def plotEvalDelay(save_data_path, param_dict, dim, save_pdf=False):
 
     # load each task
     for task in task_l:
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task+'.pkl')
+        roc_pkl = os.path.join(save_data_path, 'roc_'+task+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
         nPoints  = ROC_dict['nPoints']
         max_acc_dict = {}
@@ -2215,7 +2215,7 @@ def plotEvalDelay(save_data_path, param_dict, dim, save_pdf=False):
             max_acc_dict[method][0] = tp_idx_ll[max_point_idx]
             max_acc_dict[method][1] = tp_delay_ll[max_point_idx]
 
-
+            print max_acc_dict[method]
 
 
 if __name__ == '__main__':
