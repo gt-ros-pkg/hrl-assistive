@@ -1402,9 +1402,9 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
 
     successData = d['successData']
     failureData = d['failureData']
-    param_dict  = d['param_dict']
-    if 'timeList' in param_dict.keys():
-        timeList    = param_dict['timeList'][startIdx:]
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
 
@@ -2174,30 +2174,60 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             fig.savefig('test.png')
             os.system('mv test.* ~/Dropbox/HRL/')
 
-def plotEvalDelay(save_data_path, param_dict, dim, save_pdf=False):
+def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
 
-    task_l = ['scooping', 'feeding']
-    method_l = ['svm', 'fixed']
+    task_list = ['pushing_microblack', 'pushing_microwhite','pushing_toolcase','scooping', 'feeding']
+    method_list = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
+    ref_method = 'svm'
+
+    delay_dict = {}
+    acc_dict   = {}
+    for task in task_list:
+        delay_dict[task] = {}
+        acc_dict[task]   = {}        
+        for method in method_list:
+            if method is ref_method: continue
+            delay_dict[task][method] = []
+            acc_dict[task][method]   = []
 
     # load each task
-    for task in task_l:
+    for task in task_list:
+
+        _, save_data_path, param_dict = getParams(task, False, \
+                                                  False, False, dim,\
+                                                  rf_center, local_range)
+
         roc_pkl = os.path.join(save_data_path, 'roc_'+task+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        nPoints  = ROC_dict['nPoints']
+
+        crossVal_pkl = os.path.join(save_data_path, 'cv_'+task+'.pkl')
+        d = ut.load_pickle(crossVal_pkl)
+        param_dict2  = d['param_dict']
+
+        # Dict
+        ROC_dict  = param_dict['ROC']
+        data_dict = param_dict['data_param']
+
+        startIdx    = 4        
+        if 'timeList' in param_dict2.keys():
+            timeList    = param_dict2['timeList'][startIdx:]
+        else: timeList = None
+        
+        nPoints   = ROC_dict['nPoints']
+        nFiles    = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         max_acc_dict = {}
 
         for method in method_list:
-
+            print task, method
             # find Max ACC's delay and idx
             tp_ll = ROC_data[method]['tp_l']
             fp_ll = ROC_data[method]['fp_l']
             tn_ll = ROC_data[method]['tn_l']
             fn_ll = ROC_data[method]['fn_l']
+            delay_ll = ROC_data[method]['delay_l']
             tp_delay_ll = ROC_data[method]['tp_delay_l']
-            tp_idx_ll   = ROC_data[method]['tp_delay_l']
+            tp_idx_ll   = ROC_data[method]['tp_idx_l']
 
-            delay_mean_l = []
-            delay_std_l  = []
             acc_l = []
 
             if timeList is not None:
@@ -2206,16 +2236,63 @@ def plotEvalDelay(save_data_path, param_dict, dim, save_pdf=False):
                 time_step = 1.0
 
             for i in xrange(nPoints):
-                delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
-                delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
-                acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+                acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / \
+                              float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
             max_point_idx = np.argmax(acc_l)
             max_acc_dict[method] = [[],[]]
             max_acc_dict[method][0] = tp_idx_ll[max_point_idx]
             max_acc_dict[method][1] = tp_delay_ll[max_point_idx]
+            ## print np.shape(max_acc_dict[method][0]), np.shape(max_acc_dict[method][1])
+            if method is not ref_method:
+                acc_dict[task][method] = np.amax(acc_l)
+            
+        # compare idx and take time only
+        for method in method_list:
+            if method is not ref_method:
 
-            print max_acc_dict[method]
+                delay_l = []
+                for i in xrange(nFiles):
+                    idx_l = list(set(max_acc_dict[ref_method][0][i]).intersection(max_acc_dict[method][0][i]))
+                    ref_idx_l = [ idx for idx, x in enumerate(max_acc_dict[ref_method][0][i]) if x in idx_l ]
+                    tgt_idx_l = [ idx for idx, x in enumerate(max_acc_dict[method][0][i]) if x in idx_l ]
+                    
+                    ref_delay_l = np.array(max_acc_dict[ref_method][1][i])[ref_idx_l] * time_step
+                    tgt_delay_l = np.array(max_acc_dict[method][1][i])[tgt_idx_l] * time_step
+
+                    delay_l += (tgt_delay_l-ref_delay_l).tolist()
+
+                delay_dict[task][method] += delay_l
+
+
+    fig = plt.figure(1)
+    colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
+    shapes = itertools.cycle(['x','v', 'o', '+', '*'])
+    
+    for method in method_list:
+        if method is ref_method: continue        
+        color = colors.next()
+        for task in task_list:
+            shape = shapes.next()
+            plt.scatter(acc_dict[task][method], np.mean(delay_dict[task][method]), c=color, \
+                        marker=shape)
+                
+            print task, method, " : ", acc_dict[task][method], np.mean(delay_dict[task][method]), \
+              np.std(delay_dict[task][method])
+
+
+    ## plt.legend(lines, labels, loc=4, prop={'size':12})
+    plt.ylabel("Accuracy [Percentage]", fontsize=22)
+    plt.xlabel("Detection Time [sec]", fontsize=22)
+
+    if save_pdf is False:
+        plt.show()
+    else:
+        print "Save pdf to Dropbox folder "
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('mv test.* ~/Dropbox/HRL/')
+
 
 
 if __name__ == '__main__':
@@ -2463,7 +2540,7 @@ if __name__ == '__main__':
             find_ROC_param_range(method, opt.task, save_data_path, param_dict, debug=opt.bDebug)
 
     elif opt.bEvaluationDelay:
-        plotEvalDelay(save_data_path, param_dict, dim=opt.dim, save_pdf=opt.bSavePdf)
+        plotEvalDelay(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
             
 
     elif opt.bEvaluationWithDiffFreq:
