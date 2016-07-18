@@ -2582,7 +2582,6 @@ if __name__ == '__main__':
         param_dict['ROC']['methods']     = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         param_dict['ROC']['update_list'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
