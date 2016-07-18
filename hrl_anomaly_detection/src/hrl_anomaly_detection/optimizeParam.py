@@ -52,7 +52,7 @@ from hrl_anomaly_detection import data_manager as dm
 
 
 def find_ROC_param_range(method, task_name, processed_data_path, param_dict, debug=False,\
-                         modeling_pkl_prefix=None):
+                         modeling_pkl_prefix=None, add_print=''):
 
     ## Parameters
     # data
@@ -289,12 +289,14 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
     if os.path.isfile(savefile) is False:
         with open(savefile, 'w') as file:
             file.write( "-----------------------------------------\n")
+            file.write( add_print+" \n" )
             file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
             file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
             file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )
     else:
         with open(savefile, 'a') as file:
             file.write( "-----------------------------------------\n")
+            file.write( add_print+" \n" )
             file.write( 'task: '+task_name+' method: '+method+' dim: '+str(dim)+'\n' )
             file.write( "%0.3f with %r" % (min_param, min_fpr_range)+'\n' )
             file.write( "%0.3f with %r" % (max_param, max_fpr_range)+'\n\n' )

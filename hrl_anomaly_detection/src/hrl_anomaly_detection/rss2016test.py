@@ -841,7 +841,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         #find the best parameters
         for method in method_list:
             if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
-            find_ROC_param_range(method, task_name, processed_data_path, param_dict)            
+            find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
+                                 add_print="eval_all")            
         sys.exit()
                                    
     # parallelization
@@ -1290,7 +1291,8 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
         for method in method_list:
             if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
             find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
-                                 modeling_pkl_prefix='hmm_drop_'+task_name)
+                                 modeling_pkl_prefix='hmm_drop_'+task_name, \
+                                 add_print="eval_drop")
             
         sys.exit()
 
