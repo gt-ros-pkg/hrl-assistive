@@ -47,6 +47,7 @@ from scipy.stats import norm, entropy
 from joblib import Parallel, delayed
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 from sklearn import metrics
+from sklearn.externals import joblib
 
 from hrl_anomaly_detection import data_manager as dm
 
@@ -541,8 +542,7 @@ class classifier(learning_base):
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
         elif self.method.find('sgd')>=0:
-            import pickle
-            pickle.dumps()
+            joblib.dump(self.dt, fileName)
         else:
             print "Not available method"
 
@@ -552,6 +552,8 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             self.dt = svm.svm_load_model(use_pkl) 
+        elif self.method.find('sgd')>=0:
+            self.dt = joblib.load(fileName)
         else:
             print "Not available method"
         

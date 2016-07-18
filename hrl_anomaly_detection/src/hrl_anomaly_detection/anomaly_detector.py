@@ -197,15 +197,14 @@ class anomaly_detector:
 
     def initDetector(self, data_renew=False, hmm_renew=False):
         print "Initializing a detector with ", self.classifier_method
-        
-        train_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
+                
         startIdx  = 4
         (success_list, failure_list) = \
           util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
         self.used_file_list = success_list+failure_list
         
-        if os.path.isfile(train_pkl) and hmm_renew is False:
-            d = ut.load_pickle(train_pkl)
+        if os.path.isfile(hmm_model_pkl) and hmm_renew is False:
+            d = ut.load_pickle(hmm_model_pkl)
             # HMM
             self.nEmissionDim = d['nEmissionDim']
             self.A            = d['A']
@@ -330,7 +329,7 @@ class anomaly_detector:
             d['nLength']       = nLength = len(normalTrainData[0][0])
             d['param_dict']    = self.handFeatureParams
             d['normalTrainData'] = self.normalTrainData = normalTrainData
-            ut.save_pickle(d, train_pkl)
+            ut.save_pickle(d, hmm_model_pkl)
 
         # data preparation
         self.scaler        = preprocessing.StandardScaler()
@@ -885,26 +884,27 @@ class anomaly_detector:
             rate.sleep()
 
         # save model and param
-        self.save_params()
+        self.save()
         print "Saved current parameters"
 
     '''
     Save detector
     '''
-    def save_params(self):
+    def save(self):
         pkg_path    = os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/params/'
         yaml_file   = os.path.join(pkg_path, 'anomaly_detection_'+self.task_name+'.yaml')
         param_namespace = '/'+self.task_name 
         os.system('rosparam dump '+yaml_file+' '+param_namespace)
 
-
-        ## train_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
-        ## d         = ut.load_pickle(train_pkl)
+        
+        self.classifier.save_model()
+        
+        ## model_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
+        ## d         = ut.load_pickle(model_pkl)
         ## self.handFeatureParams
         ## d['param_dict'] = self.handFeatureParams
-        ## ut.save_pickle(d, train_pkl)
+        ## ut.save_pickle(d, model_pkl)
         
-
 
     def visualization(self):
         if self.figure_flag is False:
