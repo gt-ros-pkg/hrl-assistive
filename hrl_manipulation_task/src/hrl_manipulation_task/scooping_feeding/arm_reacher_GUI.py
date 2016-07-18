@@ -81,7 +81,7 @@ class armReacherGUI:
 
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
-        self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback)
+        self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=2)
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         

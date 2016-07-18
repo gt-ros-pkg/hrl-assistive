@@ -71,7 +71,8 @@ var ManipulationTask = function (ros) {
 
     manTask.emergencyPub = new manTask.ros.Topic({
         name: manTask.EMERGENCY_TOPIC,
-        messageType: 'std_msgs/String'
+        messageType: 'std_msgs/String',
+        queue_size: 2
     });
     manTask.emergencyPub.advertise();
 
