@@ -79,6 +79,7 @@ class anomaly_detector:
         self.auto_update     = auto_update
         self.used_file_list  = []
         self.figure_flag     = False
+        self.anomaly_flag    = False
         
         # Params
         self.param_dict = param_dict        
@@ -361,6 +362,7 @@ class anomaly_detector:
         if msg.data is True:
             rospy.loginfo("anomaly detector enabled")
             self.enable_detector = True
+            self.anomaly_flag    = False            
             # visualize sensitivity
             self.pubSensitivity()                    
         else:
@@ -505,29 +507,45 @@ class anomaly_detector:
             if self.used_file_list == []: return
 
             ## If does not wake, check use_sim_time. If you are not running GAZEBO, it should be false."
-            ## DO NOT REMOVE!!
+            ## Need to wait until the last file saved!!
             rospy.sleep(2.0)
 
+            # 4 cases
+            update_flag = False
+            if user_feedback == "SUCCESS":
+                if self.anomaly_flag is False:
+                    print "Detection Status: False positive - update!!"
+                    update_flag = True
+                else:
+                    print "Detection Status: True Negative - no update!!"                    
+            else:
+                if self.anomaly_flag is False:
+                    print "Detection Status: False Negative - update!!"
+                    update_flag = True
+                else:
+                    print "Detection Status: True Positive - No update!!"
+            if update_flag: return
+                
             # check unused data
             (success_list, failure_list) = \
               util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
             unused_fileList = [filename for filename in success_list if filename not in self.used_file_list]
             unused_fileList += [filename for filename in failure_list if filename not in self.used_file_list]
 
-            ## print "Used file list ------------------------"
-            ## for f in self.used_file_list:
-            ##     print f
-            
             print "Unused file list ------------------------"
             for f in unused_fileList:
                 print os.path.split(f)[1]
             print "-----------------------------------------"
             
-            if len(unused_fileList) == 0: return
+            if len(unused_fileList) == 0:
+                rospy.logwarn("No saved file exists!")
+                return
 
-            Y_test_org = []
 
+            # need to update if 
             # check if both success and failure data exists
+            # if no file exists, force to use the recent success/failure files.
+            Y_test_org = []
             s_flag = 0
             f_flag = 0
             for f in unused_fileList:
@@ -537,7 +555,19 @@ class anomaly_detector:
                 elif f.find("failure")>=0:
                     f_flag = 1
                     Y_test_org.append(1)
-            if s_flag*f_flag == 0: return
+            if s_flag == 0:
+                for i in range(len(self.used_file_list)-1,-1,-1):
+                    if self.used_file_list[i].find("success")>=0:
+                        unused_fileList.append(self.used_file_list[i])
+                        Y_test_org.append(-1)
+                        break
+            if f_flag == 0:
+                for i in range(len(self.used_file_list)-1,-1,-1):
+                    if self.used_file_list[i].find("failure")>=0:
+                        unused_fileList.append(self.used_file_list[i])
+                        Y_test_org.append(1)
+                        break
+                
 
             print "Start to collect #success=",s_flag, " #failure=", f_flag
             trainData = dm.getDataList(unused_fileList, self.rf_center, self.rf_radius,\
@@ -578,7 +608,14 @@ class anomaly_detector:
                 ## self.X_scaled = np.vstack([ self.X_scaled, X ])
                 ## self.classifier.fit(self.X_scaled, self.Y_test_org)
                 print "Not available update method"
-                            
+
+
+            # adjust the sensitivity until classify the new data correctly.
+            
+
+
+            # update file list
+            self.used_file_list += unused_fileList
             print "Update completed!!!"
 
             
@@ -841,6 +878,7 @@ class anomaly_detector:
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
                 self.soundHandle.play(2)
+                self.anomaly_flag    = True                
                 self.enable_detector = False
                 self.reset()
 

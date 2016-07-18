@@ -279,6 +279,7 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
         if abs(start_param-end_param) < 0.05: break
     
     max_param = end_param
+    if i+1 > len(fpr_l)-1: fpr_l.append(fpr_l[-1])
     max_fpr_range = [fpr_l[i], fpr_l[i+1]]
     
     print "----------------------------------------"
