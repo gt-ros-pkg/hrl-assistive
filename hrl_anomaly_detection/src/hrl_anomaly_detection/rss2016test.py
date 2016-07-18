@@ -2176,8 +2176,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 
 def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
 
-    # 'pushing_microwhite',
-    task_list = ['pushing_microblack', 'pushing_toolcase','scooping', 'feeding']
+    task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
     method_list = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
     ref_method = 'svm'
 
@@ -2265,31 +2264,91 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
                 delay_dict[task][method] = [0.0]
 
 
-    fig = plt.figure(1)
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
-    
-    for method in method_list:
-        color = colors.next()
-        for task in task_list:
-            shape = shapes.next()
-            plt.scatter(acc_dict[task][method], np.mean(delay_dict[task][method]), c=color, \
-                        marker=shape, s=124)
-                
-            print task, method, " : ", acc_dict[task][method], np.mean(delay_dict[task][method]), \
-              np.std(delay_dict[task][method])
+    tasks   = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding'] 
+    methods = ['HMM-BPSVM', 'HMM-D', 'HMM-F', 'OSVM']
 
-    colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
-    classes = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding']
-    count = 0
-    for method in method_list:
+    if False:
+        fig = plt.figure(1)
+        for method in method_list:
+            color = colors.next()
+            for task in task_list:
+                shape = shapes.next()
+                plt.scatter(acc_dict[task][method], np.mean(delay_dict[task][method]), c=color, \
+                            marker=shape, s=124)
+
+                print task, method, " : ", acc_dict[task][method], np.mean(delay_dict[task][method]), \
+                  np.std(delay_dict[task][method])
+
+
+        import matplotlib.patches as mpatches
+        colors  = ['r', 'g', 'b', 'k', 'y', ]
+        recs = []
+        for i, method in enumerate(methods):       
+            recs.append(mpatches.Rectangle((0,0),1,1,fc=colors[i]))
+
+        plt.legend(recs,methods,loc='lower left', prop={'size':22})
+
+        ## plt.legend(lines, labels, loc=4, prop={'size':12})
+        plt.xlabel("Accuracy [Percentage]", fontsize=22)
+        plt.ylabel("Detection Time [sec]", fontsize=22)
+
+    elif True:
+        fig = plt.figure(1)
+        acc_mean_l = []
+        acc_std_l  = []
+        delay_mean_l = []
+        delay_std_l  = []
+        delay_data = []
+
+        width = .35
+        ind = np.arange(len(methods)) #*0.9 #+width/2.0
+
+        count = 0
+        for method in method_list:
+            acc_l   = []
+            delay_l = []
+            for task in task_list:
+                acc_l.append(acc_dict[task][method])
+                delay_l += delay_dict[task][method] 
+                
+            acc_mean_l.append( np.mean(acc_l) )
+            acc_std_l.append( np.std(acc_l) )
+
+            delay_mean_l.append( np.mean(delay_l) )
+            delay_std_l.append( np.std(delay_l) )
+
+            ## data = np.concatenate( (delay_l, [ind[count]+width*1.5]*len(delay_l) ),0 )
+            data = delay_l
+            delay_data.append( data )
+            count += 1
+            
+        # MAX ACC        
+        ax1 = plt.gca()
+        rects1 = ax1.bar(ind, acc_mean_l, width, color='r', yerr=acc_std_l, \
+                         error_kw=dict(elinewidth=6, ecolor='pink'))
+        ax1.set_ylabel("Accuracy [Percentage]", fontsize=22)
+
+        ax2 = ax1.twinx()
+        ## rects2 = ax2.bar(ind+width*1.5, delay_mean_l, width, color='y', yerr=delay_std_l, \
+        ##                  error_kw=dict(elinewidth=6, ecolor='yellow'))                         
+        ## rects2 = ax2.boxplot(delay_data, positions=ind+width*1.5+0.05, widths=width)                         
+        rects2 = ax2.errorbar(ind+width*1.5+0.05, delay_mean_l, delay_std_l, linestyle='None', marker='o',\
+                              )
+        print rects2[0]
         
-        recs.append(mpatches.Rectangle((0,0),1,1,fc=colors[count]))
-    plt.legend(recs,classes,loc=4)
-        
-    ## plt.legend(lines, labels, loc=4, prop={'size':12})
-    plt.xlabel("Accuracy [Percentage]", fontsize=22)
-    plt.ylabel("Detection Time [sec]", fontsize=22)
+        ax2.set_ylabel("Detection Time [sec]", fontsize=22)
+        ## plt.legend( (rects1[0], rects1[0]), ('Max Accuracy', 'Detection Delay') )
+        plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
+                    fontsize=18 )
+        plt.xlim([-0.2, (ind+width*2.0+0.2)[-1]])
+        plt.xticks(ind+width, methods, fontsize=40 )
+        for tick in ax1.xaxis.get_major_ticks():
+            tick.label.set_fontsize(18) 
+
+        ## plt.legend(recs,methods,loc='lower left', prop={'size':22})
+
 
     if save_pdf is False:
         plt.show()

@@ -150,26 +150,28 @@ class anomaly_detector:
 
             self.SVM_dict        = self.param_dict['SVM']
 
-            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
-                self.init_w_positive = self.param_dict['AD'][self.classifier_method+'_w_positive']
-                self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
-                self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
-            elif self.classifier_method == 'progress_time_cluster':                    
-                self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
-                self.w_min = self.param_dict['ROC']['progress_param_range'][0]
-            else:
-                print "sensitivity info is not available"
-                sys.exit()
+            
+        
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+            self.init_w_positive = rospy.get_param(self.classifier_method+'_w_positive')
+            self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
+            self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
+        elif self.classifier_method == 'progress_time_cluster':                    
+            self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
+            self.w_min = self.param_dict['ROC']['progress_param_range'][0]
+        else:
+            print "sensitivity info is not available"
+            sys.exit()
 
-            if self.w_min > self.w_max:
-                temp = self.w_min
-                self.w_min = self.w_max
-                self.w_max = temp
-                
-            # we use logarlism for the sensitivity
-            if self.exp_sensitivity:
-                self.w_max = np.log(self.w_max)
-                self.w_min = np.log(self.w_min)
+        if self.w_min > self.w_max:
+            temp = self.w_min
+            self.w_min = self.w_max
+            self.w_max = temp
+
+        # we use logarlism for the sensitivity
+        if self.exp_sensitivity:
+            self.w_max = np.log(self.w_max)
+            self.w_min = np.log(self.w_min)
 
 
     def initComms(self):
@@ -195,12 +197,11 @@ class anomaly_detector:
     def initDetector(self, data_renew=False, hmm_renew=False):
         print "Initializing a detector with ", self.classifier_method
         
-        train_pkl = os.path.join(save_data_path, self.task_name + '_demo.pkl')
+        train_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
         startIdx  = 4
         (success_list, failure_list) = \
-          util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+          util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
         self.used_file_list = success_list+failure_list
-
         
         if os.path.isfile(train_pkl) and hmm_renew is False:
             d = ut.load_pickle(train_pkl)
@@ -215,7 +216,7 @@ class anomaly_detector:
             X_train_org   = d['X_train_org'] 
             Y_train_org   = d['Y_train_org']
             idx_train_org = d['idx_train_org']
-            nLength      = d['nLength']            
+            nLength       = d['nLength']            
             self.handFeatureParams = d['param_dict']
             self.normalTrainData   = d.get('normalTrainData', None)
 
@@ -233,7 +234,8 @@ class anomaly_detector:
                                ae_data=False,\
                                handFeatures=self.handFeatures, \
                                cut_data=self.cut_data,\
-                               data_renew=data_renew)
+                               data_renew=data_renew, \
+                               time_sort=True)
 
             self.handFeatureParams = dd['param_dict']
 
@@ -252,19 +254,9 @@ class anomaly_detector:
                 abnormalTestIdx = None
 
             # dim x sample x length # TODO: what is the best selection?
-            if self.classifier_method.find('svm')>=0:
+            if self.classifier_method.find('svm')>=0 or self.classifier_method.find('sgd')>=0:
                 normalTrainData   = dd['successData'][:, normalTrainIdx, :]   * self.scale
                 abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale 
-                ## if normalTestIdx is not None:
-                ##     normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
-                ##     abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
-            elif self.classifier_method.find('sgd')>=0:
-                normalTrainData   = dd['successData'][:, normalTrainIdx, :]   * self.scale
-                abnormalTrainData = dd['failureData'][:, abnormalTrainIdx, :] * self.scale
-                ## if normalTestIdx is not None:
-                ##     normalTestData    = dd['successData'][:, normalTestIdx, :]    * self.scale
-                ##     abnormalTestData  = dd['failureData'][:, abnormalTestIdx, :]  * self.scale
-
 
             if self.debug:
                 self.normalTrainData = normalTrainData
@@ -326,10 +318,10 @@ class anomaly_detector:
                     Y_train_org.append(ll_classifier_train_Y[i][j])
                     idx_train_org.append(ll_classifier_train_idx[i][j])
 
-            d = {}
-            d['A']  = self.ml.A
-            d['B']  = self.ml.B
-            d['pi'] = self.ml.pi
+            d                  = {}
+            d['A']             = self.ml.A
+            d['B']             = self.ml.B
+            d['pi']            = self.ml.pi
             d['nEmissionDim']  = self.nEmissionDim
             d['X_train_org']   = X_train_org
             d['Y_train_org']   = Y_train_org
@@ -383,8 +375,7 @@ class anomaly_detector:
     def rawDataCallback(self, msg):
         '''
         Subscribe raw data
-        '''
-        
+        '''        
         self.audio_feature     = msg.audio_feature
         self.audio_power       = msg.audio_power
         self.audio_azimuth     = msg.audio_azimuth
@@ -486,6 +477,7 @@ class anomaly_detector:
             else:
                 sensitivity_des = sensitivity_req*(self.w_max-self.w_min)+self.w_min                
             self.classifier.set_params(class_weight=sensitivity_des)
+            rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))
 
             if 'svm' in self.classifier_method:
                 self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
@@ -495,30 +487,30 @@ class anomaly_detector:
 
         else:
             print "not supported method"
-            sys.exit()
-            
             ## elif self.classifier_method == 'progress_time_cluster':                    
             ##     self.classifier.set_params(ths_mult=sensitivity_req*(self.w_max-self.w_min)+self.w_min)
             ## elif self.classifier_method == 'progress_time_cluster':                    
             ##     sensitivity = (self.classifier.ths_mult-self.w_min)/(self.w_max-self.w_min)
             ##     print "Current sensitivity is ", sensitivity, self.classifier.ths_mult
-
+            sys.exit()
+            
         self.pubSensitivity()
 
         
     def userfbCallback(self, msg):
         user_feedback = msg.data
-        print user_feedback
+        print "Logger feedback received: ", user_feedback
 
-        print "Logger feedback received"
         if (user_feedback == "SUCCESS" or user_feedback == "FAIL") and self.auto_update:
             if self.used_file_list == []: return
 
+            ## If does not wake, check use_sim_time. If you are not running GAZEBO, it should be false."
+            ## DO NOT REMOVE!!
             rospy.sleep(2.0)
-            
+
             # check unused data
             (success_list, failure_list) = \
-              util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name)
+              util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
             unused_fileList = [filename for filename in success_list if filename not in self.used_file_list]
             unused_fileList += [filename for filename in failure_list if filename not in self.used_file_list]
 
@@ -591,54 +583,54 @@ class anomaly_detector:
 
             
 
-    def updateCallback(self, msg):
-        fileNames = msg.data
+    ## def updateCallback(self, msg):
+    ##     fileNames = msg.data
 
-        if len(fileNames) == 0 or os.path.isfile(fileName) is False:
-            print "Warning>> there is no recorded file"
-            return StringArray_NoneResponse()
+    ##     if len(fileNames) == 0 or os.path.isfile(fileName) is False:
+    ##         print "Warning>> there is no recorded file"
+    ##         return StringArray_NoneResponse()
               
-        print "Start to update detector using ", fileName
+    ##     print "Start to update detector using ", fileName
 
-        # Get label
-        for f in fileNames:
-            if 'success' in f: self.Y_test_org.append(0)
-            else: Y_test_org.append(1)
+    ##     # Get label
+    ##     for f in fileNames:
+    ##         if 'success' in f: self.Y_test_org.append(0)
+    ##         else: Y_test_org.append(1)
 
-        # Preprocessing
-        trainData,_ = dm.getDataList(fileNames, self.rf_center, self.local_range,\
-                                     self.handFeatureParams,\
-                                     downSampleSize = self.downSampleSize, \
-                                     cut_data       = self.cut_data,\
-                                     handFeatures   = self.handFeatures)
-        print "Preprocessing: ", np.shape(trainData), np.shape(Y_test_org)
+    ##     # Preprocessing
+    ##     trainData,_ = dm.getDataList(fileNames, self.rf_center, self.local_range,\
+    ##                                  self.handFeatureParams,\
+    ##                                  downSampleSize = self.downSampleSize, \
+    ##                                  cut_data       = self.cut_data,\
+    ##                                  handFeatures   = self.handFeatures)
+    ##     print "Preprocessing: ", np.shape(trainData), np.shape(Y_test_org)
 
-        ## HMM
-        ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
-        X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org, c=1.0, add_delta_logp=self.add_logp_d)
-        print "Features: ", np.shape(X), np.shape(Y)
+    ##     ## HMM
+    ##     ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
+    ##     X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org, c=1.0, add_delta_logp=self.add_logp_d)
+    ##     print "Features: ", np.shape(X), np.shape(Y)
 
-        ## Remove unseparable region and scaling it
-        X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
-        if 'svm' in self.classifier_method:
-            self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
-        elif 'sgd' in self.classifier_method:
-            self.X_scaled = self.scaler.transform(X_train_org)
-        else:
-            print "Not available method"
-            sys.exit()
+    ##     ## Remove unseparable region and scaling it
+    ##     X_train_org, Y_train_org, _ = dm.flattenSample(X, Y, remove_fp=True)
+    ##     if 'svm' in self.classifier_method:
+    ##         self.X_scaled = np.vstack([ self.X_scaled, self.scaler.transform(X_train_org) ])
+    ##     elif 'sgd' in self.classifier_method:
+    ##         self.X_scaled = self.scaler.transform(X_train_org)
+    ##     else:
+    ##         print "Not available method"
+    ##         sys.exit()
 
-        # Run SGD? or SVM?
-        if self.classifier_method.find('svm') >= 0:
-            self.classifier.fit(self.X_scaled, self.Y_test_org)
-        elif self.classifier_method.find('svm') >= 0:
-            print "Not available"
-            return StringArray_NoneResponse()
-            self.classifier.partial_fit(self.X_scaled, self.Y_test_org, classes=[-1,1])            
-        else:
-            print "Not available update method"
+    ##     # Run SGD? or SVM?
+    ##     if self.classifier_method.find('svm') >= 0:
+    ##         self.classifier.fit(self.X_scaled, self.Y_test_org)
+    ##     elif self.classifier_method.find('svm') >= 0:
+    ##         print "Not available"
+    ##         return StringArray_NoneResponse()
+    ##         self.classifier.partial_fit(self.X_scaled, self.Y_test_org, classes=[-1,1])            
+    ##     else:
+    ##         print "Not available update method"
             
-        return StringArray_NoneResponse()
+    ##     return StringArray_NoneResponse()
 
 
 
@@ -853,6 +845,28 @@ class anomaly_detector:
                 self.reset()
 
             rate.sleep()
+
+        # save model and param
+        self.save_params()
+        print "Saved current parameters"
+
+    '''
+    Save detector
+    '''
+    def save_params(self):
+        pkg_path    = os.path.expanduser('~')+'/catkin_ws/src/hrl-assistive/hrl_anomaly_detection/params/'
+        yaml_file   = os.path.join(pkg_path, 'anomaly_detection_'+self.task_name+'.yaml')
+        param_namespace = '/'+self.task_name 
+        os.system('rosparam dump '+yaml_file+' '+param_namespace)
+
+
+        ## train_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
+        ## d         = ut.load_pickle(train_pkl)
+        ## self.handFeatureParams
+        ## d['param_dict'] = self.handFeatureParams
+        ## ut.save_pickle(d, train_pkl)
+        
+
 
     def visualization(self):
         if self.figure_flag is False:

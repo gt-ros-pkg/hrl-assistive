@@ -555,11 +555,13 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name, exact_name=False):
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, time_sort=False):
     # List up recorded files
-    folder_list = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
+    folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
+    success_time_list = []
     failure_list = []
+    failure_time_list = []
     for d in folder_list:
 
         name_flag = False
@@ -579,13 +581,26 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=False):
                 pkl_file = os.path.join(root_path,d,f)
                 
                 if f.find('success') >= 0:
-                    if len(success_list)==0: success_list = [pkl_file]
-                    else: success_list.append(pkl_file)
+                    success_list.append(pkl_file)
+                    success_time_list.append( os.stat(pkl_file).st_mtime )
                 elif f.find('failure') >= 0:
-                    if len(failure_list)==0: failure_list = [pkl_file]
-                    else: failure_list.append(pkl_file)
+                    failure_list.append(pkl_file)
+                    failure_time_list.append( os.stat(pkl_file).st_mtime )
                 else:
                     print "It's not success/failure file: ", f
+
+    if time_sort:
+        entries = ((success_time, success_file) for success_time, success_file in \
+                   zip(success_time_list, success_list))
+        success_list = [] 
+        for mdate, pkl_file in sorted(entries):
+            success_list.append(pkl_file)
+
+        entries = ((failure_time, failure_file) for failure_time, failure_file in \
+                   zip(failure_time_list, failure_list))
+        failure_list = [] 
+        for mdate, pkl_file in sorted(entries):
+            failure_list.append(pkl_file)
 
     print "--------------------------------------------"
     print "# of Success files: ", len(success_list)

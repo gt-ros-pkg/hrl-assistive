@@ -149,7 +149,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                cut_data=None, init_param_dict=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
-               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
+               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False,\
+               time_sort=False):
     '''
     If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
@@ -182,7 +183,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     else:
         ## data_renew = False #temp        
-        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
+        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
+                                                             time_sort=time_sort)
 
         print "start to load data"
         # loading and time-sync    
