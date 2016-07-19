@@ -1,6 +1,15 @@
+function enableButton(button_id) {
+    $(button_id).css("opacity", "1.0");
+    $(button_id).css("pointer-events", "auto"); 
+}
+function disableButton(button_id) {
+    $(button_id).css("opacity", "0.6");
+    $(button_id).css("pointer-events", "none"); 
+}
 var ManipulationTask = function (ros) {
     'use strict';
     var manTask = this;
+    manTask.available = true;
     manTask.ros = ros;
     //Topic used in manTask
     manTask.USER_INPUT_TOPIC = "manipulation_task/user_input";
@@ -14,27 +23,42 @@ var ManipulationTask = function (ros) {
     });
     manTask.statusPub.advertise();
     manTask.scoop = function () {
-        var msg = new manTask.ros.Message({
-          data: 'Scooping'
-        });
-        assistive_teleop.log('Please, follow the step 2 to select the action.');
-        manTask.statusPub.publish(msg);
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Scooping'
+            });
+            assistive_teleop.log('Please, follow the step 2 to select the action.');
+            manTask.statusPub.publish(msg);
+            return true;
+        } else {
+            return false;
+        }
     };
 
     manTask.feed = function () {
-        var msg = new manTask.ros.Message({
-          data: 'Feeding'
-        });
-        assistive_teleop.log('Please, follow the step 2 to select the action.');
-        manTask.statusPub.publish(msg);
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Feeding'
+            });
+            assistive_teleop.log('Please, follow the step 2 to select the action.');
+            manTask.statusPub.publish(msg);
+            return true;
+        } else {
+            return false;
+        }
     };
 
     manTask.both = function () {
-        var msg = new manTask.ros.Message({
-          data: 'Init'
-        });
-        assistive_teleop.log('Please, follow the step 2 to select the action.');
-        manTask.statusPub.publish(msg);
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Init'
+            });
+            assistive_teleop.log('Please, follow the step 2 to select the action.');
+            manTask.statusPub.publish(msg);
+            return true;
+        } else {
+            return false;
+        }
     };
 
 
@@ -47,7 +71,8 @@ var ManipulationTask = function (ros) {
 
     manTask.emergencyPub = new manTask.ros.Topic({
         name: manTask.EMERGENCY_TOPIC,
-        messageType: 'std_msgs/String'
+        messageType: 'std_msgs/String',
+        queue_size: 2
     });
     manTask.emergencyPub.advertise();
 
@@ -58,13 +83,18 @@ var ManipulationTask = function (ros) {
     manTask.userFeedbackPub.advertise();
     // Function for start, stop, and continue
     manTask.start = function () {
-        var msg = new manTask.ros.Message({
-          data: 'Start'
-        });
-        manTask.userInputPub.publish(msg);
-        assistive_teleop.log('Starting the manipulation task');
-        assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
-        console.log('Publishing Start msg to manTask system.');
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Start'
+            });
+            manTask.userInputPub.publish(msg);
+            assistive_teleop.log('Starting the manipulation task');
+            assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
+            console.log('Publishing Start msg to manTask system.');
+            return true;
+        } else {
+            return false;
+        }
     };
 
     manTask.stop = function () {
@@ -75,16 +105,22 @@ var ManipulationTask = function (ros) {
         assistive_teleop.log('Stopping the manipulation task');
         assistive_teleop.log('Please, press "Continue" to re-start the action. Or re-start from step 1.');
         console.log('Publishing Stop msg to manTask system.');
+        manTask.available=false;
     };
 
     manTask.continue_ = function () {
-        var msg = new manTask.ros.Message({
-          data: 'Continue'
-        });
-        manTask.userInputPub.publish(msg);
-        assistive_teleop.log('Continuing the manipulation task');
-        assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
-        console.log('Publishing Continue msg to manTask system.');
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Continue'
+            });
+            manTask.userInputPub.publish(msg);
+            assistive_teleop.log('Continuing the manipulation task');
+            assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
+            console.log('Publishing Continue msg to manTask system.');
+            return true;
+        } else {
+            return false;
+        }
     };
     // Function to report the feedback
     manTask.success = function () {
@@ -114,7 +150,17 @@ var ManipulationTask = function (ros) {
         console.log('Reporting the feedback message.');
     };
 
-
+    //part added in 7/18
+    manTask.availableSub = new manTask.ros.Topic({
+        name: 'manipulation_task/available',
+        messageType: 'std_msgs/String'});
+    manTask.availableSub.subscribe(function (msg) {
+        if(msg.data=="true") {
+            manTask.available=true;
+        } else {
+            manTask.available=false;
+        }
+    });
     //part added.
     manTask.feedbackSub = new manTask.ros.Topic({
         name: 'manipulation_task/feedbackRequest',
@@ -123,62 +169,69 @@ var ManipulationTask = function (ros) {
         assistive_teleop.log(msg.data);
         if(msg.data=="Requesting Feedback!") {
         //assistive_teleop.log("worked?");
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","1.0");
-        $('#man_task_Fail').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Skip').css("opacity","1.0");
-        // "pointer-events" "none" "auto"
-
-        $('#man_task_Scooping').css("pointer-events","none");
-        $('#man_task_Feeding').css("pointer-events","none");
-        $('#man_task_Init').css("pointer-events","none");
-        $('#man_task_stop').css("pointer-events","none");
-        $('#man_task_Continue').css("pointer-events","none");
-        $('#man_task_start').css("pointer-events","none");
-
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            enableButton('#man_task_success');
+            enableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            enableButton('#man_task_Skip');
+        }
+        if(msg.data=="No feedback requested") {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            enableButton('#man_task_success');
+            enableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            enableButton('#man_task_Skip');
+            /*
+            enableButton('#man_task_Scooping');
+            enableButton('#man_task_Feeding');
+            enableButton('#man_task_Init');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Skip');
+            enableButton('#ad_scooping_sense_min');
+            enableButton('#ad_scooping_sense_max');
+            enableButton('#ad_scooping_slider');
+            enableButton('#ad_feeding_sense_min');
+            enableButton('#ad_feeding_sense_max');
+            enableButton('#ad_feeding_slider');
+            */
         }
 
     });
 
     //part added on 4/7 to accomodate anomaly signal.
-    manTask.feedbackSub = new manTask.ros.Topic({
+    manTask.emergencySub = new manTask.ros.Topic({
         name: 'manipulation_task/emergency',
         messageType: 'std_msgs/String'});
-    manTask.feedbackSub.subscribe(function (msg) {
+    manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
-
-        $('#man_task_Scooping').css("opacity","1.0");
-        $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Init').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","1.0");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6"); 
-        $('#man_task_Skip').css("opacity","0.6");
-
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
-        $('#man_task_stop').css("pointer-events","none");
- 
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","1.0");
-        $('#ad_scooping_sense_max').css("opacity","1.0");
-        $('#ad_scooping_slider').css("opacity","1.0");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","1.0");
-        $('#ad_feeding_sense_max').css("opacity","1.0");
-        $('#ad_feeding_slider').css("opacity","1.0");
+            manTask.available = false;
+            enableButton('#man_task_Scooping');
+            enableButton('#man_task_Feeding');
+            enableButton('#man_task_Init');
+            disableButton('#man_task_start');
+            enableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Skip');
+            enableButton('#ad_scooping_sense_min');
+            enableButton('#ad_scooping_sense_max');
+            enableButton('#ad_scooping_slider');
+            enableButton('#ad_feeding_sense_min');
+            enableButton('#ad_feeding_sense_max');
+            enableButton('#ad_feeding_slider');
 
         }
 
@@ -194,252 +247,166 @@ var initManTaskTab = function() {
   assistive_teleop.log('initiating manipulation Task');
 
     $('#man_task_Scooping').click(function(){
-        assistive_teleop.manTask.scoop();
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_start').css("opacity","1.0");
-        $('#man_task_Skip').css("opacity","0.6");
-
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
-
-
+        if (assistive_teleop.manTask.scoop()) {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+        }
     });
+
     $('#man_task_Feeding').click(function(){
-        assistive_teleop.manTask.feed();
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_start').css("opacity","1.0");
-        $('#man_task_Skip').css("opacity","0.6");
-
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto"); 
-
+        if (assistive_teleop.manTask.feed()) {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+        }
     });
-    $('#man_task_Init').click(function(){
-        assistive_teleop.manTask.both();
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6"); 
-        $('#man_task_start').css("opacity","1.0");
-        $('#man_task_Skip').css("opacity","0.6");
 
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
+    $('#man_task_Init').click(function(){
+        if(assistive_teleop.manTask.both()) {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+        }
  
     });
     $('#man_task_start').click(function(){
-        assistive_teleop.manTask.start();
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","1.0"); 
-        $('#man_task_Skip').css("opacity","0.6");
+        if(assistive_teleop.manTask.start()) {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Skip');
 
-        $('#man_task_Continue').css("pointer-events","none");
-        $('#man_task_start').css("pointer-events","none");
-        $('#man_task_stop').css("pointer-events","auto"); 
-
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","0.6");
-        $('#ad_scooping_sense_max').css("opacity","0.6");
-        $('#ad_scooping_slider').css("opacity","0.6");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","0.6");
-        $('#ad_feeding_sense_max').css("opacity","0.6");
-        $('#ad_feeding_slider').css("opacity","0.6");
-
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+        }
 
     });
     $('#man_task_stop').click(function(){
         assistive_teleop.manTask.stop();
-        $('#man_task_Scooping').css("opacity","1.0");
-        $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Init').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","1.0");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6"); 
-        $('#man_task_Skip').css("opacity","0.6");
+        enableButton('#man_task_Scooping');
+        enableButton('#man_task_Feeding');
+        enableButton('#man_task_Init');
+        enableButton('#man_task_stop');
+        enableButton('#man_task_Continue');
+        disableButton('#man_task_success');
+        disableButton('#man_task_Fail');
+        disableButton('#man_task_start');
+        disableButton('#man_task_Skip');
 
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
-        $('#man_task_stop').css("pointer-events","none");
-
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","1.0");
-        $('#ad_scooping_sense_max').css("opacity","1.0");
-        $('#ad_scooping_slider').css("opacity","1.0");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","1.0");
-        $('#ad_feeding_sense_max').css("opacity","1.0");
-        $('#ad_feeding_slider').css("opacity","1.0");
+        enableButton('#ad_scooping_sense_min');
+        enableButton('#ad_scooping_sense_max');
+        enableButton('#ad_scooping_slider');
+        enableButton('#ad_feeding_sense_min');
+        enableButton('#ad_feeding_sense_max');
+        enableButton('#ad_feeding_slider');
  
     });
     $('#man_task_Continue').click(function(){
-        assistive_teleop.manTask.continue_();
-        $('#man_task_Scooping').css("opacity","0.6");
-        $('#man_task_Feeding').css("opacity","0.6");
-        $('#man_task_Init').css("opacity","0.6");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","1.0"); 
-        $('#man_task_Skip').css("opacity","0.6");
+        if (assistive_teleop.manTask.continue_()) {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Skip');
 
-        $('#man_task_Continue').css("pointer-events","none");
-        $('#man_task_start').css("pointer-events","none");
-        $('#man_task_stop').css("pointer-events","auto");
-
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","0.6");
-        $('#ad_scooping_sense_max').css("opacity","0.6");
-        $('#ad_scooping_slider').css("opacity","0.6");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","0.6");
-        $('#ad_feeding_sense_max').css("opacity","0.6");
-        $('#ad_feeding_slider').css("opacity","0.6");
- 
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+        }
     });
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();
-        $('#man_task_Scooping').css("opacity","1.0");
-        $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Init').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6"); 
-        $('#man_task_Skip').css("opacity","0.6");
+        enableButton('#man_task_Scooping');
+        enableButton('#man_task_Feeding');
+        enableButton('#man_task_Init');
+        disableButton('#man_task_stop');
+        disableButton('#man_task_Continue');
+        disableButton('#man_task_success');
+        disableButton('#man_task_Fail');
+        disableButton('#man_task_start');
+        disableButton('#man_task_Skip');
 
-    //re-enable click
-        $('#man_task_Scooping').css("pointer-events","auto");
-        $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Init').css("pointer-events","auto");
-        $('#man_task_stop').css("pointer-events","auto");
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
-
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","1.0");
-        $('#ad_scooping_sense_max').css("opacity","1.0");
-        $('#ad_scooping_slider').css("opacity","1.0");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","1.0");
-        $('#ad_feeding_sense_max').css("opacity","1.0");
-        $('#ad_feeding_slider').css("opacity","1.0");
+        enableButton('#ad_scooping_sense_min');
+        enableButton('#ad_scooping_sense_max');
+        enableButton('#ad_scooping_slider');
+        enableButton('#ad_feeding_sense_min');
+        enableButton('#ad_feeding_sense_max');
+        enableButton('#ad_feeding_slider');
 
     });
     $('#man_task_Fail').click(function(){
         assistive_teleop.manTask.failure();
-        $('#man_task_Scooping').css("opacity","1.0");
-        $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Init').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");  
-        $('#man_task_Skip').css("opacity","0.6");
+        enableButton('#man_task_Scooping');
+        enableButton('#man_task_Feeding');
+        enableButton('#man_task_Init');
+        disableButton('#man_task_stop');
+        disableButton('#man_task_Continue');
+        disableButton('#man_task_success');
+        disableButton('#man_task_Fail');
+        disableButton('#man_task_start');
+        disableButton('#man_task_Skip');
 
-    //re-enable click
-        $('#man_task_Scooping').css("pointer-events","auto");
-        $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Init').css("pointer-events","auto");
-        $('#man_task_stop').css("pointer-events","auto");
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
-
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","1.0");
-        $('#ad_scooping_sense_max').css("opacity","1.0");
-        $('#ad_scooping_slider').css("opacity","1.0");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","1.0");
-        $('#ad_feeding_sense_max').css("opacity","1.0");
-        $('#ad_feeding_slider').css("opacity","1.0");
-
+        enableButton('#ad_scooping_sense_min');
+        enableButton('#ad_scooping_sense_max');
+        enableButton('#ad_scooping_slider');
+        enableButton('#ad_feeding_sense_min');
+        enableButton('#ad_feeding_sense_max');
+        enableButton('#ad_feeding_slider');
     });
 
     $('#man_task_Skip').click(function(){
         assistive_teleop.manTask.skip();
-        $('#man_task_Scooping').css("opacity","1.0");
-        $('#man_task_Feeding').css("opacity","1.0");
-        $('#man_task_Init').css("opacity","1.0");
-        $('#man_task_start').css("opacity","0.6");
-        $('#man_task_Continue').css("opacity","0.6");
-        $('#man_task_success').css("opacity","0.6");
-        $('#man_task_Fail').css("opacity","0.6");
-        $('#man_task_stop').css("opacity","0.6");  
-        $('#man_task_Skip').css("opacity","0.6");
-    //re-enable click
-        $('#man_task_Scooping').css("pointer-events","auto");
-        $('#man_task_Feeding').css("pointer-events","auto");
-        $('#man_task_Init').css("pointer-events","auto");
-        $('#man_task_stop').css("pointer-events","auto");
-        $('#man_task_Continue').css("pointer-events","auto");
-        $('#man_task_start').css("pointer-events","auto");
+        enableButton('#man_task_Scooping');
+        enableButton('#man_task_Feeding');
+        enableButton('#man_task_Init');
+        disableButton('#man_task_stop');
+        disableButton('#man_task_Continue');
+        disableButton('#man_task_success');
+        disableButton('#man_task_Fail');
+        disableButton('#man_task_start');
+        disableButton('#man_task_Skip');
 
-        $('#ad_scooping_sense_min').css("pointer-events","auto");
-        $('#ad_scooping_sense_max').css("pointer-events","auto");
-        $('#ad_scooping_slider').css("pointer-events","auto");
-        $('#ad_scooping_sense_min').css("opacity","1.0");
-        $('#ad_scooping_sense_max').css("opacity","1.0");
-        $('#ad_scooping_slider').css("opacity","1.0");
-
-        $('#ad_feeding_sense_min').css("pointer-events","auto");
-        $('#ad_feeding_sense_max').css("pointer-events","auto");
-        $('#ad_feeding_slider').css("pointer-events","auto");
-        $('#ad_feeding_sense_min').css("opacity","1.0");
-        $('#ad_feeding_sense_max').css("opacity","1.0");
-        $('#ad_feeding_slider').css("opacity","1.0");
-
+        enableButton('#ad_scooping_sense_min');
+        enableButton('#ad_scooping_sense_max');
+        enableButton('#ad_scooping_slider');
+        enableButton('#ad_feeding_sense_min');
+        enableButton('#ad_feeding_sense_max');
+        enableButton('#ad_feeding_slider');
     });
 
 

@@ -32,7 +32,7 @@
 # system library
 import time
 import datetime
-import multiprocessing
+import multiprocessing, threading
 
 # ROS library
 import rospy, roslib
@@ -64,6 +64,9 @@ class armReacherGUI:
         self.log = log
         self.left_mtx = False
         self.right_mtx = False
+        self.status_lock = threading.RLock()
+        self.encountered_emergency = 0
+        self.expected_emergency = 0
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
@@ -74,14 +77,16 @@ class armReacherGUI:
         #Publisher:
         self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
         self.falselogPub = rospy.Publisher("/manipulation_task/feedbackRequest", String)
-                
+        self.availablePub = rospy.Publisher("/manipulation_task/available", String)
+
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
-        self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback)
+        self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=2)
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         
         rospy.wait_for_service("/arm_reach_enable")
+        rospy.wait_for_service("/right/arm_reach_enable")
         self.armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
         self.armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
         
@@ -89,16 +94,19 @@ class armReacherGUI:
     def inputCallback(self, msg):
         #Callback function for input. It communicate with both start and continue button.
         rospy.wait_for_service("/arm_reach_enable")
-        self.inputMSG = msg.data
-        self.inputStatus = True
-        #Maybe had to add if statement.
-        self.emergencyStatus = False
-        print "Input received"
+        rospy.wait_for_service("/right/arm_reach_enable")
+        with self.status_lock:
+            self.inputMSG = msg.data
 
-        # initialize current motion only when Start button is pushed
-        if self.inputMSG == 'Start':
-            self.ScoopNumber = 0
-            self.FeedNumber = 0
+            # initialize current motion only when Start button is pushed
+            if self.inputMSG == 'Start':
+                self.ScoopNumber = 0
+                self.FeedNumber = 0
+
+            self.inputStatus = True
+            #Maybe had to add if statement.
+            self.emergencyStatus = False
+            print "Input received"
 
 
     def emergencyCallback(self, msg):
@@ -109,12 +117,12 @@ class armReacherGUI:
         if self.emergencyMsg == 'STOP':
             self.emergencyPub.publish("STOP")
         print "Emergency received"
-
         if self.log != None:
             if self.log.getLogStatus(): self.log.log_stop()
         
         print "Wait arm reach service"
         rospy.wait_for_service("/arm_reach_enable")
+        rospy.wait_for_service("/right/arm_reach_enable")
         
         while not rospy.is_shutdown():
             print "Waiting aborting Sequence"
@@ -124,9 +132,7 @@ class armReacherGUI:
 
         if self.log != None: self.log.close_log_file_GUI()
         rospy.sleep(2.0)
-
-
-
+        self.availablePub.publish("true")
 
     def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
@@ -134,15 +140,18 @@ class armReacherGUI:
 
     def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
-        self.actionStatus = msg.data
-        rospy.loginfo("status received")
-        if self.log != None:
-            if self.actionStatus == "Scooping":
-                self.log.setTask('scooping')
-            elif self.actionStatus == "Feeding":
-                self.log.setTask('feeding')
+        with self.status_lock:
+            self.inputStatus = False
+            self.actionStatus = msg.data
+            rospy.loginfo("status received")
+            if self.log != None:
+                if self.actionStatus == "Scooping":
+                    self.log.setTask('scooping')
+                elif self.actionStatus == "Feeding":
+                    self.log.setTask('feeding')
 
-            print "" + self.log.task
+                print "" + self.log.task
+            self.availablePub.publish("true")
 
 
     # --------------------------------------------------------------------------
@@ -214,6 +223,8 @@ class armReacherGUI:
                 self.falselogPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
                 self.log.close_log_file_GUI()
+            else:
+                self.falselogPub.publish("No feedback requested")
             self.ScoopNumber = 0
             break
 
@@ -250,7 +261,7 @@ class armReacherGUI:
                 self.FeedNumber = 3
     
             if self.FeedNumber < 4:
-                if self.log is None:
+                if self.log is not None:
                     self.log.log_start()
                     if detection_flag: self.log.enableDetector(True)
 
@@ -264,6 +275,8 @@ class armReacherGUI:
                     self.falselogPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
                     self.log.close_log_file_GUI()
+                else:
+                    self.falselogPub.publish("No feedback requested")
 
                 self.FeedNumber = 4
                     
