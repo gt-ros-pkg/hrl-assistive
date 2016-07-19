@@ -18,7 +18,7 @@ fi
 echo "HMM renew is " $HMM_RENEW
 #exit 2
 
-for ((I=2;I<=5;I++)); do
+for ((I=2;I<=3;I++)); do
     echo ${I}
     if [ $I -eq 5 ]; then 
         if ["$1" = "scooping"] || ["$1" = "feeding"]; then
@@ -31,13 +31,13 @@ for ((I=2;I<=5;I++)); do
     fi
 
     if [ $I -eq 2 ]; then
-        METHOD=('svm' 'hmmosvm');
+        METHOD=('svm' 'hmmosvm' 'hmmsvm_LSLS', 'hmmsvm_no_dL');
     elif [ $I -eq 3 ]; then        
-        METHOD=('svm' 'hmmosvm' );
+        METHOD=('svm' 'hmmosvm' 'hmmsvm_LSLS', 'hmmsvm_no_dL');
     elif [ $I -eq 4 ]; then        
         METHOD=('svm' 'hmmosvm' 'hmmsvm_diag' 'hmmsvm_dL' 'hmmsvm_LSLS' );
     elif [ $I -eq 5 ]; then        
-        METHOD=('svm' 'hmmosvm' );
+        METHOD=('svm' 'hmmosvm' 'hmmsvm_LSLS', 'hmmsvm_no_dL');
     fi
     #METHOD=('hmmosvm' );
 

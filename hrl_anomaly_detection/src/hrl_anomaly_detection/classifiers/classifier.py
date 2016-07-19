@@ -56,8 +56,8 @@ class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
                  #progress time or state?
                  logp_offset = 0.0,\
-                 # svm
                  class_weight=1.0, \
+                 # svm
                  svm_type    = 0,\
                  kernel_type = 2,\
                  degree      = 3,\
@@ -532,7 +532,7 @@ class classifier(learning_base):
             return 
 
         
-    def save_model(fileName):
+    def save_model(self, fileName):
         if self.dt is None: 
             print "No trained classifier"
             return
@@ -547,7 +547,7 @@ class classifier(learning_base):
             print "Not available method"
 
             
-    def load_model(fileName):        
+    def load_model(self, fileName):        
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            

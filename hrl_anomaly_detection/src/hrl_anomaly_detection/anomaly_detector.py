@@ -197,14 +197,18 @@ class anomaly_detector:
 
     def initDetector(self, data_renew=False, hmm_renew=False):
         print "Initializing a detector with ", self.classifier_method
-                
+        
+        self.hmm_model_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name + '.pkl')
+        self.classifier_model_file = os.path.join(self.save_data_path, 'classifier_'+self.task_name+'.pkl' )
+        
         startIdx  = 4
         (success_list, failure_list) = \
           util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
         self.used_file_list = success_list+failure_list
-        
-        if os.path.isfile(hmm_model_pkl) and hmm_renew is False:
-            d = ut.load_pickle(hmm_model_pkl)
+
+        print "Start to load/train an hmm model"
+        if os.path.isfile(self.hmm_model_pkl) and hmm_renew is False:
+            d = ut.load_pickle(self.hmm_model_pkl)
             # HMM
             self.nEmissionDim = d['nEmissionDim']
             self.A            = d['A']
@@ -329,9 +333,10 @@ class anomaly_detector:
             d['nLength']       = nLength = len(normalTrainData[0][0])
             d['param_dict']    = self.handFeatureParams
             d['normalTrainData'] = self.normalTrainData = normalTrainData
-            ut.save_pickle(d, hmm_model_pkl)
+            ut.save_pickle(d, self.hmm_model_pkl)
 
         # data preparation
+        print "Start to load/train a scaler model"
         self.scaler        = preprocessing.StandardScaler()
         self.Y_train_org   = Y_train_org
         self.idx_train_org = idx_train_org
@@ -344,12 +349,17 @@ class anomaly_detector:
           np.shape(self.X_scaled), np.shape(self.Y_train_org)
             
         # Fit Classifier
+        print "Start to load/train a classifier model"
         self.classifier = cb.classifier(method=self.classifier_method, nPosteriors=self.nState, \
                                         nLength=nLength - startIdx)
         self.classifier.set_params(**self.SVM_dict)
-        self.classifier.set_params( class_weight=self.init_w_positive )        # for svm , sgd
-        self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org, parallel=False)
-        print "Finished to train "+self.classifier_method
+        self.classifier.set_params( class_weight=self.init_w_positive )       
+                                        
+        if os.path.isfile(self.classifier_model_file):
+            self.classifier.load_model(self.classifier_model_file)
+        else:
+            self.classifier.fit(self.X_scaled, self.Y_train_org, self.idx_train_org)
+            print "Finished to train "+self.classifier_method
 
         self.pubSensitivity()        
         return
@@ -804,10 +814,10 @@ class anomaly_detector:
         self.dataList = []
         self.enable_detector = False
 
-    '''
-    Run detector
-    '''
     def run(self, freq=20):
+        '''
+        Run detector
+        '''
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
         rate = rospy.Rate(freq) # 25Hz, nominally.
         while not rospy.is_shutdown():
@@ -887,6 +897,41 @@ class anomaly_detector:
         self.save()
         print "Saved current parameters"
 
+    def runSim(self):
+        for i in xrange(100):
+            # load new file            
+            ut.get_keystroke('Hit a key to load a new file')
+            (success_list, failure_list) = \
+              util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
+            unused_fileList = [filename for filename in success_list if filename not in self.used_file_list]
+            unused_fileList += [filename for filename in failure_list if filename not in self.used_file_list]
+
+            for j in xrange(len(unused_fileList)):
+                if unused_fileList[j].find('success')>=0: label = -1
+                else: label = 1
+                trainData = dm.getDataList(unused_fileList, self.rf_center, self.rf_radius,\
+                                           self.handFeatureParams,\
+                                           downSampleSize = self.downSampleSize, \
+                                           cut_data       = self.cut_data,\
+                                           handFeatures   = self.handFeatures)
+                ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
+                X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, [label])
+
+                X_scaled = self.scaler.transform(X)
+                y_est    = self.classifier.predict(X_scaled)
+                if type(y_est) == list:
+                    y_est = y_est[0]
+                
+                
+                
+
+            
+            # check anomaly
+            
+
+            # send feedback
+
+
     '''
     Save detector
     '''
@@ -897,7 +942,7 @@ class anomaly_detector:
         os.system('rosparam dump '+yaml_file+' '+param_namespace)
 
         
-        self.classifier.save_model()
+        self.classifier.save_model(self.classifier_model_file)
         
         ## model_pkl = os.path.join(self.save_data_path, self.task_name + '_demo.pkl')
         ## d         = ut.load_pickle(model_pkl)
@@ -955,6 +1000,8 @@ if __name__ == '__main__':
                  default=False, help='Enable auto update.')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
+    p.add_option('--simulation', '--sim', action='store_true', dest='bSim',
+                 default=False, help='Enable a simulation mode.')
     
 
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
@@ -1052,5 +1099,8 @@ if __name__ == '__main__':
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
                           debug=opt.bDebug)
-    ad.run()
+    if opt.bSim is False:
+        ad.run()
+    else:
+        ad.runSim()
 
