@@ -1,3 +1,17 @@
+function fullscreenStart(div_id) {
+    var curr_w = $(div_id).css("width");
+    var curr_h = $(div_id).css("height");
+    var curr_z = $(div_id).css("z-index");
+    var curr_p = $(div_id).css("position");
+    $(div_id).css({"width":"100%",
+                   "height":"100%",
+                   "z-index":"10",
+                   "position":"fixed"});
+    return {'width':curr_w, 'height':curr_h, "z-index":curr_z, "position":curr_p};
+}
+function fullscreenStop(div_id, previous_css) {
+    $(div_id).css(previous_css);
+}
 function enableButton(button_id) {
     $(button_id).css("opacity", "1.0");
     $(button_id).css("pointer-events", "auto"); 
@@ -6,6 +20,7 @@ function disableButton(button_id) {
     $(button_id).css("opacity", "0.6");
     $(button_id).css("pointer-events", "none"); 
 }
+var previous_css = {};
 var ManipulationTask = function (ros) {
     'use strict';
     var manTask = this;
@@ -91,6 +106,7 @@ var ManipulationTask = function (ros) {
             assistive_teleop.log('Starting the manipulation task');
             assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
             console.log('Publishing Start msg to manTask system.');
+            //$('#tabs').css.("width","100%");
             return true;
         } else {
             return false;
@@ -207,7 +223,7 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_slider');
             */
         }
-
+        fullscreenStop('#fullscreenOverlay', previous_css);
     });
 
     //part added on 4/7 to accomodate anomaly signal.
@@ -243,9 +259,9 @@ var ManipulationTask = function (ros) {
 };
 
 var initManTaskTab = function() {
-  assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
-  assistive_teleop.log('initiating manipulation Task');
-
+    assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
+    assistive_teleop.log('initiating manipulation Task');
+    $('#fullscreenOverlay').css({});
     $('#man_task_Scooping').click(function(){
         if (assistive_teleop.manTask.scoop()) {
             disableButton('#man_task_Scooping');
@@ -300,6 +316,7 @@ var initManTaskTab = function() {
             disableButton('#man_task_start');
             disableButton('#man_task_Skip');
 
+            previous_css = fullscreenStart('#fullscreenOverlay');
             disableButton('#ad_scooping_sense_min');
             disableButton('#ad_scooping_sense_max');
             disableButton('#ad_scooping_slider');
@@ -321,6 +338,28 @@ var initManTaskTab = function() {
         disableButton('#man_task_start');
         disableButton('#man_task_Skip');
 
+        fullscreenStop('#fullscreenOverlay', previous_css);
+        enableButton('#ad_scooping_sense_min');
+        enableButton('#ad_scooping_sense_max');
+        enableButton('#ad_scooping_slider');
+        enableButton('#ad_feeding_sense_min');
+        enableButton('#ad_feeding_sense_max');
+        enableButton('#ad_feeding_slider');
+ 
+    });
+    $('#fullscreenOverlay').click(function(){
+        assistive_teleop.manTask.stop();
+        enableButton('#man_task_Scooping');
+        enableButton('#man_task_Feeding');
+        enableButton('#man_task_Init');
+        enableButton('#man_task_stop');
+        enableButton('#man_task_Continue');
+        disableButton('#man_task_success');
+        disableButton('#man_task_Fail');
+        disableButton('#man_task_start');
+        disableButton('#man_task_Skip');
+
+        fullscreenStop('#fullscreenOverlay', previous_css);
         enableButton('#ad_scooping_sense_min');
         enableButton('#ad_scooping_sense_max');
         enableButton('#ad_scooping_slider');
@@ -341,6 +380,7 @@ var initManTaskTab = function() {
             disableButton('#man_task_start');
             disableButton('#man_task_Skip');
 
+            previous_css = fullscreenStart('#fullscreenOverlay');
             disableButton('#ad_scooping_sense_min');
             disableButton('#ad_scooping_sense_max');
             disableButton('#ad_scooping_slider');
