@@ -44,8 +44,20 @@
 <body onload="assistive_teleop.start()" ondragstart="return false;" ondrop="return false;">
   <div id="fullscreenOverlay" style="width:0;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:0.6;top:0;left:0">
     <div style="width:100%;top:49%;left:0;position:relative;text-align:center;color:white;font-size:60px">
-      <label>Press anywhere to stop</label>    
+      <label id="bigStop">Press anywhere to stop</label>    
     </div>
+    <!--div style="width:100%;top:74%;left:0;position:relative;color:white;font-size:20px"-->
+      <table id="step_table" style="width:100%;top:74%;left:0;position:relative;color:white;font-size:40px;text-align:center">
+        <tr>
+          <td id="step_table1">
+          </td>
+          <td id="step_table2">
+          </td>
+          <td id="step_table3">
+          </td>
+        </tr>
+      </table>
+    <!--/div-->
   </div>
   <table>
     <tr>

@@ -76,8 +76,9 @@ class armReacherGUI:
     def initComms(self):
         #Publisher:
         self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
-        self.falselogPub = rospy.Publisher("/manipulation_task/feedbackRequest", String)
+        self.falselogPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String)
+        self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String) 
 
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
@@ -171,6 +172,7 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Init motion...")
                 self.initMotion(self.armReachActionLeft, self.armReachActionRight)
+                self.falselogPub.publish("Requesting Feedback!")
             rate.sleep()
 
 
@@ -193,21 +195,25 @@ class armReacherGUI:
             
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
+                self.proceedPub.publish("Start: Scooping 1, Scooping 2");
                 rospy.loginfo("Initializing arms for scooping")
                 self.initMotion(armReachActionLeft, armReachActionRight)
                 if self.emergencyStatus: break
                 self.ScoopNumber = 1
+                self.proceedPub.publish("Next: Scooping 3");
         
             if self.ScoopNumber < 2:        
                 self.ServiceCallLeft("getBowlPos")            
                 self.ServiceCallLeft('lookAtBowl')
                 if self.emergencyStatus: break
                 self.ScoopNumber = 2            
+                self.proceedPub.publish("Next: Scooping 4");
                 
             if self.ScoopNumber < 3:        
                 self.ServiceCallLeft("initScooping2")
                 if self.emergencyStatus: break
                 self.ScoopNumber = 3            
+                self.proceedPub.publish("Next: Done");
     
             if self.log is not None:
                 self.log.log_start()
@@ -218,7 +224,7 @@ class armReacherGUI:
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
-
+            self.proceedPub.publish("Done");
             if self.log is not None:
                 self.falselogPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
@@ -239,6 +245,7 @@ class armReacherGUI:
             if self.FeedNumber < 1:
                 ## Feeding -----------------------------------
                 rospy.loginfo("Initializing left arm for feeding")
+                self.proceedPub.publish("Start: Feeding 1, Feeding 2");
                 self.ServiceCallLeft("lookToRight")
                 if self.emergencyStatus: break
                 self.ServiceCallLeft("initFeeding1")
@@ -247,18 +254,21 @@ class armReacherGUI:
                 self.ServiceCallRight("initFeeding")
                 if self.emergencyStatus: break                
                 self.FeedNumber = 1
+                self.proceedPub.publish("Next: Feeding 3");
     
             if self.FeedNumber < 2:
                 rospy.loginfo("Detect a mouth")
                 self.ServiceCallLeft("getHeadPos")
                 self.ServiceCallLeft("initFeeding2")
                 self.FeedNumber = 2
+                self.proceedPub.publish("Next: Feeding 4");
     
             if self.FeedNumber < 3:
                 rospy.loginfo("Running init feeding2")
                 self.ServiceCallLeft("initFeeding3")
                 if self.emergencyStatus: break
                 self.FeedNumber = 3
+                self.proceedPub.publish("Next: retrieving");
     
             if self.FeedNumber < 4:
                 if self.log is not None:
@@ -270,7 +280,7 @@ class armReacherGUI:
                 if self.emergencyStatus:
                     if detection_flag: self.log.enableDetector(False)                
                     break
-
+                self.proceedPub.publish("Next: Done");
                 if self.log is not None:
                     self.falselogPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
@@ -279,12 +289,14 @@ class armReacherGUI:
                     self.falselogPub.publish("No feedback requested")
 
                 self.FeedNumber = 4
+                self.proceedPub.publish("Next: Done");
                     
             if self.FeedNumber < 5:
                 # Returning motion
                 self.ServiceCallLeft("initFeeding2")
                 if self.emergencyStatus: break
                 self.FeedNumber = 0
+                self.proceedPub.publish("Done");
                 break
 
         
