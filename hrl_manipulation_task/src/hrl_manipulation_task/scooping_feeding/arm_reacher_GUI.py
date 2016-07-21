@@ -172,6 +172,7 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Init motion...")
                 self.initMotion(self.armReachActionLeft, self.armReachActionRight)
+                self.proceedPub.publish("Start: initialize,")
                 self.falselogPub.publish("Requesting Feedback!")
             rate.sleep()
 
@@ -183,6 +184,8 @@ class armReacherGUI:
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
         self.ScoopNumber = 1
+        self.proceedPub.publish("Start: Scooping 1, Scooping 2")
+        self.proceedPub.publish("Next: Scooping 3")
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):
@@ -200,7 +203,7 @@ class armReacherGUI:
                 self.initMotion(armReachActionLeft, armReachActionRight)
                 if self.emergencyStatus: break
                 self.ScoopNumber = 1
-                self.proceedPub.publish("Next: Scooping 3");
+                #self.proceedPub.publish("Next: Scooping 3");
         
             if self.ScoopNumber < 2:        
                 self.ServiceCallLeft("getBowlPos")            
@@ -221,10 +224,10 @@ class armReacherGUI:
         
             rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
+            self.proceedPub.publish("Done");
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
-            self.proceedPub.publish("Done");
             if self.log is not None:
                 self.falselogPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
