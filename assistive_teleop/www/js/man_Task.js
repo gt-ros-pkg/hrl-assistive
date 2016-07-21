@@ -43,6 +43,7 @@ var ManipulationTask = function (ros) {
     manTask.STATUS_TOPIC = "manipulation_task/status";
     manTask.current_step = 1;
     manTask.max_step = 0;
+    manTask.feedback_received = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -58,6 +59,7 @@ var ManipulationTask = function (ros) {
             manTask.current_step = 0;
             manTask.max_step = 3;
             assistive_teleop.log('Please, follow the step 2 to select the action.');
+            manTask.feedback_received = false;
             return true;
         } else {
             return false;
@@ -73,6 +75,7 @@ var ManipulationTask = function (ros) {
             manTask.statusPub.publish(msg);
             manTask.current_step = 0;
             manTask.max_step = 5;
+            manTask.feedback_received = false;
             return true;
         } else {
             return false;
@@ -162,6 +165,7 @@ var ManipulationTask = function (ros) {
         manTask.userFeedbackPub.publish(msg);
         assistive_teleop.log('Successful run');
         console.log('Reporting the feedback message.');
+        manTask.feedback_received = true;
     };
 
     manTask.failure = function () {
@@ -171,6 +175,7 @@ var ManipulationTask = function (ros) {
         manTask.userFeedbackPub.publish(msg);
         assistive_teleop.log('Failed run');
         console.log('Reporting the feedback message.');
+        manTask.feedback_received = true;
     };
 
     manTask.skip = function () {
@@ -180,6 +185,7 @@ var ManipulationTask = function (ros) {
         manTask.userFeedbackPub.publish(msg);
         assistive_teleop.log('No report has been filed');
         console.log('Reporting the feedback message.');
+        manTask.feedback_received = true;
     };
 
     //part added in 7/18
@@ -204,7 +210,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
             disableButton('#man_task_Init');
-            disableButton('#man_task_stop');
+            //enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             enableButton('#man_task_success');
             enableButton('#man_task_Fail');
@@ -215,7 +221,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
             disableButton('#man_task_Init');
-            disableButton('#man_task_stop');
+            //enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             enableButton('#man_task_success');
             enableButton('#man_task_Fail');
@@ -291,6 +297,34 @@ var ManipulationTask = function (ros) {
 
         } else if (cmd == "Done") {
             unglow('#step_table2');
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            if(manTask.feedback_received) {
+                enableButton('#man_task_Scooping');
+                enableButton('#man_task_Feeding');
+                enableButton('#man_task_Init');
+                disableButton('#man_task_start');
+                disableButton('#man_task_Continue');
+                disableButton('#man_task_success');
+                disableButton('#man_task_Fail');
+                disableButton('#man_task_stop');
+                disableButton('#man_task_Skip');
+                enableButton('#ad_scooping_sense_min');
+                enableButton('#ad_scooping_sense_max');
+                enableButton('#ad_scooping_slider');
+                enableButton('#ad_feeding_sense_min');
+                enableButton('#ad_feeding_sense_max');
+                enableButton('#ad_feeding_slider');
+            } else {
+                disableButton('#man_task_Scooping');
+                disableButton('#man_task_Feeding');
+                disableButton('#man_task_Init');
+                disableButton('#man_task_stop');
+                disableButton('#man_task_Continue');
+                enableButton('#man_task_success');
+                enableButton('#man_task_Fail');
+                disableButton('#man_task_start');
+                enableButton('#man_task_Skip');
+            }
         }
         /*
         else if (cmd=="Prev") {
@@ -313,6 +347,7 @@ var ManipulationTask = function (ros) {
     manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
             manTask.available = false;
+            fullscreenStop('#fullscreenOverlay', previous_css);
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
             enableButton('#man_task_Init');

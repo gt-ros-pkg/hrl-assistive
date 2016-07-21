@@ -224,7 +224,6 @@ class armReacherGUI:
         
             rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
-            self.proceedPub.publish("Done");
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
@@ -235,6 +234,7 @@ class armReacherGUI:
             else:
                 self.falselogPub.publish("No feedback requested")
             self.ScoopNumber = 0
+            self.proceedPub.publish("Done");
             break
 
     
@@ -292,7 +292,6 @@ class armReacherGUI:
                     self.falselogPub.publish("No feedback requested")
 
                 self.FeedNumber = 4
-                self.proceedPub.publish("Next: Done");
                     
             if self.FeedNumber < 5:
                 # Returning motion
