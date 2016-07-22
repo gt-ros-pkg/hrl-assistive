@@ -555,7 +555,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, time_sort=False):
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, time_sort=False, \
+                       no_split=False):
     # List up recorded files
     folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
@@ -589,25 +590,39 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, ti
                 else:
                     print "It's not success/failure file: ", f
 
-    if time_sort:
-        entries = ((success_time, success_file) for success_time, success_file in \
-                   zip(success_time_list, success_list))
-        success_list = [] 
-        for mdate, pkl_file in sorted(entries):
-            success_list.append(pkl_file)
-
-        entries = ((failure_time, failure_file) for failure_time, failure_file in \
-                   zip(failure_time_list, failure_list))
-        failure_list = [] 
-        for mdate, pkl_file in sorted(entries):
-            failure_list.append(pkl_file)
-
     print "--------------------------------------------"
     print "# of Success files: ", len(success_list)
     print "# of Failure files: ", len(failure_list)
     print "--------------------------------------------"
-    
-    return success_list, failure_list
+
+    if no_split is True:
+        time_list = success_time_list + failure_time_list
+        file_list = success_list + failure_list
+
+        if time_sort:
+            entries = ((itime, ifile) for itime, ifile in \
+                       zip(time_list, file_list))
+            file_list = [] 
+            for mdate, pkl_file in sorted(entries):
+                file_list.append(pkl_file)
+                
+        return file_list                 
+    else:
+        
+        if time_sort:
+            entries = ((success_time, success_file) for success_time, success_file in \
+                       zip(success_time_list, success_list))
+            success_list = [] 
+            for mdate, pkl_file in sorted(entries):
+                success_list.append(pkl_file)
+
+            entries = ((failure_time, failure_file) for failure_time, failure_file in \
+                       zip(failure_time_list, failure_list))
+            failure_list = [] 
+            for mdate, pkl_file in sorted(entries):
+                failure_list.append(pkl_file)
+            
+        return success_list, failure_list
 
 
 def downSampleAudio(time_array, data_array, new_time_array):

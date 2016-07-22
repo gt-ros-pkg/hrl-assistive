@@ -360,7 +360,7 @@ class classifier(learning_base):
             print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
             self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, #learning_rate='constant',\
-                                    eta0=1e-2, shuffle=True, average=True)
+                                    eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
             self.dt.fit(X_features, y)
 
 
@@ -372,6 +372,9 @@ class classifier(learning_base):
 
         if self.method == 'sgd':
             ## if sample_weight is None: sample_weight = [self.class_weight]*len(X)
+            d = {+1: self.class_weight, -1: self.sgd_w_negative}
+            self.dt.set_params(class_weight=d)
+            
             X_features = self.rbf_feature.transform(X)
             for i in xrange(n_iter):
                 self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
@@ -518,6 +521,9 @@ class classifier(learning_base):
                 return self.predict(X.tolist())
             else:
                 return self.predict(X)
+        elif self.method.find('sgd')>=0:
+            X_features = self.rbf_feature.transform(X)
+            return self.dt.decision_function(X_features)
         else:
             print "Not implemented"
             sys.exit()
@@ -542,7 +548,11 @@ class classifier(learning_base):
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
         elif self.method.find('sgd')>=0:
-            joblib.dump(self.dt, fileName)
+            import pickle
+            with open(fileName, 'wb') as f:
+                pickle.dump(self.dt, f)
+                pickle.dump(self.rbf_feature, f)
+            ## joblib.dump(self.dt, fileName)
         else:
             print "Not available method"
 
@@ -553,7 +563,11 @@ class classifier(learning_base):
             import svmutil as svm            
             self.dt = svm.svm_load_model(use_pkl) 
         elif self.method.find('sgd')>=0:
-            self.dt = joblib.load(fileName)
+            import pickle
+            with open(fileName, 'rb') as f:
+                self.dt = pickle.load(f)
+                self.rbf_feature = pickle.load(f)
+            ## self.dt = joblib.load(fileName)
         else:
             print "Not available method"
         
