@@ -42,34 +42,53 @@
 </head>
 
 <body onload="assistive_teleop.start()" ondragstart="return false;" ondrop="return false;">
-
+  <div id="fullscreenOverlay" style="width:0;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:0.6;top:0;left:0">
+    <div style="width:100%;top:49%;left:0;position:relative;text-align:center;color:white;font-size:60px">
+      <label id="bigStop">Press anywhere to stop</label>    
+    </div>
+    <!--div style="width:100%;top:74%;left:0;position:relative;color:white;font-size:20px"-->
+      <table id="step_table" style="width:100%;top:74%;left:0;position:relative;color:white;font-size:40px;text-align:center">
+        <tr>
+          <td id="step_table1">
+          </td>
+          <td id="step_table2">
+          </td>
+          <td id="step_table3">
+          </td>
+        </tr>
+      </table>
+    <!--/div-->
+  </div>
   <table>
     <tr>
       <td>
-        <table>
-          <tr>
-            <td>
-              <div id="FTDisplay"></div>
-            </td>
-            <td>
-              <div id="videoAndControls"></div>
-            </td>
-          </tr>
-          <tr>
-            <td colspan=6>
-              <!--TODO: Remove hard colspan -->
-              <hr>
-              <div id="console"></div>
-              <hr>
-            </td>
-          </tr>
-          <tr>
-            <td colspan=6>
-              <!--TODO: Remove hard colspan -->
-              <div id="runStopDiv"></div>
-            </td>
-          </tr>
-        </table>
+        <div id="leftPanel">
+          <table>
+            <tr>
+              <td>
+                <div id="FTDisplay"></div>
+              </td>
+              <td>
+                <div id="videoAndControls"></div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan=6>
+                <!--TODO: Remove hard colspan -->
+                <hr>
+                <div id="console"></div>
+                <hr>
+              </td>
+            </tr>
+            
+            <tr>
+              <td colspan=6>
+                <!--TODO: Remove hard colspan -->
+                <div id="runStopDiv"></div>
+              </td>
+            </tr>
+          </table>
+        </div>
       </td>
       <td style="position: absolute">
 
