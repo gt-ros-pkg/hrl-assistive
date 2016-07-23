@@ -47,6 +47,18 @@ RFH.CartesianEEControl = function (options) {
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
 
+    var tuckAside = function (event) {
+        console.log("Tuck Arm To Side!");
+        var tuckSideAngles;
+        if (self.side[0] == 'r') {
+            tuckSideAngles = [-1.8, 1.25, -1.9, -2.0, 3.5,  -1.5, 0];
+        } else if (self.side[0] === 'l') {
+            tuckSideAngles = [1.8,  1.25,  1.9, -2.0, 2.8, -1.5, 0];
+        }
+        self.arm.sendJointAngleGoal(tuckSideAngles);
+    };
+    $('#controls > .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
+
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
         if (RFH.kinectHeadPointCloud.locked) {

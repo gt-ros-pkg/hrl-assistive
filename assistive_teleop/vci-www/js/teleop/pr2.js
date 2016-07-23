@@ -172,7 +172,6 @@ var PR2GripperSensor = function (options) {
     self.cancelReleaseOnContact = function () {
         releaseActionClient.cancel();
     };
-
 };
 
 var PR2Gripper = function (options) {
@@ -282,7 +281,6 @@ var PR2Head = function (options) {
         var trajPointStartMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointStartMsg.positions = state;
         trajPointStartMsg.velocities = [0.0, 0.0];
-//        trajPointStartMsg.time_from_start = 0.0;
         var trajPointMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
@@ -328,17 +326,14 @@ var PR2Head = function (options) {
         actionGoal.send();
     };
 
-
     self.trackPoint = function (x, y, z, frame) {
         self.pointHead(x, y, z, frame); // Start looking now
         trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
-//        console.log("Beginning Head tracking of ", frame);
     };
 
     self.stopTracking = function () {
         // Stop sending tracking messages
         clearInterval(trackingInterval);
-//        console.log("Ending Head tracking");
     };
 };
 
@@ -398,12 +393,15 @@ var PR2ArmMPC = function (options) {
     self.side = options.side;
     self.ee_frame = options.ee_frame;
     self.stateTopic = options.stateTopic || 'haptic_mpc/gripper_pose';
+    self.jointStateTopic = options.jointStateTopic || self.side[0]+'_arm_controller/state';
     self.poseGoalTopic = options.poseGoalTopic || 'haptic_mpc/goal_pose';
     self.trajectoryGoalTopic = options.trajectoryGoalTopic || 'haptic_mpc/joint_trajectory';
     self.plannerServiceName = options.plannerServiceName;
     self.state = null;
+    self.jointNames = [];
     self.ros.getMsgDetails('geometry_msgs/PoseStamped');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
+
 
     self.getState = function () {
         return self.state;
@@ -443,6 +441,19 @@ var PR2ArmMPC = function (options) {
         self.goalPosePublisher.publish(msg);
     };
 
+    self.getJointNames = function (state_msg) {
+        self.jointNames = state_msg.joint_names;
+        self.jointStateSubscriber.unsubscribe();
+    };
+
+    self.jointStateSubscriber = new ROSLIB.Topic({
+        ros: self.ros,
+        name: self.jointStateTopic,
+        messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
+    });
+    self.jointStateSubscriber.subscribe(self.getJointNames);
+
+
     self.trajectoryGoalPublisher = new ROSLIB.Topic({
         ros: self.ros,
         name: self.trajectoryGoalTopic,
@@ -452,6 +463,15 @@ var PR2ArmMPC = function (options) {
 
     self.sendTrajectoryGoal = function (trajectory) {
         self.trajectoryGoalPublisher.publish(trajectory);
+    };
+
+    self.sendJointAngleGoal = function (angleList) {
+        var traj = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
+        var trajPoint = self.ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
+        trajPoint.positions = angleList;
+        traj.joint_names = self.jointNames;
+        traj.points.push(trajPoint);
+        self.trajectoryGoalPublisher.publish(traj);
     };
 
     self.moveitPlannerClient = new ROSLIB.Service({
@@ -474,9 +494,6 @@ var PR2ArmMPC = function (options) {
         var req = new ROSLIB.ServiceRequest({'pose_target': pose});
         self.moveitPlannerClient.callService(req, cb, failureCB);
     };
-
-
-
 };
 
 var PR2 = function (ros) {
@@ -498,6 +515,7 @@ var PR2 = function (ros) {
                                      stateTopic: 'right_arm/haptic_mpc/gripper_pose',
                                      poseGoalTopic: 'right_arm/haptic_mpc/goal_pose',
                                      ee_frame:'r_gripper_tool_frame',
+                                     jointStateTopic:'r_arm_controller/state',
                                      trajectoryGoalTopic: '/right_arm/haptic_mpc/joint_trajectory',
                                      plannerServiceName:'/moveit_plan/right_arm'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',
@@ -505,6 +523,7 @@ var PR2 = function (ros) {
                                      stateTopic: 'left_arm/haptic_mpc/gripper_pose',
                                      poseGoalTopic: 'left_arm/haptic_mpc/goal_pose',
                                      ee_frame:'l_gripper_tool_frame',
+                                     jointStateTopic:'l_arm_controller/state',
                                      trajectoryGoalTopic: '/left_arm/haptic_mpc/joint_trajectory',
                                      plannerServiceName:'/moveit_plan/left_arm'});
 };
