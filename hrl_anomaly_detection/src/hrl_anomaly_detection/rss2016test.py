@@ -2392,6 +2392,8 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
+    p.add_option('--data_generation', action='store_true', dest='bDataGen',
+                 default=False, help='Data generation before evaluation.')
     p.add_option('--decision_boundary', '--db', action='store_true', dest='bDecisionBoundary',
                  default=False, help='Plot decision boundaries.')
     
@@ -2508,9 +2510,13 @@ if __name__ == '__main__':
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
                        modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)        
 
-    elif opt.bFeaturePlot:
-        success_viz = True
-        failure_viz = False
+    elif opt.bFeaturePlot or opt.bDataGen:
+        if opt.bDataGen is False:
+            success_viz = True
+            failure_viz = False
+        else:
+            success_viz = False
+            failure_viz = False
         
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
