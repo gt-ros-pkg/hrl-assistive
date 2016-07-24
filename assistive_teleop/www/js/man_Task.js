@@ -347,16 +347,17 @@ var ManipulationTask = function (ros) {
     manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
             manTask.available = false;
-            fullscreenStop('#fullscreenOverlay', previous_css);
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
             enableButton('#man_task_Init');
-            disableButton('#man_task_start');
+            enableButton('#man_task_stop');
             enableButton('#man_task_Continue');
             disableButton('#man_task_success');
             disableButton('#man_task_Fail');
-            disableButton('#man_task_stop');
+            disableButton('#man_task_start');
             disableButton('#man_task_Skip');
+            
+            fullscreenStop('#fullscreenOverlay', previous_css);
             enableButton('#ad_scooping_sense_min');
             enableButton('#ad_scooping_sense_max');
             enableButton('#ad_scooping_slider');
