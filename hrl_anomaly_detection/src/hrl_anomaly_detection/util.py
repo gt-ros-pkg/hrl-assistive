@@ -49,7 +49,7 @@ from matplotlib import gridspec
 ## import data_viz
 
 def extrapolateData(data, maxsize):
-    if len(np.shape(data[0])) > 1:     
+    if len(np.shape(data[0])) > 1:
         # need to implement incremental extrapolation
         return [x if len(x[0]) >= maxsize else x + [x[:,-1]]*(maxsize-len(x[0])) for x in data]
     else:
@@ -58,7 +58,7 @@ def extrapolateData(data, maxsize):
         
 
 def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
-             global_data=False, verbose=False, renew=True, save_pkl=None, plot_data=False):
+             global_data=False, verbose=False, renew=True, save_pkl=None, plot_data=False, max_time=None):
 
     if save_pkl is not None:
         if os.path.isfile(save_pkl+'_raw.pkl') is True and os.path.isfile(save_pkl+'_interp.pkl') is True \
@@ -89,22 +89,22 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict[key]  = []
 
     # check data to get maximum time limit
-    max_time = 0
-    for idx, fileName in enumerate(fileNames):
-        if os.path.isdir(fileName):
-            continue
-        d = ut.load_pickle(fileName)        
-        init_time = d['init_time']
-        for key in d.keys():
-            if 'time' in key and 'init' not in key:
-                feature_time = d[key]
-                if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
+    if max_time is None:
+        max_time = 0
+        for idx, fileName in enumerate(fileNames):
+            if os.path.isdir(fileName):
+                continue
+            d = ut.load_pickle(fileName)        
+            init_time = d['init_time']
+            for key in d.keys():
+                if 'time' in key and 'init' not in key:
+                    feature_time = d[key]
+                    if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
     new_times = np.linspace(0.01, max_time, downSampleSize)
 
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
-
         ## cause = os.path.split(fileName)[1].split('_')[3:]
         ## description = ''
         ## if cause is list:
@@ -125,7 +125,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
         ## new_times = np.linspace(0.01, max_time, downSampleSize)
         data_dict['timesList'].append(new_times)
-           
 
         # Define receptive field center trajectory ---------------------------
         rf_time = np.array(d['kinematics_time']) - init_time
@@ -220,7 +219,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
             raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
-
+            
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
                 data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
@@ -228,7 +227,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
                 data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
-            
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -326,7 +324,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
-
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
             ft_time  = (np.array(d['ft_time']) - init_time).tolist()
@@ -352,8 +349,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             res = interpolationData(ft_time, local_ft_torque, new_times)
             data_dict['ftTorqueList'].append(res)                                         
-            
-                    
+
         # vision artag -------------------------------------------------------------
         if 'vision_artag_time' in d.keys():
             vision_time = (np.array(d['vision_artag_time']) - init_time).tolist()
@@ -380,7 +376,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
 
         # vision landmark -------------------------------------------------------------
-        if 'vision_landmark_time' in d.keys():
+        if 'vision_landmark_time' in d.keys() and len(d['vision_landmark_time'])>2:
             vision_time = (np.array(d['vision_landmark_time']) - init_time).tolist()
             vision_pos  = d['vision_landmark_pos'] #3*timelength
             vision_quat = d['vision_landmark_quat']
@@ -397,12 +393,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['visionLandmarkPosList'].append(local_vision_pos)
             raw_data_dict['visionLandmarkQuatList'].append(local_vision_quat)
 
+            if len(np.shape(local_vision_quat)) == 1:
+                print "Wrong quat file"
+                print fileName, np.shape(local_vision_quat)
+                sys.exit()
+
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
             vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
-            data_dict['visionLandmarkQuatList'].append(vision_quat_array)                                         
+            data_dict['visionLandmarkQuatList'].append(vision_quat_array)
 
-
+            
         # vision change -----------------------------------------------------------
         if 'vision_change_time' in d.keys():
             vision_time = (np.array(d['vision_change_time']) - init_time).tolist()
@@ -545,7 +546,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             if data_dict[key] == []: continue
             if 'fabric' in key:
                 data_dict[key] = [x if len(x) >= max_size else x + []*(max_size-len(x)) for x in data_dict[key]]
-            else:                
+            else:
                 data_dict[key] = extrapolateData(data_dict[key], max_size)
 
     if save_pkl is not None:
@@ -697,7 +698,6 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
             if cosHalfTheta < 0.0:
                 target_array[:,i+1] *= -1.0
 
-
     # remove repeated data
     temp_time_array = [time_array[0]]
     temp_data_array = target_array[:,0:1]
@@ -712,7 +712,7 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
     time_array = temp_time_array
     target_array = temp_data_array
 
-    if len(time_array) < 2:
+    if len(time_array) < 4:
         nDim = len(target_array)
         return np.zeros((nDim,len(new_time_array)))
     

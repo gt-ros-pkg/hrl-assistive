@@ -2,7 +2,8 @@ import os, sys
 import numpy as np
 
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
+def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', local_range=10.0, \
+                pre_train=False,\
                 ae_swtch=False, dim=4):
 
     if dim == 4:
@@ -123,7 +124,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
+def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local_range=10.0, \
+               ae_swtch=False, dim=4):
 
     if dim == 4:
 
@@ -230,7 +232,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                    #'relativePose_landmark_EE', \
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
     ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
