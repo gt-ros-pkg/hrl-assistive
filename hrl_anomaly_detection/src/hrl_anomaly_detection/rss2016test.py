@@ -522,7 +522,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True, find_param=False):
+                   no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
     ## Parameters
     # data
@@ -575,6 +575,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                               data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # parameters
@@ -2510,13 +2511,9 @@ if __name__ == '__main__':
                        raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
                        modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)        
 
-    elif opt.bFeaturePlot or opt.bDataGen:
-        if opt.bDataGen is False:
-            success_viz = True
-            failure_viz = False
-        else:
-            success_viz = False
-            failure_viz = False
+    elif opt.bFeaturePlot:
+        success_viz = True
+        failure_viz = False
         
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
@@ -2559,7 +2556,7 @@ if __name__ == '__main__':
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                               verbose=opt.bVerbose)
                               
-    elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM:
+    elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         if opt.bPlotProgressVSHMMOSVM:
@@ -2573,7 +2570,7 @@ if __name__ == '__main__':
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                       find_param=opt.bFindROCparamRange)
+                       find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['svm']
