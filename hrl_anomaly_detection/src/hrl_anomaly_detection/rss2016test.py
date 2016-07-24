@@ -575,7 +575,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                               data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-        if data_gen: sys.exit()
+    if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # parameters
