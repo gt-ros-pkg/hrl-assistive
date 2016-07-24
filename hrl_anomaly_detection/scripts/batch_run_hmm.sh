@@ -9,8 +9,8 @@ for ((I=2;I<=5;I++)); do
     fi
 
 
-    python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --data_generation \;
-    #python ../src/hrl_anomaly_detection/hmm/run_hmm_cpu.py --task $1 --dim $I --save \;
+    #python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --data_generation \;
+    python ../src/hrl_anomaly_detection/hmm/run_hmm_cpu.py --task $1 --dim $I --save \;
 
 
 done
