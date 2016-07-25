@@ -35,8 +35,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
 
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_landmarkEEDist', \
-                        'crossmodal_landmarkEEAng', \
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 1.0,
                           'add_logp_d': True}
@@ -113,8 +113,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
                    'ft' ]                                
-    modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_landmark', \
-                     'vision_change', 'pps']
+    modality_list = ['kinematics', 'audioWrist', 'ft', \
+                     'pps']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
@@ -153,7 +153,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 14.0,\
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 4.455, 'cost': 2.25,\

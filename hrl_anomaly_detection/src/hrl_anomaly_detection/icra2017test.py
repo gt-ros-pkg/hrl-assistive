@@ -104,8 +104,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
     if os.path.isfile(crossVal_pkl) and data_renew is False:
-        d = ut.load_pickle(crossVal_pkl)
-        kFold_list  = d['kFoldList']
+        print "CV data exists and no renew"
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -126,6 +125,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
     if data_gen: sys.exit()
+
+    hmm.computeHMMfeatures(task_name, processed_data_path, param_dict, data_renew=data_renew)
+    
 
 
 if __name__ == '__main__':
@@ -191,7 +193,7 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
     if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
+        subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         subjects = [ 'zack', 'hkim', 'park']
