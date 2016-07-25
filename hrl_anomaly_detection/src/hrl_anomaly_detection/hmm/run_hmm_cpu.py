@@ -42,7 +42,6 @@ from hrl_anomaly_detection import data_manager as dm
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.classifiers import classifier as cb
-from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
@@ -698,6 +697,10 @@ if __name__ == '__main__':
                  default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+
+    p.add_option('--icra2017', action='store_true', dest='bICRA2017',
+                 default=False, help='Enable ICRA2017.')
+    
     p.add_option('--save', action='store_true', dest='bSave',
                  default=False, help='Save result.')
     opt, args = p.parse_args()
@@ -705,52 +708,53 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
+    if opt.bICRA2017 is False:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=10)
 
-    if opt.task == 'scooping':
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                False, False,\
-                                                                rf_center, local_range, \
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(2.0,10.0,10), \
-                      'cov': np.linspace(2.,5.0,10) }
 
-    elif opt.task == 'feeding':
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range, \
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim, \
-                                                               nPoints=10)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
-                      'cov': np.linspace(1.0,6.0,5) }
+        if opt.task == 'scooping':
+            parameters = {'nState': [25], 'scale': np.linspace(2.0,10.0,10), \
+                          'cov': np.linspace(2.,5.0,10) }
 
-    elif opt.task == 'pushing_microwhite':
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        if opt.dim == 4:
+        elif opt.task == 'feeding':
+            parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
+                          'cov': np.linspace(1.0,6.0,5) }
+
+        elif opt.task == 'pushing_microwhite':
+            if opt.dim == 4:
+                parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
+                              'cov': np.linspace(0.01,6.0,10) }
+            else:
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                              'cov': np.linspace(0.1,2.0,10) }
+
+        elif opt.task == 'pushing_microblack':
             parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
-                          'cov': np.linspace(0.01,6.0,10) }
+                          'cov': np.linspace(0.5,5.,10) }
+        elif opt.task == 'pushing_toolcase':
+            parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
+                          'cov': np.linspace(0.5,4.0,10) }
         else:
-            parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
-                          'cov': np.linspace(0.1,2.0,10) }
-            
-    elif opt.task == 'pushing_microblack':
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
-                      'cov': np.linspace(0.5,5.,10) }
-    elif opt.task == 'pushing_toolcase':
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
-                                                                       False, False,\
-                                                                       rf_center, local_range, \
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
-                      'cov': np.linspace(0.5,4.0,10) }
+            print "Not available task"
+
     else:
-        print "Not available task"
+
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=10)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,5), \
+                      'cov': np.linspace(1.0,6.0,5) }
+        
+
+            
 
     #--------------------------------------------------------------------------------------
     # test change of logp

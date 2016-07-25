@@ -3,21 +3,23 @@ import numpy as np
 
 
 def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
-              local_range=10.0, bAESwitch=False ):
+              local_range=10.0, bAESwitch=False, nPoints=None ):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':
         raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
                                                                 bAERenew, bHMMRenew,\
                                                                 rf_center, local_range,\
-                                                                ae_swtch=bAESwitch, dim=dim)
+                                                                ae_swtch=bAESwitch, dim=dim,\
+                                                                nPoints=nPoints)
         
     #---------------------------------------------------------------------------
     elif task == 'feeding':
         raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
                                                                bAERenew, bHMMRenew,\
                                                                rf_center, local_range,\
-                                                               ae_swtch=bAESwitch, dim=dim)
+                                                               ae_swtch=bAESwitch, dim=dim,\
+                                                               nPoints=nPoints)
         
     else:
         print "Selected task name is not available."
@@ -27,7 +29,9 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
 
 def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', local_range=10.0, \
                 pre_train=False,\
-                ae_swtch=False, dim=4):
+                ae_swtch=False, dim=4, nPoints=None):
+
+    if nPoints is None: nPoints = 20  
 
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
@@ -45,7 +49,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                           'hmmsvm_dL_gamma': 0.50749,
                           }
         
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'svm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
@@ -73,7 +76,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
@@ -95,7 +97,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
@@ -114,7 +115,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                    'ft' ]                                
     modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_landmark', \
                      'vision_change', 'pps']
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
@@ -144,7 +145,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
 
 
 def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local_range=10.0, \
-               ae_swtch=False, dim=4):
+               ae_swtch=False, dim=4, nPoints=None):
+
+    if nPoints is None: nPoints = 20 
 
     if dim == 4:
 
@@ -169,8 +172,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2
                           }
                           
-
-        nPoints        = 20 
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS', 'bpsvm' ],\
                           'update_list': ['bpsvm'],\
                           'nPoints': nPoints,\
@@ -202,8 +203,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 0.2
                           }
                           
-
-        nPoints        = 20 #'svm','hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
@@ -231,7 +230,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        nPoints        = 20 #, 'hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
@@ -252,7 +250,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \

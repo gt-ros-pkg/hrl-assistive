@@ -230,6 +230,9 @@ if __name__ == '__main__':
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
 
+    p.add_option('--icra2017', action='store_true', dest='bICRA2017',
+                 default=False, help='Enable ICRA2017.')
+
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
@@ -240,15 +243,28 @@ if __name__ == '__main__':
 
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
+    nPoints        = 10
+
+
+    if opt.bICRA2017 is False:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    else:
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    
+
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                False, False,\
-                                                                rf_center, local_range,\
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-
-        nPoints        = 10
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL',\
                                       'hmmsvm_no_dL'],\
                           'update_list': [],\
@@ -325,11 +341,6 @@ if __name__ == '__main__':
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
@@ -409,12 +420,6 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microwhite':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        nPoints        = 10
         ROC_param_dict = {'methods': ['hmmsvm_LSLS'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -498,13 +503,6 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_toolcase':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
-                                                                       False, False,\
-                                                                       rf_center, local_range,\
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
@@ -598,13 +596,6 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microblack':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \

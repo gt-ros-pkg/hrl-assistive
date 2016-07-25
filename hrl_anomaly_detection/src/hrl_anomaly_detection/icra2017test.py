@@ -72,7 +72,62 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
+
+
+def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                   data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                   no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+    
+    #------------------------------------------
+
    
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           ae_data=AE_dict['switch'],\
+                           handFeatures=data_dict['handFeatures'], \
+                           rawFeatures=AE_dict['rawFeatures'],\
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew)
+
+        # TODO: need leave-one-person-out
+        # Task-oriented hand-crafted features        
+        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        d['kFoldList']   = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+    if data_gen: sys.exit()
+
+
 if __name__ == '__main__':
 
     import optparse
@@ -103,11 +158,11 @@ if __name__ == '__main__':
                  default=False, help='Plot the change of likelihood.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
-    p.add_option('--data_generation', action='store_true', dest='bDataGen',
-                 default=False, help='Data generation before evaluation.')
     
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--data_generation', action='store_true', dest='bDataGen',
+                 default=False, help='Data generation before evaluation.')
                  
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -139,7 +194,7 @@ if __name__ == '__main__':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'hkim']
+        subjects = [ 'zack', 'hkim', 'park']
     else:
         print "Selected task name is not available."
         sys.exit()
@@ -180,3 +235,11 @@ if __name__ == '__main__':
                       cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=True,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
+
+    elif opt.bEvaluationAll or opt.bDataGen:
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+                    
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                       find_param=False, data_gen=opt.bDataGen)
