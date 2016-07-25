@@ -460,18 +460,35 @@ var ManipulationTask = function (ros) {
                 enableButton('#man_task_Skip');
             }
         }
-        /*
-        else if (cmd=="Prev") {
-            manTask.current_step = manTask.current_step - 1;
-            if (manTask.current_step < 1) {
-                manTask.current_step = 1;
-                glow('#step_table1');
-            } else if (manTask.current_step < manTask.current_step) {
-                glow('#step_table' + manTask.current_step);
-                unglow('#step_table' + (manTask.current_step + 1));
-            }
+    });
+
+
+    manTask.scoopingResultSub= new manTask.ros.Topic({
+        name: 'scooping/manipulation_task/eval_status',
+        messageType: 'hrl_msgs/FloatArray'
+    });
+    manTask.scoopingResultSub.subscribe( function(msg) {
+        if (msg.data.length == 2) {
+            document.getElementById('ad_scooping_result_1').innerHTML = msg.data[0];
+            document.getElementById('ad_scooping_result_1').innerHTML = document.getElementById('ad_scooping_result_1').innerHTML + "%";
+            document.getElementById('ad_scooping_result_2').innerHTML = msg.data[1];
+            document.getElementById('ad_scooping_result_2').innerHTML = document.getElementById('ad_scooping_result_2').innerHTML + "%";
         }
-        */
+    });
+
+
+    manTask.feedingResultSub= new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/eval_status',
+        messageType: 'hrl_msgs/FloatArray'
+    });
+    manTask.feedingResultSub.subscribe( function(msg) {
+        //document.getElementById('ad_feeding_result_1').innerHTML = "hello";
+        if (msg.data.length == 2) {
+            document.getElementById('ad_feeding_result_1').innerHTML = msg.data[0];
+            document.getElementById('ad_feeding_result_1').innerHTML = document.getElementById('ad_feeding_result_1').innerHTML + "%";
+            document.getElementById('ad_feeding_result_2').innerHTML = msg.data[1];
+            document.getElementById('ad_feeding_result_2').innerHTML = document.getElementById('ad_feeding_result_2').innerHTML + "%";
+        }
     });
 
     //part added on 4/7 to accomodate anomaly signal.
