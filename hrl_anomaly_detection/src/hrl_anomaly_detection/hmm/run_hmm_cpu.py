@@ -718,8 +718,9 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
                                                                False, False,\
                                                                rf_center, local_range, \
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,15.0,10), \
+                                                               ae_swtch=opt.bAESwitch, dim=opt.dim, \
+                                                               nPoints=10)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
                       'cov': np.linspace(1.0,6.0,5) }
 
     elif opt.task == 'pushing_microwhite':

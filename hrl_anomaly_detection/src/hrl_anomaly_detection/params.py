@@ -165,7 +165,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
+def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4,\
+               nPoints=None):
+    if nPoints is None: nPoints=20
 
     if dim == 4:
 
@@ -173,7 +175,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111, \
                           'add_logp_d': True}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 0.52, 'gamma': 1.5, 'cost': 7.5,\
                           'hmmosvm_nu': 0.0001,\
                           'osvm_nu': 0.000359,\
@@ -192,14 +193,12 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'bpsvm_w_negative': 1.175
                           }
                           
-
-        nPoints        = 20 #, 'osvm' 'bpsvm', 'progress_state' 'progress_time_cluster', 'svm','fixed', 
         ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'bpsvm', 'hmmsvm_no_dL'],\
                           'update_list': [ 'hmmosvm' ],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'progress_state_param_range':np.linspace(-1, -40., nPoints), \
-                          'svm_param_range': np.logspace(-2.0, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-4.0, 1.2, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-2.5, 1.2, nPoints),\
@@ -224,7 +223,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           }
                           
 
-        nPoints        = 20 #'svm','hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
@@ -248,7 +246,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        nPoints        = 20 #, 'hmmosvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
                           'update_list': ['fixed', 'hmmosvm', 'svm'],\
                           'nPoints': nPoints,\
