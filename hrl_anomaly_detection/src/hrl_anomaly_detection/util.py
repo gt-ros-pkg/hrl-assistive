@@ -398,6 +398,21 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 print fileName, np.shape(local_vision_quat)
                 sys.exit()
 
+            ## plt.figure(1)
+            ## data_list = []
+            ## print fileName
+            ## for time_idx in xrange(len(vision_time)):
+
+            ##     ## startQuat = kinEEQuat[:,time_idx]
+            ##     startQuat = local_vision_quat[:,0]
+            ##     endQuat   = local_vision_quat[:,time_idx]
+            ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
+            ##     data_list.append(diff_ang)
+            
+            ## plt.plot(data_list)
+            ## plt.show()
+                
+
             vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
             vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)

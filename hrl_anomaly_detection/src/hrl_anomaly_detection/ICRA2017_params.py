@@ -2,27 +2,47 @@ import os, sys
 import numpy as np
 
 
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
+              local_range=10.0, bAESwitch=False ):
+
+    #---------------------------------------------------------------------------
+    if task == 'scooping':
+        raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
+                                                                bAERenew, bHMMRenew,\
+                                                                rf_center, local_range,\
+                                                                ae_swtch=bAESwitch, dim=dim)
+        
+    #---------------------------------------------------------------------------
+    elif task == 'feeding':
+        raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
+                                                               bAERenew, bHMMRenew,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=bAESwitch, dim=dim)
+        
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    return raw_data_path, save_data_path, param_dict
+
 def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', local_range=10.0, \
                 pre_train=False,\
                 ae_swtch=False, dim=4):
 
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng', \
+                        'crossmodal_landmarkEEDist', \
+                        'crossmodal_landmarkEEAng', \
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 1.0,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 4.59,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 0.01, 'cost': 15.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
                           'osvm_nu': 0.000215, 'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,
-                          'hmmsvm_LSLS_cost': 15.0,\
-                          'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 0.2,
                           }
         
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
@@ -30,14 +50,13 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
-                          'svm_param_range': np.logspace(1.4, 1.45, nPoints),\
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'sgd_param_range': np.logspace(1.0, 1.5, nPoints)}
 
@@ -228,8 +247,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
         
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
-                   'ft' ]
-                   #'relativePose_landmark_EE', \
+                   'ft',\
+                   'relativePose_landmark_EE']
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'

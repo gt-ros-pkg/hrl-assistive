@@ -224,9 +224,11 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             param_dict=init_param_dict                                            
         else:
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                                     cut_data=cut_data)            
+                                                     cut_data=cut_data)
+        print " --------------------- Success -----------------------------"  
         successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
                                                  param_dict=param_dict, cut_data=cut_data)
+        print " --------------------- Failure -----------------------------"  
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
                                                  param_dict=param_dict, cut_data=cut_data)
 
@@ -298,6 +300,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     if success_viz or failure_viz:
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+        for i in xrange(n):
+            ax = fig.add_subplot(n*100+10+i)
+            ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
+            ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -1082,6 +1088,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             ## audioAzimuth = d['audioAzimuthList'][idx]
             audioPower   = d['audioPowerList'][idx]            
             unimodal_audioPower = audioPower
+            print idx, np.amax(audioPower)
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
@@ -1464,9 +1471,12 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     # Scaling ------------------------------------------------------------
     if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
-        print "Before scaling, max is: ", param_dict['feature_max']
-        print "Before scaling, min is: ", param_dict['feature_min']
+        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]    
+    print "Before scaling, max is: ", param_dict['feature_max']
+    print "Before scaling, min is: ", param_dict['feature_min']
+    print "Cur scale, max is: ", [ np.max(np.array(feature).flatten()) for feature in features ]
+    print "Cur scale, min is: ", [ np.min(np.array(feature).flatten()) for feature in features ]
+    print "-----------------------------------------------------------------"
                 
     scaled_features = []
     for i, feature in enumerate(features):

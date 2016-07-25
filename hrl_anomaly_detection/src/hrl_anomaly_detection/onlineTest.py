@@ -558,11 +558,12 @@ def dataCompPlot(task, dim, all_data, one_data, rf_center='kinEEPos', local_rang
 
 
 
-def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim):
     
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
+    bAESwitch     = False
     
     #---------------------------------------------------------------------------
     if task == 'scooping':
@@ -2317,17 +2318,18 @@ if __name__ == '__main__':
                                renew=opt.bRenew, bUpdateHMM=opt.bUpdateHMM )
     elif opt.bDataCompPlot:
         from hrl_anomaly_detection import ICRA2017_params as prm
-        opt.task = 'scooping'
+        opt.task = 'feeding'
         opt.dim  = 4
         
-        ## raw_data_path1, save_data_path1, param_dict1 = \
-        ##   prm.getFeeding(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.bAESwitch, opt.dim)
-        save_data_path1    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
-          opt.task+'_data'
+        raw_data_path1, save_data_path1, param_dict1 = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.dim)
+        ## save_data_path1    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+        ##   opt.task+'_data'
           
-        subject_names1 = ['Zack', 'park'] 
+        ## subject_names1 = ['Zack', 'park']
+        subject_names1 = [ 'Ashwin', 'Song', 'tom' , 'lin', 'wonyoung']
         subject_names2 = ['test'] 
-        raw_data_path2, save_data_path2, param_dict2 = prm.getScooping(opt.task, False, \
+        raw_data_path2, save_data_path2, param_dict2 = prm.getFeeding(opt.task, False, \
                                                                False, False,\
                                                                dim=opt.dim)
         save_data_path2    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\

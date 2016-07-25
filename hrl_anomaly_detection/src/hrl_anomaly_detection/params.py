@@ -2,7 +2,8 @@ import os, sys
 import numpy as np
 
 
-def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center,local_range, bAESwitch=False ):
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
+              local_range=10.0, bAESwitch=False ):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':
