@@ -59,6 +59,27 @@ RFH.CartesianEEControl = function (options) {
     };
     $('#controls > .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
 
+    var armCameraOn = false;
+    var showArmCamera = function (event) {
+        RFH.mjpeg.setParam('topic', self.side[0]+'_forearm_cam/image_color_rotated');
+        $('#armCtrlContainer').hide();
+        self.rotationControl.setActive(false);
+        armCameraOn = true;
+    };
+    var hideArmCamera = function (event) {
+        RFH.mjpeg.setParam('topic', '/head_mount_kinect/qhd/image_color');
+        self.setPositionCtrls();
+        armCameraOn = false;
+    };
+    var toggleArmCamera = function (event) {
+        if (armCameraOn) {
+            hideArmCamera();
+        } else {
+            showArmCamera();
+        }
+    };
+    $('#controls > .arm-cam.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', toggleArmCamera);
+
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
         if (RFH.kinectHeadPointCloud.locked) {
@@ -630,6 +651,9 @@ RFH.CartesianEEControl = function (options) {
         self.trackHand(false);
         self.active = false;
         self.rotationControl.hide();
+        if (armCameraOn) {
+            hideArmCamera();
+        };
 //        for (var dir in self.rotArrows) {
 //            self.rotArrows[dir].mesh.visible = false;
 //            self.rotArrows[dir].edges.visible = false;
