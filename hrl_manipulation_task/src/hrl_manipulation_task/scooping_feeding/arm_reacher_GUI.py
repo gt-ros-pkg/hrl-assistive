@@ -76,7 +76,7 @@ class armReacherGUI:
     def initComms(self):
         #Publisher:
         self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
-        self.falselogPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String)
+        self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String)
         self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String) 
 
@@ -172,9 +172,9 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Init motion...")
                 # TODO: cleaning motion
-                self.initMotion(self.armReachActionLeft, self.armReachActionRight)
+                self.cleanMotion(self.armReachActionLeft, self.armReachActionRight)
                 self.proceedPub.publish("Start: initialize,")
-                self.falselogPub.publish("Requesting Feedback!")
+                self.logRequestPub.publish("Requesting Feedback!")
             rate.sleep()
 
 
@@ -230,11 +230,11 @@ class armReacherGUI:
                 break
             self.proceedPub.publish("Done");
             if self.log is not None:
-                self.falselogPub.publish("Requesting Feedback!")    
+                self.logRequestPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
                 self.log.close_log_file_GUI()
             else:
-                self.falselogPub.publish("No feedback requested")
+                self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
             break
 
@@ -287,11 +287,11 @@ class armReacherGUI:
                 self.proceedPub.publish("Done");                
                 #self.proceedPub.publish("Next: Done");
                 if self.log is not None:
-                    self.falselogPub.publish("Requesting Feedback!")    
+                    self.logRequestPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
                     self.log.close_log_file_GUI()
                 else:
-                    self.falselogPub.publish("No feedback requested")
+                    self.logRequestPub.publish("No feedback requested")
 
                 self.FeedNumber = 4
                     
@@ -303,7 +303,19 @@ class armReacherGUI:
                 #self.proceedPub.publish("Done");
                 break
 
-        
+
+    def cleanMotion(self, armReachActionLeft, armReachActionRight):
+        rospy.loginfo("Initializing arms")
+        self.ServiceCallLeft("getBowlPos")            
+        leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("cleanSpoon1",))
+        rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("cleanSpoon1",))
+        leftProc.start(); rightProc.start()
+        leftProc.join(); rightProc.join()
+        self.ScoopNumber = 1
+        self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
+        self.proceedPub.publish("Next: Scooping 3")
+
+            
     def ServiceCallLeft(self, cmd):
         if self.left_mtx is not True:
             self.left_mtx = True
@@ -377,8 +389,8 @@ if __name__ == '__main__':
     
     if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=True, vision_change=False, pps=True, skin=False, \
-                     subject="park", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     vision_landmark=False, vision_change=False, pps=True, skin=False, \
+                     subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None
