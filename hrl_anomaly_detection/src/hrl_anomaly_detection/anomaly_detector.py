@@ -56,6 +56,7 @@ from hrl_anomaly_detection.classifiers.classifier_util import *
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
+from hrl_msgs.msg import FloatArray
 
 #
 from matplotlib import pyplot as plt
@@ -108,7 +109,7 @@ class anomaly_detector:
         self.nRecentTests = 2
         self.ll_recent_test_X = deque([],self.nRecentTests)
         self.ll_recent_test_Y = deque([],self.nRecentTests)
-        self.nTests           = 20 
+        self.nTests           = 10 
         self.ll_test_X        = deque([],self.nTests)
         self.ll_test_Y        = deque([],self.nTests)
 
@@ -209,10 +210,8 @@ class anomaly_detector:
         self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
 
-        self.accuracy_all_pub = rospy.Publisher("manipulation_task/acc_all",\
-                                                Float64, queue_size=QUEUE_SIZE, latch=True)
-        self.accuracy_part_pub = rospy.Publisher("manipulation_task/acc_part",\
-                                            Float64, queue_size=QUEUE_SIZE, latch=True)
+        self.accuracy_pub = rospy.Publisher("manipulation_task/eval_status",\
+                                            FloatArray, queue_size=QUEUE_SIZE, latch=True)
 
 
         # Subscriber # TODO: topic should include task name prefix?
@@ -423,9 +422,10 @@ class anomaly_detector:
             
         # info for GUI
         self.pubSensitivity()
-        acc, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        self.accuracy_all_pub.publish(acc)
-        self.accuracy_part_pub.publish(0.0)
+        self.acc_part, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        msg = FloatArray()
+        msg.data = [self.acc_part, 100.0]
+        self.accuracy_pub.publish(msg)
         ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
 
 
@@ -561,12 +561,14 @@ class anomaly_detector:
         rospy.loginfo( "Classifier is updated!")
 
         if len(self.ll_recent_test_X) > 0:
-            acc, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
-                                   self.classifier)
-            self.accuracy_part_pub.publish(acc)            
+            self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
+                                        self.classifier)
         else:
-            acc, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-            self.accuracy_all_pub.publish(acc)                                   
+            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+
+        msg = FloatArray()
+        msg.data = [self.acc_part, self.acc_all]            
+        self.accuracy_pub.publish(msg)                                   
             
         self.pubSensitivity()
 
@@ -717,7 +719,7 @@ class anomaly_detector:
                 rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                 self.classifier.set_params( class_weight=1.0 )                
                 self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
-                                              test_X, test_Y, nMaxIter=200)
+                                              test_X, test_Y, nMaxIter=10)
                 self.classifier.set_params( class_weight=self.w_positive )
             else:
                 rospy.loginfo( "Not available update method")
@@ -729,15 +731,16 @@ class anomaly_detector:
 
             self.pubSensitivity()
             print "################ Only recent data #####################"
-            acc, _, _ = evaluation(list(test_X), list(test_Y), \
+            self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
                                    self.classifier)
             ## acc, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
             ##                        self.classifier)
-            self.accuracy_part_pub.publish(acc)            
             print "################ CUMULATIVE EVAL #####################"
-            acc, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-            self.accuracy_all_pub.publish(acc)                                   
+            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
             print "###########################################"
+            msg = FloatArray()
+            msg.data = [self.acc_part, self.acc_all]
+            self.accuracy_pub.publish(msg)                                   
 
             # update file list
             self.used_file_list += self.unused_fileList
@@ -1008,9 +1011,6 @@ class anomaly_detector:
                 
                 X_scaled = self.scaler.transform(X_test)
                 y_est    = self.classifier.predict(X_scaled)
-                print "Before######################################33"
-                print y_est
-                print "Before######################################33"
 
                 for ii in xrange(len(y_est[self.startCheckIdx:])):
                     if y_est[ii] > 0.0:
@@ -1028,10 +1028,16 @@ class anomaly_detector:
                     msg.data = 'SUCCESS'
                     self.userfbCallback(msg)
 
-                print "Confirm######################################33"
-                y_est    = self.classifier.predict(X_scaled)
-                print y_est
-                print "Confirm######################################33"
+                if (label ==1 and self.anomaly_flag is False) or \
+                  (label ==-1 and self.anomaly_flag is True):
+                    print "Before######################################33"
+                    print y_est
+                    print "Before######################################33"
+
+                    print "Confirm######################################33"
+                    y_est    = self.classifier.predict(X_scaled)
+                    print y_est
+                    print "Confirm######################################33"
                     
                 fb =  ut.get_keystroke('Hit a key after providing user fb')
                 if fb == 'z' or fb == 's': break
@@ -1240,6 +1246,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, ):
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
         if abs(cost-last_cost) < 0.001: break
+        if cost-last_cost > 0.01: break
         last_cost = cost
         
         ## dCoef = np.linalg.norm(last_Coef-copy.deepcopy(clf.dt.coef_))        
@@ -1366,16 +1373,15 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
-                                                              bAESwitch=opt.bAESwitch, \
                                                               nPoints=10)
         
         if opt.task == 'scooping':
             ## subject_names = ['test'] 
             ## subject_names = ['Zack'] 
-            subject_names = ['park'] 
+            subject_names = ['park', 'new'] 
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
-              subject_names[0]+'_'+opt.task+'_data/demo'
+              opt.task+'_demo_data'
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
                                  'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
                                  'sgd_gamma':0.32, 'sgd_w_negative':2.5,}
@@ -1385,10 +1391,10 @@ if __name__ == '__main__':
 
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
-            subject_names = ['park'] 
+            subject_names = ['park', 'hkim', 'new'] #, 'zack'
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
-              subject_names[0]+'_'+opt.task+'_data/demo'
+              opt.task+'_demo_data'
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
                                  'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
                                  'sgd_gamma':0.32, 'sgd_w_negative':2.5}
