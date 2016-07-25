@@ -1362,14 +1362,17 @@ if __name__ == '__main__':
             sys.exit()
     else:
         from hrl_anomaly_detection.ICRA2017_params import *
+
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=10)
         
         if opt.task == 'scooping':
             ## subject_names = ['test'] 
             ## subject_names = ['Zack'] 
             subject_names = ['park'] 
-            raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                    False, False,\
-                                                                    rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
               subject_names[0]+'_'+opt.task+'_data/demo'
@@ -1383,9 +1386,6 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
             subject_names = ['park'] 
-            raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                                    False, False,\
-                                                                    rf_center, local_range, dim=opt.dim)
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
               subject_names[0]+'_'+opt.task+'_data/demo'
