@@ -181,9 +181,9 @@ class armReachAction(mpcBaseAction):
 
         ## Init arms ---------------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
-        self.motions['cleanSpoon1']['left']  = [['MOVES', '[ 0.05, 0.0,  -0.005, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
+        self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.005, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
                                                 ['PAUSE', 3.0],\
-                                                ['MOVES', '[ 0.05, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
+                                                ['MOVEL', '[ 0.0, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
         self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\
                                                 ['MOVET', '[0., -0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'],\
                                                 ['PAUSE', 2.0],\
@@ -216,9 +216,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVEL', '[-0.05, 0.0-self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
-           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
-           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -319,7 +319,7 @@ class armReachAction(mpcBaseAction):
         print 'Highest Point original position:', [data.x, data.y, data.z]
         print 'Bowl Position:', self.bowlPosition
 	# Subtract 0.01 to account for the bowl center position being slightly off center
-        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.01
+        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.015
         print '-'*25
         print 'Highest bowl point difference:', self.highBowlDiff
         print '-'*25
