@@ -106,7 +106,7 @@ class armReachAction(mpcBaseAction):
                                            queue_size=QUEUE_SIZE, latch=True)
         self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
                                         queue_size=QUEUE_SIZE, latch=True)
-        self.kinect_pause = rospy.Publisher('/pause_kinect', String, queue_size=QUEUE_SIZE, latch=True)
+        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
@@ -226,12 +226,17 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding3'] = {}
+        ## self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        ##                                       ['PAUSE', 1.0]]
         self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 0.5],
-                                              ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
+                                              ['MOVES', '[-0.02, 0.0, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame']]
+        ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        ##                                       ['PAUSE', 0.5],
+        ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
 
         rospy.loginfo("Parameters are loaded.")
 
