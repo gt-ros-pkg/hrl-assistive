@@ -86,6 +86,23 @@ class realsense_vision():
                                            msg.pose.orientation.z,
                                            msg.pose.orientation.w]).reshape(4,1)
 
+            # temp, preprocessing to use upright mouth frame
+            ## tx = PyKDL.Vector(1.0, 0.0, 0.0)
+            ## ty = PyKDL.Vector(0.0, 1.0, 0.0)
+            ## M = PyKDL.Rotation.Quaternion(msg.pose.orientation.x, msg.pose.orientation.y,
+            ##                               msg.pose.orientation.z, msg.pose.orientation.w)
+            ## px = PyKDL.dot(tx, M.UnitZ())
+            ## py = PyKDL.dot(ty, M.UnitZ())
+            ## mouth_z = PyKDL.Vector(px, py, 0.0)
+            ## mouth_z.Normalize()
+            ## mouth_x = PyKDL.Vector(0.0, 0.0, 1.0)
+            ## mouth_y = mouth_z * mouth_x
+            ## M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
+            ## self.landmark_quat = np.array([M.GetQuaternion()[0],
+            ##                                M.GetQuaternion()[1],
+            ##                                M.GetQuaternion()[2],
+            ##                                M.GetQuaternion()[3]]).reshape(4,1)
+
             if self.verbose: print np.shape(self.landmark_pos)
             
     def test(self, save_pdf=False):

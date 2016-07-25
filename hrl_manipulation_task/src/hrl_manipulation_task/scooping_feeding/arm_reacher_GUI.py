@@ -131,9 +131,9 @@ class armReacherGUI:
             
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
 
+        self.availablePub.publish("true")
         if self.log != None: self.log.close_log_file_GUI()
         rospy.sleep(2.0)
-        self.availablePub.publish("true")
 
     def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
@@ -145,6 +145,7 @@ class armReacherGUI:
             self.inputStatus = False
             self.actionStatus = msg.data
             rospy.loginfo("status received")
+            self.availablePub.publish("true")
             if self.log != None:
                 if self.actionStatus == "Scooping":
                     self.log.setTask('scooping')
@@ -152,7 +153,6 @@ class armReacherGUI:
                     self.log.setTask('feeding')
 
                 print "" + self.log.task
-            self.availablePub.publish("true")
 
 
     # --------------------------------------------------------------------------
@@ -171,6 +171,7 @@ class armReacherGUI:
             elif self.inputStatus and self.actionStatus == 'Init':
                 self.inputStatus = False
                 rospy.loginfo("Init motion...")
+                # TODO: cleaning motion
                 self.initMotion(self.armReachActionLeft, self.armReachActionRight)
                 self.proceedPub.publish("Start: initialize,")
                 self.falselogPub.publish("Requesting Feedback!")
@@ -377,7 +378,7 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
-                     subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     subject="park", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None
