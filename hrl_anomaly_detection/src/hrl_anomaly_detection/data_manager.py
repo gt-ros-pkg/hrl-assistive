@@ -1472,11 +1472,11 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
     if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]    
-    print "Before scaling, max is: ", param_dict['feature_max']
-    print "Before scaling, min is: ", param_dict['feature_min']
-    print "Cur scale, max is: ", [ np.max(np.array(feature).flatten()) for feature in features ]
-    print "Cur scale, min is: ", [ np.min(np.array(feature).flatten()) for feature in features ]
-    print "-----------------------------------------------------------------"
+    ## print "Before scaling, max is: ", param_dict['feature_max']
+    ## print "Before scaling, min is: ", param_dict['feature_min']
+    ## print "Cur scale, max is: ", [ np.max(np.array(feature).flatten()) for feature in features ]
+    ## print "Cur scale, min is: ", [ np.min(np.array(feature).flatten()) for feature in features ]
+    ## print "-----------------------------------------------------------------"
                 
     scaled_features = []
     for i, feature in enumerate(features):
