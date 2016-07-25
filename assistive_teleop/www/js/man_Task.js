@@ -7,7 +7,7 @@ function fullscreenStart(div_id) {
                    "height":"100%",
                    "z-index":"10",
                    "position":"fixed"});
-    return {'width':curr_w, 'height':curr_h, "z-index":curr_z, "position":curr_p};
+    return {'height':"0%"};
 }
 function fullscreenStop(div_id, previous_css) {
     $(div_id).css(previous_css);
@@ -30,7 +30,7 @@ function disableButton(button_id) {
     $(button_id).css("opacity", "0.6");
     $(button_id).css("pointer-events", "none"); 
 }
-var previous_css = {};
+var previous_css = {'height':"0%"};
 var ManipulationTask = function (ros) {
     'use strict';
     var manTask = this;
@@ -44,6 +44,7 @@ var ManipulationTask = function (ros) {
     manTask.current_step = 1;
     manTask.max_step = 0;
     manTask.feedback_received = false;
+    manTask.handshaked = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -248,6 +249,127 @@ var ManipulationTask = function (ros) {
         fullscreenStop('#fullscreenOverlay', previous_css);
     });
 
+    manTask.guiStatusSub = new manTask.ros.Topic({
+        name: 'manipulation_task/gui_status',
+        messageType: 'std_msgs/String'});
+    manTask.guiStatusSub.subscribe(function(msg) {
+        if(msg.data == 'select task') {
+            enableButton('#man_task_Scooping');
+            enableButton('#man_task_Feeding');
+            enableButton('#man_task_Init');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Skip');
+
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            enableButton('#ad_scooping_sense_min');
+            enableButton('#ad_scooping_sense_max');
+            enableButton('#ad_scooping_slider');
+            enableButton('#ad_feeding_sense_min');
+            enableButton('#ad_feeding_sense_max');
+            enableButton('#ad_feeding_slider');
+            manTask.available=true;
+        } else if (msg.data == 'wait start') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+        } else if (msg.data == 'in motion') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+
+            previous_css = fullscreenStart('#fullscreenOverlay', previous_css);
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');            
+            manTask.available=true;
+        } else if (msg.data == 'stopping') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+            manTask.available=false;
+        } else if (msg.data == 'stopped') {
+            enableButton('#man_task_Scooping');
+            enableButton('#man_task_Feeding');
+            enableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            enableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+            
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            enableButton('#ad_scooping_sense_min');
+            enableButton('#ad_scooping_sense_max');
+            enableButton('#ad_scooping_slider');
+            enableButton('#ad_feeding_sense_min');
+            enableButton('#ad_feeding_sense_max');
+            enableButton('#ad_feeding_slider');
+            manTask.available=true;
+        } else if (msg.data == 'request feedback') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Init');
+            disableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            enableButton('#man_task_success');
+            enableButton('#man_task_Fail');
+            disableButton('#man_task_start');
+            enableButton('#man_task_Skip');
+
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            enableButton('#ad_scooping_sense_min');
+            enableButton('#ad_scooping_sense_max');
+            enableButton('#ad_scooping_slider');
+            enableButton('#ad_feeding_sense_min');
+            enableButton('#ad_feeding_sense_max');
+            enableButton('#ad_feeding_slider');
+            manTask.available=false;
+        }
+        manTask.handshaked = true;
+    });
+
     manTask.proceedSub = new manTask.ros.Topic({
         name: 'manipulation_task/proceed',
         messageType: 'std_msgs/String'});
@@ -294,7 +416,19 @@ var ManipulationTask = function (ros) {
             document.getElementById('step_table2').innerHTML = arr[0];
             document.getElementById('step_table3').innerHTML = arr[1];
             glow('#step_table2');
-
+        } else if (cmd == "Set") {
+            var comma_loc = 0;
+            var arr       = [];
+            for (var i = 0; i <= sub_cmd.length; i++) {
+                if (sub_cmd.charAt(i) == ',' || i == sub_cmd.length) {
+                    arr.push(sub_cmd.substring(comma_loc, i));
+                    comma_loc = i + 1;
+                }
+            }
+            document.getElementById('step_table1').innerHTML = arr[0];
+            document.getElementById('step_table2').innerHTML = arr[1];
+            document.getElementById('step_table3').innerHTML = arr[2];
+            glow('#step_table2');
         } else if (cmd == "Done") {
             unglow('#step_table2');
             fullscreenStop('#fullscreenOverlay', previous_css);
@@ -341,6 +475,7 @@ var ManipulationTask = function (ros) {
     });
 
     //part added on 4/7 to accomodate anomaly signal.
+    /*
     manTask.emergencySub = new manTask.ros.Topic({
         name: 'manipulation_task/emergency',
         messageType: 'std_msgs/String'});
@@ -368,7 +503,7 @@ var ManipulationTask = function (ros) {
         }
 
     });
-
+    */
 
 
 
@@ -378,6 +513,10 @@ var initManTaskTab = function() {
     assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
     assistive_teleop.log('initiating manipulation Task');
     $('#man_task_Scooping').click(function(){
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.scoop();
+        }
+        /*
         if (assistive_teleop.manTask.scoop()) {
             /*
             var table = document.getElementById('step_table');
@@ -390,6 +529,7 @@ var initManTaskTab = function() {
             }
             glow('#step_table' + (1));
             */
+        /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
             disableButton('#man_task_Init');
@@ -400,9 +540,14 @@ var initManTaskTab = function() {
             enableButton('#man_task_start');
             disableButton('#man_task_Skip');
         }
+        */
     });
 
     $('#man_task_Feeding').click(function(){
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.feed();
+        }
+        /*
         if (assistive_teleop.manTask.feed()) {
             /*
             var table = document.getElementById('step_table');
@@ -415,6 +560,7 @@ var initManTaskTab = function() {
             }
             glow('#step_table1');
             */
+        /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
             disableButton('#man_task_Init');
@@ -425,9 +571,14 @@ var initManTaskTab = function() {
             enableButton('#man_task_start');
             disableButton('#man_task_Skip');
         }
+        */
     });
 
     $('#man_task_Init').click(function(){
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.both();
+        }
+        /*
         if(assistive_teleop.manTask.both()) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -439,7 +590,7 @@ var initManTaskTab = function() {
             enableButton('#man_task_start');
             disableButton('#man_task_Skip');
         }
- 
+        */
     });
     $('#man_task_start').click(function(){
         if(assistive_teleop.manTask.start()) {
@@ -447,6 +598,7 @@ var initManTaskTab = function() {
             document.getElementById('step_table2').innerHTML = "Waiting for robot";
             unglow('#step_table2');
             document.getElementById('step_table3').innerHTML = " ";
+            /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
             disableButton('#man_task_Init');
@@ -464,11 +616,13 @@ var initManTaskTab = function() {
             disableButton('#ad_feeding_sense_min');
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');
+            */
         }
 
     });
     $('#man_task_stop').click(function(){
         assistive_teleop.manTask.stop();
+        /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
         enableButton('#man_task_Init');
@@ -486,10 +640,11 @@ var initManTaskTab = function() {
         enableButton('#ad_feeding_sense_min');
         enableButton('#ad_feeding_sense_max');
         enableButton('#ad_feeding_slider');
- 
+        */
     });
     $('#fullscreenOverlay').click(function(){
         assistive_teleop.manTask.stop();
+        /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
         enableButton('#man_task_Init');
@@ -507,9 +662,11 @@ var initManTaskTab = function() {
         enableButton('#ad_feeding_sense_min');
         enableButton('#ad_feeding_sense_max');
         enableButton('#ad_feeding_slider');
- 
+        */
     });
     $('#man_task_Continue').click(function(){
+        assistive_teleop.manTask.continue_();
+        /*
         if (assistive_teleop.manTask.continue_()) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -529,9 +686,11 @@ var initManTaskTab = function() {
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');
         }
+        */
     });
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();
+        /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
         enableButton('#man_task_Init');
@@ -548,10 +707,11 @@ var initManTaskTab = function() {
         enableButton('#ad_feeding_sense_min');
         enableButton('#ad_feeding_sense_max');
         enableButton('#ad_feeding_slider');
-
+        */
     });
     $('#man_task_Fail').click(function(){
         assistive_teleop.manTask.failure();
+        /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
         enableButton('#man_task_Init');
@@ -568,10 +728,12 @@ var initManTaskTab = function() {
         enableButton('#ad_feeding_sense_min');
         enableButton('#ad_feeding_sense_max');
         enableButton('#ad_feeding_slider');
+        */
     });
 
     $('#man_task_Skip').click(function(){
         assistive_teleop.manTask.skip();
+        /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
         enableButton('#man_task_Init');
@@ -588,6 +750,7 @@ var initManTaskTab = function() {
         enableButton('#ad_feeding_sense_min');
         enableButton('#ad_feeding_sense_max');
         enableButton('#ad_feeding_slider');
+        */
     });
 
 

@@ -67,6 +67,7 @@ class armReacherGUI:
         self.status_lock = threading.RLock()
         self.encountered_emergency = 0
         self.expected_emergency = 0
+        self.guiStatusReady = False
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
@@ -78,22 +79,25 @@ class armReacherGUI:
         self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
         self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String)
-        self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String) 
+        self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String, queue_size=2, latch=True) 
+        self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
 
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
         self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=2)
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
+        self.guiStatusSub = rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
         
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
         self.armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
         self.armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
-        
 
     def inputCallback(self, msg):
         #Callback function for input. It communicate with both start and continue button.
+        if not self.guiStatusReady:
+            return
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
         with self.status_lock:
@@ -107,6 +111,7 @@ class armReacherGUI:
             self.inputStatus = True
             #Maybe had to add if statement.
             self.emergencyStatus = False
+            self.guiStatusPub.publish("in motion")
             print "Input received"
 
 
@@ -116,7 +121,11 @@ class armReacherGUI:
         self.inputStatus = False
         self.emergencyMsg = msg.data
         if self.emergencyMsg == 'STOP':
-            self.emergencyPub.publish("STOP")
+            if self.guiStatusReady:
+                self.emergencyPub.publish("STOP")
+            else:
+                return
+        self.guiStatusPub.publish("stopping")
         print "Emergency received"
         if self.log != None:
             if self.log.getLogStatus(): self.log.log_stop()
@@ -132,20 +141,27 @@ class armReacherGUI:
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
 
         self.availablePub.publish("true")
+        self.guiStatusPub.publish("stopped")
         if self.log != None: self.log.close_log_file_GUI()
         rospy.sleep(2.0)
 
     def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
+        if not self.guiStatusReady:
+            return
         self.feedbackMsg = msg.data
+        self.guiStatusPub.publish("select task")
 
     def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
+        if not self.guiStatusReady:
+            return
         with self.status_lock:
             self.inputStatus = False
             self.actionStatus = msg.data
             rospy.loginfo("status received")
             self.availablePub.publish("true")
+            self.guiStatusPub.publish("wait start")
             if self.log != None:
                 if self.actionStatus == "Scooping":
                     self.log.setTask('scooping')
@@ -154,12 +170,21 @@ class armReacherGUI:
 
                 print "" + self.log.task
 
+    def guiCallback(self, msg):
+        self.guiStatusReady = True
 
     # --------------------------------------------------------------------------
     def run(self):
         rospy.loginfo("Continous run function called")
         rate = rospy.Rate(10)
+
         while not rospy.is_shutdown():
+            if not self.guiStatusReady:
+                self.guiStatusPub.publish("select task")
+                #self.availablePub.publish("true")
+                print "stuck?"
+                rate.sleep()
+                continue
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
                 rospy.loginfo("Scooping Starting...")
@@ -175,6 +200,7 @@ class armReacherGUI:
                 self.cleanMotion(self.armReachActionLeft, self.armReachActionRight)
                 self.proceedPub.publish("Start: initialize,")
                 self.logRequestPub.publish("Requesting Feedback!")
+                self.guiStatusPub.publish("request feedback")
             rate.sleep()
 
 
@@ -185,8 +211,9 @@ class armReacherGUI:
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
         self.ScoopNumber = 1
-        self.proceedPub.publish("Start: Scooping 1, Scooping 2")
-        self.proceedPub.publish("Next: Scooping 3")
+        self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
+        #self.proceedPub.publish("Start: Scooping 1, Scooping 2")
+        #self.proceedPub.publish("Next: Scooping 3")
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):
@@ -199,25 +226,27 @@ class armReacherGUI:
             
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
-                self.proceedPub.publish("Start: Scooping 1, Scooping 2");
+                #self.proceedPub.publish("Start: Scooping 1, Scooping 2")
+                self.proceedPub.publish("Set: , Scooping 1, Scooping 2")
                 rospy.loginfo("Initializing arms for scooping")
                 self.initMotion(armReachActionLeft, armReachActionRight)
                 if self.emergencyStatus: break
                 self.ScoopNumber = 1
-                #self.proceedPub.publish("Next: Scooping 3");
+                #self.proceedPub.publish("Next: Scooping 3")
         
             if self.ScoopNumber < 2:        
                 self.ServiceCallLeft("getBowlPos")            
                 self.ServiceCallLeft('lookAtBowl')
                 if self.emergencyStatus: break
                 self.ScoopNumber = 2            
-                self.proceedPub.publish("Next: Scooping 4");
-                
+                #self.proceedPub.publish("Next: Scooping 4")
+                self.proceedPub.publish("Set: Scooping 2, Scooping 3, Scooping 4")
             if self.ScoopNumber < 3:        
                 self.ServiceCallLeft("initScooping2")
                 if self.emergencyStatus: break
                 self.ScoopNumber = 3            
-                self.proceedPub.publish("Next: Done");
+                #self.proceedPub.publish("Next: Done")
+                self.proceedPub.publish("Set: Scooping 3, Scooping 4, Done")
     
             if self.log is not None:
                 self.log.log_start()
@@ -228,7 +257,8 @@ class armReacherGUI:
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
-            self.proceedPub.publish("Done");
+            self.proceedPub.publish("Done")
+            self.guiStatusPub.publish("request feedback")
             if self.log is not None:
                 self.logRequestPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
@@ -249,7 +279,7 @@ class armReacherGUI:
             if self.FeedNumber < 1:
                 ## Feeding -----------------------------------
                 rospy.loginfo("Initializing left arm for feeding")
-                self.proceedPub.publish("Start: Feeding 1, Feeding 2");
+                self.proceedPub.publish("Set: , Feeding 1, Feeding 2")
                 self.ServiceCallLeft("lookToRight")
                 if self.emergencyStatus: break
                 self.ServiceCallLeft("initFeeding1")
@@ -258,21 +288,24 @@ class armReacherGUI:
                 self.ServiceCallRight("initFeeding")
                 if self.emergencyStatus: break                
                 self.FeedNumber = 1
-                self.proceedPub.publish("Next: Feeding 3");
+                #self.proceedPub.publish("Next: Feeding 3")
+                self.proceedPub.publish("Set: Feeding 1, Feeding 2, Feeding 3")
     
             if self.FeedNumber < 2:
                 rospy.loginfo("Detect a mouth")
                 self.ServiceCallLeft("getHeadPos")
                 self.ServiceCallLeft("initFeeding2")
                 self.FeedNumber = 2
-                self.proceedPub.publish("Next: Feeding 4");
+                #self.proceedPub.publish("Next: Feeding 4")
+                self.proceedPub.publish("Set: Feeding 2, Feeding 3, Feeding 4")
     
             if self.FeedNumber < 3:
                 rospy.loginfo("Running init feeding2")
                 self.ServiceCallLeft("initFeeding3")
                 if self.emergencyStatus: break
                 self.FeedNumber = 3
-                self.proceedPub.publish("Next: retrieving");
+                #self.proceedPub.publish("Next: retrieving")
+                self.proceedPub.publish("Set: Feeding 3, Feeding 4, retrieving")
     
             if self.FeedNumber < 4:
                 if self.log is not None:
@@ -284,8 +317,9 @@ class armReacherGUI:
                 if self.emergencyStatus:
                     if detection_flag: self.log.enableDetector(False)                
                     break
-                self.proceedPub.publish("Done");                
-                #self.proceedPub.publish("Next: Done");
+                self.proceedPub.publish("Done")
+                #self.proceedPub.publish("Next: Done")
+                self.guiStatusPub.publish("request feedback")
                 if self.log is not None:
                     self.logRequestPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
@@ -300,7 +334,7 @@ class armReacherGUI:
                 self.ServiceCallLeft("initFeeding2")
                 if self.emergencyStatus: break
                 self.FeedNumber = 0
-                #self.proceedPub.publish("Done");
+                #self.proceedPub.publish("Done")
                 break
 
 
@@ -312,8 +346,9 @@ class armReacherGUI:
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
         self.ScoopNumber = 1
-        self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
-        self.proceedPub.publish("Next: Scooping 3")
+        #self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
+        #self.proceedPub.publish("Next: Scooping 3")
+        self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
 
             
     def ServiceCallLeft(self, cmd):
