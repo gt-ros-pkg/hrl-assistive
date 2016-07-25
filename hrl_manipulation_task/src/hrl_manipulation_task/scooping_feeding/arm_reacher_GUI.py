@@ -96,6 +96,8 @@ class armReacherGUI:
 
     def inputCallback(self, msg):
         #Callback function for input. It communicate with both start and continue button.
+        if not self.guiStatusReady:
+            return
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
         with self.status_lock:
@@ -117,10 +119,13 @@ class armReacherGUI:
         #Emergency status button.
         self.emergencyStatus = True
         self.inputStatus = False
-        self.guiStatusPub.publish("stopping")
         self.emergencyMsg = msg.data
         if self.emergencyMsg == 'STOP':
-            self.emergencyPub.publish("STOP")
+            if self.guiStatusReady:
+                self.emergencyPub.publish("STOP")
+            else:
+                return
+        self.guiStatusPub.publish("stopping")
         print "Emergency received"
         if self.log != None:
             if self.log.getLogStatus(): self.log.log_stop()
@@ -142,11 +147,15 @@ class armReacherGUI:
 
     def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
+        if not self.guiStatusReady:
+            return
         self.feedbackMsg = msg.data
         self.guiStatusPub.publish("select task")
 
     def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
+        if not self.guiStatusReady:
+            return
         with self.status_lock:
             self.inputStatus = False
             self.actionStatus = msg.data
@@ -172,6 +181,7 @@ class armReacherGUI:
         while not rospy.is_shutdown():
             if not self.guiStatusReady:
                 self.guiStatusPub.publish("select task")
+                #self.availablePub.publish("true")
                 print "stuck?"
                 rate.sleep()
                 continue

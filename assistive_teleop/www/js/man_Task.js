@@ -44,6 +44,7 @@ var ManipulationTask = function (ros) {
     manTask.current_step = 1;
     manTask.max_step = 0;
     manTask.feedback_received = false;
+    manTask.handshaked = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -270,6 +271,7 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_min');
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
+            manTask.available=true;
         } else if (msg.data == 'wait start') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -306,6 +308,7 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_sense_min');
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');            
+            manTask.available=true;
         } else if (msg.data == 'stopping') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -324,6 +327,7 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_sense_min');
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');
+            manTask.available=false;
         } else if (msg.data == 'stopped') {
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
@@ -342,6 +346,7 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_min');
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
+            manTask.available=true;
         } else if (msg.data == 'request feedback') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -360,7 +365,9 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_min');
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
+            manTask.available=false;
         }
+        manTask.handshaked = true;
     });
 
     manTask.proceedSub = new manTask.ros.Topic({
@@ -506,7 +513,9 @@ var initManTaskTab = function() {
     assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
     assistive_teleop.log('initiating manipulation Task');
     $('#man_task_Scooping').click(function(){
-        assistive_teleop.manTask.scoop();
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.scoop();
+        }
         /*
         if (assistive_teleop.manTask.scoop()) {
             /*
@@ -535,7 +544,9 @@ var initManTaskTab = function() {
     });
 
     $('#man_task_Feeding').click(function(){
-        assistive_teleop.manTask.feed();
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.feed();
+        }
         /*
         if (assistive_teleop.manTask.feed()) {
             /*
@@ -564,7 +575,9 @@ var initManTaskTab = function() {
     });
 
     $('#man_task_Init').click(function(){
-        assistive_teleop.manTask.both();
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.both();
+        }
         /*
         if(assistive_teleop.manTask.both()) {
             disableButton('#man_task_Scooping');
