@@ -227,6 +227,7 @@ class armReacherGUI:
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
+            self.proceedPub.publish("Done");
             if self.log is not None:
                 self.falselogPub.publish("Requesting Feedback!")    
                 if detection_flag: self.log.enableDetector(False)
@@ -234,7 +235,6 @@ class armReacherGUI:
             else:
                 self.falselogPub.publish("No feedback requested")
             self.ScoopNumber = 0
-            self.proceedPub.publish("Done");
             break
 
     
@@ -283,7 +283,8 @@ class armReacherGUI:
                 if self.emergencyStatus:
                     if detection_flag: self.log.enableDetector(False)                
                     break
-                self.proceedPub.publish("Next: Done");
+                self.proceedPub.publish("Done");                
+                #self.proceedPub.publish("Next: Done");
                 if self.log is not None:
                     self.falselogPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
@@ -298,7 +299,7 @@ class armReacherGUI:
                 self.ServiceCallLeft("initFeeding2")
                 if self.emergencyStatus: break
                 self.FeedNumber = 0
-                self.proceedPub.publish("Done");
+                #self.proceedPub.publish("Done");
                 break
 
         
@@ -340,6 +341,8 @@ class armReacherGUI:
                 self.ServiceCallLeft("initFeeding2")
             elif self.FeedNumber<4:
                 self.ServiceCallLeft("initFeeding3")
+                self.FeedNumber = 2
+                self.ServiceCallLeft("initFeeding2")
             else: 
                 #print self.armReachActionLeft("runFeeding1")
                 self.ServiceCallLeft("initFeeding2")
@@ -374,7 +377,7 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
-                     subject="park", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None

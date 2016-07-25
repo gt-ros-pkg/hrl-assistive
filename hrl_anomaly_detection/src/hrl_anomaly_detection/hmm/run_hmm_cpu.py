@@ -46,7 +46,7 @@ from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, bSave=False):
 
     ## Parameters
     # data
@@ -358,12 +358,21 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         print("%0.3f : %0.3f (+/-%0.03f) for %r"
               % (score_array[i], mean_list[i], std_list[i], param_list[i]))
 
-    ## # Get sorted results
-    ## from operator import itemgetter
-    ## mean_list.sort(key=itemgetter(0), reverse=False)
+    if bSave: 
+        savefile = os.path.join(processed_data_path,'../','result_run_hmm.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'dim: '+str(nEmissionDim)+'\n' )
+                file.write( "%0.3f : %0.3f (+/-%0.03f) for %r"
+                            % (score_array[i], mean_list[i], std_list[i], param_list[i])+'\n\n' )
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'dim: '+str(nEmissionDim)+'\n' )
+                file.write( "%0.3f : %0.3f (+/-%0.03f) for %r"
+                            % (score_array[i], mean_list[i], std_list[i], param_list[i])+'\n\n' )
 
-    ## for i in xrange(len(results)):
-    ##     print results[i]
 
 
 def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, SVM_dict, weight, \
@@ -689,6 +698,8 @@ if __name__ == '__main__':
                  default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     opt, args = p.parse_args()
     
     rf_center     = 'kinEEPos'        
@@ -737,10 +748,11 @@ if __name__ == '__main__':
                                                                        ae_swtch=opt.bAESwitch, dim=opt.dim)
         parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
                       'cov': np.linspace(0.5,4.0,10) }
+    else:
+        print "Not available task"
 
     #--------------------------------------------------------------------------------------
     # test change of logp
-    param_dict['HMM']['add_logp_d'] = opt.bAddLogpD
     
     crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
     if os.path.isfile(crossVal_pkl):
@@ -750,5 +762,5 @@ if __name__ == '__main__':
         print "no existing data file, ", crossVal_pkl
         sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, bSave=opt.bSave)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

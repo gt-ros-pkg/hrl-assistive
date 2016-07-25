@@ -460,7 +460,7 @@ class learning_hmm(learning_base):
 def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp=True):
     '''
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
-    It returns [logp, d_logp/(d_post+c), post].
+    It returns [logp, last_post, post].
     '''
 
     X = []
@@ -471,11 +471,14 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
         for j in xrange(1,len(ll_logp[i])):
             if add_delta_logp:                    
                 if j == 0:
-                    l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                    ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() + ll_post[i][j].tolist() )
                 else:
-                    d_logp = ll_logp[i][j]-ll_logp[i][j-1]
-                    d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
-                    l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
+                    ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
+                    ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
+                    ## l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
+                    ##             ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j-1].tolist() + \
                                 ll_post[i][j].tolist() )
             else:
                 l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
