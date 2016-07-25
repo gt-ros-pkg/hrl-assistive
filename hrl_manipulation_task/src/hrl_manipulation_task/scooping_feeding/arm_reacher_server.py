@@ -179,6 +179,16 @@ class armReachAction(mpcBaseAction):
         self.motions['initArms']['left']  = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
         self.motions['initArms']['right'] = [['MOVEJ', '[-0.59, 0.0, -1.574, -1.041, 0.0, -1.136, -1.65]', 10.0]]
 
+        ## Init arms ---------------------------------------------------------------
+        self.motions['cleanSpoon1'] = {}
+        self.motions['cleanSpoon1']['left']  = [['MOVES', '[ 0.05, 0.0,  -0.005, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
+                                                ['PAUSE', 3.0],\
+                                                ['MOVES', '[ 0.05, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
+        self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\
+                                                ['MOVET', '[0., -0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'],\
+                                                ['PAUSE', 2.0],\
+                                                ['MOVET', '[0., 0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'] ]
+                                                
 
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame
@@ -187,8 +197,9 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping1'] = {}
         self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
                                                  ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
-        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.702]', 5.0],
-                                                  ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+        self.motions['initScooping1']['right'] = [['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+        ## ['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+                                                  
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
@@ -205,9 +216,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
-           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+          [['MOVEL', '[-0.05, 0.0-self.highBowlDiff[1],  0.045, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 1, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
@@ -228,7 +239,7 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding3'] = {}
         ## self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 1.0]]
-        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
