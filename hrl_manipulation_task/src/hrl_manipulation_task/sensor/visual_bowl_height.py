@@ -29,10 +29,8 @@
 #  \author Zackory Erickson (Healthcare Robotics Lab, Georgia Tech.)
 
 # system library
-import time
-import random
+import sys, time, random, signal, multiprocessing
 import numpy as np
-import multiprocessing
 
 # ROS library
 import rospy, roslib
@@ -61,6 +59,7 @@ class ArmReacherClient:
         self.tf = tf.TransformListener()
 
         self.verbose = verbose
+	self.started = False
         self.initialized = False
 	self.highestPointPublished = False
         self.bowlRawPos = None
@@ -74,9 +73,9 @@ class ArmReacherClient:
         self.highestBowlPointPublisher = rospy.Publisher('/hrl_manipulation_task/bowl_highest_point', Point, queue_size=10)
 
         # Connect to point cloud from Kinect
-        self.cloudSub = rospy.Subscriber('/head_mount_kinect/qhd/points', PointCloud2, self.cloudCallback)
+        self.cloudSub = rospy.Subscriber('/head_mount_kinect/sd/points', PointCloud2, self.cloudCallback)
         if self.verbose: print 'Connected to Kinect depth'
-        self.cameraSub = rospy.Subscriber('/head_mount_kinect/qhd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
+        self.cameraSub = rospy.Subscriber('/head_mount_kinect/sd/camera_info', CameraInfo, self.cameraRGBInfoCallback)
         if self.verbose: print 'Connected to Kinect camera info'
 
         # Connect to arm reacher
@@ -93,6 +92,10 @@ class ArmReacherClient:
 
     # Call this right after 'lookAtBowl' and right before 'initScooping2'
     def initialize(self):
+	if not self.started:
+	    # For some reason the initialize callback is trigger upon startup. This fixes that issue.
+	    self.started = True
+	    return
         self.reset()
         self.initialized = True
 
@@ -103,7 +106,7 @@ class ArmReacherClient:
     def bowlCallback(self, data):
         bowlPosePos = data.pose.position
         # Account for the fact  that the bowl center position is not directly in the center
-        self.bowlRawPos = [bowlPosePos.x + 0.015, bowlPosePos.y + 0.02, bowlPosePos.z]
+        self.bowlRawPos = [bowlPosePos.x + 0.005, bowlPosePos.y + 0.01, bowlPosePos.z]
         if self.verbose: print 'Bowl position:', self.bowlRawPos
 
     def cameraRGBInfoCallback(self, data):
@@ -114,12 +117,14 @@ class ArmReacherClient:
             self.pinholeCamera.fromCameraInfo(data)
 
     def initCallback(self, req):
-	self.initialize()
-	print 'Initialize Callback'
+        self.initialize()
+        print 'Initialize Callback'
 
     def cloudCallback(self, data):
         # print 'Time between cloud calls:', time.time() - self.cloudTime
         # startTime = time.time()
+
+	print 'cloud callback'
 
         # Wait to obtain cloud data until after arms have been initialized
         if not self.initialized or self.highestPointPublished:
@@ -154,8 +159,8 @@ class ArmReacherClient:
             print 'Unable to unpack from PointCloud2!'
             return
 
-	points3D = [x for x in points3D]
-	if self.verbose: self.publishPoints('allDepthPoints', points3D, r=0.5, g=0.5)
+        points3D = [x for x in points3D]
+        if self.verbose: self.publishPoints('allDepthPoints', points3D, r=0.5, g=0.5, frame='head_mount_kinect_ir_optical_frame')
 
         t = time.time()
 
@@ -175,6 +180,7 @@ class ArmReacherClient:
 
         if len(points3D) == 0:
             print 'No highest point detected within the bowl.'
+	    return
 
         # Find the highest point (based on Z axis value) that is within the bowl. Positive Z is facing towards the floor, so find the min Z value
         if self.verbose: print 'points3D:', np.shape(points3D)
@@ -201,7 +207,7 @@ class ArmReacherClient:
 
         # Use five multivariate (trivariate) Gaussian distributions in the bowl to determine the best scooping location (https://www.wikiwand.com/en/Multivariate_normal_distribution)
         # Shift bowl center location down to bottom of bowl
-	# Note: This is using torso_lift_link frame
+        # Note: This is using torso_lift_link frame
         bowlBottom = self.bowlRawPos + np.array([0, 0, 0.0])
         # mu (center) locations for Gaussian distributions are as follows: center, left, right, forwards, backwards)
         muLocations = [bowlBottom, bowlBottom + np.array([0, 0.03, 0]), bowlBottom + np.array([0, -0.03, 0]), bowlBottom + np.array([0.025, 0, 0]), bowlBottom + np.array([-0.025, 0, 0])]
@@ -235,9 +241,9 @@ class ArmReacherClient:
         # maxIndex = points3D[:, 2].argmax()
         # highestBowlPoint = np.array(points3D[maxIndex]) #+ np.array([0, 0.25, 0])
 
-	self.publishHighestBowlPoint(highestBowlPoint)
-	# We only want to publish the highest point once.
-	self.highestPointPublished = True
+        self.publishHighestBowlPoint(highestBowlPoint)
+        # We only want to publish the highest point once.
+        self.highestPointPublished = True
 
         # Publish highest bowl point and all 3D points in bowl
         if self.verbose:
@@ -271,6 +277,12 @@ class ArmReacherClient:
 if __name__ == '__main__':
     client = ArmReacherClient(verbose=True)
     # client.initialize()
+
+    def signal_handler(sig, frame):
+	client.cancel()
+	sys.exit()
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     rate = rospy.Rate(10) # 25Hz, nominally.
     while not rospy.is_shutdown():
