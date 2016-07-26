@@ -569,7 +569,9 @@ class anomaly_detector:
             self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
                                         self.classifier)
         else:
-            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+            self.acc_part = 0.0
+        self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        self.evaluation_ref()
 
         msg = FloatArray()
         msg.data = [self.acc_part, self.acc_all]            
@@ -618,12 +620,12 @@ class anomaly_detector:
                 unused_fileList = self.unused_fileList
                 
             # Remove no update data
-            if update_flag is False:
-                self.used_file_list += unused_fileList
-                self.unused_fileList = []
-                return
-            else:
-                self.unused_fileList = unused_fileList
+            ## if update_flag is False:
+            ##     self.used_file_list += unused_fileList
+            ##     self.unused_fileList = []
+            ##     ## return
+            ## else:
+            self.unused_fileList = unused_fileList
 
 
             rospy.loginfo( "Unused file list ------------------------")
@@ -688,8 +690,8 @@ class anomaly_detector:
             ## HMM
             ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
             X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
-            rospy.loginfo( "Features: "+ str(np.shape(X)) +" "+ str( np.shape(Y) ))
-            rospy.loginfo( "Currrent method: " + self.classifier_method)           
+            ## rospy.loginfo( "Features: "+ str(np.shape(X)) +" "+ str( np.shape(Y) ))
+            ## rospy.loginfo( "Currrent method: " + self.classifier_method)           
 
             test_X = [] #copy.copy(self.ll_recent_test_X) #need?
             test_Y = [] #copy.copy(self.ll_recent_test_Y)
@@ -720,31 +722,33 @@ class anomaly_detector:
                 #remove fp and shuffle                
                 p_train_X, p_train_Y, p_train_W = getProcessSGDdata(test_X, test_Y, \
                                                                     sample_weight=weight_list) 
-
-                rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
-                self.classifier.set_params( class_weight=1.0 )                
-                self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
-                                              test_X, test_Y, nMaxIter=10)
-                self.classifier.set_params( class_weight=self.w_positive )
+                if update_flag:
+                    rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
+                    self.classifier.set_params( class_weight=1.0 )                
+                    self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
+                                                  test_X, test_Y, nMaxIter=10)
+                    self.classifier.set_params( class_weight=self.w_positive )
             else:
                 rospy.loginfo( "Not available update method")
 
-
             # TODO: remove fake data
+            self.X_train_org = np.delete(self.X_train_org, np.s_[:len(p_train_X)], 0)
+            self.Y_train_org = np.delete(self.Y_train_org, np.s_[:len(p_train_Y)], 0)
             self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
             self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y])
 
-            self.pubSensitivity()
-            print "################ Only recent data #####################"
-            self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
-                                   self.classifier)
-            ## acc, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
+            # ------------------------------------------------------------------------------------------
+            print "################ Only recent data ####################"
+            self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
+                                        self.classifier)
+            ## self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
             ##                        self.classifier)
             print "################ CUMULATIVE EVAL #####################"
             self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-            print "###########################################"
-            self.evaluation_ref()
-            
+            print "######################################################"
+            if update_flag: self.evaluation_ref()
+
+            # pub accuracy
             msg = FloatArray()
             msg.data = [self.acc_part, self.acc_all]
             self.accuracy_pub.publish(msg)                                   
@@ -1035,16 +1039,16 @@ class anomaly_detector:
                     msg.data = 'SUCCESS'
                     self.userfbCallback(msg)
 
-                if (label ==1 and self.anomaly_flag is False) or \
-                  (label ==-1 and self.anomaly_flag is True):
-                    print "Before######################################33"
-                    print y_est
-                    print "Before######################################33"
+                ## if (label ==1 and self.anomaly_flag is False) or \
+                ##   (label ==-1 and self.anomaly_flag is True):
+                ##     print "Before######################################33"
+                ##     print y_est
+                ##     print "Before######################################33"
 
-                    print "Confirm######################################33"
-                    y_est    = self.classifier.predict(X_scaled)
-                    print y_est
-                    print "Confirm######################################33"
+                ##     print "Confirm######################################33"
+                ##     y_est    = self.classifier.predict(X_scaled)
+                ##     print y_est
+                ##     print "Confirm######################################33"
                     
                 fb =  ut.get_keystroke('Hit a key after providing user fb')
                 if fb == 'z' or fb == 's': break
@@ -1170,17 +1174,17 @@ class anomaly_detector:
             
         print "################ Reference data #####################"
         acc, _, _ = evaluation(list(self.eval_test_X), list(self.eval_test_Y), self.classifier)
-        print "###########################################"
+        print "#####################################################"
 
             
 ###############################################################################
 
-def optFunc(x, clf, scaler, X, Y, verbose=False):
+## def optFunc(x, clf, scaler, X, Y, verbose=False):
 
-    clf.dt.intercept_ = np.array([x])
-    ## acc, _, _ = evaluation(X, Y, clf, verbose=False)
-    ## return (100. - acc)/100.0
-    return evaluation_cost(X, Y, clf, verbose)
+##     clf.dt.intercept_ = np.array([x])
+##     ## acc, _, _ = evaluation(X, Y, clf, verbose=False)
+##     ## return (100. - acc)/100.0
+##     return evaluation_cost(X, Y, clf, verbose)
     
 
 def evaluation(X, Y, clf, verbose=False):
@@ -1278,7 +1282,7 @@ def evaluation_cost(X, Y, clf, verbose=False):
         print "Not available method"
         sys.exit()
 
-    if verbose: print "cost: ", np.sum(cost), ", intercept: ", clf.dt.intercept_
+    if verbose: print "cost: ", np.sum(cost) #,  ", intercept: ", clf.dt.intercept_
     if len(cost) == 0: return 0.0
     return np.sum(cost)
 
@@ -1292,7 +1296,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=100, sample_weight=W)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=20, sample_weight=W)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
