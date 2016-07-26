@@ -201,6 +201,7 @@ var ManipulationTask = function (ros) {
         }
     });
     //part added.
+    /*
     manTask.feedbackSub = new manTask.ros.Topic({
         name: 'manipulation_task/feedbackRequest',
         messageType: 'std_msgs/String'});
@@ -245,9 +246,11 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
             */
+    /*
         }
         fullscreenStop('#fullscreenOverlay', previous_css);
     });
+    */
 
     manTask.guiStatusSub = new manTask.ros.Topic({
         name: 'manipulation_task/gui_status',
@@ -369,7 +372,14 @@ var ManipulationTask = function (ros) {
         }
         manTask.handshaked = true;
     });
-
+    /*
+    manTask.adScoopingSliderSub = new manTask.ros.Topic({
+        name: 'scooping/manipulation_task/ad_senstivity_request',
+        messageType:'std_msgs/Float64'});
+    manTask.adScoopingSliderSub.subscribe(function (msg) {
+        
+    });
+    */
     manTask.proceedSub = new manTask.ros.Topic({
         name: 'manipulation_task/proceed',
         messageType: 'std_msgs/String'});
@@ -432,6 +442,7 @@ var ManipulationTask = function (ros) {
         } else if (cmd == "Done") {
             unglow('#step_table2');
             fullscreenStop('#fullscreenOverlay', previous_css);
+            /*
             if(manTask.feedback_received) {
                 enableButton('#man_task_Scooping');
                 enableButton('#man_task_Feeding');
@@ -459,6 +470,7 @@ var ManipulationTask = function (ros) {
                 disableButton('#man_task_start');
                 enableButton('#man_task_Skip');
             }
+            */
         }
     });
 
