@@ -1,12 +1,12 @@
 
 <launch>
 
-    <group ns="feeding" >
-      <arg name="ad_param" default="$(find hrl_anomaly_detection)/params/anomaly_detection_feeding.yaml" />    
+    <group ns="scooping" >
+      <arg name="ad_param" default="$(find hrl_anomaly_detection)/params/anomaly_detection_scooping.yaml" />    
       <rosparam command="load" file="$(arg ad_param)" />
 
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
-            type="anomaly_detector.py" args="--task feeding --dim 4
+            type="anomaly_detector.py" args="--task scooping --dim 4
                                              --m sgd --au --sim "
             output="screen" />
     </group>

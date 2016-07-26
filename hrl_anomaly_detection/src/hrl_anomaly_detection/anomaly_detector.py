@@ -114,7 +114,7 @@ class anomaly_detector:
         self.ll_test_Y        = deque([],self.nTests)
 
         # evaluation reference data
-        self.eval_fileList  = None
+        self.eval_fileList = None
         self.eval_test_X = None
         self.eval_test_Y = None
 
@@ -431,7 +431,7 @@ class anomaly_detector:
         self.accuracy_pub.publish(msg)
         ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
 
-        self.evaluation_ref()
+        if self.bSim: self.evaluation_ref()
         
 
     #-------------------------- Communication fuctions --------------------------
@@ -571,7 +571,7 @@ class anomaly_detector:
         else:
             self.acc_part = 0.0
         self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        self.evaluation_ref()
+        if self.bSim: self.evaluation_ref()
 
         msg = FloatArray()
         msg.data = [self.acc_part, self.acc_all]            
@@ -746,7 +746,7 @@ class anomaly_detector:
             print "################ CUMULATIVE EVAL #####################"
             self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
             print "######################################################"
-            if update_flag: self.evaluation_ref()
+            if update_flag and self.bSim: self.evaluation_ref()
 
             # pub accuracy
             msg = FloatArray()
