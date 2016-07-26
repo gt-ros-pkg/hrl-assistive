@@ -113,7 +113,10 @@ class anomaly_detector:
         self.ll_test_X        = deque([],self.nTests)
         self.ll_test_Y        = deque([],self.nTests)
 
-
+        # evaluation reference data
+        self.eval_fileList  = None
+        self.eval_test_X = None
+        self.eval_test_Y = None
 
         # Comms
         self.lock = threading.Lock()        
@@ -201,6 +204,7 @@ class anomaly_detector:
             self.w_min = np.log10(self.w_min)
 
 
+
     def initComms(self):
         # Publisher
         self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String,
@@ -209,7 +213,6 @@ class anomaly_detector:
                                                        queue_size=QUEUE_SIZE)
         self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
-
         self.accuracy_pub = rospy.Publisher("manipulation_task/eval_status",\
                                             FloatArray, queue_size=QUEUE_SIZE, latch=True)
 
@@ -428,6 +431,8 @@ class anomaly_detector:
         self.accuracy_pub.publish(msg)
         ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
 
+        self.evaluation_ref()
+        
 
     #-------------------------- Communication fuctions --------------------------
     def enablerCallback(self, msg):
@@ -738,6 +743,8 @@ class anomaly_detector:
             print "################ CUMULATIVE EVAL #####################"
             self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
             print "###########################################"
+            self.evaluation_ref()
+            
             msg = FloatArray()
             msg.data = [self.acc_part, self.acc_all]
             self.accuracy_pub.publish(msg)                                   
@@ -1121,7 +1128,51 @@ class anomaly_detector:
             rate = rospy.Rate(5) # 25Hz, nominally.            
             while not rospy.is_shutdown():
                 continue
-        
+
+    def evaluation_ref(self):
+
+        if self.eval_fileList is None:
+            self.eval_fileList = util.getSubjectFileList(self.raw_data_path, \
+                                                         self.param_dict['AD']['eval_target'], \
+                                                         self.task_name, \
+                                                         no_split=True)
+
+        if self.eval_test_X is None:
+            trainData = dm.getDataList(self.eval_fileList, self.rf_center, self.rf_radius,\
+                                       self.handFeatureParams,\
+                                       downSampleSize = self.downSampleSize, \
+                                       cut_data       = self.cut_data,\
+                                       handFeatures   = self.handFeatures)
+
+            # scaling and applying offset            
+            trainData = np.array(trainData)*self.scale
+            trainData = self.applying_offset(trainData)
+
+            Y_test_org = []
+            for f in self.eval_fileList:
+                if f.find("success")>=0:
+                    Y_test_org.append(-1)
+                elif f.find("failure")>=0:
+                    Y_test_org.append(1)
+            
+            # update
+            ## HMM
+            ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
+            X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
+
+            self.eval_test_X = [] #copy.copy(self.ll_recent_test_X) #need?
+            self.eval_test_Y = [] #copy.copy(self.ll_recent_test_Y)
+            for i in xrange(len(X)):
+
+                X_scaled = self.scaler.transform(X[i])
+                self.eval_test_X.append(X_scaled)
+                self.eval_test_Y.append(Y[i])
+            
+        print "################ Reference data #####################"
+        acc, _, _ = evaluation(list(self.eval_test_X), list(self.eval_test_Y), self.classifier)
+        print "###########################################"
+
+            
 ###############################################################################
 
 def optFunc(x, clf, scaler, X, Y, verbose=False):
@@ -1388,10 +1439,12 @@ if __name__ == '__main__':
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1
+            param_dict['AD']['eval_target'] = ['ref']
 
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
-            subject_names = ['park', 'hkim', 'new'] #, 'zack'
+            subject_names = ['zack', 'hkim', 'new'] #, 'zack'
+            
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
               opt.task+'_demo_data'
@@ -1401,12 +1454,13 @@ if __name__ == '__main__':
 
             param_dict['data_param']['nNormalFold']   = 1
             param_dict['data_param']['nAbnormalFold'] = 1
+            param_dict['AD']['eval_target'] = ['ref']
 
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
-                          debug=opt.bDebug)
+                          debug=opt.bDebug )
     if opt.bSim is False:
         ad.run()
     else:

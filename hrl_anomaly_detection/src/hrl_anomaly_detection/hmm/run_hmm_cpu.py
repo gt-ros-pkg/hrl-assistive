@@ -749,8 +749,8 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
-                                                              nPoints=10)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,5), \
+                                                              nPoints=5)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,20.0,10), \
                       'cov': np.linspace(1.0,6.0,5) }
         
 
