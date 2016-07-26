@@ -3,42 +3,47 @@ import numpy as np
 
 
 def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
-              local_range=10.0, bAESwitch=False ):
+              local_range=10.0, bAESwitch=False, nPoints=None ):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':
         raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
                                                                 bAERenew, bHMMRenew,\
                                                                 rf_center, local_range,\
-                                                                ae_swtch=bAESwitch, dim=dim)
+                                                                ae_swtch=bAESwitch, dim=dim, \
+                                                                nPoints=nPoints)
         
     #---------------------------------------------------------------------------
     elif task == 'feeding':
         raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
                                                                bAERenew, bHMMRenew,\
                                                                rf_center, local_range,\
-                                                               ae_swtch=bAESwitch, dim=dim)
+                                                               ae_swtch=bAESwitch, dim=dim,\
+                                                               nPoints=nPoints)
         
     #---------------------------------------------------------------------------           
     elif task == 'pushing_microwhite':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task, bDataRenew, \
                                                                          bAERenew, bHMMRenew,\
                                                                          rf_center, local_range, \
-                                                                         ae_swtch=bAESwitch, dim=dim)
+                                                                         ae_swtch=bAESwitch, dim=dim,\
+                                                                         nPoints=nPoints)
                                                                          
     #---------------------------------------------------------------------------           
     elif task == 'pushing_microblack':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(task, bDataRenew, \
                                                                          bAERenew, bHMMRenew,\
                                                                          rf_center, local_range, \
-                                                                         ae_swtch=bAESwitch, dim=dim)
+                                                                         ae_swtch=bAESwitch, dim=dim,\
+                                                                         nPoints=nPoints)
         
     #---------------------------------------------------------------------------           
     elif task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(task, bDataRenew, \
                                                                        bAERenew, bHMMRenew,\
                                                                        rf_center, local_range, \
-                                                                       ae_swtch=bAESwitch, dim=dim)
+                                                                       ae_swtch=bAESwitch, dim=dim,\
+                                                                       nPoints=nPoints)
         
     else:
         print "Selected task name is not available."
@@ -48,8 +53,9 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     
 
 def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
-                ae_swtch=False, dim=4):
+                ae_swtch=False, dim=4, nPoints=None):
 
+    if nPoints is None: nPoints = 20
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
@@ -71,7 +77,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'bpsvm_w_negative': 0.2                          
                           }
         
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , , 'hmmosvm', 'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'svm'
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress_time_cluster', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'bpsvm', 'osvm', 'svm', 'hmmsvm_no_dL' ],\
                           'update_list': [ 'fixed'],\
                           'nPoints': nPoints,\
@@ -100,7 +105,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -120,7 +124,6 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.01, 'cost': 6.2,\
                           'hmmosvm_nu': 0.00316}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -293,7 +296,8 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
     return raw_data_path, save_data_path, param_dict
 
 def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, \
-                         ae_swtch=False, dim=3):
+                         ae_swtch=False, dim=3, nPoints=None):
+    if nPoints is None: nPoints = 20
 
     if dim == 5:
         handFeatures = ['unimodal_ftForce',\
@@ -306,7 +310,6 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 1.0, 'cost': 4.0,\
                           'hmmosvm_nu': 0.001}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
                           'update_list': [ 'fixed' ],\
                           'nPoints': nPoints,\
@@ -348,7 +351,6 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'bpsvm_w_negative': 1.5,\
                               }
 
-        nPoints        = 20   
         ROC_param_dict = {'methods': [ 'bpsvm', 'change','fixed','progress_time_cluster', 'svm' , 'hmmosvm', \
                                        'hmmsvm_diag', 'osvm', 'hmmsvm_dL', 'progress_state',\
                                        'hmmsvm_no_dL'],\
@@ -399,7 +401,6 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_diag_gamma': 0.01}
                           
 
-        nPoints        = 20  #
         ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -505,8 +506,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
 
 def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
-                         ae_swtch=False, dim=3):
+                         ae_swtch=False, dim=3, nPoints=None):
 
+    if nPoints is None: nPoints        = 20  #
     if dim == 5:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
@@ -519,7 +521,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.316, 'gamma': 1.136, 'cost': 2.5,\
                           'hmmosvm_nu': 0.001}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -557,7 +558,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'bpsvm_w_negative': 1.5                              
                               }                              
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' ,  'osvm', 'hmmsvm_dL', , 'bpsvm' 'progress_state'
         ROC_param_dict = {'methods': ['fixed', 'change','progress_time_cluster', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'bpsvm', 'hmmsvm_no_dL' ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -585,7 +585,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.1, 'cost': 3.25,\
                           'hmmosvm_nu': 0.000316}
         
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
                           'update_list': [ 'svm' ],\
                           'nPoints': nPoints,\
@@ -671,10 +670,10 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
 
 
 def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, \
-                       ae_swtch=False, dim=3):
+                       ae_swtch=False, dim=3, nPoints=None):
 
     
-    nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' 
+    if nPoints is None: nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' 
     if dim == 5:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
