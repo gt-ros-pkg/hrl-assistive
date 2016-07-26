@@ -42,6 +42,7 @@ from matplotlib import gridspec
 import numpy as np
 import scipy
 import hrl_lib.util as ut
+import random, copy
 
 from scipy.stats import norm, entropy
 from joblib import Parallel, delayed
@@ -364,11 +365,19 @@ class classifier(learning_base):
             self.dt.fit(X_features, y)
 
 
-    def partial_fit(self, X, y, classes=None, sample_weight=None, n_iter=1):
+    def partial_fit(self, X, y, classes=None, sample_weight=None, n_iter=1, shuffle=True):
         '''
         X: samples x hmm-feature vec
         y: sample
         '''
+
+        if shuffle is True:
+            idx_list = range(len(X))
+            random.shuffle(idx_list)
+            X = [X[ii] for ii in idx_list]
+            y = [y[ii] for ii in idx_list]
+            if sample_weight is not None:
+                sample_weight = [sample_weight[ii] for ii in idx_list]
 
         if self.method == 'sgd':
             ## if sample_weight is None: sample_weight = [self.class_weight]*len(X)

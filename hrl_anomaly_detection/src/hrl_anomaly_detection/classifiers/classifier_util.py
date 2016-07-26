@@ -1,3 +1,4 @@
+import warnings
 
 from sklearn import preprocessing
 import random, copy
@@ -16,12 +17,16 @@ def getProcessSGDdata(X, y, sample_weight=None, remove_overlap=True):
         X_ptrain, Y_ptrain = X[k], y[k]
         if Y_ptrain[0] > 0 and remove_overlap:           
             X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
+            if len(X_ptrain) == 0:
+                warnings.warn("No likelihood drop. Please, increase the sensitivity!!")
+                X_ptrain = X[k][len(X[k])/2:]
+                Y_ptrain = y[k][len(y[k])/2:]
 
         ## sample_weight = np.array([1.0]*len(Y_ptrain))
         if sample_weight is None:
             sample_weights = [1.0]*len(Y_ptrain)
         else:
-            sample_weights = [sample_weight[k]]*len(Y_ptrain)
+            sample_weights = [sample_weight[k]]*len(Y_ptrain)        
 
         if k==0:
             p_train_X = X_ptrain
@@ -31,12 +36,6 @@ def getProcessSGDdata(X, y, sample_weight=None, remove_overlap=True):
             p_train_X = np.vstack([p_train_X, X_ptrain])
             p_train_Y = np.hstack([p_train_Y, Y_ptrain])
             p_train_W = p_train_W + sample_weights
-
-    p_idx_list = range(len(p_train_X))
-    random.shuffle(p_idx_list)
-    p_train_X = [p_train_X[ii] for ii in p_idx_list]
-    p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
-    p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
     return p_train_X, p_train_Y, p_train_W
     

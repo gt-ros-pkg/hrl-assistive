@@ -1151,26 +1151,30 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
 
-            ## ftPos   = d['kinEEPosList'][idx]
-            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
 
-            ## unimodal_ftForce = None
-            ## for time_idx in xrange(len(timeList)):
-            ##     if unimodal_ftForce is None:
-            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-            ##     else:
-            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
-
-            ## unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForceZ' in feature_list:
+            ftForce = d['ftForceList'][idx]
             
-            ## if 'ftForce_1' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_1')
-            ##     param_dict['feature_names'].append('ftForce_2')
-            ## if 'ftForce_x' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_x')
-            ##     param_dict['feature_names'].append('ftForce_y')
-            ##     param_dict['feature_names'].append('ftForce_z')
+            # magnitude
+            if len(np.shape(ftForce)) > 1:
+                print np.shape(ftForce)
+                sys.exit()
+                unimodal_ftForce_z = ftForce[2:3,:]
+                if offset_flag:
+                    unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:startOffsetSize])
+                
+                if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
+            else:                
+                unimodal_ftForce_z = ftForce
+            
+                if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
+                else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
+
+            if 'ftForce_z' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_z')
+
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in feature_list:
@@ -2005,7 +2009,6 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     elif len(np.shape(ll_X))==2:
         if ll_idx is not None: flatten_idx = ll_idx[-1]
         for j in xrange(0, len(ll_X)-nOffset):
-            ## print j, ll_X[j+nOffset][0]-ll_X[j][0]
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
@@ -2015,7 +2018,7 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
                 break
     else:
         warnings.warn("Not available dimension of data X")
-                
+
     flatten_Y = [1]*len(flatten_X)
 
     if ll_idx is None:

@@ -67,7 +67,7 @@ QUEUE_SIZE = 10
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict, data_renew=False, hmm_renew=False, viz=False, auto_update=False, \
-                 debug=False):
+                 debug=False, sim=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names   = subject_names
@@ -77,19 +77,16 @@ class anomaly_detector:
         self.debug           = debug
 
         self.enable_detector = False
-        self.cur_task        = None
         self.soundHandle     = SoundClient()
         self.dataList        = []
-        self.auto_update     = auto_update
+        self.auto_update     = auto_update        
 
         # auto update related params
         self.nMinUpdateFiles = 1
         self.used_file_list  = []
-        ## self.fileList_buf = cb.CircularBuffer(self.nMinUpdateFiles, (1,))        
         self.anomaly_flag    = False
-
         self.figure_flag     = False
-
+        ## self.fileList_buf = cb.CircularBuffer(self.nMinUpdateFiles, (1,))       
         
         # Params
         self.param_dict = param_dict        
@@ -102,8 +99,12 @@ class anomaly_detector:
         self.nEmissionDim = None
         self.ml = None
         self.classifier = None
-        self.bSim       = False
+        self.bSim       = sim
+        if self.bSim: self.cur_task = self.task_name
+        else:         self.cur_task = None
         ## self.t1 = datetime.datetime.now()
+
+
 
         # evaluation test
         self.nRecentTests = 2
@@ -455,7 +456,10 @@ class anomaly_detector:
     def rawDataCallback(self, msg):
         '''
         Subscribe raw data
-        '''        
+        '''
+        if self.cur_task is None: return
+        if self.cur_task.find(self.task_name) < 0: return
+
         self.audio_feature     = msg.audio_feature
         self.audio_power       = msg.audio_power
         self.audio_azimuth     = msg.audio_azimuth
@@ -581,6 +585,13 @@ class anomaly_detector:
 
         
     def userfbCallback(self, msg):
+        ## #temp
+        ## self.cur_task     = 'feeding'
+        ## self.anomaly_flag = False
+        
+        if self.cur_task is None and self.bSim is False: return        
+        if self.cur_task.find(self.task_name) < 0  and self.bSim is False: return
+       
         user_feedback = msg.data
         rospy.loginfo( "Logger feedback received: %s", user_feedback)
 
@@ -654,6 +665,7 @@ class anomaly_detector:
                     f_flag += 1
                     Y_test_org.append(1)
 
+            rospy.loginfo( "Start to load #success= %i #failure= %i", s_flag, f_flag)
             nFakeData = 0
             if s_flag < f_flag:
                 max_count = f_flag-s_flag
@@ -673,9 +685,8 @@ class anomaly_detector:
                         nFakeData += 1
                         if nFakeData == max_count:
                             break
-                
-
-            rospy.loginfo( "Start to load #success= %i #failure= %i", s_flag, f_flag)
+            print self.unused_fileList
+            
             trainData = dm.getDataList(self.unused_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
                                        downSampleSize = self.downSampleSize, \
@@ -693,19 +704,19 @@ class anomaly_detector:
             ## rospy.loginfo( "Features: "+ str(np.shape(X)) +" "+ str( np.shape(Y) ))
             ## rospy.loginfo( "Currrent method: " + self.classifier_method)           
 
-            test_X = [] #copy.copy(self.ll_recent_test_X) #need?
-            test_Y = [] #copy.copy(self.ll_recent_test_Y)
+            ## test_X = [] #copy.copy(self.ll_recent_test_X) #need?
+            ## test_Y = [] #copy.copy(self.ll_recent_test_Y)
             for i in xrange(len(X)):
 
+                ## test_X.append(X_scaled)
+                ## test_Y.append(Y[i])
                 X_scaled = self.scaler.transform(X[i])
-                test_X.append(X_scaled)
-                test_Y.append(Y[i])
+                self.ll_test_X.append(X_scaled)
+                self.ll_test_Y.append(Y[i])
                 
                 if i > len(X)-nFakeData-1: break
                 self.ll_recent_test_X.append(X_scaled)
                 self.ll_recent_test_Y.append(Y[i])
-                self.ll_test_X.append(X_scaled)
-                self.ll_test_Y.append(Y[i])
 
             test_X = list(self.ll_test_X)
             test_Y = list(self.ll_test_Y)
@@ -717,25 +728,26 @@ class anomaly_detector:
                 self.classifier.fit(self.X_train_org, self.Y_train_org)                
             elif self.classifier_method.find('sgd')>=0:
                 weight_list    = [1.0]*len(test_X)
-                weight_list[0] = 5.0
-                
-                #remove fp and shuffle                
+                weight_list[-2] = 20.0
+
+                #remove fp and flattening     
                 p_train_X, p_train_Y, p_train_W = getProcessSGDdata(test_X, test_Y, \
                                                                     sample_weight=weight_list) 
                 if update_flag:
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     self.classifier.set_params( class_weight=1.0 )                
                     self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
-                                                  test_X, test_Y, nMaxIter=10)
+                                                  test_X, test_Y, nMaxIter=10, shuffle=True)
                     self.classifier.set_params( class_weight=self.w_positive )
             else:
                 rospy.loginfo( "Not available update method")
 
             # TODO: remove fake data
-            self.X_train_org = np.delete(self.X_train_org, np.s_[:len(p_train_X)], 0)
-            self.Y_train_org = np.delete(self.Y_train_org, np.s_[:len(p_train_Y)], 0)
-            self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
-            self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y])
+            nLength = len(p_train_X)/self.nTests
+            self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
+            self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
+            self.X_train_org = np.vstack([ self.X_train_org, p_train_X[-nLength:] ])
+            self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y[-nLength:] ])
 
             # ------------------------------------------------------------------------------------------
             print "################ Only recent data ####################"
@@ -805,6 +817,10 @@ class anomaly_detector:
         if 'unimodal_ftForce' in self.handFeatures:
             data_dict['ftForceList']  = [np.array([self.ft_force]).T]
             data_dict['ftTorqueList'] = [np.array([self.ft_torque]).T]
+
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForceZ' in self.handFeatures:            
+            data_dict['ftForceZList']  = [self.ft_force[2]]
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in self.handFeatures:
@@ -894,7 +910,9 @@ class anomaly_detector:
 
             if len(self.dataList) >0 and self.viz:
                 self.visualization()
-            
+
+            if self.cur_task is None: continue
+            if self.cur_task.find(self.task_name) < 0: continue            
             if self.enable_detector is False: 
                 self.dataList = []
                 self.last_logp = None
@@ -920,8 +938,7 @@ class anomaly_detector:
                 continue
 
             post = post[cur_length-1]
-            rospy.loginfo( "logp: "+ str(logp)+ "  state: ", str(np.argmax(post))+ \
-              " cutoff: "+ str(self.param_dict['HMM']['nState']*0.9 ))
+            print "logp: ", logp, "  state: ", np.argmax(post)
             if np.argmax(post)==0 and logp < 0.0: continue
             if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
@@ -1287,7 +1304,7 @@ def evaluation_cost(X, Y, clf, verbose=False):
     return np.sum(cost)
 
 
-def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, ):
+def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True ):
 
     last_Coef  = copy.deepcopy(clf.dt.coef_)
     last_dCoef = 0.0
@@ -1296,7 +1313,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=20, sample_weight=W)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=60, sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
@@ -1464,7 +1481,7 @@ if __name__ == '__main__':
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
-                          debug=opt.bDebug )
+                          debug=opt.bDebug, sim=opt.bSim )
     if opt.bSim is False:
         ad.run()
     else:

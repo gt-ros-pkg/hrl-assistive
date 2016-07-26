@@ -12,7 +12,7 @@
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
             type="anomaly_detector.py" args="--task scooping --dim 4
                                              --m sgd --au "
-            output="screen" />
+            />
     </group>
     <!-- au  -->
 
