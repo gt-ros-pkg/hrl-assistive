@@ -814,13 +814,9 @@ class anomaly_detector:
             rospy.loginfo( 'unimodal_kinVel not implemented')
 
         # Unimodal feature - Force -------------------------------------------
-        if 'unimodal_ftForce' in self.handFeatures:
+        if 'unimodal_ftForce' in self.handFeatures or 'unimodal_ftForceZ' in self.handFeatures:
             data_dict['ftForceList']  = [np.array([self.ft_force]).T]
             data_dict['ftTorqueList'] = [np.array([self.ft_torque]).T]
-
-        # Unimodal feature - Force -------------------------------------------
-        if 'unimodal_ftForceZ' in self.handFeatures:            
-            data_dict['ftForceZList']  = [self.ft_force[2]]
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in self.handFeatures:

@@ -196,7 +196,8 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'zack', 'hkim', 'park', 'test']
+        ## subjects = [ 'zack', 'hkim', 'park', 'test']
+        subjects = [ 'zack']
         ## subjects = [ ]
     else:
         print "Selected task name is not available."

@@ -1128,7 +1128,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
                 ## unimodal_ftForce_ind = ftForce[2:3,:]
-                if offset_flag:
+                if offset_flag: #correct???????
                     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
@@ -1158,12 +1158,10 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                print np.shape(ftForce)
-                sys.exit()
-                unimodal_ftForce_z = ftForce[2:3,:]
+                unimodal_ftForce_z = ftForce[2,:]
                 if offset_flag:
                     unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:startOffsetSize])
-                
+
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
             else:                
@@ -1174,6 +1172,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
             if 'ftForce_z' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_z')
+
 
 
         # Unimodal feature - pps -------------------------------------------
