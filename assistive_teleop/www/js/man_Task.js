@@ -44,6 +44,7 @@ var ManipulationTask = function (ros) {
     manTask.current_step = 1;
     manTask.max_step = 0;
     manTask.feedback_received = false;
+    manTask.feedingDistanceSynched = true;
     manTask.handshaked = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
@@ -117,6 +118,13 @@ var ManipulationTask = function (ros) {
     });
     manTask.userFeedbackPub.advertise();
     // Function for start, stop, and continue
+
+    manTask.feedingDistancePub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/feeding_dist_request',
+        messageType: 'std_msgs/String'
+    });
+    manTask.feedingDistancePub.advertise();
+
     manTask.start = function () {
         if (manTask.available) {
             var msg = new manTask.ros.Message({
@@ -199,6 +207,28 @@ var ManipulationTask = function (ros) {
         } else {
             manTask.available=false;
         }
+    });
+
+    manTask.feedingDistanceRequest = function() {
+        if (manTask.feedingDistanceSynched) {
+            var new_dist = document.getElementById("man_task_Feeding_dist").value;
+            var msg = new manTask.ros.Message({
+                data: new_dist
+            });
+            manTask.feedingDistancePub.publish(msg);
+            manTask.feedingDistanceSynched = false;
+            document.getElementById("man_task_Feeding_dist").disabled = true;
+        }
+    }
+
+    manTask.feedingDistanceSub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/feeding_dist_state',
+        messageType: 'std_msgs/String'
+    });
+    manTask.feedingDistanceSub.subscribe(function (msg) {
+        document.getElementById("man_task_Feeding_dist").value = msg.data;
+        manTask.feedingDistanceSynched = true;
+        document.getElementById("man_task_Feeding_dist").disabled = false;
     });
     //part added.
     /*
@@ -541,6 +571,9 @@ var ManipulationTask = function (ros) {
 var initManTaskTab = function() {
     assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
     assistive_teleop.log('initiating manipulation Task');
+    $('#man_task_Feeding_dist').change(function(){
+        assistive_teleop.manTask.feedingDistanceRequest();
+    });
     $('#man_task_Scooping').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.scoop();
