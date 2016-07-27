@@ -66,7 +66,8 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
-                 param_dict, data_renew=False, hmm_renew=False, viz=False, auto_update=False, \
+                 param_dict, data_renew=False, hmm_renew=False, clf_renew=False, viz=False, \
+                 auto_update=False, \
                  debug=False, sim=False):
         rospy.loginfo('Initializing anomaly detector')
 
@@ -118,13 +119,15 @@ class anomaly_detector:
         self.eval_fileList = None
         self.eval_test_X = None
         self.eval_test_Y = None
+        self.acc_part = 100.0
+        self.acc_all  = 100.0
 
         # Comms
         self.lock = threading.Lock()        
 
         self.initParams()
         self.initComms()
-        self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew)
+        self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew, clf_renew=clf_renew)
 
         self.viz = viz
         if viz:
@@ -229,8 +232,8 @@ class anomaly_detector:
         ## self.update_service    = rospy.Service('anomaly_detector_update', StringArray_None, self.updateCallback)
         # NOTE: when and how update?
 
-    def initDetector(self, data_renew=False, hmm_renew=False):
-        rospy.loginfo( "Initializing a detector with %s", self.classifier_method)
+    def initDetector(self, data_renew=False, hmm_renew=False, clf_renew=False):
+        rospy.loginfo( "Initializing a detector with %s of %s", self.classifier_method, self.task_name)
         
         self.hmm_model_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name + '.pkl')
         self.scaler_model_file = os.path.join(self.save_data_path, 'scaler_'+self.task_name+'.pkl' )
@@ -242,7 +245,7 @@ class anomaly_detector:
           util.getSubjectFileList(self.raw_data_path, self.subject_names, self.task_name, time_sort=True)
         self.used_file_list = success_list+failure_list
 
-        rospy.loginfo( "Start to load/train an hmm model")
+        rospy.loginfo( "Start to load/train an hmm model of %s", self.task_name)
         if os.path.isfile(self.hmm_model_pkl) and hmm_renew is False:
             d = ut.load_pickle(self.hmm_model_pkl)
             # HMM
@@ -267,6 +270,8 @@ class anomaly_detector:
                 sys.exit()
 
         else:
+            clf_renew = True
+            
             rospy.loginfo( "Started get data set")
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
                                self.save_data_path, self.rf_center, \
@@ -413,7 +418,7 @@ class anomaly_detector:
             self.classifier.set_params( sgd_n_iter=self.sgd_n_iter )
 
         # Load / Fit the classifier
-        if os.path.isfile(self.classifier_model_file):
+        if os.path.isfile(self.classifier_model_file) and clf_renew is False:
             self.classifier.load_model(self.classifier_model_file)
         else:
             self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org)
@@ -426,9 +431,9 @@ class anomaly_detector:
             
         # info for GUI
         self.pubSensitivity()
-        self.acc_part, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        ## self.acc_part, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
         msg = FloatArray()
-        msg.data = [self.acc_part, 100.0]
+        msg.data = [self.acc_part, self.acc_all]
         self.accuracy_pub.publish(msg)
         ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
 
@@ -439,13 +444,13 @@ class anomaly_detector:
     def enablerCallback(self, msg):
 
         if msg.data is True:
-            rospy.loginfo("anomaly detector enabled")
+            rospy.loginfo("%s anomaly detector enabled", self.task_name)
             self.enable_detector = True
             self.anomaly_flag    = False            
             # visualize sensitivity
             self.pubSensitivity()                    
         else:
-            rospy.loginfo("anomaly detector disabled")
+            rospy.loginfo("%s anomaly detector disabled", self.task_name)
             # Reset detector
             self.enable_detector = False
             self.reset() #TODO: may be it should be removed
@@ -562,18 +567,13 @@ class anomaly_detector:
             self.w_positive = sensitivity_des
             self.classifier.set_params(class_weight=self.w_positive)
             rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))
-            self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org)
+            self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org, warm_start=True)
         else:
             rospy.loginfo( "not supported method")
             sys.exit()
 
         rospy.loginfo( "Classifier is updated!")
 
-        if len(self.ll_recent_test_X) > 0:
-            self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
-                                        self.classifier)
-        else:
-            self.acc_part = 0.0
         self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
         if self.bSim: self.evaluation_ref()
 
@@ -685,8 +685,7 @@ class anomaly_detector:
                         nFakeData += 1
                         if nFakeData == max_count:
                             break
-            print self.unused_fileList
-            
+                        
             trainData = dm.getDataList(self.unused_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
                                        downSampleSize = self.downSampleSize, \
@@ -750,9 +749,9 @@ class anomaly_detector:
             self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y[-nLength:] ])
 
             # ------------------------------------------------------------------------------------------
-            print "################ Only recent data ####################"
-            self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
-                                        self.classifier)
+            ## print "################ Only recent data ####################"
+            ## self.acc_part, _, _ = evaluation(list(self.ll_recent_test_X), list(self.ll_recent_test_Y), \
+            ##                             self.classifier)
             ## self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
             ##                        self.classifier)
             print "################ CUMULATIVE EVAL #####################"
@@ -885,7 +884,7 @@ class anomaly_detector:
             data_dict['visionLandmarkQuatList'] = [np.array([self.vision_landmark_quat]).T]
 
         data, _ = dm.extractHandFeature(data_dict, self.handFeatures, scale=1.0, \
-                                        param_dict = self.handFeatureParams)
+                                        init_param_dict = self.handFeatureParams)
                                         
         return data
 
@@ -1385,6 +1384,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
+    p.add_option('--clfRenew', '--cr', action='store_true', dest='bCLFRenew',
+                 default=False, help='Renew classifier.')
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize data.')
     
@@ -1476,6 +1477,7 @@ if __name__ == '__main__':
 
     ad = anomaly_detector(subject_names, opt.task, check_method, raw_data_path, save_data_path, \
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
+                          clf_renew=opt.bCLFRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
                           debug=opt.bDebug, sim=opt.bSim )
     if opt.bSim is False:

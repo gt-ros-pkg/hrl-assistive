@@ -135,13 +135,14 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
             sys.exit()
 
     max_time = param_dict['timeList'][-1]
-
+    print "max time is ", max_time
+    
     _, data_dict = util.loadData(fileNames, isTrainingData=False,
                                  downSampleSize=downSampleSize,
                                  local_range=local_range, rf_center=rf_center, max_time=max_time)
    
     features, _ = extractHandFeature(data_dict, handFeatures, \
-                                     param_dict=param_dict, cut_data=cut_data,\
+                                     init_param_dict=param_dict, cut_data=cut_data,\
                                      renew_minmax=renew_minmax)
 
     return features
@@ -220,17 +221,17 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
             allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                            param_dict=init_param_dict, cut_data=cut_data)
+                                            init_param_dict=init_param_dict, cut_data=cut_data)
             param_dict=init_param_dict                                            
         else:
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
                                                      cut_data=cut_data)
         print " --------------------- Success -----------------------------"  
         successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
+                                                 init_param_dict=param_dict, cut_data=cut_data)
         print " --------------------- Failure -----------------------------"  
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
+                                                 init_param_dict=param_dict, cut_data=cut_data)
 
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
@@ -1008,10 +1009,10 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False, \
+def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dict=None, verbose=False, \
                        renew_minmax=False):
 
-    if param_dict is None:
+    if init_param_dict is None:
         isTrainingData=True
         param_dict = {}
         param_dict['timeList'] = d['timesList'][0]
@@ -1067,6 +1068,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
         param_dict['feature_names'] = []
     else:
+        param_dict = copy.copy(init_param_dict)
         isTrainingData=False
             
 
@@ -1158,17 +1160,14 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_z = ftForce[2,:]
+                unimodal_ftForce_z = ftForce[2:3,:]
                 if offset_flag:
-                    unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:startOffsetSize])
-
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
+                    unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:,:startOffsetSize])
             else:                
                 unimodal_ftForce_z = ftForce
-            
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
 
             if 'ftForce_z' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_z')

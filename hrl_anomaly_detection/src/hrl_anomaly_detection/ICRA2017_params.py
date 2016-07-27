@@ -176,7 +176,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'update_list': ['bpsvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
-                          'svm_param_range': np.logspace(-3., 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-1., 0.7, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -186,7 +186,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-4, 1., nPoints)}
+                          'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
                           

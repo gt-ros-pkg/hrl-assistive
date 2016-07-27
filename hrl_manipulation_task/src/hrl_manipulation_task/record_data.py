@@ -74,6 +74,7 @@ class logger:
         self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
+        self.enable_log_thread = False
 
         # GUI
         self.feedbackMSG = 0
@@ -113,8 +114,6 @@ class logger:
         Record data and publish raw data
         '''        
         ##GUI implementation       
-        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String,
-                                                 queue_size=QUEUE_SIZE)
         self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String,
                                                    self.feedbackCallback)
         
@@ -241,14 +240,14 @@ class logger:
 
         flag = 0
         self.feedbackStatus = 0
-        self.consolePub.publish("Requesting Feedback!") 
         if bCont:
             status = last_status
         else:
+            rate = rospy.Rate(2)
             while flag == 0 and not rospy.is_shutdown():
                 flag = self.feedbackStatus
-                #print "Enter Feedback"
-                #print self.feedbackStatus
+                rate.sleep()
+
             if flag == '1':   status = 'success'
             elif flag == '2': status = 'failure'
             elif flag == '3': status = 'skip'

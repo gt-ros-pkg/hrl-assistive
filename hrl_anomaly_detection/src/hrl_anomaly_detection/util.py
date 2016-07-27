@@ -101,6 +101,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                     feature_time = d[key]
                     if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
     new_times = np.linspace(0.01, max_time, downSampleSize)
+    if new_times[-1] < 0.01:
+        print max_time
+        print "Wrong max time!!!!!!!!!!!!!!!"
+        sys.exit()
 
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
@@ -680,8 +684,16 @@ def downSampleAudio(time_array, data_array, new_time_array):
         interp_data = []
         for new_time_idx in xrange(len(new_time_array)):
             
-            time_idx = np.abs(time_array - new_time_array[new_time_idx]).argmin()                
-            interp_data.append( max(data_array[i,last_time_idx:time_idx+1]) )
+            time_idx = np.abs(time_array - new_time_array[new_time_idx]).argmin()
+
+            try:            
+                interp_data.append( max(data_array[i,last_time_idx:time_idx+1]) )
+            except:
+                print i, time_idx
+                print time_array[0], time_array[-1], new_time_array[0], new_time_array[-1]
+                print data_array
+                sys.exit()
+            
             last_time_idx = time_idx
         
         if new_data_array is None: new_data_array = interp_data

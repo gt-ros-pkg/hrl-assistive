@@ -6,6 +6,6 @@ rf_radius: 0.15
 sgd_intercept: 0.15
 sgd_intercept_max: 3.0
 sgd_intercept_min: -3.0
-sgd_w_positive: 3.1622776601683795
+sgd_w_positive: 0.0001
 states: 10
 svm_w_positive: 20.0

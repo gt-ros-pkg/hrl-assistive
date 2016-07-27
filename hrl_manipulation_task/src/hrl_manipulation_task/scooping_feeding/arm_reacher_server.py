@@ -37,7 +37,7 @@ import numpy as np
 import rospy, roslib
 import PyKDL
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String, Empty, Int64
 import pr2_controllers_msgs.msg
 import actionlib
 
@@ -61,6 +61,7 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
+        self.mouthOffset  = [-0.02, 0., 0.05]
 
         self.bowl_pub = None
         self.mouth_pub = None
@@ -108,6 +109,12 @@ class armReachAction(mpcBaseAction):
                                         queue_size=QUEUE_SIZE, latch=True)
         self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=True)
 
+        if self.arm_name == 'left':
+            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
+            msg = Int64()
+            msg.data = int(self.mouthOffset[2]*100.0)
+            self.feeding_dist_pub.publish(msg)
+
         # subscribers
         rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
         rospy.Subscriber('/hrl_manipulation_task/bowl_highest_point', Point, self.highestBowlPointCallback)
@@ -115,6 +122,8 @@ class armReachAction(mpcBaseAction):
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
+        if self.arm_name == 'left':
+            rospy.Subscriber('/feeding/manipulation_task/feeding_dist_request', Int64, self.feedingDistCallback)
 
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
@@ -197,8 +206,9 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping1'] = {}
         self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
                                                  ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
-        self.motions['initScooping1']['right'] = [['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
-        ## ['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+                                                  ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+        ## 
                                                   
 
         self.motions['initScooping2'] = {}
@@ -239,12 +249,12 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding3'] = {}
         ## self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 1.0]]
-        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
+        self.motions['runFeeding']['left'] = [['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                               ['PAUSE', 0.5],
-                                              ['MOVES', '[-0.02, 0.0, -0.15, 0., 0., 0.]', 5., 'self.mouth_frame']]
+                                              ['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame']]
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],
         ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
@@ -360,6 +370,15 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
+
+    def feedingDistCallback(self, msg):
+        print "Feeding distance requested ", msg.data
+        self.mouthOffset[2] = float(msg.data)/100.0
+        msg = Int64()
+        msg.data = int(self.mouthOffset[2]*100.0)
+        self.feeding_dist_pub.publish(msg)
+        
+        
 
     def stopCallback(self, msg):
         print '\n\nAction Interrupted! Event Stop\n\n'

@@ -182,7 +182,7 @@ class classifier(learning_base):
                         
         learning_base.__init__(self)
 
-    def fit(self, X, y, ll_idx=None, parallel=True):
+    def fit(self, X, y, ll_idx=None, parallel=True, warm_start=False):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
@@ -360,8 +360,12 @@ class classifier(learning_base):
             # fitting
             print "Class weight: ", self.class_weight, self.sgd_w_negative
             d = {+1: self.class_weight, -1: self.sgd_w_negative}
-            self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, #learning_rate='constant',\
-                                    eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
+            if warm_start and self.dt is not None:
+                self.dt.set_params(class_weight=d)
+                self.dt.set_params(warm_start=True)
+            else:
+                self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, #learning_rate='constant',\
+                                        eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
             self.dt.fit(X_features, y)
 
 
