@@ -37,7 +37,7 @@ import multiprocessing, threading
 # ROS library
 import rospy, roslib
 
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 # HRL library
 from hrl_srvs.srv import String_String, String_StringRequest
@@ -82,6 +82,8 @@ class armReacherGUI:
         self.availablePub = rospy.Publisher("/manipulation_task/available", String)
         self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String, queue_size=10, latch=True) 
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
+        self.debugPub1    = rospy.Publisher("/manipulation_task/debug/input_bool", Bool)
+        self.debugPub2    = rospy.Publisher("/manipulation_task/debug/emergency_bool", Bool)
 
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
@@ -197,6 +199,8 @@ class armReacherGUI:
                 print "stuck?"
                 rate.sleep()
                 continue
+            self.debugPub1.publish(self.inputStatus)
+            self.debugPub2.publish(self.emergencyStatus)
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
                 rospy.loginfo("Scooping Starting...")
