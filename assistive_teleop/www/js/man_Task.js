@@ -121,7 +121,7 @@ var ManipulationTask = function (ros) {
 
     manTask.feedingDistancePub = new manTask.ros.Topic({
         name: 'feeding/manipulation_task/feeding_dist_request',
-        messageType: 'std_msgs/String'
+        messageType: 'std_msgs/Int64'
     });
     manTask.feedingDistancePub.advertise();
 
@@ -211,7 +211,7 @@ var ManipulationTask = function (ros) {
 
     manTask.feedingDistanceRequest = function() {
         if (manTask.feedingDistanceSynched) {
-            var new_dist = document.getElementById("man_task_Feeding_dist").value;
+            var new_dist = parseInt(document.getElementById("man_task_Feeding_dist").value);
             var msg = new manTask.ros.Message({
                 data: new_dist
             });
@@ -223,7 +223,7 @@ var ManipulationTask = function (ros) {
 
     manTask.feedingDistanceSub = new manTask.ros.Topic({
         name: 'feeding/manipulation_task/feeding_dist_state',
-        messageType: 'std_msgs/String'
+        messageType: 'std_msgs/Int64'
     });
     manTask.feedingDistanceSub.subscribe(function (msg) {
         document.getElementById("man_task_Feeding_dist").value = msg.data;
