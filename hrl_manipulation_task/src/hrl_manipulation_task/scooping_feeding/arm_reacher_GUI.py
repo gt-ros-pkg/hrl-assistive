@@ -111,9 +111,9 @@ class armReacherGUI:
                 self.ScoopNumber = 0
                 self.FeedNumber = 0
 
-            self.inputStatus = True
+            #self.inputStatus = True
             #Maybe had to add if statement.
-            self.emergencyStatus = False
+            #self.emergencyStatus = False
             self.guiStatusPub.publish("in motion")
             print "Input received"
             self.feedback_received = False
@@ -131,8 +131,8 @@ class armReacherGUI:
         self.inputStatus = False
 
         temp_gui_status = self.gui_status
-        if self.gui_status == "in motion":
-            self.guiStatusPub.publish("stopping")
+        #if self.gui_status == "in motion":
+        self.guiStatusPub.publish("stopping")
         print "Emergency received"
         if self.log != None:
             if self.log.getLogStatus(): self.log.log_stop()
@@ -186,6 +186,9 @@ class armReacherGUI:
     def guiCallback(self, msg):
         self.guiStatusReady = True
         self.gui_status = msg.data
+        if self.gui_status =="in motion":
+            self.inputStatus=True
+            self.emergencyStatus = False
 
     # --------------------------------------------------------------------------
     def run(self):
@@ -333,15 +336,13 @@ class armReacherGUI:
                 self.proceedPub.publish("Done")
                 #self.proceedPub.publish("Next: Done")
                 self.guiStatusPub.publish("request feedback")
-                if self.emergencyStatus:
-                    if detection_flag: self.log.enableDetector(False)                
-                    break
                 if self.log is not None:
                     self.logRequestPub.publish("Requesting Feedback!")    
                     if detection_flag: self.log.enableDetector(False)
                     self.log.close_log_file_GUI()
                 else:
                     self.logRequestPub.publish("No feedback requested")
+                if self.emergencyStatus: break
 
                 self.FeedNumber = 4
                     
@@ -349,9 +350,8 @@ class armReacherGUI:
                 # Returning motion
                 self.ServiceCallLeft("initFeeding2")
                 if self.emergencyStatus: break
-                self.FeedNumber = 0
-                #self.proceedPub.publish("Done")
-                break
+            self.FeedNumber = 0
+            break
 
 
     def cleanMotion(self, armReachActionLeft, armReachActionRight):
