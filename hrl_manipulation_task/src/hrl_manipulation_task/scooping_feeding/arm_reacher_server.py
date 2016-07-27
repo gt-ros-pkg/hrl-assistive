@@ -107,7 +107,7 @@ class armReachAction(mpcBaseAction):
                                            queue_size=QUEUE_SIZE, latch=True)
         self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
                                         queue_size=QUEUE_SIZE, latch=True)
-        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=True)
+        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=False)
 
         if self.arm_name == 'left':
             self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
