@@ -205,14 +205,13 @@ class armReacherGUI:
                 self.inputStatus = False
                 rospy.loginfo("Feeding Starting....")
                 self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
-            elif self.inputStatus and self.actionStatus == 'Init':
+            elif self.inputStatus and self.actionStatus == 'Clean':
                 self.inputStatus = False
-                rospy.loginfo("Init motion...")
+                rospy.loginfo("Clean motion...")
                 # TODO: cleaning motion
                 self.cleanMotion(self.armReachActionLeft, self.armReachActionRight)
-                self.proceedPub.publish("Start: initialize,")
-                self.logRequestPub.publish("Requesting Feedback!")
-                self.guiStatusPub.publish("request feedback")
+                #self.logRequestPub.publish("Requesting Feedback!")
+                self.guiStatusPub.publish("select task")
             rate.sleep()
 
 
@@ -244,6 +243,7 @@ class armReacherGUI:
                 self.initMotion(armReachActionLeft, armReachActionRight)
                 if self.emergencyStatus: break
                 self.ScoopNumber = 1
+                self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
                 #self.proceedPub.publish("Next: Scooping 3")
         
             if self.ScoopNumber < 2:        
@@ -352,15 +352,16 @@ class armReacherGUI:
 
     def cleanMotion(self, armReachActionLeft, armReachActionRight):
         rospy.loginfo("Initializing arms")
+        self.proceedPub.publish("Set: , cleaning, ")
         self.ServiceCallLeft("getBowlPos")            
         leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("cleanSpoon1",))
         rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("cleanSpoon1",))
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
-        self.ScoopNumber = 1
+        #self.ScoopNumber = 1
         #self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
         #self.proceedPub.publish("Next: Scooping 3")
-        self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
+        #self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
 
             
     def ServiceCallLeft(self, cmd):

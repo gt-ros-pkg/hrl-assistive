@@ -87,7 +87,7 @@ var ManipulationTask = function (ros) {
     manTask.both = function () {
         if (manTask.available) {
             var msg = new manTask.ros.Message({
-                data: 'Init'
+                data: 'Clean'
             });
             assistive_teleop.log('Please, follow the step 2 to select the action.');
             manTask.statusPub.publish(msg);
@@ -241,7 +241,7 @@ var ManipulationTask = function (ros) {
         //assistive_teleop.log("worked?");
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             //enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             enableButton('#man_task_success');
@@ -252,7 +252,7 @@ var ManipulationTask = function (ros) {
         if(msg.data=="No feedback requested") {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             //enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             enableButton('#man_task_success');
@@ -262,7 +262,7 @@ var ManipulationTask = function (ros) {
             /*
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
-            enableButton('#man_task_Init');
+            enableButton('#man_task_Clean');
             disableButton('#man_task_start');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -289,7 +289,7 @@ var ManipulationTask = function (ros) {
         if(msg.data == 'select task') {
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
-            enableButton('#man_task_Init');
+            enableButton('#man_task_Clean');
             disableButton('#man_task_start');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -308,7 +308,7 @@ var ManipulationTask = function (ros) {
         } else if (msg.data == 'wait start') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -326,7 +326,7 @@ var ManipulationTask = function (ros) {
         } else if (msg.data == 'in motion') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -345,7 +345,7 @@ var ManipulationTask = function (ros) {
         } else if (msg.data == 'stopping') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -364,7 +364,7 @@ var ManipulationTask = function (ros) {
         } else if (msg.data == 'stopped') {
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
-            enableButton('#man_task_Init');
+            enableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             enableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -383,7 +383,7 @@ var ManipulationTask = function (ros) {
         } else if (msg.data == 'request feedback') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             enableButton('#man_task_success');
@@ -476,7 +476,7 @@ var ManipulationTask = function (ros) {
             if(manTask.feedback_received) {
                 enableButton('#man_task_Scooping');
                 enableButton('#man_task_Feeding');
-                enableButton('#man_task_Init');
+                enableButton('#man_task_Clean');
                 disableButton('#man_task_start');
                 disableButton('#man_task_Continue');
                 disableButton('#man_task_success');
@@ -492,7 +492,7 @@ var ManipulationTask = function (ros) {
             } else {
                 disableButton('#man_task_Scooping');
                 disableButton('#man_task_Feeding');
-                disableButton('#man_task_Init');
+                disableButton('#man_task_Clean');
                 disableButton('#man_task_stop');
                 disableButton('#man_task_Continue');
                 enableButton('#man_task_success');
@@ -543,7 +543,7 @@ var ManipulationTask = function (ros) {
             manTask.available = false;
             enableButton('#man_task_Scooping');
             enableButton('#man_task_Feeding');
-            enableButton('#man_task_Init');
+            enableButton('#man_task_Clean');
             enableButton('#man_task_stop');
             enableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -594,7 +594,7 @@ var initManTaskTab = function() {
         /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -625,7 +625,7 @@ var initManTaskTab = function() {
         /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -636,7 +636,7 @@ var initManTaskTab = function() {
         */
     });
 
-    $('#man_task_Init').click(function(){
+    $('#man_task_Clean').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.both();
         }
@@ -644,7 +644,7 @@ var initManTaskTab = function() {
         if(assistive_teleop.manTask.both()) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             disableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -663,7 +663,7 @@ var initManTaskTab = function() {
             /*
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -687,7 +687,7 @@ var initManTaskTab = function() {
         /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
-        enableButton('#man_task_Init');
+        enableButton('#man_task_Clean');
         enableButton('#man_task_stop');
         enableButton('#man_task_Continue');
         disableButton('#man_task_success');
@@ -709,7 +709,7 @@ var initManTaskTab = function() {
         /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
-        enableButton('#man_task_Init');
+        enableButton('#man_task_Clean');
         enableButton('#man_task_stop');
         enableButton('#man_task_Continue');
         disableButton('#man_task_success');
@@ -732,7 +732,7 @@ var initManTaskTab = function() {
         if (assistive_teleop.manTask.continue_()) {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
-            disableButton('#man_task_Init');
+            disableButton('#man_task_Clean');
             enableButton('#man_task_stop');
             disableButton('#man_task_Continue');
             disableButton('#man_task_success');
@@ -755,7 +755,7 @@ var initManTaskTab = function() {
         /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
-        enableButton('#man_task_Init');
+        enableButton('#man_task_Clean');
         disableButton('#man_task_stop');
         disableButton('#man_task_Continue');
         disableButton('#man_task_success');
@@ -776,7 +776,7 @@ var initManTaskTab = function() {
         /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
-        enableButton('#man_task_Init');
+        enableButton('#man_task_Clean');
         disableButton('#man_task_stop');
         disableButton('#man_task_Continue');
         disableButton('#man_task_success');
@@ -798,7 +798,7 @@ var initManTaskTab = function() {
         /*
         enableButton('#man_task_Scooping');
         enableButton('#man_task_Feeding');
-        enableButton('#man_task_Init');
+        enableButton('#man_task_Clean');
         disableButton('#man_task_stop');
         disableButton('#man_task_Continue');
         disableButton('#man_task_success');
