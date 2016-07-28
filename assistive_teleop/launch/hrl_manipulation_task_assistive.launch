@@ -43,6 +43,25 @@
     <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
   </node>
 
+
+  <!--arg name="input_frame" default="base_link" /-->
+  <!--arg name="output_frame" default="base_link_rotated" /-->
+  <arg name="input_frame" default="SR300_rgb_optical_frame" />
+  <arg name="output_frame" default="SR300_rgb_optical_frame_rotated" />
+
+  <node pkg="tf" type="static_transform_publisher"
+        name="SR300_rotate" args="0 0 0 0 0 3.141592 $(arg
+                                  input_frame) $(arg output_frame) 100"/>
+  <node name="image_rotater_wrist" pkg="image_rotate" type="image_rotate" machine="c1"> 
+    <remap from="image" to="/SR300/rgb/image_raw"/>
+    <remap from="rotated/image" to="/SR300/rgb/image_raw_rotated"/>
+    <param name="source_frame_id" value="$(arg input_frame)" />
+    <param name="input_frame_id" value="$(arg input_frame)" />
+    <param name="target_frame_id" value="$(arg output_frame)" />
+    <param name="output_frame_id" value="$(arg output_frame)" />
+    <param name="use_camera_info" value="false" />
+  </node>
+
   <!-- Text-to-speech backend -->
   <!--<node pkg="assistive_teleop" type="speech_intermediary" name="wt_speech_intermediary">-->
     <!--<param name="voice" value="voice_nitech_us_rms_arctic_hts"/>-->

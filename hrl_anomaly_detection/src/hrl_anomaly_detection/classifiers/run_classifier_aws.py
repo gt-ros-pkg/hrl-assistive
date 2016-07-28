@@ -101,19 +101,27 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     ROC_data[method]['fn_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
     ROC_data[method]['delay_l'] = [ [] for i in xrange(ROC_dict['nPoints']) ]
 
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_ROC_eval)(j, data[file_idx]['X_scaled'], \
-                                                                  data[file_idx]['Y_train_org'], \
-                                                                  data[file_idx]['idx_train_org'], \
-                                                                  data[file_idx]['X_test'], \
-                                                                  data[file_idx]['Y_test'], \
-                                                                  data[file_idx]['idx_test'], \
-                                                                  method, ROC_dict, \
-                                                                  HMM_dict, custom_params, \
-                                                                  data[file_idx]['nLength'])
-                                                                  for j in xrange(ROC_dict['nPoints'])
-                                                                  for file_idx in xrange(nFiles))
+    from hrl_anomaly_detection.classifiers import classifier as cb
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cb.run_classifier)(j,\
+                                                                       data[file_idx]['X_scaled'], \
+                                                                       data[file_idx]['Y_train_org'], \
+                                                                       data[file_idx]['idx_train_org'], \
+                                                                       data[file_idx]['X_test'], \
+                                                                       data[file_idx]['Y_test'], \
+                                                                       data[file_idx]['idx_test'], \
+                                                                       method, HMM_dict['nState'], \
+                                                                       data[file_idx]['nLength'], \
+                                                                       ROC_dict['nPoints'],\
+                                                                       custom_params, ROC_dict )
+                                                                       for j in xrange(ROC_dict['nPoints'])
+                                                                       for file_idx in xrange(nFiles))
+
     l_j, l_tp_l, l_fp_l, l_fn_l, l_tn_l, l_delay_l = zip(*r)
-    for i, j in enumerate(l_j):        
+    for i, j in enumerate(l_j):
+        if j == 'fit failed':
+            print i,j, 'fit failed'
+            sys.exit()
+            continue
         ROC_data[method]['tp_l'][j] += l_tp_l[i]
         ROC_data[method]['fp_l'][j] += l_fp_l[i]
         ROC_data[method]['fn_l'][j] += l_fn_l[i]
@@ -123,74 +131,9 @@ def cross_validate_local(param_idx, nFiles, data, default_params, custom_params,
     return ROC_data, param_idx, custom_params
 
 
-# classifier
-def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
-                 X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
-    from hrl_anomaly_detection.classifiers import classifier as cb
-
-    dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
-    if method == 'svm':
-        weights = ROC_dict['svm_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'cssvm_standard':
-        weights = np.logspace(-2, 0.1, nPoints)
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'cssvm':
-        weights = ROC_dict['cssvm_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    elif method == 'progress_time_cluster':
-        thresholds = ROC_dict['progress_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
-    elif method == 'fixed':
-        thresholds = ROC_dict['fixed_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
-    elif method == 'sgd':
-        weights = ROC_dict['sgd_param_range']
-        dtc.set_params( class_weight=weights[j] )
-    else:
-        print "Not available method"
-        return "Not available method", -1, params
-
-    dtc.set_params(**params)
-
-    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
-    if ret is False: return 'fit failed', -1
-
-    # evaluate the classifier
-    tp_l = []
-    fp_l = []
-    tn_l = []
-    fn_l = []
-    delay_l = []
-    delay_idx = 0
-
-    for ii in xrange(len(X_test)):
-        if len(Y_test[ii])==0: continue
-        est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
-
-        for jj in xrange(len(est_y)):
-            if est_y[jj] > 0.0:                
-                try:
-                    delay_idx = idx_test[ii][jj]
-                except:
-                    print "Error!!!!!!!!!!!!!!!!!!"
-                    print np.shape(idx_test), ii, jj
-                ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
-                break        
-
-        if Y_test[ii][0] > 0.0:
-            if est_y[jj] > 0.0:
-                tp_l.append(1)
-                delay_l.append(delay_idx)
-            else: fn_l.append(1)
-        elif Y_test[ii][0] <= 0.0:
-            if est_y[jj] > 0.0: fp_l.append(1)
-            else: tn_l.append(1)
-
-    return j, tp_l, fp_l, fn_l, tn_l, delay_l
 
 
-def disp_score(results, method, nPoints):
+def disp_score(results, method, nPoints, savefile=None, dim=0):
 
     score_list = []
     for result in results:
@@ -201,6 +144,7 @@ def disp_score(results, method, nPoints):
         if ret_param_idx == -1:
             score_list.append([0, ret_params])
             continue
+
         tp_ll = ret_ROC_data[method]['tp_l']
         fp_ll = ret_ROC_data[method]['fp_l']
         tn_ll = ret_ROC_data[method]['tn_l']
@@ -209,19 +153,23 @@ def disp_score(results, method, nPoints):
 
         tpr_l = []
         fpr_l = []
-        try:
-            for j in xrange(nPoints):
+        for j in xrange(nPoints):
+            try:
                 tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
                 fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
-        except:
-            print "failed to get TPR and FPR"
-            break
+            except:
+                tpr_l.append(0.0)
+                fpr_l.append(0.0)
+                print j, np.shape(tp_ll[j]), np.shape(fn_ll[j]), np.shape(fp_ll[j]), np.shape(tn_ll[j])
+                print "failed to get TPR and FPR"
+                sys.exit()
+            ## break
         print "tpr: ", tpr_l
         print "fpr: ", fpr_l
 
         # get AUC
         from sklearn import metrics        
-        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params] )
+        score_list.append( [metrics.auc([0]+fpr_l+[100], [0]+tpr_l+[100], True), ret_params, tpr_l, fpr_l] )
 
         # get max tp in fpr (0~20)
         ## max_tp = 0
@@ -238,7 +186,21 @@ def disp_score(results, method, nPoints):
     for i in xrange(len(score_list)):
         print("%0.3f for %r" % (score_list[i][0], score_list[i][1]))
 
+    print "tpr: ", score_list[-1][2]
+    print "fpr: ", score_list[-1][3]
     
+
+    if savefile is not None:
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+                file.write( "%0.3f for %r" % (score_list[-1][0], score_list[-1][1])+'\n\n' )
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'method: '+method+' dim: '+str(dim)+'\n' )
+                file.write( "%0.3f for %r" % (score_list[-1][0], score_list[-1][1])+'\n\n' )
 
 
 def getAUC(fpr_l, tpr_l):
@@ -259,8 +221,17 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+                 help='type the method name')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+
+    p.add_option('--icra2017', action='store_true', dest='bICRA2017',
+                 default=False, help='Enable ICRA2017.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -272,129 +243,343 @@ if __name__ == '__main__':
 
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
+    nPoints        = 10
+
+
+    if opt.bICRA2017 is False:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    else:
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    
+
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                False, False,\
-                                                                rf_center, local_range,\
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-
-        nPoints        = 20
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL',\
+                                      'hmmsvm_no_dL'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-2.5, 0.6, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
+                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 16
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'degree': [3], 'gamma': np.linspace(0.01, 0.5, 4).tolist(), \
-        ##               'w_negative': np.arange(1.0, 10.0) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(0.5, 2.0, 5).tolist(),\
-                      'gamma': np.linspace(0.01, 0.3, 4).tolist(), \
-                      'w_negative': np.linspace(1.0, 2.0,5).tolist() }
+        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        if opt.method == 'svm':
+            if opt.dim == 4:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(3.0, 6.0, 5),\
+                              'gamma': np.logspace(-2, 1.0, 10), \
+                              'w_negative': np.logspace(-2, 0.3, 10) }
+                param_dict['ROC']['svm_param_range'] = np.logspace(-2.5, 0.5, nPoints)
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(3.0, 7.0, 6),\
+                              'gamma': np.logspace(-2, 0.7, 5), \
+                              'w_negative': np.linspace(1.0, 6.0,5) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-5,0.,5)
+                          }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-5,-3,10),
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(10,20.0,5),\
+                          'hmmsvm_no_dL_gamma': np.logspace(-3,0.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.5,2.0,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
+                          'pca_gamma': [1.0]                          
+                          }
+                
+                      
 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song'] #'Wonyoung']
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed'],\
+        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
+        ROC_param_dict = {'methods': ['svm'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-2.0, 1.4, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'osvm_param_range': np.logspace(-4, 0.2, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 16
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(1.0,15.0,10),\
-                      'gamma': np.linspace(0.001, 0.015, 4).tolist(), \
-                      'w_negative': np.linspace(0.01, 1.3, 5) }
+        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+        if opt.method == 'svm':
+            if opt.dim == 2:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1,4.0,5),\
+                              'gamma': np.linspace(0.1,4.0,5), \
+                              'w_negative': np.linspace(0.1,5.0,5) }
+            elif opt.dim == 3:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(0.5,5.0,5),\
+                              'gamma': np.linspace(0.1,5.0,10), \
+                              'w_negative': np.linspace(0.1,3.0,5) }
+                param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(0.1,6.0,10),\
+                              'gamma': np.linspace(0.1,8.0,10), \
+                              'w_negative': np.linspace(0.1,2.0,5) }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                         }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-5,-3,10),
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,4.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(1,10.0,5),\
+                          'hmmsvm_no_dL_gamma': np.linspace(0.5,6.0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.2,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),
+                          'pca_gamma': [1.0]                          
+                          }
+                
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 20
-        ROC_param_dict = {'methods': ['svm'],\
+        ROC_param_dict = {'methods': ['hmmsvm_LSLS'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 5 #9
+        nFiles = 4 #9
+        if opt.method == 'svm':
+            if opt.dim == 2:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(0.5,8.0,10),\
+                              'gamma': np.linspace(2.0,6.0,5), \
+                              'w_negative': np.logspace(-2,0.2,10) }
+            elif opt.dim == 5:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(0.5,4.0,5),\
+                              'gamma': np.logspace(-3,0.0,5), \
+                              'w_negative': np.linspace(0.2,1.5,5) }
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(5,15.0,5),\
+                              'gamma': np.logspace(-3,0.2,5), \
+                              'w_negative': np.linspace(0.2,1.5,5) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                          }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-5,-3,10),
+                          }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(1.5,6.0,5),\
+                          'hmmsvm_no_dL_gamma': np.logspace(-2.5,0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(1.5,5.0,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(5,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
+                          'pca_gamma': [1.0] #np.linspace(0.1,3, 5)
+                          }
+
+                
+                                      
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(5,15.0,5),\
-                      'gamma': np.linspace(0.01,2.0,5), \
-                      'w_negative': np.linspace(0.2,1.5,5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [3.,4.,5.],\
-        ##               'gamma': [1.5,2.0,2.5], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
-        ##               'cost': [1.],\
-        ##               'gamma': [1.], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
 
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
-                                                                       False, False,\
-                                                                       rf_center, local_range,\
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.1, nPoints),\
+                          'svm_param_range': np.logspace(-2, 0.3, nPoints),\
+                          'osvm_param_range': np.logspace(-4, 1.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 9
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-        ##               'cost': [1.0,2.0,4.0,8.0],\
-        ##               'gamma': np.linspace(0.0001, 1.0, 4).tolist(), \
-        ##               'w_negative': [0.5,3.0,6.0] }
+        nFiles = 4 #9
 
-        if opt.dim == 5:
-            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(5.0,12.0,5),\
-                          'gamma': [0.01, 0.1, 1.0], \
-                          'w_negative': np.linspace(0.1,2.0,4) }
-        else:
-            parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                          'cost': np.linspace(1.0,10.0,5),\
-                          'gamma': [0.1, 1.0, 2.0, 3.0, 4.0], \
-                          'w_negative': np.linspace(0.1,3.0,5) }
+        if opt.method == 'svm':        
+            if opt.dim == 5:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(5.0,12.0,5),\
+                              'gamma': [0.01, 0.1, 1.0], \
+                              'w_negative': np.linspace(0.1,2.0,4) }
+            elif opt.dim == 3:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,5.0,5),\
+                              'gamma': np.logspace(-2, 0.4, 5), \
+                              'w_negative': np.linspace(1.0,5.0,5) }
+            elif opt.dim == 2:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(4.0,9.0,5),\
+                              'gamma': [0.01, 0.1, 0.5, 1.0, 2.0], \
+                              'w_negative': np.linspace(0.1,2.0,5) }
+            elif opt.dim == 4:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,10.0,10),\
+                              'gamma': np.logspace(-2, 0.3, 10), \
+                              'w_negative': np.linspace(0.1,3.0,10) }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                          }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_diag_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_diag_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-5.5,-3.0,20),
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(1,10.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,1.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(1.3,3.0,5)
+                          }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(8,20.0,5),\
+                          'hmmsvm_no_dL_gamma': np.logspace(-3,0,5), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(7,18.0,5),\
+                          'bpsvm_gamma': np.linspace(1.0,4.0,5), \
+                          'bpsvm_w_negative': np.logspace(-1.5,0.1,5),
+                          'pca_gamma': [1.0]                          
+                          }
             
         ## if opt.dim == 4:
         ##     parameters = {'method': ['cssvm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -411,23 +596,23 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microblack':
     
         subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
         ROC_param_dict = {'methods': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1., -10., nPoints), \
                           'svm_param_range': np.logspace(-2, 0, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
+                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
+                          'osvm_param_range': np.logspace(-3., 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-2, 0.8, nPoints),\
                           'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
         param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4
+        nFiles = 4 #9
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -435,15 +620,64 @@ if __name__ == '__main__':
         ##               'cost': [3.,4.,5.],\
         ##               'gamma': [1.5,2.0,2.5], \
         ##               'w_negative': np.linspace(0.2,0.7,5) }
-        parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                      'cost': np.linspace(1.0,4.0,5),\
-                      'gamma': np.linspace(0.1,8.0,10), \
-                      'w_negative': np.linspace(0.1,2.0,5) }
-        ## parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [0], \
-        ##               'cost': [1.],\
-        ##               'gamma': [1.], \
-        ##               'w_negative': np.linspace(0.2,0.7,5) }
-                          
+        if opt.method == 'svm':
+            if opt.dim == 5:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,4.0,5),\
+                              'gamma': np.logspace(-1.5,0.5,10), \
+                              'w_negative': np.logspace(-0.5, 0.5, 5) }
+                param_dict['ROC']['svm_param_range'] = np.logspace(-2, -0.5, nPoints)
+            else:
+                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                              'cost': np.linspace(1.0,4.0,5),\
+                              'gamma': np.linspace(0.1,8.0,10), \
+                              'w_negative': np.logspace(-2, 0.5, 5) }                
+        elif opt.method == 'osvm':
+            parameters = {'method': ['osvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'osvm_nu': np.logspace(-6,-1,10),
+                          }
+        elif opt.method == 'hmmosvm':
+            parameters = {'method': ['hmmosvm'], 'svm_type': [2], 'kernel_type': [2], \
+                          'hmmosvm_nu': np.logspace(-4,-2.,5)
+                         }
+        elif opt.method == 'hmmsvm_diag':
+            parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
+                          opt.method+'_cost': np.linspace(5,15.0,5),\
+                          opt.method+'_gamma': np.linspace(0.01,2.0,5), \
+                          opt.method+'_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_dL':
+            parameters = {'method': ['hmmsvm_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_dL_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_dL_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_LSLS':
+            parameters = {'method': ['hmmsvm_LSLS'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_LSLS_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_LSLS_gamma': np.linspace(0.01,2.0,5), \
+                          'hmmsvm_LSLS_w_negative': np.linspace(0.2,1.5,5)
+                          }
+        elif opt.method == 'hmmsvm_no_dL':
+            parameters = {'method': ['hmmsvm_no_dL'], 'svm_type': [0], 'kernel_type': [2], \
+                          'hmmsvm_no_dL_cost': np.linspace(5,15.0,5),\
+                          'hmmsvm_no_dL_gamma': np.logspace(-3,-1,3), \
+                          'hmmsvm_no_dL_w_negative': np.linspace(1.5,3.5,5)
+                          }
+        elif opt.method == 'bpsvm':
+            parameters = {'method': ['bpsvm'], 'svm_type': [0], 'kernel_type': [2], \
+                          'bpsvm_cost': np.linspace(8,15.0,5),\
+                          'bpsvm_gamma': np.linspace(0.01,2.0,5), \
+                          'bpsvm_w_negative': np.linspace(0.2,1.5,5),\
+                          'pca_gamma': [1.0]                          
+                          }
+                
+
+
+        ## if opt.dim > 2:
+        ##     ROC_param_dict['hmmosvm_param_range'] = np.logspace(-2, 2.5, nPoints)
+        ## elif opt.dim == 2:
+        ##     ROC_param_dict['hmmosvm_param_range'] = np.logspace(-4, 1.5, nPoints)
 
     else:
         print "Selected task name is not available."
@@ -464,8 +698,9 @@ if __name__ == '__main__':
     elif AE_param_dict['switch'] == True:
         result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_raw_'+str(opt.dim)+'.pkl')
     else:
-        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'.pkl')
-        
+        result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
+
+
     ##################################################################################################
     # cpu version
     if opt.bCPU:
@@ -475,18 +710,40 @@ if __name__ == '__main__':
         ##               'cost': [1.0, 3.], 'w_negative': [3.0]}
         
         if os.path.isfile(result_pkl) is False or opt.bRenew is True:
-
             ## Custom parameters
             method = parameters['method'][0]
-            data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
-    
+            if method is not 'osvm':
+                if method is 'hmmosvm':
+                    data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict, negTrain=True)
+                else:
+                    data = dm.getHMMData(method, nFiles, save_data_path, opt.task, param_dict)
+                    if method is 'bpsvm':
+                        pos_dict=[]
+                        for i in xrange(len(data)):
+                            d = {}
+                            d['rnd_train_idx'] = data[i]['rnd_train_idx']
+                            d['rnd_test_idx']  = data[i]['rnd_test_idx']
+                            d['abnormal_train_cut_idx'] = data[i]['abnormal_train_cut_idx']
+                            pos_dict.append(d)
+            
             results = []
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
+                if method is 'osvm':
+                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
+                    data = dm.getPCAData(nFiles, data_pkl, \
+                                         window=param_dict['SVM']['raw_window_size'],\
+                                         pos_dict=None, use_test=False)
+                elif method is 'bpsvm':
+                    data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
+                    data = dm.getPCAData(nFiles, data_pkl, gamma=param['pca_gamma'],\
+                                         window=param_dict['SVM']['raw_window_size'],\
+                                         pos_dict=pos_dict, use_test=False, use_pca=False)
+                    
                 print "running ", param_idx, " / ", len(list(ParameterGrid(parameters))) 
                 start = time.time()
                 ret_ROC_data, ret_param_idx, ret_params = cross_validate_local(param_idx, nFiles, \
                                                                                data, param_dict, param, \
-                                                                               n_jobs=-1)
+                                                                               n_jobs=opt.n_jobs)
                 end = time.time()
                 print "-------------------------------------------------"
                 print param_idx, " Elapsed time: ", end - start
@@ -495,8 +752,12 @@ if __name__ == '__main__':
                 disp_score(results, method, nPoints)
 
             ut.save_pickle(results, result_pkl)
+            if opt.bSave:
+                savefile = os.path.join(save_data_path,'../','result_run_classifier.txt')
+                disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)            
         else:
             results = ut.load_pickle(result_pkl)
+            disp_score(results, method, nPoints)
 
     else:
 
@@ -546,9 +807,14 @@ if __name__ == '__main__':
         print "Finished"
 
     # 000000000000000000000000000000000000000000000000000000000000000000
-    disp_score(results, method, nPoints)
 
-
+    ## if opt.bSave:
+    ##     method  = parameters['method'][0]
+    ##     results = ut.load_pickle('/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/pushing_toolcase_data/AE200_4/result_pushing_toolcase_4.pkl')
+    ##     savefile = os.path.join(save_data_path,'../','result_run_classifier_'+method+'.txt')
+    ##     disp_score(results, method, nPoints, savefile=savefile, dim=opt.dim)
+    ##     sys.exit()        
+        
 
 
 ## def run_classifier(param_idx, modeling_pkl, method, HMM_dict, ROC_dict, params, n_jobs=-1):
@@ -646,3 +912,68 @@ if __name__ == '__main__':
 
 ##     return ROC_data, param_idx
 
+## # classifier
+## def run_ROC_eval(j, X_scaled, Y_train_org, idx_train_org, \
+##                  X_test, Y_test, idx_test, method, ROC_dict, HMM_dict, params, nLength):
+##     from hrl_anomaly_detection.classifiers import classifier as cb
+
+##     dtc = cb.classifier( method=method, nPosteriors=HMM_dict['nState'], nLength=nLength )        
+##     if method == 'svm':
+##         weights = ROC_dict['svm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm_standard':
+##         weights = np.logspace(-2, 0.1, nPoints)
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'cssvm':
+##         weights = ROC_dict['cssvm_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     elif method == 'progress_time_cluster':
+##         thresholds = ROC_dict['progress_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'fixed':
+##         thresholds = ROC_dict['fixed_param_range']
+##         dtc.set_params( ths_mult = thresholds[j] )
+##     elif method == 'sgd':
+##         weights = ROC_dict['sgd_param_range']
+##         dtc.set_params( class_weight=weights[j] )
+##     else:
+##         print "Not available method"
+##         return "Not available method", -1, params
+
+##     dtc.set_params(**params)
+
+##     ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+##     if ret is False: return 'fit failed', -1
+
+##     # evaluate the classifier
+##     tp_l = []
+##     fp_l = []
+##     tn_l = []
+##     fn_l = []
+##     delay_l = []
+##     delay_idx = 0
+
+##     for ii in xrange(len(X_test)):
+##         if len(Y_test[ii])==0: continue
+##         est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+
+##         for jj in xrange(len(est_y)):
+##             if est_y[jj] > 0.0:                
+##                 try:
+##                     delay_idx = idx_test[ii][jj]
+##                 except:
+##                     print "Error!!!!!!!!!!!!!!!!!!"
+##                     print np.shape(idx_test), ii, jj
+##                 ## print "Break ", ii, " ", jj, " in ", est_y, " = ", ll_classifier_test_Y[ii][jj]
+##                 break        
+
+##         if Y_test[ii][0] > 0.0:
+##             if est_y[jj] > 0.0:
+##                 tp_l.append(1)
+##                 delay_l.append(delay_idx)
+##             else: fn_l.append(1)
+##         elif Y_test[ii][0] <= 0.0:
+##             if est_y[jj] > 0.0: fp_l.append(1)
+##             else: tn_l.append(1)
+
+##     return j, tp_l, fp_l, fn_l, tn_l, delay_l

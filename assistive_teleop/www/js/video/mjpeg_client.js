@@ -10,9 +10,9 @@ var MjpegClient = function (options) {
     self.height = options.height || 480;
     self.quality = options.quality || 90;
 
-    self.cameraData = {'Head': {topic:'/head_mount_kinect/qhd/image_color',//kinect 1 is image_color
+    self.cameraData = {'Head': {topic:'/head_mount_kinect/qhd/image_color',//kinect 1 is image_color 
                                        optgroup:'Default',
-                                       cameraInfo:'/head_mount_kinect/qhd/camera_info',
+                                       cameraInfo:'/head_mount_kinect/qhd/camera_info', //
                                        clickable:true,
                                        rotated: false,
                                        width: 960, //960, //1280, originally 640
@@ -27,6 +27,13 @@ var MjpegClient = function (options) {
                               'Left Arm': {topic: '/l_forearm_cam/image_color_rotated',
                                            optgroup:'Default',
                                            cameraInfo: '/l_forearm_cam/camera_info',
+                                           clickable: false,
+                                           rotated: true,
+                                           width:640,
+                                           height:480},
+                              'Wrist': {topic: '/SR300/rgb/image_raw_rotated',
+                                           optgroup:'Default',
+                                           cameraInfo: '/SR300/rgb/camera_info',
                                            clickable: false,
                                            rotated: true,
                                            width:640,

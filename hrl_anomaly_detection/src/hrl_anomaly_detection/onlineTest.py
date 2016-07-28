@@ -10,6 +10,8 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.params import *
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
+from hrl_anomaly_detection.classifiers.classifier_util import *
+from hrl_anomaly_detection import util
 
 from sklearn import preprocessing
 from joblib import Parallel, delayed
@@ -25,7 +27,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param_dict, renew=False,\
-                                      save_pdf=False):
+                                      save_pdf=False, sgd_intercept=True):
 
     ## Parameters
     # data
@@ -54,6 +56,11 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
     ROC_dict['nPoints'] = nPoints = 10
     ## nValidData   = 16
     nPartialFit  = 5
+
+    # for ICRA2017
+    if sgd_intercept:
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'.pkl')
+
 
     for fit_method in fit_methods:
         roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
@@ -126,6 +133,147 @@ def onlineEvaluationSingleIncremental(task, raw_data_path, save_data_path, param
         plt.show()        
         
     return
+
+
+def onlineEvaluationSingleIncrementalICRA(task, raw_data_path, save_data_path, param_dict, renew=False,\
+                                          save_pdf=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    cut_data   = data_dict['cut_data']
+    downSampleSize = data_dict['downSampleSize']
+    
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    scale    = HMM_dict['scale']
+    
+    # SVM
+    SVM_dict = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    fit_methods = ['single_incremental_fit', 'single_fit', 'full_fit']
+    ## fit_renew_methods = ['single_fit','single_incremental_fit','full_fit','full_incremental_fit']
+    fit_renew_methods = []#'single_incremental_fit']
+    
+    #------------------------------------------
+    # get subject1 - task1 's hmm & classifier data
+    nFolds = 1
+    method = 'sgd'
+    ROC_dict['nPoints'] = nPoints = 10
+    ## nValidData   = 16
+    nPartialFit  = 5
+    subject_names = ['test']
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    rf_radius     = 10.0    
+    
+
+    # for ICRA2017
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'.pkl')
+    scaler_pkl = os.path.join(save_data_path, 'scaler_'+task+'.pkl')
+    d = ut.load_pickle(self.hmm_model_pkl)
+    # HMM
+    nEmissionDim = d['nEmissionDim']
+    A            = d['A']
+    B            = d['B']
+    pi           = d['pi']
+    handFeatureParams = d['param_dict']
+    
+    ml = learning_hmm.learning_hmm(nState, nEmissionDim, verbose=False)
+    ml.set_hmm_object(A, B, pi)
+    
+
+    unused_fileList = util.getSubjectFileList(raw_data_path, \
+                                              subject_names, \
+                                              task, \
+                                              time_sort=True,\
+                                              no_split=True)
+
+    trainData = dm.getDataList(unused_fileList, rf_center, rf_radius,\
+                               handFeatureParams,\
+                               downSampleSize = downSampleSize, \
+                               cut_data       = cut_data,\
+                               handFeatures   = handFeatures)
+
+
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+
+        if os.path.isfile(roc_data_pkl) is False or renew is True or fit_method in fit_renew_methods:
+
+            ROC_data = {}
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
+            ROC_data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
+
+
+            # parallelization 
+            l_data = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers_incremental_ICRA)\
+                                                     ( idx, save_data_path, task, \
+                                                       method, ROC_data, ROC_dict, AE_dict, \
+                                                       SVM_dict, fit_method=fit_method,\
+                                                     nPartialFit=nPartialFit) \
+                                                     for idx in xrange(nFolds) )
+
+            ut.save_pickle(l_data, 'temp.pkl')
+            ## l_data = ut.load_pickle('temp.pkl')
+
+            for i in xrange(len(l_data)): # each fold
+
+                try:
+                    method = l_data[i].keys()[0]
+                except:
+                    print l_data[i]
+                    sys.exit()
+                
+                for j in xrange(nPoints):
+
+                    for k in xrange(len(l_data[i][method]['tp_l'][j])): #incremental
+                        if len(ROC_data[method]['tp_l'][j]) < len(l_data[i][method]['tp_l'][j]):
+                            ROC_data[method]['tp_l'][j].append([])
+                            ROC_data[method]['fp_l'][j].append([])
+                            ROC_data[method]['tn_l'][j].append([])
+                            ROC_data[method]['fn_l'][j].append([])
+                            ROC_data[method]['result'][j].append([])
+                        
+                        ROC_data[method]['tp_l'][j][k] += l_data[i][method]['tp_l'][j][k]
+                        ROC_data[method]['fp_l'][j][k] += l_data[i][method]['fp_l'][j][k]
+                        ROC_data[method]['tn_l'][j][k] += l_data[i][method]['tn_l'][j][k]
+                        ROC_data[method]['fn_l'][j][k] += l_data[i][method]['fn_l'][j][k]
+                        ROC_data[method]['result'][j][k].append(l_data[i][method]['result'][j][k])
+
+            ROC_data[method]['complete'] = True
+            ut.save_pickle(ROC_data, roc_data_pkl)
+            print ROC_data[method]['tp_l'][0], ROC_data[method]['fp_l'][0], ROC_data[method]['fn_l'][0],ROC_data[method]['tn_l'][0]
+
+
+
+    fig = plt.figure(1)
+    for fit_method in fit_methods:
+        roc_data_pkl = os.path.join(save_data_path, 'plr_sgd_'+task+'_'+fit_method+'.pkl')
+        ROC_data = ut.load_pickle(roc_data_pkl)
+        nData = plotPLR(method, task, nPoints, nPartialFit, ROC_data, fit_method=fit_method, fig=fig, )
+    plt.legend(loc=4,prop={'size':16})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
+        
+    return
+
 
 
 def onlineEvaluationSingle(task, raw_data_path, save_data_path, param_dict, renew=False ):
@@ -284,12 +432,138 @@ def onlineEvaluationDouble(task, raw_data_path, save_data_path, param_dict, \
 
 
 
+def dataCompPlot(task, dim, all_data, one_data, rf_center='kinEEPos', local_range=10.0):
+    subjects1 = all_data[0]
+    subjects2 = one_data[0]
+    
+    raw_data_path1 = all_data[1]
+    raw_data_path2 = one_data[1]
 
-def getParams(task, bDataRenew, bAERenew, bHMMRenew, bAESwitch, dim):
+    save_data_path1 = all_data[2]
+    save_data_path2 = one_data[2]
+
+    param_dict1     = all_data[3]
+    #------------------------------------------
+    ## Parameters
+    # data
+    data_dict  = param_dict1['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict1['AE']
+    # HMM
+    HMM_dict   = param_dict1['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict1['SVM']
+
+    # ROC
+    ROC_dict = param_dict1['ROC']
+    
+    #------------------------------------------
+
+    downSampleSize = param_dict1['data_param']['downSampleSize']
+    handFeatures   = param_dict1['data_param']['handFeatures']
+    cut_data       = param_dict1['data_param']['cut_data']
+    
+    # all data
+    idx = 1
+    crossVal_pkl1 = os.path.join(save_data_path1, 'cv_'+task+'.pkl')
+    modeling_pkl1 = os.path.join(save_data_path1, 'hmm_'+task+'_'+str(idx)+'.pkl')
+    save_pkl1     = os.path.join(save_data_path1, 'feature_extraction_'+rf_center+'_'+\
+                            str(local_range) )
+    
+    d1 = dm.getDataSet(subjects1, task, raw_data_path1, \
+                       save_data_path1, data_dict['rf_center'], data_dict['local_range'],\
+                       downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                       ae_data=AE_dict['switch'],\
+                       handFeatures=data_dict['handFeatures'], \
+                       rawFeatures=AE_dict['rawFeatures'],\
+                       cut_data=data_dict['cut_data'], \
+                       data_renew=False)
+
+
+    # load all data
+    ## d1 = ut.load_pickle(save_pkl1)
+    successData1      = d1['successData'] 
+    handFeatureParams = d1['param_dict']
+    
+    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    print handFeatureParams['feature_max']
+    print handFeatureParams['feature_min']
+    print handFeatureParams['feature_names']
+    print handFeatureParams['timeList'][0], handFeatureParams['timeList'][-1]
+    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ## handFeatures[-2] = 'crossmodal_landmarkEEDist'
+    ## handFeatures[-1] = 'crossmodal_landmarkEEAng'
+    
+    #---------------------------------------------------------------------------------
+    # one data
+    idx = 0
+    crossVal_pkl2 = os.path.join(save_data_path2, 'cv_'+task+'.pkl')
+    modeling_pkl2 = os.path.join(save_data_path2, 'hmm_'+task+'_'+str(idx)+'.pkl')
+
+    (success_list, failure_list) = \
+      util.getSubjectFileList(raw_data_path2, subjects2, task, time_sort=True)
+    successData2 = dm.getDataList(success_list, rf_center, local_range,\
+                                  handFeatureParams,\
+                                  downSampleSize = downSampleSize, \
+                                  cut_data       = cut_data,\
+                                  handFeatures   = handFeatures,\
+                                  renew_minmax   = False)
+
+    ## failureData2 = dm.getDataList(failure_list, rf_center, local_range,\
+    ##                               handFeatureParams,\
+    ##                               downSampleSize = downSampleSize, \
+    ##                               cut_data       = cut_data,\
+    ##                               handFeatures   = handFeatures)
+                                  
+    #---------------------------------------------------------------------------------
+    ## print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ## print np.mean(successData1[2][:,:3]), np.mean(successData1[2][:,-3:])
+    ## print np.mean(successData2[2][:,:3]), np.mean(successData2[2][:,-3:])
+    ## sg1 = [np.mean(successData1[2][:,:3]), np.mean(successData1[2][:,-3:])] 
+    ## sg2 = [np.mean(successData2[2][:,:3]), np.mean(successData2[2][:,-3:])] 
+    ## d = sg2[1]-sg1[1]
+    ## successData1[2] += d*np.linspace(0.0,1.0,200)
+    ## print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"    
+    
+    #---------------------------------------------------------------------------------
+    # visualization
+    fig = plt.figure()
+    solid_color=True
+
+    # reference data
+    n,m,k = np.shape(successData1)
+    for i in xrange(n):
+        ax = fig.add_subplot(n*100+10+i+1)
+        ax.plot(successData1[i].T, c='b')
+
+    # target data
+    n,m,k = np.shape(successData2)
+    for i in xrange(n):
+        ax = fig.add_subplot(n*100+10+i+1)
+        ax.plot(successData2[i].T, c='g')
+    
+    ## n,m,k = np.shape(failureData2)
+    ## for i in xrange(n):
+    ##     ax = fig.add_subplot(n*100+10+i+1)
+    ##     ax.plot(failureData2[i].T, c='r')
+
+
+    plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+    plt.show()
+
+
+
+
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim):
     
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
+    bAESwitch     = False
     
     #---------------------------------------------------------------------------
     if task == 'scooping':
@@ -705,7 +979,6 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
             weights = np.logspace(-1.5, 2.0, nPoints) #ROC_dict['sgd_param_range']
-            dtc.set_params( class_weight=weights[j] )
             dtc.set_params( class_weight=weights[j], sgd_n_iter=20 )
         else:
             print "Not available method"
@@ -718,15 +991,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
                 for idx in train_idx_list:
                     if idx not in initial_idx_list:
                         X_ptrain, Y_ptrain = train_X[idx], train_Y[idx]
-                        #sample_weight = [10.0]*nLength
-                        if Y_ptrain == -1:
-                            sample_weight = [1.0]*nLength
-                        else:
-                            sample_weight = np.logspace(1,2.0,nLength )
-                            sample_weight /= np.amax(sample_weight)
-                        sample_weight /= 10.0
-
-                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) #, sample_weight=sample_weight)
+                        ret = dtc.partial_fit(X_ptrain, Y_ptrain, classes=[-1,1]) 
                         
         if ret is False: return 'fit failed', -1
 
@@ -809,17 +1074,27 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
     return data
 
 def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_dict, SVM_dict,
-                                fit_method='full_fit', nPartialFit = 2):
+                                fit_method='full_fit', nPartialFit = 2, ICRA2017=False):
 
-    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+    if ICRA2017 is True:
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'.pkl')
+        scaler_pkl = os.path.join(save_data_path, 'scaler_'+task+'.pkl')
+    else:
+        modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+        scaler       = None
+        
     nPoints = ROC_dict['nPoints']
-    
-    if method == 'sgd' and fit_method.find('full')>=0:
-        weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
-    elif method == 'sgd' and fit_method.find('single')>=0:
-        ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
-        ## weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
-        weights = np.logspace(-2.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
+
+    if sgd_intercept:
+        intercepts = np.linspace(-3., 3., nPoints)
+        weights    = 0.1230268
+    else:
+        if method == 'sgd' and fit_method.find('full')>=0:
+            weights = np.logspace(-2, 1.2, nPoints) #ROC_dict['sgd_param_range']
+        elif method == 'sgd' and fit_method.find('single')>=0:
+            ## weights = np.linspace(10.0, 15.0, nPoints) #ROC_dict['sgd_param_range']
+            ## weights = np.logspace(-0.1, 1.2, nPoints) #ROC_dict['sgd_param_range']
+            weights = np.logspace(-2.5, 1.0, nPoints) #ROC_dict['sgd_param_range']
     
 
     print "start to load hmm data, ", modeling_pkl
@@ -854,21 +1129,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
                                                     ll_classifier_train_Y, \
                                                     ll_classifier_train_idx)
     else:
-        ## train_X = []
-        ## train_Y = []
-        ## ## print method, " : Before classification : ", np.shape(ll_classifier_train_X), \
-        ##   ## np.shape(ll_classifier_train_Y)
-        
-        ## # get single data
-        ## for j in xrange(len(ll_classifier_train_X)):
-        ##     if method.find('svm')>=0 or method.find('sgd')>=0:
-        ##         X = scaler.transform(ll_classifier_train_X[j])                                
-        ##     elif method == 'progress_time_cluster' or method == 'fixed':
-        ##         X = ll_classifier_train_X[j]
-
-        ##     train_X.append(X)
-        ##     train_Y.append(ll_classifier_train_Y[j])
-
         X_train   = []
         Y_train   = []
         idx_train = []
@@ -940,7 +1200,6 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         if method == 'sgd' and fit_method.find('full')>=0:
             dtc.set_params( class_weight=weights[j] )
         elif method == 'sgd' and fit_method.find('single')>=0:
-            dtc.set_params( class_weight=weights[j] )
             dtc.set_params( class_weight=weights[j], sgd_n_iter=sgd_n_iter )
         else:
             print "Not available method"
@@ -998,41 +1257,40 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             
             for idx in range(0,len(X_valid_scaled),nPartialFit):
                 if idx+nPartialFit > len(X_valid_scaled): continue
-                for k in xrange(nPartialFit):
-                    X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
-                    if Y_ptrain[0] > 0:
-                        X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
+
+                p_train_X, p_train_Y, p_train_W = getProcessSGDdata(X_valid_scaled[idx:idx+nPartialFit], \
+                                                                    Y_valid[idx:idx+nPartialFit], weights[j])
+                
+                ## for k in xrange(nPartialFit):
+                ##     X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
+                ##     if Y_ptrain[0] > 0:
+                ##         X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
                     
-                    ## sample_weight = np.array([1.0]*len(Y_ptrain))
-                    if Y_ptrain == -1:
-                        sample_weight = [1.0]*len(X_ptrain)
-                    else:
-                        sample_weight = [weights[j]]*len(X_ptrain)
-                        ## sample_weight = np.linspace(0,1.0,len(X_ptrain) )
-                        ## sample_weight /= np.amax(sample_weight)
-                    ## sample_weight *= float(nSamples) #50.0
-                    ## sample_weight /= (float(nSamples + idx+1))
+                ##     ## sample_weight = np.array([1.0]*len(Y_ptrain))
+                ##     if Y_ptrain == -1:
+                ##         sample_weight = [1.0]*len(X_ptrain)
+                ##     else:
+                ##         sample_weight = [weights[j]]*len(X_ptrain)
 
-                    if k==0:
-                        p_train_X = X_ptrain
-                        p_train_Y = Y_ptrain
-                        p_train_W = sample_weight
-                    else:
-                        p_train_X = np.vstack([p_train_X, X_ptrain])
-                        p_train_Y = np.hstack([p_train_Y, Y_ptrain])
-                        p_train_W = np.hstack([p_train_W, sample_weight])
+                ##     if k==0:
+                ##         p_train_X = X_ptrain
+                ##         p_train_Y = Y_ptrain
+                ##         p_train_W = sample_weight
+                ##     else:
+                ##         p_train_X = np.vstack([p_train_X, X_ptrain])
+                ##         p_train_Y = np.hstack([p_train_Y, Y_ptrain])
+                ##         p_train_W = np.hstack([p_train_W, sample_weight])
 
-                p_idx_list = range(len(p_train_X))
-                random.shuffle(p_idx_list)
-                p_train_X = [p_train_X[ii] for ii in p_idx_list]
-                p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
-                p_train_W = [p_train_W[ii] for ii in p_idx_list]
+                ## p_idx_list = range(len(p_train_X))
+                ## random.shuffle(p_idx_list)
+                ## p_train_X = [p_train_X[ii] for ii in p_idx_list]
+                ## p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
+                ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
 
                 ## dtc.set_params( learning_rate='constant' )
                 ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
                 ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
-                for kkk in xrange(5): #sgd_n_iter):
-                    ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1])
+                ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], n_iter=5)
                 ## ret = dtc.fit(p_train_X, p_train_Y)
 
                 tp_l = []
@@ -1127,6 +1385,307 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
             data[method]['result'][j].append(result_list)
 
     return data
+
+
+def run_classifiers_incremental_ICRA(idx, save_data_path, task, method, ROC_data, \
+                                         ROC_dict, AE_dict, SVM_dict,
+                                         fit_method='full_fit', nPartialFit = 2):
+
+        
+    nPoints = ROC_dict['nPoints']
+    intercepts = np.linspace(-3., 3., nPoints)
+    weights    = 0.1230268
+
+    print "start to load hmm data, ", modeling_pkl
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task+'_'+str(idx)+'.pkl')
+    d            = ut.load_pickle(modeling_pkl)
+    nState       = d['nState']        
+    ll_classifier_train_X   = d['ll_classifier_train_X']
+    ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+    ll_classifier_train_idx = d['ll_classifier_train_idx']
+    ll_classifier_test_X    = d['ll_classifier_test_X']  
+    ll_classifier_test_Y    = d['ll_classifier_test_Y']
+    ll_classifier_test_idx  = d['ll_classifier_test_idx']
+    nLength = d['nLength']
+
+    #-----------------------------------------------------------------------------------------
+
+    data = {}
+    # pass method if there is existing result
+    data[method] = {}
+    data[method]['tp_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['fp_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['tn_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['fn_l'] = [ [ ] for j in xrange(nPoints) ]
+    data[method]['result'] = [ [ ] for j in xrange(nPoints) ]
+    
+    if ROC_data[method]['complete'] == True: return data
+
+    #-----------------------------------------------------------------------------------------
+    # training set
+    if fit_method.find('full') >= 0:
+        print method, " : Before classification : ", np.shape(X_train_scaled), np.shape(Y_train)   
+        X_train, Y_train, idx_train = flattenSample(ll_classifier_train_X, \
+                                                    ll_classifier_train_Y, \
+                                                    ll_classifier_train_idx)
+    else:
+        X_train   = []
+        Y_train   = []
+        idx_train = []
+        X_valid   = []
+        Y_valid   = []
+        
+        train_idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(train_idx_list)
+        normal_data=False
+        abnormal_data=False
+        for idx in train_idx_list:
+            if ll_classifier_train_Y[idx][0] == -1 and normal_data is False:
+                X_train.append(ll_classifier_train_X[idx])
+                Y_train.append([-1]*len(ll_classifier_train_X[idx]))
+                idx_train.append(idx)
+                normal_data = True
+            elif ll_classifier_train_Y[idx][0] == 1 and abnormal_data is False:
+                X_train.append(ll_classifier_train_X[idx])        
+                Y_train.append([1]*len(ll_classifier_train_X[idx]))
+                idx_train.append(idx)
+                abnormal_data = True
+            else:
+                X_valid.append(ll_classifier_train_X[idx])
+                Y_valid.append([ll_classifier_train_Y[idx][0]]*len(ll_classifier_train_X[idx]))
+
+        ## print np.shape(initial_train_X), np.shape(initial_train_Y)
+        X_train, Y_train, _ = dm.flattenSample(X_train, Y_train, remove_fp=True)
+
+    #-----------------------------------------------------------------------------------------
+    scaler = preprocessing.StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    if not (fit_method.find('full') >= 0):
+        X_valid_scaled = []
+        for i in xrange(len(X_valid)):
+            X_valid_scaled.append( scaler.transform(X_valid[i]) )
+    ## print np.shape(X_train), np.shape(X_train_scaled), " - " , np.shape(X_valid), np.shape(X_valid_scaled)
+
+    ## validation set (incremental fitting) and test set
+    X_test = []
+    Y_test = [] 
+    for j in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_X[j])==0: continue
+
+        try:
+            if method.find('svm')>=0 or method.find('sgd')>=0:
+                X = scaler.transform(ll_classifier_test_X[j])                                
+            elif method == 'progress_time_cluster' or method == 'fixed':
+                X = ll_classifier_test_X[j]
+        except:
+            print ll_classifier_test_X[j]
+            continue
+            
+        X_test.append(X)
+        Y_test.append(ll_classifier_test_Y[j])
+
+    idx_list     = range(len(X_test))
+    new_idx_list = copy.copy(idx_list) #randomList(idx_list)
+    random.shuffle(new_idx_list)
+    X_test  = [X_test[idx] for idx in new_idx_list]
+    Y_test  = [Y_test[idx] for idx in new_idx_list]
+
+    #-----------------------------------------------------------------------------------------
+    nSamples = len(Y_train)
+    sgd_n_iter = 10
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    for j in xrange(nPoints): 
+        dtc.set_params(**SVM_dict)        
+        if method == 'sgd' and fit_method.find('full')>=0:
+            dtc.set_params( class_weight=weights[j] )
+        elif method == 'sgd' and fit_method.find('single')>=0:
+            dtc.set_params( class_weight=weights[j], sgd_n_iter=sgd_n_iter )
+        else:
+            print "Not available method"
+            return "Not available method", -1, params
+
+        # Training fit
+        ret = dtc.fit(X_train_scaled, Y_train)
+
+        # Incremental fit
+        if fit_method.find('incremental') >= 0:
+
+            tp_l = []
+            fp_l = []
+            tn_l = []
+            fn_l = []
+            result_list = []
+
+            # incremental learning and classification
+            for i in xrange(len(X_test)):
+                if len(Y_test[i])==0: continue
+
+                # 2) test classifier
+                X_ptest = X_test[i]
+                Y_ptest = Y_test[i]
+                Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                for k, y_est in enumerate(Y_est):
+                    if y_est > 0:
+                        break
+
+                tp=0; fp=0; tn=0; fn=0
+                if Y_ptest[0] > 0:
+                    if y_est > 0:
+                        tp = 1
+                        tp_l.append(1)
+                    else:
+                        fn = 1
+                        fn_l.append(1)
+                elif Y_ptest[0] <= 0:
+                    if y_est > 0:
+                        fp = 1
+                        fp_l.append(1)
+                    else:
+                        tn = 1
+                        tn_l.append(1)
+
+                result_list.append([tp,fn,fp,tn])
+
+            data[method]['tp_l'][j].append(tp_l)
+            data[method]['fp_l'][j].append(fp_l)
+            data[method]['fn_l'][j].append(fn_l)
+            data[method]['tn_l'][j].append(tn_l)
+            data[method]['result'][j].append(result_list)
+
+
+            
+            for idx in range(0,len(X_valid_scaled),nPartialFit):
+                if idx+nPartialFit > len(X_valid_scaled): continue
+
+                p_train_X, p_train_Y, p_train_W = getProcessSGDdata(X_valid_scaled[idx:idx+nPartialFit], \
+                                                                    Y_valid[idx:idx+nPartialFit], weights[j])
+                
+                ## for k in xrange(nPartialFit):
+                ##     X_ptrain, Y_ptrain = X_valid_scaled[idx+k], Y_valid[idx+k]
+                ##     if Y_ptrain[0] > 0:
+                ##         X_ptrain, Y_ptrain = dm.getEstTruePositive(X_ptrain)
+                    
+                ##     ## sample_weight = np.array([1.0]*len(Y_ptrain))
+                ##     if Y_ptrain == -1:
+                ##         sample_weight = [1.0]*len(X_ptrain)
+                ##     else:
+                ##         sample_weight = [weights[j]]*len(X_ptrain)
+
+                ##     if k==0:
+                ##         p_train_X = X_ptrain
+                ##         p_train_Y = Y_ptrain
+                ##         p_train_W = sample_weight
+                ##     else:
+                ##         p_train_X = np.vstack([p_train_X, X_ptrain])
+                ##         p_train_Y = np.hstack([p_train_Y, Y_ptrain])
+                ##         p_train_W = np.hstack([p_train_W, sample_weight])
+
+                ## p_idx_list = range(len(p_train_X))
+                ## random.shuffle(p_idx_list)
+                ## p_train_X = [p_train_X[ii] for ii in p_idx_list]
+                ## p_train_Y = [p_train_Y[ii] for ii in p_idx_list]
+                ## p_train_W = [p_train_W[ii] for ii in p_idx_list]
+
+                ## dtc.set_params( learning_rate='constant' )
+                ## dtc.set_params( eta0=0.05 )  #1.0/(float(nSamples + idx+1))/5.0 )
+                ## ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], sample_weight=p_train_W)
+                ret = dtc.partial_fit(p_train_X, p_train_Y, classes=[-1,1], n_iter=5)
+                ## ret = dtc.fit(p_train_X, p_train_Y)
+
+                tp_l = []
+                fp_l = []
+                tn_l = []
+                fn_l = []
+                result_list = []
+
+                # incremental learning and classification
+                for i in xrange(len(X_test)):
+                    if len(Y_test[i])==0: continue
+
+                    # 2) test classifier
+                    X_ptest = X_test[i]
+                    Y_ptest = Y_test[i]
+                    Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                    for k, y_est in enumerate(Y_est):
+                        if y_est > 0:
+                            break
+
+                    tp=0; fp=0; tn=0; fn=0
+                    if Y_ptest[0] > 0:
+                        if y_est > 0:
+                            tp = 1
+                            tp_l.append(1)
+                        else:
+                            fn = 1
+                            fn_l.append(1)
+                    elif Y_ptest[0] <= 0:
+                        if y_est > 0:
+                            fp = 1
+                            fp_l.append(1)
+                        else:
+                            tn = 1
+                            tn_l.append(1)
+
+                    result_list.append([tp,fn,fp,tn])
+
+                data[method]['tp_l'][j].append(tp_l)
+                data[method]['fp_l'][j].append(fp_l)
+                data[method]['fn_l'][j].append(fn_l)
+                data[method]['tn_l'][j].append(tn_l)
+                data[method]['result'][j].append(result_list)
+
+                tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))
+                fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))
+                print j, idx, " = ",  tpr, fpr, np.sum(tp_l+fn_l+fp_l+tn_l)
+
+        else:
+            idx  = 0
+            tp_l = []
+            fp_l = []
+            tn_l = []
+            fn_l = []
+            result_list = []
+            nSamples = len(Y_train)
+
+            # classification
+            for i in xrange(len(X_test)):
+                if len(Y_test[i])==0: continue
+
+                # 2) test classifier
+                X_ptest = X_test[i]
+                Y_ptest = Y_test[i]
+                Y_est   = dtc.predict(X_ptest, y=Y_ptest)
+                for k, y_est in enumerate(Y_est):
+                    if y_est > 0:
+                        break
+
+                tp=0; fp=0; tn=0; fn=0
+                if Y_ptest[0] > 0:
+                    if y_est > 0:
+                        tp = 1
+                        tp_l.append(1)
+                    else:
+                        fn = 1
+                        fn_l.append(1)
+                elif Y_ptest[0] <= 0:
+                    if y_est > 0:
+                        fp = 1
+                        fp_l.append(1)
+                    else:
+                        tn = 1
+                        tn_l.append(1)
+
+                result_list.append([tp,fn,fp,tn])
+
+            data[method]['tp_l'][j].append( tp_l )
+            data[method]['fp_l'][j].append( fp_l )
+            data[method]['fn_l'][j].append( fn_l )
+            data[method]['tn_l'][j].append( tn_l )
+            data[method]['result'][j].append(result_list)
+
+    return data
+
 
 
 
@@ -1700,6 +2259,9 @@ if __name__ == '__main__':
     p.add_option('--likelihood_plot', '--lp', action='store_true', dest='bLikelihoodPlot', \
                  default=False,help='plot likelihood given multiple classes')
 
+    p.add_option('--data_comp_plot', '--dcp', action='store_true', dest='bDataCompPlot', \
+                 default=False,help='')
+
     
     p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
                  default=False, help='Renew pickle files.')
@@ -1754,6 +2316,51 @@ if __name__ == '__main__':
         onlineEvaluationDouble(opt.task, raw_data_path1, save_data_path1, param_dict1, \
                                opt.task2, raw_data_path2, save_data_path2, param_dict2, \
                                renew=opt.bRenew, bUpdateHMM=opt.bUpdateHMM )
+    elif opt.bDataCompPlot:
+        from hrl_anomaly_detection import ICRA2017_params as prm
+        opt.task = 'feeding'
+        opt.dim  = 4
+        
+        raw_data_path1, save_data_path1, param_dict1 = \
+          getParams(opt.task, opt.bDataRenew, opt.bAERenew, opt.bHMMRenew, opt.dim)
+        ## save_data_path1    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+        ##   opt.task+'_data'
+          
+        ## subject_names1 = ['Zack', 'park']
+        subject_names1 = [ 'Ashwin', 'Song', 'tom' , 'lin', 'wonyoung']
+        subject_names2 = ['test'] 
+        raw_data_path2, save_data_path2, param_dict2 = prm.getFeeding(opt.task, False, \
+                                                               False, False,\
+                                                               dim=opt.dim)
+        save_data_path2    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+          subject_names1[0]+'_'+opt.task+'_data/demo'
+
+        dataCompPlot(opt.task, opt.dim,\
+                     (subject_names1, raw_data_path2, save_data_path1, param_dict2),\
+                     (subject_names2, raw_data_path2, save_data_path2, param_dict2))
+
+
+                               
+    elif opt.bICRA2017test:
+
+        subject_names = ['test'] 
+        ## subject_names = ['park'] 
+        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
+                                                                False, False,\
+                                                                rf_center, local_range, dim=opt.dim)
+        check_method      = opt.method
+        save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
+          subject_names[0]+'_'+opt.task+'_data/demo'
+        param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
+                             'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
+                             'sgd_gamma':0.32, 'sgd_w_negative':2.5}
+
+        param_dict['data_param']['nNormalFold']   = 1
+        param_dict['data_param']['nAbnormalFold'] = 1
+
+        
+        onlineEvaluationSingleIncremental(opt.task, raw_data_path, save_data_path, param_dict, renew=opt.bRenew,\
+                                          save_pdf=opt.bSavePdf, sgd_intercept=True)
                                
     else:
         raw_data_path, save_data_path, param_dict = \

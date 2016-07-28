@@ -42,7 +42,7 @@ import hrl_lib.util as ut
 
 # msgs and srvs
 from hrl_anomaly_detection.msg import MultiModality
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse, String_None, String_NoneResponse
+from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None, StringArray_NoneResponse
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
@@ -52,6 +52,7 @@ from sensor.robot_kinematics import robot_kinematics
 from sensor.tool_ft import tool_ft
 from sensor.artag_vision import artag_vision
 from sensor.kinect_vision import kinect_vision
+from sensor.realsense_vision import realsense_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
@@ -61,7 +62,7 @@ QUEUE_SIZE = 10
 
 class logger:
     def __init__(self, ft=False, audio=False, audio_wrist=False, kinematics=False, vision_artag=False, \
-                 vision_change=False, pps=False, skin=False, \
+                 vision_change=False, vision_landmark=False, pps=False, skin=False, \
                  subject=None, task=None, \
                  record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
                  data_pub= False, detector=False, verbose=False):
@@ -73,6 +74,7 @@ class logger:
         self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
+        self.enable_log_thread = False
 
         # GUI
         self.feedbackMSG = 0
@@ -80,15 +82,17 @@ class logger:
         
         self.initParams()
 
-        self.audio_kinect  = kinect_audio() if audio else None
-        self.audio_kinect  = kinect_audio() if audio else None
-        self.audio_wrist   = wrist_audio() if audio_wrist else None
-        self.kinematics    = robot_kinematics() if kinematics else None
-        self.ft            = tool_ft() if ft else None
-        self.vision_artag  = artag_vision(self.task, False, viz=False) if vision_artag else None
-        self.vision_change = kinect_vision(False) if vision_change else None
-        self.pps_skin      = pps_skin(True) if pps else None
-        self.fabric_skin   = fabric_skin(True) if skin else None
+        # A list of sensor objects
+        self.audio_kinect    = kinect_audio() if audio else None
+        self.audio_kinect    = kinect_audio() if audio else None
+        self.audio_wrist     = wrist_audio() if audio_wrist else None
+        self.kinematics      = robot_kinematics() if kinematics else None
+        self.ft              = tool_ft() if ft else None
+        self.vision_artag    = artag_vision(self.task, False, viz=False) if vision_artag else None
+        self.vision_change   = kinect_vision(False) if vision_change else None
+        self.vision_landmark = realsense_vision(False) if vision_landmark else None
+        self.pps_skin        = pps_skin(True) if pps else None
+        self.fabric_skin     = fabric_skin(True) if skin else None
 
         self.waitForReady()
         self.initComms()
@@ -110,9 +114,8 @@ class logger:
         Record data and publish raw data
         '''        
         ##GUI implementation       
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
-        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String,
-                                                 queue_size=QUEUE_SIZE)
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String,
+                                                   self.feedbackCallback)
         
         if self.data_pub:
             self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
@@ -121,12 +124,12 @@ class logger:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
             self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', String_None)
+            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', StringArray_None)
             print "Detected anomaly detector service"
 
     ##GUI implementation
     def feedbackCallback(self, data):
-    #Just...log? idk where this one will go. I assume it is integrated with log....
+        #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
         if self.feedbackMSG == "SUCCESS":
@@ -136,12 +139,16 @@ class logger:
         else:
             self.feedbackStatus = '3'
             
-        
+
+    def getLogStatus(self):
+        return self.enable_log_thread
+            
     def setTask(self, task):
         '''
         Set a current task
         '''
         self.task = task
+        self.initParams()
 
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
@@ -149,28 +156,17 @@ class logger:
         if self.ad_flag:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv   = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
+            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
             print "Detected anomaly detector service"
             
         
     def log_start(self):
+        rospy.loginfo("Start to log!")
         self.init_time = rospy.get_rostime().to_sec()
         self.data = {}
         self.data['init_time'] = self.init_time
 
         ## ## Reset time
-        ## if self.audio_kinect is not None:
-        ##     self.audio_kinect.reset(self.init_time)            
-        ##     ## self.audio_kinect.enable_log = True # logging by callback
-        ## if self.kinematics is not None:
-        ##     self.kinematics.reset(self.init_time)
-        ##     ## self.kinematics.enable_log = True # logging by callback            
-        ## if self.ft is not None:
-        ##     self.ft.reset(self.init_time)
-        ## if self.vision is not None:
-        ##     self.vision.reset(self.init_time)
-        ## if self.pps_skin is not None:
-        ##     self.pps_skin.reset(self.init_time)
         if self.fabric_skin is not None:
             self.fabric_skin.reset(self.init_time)
 
@@ -182,42 +178,18 @@ class logger:
 
         # special treament for audio
         ## self.audio_wrist.log_start()
-                    
-    def close_log_file(self, bCont=False, last_status='skip'):
 
-        ## # logging by callback
-        ## # disable logging
-        ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
-        ## if self.kinematics is not None: self.kinematics.enable_log = False
-        ## if self.audio_wrist is not None: self.audio_wrist.cancelled = True
-        
-        ## # log into data
-        ## if self.audio_kinect is not None: 
-        ##     self.data['audio_time']    = self.audio_kinect.time_data            
-        ##     self.data['audio_azimuth'] = self.audio_kinect.audio_azimuth
-        ##     self.data['audio_power']   = self.audio_kinect.audio_power
-        
-        ## if self.kinematics is not None:
-        ##     self.data['kinematics_time']        = self.kinematics.time_data
-        ##     self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
-        ##     self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
-        ##     self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
-        ##     self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
-        ##     self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
-        ##     self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
-        ##     self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
 
-        # logging by thread 
+    def log_stop(self):
+        rospy.loginfo("Stop to log!")
         self.enable_log_thread = False
+        
+        
+    def close_log_file(self, bCont=False, last_status='skip'):
+        rospy.loginfo("Saving a file...")
 
-        ## # log thread data
-        ## if self.audio_wrist is not None: 
-        ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
-        ##     ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
-        ##     ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
-        ##     self.data['audio_wrist_rms']   = audio_wrist_rms
-        ##     self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
-
+        # logging by thread
+        self.log_stop()
         
         if bCont:
             status = last_status
@@ -257,54 +229,25 @@ class logger:
 
         gc.collect()
         ## rospy.sleep(1.0)
+        rospy.loginfo("Finish to log!")
 
 
-##GUI section
+        ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
 
-        ## # logging by callback
-        ## # disable logging
-        ## if self.audio_kinect is not None: self.audio_kinect.enable_log = False
-        ## if self.kinematics is not None: self.kinematics.enable_log = False
-        ## if self.audio_wrist is not None: self.audio_wrist.cancelled = True
-        
-        ## # log into data
-        ## if self.audio_kinect is not None: 
-        ##     self.data['audio_time']    = self.audio_kinect.time_data            
-        ##     self.data['audio_azimuth'] = self.audio_kinect.audio_azimuth
-        ##     self.data['audio_power']   = self.audio_kinect.audio_power
-        
-        ## if self.kinematics is not None:
-        ##     self.data['kinematics_time']        = self.kinematics.time_data
-        ##     self.data['kinematics_ee_pos']      = self.kinematics.kinematics_ee_pos
-        ##     self.data['kinematics_ee_quat']     = self.kinematics.kinematics_ee_quat
-        ##     self.data['kinematics_jnt_pos']     = self.kinematics.kinematics_main_jnt_pos
-        ##     self.data['kinematics_jnt_vel']     = self.kinematics.kinematics_main_jnt_vel
-        ##     self.data['kinematics_jnt_eff']     = self.kinematics.kinematics_main_jnt_eff
-        ##     self.data['kinematics_target_pos']  = self.kinematics.kinematics_target_pos
-        ##     self.data['kinematics_target_quat'] = self.kinematics.kinematics_target_quat                    
-
-        # logging by thread 
-        self.enable_log_thread = False
-
-        ## # log thread data
-        ## if self.audio_wrist is not None: 
-        ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_features(self.data['audio_wrist_data'])
-        ##     ## self.data['audio_wrist_time']  = self.audio_wrist.time_data
-        ##     ## self.data['audio_wrist_data']  = self.audio_wrist.audio_data
-        ##     self.data['audio_wrist_rms']   = audio_wrist_rms
-        ##     self.data['audio_wrist_mfcc']  = audio_wrist_mfcc
+        # logging by thread
+        self.log_stop()
 
         flag = 0
         self.feedbackStatus = 0
-        self.consolePub.publish("Requesting Feedback!") 
         if bCont:
             status = last_status
         else:
+            rate = rospy.Rate(2)
             while flag == 0 and not rospy.is_shutdown():
                 flag = self.feedbackStatus
-                #print "Enter Feedback"
-                #print self.feedbackStatus
+                rate.sleep()
+
             if flag == '1':   status = 'success'
             elif flag == '2': status = 'failure'
             elif flag == '3': status = 'skip'
@@ -345,8 +288,18 @@ class logger:
     def enableDetector(self, enableFlag):
         ret = self.ad_srv(enableFlag)
 
-    def updateDetector(self, fileName):        
-        ret = self.ad_update_srv(fileName)
+    def updateDetector(self):
+        '''
+        It is called by arm_reacher_logging...
+        '''
+
+        fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
+        unused_fileList = [filename for filename in fileList if filename.find('used')<0]
+        
+        ret = self.ad_update_srv(unused_fileList)
+        for f in unused_fileList:
+            name = f.split('.pkl')[0]
+            os.system('mv '+f + ' '+ name+'_used.pkl')
         
         
     def waitForReady(self):
@@ -398,6 +351,13 @@ class logger:
                 if self.vision_change.isReady() is False: 
                     print "-------------------------------------"
                     print "Octree change is not ready"                                        
+                    print "-------------------------------------"
+                    continue
+
+            if self.vision_landmark is not None:
+                if self.vision_landmark.isReady() is False: 
+                    print "-------------------------------------"
+                    print "Landmark detection is not ready"                                        
                     print "-------------------------------------"
                     continue
                 
@@ -477,12 +437,17 @@ class logger:
                     msg.vision_artag_pos  = np.squeeze(self.vision_artag.artag_pos.T).tolist()
                     msg.vision_artag_quat = np.squeeze(self.vision_artag.artag_quat.T).tolist()
 
+            if self.vision_landmark is not None:
+                if self.vision_landmark.landmark_pos is not None:
+                    msg.vision_landmark_pos  = np.squeeze(self.vision_landmark.landmark_pos.T).tolist()
+                    msg.vision_landmark_quat = np.squeeze(self.vision_landmark.landmark_quat.T).tolist()
+                    
             if self.vision_change is not None:
                 if self.vision_change.centers is not None:
                     msg.vision_change_centers_x = np.squeeze(self.vision_change.centers[:,0]).tolist() # 3xN
                     msg.vision_change_centers_y = np.squeeze(self.vision_change.centers[:,1]).tolist() # 3xN
                     msg.vision_change_centers_z = np.squeeze(self.vision_change.centers[:,2]).tolist() # 3xN
-                    
+
             if self.pps_skin is not None:
                 msg.pps_skin_left  = np.squeeze(self.pps_skin.data_left.T).tolist()
                 msg.pps_skin_right = np.squeeze(self.pps_skin.data_right.T).tolist()
@@ -583,6 +548,19 @@ class logger:
                     self.data['vision_artag_quat'] = np.hstack([self.data['vision_artag_quat'], \
                                                                 self.vision_artag.artag_quat])
 
+            if self.vision_landmark is not None:
+
+                if 'vision_landmark_time' not in self.data.keys():
+                    self.data['vision_landmark_time'] = [self.vision_landmark.time]
+                    self.data['vision_landmark_pos']  = self.vision_landmark.landmark_pos
+                    self.data['vision_landmark_quat'] = self.vision_landmark.landmark_quat
+                else:                    
+                    self.data['vision_landmark_time'].append(self.vision_landmark.time)
+                    self.data['vision_landmark_pos']  = np.hstack([self.data['vision_landmark_pos'], \
+                                                                self.vision_landmark.landmark_pos])
+                    self.data['vision_landmark_quat'] = np.hstack([self.data['vision_landmark_quat'], \
+                                                                self.vision_landmark.landmark_quat])
+
             if self.vision_change is not None:
                 if 'vision_change_time' not in self.data.keys():
                     self.data['vision_change_time'] = [self.vision_change.time]
@@ -643,12 +621,13 @@ if __name__ == '__main__':
     verbose = True
     data_pub= True
     detector= False
+    record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'
 
     rospy.init_node('record_data')
-    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=True, \
-                 vision_change=False, \
+    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+                 vision_landmark=False, vision_change=False, \
                  pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
-                 data_pub=data_pub, detector=detector)
+                 data_pub=data_pub, detector=detector, record_root_path=record_root_path)
 
     rospy.sleep(1.0)
     log.run()

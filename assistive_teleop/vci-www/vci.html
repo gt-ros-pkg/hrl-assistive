@@ -97,6 +97,7 @@
      <div id="controls">
         <h3>Controls</h3>
         <!-- Driving Controls -->
+        <div class="tuck-driving drive-ctrl" style="display:none">Tuck Arms</div>
         <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
         <h4 class="drive-ctrl" style="display:none">Click on video to drive.</h4>
 
@@ -119,6 +120,7 @@
         <!-- Right Arm Controls -->
         <div class="pick-and-place r-arm-ctrl" style="display:none"></div>
         <div class="camera-swing r-arm-ctrl" style="display:none">3D Peek</div>
+        <div class="arm-cam r-arm-ctrl" style="display:none">Forearm Camera</div>
         <div id="r-posrot-set" class="r-arm-ctrl posrot-set" style="display:none">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
@@ -126,10 +128,12 @@
             <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
             <label for="r-posrot-rot">Wrist Rotation</label>
         </div>
+        <div class="tuck-side r-arm-ctrl" style="display:none">Tuck Aside</div>
 
         <!-- Left Arm Controls -->
         <div class="pick-and-place l-arm-ctrl" style="display:none"></div>
         <div class="camera-swing l-arm-ctrl" style="display:none">3D Peek</div>
+        <div class="arm-cam l-arm-ctrl" style="display:none">Forearm Camera</div>
         <div id="l-posrot-set" class="l-arm-ctrl posrot-set" style="display:none">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
@@ -137,6 +141,7 @@
             <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
             <label for="l-posrot-rot">Wrist Rotation</label>
         </div>
+        <div class="tuck-side l-arm-ctrl" style="display:none">Tuck Aside</div>
 
         <!-- Step size controls -->
         <div id="speedOptions" class="arm-ctrl">
@@ -182,10 +187,6 @@
      <img id="shortIcon" src="./css/icons/short.png"></img>
      <div id="torsoSlider"></div>
      <!-- divs for arm controls -->
-<!--         <img id="rightFocusPoint" class="focus-point r-arm-ctrl" src="./css/icons/focus-point.png"></img>
-     <img id="leftFocusPoint" class="focus-point l-ARM-Ctrl" src="./css/icons/focus-point.png"></img>
-     <div id="depthMaskLeft" class="depth-mask arm-ctrl" ></div>
-     <div id="depthMaskRight" class="depth-mask arm-ctrl" ></div>-->
      <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
          <!--<div class="slider"></div>-->
          <div id="ctrl-ring" class="default">
@@ -213,7 +214,6 @@
         <div class="gripper-slider"></div>
         <input type="checkbox" class="release" id="release-left"/>
         <label for="release-left">Release on contact</label>
-<!--        <div class="grab">Grab</div>-->
      </div>
  </div>
 

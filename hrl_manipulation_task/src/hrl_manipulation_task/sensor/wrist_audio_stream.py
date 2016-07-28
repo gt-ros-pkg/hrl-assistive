@@ -127,7 +127,7 @@ class wrist_audio(threading.Thread):
             devinfo = self.p.get_device_info_by_index(i)
             print('Device %d: %s'%(i, devinfo['name']))
 
-            for keyword in ['mic', 'input', 'icicle']:
+            for keyword in ['mic', 'input', 'icicle', 'creative']:
                 if keyword in devinfo['name'].lower():
                     print('Found an input: device %d - %s'%(i, devinfo['name']))
                     device_index = i

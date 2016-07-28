@@ -78,7 +78,7 @@ def vectors_to_mean_sigma(vec, nState):
     return mu, sig
 
 # Returns mu,sigma for n hidden-states from feature-vector
-def vectors_to_mean_cov(vecs, nState, nEmissionDim):
+def vectors_to_mean_cov(vecs, nState, nEmissionDim, cov_type='full'):
     index = 0
     m, n = np.shape(vecs[0]) # samples x length
     mus  = [np.zeros(nState) for i in xrange(nEmissionDim)]
@@ -95,6 +95,11 @@ def vectors_to_mean_cov(vecs, nState, nEmissionDim):
 
         ## print np.shape(temp_vecs), np.shape(cov)
         cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
+        if cov_type == 'diag':
+            for i in xrange(nEmissionDim):
+                for j in xrange(nEmissionDim):
+                    if i==j: continue
+                    cov[index,i, j] = 0.0
         index += 1
 
     return mus, cov

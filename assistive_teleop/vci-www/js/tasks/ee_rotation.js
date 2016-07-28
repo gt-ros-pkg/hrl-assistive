@@ -4,6 +4,10 @@ RFH.EERotation = function (options) {
     self.arm = options.arm;
     self.tfClient = options.tfClient;
     self.eeDeltaCmd = options.eeDeltaCmdFn;
+    self.updatePreview = options.updatePreviewFn;
+    self.startPreview = options.startPreviewFn;
+    self.stopPreview = options.stopPreviewFn;
+    self.setHandDelta = options.setDeltaFn;
     self.$viewer = $('#viewer-canvas');
     self.raycaster = new THREE.Raycaster();
     self.hoveredMesh = null;
@@ -106,15 +110,21 @@ RFH.EERotation = function (options) {
             if (self.hoveredMesh !== null){
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = null;
+                self.stopPreview()
             }
         } else {
             if (self.hoveredMesh === null) {
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh = overMesh;
+                self.setHandDelta(overMesh.cbArgs);
+                self.startPreview();
+                self.updatePreview();
             } else if (overMesh !== self.hoveredMesh) {
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = overMesh;
+                self.setHandDelta(overMesh.cbArgs)
+                self.updatePreview();
             }
         }
     };
@@ -287,5 +297,4 @@ RFH.EERotation = function (options) {
         }
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
-
 };

@@ -18,12 +18,12 @@
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
-  <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
+  <node name="$(anon rosbridge)" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
     <param name="port" type="int" value="$(arg ws_port)" />
     <param name="binary_encoder" type="str" value="bson" />
   </node>
-  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
-  <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
+  <node name="$(anon rosapi)" pkg="rosapi" type="rosapi_node" output="screen"/>
+  <node name="$(anon roswww)" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath www"/>
   <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
   <!--<node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
@@ -31,19 +31,19 @@
   <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
 
   <!-- Throttling nodes for robot state -->
-  <node name="torso_state_throttle" pkg="topic_tools" type="throttle"
+  <node name="$(anon torso_state_throttle)" pkg="topic_tools" type="throttle"
         args="messages /torso_controller/state 2 /torso_controller/state_throttled" />
 
-  <node name="head_state_throttle" pkg="topic_tools" type="throttle"
+  <node name="$(anon head_state_throttle)" pkg="topic_tools" type="throttle"
         args="messages /head_traj_controller/state 4 /head_traj_controller/state_throttled" />
 
-  <node name="r_gripper_state_throttle" pkg="topic_tools" type="throttle"
+  <node name="$(anon r_gripper_state_throttle)" pkg="topic_tools" type="throttle"
         args="messages /r_gripper_controller/state 1 /r_gripper_controller/state_throttled" />
 
-  <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle"
+  <node name="$(anon l_gripper_state_throttle)" pkg="topic_tools" type="throttle"
         args="messages /l_gripper_controller/state 1 /l_gripper_controller/state_throttled" />
 
-  <node if="$(arg run_ft_sensor)" name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
+  <node if="$(arg run_ft_sensor)" name="$(anon throttle_wt_force_out)" pkg="topic_tools" type="throttle"
         args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
 
   <!-- Launch Kinect (needed for pixel_2_3d -->
@@ -53,7 +53,7 @@
   </include>
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect -->
-  <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
+  <node name="$(anon pixel_2_3d)" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
     <remap from="info_topic" to="$(arg kinect_ns)/qhd/camera_info" />
     <!--remap from="image" to="$(arg kinect_camera)" /-->
     <remap from="point_cloud" to="$(arg kinect_points)" />

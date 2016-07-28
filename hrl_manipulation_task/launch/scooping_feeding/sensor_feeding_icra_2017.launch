@@ -1,0 +1,33 @@
+<launch>
+
+	<!--arg name="marker_size" default="3.3" /-->
+	<arg name="task_name" default="feeding" />
+
+	<arg name="cam_image_topic" default="/head_mount_kinect/hd/points" />
+	<arg name="cam_info_topic" default="/head_mount_kinect/hd/camera_info" />		
+	<arg name="output_frame" default="/torso_lift_link" />        
+
+        <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
+
+
+        <!-- Launch Realsense Camera -->
+        <include file='$(find hrl_realsense_camera)/launch/front_mount_frame.launch'/>
+        <node name="mouth_relay_node" pkg="topic_tools" type="relay"
+              args="/hrl_manipulation_task/mouth_pose_backpack /hrl_manipulation_task/mouth_pose" output="screen" />
+        <node name="image_relay_node" pkg="topic_tools" type="relay"
+              args="/SR300/rgb/image_raw /SR300/rgb/image_raw_relay" output="screen" />
+
+        <!-- F/T sensor -->
+        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="false" />
+        
+        <!-- Head conversion -->  
+        <!--node name="findMouth" pkg="hrl_manipulation_task"
+            type="findMouthLandmark.py" respawn="false"
+            output="screen" /-->
+
+        <!-- Visual bowl height -->  
+        <!--node name="bowlHeight" pkg="hrl_manipulation_task" type="visual_bowl_height.py" respawn="false" output="screen" /-->
+
+</launch>
+
+

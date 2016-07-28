@@ -31,36 +31,51 @@
 # system library
 import time
 import datetime
+import multiprocessing
 
 # ROS library
 import rospy, roslib
 
 # HRL library
-from hrl_srvs.srv import String_String
+from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
 
 from hrl_manipulation_task.record_data import logger
 
+def armReachLeft(action):
+    armReachActionLeft(action)
+    
+def armReachRight(action):
+    armReachActionRight(action)
 
-def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=False, abnormal=False):
+def initTask(armReachActionLeft, armReachActionRight):
+    
+    print "Initializing both arms"
+    print armReachActionRight("initScooping1")
+    print armReachActionLeft("initScooping1")
+    
+
+def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, \
+             rndPose=False, rndVision=False):
 
     log.task = 'scooping'
     log.initParams()
     
     ## Scooping -----------------------------------    
     print "Initializing left arm for scooping"
-    print armReachActionLeft("initScooping1")
-    print armReachActionRight("initScooping1")
-    
     #ut.get_keystroke('Hit a key to proceed next')
-    if train: 
-        print armReachActionRight("initScooping2Random")
-        if abnormal:
-            print armReachActionLeft("getBowlPosRandom")
-        else:
-            print armReachActionLeft("getBowlPos")            
+    ## print armReachActionRight("initScooping1")
+    
+    if rndPose: 
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2Random',))
     else: 
-        print armReachActionRight("initScooping2")
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+    rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
+    leftProc.start(); rightProc.start()
+    leftProc.join(); rightProc.join()
+        
+    if rndVision: print armReachActionLeft("getBowlPosRandom")
+    else:       print armReachActionLeft("getBowlPos")            
     print armReachActionLeft('lookAtBowl')
     print armReachActionLeft("initScooping2")
         
@@ -78,33 +93,40 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train
     
 def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
 
-    log.task = 'feeding'
-    log.initParams()
+    log.setTask('feeding')
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    print armReachActionLeft("initFeeding")
-    print armReachActionRight("initFeeding")
-
+    print armReachActionLeft('lookToRight')
     print "Detect ar tag on the head"
-    print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
-    #ut.get_keystroke('Hit a key to proceed next')        
+    print armReachActionLeft("initFeeding1")  
+    print armReachActionRight("getHeadPos")
+    print armReachActionRight("initFeeding")  
+    
+    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initFeeding1',))
+    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initFeeding',))
+    ## leftProc.start(); rightProc.start()
+    ## leftProc.join(); rightProc.join()
 
-    print "Running feeding1"    
-    print armReachActionLeft("runFeeding1")
+    ## print armReachActionLeft('lookAtMouth')
+    print armReachActionLeft("getHeadPos")
+    print armReachActionLeft("initFeeding2")
     
     print "Start to log!"    
     log.log_start()
-    if detection_flag: log.enableDetector(True)
-    
-    print "Running feeding2"    
-    print armReachActionLeft("runFeeding2")
-
+    if detection_flag: log.enableDetector(True)    
+    print armReachActionLeft("runFeeding")
     if detection_flag: log.enableDetector(False)
     print "Finish to log!"    
     log.close_log_file()
     
+def updateSGDClassifier(task):
+    log.setTask(task)
+    log.updateDetector()
+
+    return
+
     
 if __name__ == '__main__':
     
@@ -114,6 +136,11 @@ if __name__ == '__main__':
                  default=False, help='Continuously publish data.')
     p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
                  default=False, help='Enable anomaly detector.')
+    p.add_option('--en_random_pose', '--rnd', action='store_true', dest='bRandPose',
+                 default=False, help='Enable randomness in a right arm pose.')
+    p.add_option('--data_path', action='store', dest='sRecordDataPath',
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
+                 help='Enter a record data path')
     opt, args = p.parse_args()
 
     rospy.init_node('arm_reach_client')
@@ -132,22 +159,29 @@ if __name__ == '__main__':
     ## rospy.sleep(2.0)    
     ## #print armReachActionLeft('lookAtMouth')
     ## print armReachActionLeft('lookAtBowl')
+
     
-    log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
-                 pps=True, skin=True, \
-                 subject="gatsbii", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
-                     
+    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+                 vision_landmark=True, vision_change=False, \
+                 pps=True, skin=False, \
+                 subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                 record_root_path=opt.sRecordDataPath, verbose=False)
+    ## log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
+    ##              pps=True, skin=True, \
+    ##              subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
+
+                 
     last_trial  = '4'
-    last_detect = '2'
+    last_detect = '2'    
                  
     while not rospy.is_shutdown():
 
         detection_flag = False
         
-        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingNormalTrain, 5:scoopingAbnormalTrain, else: exit): ')
+        trial  = raw_input('Enter trial\'s status (e.g. 1:scooping, 2:feeding, 3: both, 4:scoopingRandom, 5:scoopingSGDUpdate else: exit): ')
         if trial=='': trial=last_trial
             
-        if trial is '1' or trial is '2' or trial is '3' or trial is '4' or trial is '5':
+        if trial is '1' or trial is '2' or trial is '3' or trial is '4' :
             detect = raw_input('Enable anomaly detection? (e.g. 1:enable else: disable): ')
             if detect == '': detect=last_detect
             if detect == '1': detection_flag = True
@@ -155,14 +189,15 @@ if __name__ == '__main__':
             if trial == '1':
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
             elif trial == '4':
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True)
-            elif trial == '5':
-                scooping(armReachActionLeft, armReachActionRight, log, detection_flag, train=True, abnormal=True)
+                scooping(armReachActionLeft, armReachActionRight, log, detection_flag,
+                         rndPose=opt.bRandPose, rndVision=False)
             elif trial == '2':
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
             else:
                 scooping(armReachActionLeft, armReachActionRight, log, detection_flag)
                 feeding(armReachActionLeft, armReachActionRight, log, detection_flag)
+        elif trial is '5':
+            updateSGDClassifier('scooping')
         else:
             break
 

@@ -7,8 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Frames1
-        - /PointCloud21
-        - /Image1
         - /PointCloud22
       Splitter Ratio: 0.5
     Tree Height: 276
@@ -30,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: Image
 Visualization Manager:
   Class: ""
   Displays:
@@ -56,12 +54,12 @@ Visualization Manager:
       Enabled: false
       Frame Timeout: 15
       Frames:
-        All Enabled: false
+        All Enabled: true
       Marker Scale: 0.3
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: false
+      Show Names: true
       Tree:
         {}
       Update Interval: 0
@@ -81,14 +79,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        base_camera_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_camera_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         base_footprint:
           Alpha: 1
           Show Axes: false
@@ -168,12 +158,12 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        head_mount_kinect_depth_link:
+        head_mount_kinect_ir_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        head_mount_kinect_depth_optical_frame:
+        head_mount_kinect_ir_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -259,10 +249,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        l_gripper_brush45_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         l_gripper_l_finger_link:
           Alpha: 1
           Show Axes: false
@@ -309,18 +295,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        l_gripper_shaver0_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_gripper_shaver45_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_gripper_shaver90_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         l_gripper_spoon_frame:
           Alpha: 1
           Show Axes: false
@@ -372,19 +346,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        narrow_stereo_gazebo_l_stereo_camera_frame:
+        narrow_stereo_l_stereo_camera_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        narrow_stereo_gazebo_l_stereo_camera_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        narrow_stereo_gazebo_r_stereo_camera_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        narrow_stereo_gazebo_r_stereo_camera_optical_frame:
+        narrow_stereo_l_stereo_camera_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -393,6 +359,14 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         narrow_stereo_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        narrow_stereo_r_stereo_camera_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        narrow_stereo_r_stereo_camera_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -516,14 +490,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        tilt_camera_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        tilt_camera_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         torso_lift_link:
           Alpha: 1
           Show Axes: false
@@ -533,19 +499,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        wide_stereo_gazebo_l_stereo_camera_frame:
+        wide_stereo_l_stereo_camera_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        wide_stereo_gazebo_l_stereo_camera_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wide_stereo_gazebo_r_stereo_camera_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wide_stereo_gazebo_r_stereo_camera_optical_frame:
+        wide_stereo_l_stereo_camera_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -557,6 +515,14 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        wide_stereo_r_stereo_camera_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        wide_stereo_r_stereo_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -564,12 +530,12 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 0.3
       Name: Axes
       Radius: 0.01
-      Reference Frame: r_gripper_palm_link
-      Value: false
+      Reference Frame: SR300_link
+      Value: true
     - Class: rviz/Axes
       Enabled: false
       Length: 0.3
@@ -589,46 +555,6 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.0025
-      Style: Flat Squares
-      Topic: /camera/depth/points
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Class: rviz/Image
-      Enabled: true
-      Image Topic: /head_mount_kinect/rgb_lowres/image
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
-      Value: true
-    - Alpha: 0.7
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -642,10 +568,53 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0025
       Style: Flat Squares
-      Topic: /camera/depth/points
+      Topic: /SR300/depth/points
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /SR300/rgb/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Alpha: 0.7
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.0025
+      Style: Flat Squares
+      Topic: /SR300/depth/points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -670,22 +639,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.05869
+      Distance: 1.66413
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.660279
-        Y: -0.845585
-        Z: 1.00071
+        X: 0.512693
+        Y: 0.253853
+        Z: 0.480598
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.260399
+      Pitch: 1.5698
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.97538
+      Yaw: 4.88858
     Saved: ~
 Window Geometry:
   Displays:
@@ -695,7 +664,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000010f0000025efc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a3000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006501000001d1000000b50000001600ffffff000000010000010f0000025efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000025e000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005150000003efc0100000002fb0000000800540069006d0065010000000000000515000002f600fffffffb0000000800540069006d00650100000000000004500000000000000000000004000000025e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000025efc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001a3000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006501000001d1000000b50000001600ffffff000000010000010f0000025efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000025e000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005150000003efc0100000002fb0000000800540069006d0065010000000000000515000002f600fffffffb0000000800540069006d00650100000000000004500000000000000000000003a50000025e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -705,5 +674,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1301
-  X: 55
-  Y: -14
+  X: 65
+  Y: 24

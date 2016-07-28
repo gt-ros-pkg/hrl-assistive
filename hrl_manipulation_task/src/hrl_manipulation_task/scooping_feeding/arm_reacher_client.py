@@ -31,6 +31,7 @@
 # system library
 import time, sys
 import datetime
+import multiprocessing
 
 # ROS library
 import rospy, roslib
@@ -38,6 +39,12 @@ import rospy, roslib
 # HRL library
 from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
+
+def armReachLeft(action):
+    armReachActionLeft(action)
+    
+def armReachRight(action):
+    armReachActionRight(action)
 
 if __name__ == '__main__':
 
@@ -47,21 +54,87 @@ if __name__ == '__main__':
     armReachActionLeft  = rospy.ServiceProxy("/arm_reach_enable", String_String)
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
-    
-    if False:
-        ## print armReachActionLeft("testingMotion")
-        print armReachActionRight("initScooping1")
-        print armReachActionLeft("initScooping1")
-        print armReachActionLeft("getBowlPos")
-        print armReachActionLeft('lookAtBowl')
-        print armReachActionRight("initScooping2")
-        print armReachActionLeft("initScooping2")
-        print armReachActionLeft("runScooping")
-        sys.exit()
-    
-    
-    ## Scooping -----------------------------------    
+
+    #---------------------------- Face registration ----------------------
     if True:
+        ## print armReachActionLeft('lookToRight')
+        ## sys.exit()
+        print armReachActionLeft("initArms")
+        print armReachActionRight("initArms")
+        ## print armReachActionRight("initScooping1")
+        sys.exit()
+
+    # -------------- TEST -----------------------    
+    if True:
+        
+        print armReachActionLeft("test")
+        print armReachActionRight("getHeadPos")
+        print armReachActionLeft("getHeadPos")
+        print armReachActionRight("initFeeding")  
+        print armReachActionLeft("initFeeding2")
+        print armReachActionLeft("runFeeding")
+        
+        sys.exit()
+        # Scooping
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+        rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+        leftProc.start(); rightProc.start()
+        leftProc.join(); rightProc.join()
+        print armReachActionLeft('getBowlPos')
+        print armReachActionLeft('lookAtBowl')
+        print armReachActionLeft('initScooping2')
+        print armReachActionLeft('runScooping')
+        ## sys.exit()
+        # feeding start
+        #print armReachActionLeft("initFeeding")    # run it only if there was no scooping
+        print armReachActionLeft('lookToRight')
+        print armReachActionLeft("getHeadPos")
+        print armReachActionLeft("initFeeding1")  
+        print armReachActionRight("getHeadPos")
+        print armReachActionRight("initFeeding")  
+        print armReachActionLeft("getHeadPos")
+        print armReachActionLeft("initFeeding2")
+        print armReachActionLeft("runFeeding")
+        # returning motion?        
+        sys.exit()
+
+        
+
+    #---------------------------- New Parallelization ----------------------
+    # Parallelized scooping
+    if False:
+        leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+        rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+        leftProc.start()
+        rightProc.start()
+        leftProc.join()
+        rightProc.join()
+        armReachActionRight('initScooping1')
+        armReachActionLeft('getBowlPos')
+        armReachActionLeft('lookAtBowl')
+        armReachActionLeft('initScooping2')
+        armReachActionLeft('runScooping')
+        sys.exit()
+
+    # Parallelized scooping
+    if False:
+        print "Initializing left arm for feeding"
+        print armReachActionLeft("initFeeding")
+        ## print armReachActionRight("initScooping1")
+        ## print armReachActionRight("initFeeding")
+
+        print "Detect ar tag on the head"
+        #print armReachActionLeft('lookAtMouth')
+        print armReachActionLeft("getHeadPos")
+        #ut.get_keystroke('Hit a key to proceed next')        
+
+        print "Running feeding!"
+        print armReachActionLeft("runFeeding1")
+        print armReachActionLeft("runFeeding2")
+        
+    # --------------------------- Old --------------------------------------
+    ## Scooping -----------------------------------    
+    if False:
         print "Initializing left arm for scooping"
         print armReachActionLeft("initScooping1")
         print armReachActionRight("initScooping1")
@@ -72,8 +145,8 @@ if __name__ == '__main__':
         ## print armReachActionRight("runScoopingRandom")
 
         #ut.get_keystroke('Hit a key to proceed next')        
-        ## print armReachActionLeft("getBowlPos")
-        print armReachActionLeft('lookAtBowl')
+        print armReachActionLeft("getBowlPos")
+        ## print armReachActionLeft('lookAtBowl')
         print armReachActionLeft("initScooping2")
 
         print "Running scooping!"
@@ -81,15 +154,16 @@ if __name__ == '__main__':
         sys.exit()
 
     ## Feeding -----------------------------------
-    if True:
+    if False:
         print "Initializing left arm for feeding"
         print armReachActionLeft("initFeeding")
-        print armReachActionRight("initFeeding")
+        ## print armReachActionRight("initScooping1")
+        ## print armReachActionRight("initFeeding")
 
         print "Detect ar tag on the head"
-        print armReachActionLeft('lookAtMouth')
+        #print armReachActionLeft('lookAtMouth')
         print armReachActionLeft("getHeadPos")
-        ut.get_keystroke('Hit a key to proceed next')        
+        #ut.get_keystroke('Hit a key to proceed next')        
 
         print "Running feeding!"
         print armReachActionLeft("runFeeding1")

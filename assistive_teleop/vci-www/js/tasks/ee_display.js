@@ -26,6 +26,14 @@ RFH.EEDisplay = function (options) {
         currentGripper.visible = true;
     };
 
+    self.showCurrent = function () {
+        currentGripper.visible = true;
+    };
+
+    self.hideCurrent = function () {
+        currentGripper.visible = false;
+    };
+
     self.hide = function () {
         currentGripper.visible = false;
         previewGripper.visible = false;
@@ -39,22 +47,26 @@ RFH.EEDisplay = function (options) {
 
     var gripperMaterial = new THREE.MeshBasicMaterial();
     gripperMaterial.transparent = true;
-    gripperMaterial.opacity = 0.4;
-    gripperMaterial.depthTest = true;
+    gripperMaterial.depthTest = false;
     gripperMaterial.depthWrite = false;
-    gripperMaterial.color.setRGB(1.6,1.6,1.6);
+    //gripperMaterial.color.setRGB(1.6,1.6,1.6); // Light gray default
+    gripperMaterial.color.setRGB(2.4,2.4,0.2);
+    gripperMaterial.opacity = 0.55;
 
     var previewMaterial = gripperMaterial.clone();
     previewMaterial.color.setRGB(1,0.5,0);
+    previewMaterial.opacity = 0.4;
 
     var goalMaterial = gripperMaterial.clone();
     goalMaterial.color.setRGB(0.2, 3.0, 0.2);
+    goalMaterial.opacity = 0.4;
 
-    var updateCurrentGripperTF = function (tf) {
-        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
-        currentGripper.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
-        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
-    };
+
+//    var updateCurrentGripperTF = function (tf) {
+//        currentGripper.position.set(tf.translation.x, tf.translation.y, tf.translation.z);
+//        currentGripper.quaternion.set(tf.rotation.x, tf.rotation.y, tf.rotation.z, tf.rotation.w);
+//        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+//    };
 
     var updateRightFingerTF = function (tf) {
         for (var i=0; i<allGrippers.length; i += 1){
@@ -113,7 +125,7 @@ RFH.EEDisplay = function (options) {
         palmMesh.material = goalMaterial;
         goalGripper.add(palmMesh.clone());
 
-        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
+//        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
     }
 
     var fingerOnLoad = function (collada) {
@@ -215,4 +227,10 @@ RFH.EEDisplay = function (options) {
         previewGripper.visible = false;
     };
 
+    self.setCurrentPose = function (pose) {
+        currentGripper.position.set(pose.position.x, pose.position.y, pose.position.z);
+        currentGripper.quaternion.set(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+        currentGripper.translateX(-0.18);
+        RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
+    };
 }

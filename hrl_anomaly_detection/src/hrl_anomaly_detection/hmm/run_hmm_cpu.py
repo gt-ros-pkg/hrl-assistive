@@ -42,11 +42,10 @@ from hrl_anomaly_detection import data_manager as dm
 import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.classifiers import classifier as cb
-from hrl_anomaly_detection.params import *
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, bSave=False):
 
     ## Parameters
     # data
@@ -64,7 +63,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list[:4]
+    kFold_list = kFold_list
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -171,7 +170,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 break
 
-
             #-----------------------------------------------------------------------------------------
             # Classifier train data
             #-----------------------------------------------------------------------------------------
@@ -185,7 +183,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                     np.ones(len(abnormalTrainData[0])) ])
 
             # compute last three indices only
-            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+            r = Parallel(n_jobs=n_jobs)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=4, \
@@ -195,31 +193,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             _, _, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
-            ll_classifier_test_X = []
-            ll_classifier_test_Y = []
-            add_logp_d = True
-            for i in xrange(len(ll_logp)):
-                l_X = []
-                l_Y = []
-                for j in xrange(len(ll_logp[i])):
-                    if add_logp_d:                    
-                        if j == 0: l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                        else: l_X.append( [ll_logp[i][j]] + [ll_logp[i][j]-ll_logp[i][j-1]] + \
-                                          ll_post[i][j].tolist() )
-                    else: l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                    if testDataY[i] > 0.0: l_Y.append(1)
-                    else: l_Y.append(-1)
-
-                    if np.isnan(ll_logp[i][j]):
-                        print "nan values in ", i, j
-                        print testDataX[0][i]
-                        print ll_logp[i][j], ll_post[i][j]
-                        sys.exit()
-
-                ll_classifier_test_X.append(l_X)
-                ll_classifier_test_Y.append(l_Y)
-
+            ll_classifier_test_X, ll_classifier_test_Y = \
+              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=True)
+            if ll_classifier_test_X == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+                
+            
             # split
             import random
             train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
@@ -238,7 +220,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ##                                             remove_fp=False)
 
             scaler = preprocessing.StandardScaler()
-            X_scaled = scaler.fit_transform(X_train_org)
+            try:
+                X_scaled = scaler.fit_transform(X_train_org)
+            except:
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
 
             X_test = []
             Y_test = [] 
@@ -250,21 +237,30 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 Y_test.append(test_Y[j])
 
             weights = ROC_dict['svm_param_range']
-            r = Parallel(n_jobs=-1, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
-                                                                         X_test, Y_test, \
-                                                                         nEmissionDim, nLength, \
-                                                                         SVM_dict, weight=weights[iii], \
-                                                                         verbose=False)\
-                                                                         for iii in xrange(len(weights)))
+            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                             X_test, Y_test, \
+                                                                             nEmissionDim, nLength, \
+                                                                             SVM_dict, weight=weights[iii], \
+                                                                             verbose=False)\
+                                                                             for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
-            print np.shape(tp_l), np.shape(tp_ll), np.shape(idx_l), max(idx_l)
+            err_flag = False
+            for iii, idx_point in enumerate(idx_l):
+                if np.nan in tp_ll[iii]:
+                    err_flag = True
+                    break
 
-            for iii, idx_point in enumerate(idx_l):            
                 tp_l[idx_point] += tp_ll[iii]
                 fn_l[idx_point] += fn_ll[iii]
                 fp_l[idx_point] += fp_ll[iii]
                 tn_l[idx_point] += tn_ll[iii]
+
+            if err_flag:
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+
                                 
             ## max_norm_logp = np.amax(norm_logp)
             ## min_norm_logp = np.amin(norm_logp)
@@ -331,26 +327,27 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ## scores.append( score )                                    
             ## print scores
 
-        print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
+        ## print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
-        if np.sum(tp_l)+np.sum(fn_l) == 0 or np.sum(fp_l)+np.sum(tn_l) == 0:
+        if ret == 'Failure':
             mean_list.append(0)
             std_list.append(0)
         else:
-            tpr = float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 
-            fpr = float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0
-            if fpr == 0.0:
-                mean_list.append(1000000)
-            else:
-                print tpr/fpr
-                mean_list.append(tpr/fpr)
-            std_list.append(0)
+            tpr_l = []
+            fpr_l = []
+            for i in xrange(ROC_dict['nPoints']):
+                tpr_l.append( float(np.sum(tp_l[i]))/float(np.sum(tp_l[i])+np.sum(fn_l[i]))*100.0 )
+                fpr_l.append( float(np.sum(fp_l[i]))/float(np.sum(fp_l[i])+np.sum(tn_l[i]))*100.0 )
 
+            from sklearn import metrics
+            mean_list.append( metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True) )
+            std_list.append(0)
             
         ## print np.mean(scores), param
         ## mean_list.append( np.mean(scores) )
         ## std_list.append( np.std(scores) )
-
+        
+    print "mean: ", mean_list
     score_array = np.array(mean_list) #-np.array(std_list)
     idx_list = np.argsort(score_array)
 
@@ -360,13 +357,21 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         print("%0.3f : %0.3f (+/-%0.03f) for %r"
               % (score_array[i], mean_list[i], std_list[i], param_list[i]))
 
+    if bSave: 
+        savefile = os.path.join(processed_data_path,'../','result_run_hmm.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'dim: '+str(nEmissionDim)+'\n' )
+                file.write( "%0.3f : %0.3f (+/-%0.03f) for %r"
+                            % (score_array[i], mean_list[i], std_list[i], param_list[i])+'\n\n' )
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'dim: '+str(nEmissionDim)+'\n' )
+                file.write( "%0.3f : %0.3f (+/-%0.03f) for %r"
+                            % (score_array[i], mean_list[i], std_list[i], param_list[i])+'\n\n' )
 
-    ## # Get sorted results
-    ## from operator import itemgetter
-    ## mean_list.sort(key=itemgetter(0), reverse=False)
-
-    ## for i in xrange(len(results)):
-    ##     print results[i]
 
 
 def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, SVM_dict, weight, \
@@ -376,7 +381,10 @@ def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nL
     dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
     dtc.set_params( **SVM_dict )
     dtc.set_params( class_weight=weight )
-    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)                
+    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
+    if ret is False:
+        print "SVM fitting failure!!"
+        return idx, [np.nan], [np.nan], [np.nan], [np.nan]
 
     tp_l = []
     fn_l = []
@@ -683,62 +691,74 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--dim', action='store', dest='dim', type=int, default=3,
                  help='type the desired dimension')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
+    p.add_option('--add_logp_d', '--ld', action='store_false', dest='bAddLogpD',
+                 default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+
+    p.add_option('--icra2017', action='store_true', dest='bICRA2017',
+                 default=False, help='Enable ICRA2017.')
+    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     opt, args = p.parse_args()
     
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
-    if opt.task == 'scooping':
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                False, False,\
-                                                                rf_center, local_range, \
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [20, 25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(0.1,2.0,10) }
+    if opt.bICRA2017 is False:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=10)
 
-    elif opt.task == 'feeding':
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range, \
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25, 30, 35, 40], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(0.1,2.0,4) }
 
-    elif opt.task == 'pushing_microwhite':
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        if opt.dim == 4:
-            parameters = {'nState': [25], 'scale': np.linspace(2.0,6.0,10), \
-                          'cov': np.linspace(0.01,4.0,10) }
+        if opt.task == 'scooping':
+            parameters = {'nState': [25], 'scale': np.linspace(2.0,10.0,10), \
+                          'cov': np.linspace(2.,5.0,10) }
+
+        elif opt.task == 'feeding':
+            parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
+                          'cov': np.linspace(1.0,6.0,5) }
+
+        elif opt.task == 'pushing_microwhite':
+            if opt.dim == 4:
+                parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
+                              'cov': np.linspace(0.01,6.0,10) }
+            else:
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                              'cov': np.linspace(0.1,2.0,10) }
+
+        elif opt.task == 'pushing_microblack':
+            parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
+                          'cov': np.linspace(0.5,5.,10) }
+        elif opt.task == 'pushing_toolcase':
+            parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
+                          'cov': np.linspace(0.5,4.0,10) }
         else:
-            parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
-                          'cov': np.linspace(0.1,2.0,10) }
-            
-    elif opt.task == 'pushing_microblack':
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range, \
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,5.0,5), \
-                      'cov': np.linspace(0.5,5.,5) }
-    elif opt.task == 'pushing_toolcase':
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
-                                                                       False, False,\
-                                                                       rf_center, local_range, \
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(0.5,4.0,10) }
+            print "Not available task"
 
-    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(1.0, 10.0, 2.0), \
-    ##               'cov': [2.0, 4.0, 8.0] }
-    ## parameters = {'nState': [20, 25, 30], 'scale':np.arange(4.0, 6.0, 1.0), \
-    ##               'cov': [4.0, 8.0] }
+    else:
+
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=5)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,20.0,10), \
+                      'cov': np.linspace(1.0,6.0,5) }
+        
+
+            
 
     #--------------------------------------------------------------------------------------
+    # test change of logp
+    
     crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
     if os.path.isfile(crossVal_pkl):
         d = ut.load_pickle(crossVal_pkl)
@@ -747,5 +767,5 @@ if __name__ == '__main__':
         print "no existing data file, ", crossVal_pkl
         sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, bSave=opt.bSave)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

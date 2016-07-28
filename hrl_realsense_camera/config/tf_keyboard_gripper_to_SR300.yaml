@@ -1,0 +1,11 @@
+initial_x: 0.10604
+initial_y: 0.033
+initial_z: -0.06013
+initial_roll: 0.0
+initial_pitch: 0.0
+initial_yaw: 0.0
+from: r_gripper_palm_link
+to: SR300_link
+file_package: tf_keyboard_cal
+file_name: /config/tf_keyboard_gripper_to_SR300.yaml
+topic_name: /keyboard_world_to_thing/keydown
