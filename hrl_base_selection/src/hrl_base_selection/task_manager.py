@@ -351,18 +351,54 @@ class BaseSelectionManager(object):
         #     # self.goal_pose = goal_ps
         #     self.marker_topic = "r_pr2_ar_pose_marker"  # based on location
 
-        base_goals = []
-        configuration_goals = []
+        all_base_goals = []
+        all_configuration_goals = []
+        all_distances_to_goals = []
 
         start_time = rospy.Time.now()
-        goal_array, config_array = self.call_base_selection()
+        goal_array, config_array, distance_array = self.call_base_selection()
         print goal_array
         print config_array
+        print distance_array
         print 'Time to get results back from base_selection: ', (rospy.Time.now() - start_time).to_sec()
-        for item in goal_array[:7]:
-            base_goals.append(item)
-        for item in config_array[:3]:
-            configuration_goals.append(item)
+        if len(goal_array) <= 7:
+            log_msg = 'Base Selection has returned one configurations for this task.'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            a_goal = []
+            a_config = []
+            a_distance = []
+            for item in goal_array:
+                a_goal.append(item)
+            for item in config_array:
+                a_config.append(item)
+            for item in distance_array:
+                a_distance.append(item)
+            all_base_goals.append(a_goal)
+            all_configuration_goals.append(a_config)
+            all_distances_to_goals.append(a_distance)
+
+        else:
+            log_msg = 'Base Selection has returned two configurations for this task. Will use the goal ' \
+                  'configuration with its desired PR2 base position closest to the current PR2 base position.'
+            print log_msg
+            self.feedback_pub.publish(String(log_msg))
+            for i in xrange(2):
+                a_goal = []
+                a_config = []
+                a_distance = []
+                for item in goal_array[0+i*7:7+i*7]:
+                    a_goal.append(item)
+                for item in config_array[0+i*3:3+i*3]:
+                    a_config.append(item)
+                for item in distance_array[0+i*1:1+i*1]:
+                    a_distance.append(item)
+                all_base_goals.append(a_goal)
+                all_configuration_goals.append(a_config)
+                all_distances_to_goals.append(a_distance)
+        base_goals = all_base_goals[np.argmin(all_distances_to_goals)]
+        configuration_goals = all_configuration_goals[np.argmin(all_distances_to_goals)]
+
         # [0.9], [-0.8], [0.0], [0.14999999999999999], [0.10000000000000001], [1.2217304763960306]
         # base_goals[0] = .9
         # base_goals[1] = -.8
@@ -371,8 +407,9 @@ class BaseSelectionManager(object):
         # configuration_goals[1]=0.1
         # configuration_goals[2]=1.221730476396
 
-        print "Base Goals returned:\r\n", base_goals
-        print "Configuration Goals returned:\r\n", configuration_goals
+        print "Base Goals returned:\r\n", all_base_goals
+        print "Configuration Goals returned:\r\n", all_configuration_goals
+        print "Distances to Goals returned:\r\n", all_distances_to_goals
         # if base_goals is None:
         #     rospy.loginfo("No base goal found")
         #     return
@@ -484,7 +521,7 @@ class BaseSelectionManager(object):
             rospy.logerr(se)
             self.feedback_pub.publish("Failed to find good base position. Please try again.")
             return None
-        return resp.base_goal, resp.configuration_goal
+        return resp.base_goal, resp.configuration_goal, resp.distance_to_goal
 
     def bed_state_cb(self, data):
         with self.frame_lock:
