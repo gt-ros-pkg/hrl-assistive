@@ -112,7 +112,7 @@ class anomaly_detector:
         self.nRecentTests = 2
         self.ll_recent_test_X = deque([],self.nRecentTests)
         self.ll_recent_test_Y = deque([],self.nRecentTests)
-        self.nTests           = 10
+        self.nTests           = 20
         self.ll_test_X        = deque([],self.nTests)
         self.ll_test_Y        = deque([],self.nTests)        
 
@@ -398,29 +398,10 @@ class anomaly_detector:
         self.Y_train_org   = Y_train_org
         self.idx_train_org = idx_train_org
 
-        # scaling training data
-        idx_list = range(len(ll_classifier_train_X))
-        random.shuffle(idx_list)
-        s_flag = True
-        f_flag = True
-        for i, count in enumerate(idx_list):
-            train_X = []
-            for j in xrange(len(ll_classifier_train_X[i])):
-                train_X.append( self.scaler.transform(ll_classifier_train_X[i][j]) )
-
-            if (s_flag is True and ll_classifier_train_Y[i][0] < 0) or True:
-                s_flag = False                
-                self.ll_test_X.append( train_X )
-                self.ll_test_Y.append( ll_classifier_train_Y[i] )
-            elif (f_flag is True and ll_classifier_train_Y[i][0] > 0) or True:
-                f_flag = False                
-                self.ll_test_X.append( train_X )
-                self.ll_test_Y.append( ll_classifier_train_Y[i] )
-            
-                    
         rospy.loginfo( self.classifier_method+" : Before classification : "+ \
           str(np.shape(self.X_train_org))+' '+str( np.shape(self.Y_train_org)))
 
+                               
         if self.bSim:
             # temp
             sensitivity_req = 0.5
@@ -447,6 +428,26 @@ class anomaly_detector:
             self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org)
             rospy.loginfo( "Finished to train "+self.classifier_method)
 
+
+        # scaling training data
+        idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(idx_list)
+        s_flag = True
+        f_flag = True
+        for i, count in enumerate(idx_list):
+            train_X = []
+            for j in xrange(len(ll_classifier_train_X[i])):
+                train_X.append( self.scaler.transform(ll_classifier_train_X[i][j]) )
+
+            if (s_flag is True and ll_classifier_train_Y[i][0] < 0) or True:
+                s_flag = False                
+                self.ll_test_X.append( train_X )
+                self.ll_test_Y.append( ll_classifier_train_Y[i] )
+            elif (f_flag is True and ll_classifier_train_Y[i][0] > 0) or True:
+                f_flag = False                
+                self.ll_test_X.append( train_X )
+                self.ll_test_Y.append( ll_classifier_train_Y[i] )
+
         # recent data
         ## for i in xrange(self.nRecentTests):
         ##     self.ll_recent_test_X.append(self.ll_test_X[-self.nRecentTests+i])
@@ -455,9 +456,9 @@ class anomaly_detector:
         # info for GUI
         self.pubSensitivity()
         ## self.acc_part, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        msg = FloatArray()
-        msg.data = [self.acc_part, self.acc_all]
-        self.accuracy_pub.publish(msg)
+        ## msg = FloatArray()
+        ## msg.data = [self.acc_part, self.acc_all]
+        ## self.accuracy_pub.publish(msg)
         ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
 
         if self.bSim: self.evaluation_ref()
@@ -474,12 +475,6 @@ class anomaly_detector:
             self.pubSensitivity()                    
         else:
             rospy.loginfo("%s anomaly detector disabled", self.task_name)
-
-            print "################ CUMULATIVE EVAL #####################"
-            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-            self.cum_acc_list.append(self.acc_all)
-            print "######################################################"
-            
             # Reset detector
             self.enable_detector = False
             self.reset() #TODO: may be it should be removed
@@ -799,8 +794,8 @@ class anomaly_detector:
 
             # TODO: remove fake data
             nLength = len(p_train_X)/self.nTests
-            self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
-            self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
+            ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
+            ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
             self.X_train_org = np.vstack([ self.X_train_org, p_train_X[-nLength:] ])
             self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y[-nLength:] ])
 
@@ -810,6 +805,11 @@ class anomaly_detector:
             ##                             self.classifier)
             ## self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
             ##                        self.classifier)
+            print "################ CUMULATIVE EVAL #####################"
+            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+            self.cum_acc_list.append(self.acc_all)
+            print "######################################################"
+            
             if update_flag and self.bSim: self.evaluation_ref()
         
             # pub accuracy
@@ -1245,6 +1245,8 @@ class anomaly_detector:
                                                          self.task_name, \
                                                          no_split=True)
 
+        print self.eval_fileList
+
         if self.eval_test_X is None:
             trainData = dm.getDataList(self.eval_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
@@ -1262,7 +1264,7 @@ class anomaly_detector:
                     Y_test_org.append(-1)
                 elif f.find("failure")>=0:
                     Y_test_org.append(1)
-            
+
             # update
             ## HMM
             ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)

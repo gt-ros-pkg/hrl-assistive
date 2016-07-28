@@ -357,15 +357,14 @@ class learning_hmm(learning_base):
                 try:
                     final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
                 except:
-                    if self.verbose: print "failed to make sequence"
+                    print "failed to make sequence"
                     continue
 
                 try:
                     logp = self.ml.loglikelihood(final_ts_obj)
                     if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
                 except:
-                    if self.verbose: 
-                        print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                    print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
                     return False, False # anomaly
                     #continue
 
