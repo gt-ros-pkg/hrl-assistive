@@ -514,7 +514,7 @@ var ManipulationTask = function (ros) {
             //document.getElementById('ad_scooping_result_1').innerHTML = msg.data[0];
             //document.getElementById('ad_scooping_result_1').innerHTML = document.getElementById('ad_scooping_result_1').innerHTML + "%";
             document.getElementById('ad_scooping_result_2').innerHTML = msg.data[1];
-            document.getElementById('ad_scooping_result_2').innerHTML = document.getElementById('ad_scooping_result_2').innerHTML + "%";
+            document.getElementById('ad_scooping_result_2').innerHTML = parseFloat(document.getElementById('ad_scooping_result_2').innerHTML).toFixed(1) + "%";
         }
     });
 
@@ -529,7 +529,7 @@ var ManipulationTask = function (ros) {
             //document.getElementById('ad_feeding_result_1').innerHTML = msg.data[0];
             //document.getElementById('ad_feeding_result_1').innerHTML = document.getElementById('ad_feeding_result_1').innerHTML + "%";
             document.getElementById('ad_feeding_result_2').innerHTML = msg.data[1];
-            document.getElementById('ad_feeding_result_2').innerHTML = document.getElementById('ad_feeding_result_2').innerHTML + "%";
+            document.getElementById('ad_feeding_result_2').innerHTML = parseFloat(document.getElementById('ad_feeding_result_2').innerHTML).toFixed(1) + "%";
         }
     });
 
