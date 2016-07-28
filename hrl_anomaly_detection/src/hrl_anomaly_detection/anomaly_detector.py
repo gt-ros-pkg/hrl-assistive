@@ -87,6 +87,7 @@ class anomaly_detector:
         self.used_file_list  = []
         self.anomaly_flag    = False
         self.figure_flag     = False
+        self.update_count    = 0.0
         ## self.fileList_buf = cb.CircularBuffer(self.nMinUpdateFiles, (1,))       
         
         # Params
@@ -111,14 +112,16 @@ class anomaly_detector:
         self.nRecentTests = 2
         self.ll_recent_test_X = deque([],self.nRecentTests)
         self.ll_recent_test_Y = deque([],self.nRecentTests)
-        self.nTests           = 10 
+        self.nTests           = 10
         self.ll_test_X        = deque([],self.nTests)
-        self.ll_test_Y        = deque([],self.nTests)
+        self.ll_test_Y        = deque([],self.nTests)        
 
         # evaluation reference data
         self.eval_fileList = None
         self.eval_test_X = None
         self.eval_test_Y = None
+        self.ref_acc_list  = []
+        self.cum_acc_list  = []
         self.acc_part = 100.0
         self.acc_all  = 100.0
 
@@ -398,16 +401,36 @@ class anomaly_detector:
         # scaling training data
         idx_list = range(len(ll_classifier_train_X))
         random.shuffle(idx_list)
-        for i in idx_list:
+        s_flag = True
+        f_flag = True
+        for i, count in enumerate(idx_list):
             train_X = []
             for j in xrange(len(ll_classifier_train_X[i])):
                 train_X.append( self.scaler.transform(ll_classifier_train_X[i][j]) )
-            self.ll_test_X.append( train_X )
-            self.ll_test_Y.append( ll_classifier_train_Y[i] )
+
+            if (s_flag is True and ll_classifier_train_Y[i][0] < 0) or True:
+                s_flag = False                
+                self.ll_test_X.append( train_X )
+                self.ll_test_Y.append( ll_classifier_train_Y[i] )
+            elif (f_flag is True and ll_classifier_train_Y[i][0] > 0) or True:
+                f_flag = False                
+                self.ll_test_X.append( train_X )
+                self.ll_test_Y.append( ll_classifier_train_Y[i] )
+            
                     
         rospy.loginfo( self.classifier_method+" : Before classification : "+ \
           str(np.shape(self.X_train_org))+' '+str( np.shape(self.Y_train_org)))
-            
+
+        if self.bSim:
+            # temp
+            sensitivity_req = 0.5
+            if self.exp_sensitivity:
+                sensitivity_des = np.power(10, sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            else:
+                sensitivity_des = sensitivity_req*(self.w_max-self.w_min)+self.w_min
+            self.w_positive = sensitivity_des                
+    
+          
         # Decareing Classifier
         rospy.loginfo( "Start to load/train a classifier model")
         self.classifier = clf.classifier(method=self.classifier_method, nPosteriors=self.nState, \
@@ -425,9 +448,9 @@ class anomaly_detector:
             rospy.loginfo( "Finished to train "+self.classifier_method)
 
         # recent data
-        for i in xrange(self.nRecentTests):
-            self.ll_recent_test_X.append(self.ll_test_X[-self.nRecentTests+i])
-            self.ll_recent_test_Y.append(self.ll_test_Y[-self.nRecentTests+i])
+        ## for i in xrange(self.nRecentTests):
+        ##     self.ll_recent_test_X.append(self.ll_test_X[-self.nRecentTests+i])
+        ##     self.ll_recent_test_Y.append(self.ll_test_Y[-self.nRecentTests+i])
             
         # info for GUI
         self.pubSensitivity()
@@ -451,6 +474,12 @@ class anomaly_detector:
             self.pubSensitivity()                    
         else:
             rospy.loginfo("%s anomaly detector disabled", self.task_name)
+
+            print "################ CUMULATIVE EVAL #####################"
+            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+            self.cum_acc_list.append(self.acc_all)
+            print "######################################################"
+            
             # Reset detector
             self.enable_detector = False
             self.reset() #TODO: may be it should be removed
@@ -667,24 +696,40 @@ class anomaly_detector:
 
             rospy.loginfo( "Start to load #success= %i #failure= %i", s_flag, f_flag)
             nFakeData = 0
-            if s_flag < f_flag:
-                max_count = f_flag-s_flag
+            if s_flag == 0:
                 for i in range(len(self.used_file_list)-1,-1,-1):
                     if self.used_file_list[i].find("success")>=0:
                         self.unused_fileList.append(self.used_file_list[i])
                         Y_test_org.append(-1)
                         nFakeData += 1
-                        if nFakeData == max_count:
-                            break
-            if s_flag > f_flag:
-                max_count = s_flag-f_flag
+                        break
+            if f_flag == 0:
                 for i in range(len(self.used_file_list)-1,-1,-1):
                     if self.used_file_list[i].find("failure")>=0:
                         self.unused_fileList.append(self.used_file_list[i])
                         Y_test_org.append(1)
                         nFakeData += 1
-                        if nFakeData == max_count:
-                            break
+                        break
+
+            ## if s_flag < f_flag:
+            ##     max_count = f_flag-s_flag
+            ##     for i in range(len(self.used_file_list)-1,-1,-1):
+            ##         if self.used_file_list[i].find("success")>=0:
+            ##             self.unused_fileList.append(self.used_file_list[i])
+            ##             Y_test_org.append(-1)
+            ##             nFakeData += 1
+            ##             if nFakeData == max_count:
+            ##                 break
+            ## if s_flag > f_flag:
+            ##     max_count = s_flag-f_flag
+            ##     for i in range(len(self.used_file_list)-1,-1,-1):
+            ##         if self.used_file_list[i].find("failure")>=0:
+            ##             self.unused_fileList.append(self.used_file_list[i])
+            ##             Y_test_org.append(1)
+            ##             nFakeData += 1
+            ##             if nFakeData == max_count:
+            ##                 break
+
                         
             trainData = dm.getDataList(self.unused_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
@@ -703,22 +748,24 @@ class anomaly_detector:
             ## rospy.loginfo( "Features: "+ str(np.shape(X)) +" "+ str( np.shape(Y) ))
             ## rospy.loginfo( "Currrent method: " + self.classifier_method)           
 
-            ## test_X = [] #copy.copy(self.ll_recent_test_X) #need?
-            ## test_Y = [] #copy.copy(self.ll_recent_test_Y)
+            test_X = copy.copy(self.ll_test_X) #need?
+            test_Y = copy.copy(self.ll_test_Y)
             for i in xrange(len(X)):
 
-                ## test_X.append(X_scaled)
-                ## test_Y.append(Y[i])
                 X_scaled = self.scaler.transform(X[i])
-                self.ll_test_X.append(X_scaled)
-                self.ll_test_Y.append(Y[i])
+                test_X.append(X_scaled)
+                test_Y.append(Y[i])
                 
                 if i > len(X)-nFakeData-1: break
+                self.ll_test_X.append(X_scaled)
+                self.ll_test_Y.append(Y[i])
                 self.ll_recent_test_X.append(X_scaled)
                 self.ll_recent_test_Y.append(Y[i])
 
-            test_X = list(self.ll_test_X)
-            test_Y = list(self.ll_test_Y)
+            test_X = list(test_X)
+            test_Y = list(test_Y)
+            ## test_X = list(self.ll_test_X)
+            ## test_Y = list(self.ll_test_Y)
 
             
             ## Remove unseparable region and scaling it
@@ -726,18 +773,27 @@ class anomaly_detector:
                 p_train_X, p_train_Y, _ = dm.flattenSample(X, Y, remove_fp=True)
                 self.classifier.fit(self.X_train_org, self.Y_train_org)                
             elif self.classifier_method.find('sgd')>=0:
-                weight_list    = [1.0]*len(test_X)
-                weight_list[-2] = 20.0
+                #weight_list    = np.logspace(-1, 0.0, len(test_X))
+                weight_list    = np.linspace(0.1, 1.0, len(test_X))
+                if s_flag == 0 or f_flag == 0:
+                    weight_list[-1] *= 1.0
+                    weight_list[-2] *= 1.0
+                else:
+                    weight_list[-1] *= 1.0
+                ## weight_list[-2] = 20.0
 
                 #remove fp and flattening     
                 p_train_X, p_train_Y, p_train_W = getProcessSGDdata(test_X, test_Y, \
                                                                     sample_weight=weight_list) 
                 if update_flag:
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
-                    self.classifier.set_params( class_weight=1.0 )                
+                    ## self.classifier.set_params( class_weight=1.0 )
+                    alpha = np.exp(-0.2*self.update_count)
+                    nMaxIter = int(5.0*alpha)
                     self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
-                                                  test_X, test_Y, nMaxIter=10, shuffle=True)
-                    self.classifier.set_params( class_weight=self.w_positive )
+                                                  test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
+                    self.update_count += 1.0
+                    ## self.classifier.set_params( class_weight=self.w_positive )
             else:
                 rospy.loginfo( "Not available update method")
 
@@ -754,11 +810,8 @@ class anomaly_detector:
             ##                             self.classifier)
             ## self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
             ##                        self.classifier)
-            print "################ CUMULATIVE EVAL #####################"
-            self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-            print "######################################################"
             if update_flag and self.bSim: self.evaluation_ref()
-
+        
             # pub accuracy
             msg = FloatArray()
             msg.data = [self.acc_part, self.acc_all]
@@ -979,25 +1032,52 @@ class anomaly_detector:
         self.save()
         rospy.loginfo( "Saved current parameters")
 
-    def runSim(self):
+    def runSim(self, auto=True, subject_names=['ari']):
         '''
         Run detector with offline data
         '''
-        self.bSim       = True
 
         checked_fileList = []
         self.unused_fileList = []
+
+
+        if auto:
+            sensitivity_req = 0.5
+            if self.exp_sensitivity:
+                sensitivity_des = np.power(10, sensitivity_req*(self.w_max-self.w_min)+self.w_min)
+            else:
+                sensitivity_des = sensitivity_req*(self.w_max-self.w_min)+self.w_min
+            self.w_positive = sensitivity_des                
+            self.classifier.set_params(class_weight=self.w_positive)
+            rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
+            test_fileList = util.getSubjectFileList(self.raw_data_path, \
+                                                    subject_names, \
+                                                    self.task_name, \
+                                                    time_sort=True,\
+                                                    no_split=True)
+            
+ 
+
         
         for i in xrange(100):
-            # load new file            
-            fb = ut.get_keystroke('Hit a key to load a new file')
-            if fb == 'z' or fb == 's': break
 
+            if auto:
+                if i < len(test_fileList):
+                    import shutil
+                    tgt_dir = os.path.join(self.raw_data_path, 'new_'+self.task_name)
+                    shutil.copy2(test_fileList[i], tgt_dir)
+                else:
+                    sys.exit()
+            else:            
+                # load new file            
+                fb = ut.get_keystroke('Hit a key to load a new file')
+                if fb == 'z' or fb == 's': break
+                                                          
             unused_fileList = util.getSubjectFileList(self.raw_data_path, \
                                                       self.subject_names, \
                                                       self.task_name, \
                                                       time_sort=True,\
-                                                      no_split=True)
+                                                      no_split=True)                
             unused_fileList = [filename for filename in unused_fileList \
                                if filename not in self.used_file_list]
             unused_fileList = [filename for filename in unused_fileList if filename not in checked_fileList]
@@ -1051,6 +1131,16 @@ class anomaly_detector:
                     msg.data = 'SUCCESS'
                     self.userfbCallback(msg)
 
+                print "################ CUMULATIVE EVAL #####################"
+                self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+                self.cum_acc_list.append(self.acc_all)
+                print "######################################################"
+
+                print "-------------------"
+                print self.cum_acc_list
+                print self.ref_acc_list
+                print "-------------------"
+                
                 ## if (label ==1 and self.anomaly_flag is False) or \
                 ##   (label ==-1 and self.anomaly_flag is True):
                 ##     print "Before######################################33"
@@ -1061,9 +1151,10 @@ class anomaly_detector:
                 ##     y_est    = self.classifier.predict(X_scaled)
                 ##     print y_est
                 ##     print "Confirm######################################33"
-                    
-                fb =  ut.get_keystroke('Hit a key after providing user fb')
-                if fb == 'z' or fb == 's': break
+
+                if auto is False:
+                    fb =  ut.get_keystroke('Hit a key after providing user fb')
+                    if fb == 'z' or fb == 's': break
 
             checked_fileList = [filename for filename in self.unused_fileList if filename not in self.used_file_list]
             print "===================================================================="
@@ -1187,6 +1278,7 @@ class anomaly_detector:
         print "################ Reference data #####################"
         acc, _, _ = evaluation(list(self.eval_test_X), list(self.eval_test_Y), self.classifier)
         print "#####################################################"
+        self.ref_acc_list.append(acc)
 
             
 ###############################################################################
@@ -1299,21 +1391,22 @@ def evaluation_cost(X, Y, clf, verbose=False):
     return np.sum(cost)
 
 
-def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True ):
+def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     last_Coef  = copy.deepcopy(clf.dt.coef_)
     last_dCoef = 0.0
     last_p     = 0.0
     last_cost  = 100.0
+    if nMaxIter == 0: nMaxIter = 1
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=60, sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(40.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
         if abs(cost-last_cost) < 0.001: break
-        if cost-last_cost > 0.01: break
+        if cost-last_cost > 0.005: break
         last_cost = cost
         
         ## dCoef = np.linalg.norm(last_Coef-copy.deepcopy(clf.dt.coef_))        
