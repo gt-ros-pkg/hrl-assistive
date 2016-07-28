@@ -35,23 +35,25 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
 #from sPickle import Pickler
 import tf.transformations as tft
-from score_generator import ScoreGenerator
+from score_generator_cma import ScoreGenerator
 #import data_clustering as clust
 import joblib
 from joblib import Memory
 from tempfile import mkdtemp
-
 import hrl_lib.util as ut
+
 
 class DataReader(object):
     
-    def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1,tf_listener=None):
+    def __init__(self, input_data=None, subject='sub6_shaver', reference_options=['head'],
+                 data_start=0, data_finish=5, model='autobed', task='shaving',
+                 pos_clust=5, ori_clust=1, tf_listener=None):
         self.score_sheet = []
         if tf_listener is None:
             self.tf_listener = tf.TransformListener()
         else:
             self.tf_listener = tf_listener
-        if subject == None:
+        if subject is None:
             self.subject = 0
             self.sub_num = 0
         else:
@@ -64,8 +66,8 @@ class DataReader(object):
         self.max_distance = 0.04 #10
         self.task = task
         self.num_goal_locations = 1
-        self.pos_clust=pos_clust
-        self.ori_clust=ori_clust  
+        self.pos_clust = pos_clust
+        self.ori_clust = ori_clust
 
         self.input_data=input_data
 
@@ -75,6 +77,9 @@ class DataReader(object):
         self.clustered_number = []
         self.reference_options = []
         self.clustered_reference = []
+        self.raw_goal_data = []
+        self.goal_unique = []
+        self.length = 0
 
     def receive_input_data(self, data, num, reference_options, reference):
         self.clustered_goal_data = data
@@ -159,9 +164,7 @@ class DataReader(object):
                 i+=1
                 print 'The first ', i, ' data points in the file was noise'
 
-
         for num in xrange(1,self.length):
-            #temp = np.array(np.matrix(world_B_headc_reference_data[num]).I*np.matrix(world_B_tool_data[num])*tool_correction)
             temp = np.array(np.matrix(world_B_headc_reference_data[num]).I*np.matrix(world_B_tool_data[num]))
             pos2, ori2 =Bmat_to_pos_quat(temp)
             pos1, ori1 =Bmat_to_pos_quat(self.raw_goal_data[len(self.raw_goal_data)-1])
@@ -171,92 +174,9 @@ class DataReader(object):
                 self.reference.append(0)
                 self.file_length+=1
                 self.distance.append(np.linalg.norm(temp[0:3,3]))
-                #print 'This point has a distance of: ',np.linalg.norm(temp[0:3,3])
-                #self.distance.append(np.linalg.norm(temp[0:3,3]))
-            #goal_values[num,0:3] = [round(self.raw_goal_data[num,0,3],2),round(self.raw_goal_data[num,1,3],2),round(self.raw_goal_data[num,2,3],2)]
-            #(rotx,roty,rotz) = tft.euler_from_matrix(self.raw_goal_data[num],'rxyz')
-            #goal_values[num,3:6] = np.array([round(rotx,1),round(roty,1),round(rotz,1)])
-            #temp = copy.copy(tft.euler_matrix(goal_values[num,3],goal_values[num,4],goal_values[num,5],'rxyz'))
-            #temp[0,3] = goal_values[num,0]
-            #temp[1,3] = goal_values[num,1]
-            #temp[2,3] = goal_values[num,2]
-            #if np.linalg.norm(temp[0:3,3])<self.max_distance:
-            #    self.clustered_goal_data.append(temp)
-            #self.clustered_goal_data[num] = copy.copy(tft.euler_matrix(goal_values[num,3],goal_values[num,4],goal_values[num,5],'rxyz'))
-            #self.clustered_goal_data[num,0,3] = goal_values[num,0]
-            #self.clustered_goal_data[num,1,3] = goal_values[num,1]
-            #self.clustered_goal_data[num,2,3] = goal_values[num,2]
-            # + np.matrix(tft.translation_matrix(goal_values[num,0:3]))))
-            #    self.distance.append(np.linalg.norm(temp[0:3,3]))
         self.raw_goal_data = np.array(self.raw_goal_data)
         print 'Minimum distance between center of head and goal location from raw data = ', np.min(np.array(self.distance))
         return self.raw_goal_data
-    '''
-    def cluster_data(self):
-        self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
-        self.ori_clust = np.min([len(self.raw_goal_data), self.ori_clust])
-        self.clustered_goal_data = np.zeros([1, 4, 4])
-        self.clustered_number = np.zeros([1, 1])
-        self.clustered_reference = np.zeros([1, 1])
-        # Clusters should be done separately for goals with different reference frames. Here I separate the data by
-        # reference frame, run clustering, then recombine the data.
-        for i in xrange(len(self.reference_options)):
-            print 'Clustering data for reference option ', i
-            opt_cluster = np.zeros([self.reference.count(i), 4, 4])
-            pos_clust = np.min([self.pos_clust,len(opt_cluster)])
-            ori_clust = np.min([self.ori_clust,len(opt_cluster)])
-            j = 0
-            for num, ref in enumerate(self.reference):
-                if ref == i:
-                    opt_cluster[j] = self.raw_goal_data[num]
-                    j += 1
-            enough = False
-            count = 0
-            while not enough and (count < 10):
-                count += 1
-                # cluster = clust.DataCluster(pos_clust, 0.01, ori_clust, 0.02)
-                cluster = clust.DataCluster(pos_clust, 0.03, ori_clust, 0.05)
-                clustered_goal_data, number, num_pos_clusters = cluster.clustering(opt_cluster)
-                clustered_reference = np.zeros([len(clustered_goal_data), 1])+i
-                num_pos_clusters = None  # Added this to skip the next bit of increasing number of clusters, so I can
-                                         # limit the number of clusters used.
-                if num_pos_clusters == self.pos_clust:
-                    self.pos_clust += 10
-                    self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
-                    pos_clust = np.min([self.pos_clust,len(opt_cluster)])
-                else:
-                    enough = True
-            self.clustered_goal_data = np.vstack([self.clustered_goal_data, clustered_goal_data])
-            self.clustered_number = np.vstack([self.clustered_number, number])
-            self.clustered_reference = np.vstack([self.clustered_reference, clustered_reference])
-        self.clustered_goal_data = np.delete(self.clustered_goal_data, 0, 0)
-        self.clustered_number = np.delete(self.clustered_number, 0, 0)
-        self.clustered_reference = np.delete(self.clustered_reference, 0, 0)
-        self.cluster_distance = []
-        for item in self.clustered_goal_data:
-            self.cluster_distance.append(np.linalg.norm(item[0:3, 3]))
-        print 'Minimum distance between center of head and goal location from clustered data = ', np.min(np.array(self.cluster_distance))
-        #print 'Raw data: \n',self.raw_goal_data#[0:20]
-        #print 'Clustered data: \n',self.clustered_goal_data#[0:20]
-        return self.clustered_goal_data, self.clustered_number, self.clustered_reference
-        #print 'Now finding how many unique goals there are. Please wait; this can take up to a couple of minutes.'
-        #seen_items = []
-        #self.goal_unique = [] 
-        #for item in self.clustered_goal_data:
-        #    if not (any((np.array_equal(item, x)) for x in seen_items)):
-        #        if np.linalg.norm(item[0:3,3])<0.2:
-        #            self.goal_unique.append([item,1.0/len(self.clustered_goal_data)])
-        #            seen_items.append(item)
-        #    else:
-        #        #print 'item is: ', item
-        #        #print 'score unique is: ',self.goal_unique
-        #        for num,i in enumerate(self.goal_unique):
-        #            if np.array_equal(item,i[0]):
-        #                #print 'got here'
-        #                self.goal_unique[num][1]=1.0/len(self.clustered_goal_data)+self.goal_unique[num][1]
-        #self.goal_unique = np.array(self.goal_unique)
-        #print 'final score unique is: ',self.goal_unique
-    '''
 
     def sample_raw_data(self, raw_data, num):
         sampled = []
@@ -264,9 +184,11 @@ class DataReader(object):
             sampled.append(raw_data[int(i*len(raw_data)/num)])
         return np.array(sampled)
 
+    # Formats the goal data into a list where each entry is: [reference_B_goal, weight, reference]
+    # Where reference_B_goal is the homogeneous transform from the reference coordinate frame to the goal frame
+    # weight is generally 1 divided by the number of goals, used to give certain goals more weight
+    # reference is the name of the coordinate frame that is the reference frame
     def generate_output_goals(self, test_goals=None, test_number=None, test_reference=None):
-        #print test_goals
-
         if test_goals is None:
             goals = self.clustered_goal_data
             number = self.clustered_number
@@ -282,49 +204,16 @@ class DataReader(object):
                 reference = test_reference
             print 'The number of raw goals being fed into the output goal generator is: ', len(test_goals)
 
-
-            # for item in goals:
-            #    number.append([1])
-            #    reference.append(0)
-               #number = np.ones(len(goals))
         self.goal_unique = [] 
         for num in xrange(len(number)):
-            self.goal_unique.append([goals[num], (float(number[num][0]))/(float(np.array(number).sum())), reference[num]])
-            #print 'I am appending this to distance: ', np.linalg.norm(self.clustered_goal_data[num][0:3,3])
-            #if (num > 200) and (num < 240):
-            #print 'clustered goal data number: ',num,'\n',self.clustered_goal_data[num]
-            #print 'Comes up XX number times: ',number[num][0]
-            #print 'has a distance of: ',np.linalg.norm(self.clustered_goal_data[num][0:3,3])
-        #print 'distance: ',np.array(self.distance)
+            self.goal_unique.append([goals[num], (float(number[num][0]))/(float(np.array(number).sum())),
+                                     reference[num]])
+
         self.goal_unique = np.array(self.goal_unique)
-        # print 'Goal unique is \n',self.goal_unique
+
         print 'Generated goals for score generator. There are ', len(self.goal_unique)
-        # print 'Total number of goals as summed from the clustering: ', np.array(number).sum()
-        # print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible ' \
-        #       'distance of head center (0.2m)' % (len(goals), len(self.raw_goal_data), len(self.goal_unique))
         
         return self.goal_unique
-
-#        fig = plt.figure()
-#        ax = fig.add_subplot(111, projection='3d')
-#        Xhead  = world_B_head_data[:,0,3]
-#        Yhead  = world_B_head_data[:,1,3]
-#        Zhead = world_B_head_data[:,2,3]
-#        Xtool  = world_B_tool_data[:,0,3]
-#        Ytool  = world_B_tool_data[:,1,3]
-#        Ztool = world_B_tool_data[:,2,3]
-#        #print X,len(X),Y,len(Y),Z,len(Z)
-#        #c  = 'b'
-#        ax.scatter(Xhead, Yhead, Zhead,s=40, c='b',alpha=.5)
-#        ax.scatter(Xtool, Ytool, Ztool,s=40, c='r',alpha=.5)
-#        #surf = ax.scatter(X, Y, Z,s=40, c=c,alpha=.5)
-#        #surf = ax.scatter(X, Y,s=40, c=c,alpha=.6)
-#        ax.set_xlabel('X Axis')
-#        ax.set_ylabel('Y Axis')
-#        ax.set_zlabel('Z Axis')
-
-        #fig.colorbar(surf, shrink=0.5, aspect=5)
-#        plt.show()
 
     def generate_score(self, viz_rviz=False, visualize=False, plot=False):
         cachedir = mkdtemp()
@@ -332,234 +221,40 @@ class DataReader(object):
         memory = Memory(cachedir=cachedir, mmap_mode='r')
         self.num_base_locations = 1
         mytargets = 'all_goals'
-        mytask = self.task #'shaving'
+        mytask = self.task
         myReferenceNames = self.reference_options
-        #start = 0
-        #end = 3
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
-        #print myGoals
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
                                   goals=myGoals, model=self.model, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
-        # handle_score_in_memory = memory.cache(selector.handle_score)
-        score_sheet, default_is_zero = selector.handle_score(plot=plot)
-        # score_sheet, default_is_zero = handle_score_in_memory(plot=plot)
-        if not default_is_zero:
-            print 'The score sheet top item: '
-            print '([x, y, theta, z, bed_z, bed_head_rest_theta], [space_score, reachability, manipulability])'
-            print score_sheet[0., 0.][0]
-            print 'The number of base configurations on the score sheet for the default human position (with score > 0) is: ', len(score_sheet[0., 0.])
-            print 'See the created pkl file for the entire set of data.'
-        else:
-            print 'The score is 0 for the default human position on the bed. It\'s possible that there is a good score at other human positions, but I can\'t easily output it here.'
-            print 'See the created pkl file for the entire set of data.'
-            print score_sheet[0., 0.]
-        #print 'Goals: \n',self.clustered_goal_data[0:4]
-        #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
-#        score_sheet,goal_scores = selector.handle_score()
-#        reachable = []
-#        manipulable = []
-#        for item in goal_scores:
-#            reachable_line = []
-#            manipulable_line = []
-#            for j in xrange(int(len(item)/2.)):
-#                reachable_line.append(item[2*j])
-#                manipulable_line.append(item[1+2*j])
-#            reachable.append(reachable_line)
-#            manipulable.append(manipulable_line)
-#        reachable = np.array(reachable)
-#        manipulable = np.array(manipulable)
-            
-        #self.score_sheet = []
-        #for i in xrange(len(score_sheet)):
-        #    self.score_sheet.append([score_sheet[i],reachable[i],manipulable[i]])
+        score_sheet = selector.handle_score_generation(plot=plot)
 
-        # Deals with multiple initial base configurations. Maybe could move to precomputed side of program. Depends how long this runs for.
-#        print 'I am now starting to look at the possibility of using multiple base configurations to best accomplish the task.'
-#        start_time = time.time()
-#        for num_base_locations in xrange(2,3):
-#            if (num_base_locations <= len(reachable[0])):
-#                #combs = list(comb(range(len(reachable)),num_base_locations))
-#                this_x = []
-#                this_y = []
-#                this_theta = []
-#                this_personal_space = 0.
-#                this_distance = 0.
-#                this_reachable = np.zeros(len(reachable[0]))
-#                this_manipulable = np.zeros(len(manipulable[0]))
-#                for item in comb(xrange(len(reachable)),num_base_locations):
-#                    a = None
-                    #this_score = []
-                    #for j in len(item):
-                        #this_x.append(temp_score[j][0])
-                        #this_y.append(temp_score[j][1])
-#                        this_theta.append(temp_score[j][2])
-#                        this_personal_space = np.max([this_personal_space,temp_score[j][3]])
-#                        this_distance = this_distance+temp_score[j][6]# np.max([this_distance,temp_score[j][6]
-#                        for g in xrange(reachable[item[j]]):
-#                            if (reachable[item[j]][g]!=0) and (this_reachable[g]==0):
-#                                this_reachable[g] = reachable[item[j]][g]
-#                            this_manipulable[g] = np.max([this_manipulable[g],manipulable[item[j]][g]])
-#                    this_score=[this_x,this_y,this_theta,this_personal_space,np.sum(this_reachable),np.sum(this_manipulable),this_distance]
-#                    temp_scores.append([this_score[0:3],-alpha*this_score[3]+beta*this_score[4]+gamma*this_score[5]-zeta*this_score[6]])
-#        score_sheet = sorted(temp_scores, key=lambda t:t[3], reverse=True)                    
-#        print 'Time to check multiple base configurations: %fs'%(time.time()-start_time)
+        # default_is_zero = False
+        # if not score_sheet[0., 0.]:
+        #     print 'There are no good results in the score sheet'
+        #     print score_sheet[0]
+        # else:
+        #     print 'The score sheet top item: '
+        #     print '([heady, distance, x, y, theta, z, bed_z, bed_head_rest_theta, score])'
+        #     print 'See the created pkl file for the entire set of data.'
         
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
-        #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
 
         if self.task == 'shaving' or True:
             # print 'Using the alternative streaming method for saving data because it is a big data set.'
-            # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
-            #                     '_score_data.pkl'])
             filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
-                                '_score_data'])
-            # file = open(filename, "wb")
-            # pickler = Pickler(file, -1)
-            # pickler.dump(score_sheet)
-            # file.close()
-            joblib.dump(score_sheet, filename)
+                                '_score_data.pkl'])
+            save_pickle(score_sheet, filename)
+            # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
+            #                     '_score_data'])
+            # joblib.dump(score_sheet, filename)
         else:
             save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
-        print 'There was no existing score data for this task. I therefore created a new file. And I was successful at ' \
-              'it! Yay!'
-#        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
-#            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-#            if  (np.array_equal(data1[:,0:2],self.score_sheet[:,0:2])):
-#                data1[:,3] = self.score_sheet[:,3]*.25+data1[:,3]*.75
-#            else:
-#                print 'Something is messed up with the score sheets. The saved score sheet does not match up with the new score sheet.'
-#            #for num,i in enumerate(data1):
-#                #data1[num,3]=self.score_sheet[num,3]+i[3]
-#            save_pickle(data1,''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-#            print 'There was existing score data for this task. I added the new data to the previous data.'
-#        else:
-#            save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-#            print 'There was no existing score data for this task. I therefore created a new file.'
-#        return self.score_sheet,reachable,manipulable
+        print 'I saved the data successfully!'
         return score_sheet
-    '''
-    def dangling_code(self):
-        prev_max_reachable = 0
-        for i in xrange(len(reachable)):
-            if np.count_non_zero(reachable[i])>prev_max_reachable:
-                 return
-        for i in xrange(len(reachable)):
-            if num_base_locations >1:
-                for j in xrange(i+1,len(reachable)):
-                    if num_base_locations<3:
-                        if np.count_nonzero(reachable[i]+reachable[j]>prev_max_reachable):
-                            return
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                    if num_base_locations>2:
-                        for k in xrange(j+1,len(reachable)):
-                            return
-                
-                
-    '''
-#        old_max_score = np.max(self.score_sheet[:,4])
-#        print 'The max reach score (% out of 1.00) I got when using only 1 base position was: ', np.max(self.score_sheet[:,4])
-#        ## Handles the option of getting multiple goal positions
-#        if allow_multiple:
-#            for num_base_locations in xrange(2,5):
-#                if (old_max_score<.95) and (num_base_locations <= len(myGoals)):
-#                    print 'Less than 95% of goal positions reachable from ',num_base_locations-1, ' base position(s). I should check if I can reach more goals using another base position.'
-#                    print 'Once again, it is 60-100 seconds calculation time per goal location.'
-#                    scores=[]
-#                    new_score = []
-#                    new_max_score = 0
-#                    goalCluster = []
-#                    cluster = clust.DataCluster(num_base_locations,0.001,1,0.02)
-#                    clust_numbers = cluster.pos_clustering(self.pos_data)
-#                    print 'Clusters assigned to groups: \n',clust_numbers
-#                    for i in xrange(num_base_locations):
-#                        goalCluster = []
-#                        for num,item in enumerate(self.goal_unique):
-#                            if clust_numbers[num] == i:
-#                                goalCluster.append(item)
-#                        goalCluster = np.array(goalCluster)
-#                        print 'The goals being evaluated at this base position are: \n',goalCluster
-#                        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = goalCluster,model=self.model,tf_listener=self.tf_listener)
-#                        this_score,reachable = selector.handle_score()
-#                        new_max_score += np.max(this_score[:,4])
-#                        #print 'New max score being calculated: ',new_max_score
-#                        scores.append(this_score)
-                    #old_max_score = 0
-                    #for i in xrange(self.num_base_locations):
-                    #    old_max_score += np.max(self.score_sheet[:,4+2*i])
-#                    print 'Old max score for ',self.num_base_locations,' base locations is: ',old_max_score
-#                    print 'New max reach score for ',num_base_locations,' base locations is: ',new_max_score
-#                    if new_max_score > old_max_score:
-#                        old_max_score = copy.copy(new_max_score)
-#                        for i in xrange(len(scores[0])):
-#                            score_line = []
-#                            score_line.append(list(scores[0][i,0:6]))
-#                            for j in xrange(1,num_base_locations):
-#                                score_line.append(list(scores[j][i,4:6]))
-#                            score_line = list(flatten(score_line))
-#                            new_score.append(score_line)
-#                        self.score_sheet = copy.copy(np.array(new_score))
-#                        self.num_base_locations = num_base_locations
-        #print 'number of scores',len(scores)
-
-        #print 'sample item from score sheet is: ',self.score_sheet[0]
-
-
-    def generate_library(self):
-        mytargets = 'all_goals'
-        mytask = self.task # 'shaving'
-        #start = 0
-        #end = 3
-        myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
-        print 'There are ',len(myGoals),' goals being sent to score generator.'
-        #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
-        #print 'Goals: \n',self.clustered_goal_data[0:4]
-        #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
-        score_sheet = selector.handle_score()
-        #self.score_sheet = []
-        #for i in xrange(len(score_sheet)):
-        #    self.score_sheet.append([score_sheet[i],reachable[i]])
-        self.score_sheet = copy.copy(score_sheet)
-
-          
-    
-        rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('hrl_base_selection')
-        save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
-
-        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
-            data1 = load_pickle(''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-            if  (np.array_equal(data1[:,0:2],self.score_sheet[:,0:2])):
-                data1[:,3] += self.score_sheet[:,3]/3
-            else:
-                print 'Something is messed up with the score sheets. The saved score sheet does not match up with the new score sheet.'
-            #for num,i in enumerate(data1):
-                #data1[num,3]=self.score_sheet[num,3]+i[3]
-            save_pickle(data1,''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-            print 'There was existing score data for this task. I added the new data to the previous data.'
-        else:
-            save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.task,'_score_data.pkl']))
-            print 'There was no existing score data for this task. I therefore created a new file.'
-
-
-    
-        #for num,line in enumerate(raw_goal_data):
-        #    goal_values[num] = np.array([m.acos(line[0,0]),line[0,3],line[1,3],line[2,3]])
 
     def plot_score(self,load=False):
         # Plot the score as a scatterplot heat map
@@ -816,7 +511,6 @@ if __name__ == "__main__":
     #runData.plot_score(load=False)
     #print 'Time to plot score: %fs'%(time.time()-start_time)
     rospy.spin()
-
 
 
 

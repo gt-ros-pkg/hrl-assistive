@@ -582,6 +582,7 @@ class BaseSelector(object):
 
         pr2_base_output = []
         configuration_output = []
+        distance_output = []
 
         pose_array = PoseArray()
         pose_array.header.stamp = rospy.Time.now()
@@ -626,6 +627,8 @@ class BaseSelector(object):
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
+            distance_to_goal = np.linalg.norm([pr2_B_goal[0, 3],pr2_B_goal[1, 3]])
+            distance_output.append(distance_to_goal)
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
             pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
@@ -637,7 +640,7 @@ class BaseSelector(object):
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 #        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
-        return list(flatten(pr2_base_output)), list(flatten(configuration_output))
+        return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
     # with the current state of the environment

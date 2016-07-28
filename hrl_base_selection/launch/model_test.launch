@@ -1,0 +1,11 @@
+<launch>
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <!--<include file="$(find gazebo_ros)/launch/empty_world.launch">-->
+    <!--<arg name="world_name" value="$(find hrl_base_selection)/models/empty.world"/>-->
+    <!-- more default parameters can be changed here -->
+    <param name="human_model/robot_description" textfile="$(find hrl_base_selection)/models/human.urdf" />
+    <node name="human_model_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="human_model" output="screen"/>
+    <node name="human_model_state_publisher_node" pkg="hrl_base_selection" type="human_model_state_publisher_node.py" output="screen"/>
+
+    <!--</include>-->
+</launch>
