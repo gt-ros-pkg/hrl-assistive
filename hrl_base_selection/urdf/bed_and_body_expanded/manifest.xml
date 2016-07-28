@@ -1,0 +1,6 @@
+<package>
+  <description brief="bed_and_body_assembly_expanded">bed_and_body_assembly_expanded</description>
+  <depend package="gazebo" />
+  <author>me</author>
+  <license>BSD</license>
+</package>

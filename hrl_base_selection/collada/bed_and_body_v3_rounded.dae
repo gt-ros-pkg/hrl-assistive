@@ -3,8 +3,8 @@
 		<contributor>
 			<authoring_tool>URDF Collada Writer</authoring_tool>
 		</contributor>
-		<created>2015-02-18T13:36:40.000000</created>
-		<modified>2015-02-18T13:36:40.000000</modified>
+		<created>2016-05-05T18:32:04.000000</created>
+		<modified>2016-05-05T18:32:04.000000</modified>
 		<unit/>
 		<up_axis>Z_UP</up_axis>
 	</asset>
@@ -21,7 +21,7 @@
 							</technique_common>
 						</bind_material>
 					</instance_geometry>
-					<node id="vkmodel0_node25" name="wall_link" sid="node25">
+					<node id="vkmodel0_node27" name="wall_link" sid="node27">
 						<translate>-0.0 -0.0 -0.0</translate>
 						<rotate>1.0 0.0 0.0 0.0</rotate>
 						<translate>-0.075 0.0 0.0</translate>
@@ -67,301 +67,319 @@
 									</technique_common>
 								</bind_material>
 							</instance_geometry>
-							<node id="vkmodel0_node15" name="head_updown_translation_link" sid="node15">
+							<node id="vkmodel0_node16" name="head_rotated_to_worldframe_link" sid="node16">
 								<translate>-0.0 -0.0 -0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
 								<translate>0.499 0.05 0.0</translate>
-								<rotate>0.577 0.577 0.577 120.0</rotate>
-								<translate sid="node_head_bed_updown_joint_axis0">0.0 0.0 0.0</translate>
+								<rotate>1.0 0.0 0.0 0.0</rotate>
+								<rotate sid="node_head_bed_to_worldframe_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 								<translate>0.0 0.0 0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<node id="vkmodel0_node12" name="head_leftright_translation_link" sid="node12">
+								<node id="vkmodel0_node17" name="head_updown_translation_link" sid="node17">
 									<translate>-0.0 -0.0 -0.0</translate>
 									<rotate>1.0 0.0 0.0 0.0</rotate>
 									<translate>0.0 0.0 0.0</translate>
-									<rotate>-1.0 -0.0 -0.0 90.0</rotate>
-									<translate sid="node_head_bed_leftright_joint_axis0">0.0 0.0 0.0</translate>
+									<rotate>1.0 0.0 0.0 0.0</rotate>
+									<translate sid="node_head_bed_updown_joint_axis0">0.0 0.0 0.0</translate>
 									<translate>0.0 0.0 0.0</translate>
 									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<node id="vkmodel0_node13" name="head_link" sid="node13">
+									<node id="vkmodel0_node15" name="head_rotated_to_bedframe_link" sid="node15">
 										<translate>-0.0 -0.0 -0.0</translate>
 										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.091 0.038 0.0</translate>
-										<rotate>0.983 0.129 0.129 90.976</rotate>
-										<rotate sid="node_head_contact_to_head_center_axis0">0.0 0.0 0.0 0.0</rotate>
 										<translate>0.0 0.0 0.0</translate>
 										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<instance_geometry url="#gkmodel0_head_link_geom0">
-											<bind_material>
-												<technique_common>
-													<instance_material symbol="mat0" target="#gkmodel0_head_link_geom0_mat"/>
-												</technique_common>
-											</bind_material>
-										</instance_geometry>
-										<node id="vkmodel0_node21" name="neck_rotation" sid="node21">
+										<rotate sid="node_head_bed_to_bedframe_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+										<translate>0.0 0.0 0.0</translate>
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<node id="vkmodel0_node12" name="head_leftright_translation_link" sid="node12">
 											<translate>-0.0 -0.0 -0.0</translate>
 											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<translate>-0.025 0.0 -0.085</translate>
-											<rotate>0.411 0.645 -0.645 135.34</rotate>
-											<rotate sid="node_head_neck_joint1_axis0">0.0 0.0 1.0 0.0</rotate>
+											<translate>0.0 0.0 0.0</translate>
+											<rotate>0.0 0.0 1.0 90.0</rotate>
+											<translate sid="node_head_bed_leftright_joint_axis0">0.0 0.0 0.0</translate>
 											<translate>0.0 0.0 0.0</translate>
 											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<instance_geometry url="#gkmodel0_neck_rotation_geom0">
-												<bind_material>
-													<technique_common>
-														<instance_material symbol="mat0" target="#gkmodel0_neck_rotation_geom0_mat"/>
-													</technique_common>
-												</bind_material>
-											</instance_geometry>
-											<node id="vkmodel0_node20" name="neck_link" sid="node20">
+											<node id="vkmodel0_node13" name="head_link" sid="node13">
 												<translate>-0.0 -0.0 -0.0</translate>
 												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<translate>0.091 0.038 0.0</translate>
+												<rotate>0.983 0.129 0.129 90.976</rotate>
+												<rotate sid="node_head_contact_to_head_center_axis0">0.0 0.0 0.0 0.0</rotate>
 												<translate>0.0 0.0 0.0</translate>
 												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<rotate sid="node_head_neck_joint2_axis0">0.0 0.0 1.0 0.0</rotate>
-												<translate>0.0 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<instance_geometry url="#gkmodel0_neck_link_geom0">
+												<instance_geometry url="#gkmodel0_head_link_geom0">
 													<bind_material>
 														<technique_common>
-															<instance_material symbol="mat0" target="#gkmodel0_neck_link_geom0_mat"/>
+															<instance_material symbol="mat0" target="#gkmodel0_head_link_geom0_mat"/>
 														</technique_common>
 													</bind_material>
 												</instance_geometry>
-												<node id="vkmodel0_node24" name="upper_body_link" sid="node24">
+												<node id="vkmodel0_node23" name="neck_rotation" sid="node23">
 													<translate>-0.0 -0.0 -0.0</translate>
 													<rotate>1.0 0.0 0.0 0.0</rotate>
-													<translate>0.072 0.0 0.0</translate>
-													<rotate>0.0 -0.0 1.0 38.105</rotate>
-													<rotate sid="node_neck_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+													<translate>-0.025 0.0 -0.085</translate>
+													<rotate>0.411 0.645 -0.645 135.34</rotate>
+													<rotate sid="node_head_neck_joint1_axis0">0.0 0.0 1.0 0.0</rotate>
 													<translate>0.0 0.0 0.0</translate>
 													<rotate>1.0 0.0 0.0 0.0</rotate>
-													<instance_geometry url="#gkmodel0_upper_body_link_geom0">
+													<instance_geometry url="#gkmodel0_neck_rotation_geom0">
 														<bind_material>
 															<technique_common>
-																<instance_material symbol="mat0" target="#gkmodel0_upper_body_link_geom0_mat"/>
+																<instance_material symbol="mat0" target="#gkmodel0_neck_rotation_geom0_mat"/>
 															</technique_common>
 														</bind_material>
 													</instance_geometry>
-													<node id="vkmodel0_node0" name="arm_left_link" sid="node0">
+													<node id="vkmodel0_node22" name="neck_link" sid="node22">
 														<translate>-0.0 -0.0 -0.0</translate>
 														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<translate>0.097 0.0 -0.175</translate>
-														<rotate>0.0 0.0 1.0 1.895</rotate>
-														<rotate sid="node_body_arm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 														<translate>0.0 0.0 0.0</translate>
 														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<instance_geometry url="#gkmodel0_arm_left_link_geom0">
+														<rotate sid="node_head_neck_joint2_axis0">0.0 0.0 1.0 0.0</rotate>
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<instance_geometry url="#gkmodel0_neck_link_geom0">
 															<bind_material>
 																<technique_common>
-																	<instance_material symbol="mat0" target="#gkmodel0_arm_left_link_geom0_mat"/>
+																	<instance_material symbol="mat0" target="#gkmodel0_neck_link_geom0_mat"/>
 																</technique_common>
 															</bind_material>
 														</instance_geometry>
-														<node id="vkmodel0_node8" name="forearm_left_link" sid="node8">
+														<node id="vkmodel0_node26" name="upper_body_link" sid="node26">
 															<translate>-0.0 -0.0 -0.0</translate>
 															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<translate>0.282 -0.011 -0.05</translate>
-															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<rotate sid="node_arm_forearm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+															<translate>0.072 0.0 0.0</translate>
+															<rotate>0.0 -0.0 1.0 38.105</rotate>
+															<rotate sid="node_neck_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
 															<translate>0.0 0.0 0.0</translate>
 															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<instance_geometry url="#gkmodel0_forearm_left_link_geom0">
+															<instance_geometry url="#gkmodel0_upper_body_link_geom0">
 																<bind_material>
 																	<technique_common>
-																		<instance_material symbol="mat0" target="#gkmodel0_forearm_left_link_geom0_mat"/>
+																		<instance_material symbol="mat0" target="#gkmodel0_upper_body_link_geom0_mat"/>
 																	</technique_common>
 																</bind_material>
 															</instance_geometry>
-															<node id="vkmodel0_node10" name="hand_left_link" sid="node10">
+															<node id="vkmodel0_node0" name="arm_left_link" sid="node0">
 																<translate>-0.0 -0.0 -0.0</translate>
 																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<translate>0.251 0.0 0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<rotate sid="node_forearm_hand_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																<translate>0.097 0.0 -0.175</translate>
+																<rotate>0.0 0.0 1.0 1.895</rotate>
+																<rotate sid="node_body_arm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																<translate>0.0 0.0 0.0</translate>
 																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<instance_geometry url="#gkmodel0_hand_left_link_geom0">
+																<instance_geometry url="#gkmodel0_arm_left_link_geom0">
 																	<bind_material>
 																		<technique_common>
-																			<instance_material symbol="mat0" target="#gkmodel0_hand_left_link_geom0_mat"/>
+																			<instance_material symbol="mat0" target="#gkmodel0_arm_left_link_geom0_mat"/>
 																		</technique_common>
 																	</bind_material>
 																</instance_geometry>
-															</node>
-														</node>
-													</node>
-													<node id="vkmodel0_node1" name="arm_right_link" sid="node1">
-														<translate>-0.0 -0.0 -0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<translate>0.097 0.0 0.175</translate>
-														<rotate>-0.0 0.0 -1.0 0.26</rotate>
-														<rotate sid="node_body_arm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-														<translate>0.0 0.0 0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<instance_geometry url="#gkmodel0_arm_right_link_geom0">
-															<bind_material>
-																<technique_common>
-																	<instance_material symbol="mat0" target="#gkmodel0_arm_right_link_geom0_mat"/>
-																</technique_common>
-															</bind_material>
-														</instance_geometry>
-														<node id="vkmodel0_node9" name="forearm_right_link" sid="node9">
-															<translate>-0.0 -0.0 -0.0</translate>
-															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<translate>0.282 0.0 0.05</translate>
-															<rotate>0.0 -0.0 1.0 2.155</rotate>
-															<rotate sid="node_arm_forearm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-															<translate>0.0 0.0 0.0</translate>
-															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<instance_geometry url="#gkmodel0_forearm_right_link_geom0">
-																<bind_material>
-																	<technique_common>
-																		<instance_material symbol="mat0" target="#gkmodel0_forearm_right_link_geom0_mat"/>
-																	</technique_common>
-																</bind_material>
-															</instance_geometry>
-															<node id="vkmodel0_node11" name="hand_right_link" sid="node11">
-																<translate>-0.0 -0.0 -0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<translate>0.251 0.0 0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<rotate sid="node_forearm_hand_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-																<translate>0.0 0.0 0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<instance_geometry url="#gkmodel0_hand_right_link_geom0">
-																	<bind_material>
-																		<technique_common>
-																			<instance_material symbol="mat0" target="#gkmodel0_hand_right_link_geom0_mat"/>
-																		</technique_common>
-																	</bind_material>
-																</instance_geometry>
-															</node>
-														</node>
-													</node>
-													<node id="vkmodel0_node19" name="mid_body_link" sid="node19">
-														<translate>-0.0 -0.0 -0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<translate>0.351 0.0 0.0</translate>
-														<rotate>0.0 0.0 1.0 20.0</rotate>
-														<rotate sid="node_upper_mid_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
-														<translate>0.0 0.0 0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<instance_geometry url="#gkmodel0_mid_body_link_geom0">
-															<bind_material>
-																<technique_common>
-																	<instance_material symbol="mat0" target="#gkmodel0_mid_body_link_geom0_mat"/>
-																</technique_common>
-															</bind_material>
-														</instance_geometry>
-														<node id="vkmodel0_node18" name="lower_body_link" sid="node18">
-															<translate>-0.0 -0.0 -0.0</translate>
-															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<translate>0.151 0.0 0.0</translate>
-															<rotate>0.0 0.0 -1.0 33.105</rotate>
-															<rotate sid="node_mid_lower_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
-															<translate>0.0 0.0 0.0</translate>
-															<rotate>1.0 0.0 0.0 0.0</rotate>
-															<instance_geometry url="#gkmodel0_lower_body_link_geom0">
-																<bind_material>
-																	<technique_common>
-																		<instance_material symbol="mat0" target="#gkmodel0_lower_body_link_geom0_mat"/>
-																	</technique_common>
-																</bind_material>
-															</instance_geometry>
-															<node id="vkmodel0_node22" name="quad_left_link" sid="node22">
-																<translate>-0.0 -0.0 -0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<translate>0.052 0.0 -0.086</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<rotate sid="node_body_quad_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-																<translate>0.0 0.0 0.0</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<instance_geometry url="#gkmodel0_quad_left_link_geom0">
-																	<bind_material>
-																		<technique_common>
-																			<instance_material symbol="mat0" target="#gkmodel0_quad_left_link_geom0_mat"/>
-																		</technique_common>
-																	</bind_material>
-																</instance_geometry>
-																<node id="vkmodel0_node4" name="calf_left_link" sid="node4">
+																<node id="vkmodel0_node8" name="forearm_left_link" sid="node8">
 																	<translate>-0.0 -0.0 -0.0</translate>
 																	<rotate>1.0 0.0 0.0 0.0</rotate>
-																	<translate>0.412 0.11 0.0</translate>
-																	<rotate>-0.131 0.991 -0.0 180.0</rotate>
-																	<rotate sid="node_quad_calf_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																	<translate>0.282 -0.011 -0.05</translate>
+																	<rotate>1.0 0.0 0.0 0.0</rotate>
+																	<rotate sid="node_arm_forearm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																	<translate>0.0 0.0 0.0</translate>
 																	<rotate>1.0 0.0 0.0 0.0</rotate>
-																	<instance_geometry url="#gkmodel0_calf_left_link_geom0">
+																	<instance_geometry url="#gkmodel0_forearm_left_link_geom0">
 																		<bind_material>
 																			<technique_common>
-																				<instance_material symbol="mat0" target="#gkmodel0_calf_left_link_geom0_mat"/>
+																				<instance_material symbol="mat0" target="#gkmodel0_forearm_left_link_geom0_mat"/>
 																			</technique_common>
 																		</bind_material>
 																	</instance_geometry>
-																	<node id="vkmodel0_node6" name="foot_left_link" sid="node6">
+																	<node id="vkmodel0_node10" name="hand_left_link" sid="node10">
 																		<translate>-0.0 -0.0 -0.0</translate>
 																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<translate>-0.413 -0.032 0.0</translate>
-																		<rotate>0.0 0.0 1.0 4.416</rotate>
-																		<rotate sid="node_calf_foot_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																		<translate>0.251 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<rotate sid="node_forearm_hand_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																		<translate>0.0 0.0 0.0</translate>
 																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<instance_geometry url="#gkmodel0_foot_left_link_geom0">
+																		<instance_geometry url="#gkmodel0_hand_left_link_geom0">
 																			<bind_material>
 																				<technique_common>
-																					<instance_material symbol="mat0" target="#gkmodel0_foot_left_link_geom0_mat"/>
+																					<instance_material symbol="mat0" target="#gkmodel0_hand_left_link_geom0_mat"/>
 																				</technique_common>
 																			</bind_material>
 																		</instance_geometry>
 																	</node>
 																</node>
 															</node>
-															<node id="vkmodel0_node23" name="quad_right_link" sid="node23">
+															<node id="vkmodel0_node1" name="arm_right_link" sid="node1">
 																<translate>-0.0 -0.0 -0.0</translate>
 																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<translate>0.052 0.0 0.086</translate>
-																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<rotate sid="node_body_quad_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																<translate>0.097 0.0 0.175</translate>
+																<rotate>-0.0 0.0 -1.0 0.26</rotate>
+																<rotate sid="node_body_arm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																<translate>0.0 0.0 0.0</translate>
 																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<instance_geometry url="#gkmodel0_quad_right_link_geom0">
+																<instance_geometry url="#gkmodel0_arm_right_link_geom0">
 																	<bind_material>
 																		<technique_common>
-																			<instance_material symbol="mat0" target="#gkmodel0_quad_right_link_geom0_mat"/>
+																			<instance_material symbol="mat0" target="#gkmodel0_arm_right_link_geom0_mat"/>
 																		</technique_common>
 																	</bind_material>
 																</instance_geometry>
-																<node id="vkmodel0_node5" name="calf_right_link" sid="node5">
+																<node id="vkmodel0_node9" name="forearm_right_link" sid="node9">
 																	<translate>-0.0 -0.0 -0.0</translate>
 																	<rotate>1.0 0.0 0.0 0.0</rotate>
-																	<translate>0.412 0.11 0.0</translate>
-																	<rotate>-0.131 0.991 -0.0 180.0</rotate>
-																	<rotate sid="node_quad_calf_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																	<translate>0.282 0.0 0.05</translate>
+																	<rotate>0.0 -0.0 1.0 2.155</rotate>
+																	<rotate sid="node_arm_forearm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																	<translate>0.0 0.0 0.0</translate>
 																	<rotate>1.0 0.0 0.0 0.0</rotate>
-																	<instance_geometry url="#gkmodel0_calf_right_link_geom0">
+																	<instance_geometry url="#gkmodel0_forearm_right_link_geom0">
 																		<bind_material>
 																			<technique_common>
-																				<instance_material symbol="mat0" target="#gkmodel0_calf_right_link_geom0_mat"/>
+																				<instance_material symbol="mat0" target="#gkmodel0_forearm_right_link_geom0_mat"/>
 																			</technique_common>
 																		</bind_material>
 																	</instance_geometry>
-																	<node id="vkmodel0_node7" name="foot_right_link" sid="node7">
+																	<node id="vkmodel0_node11" name="hand_right_link" sid="node11">
 																		<translate>-0.0 -0.0 -0.0</translate>
 																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<translate>-0.413 -0.032 0.0</translate>
-																		<rotate>0.0 0.0 1.0 4.416</rotate>
-																		<rotate sid="node_calf_foot_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																		<translate>0.251 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<rotate sid="node_forearm_hand_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 																		<translate>0.0 0.0 0.0</translate>
 																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<instance_geometry url="#gkmodel0_foot_right_link_geom0">
+																		<instance_geometry url="#gkmodel0_hand_right_link_geom0">
 																			<bind_material>
 																				<technique_common>
-																					<instance_material symbol="mat0" target="#gkmodel0_foot_right_link_geom0_mat"/>
+																					<instance_material symbol="mat0" target="#gkmodel0_hand_right_link_geom0_mat"/>
 																				</technique_common>
 																			</bind_material>
 																		</instance_geometry>
+																	</node>
+																</node>
+															</node>
+															<node id="vkmodel0_node21" name="mid_body_link" sid="node21">
+																<translate>-0.0 -0.0 -0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<translate>0.351 0.0 0.0</translate>
+																<rotate>0.0 0.0 1.0 20.0</rotate>
+																<rotate sid="node_upper_mid_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+																<translate>0.0 0.0 0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<instance_geometry url="#gkmodel0_mid_body_link_geom0">
+																	<bind_material>
+																		<technique_common>
+																			<instance_material symbol="mat0" target="#gkmodel0_mid_body_link_geom0_mat"/>
+																		</technique_common>
+																	</bind_material>
+																</instance_geometry>
+																<node id="vkmodel0_node20" name="lower_body_link" sid="node20">
+																	<translate>-0.0 -0.0 -0.0</translate>
+																	<rotate>1.0 0.0 0.0 0.0</rotate>
+																	<translate>0.151 0.0 0.0</translate>
+																	<rotate>0.0 0.0 -1.0 33.105</rotate>
+																	<rotate sid="node_mid_lower_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+																	<translate>0.0 0.0 0.0</translate>
+																	<rotate>1.0 0.0 0.0 0.0</rotate>
+																	<instance_geometry url="#gkmodel0_lower_body_link_geom0">
+																		<bind_material>
+																			<technique_common>
+																				<instance_material symbol="mat0" target="#gkmodel0_lower_body_link_geom0_mat"/>
+																			</technique_common>
+																		</bind_material>
+																	</instance_geometry>
+																	<node id="vkmodel0_node24" name="quad_left_link" sid="node24">
+																		<translate>-0.0 -0.0 -0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<translate>0.052 0.0 -0.086</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<rotate sid="node_body_quad_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																		<translate>0.0 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<instance_geometry url="#gkmodel0_quad_left_link_geom0">
+																			<bind_material>
+																				<technique_common>
+																					<instance_material symbol="mat0" target="#gkmodel0_quad_left_link_geom0_mat"/>
+																				</technique_common>
+																			</bind_material>
+																		</instance_geometry>
+																		<node id="vkmodel0_node4" name="calf_left_link" sid="node4">
+																			<translate>-0.0 -0.0 -0.0</translate>
+																			<rotate>1.0 0.0 0.0 0.0</rotate>
+																			<translate>0.412 0.11 0.0</translate>
+																			<rotate>-0.131 0.991 -0.0 180.0</rotate>
+																			<rotate sid="node_quad_calf_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																			<translate>0.0 0.0 0.0</translate>
+																			<rotate>1.0 0.0 0.0 0.0</rotate>
+																			<instance_geometry url="#gkmodel0_calf_left_link_geom0">
+																				<bind_material>
+																					<technique_common>
+																						<instance_material symbol="mat0" target="#gkmodel0_calf_left_link_geom0_mat"/>
+																					</technique_common>
+																				</bind_material>
+																			</instance_geometry>
+																			<node id="vkmodel0_node6" name="foot_left_link" sid="node6">
+																				<translate>-0.0 -0.0 -0.0</translate>
+																				<rotate>1.0 0.0 0.0 0.0</rotate>
+																				<translate>-0.413 -0.032 0.0</translate>
+																				<rotate>0.0 0.0 1.0 4.416</rotate>
+																				<rotate sid="node_calf_foot_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																				<translate>0.0 0.0 0.0</translate>
+																				<rotate>1.0 0.0 0.0 0.0</rotate>
+																				<instance_geometry url="#gkmodel0_foot_left_link_geom0">
+																					<bind_material>
+																						<technique_common>
+																							<instance_material symbol="mat0" target="#gkmodel0_foot_left_link_geom0_mat"/>
+																						</technique_common>
+																					</bind_material>
+																				</instance_geometry>
+																			</node>
+																		</node>
+																	</node>
+																	<node id="vkmodel0_node25" name="quad_right_link" sid="node25">
+																		<translate>-0.0 -0.0 -0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<translate>0.052 0.0 0.086</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<rotate sid="node_body_quad_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																		<translate>0.0 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<instance_geometry url="#gkmodel0_quad_right_link_geom0">
+																			<bind_material>
+																				<technique_common>
+																					<instance_material symbol="mat0" target="#gkmodel0_quad_right_link_geom0_mat"/>
+																				</technique_common>
+																			</bind_material>
+																		</instance_geometry>
+																		<node id="vkmodel0_node5" name="calf_right_link" sid="node5">
+																			<translate>-0.0 -0.0 -0.0</translate>
+																			<rotate>1.0 0.0 0.0 0.0</rotate>
+																			<translate>0.412 0.11 0.0</translate>
+																			<rotate>-0.131 0.991 -0.0 180.0</rotate>
+																			<rotate sid="node_quad_calf_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																			<translate>0.0 0.0 0.0</translate>
+																			<rotate>1.0 0.0 0.0 0.0</rotate>
+																			<instance_geometry url="#gkmodel0_calf_right_link_geom0">
+																				<bind_material>
+																					<technique_common>
+																						<instance_material symbol="mat0" target="#gkmodel0_calf_right_link_geom0_mat"/>
+																					</technique_common>
+																				</bind_material>
+																			</instance_geometry>
+																			<node id="vkmodel0_node7" name="foot_right_link" sid="node7">
+																				<translate>-0.0 -0.0 -0.0</translate>
+																				<rotate>1.0 0.0 0.0 0.0</rotate>
+																				<translate>-0.413 -0.032 0.0</translate>
+																				<rotate>0.0 0.0 1.0 4.416</rotate>
+																				<rotate sid="node_calf_foot_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+																				<translate>0.0 0.0 0.0</translate>
+																				<rotate>1.0 0.0 0.0 0.0</rotate>
+																				<instance_geometry url="#gkmodel0_foot_right_link_geom0">
+																					<bind_material>
+																						<technique_common>
+																							<instance_material symbol="mat0" target="#gkmodel0_foot_right_link_geom0_mat"/>
+																						</technique_common>
+																					</bind_material>
+																				</instance_geometry>
+																			</node>
+																		</node>
 																	</node>
 																</node>
 															</node>
@@ -374,7 +392,7 @@
 								</node>
 							</node>
 						</node>
-						<node id="vkmodel0_node17" name="leg_rest_upper_link" sid="node17">
+						<node id="vkmodel0_node19" name="leg_rest_upper_link" sid="node19">
 							<translate>-0.0 -0.0 -0.0</translate>
 							<rotate>1.0 0.0 0.0 0.0</rotate>
 							<translate>1.055 -0.274 0.05</translate>
@@ -389,7 +407,7 @@
 									</technique_common>
 								</bind_material>
 							</instance_geometry>
-							<node id="vkmodel0_node16" name="leg_rest_lower_link" sid="node16">
+							<node id="vkmodel0_node18" name="leg_rest_lower_link" sid="node18">
 								<translate>-0.0 -0.0 -0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
 								<translate>0.37 0.0 0.0</translate>
@@ -1839,9 +1857,27 @@
 						</limits>
 					</prismatic>
 				</joint>
+				<joint name="head_bed_to_bedframe_joint" sid="head_bed_to_bedframe_joint">
+					<revolute sid="axis0">
+						<axis>0 0 1</axis>
+						<limits>
+							<min>-114.592</min>
+							<max>114.592</max>
+						</limits>
+					</revolute>
+				</joint>
+				<joint name="head_bed_to_worldframe_joint" sid="head_bed_to_worldframe_joint">
+					<revolute sid="axis0">
+						<axis>0 0 1</axis>
+						<limits>
+							<min>-114.592</min>
+							<max>114.592</max>
+						</limits>
+					</revolute>
+				</joint>
 				<joint name="head_bed_updown_joint" sid="head_bed_updown_joint">
 					<prismatic sid="axis0">
-						<axis>0 0 -1</axis>
+						<axis>-1 0 0</axis>
 						<limits>
 							<min>-2.0</min>
 							<max>2.0</max>
@@ -1979,101 +2015,113 @@
 								<translate>0.775 -0.274 0.26</translate>
 								<rotate>0.0 -0.707 -0.707 180.0</rotate>
 								<link sid="head_rest_link" name="head_rest_link">
-									<attachment_full joint="kmodel0/head_bed_updown_joint">
+									<attachment_full joint="kmodel0/head_bed_to_worldframe_joint">
 										<translate>0.499 0.05 0.0</translate>
-										<rotate>0.577 0.577 0.577 120.0</rotate>
-										<link sid="head_updown_translation_link" name="head_updown_translation_link">
-											<attachment_full joint="kmodel0/head_bed_leftright_joint">
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<link sid="head_rotated_to_worldframe_link" name="head_rotated_to_worldframe_link">
+											<attachment_full joint="kmodel0/head_bed_updown_joint">
 												<translate>0.0 0.0 0.0</translate>
-												<rotate>-1.0 -0.0 -0.0 90.0</rotate>
-												<link sid="head_leftright_translation_link" name="head_leftright_translation_link">
-													<attachment_full joint="kmodel0/head_contact_to_head_center">
-														<translate>0.091 0.038 0.0</translate>
-														<rotate>0.983 0.129 0.129 90.976</rotate>
-														<link sid="head_link" name="head_link">
-															<attachment_full joint="kmodel0/head_neck_joint1">
-																<translate>-0.025 0.0 -0.085</translate>
-																<rotate>0.411 0.645 -0.645 135.34</rotate>
-																<link sid="neck_rotation" name="neck_rotation">
-																	<attachment_full joint="kmodel0/head_neck_joint2">
-																		<translate>0.0 0.0 0.0</translate>
-																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<link sid="neck_link" name="neck_link">
-																			<attachment_full joint="kmodel0/neck_body_joint">
-																				<translate>0.072 0.0 0.0</translate>
-																				<rotate>0.0 -0.0 1.0 38.105</rotate>
-																				<link sid="upper_body_link" name="upper_body_link">
-																					<attachment_full joint="kmodel0/body_arm_left_joint">
-																						<translate>0.097 0.0 -0.175</translate>
-																						<rotate>0.0 0.0 1.0 1.895</rotate>
-																						<link sid="arm_left_link" name="arm_left_link">
-																							<attachment_full joint="kmodel0/arm_forearm_left_joint">
-																								<translate>0.282 -0.011 -0.05</translate>
-																								<rotate>1.0 0.0 0.0 0.0</rotate>
-																								<link sid="forearm_left_link" name="forearm_left_link">
-																									<attachment_full joint="kmodel0/forearm_hand_left_joint">
-																										<translate>0.251 0.0 0.0</translate>
-																										<rotate>1.0 0.0 0.0 0.0</rotate>
-																										<link sid="hand_left_link" name="hand_left_link"/>
-																									</attachment_full>
-																								</link>
-																							</attachment_full>
-																						</link>
-																					</attachment_full>
-																					<attachment_full joint="kmodel0/body_arm_right_joint">
-																						<translate>0.097 0.0 0.175</translate>
-																						<rotate>-0.0 0.0 -1.0 0.26</rotate>
-																						<link sid="arm_right_link" name="arm_right_link">
-																							<attachment_full joint="kmodel0/arm_forearm_right_joint">
-																								<translate>0.282 0.0 0.05</translate>
-																								<rotate>0.0 -0.0 1.0 2.155</rotate>
-																								<link sid="forearm_right_link" name="forearm_right_link">
-																									<attachment_full joint="kmodel0/forearm_hand_right_joint">
-																										<translate>0.251 0.0 0.0</translate>
-																										<rotate>1.0 0.0 0.0 0.0</rotate>
-																										<link sid="hand_right_link" name="hand_right_link"/>
-																									</attachment_full>
-																								</link>
-																							</attachment_full>
-																						</link>
-																					</attachment_full>
-																					<attachment_full joint="kmodel0/upper_mid_body_joint">
-																						<translate>0.351 0.0 0.0</translate>
-																						<rotate>0.0 0.0 1.0 20.0</rotate>
-																						<link sid="mid_body_link" name="mid_body_link">
-																							<attachment_full joint="kmodel0/mid_lower_body_joint">
-																								<translate>0.151 0.0 0.0</translate>
-																								<rotate>0.0 0.0 -1.0 33.105</rotate>
-																								<link sid="lower_body_link" name="lower_body_link">
-																									<attachment_full joint="kmodel0/body_quad_left_joint">
-																										<translate>0.052 0.0 -0.086</translate>
-																										<rotate>1.0 0.0 0.0 0.0</rotate>
-																										<link sid="quad_left_link" name="quad_left_link">
-																											<attachment_full joint="kmodel0/quad_calf_left_joint">
-																												<translate>0.412 0.11 0.0</translate>
-																												<rotate>-0.131 0.991 -0.0 180.0</rotate>
-																												<link sid="calf_left_link" name="calf_left_link">
-																													<attachment_full joint="kmodel0/calf_foot_left_joint">
-																														<translate>-0.413 -0.032 0.0</translate>
-																														<rotate>0.0 0.0 1.0 4.416</rotate>
-																														<link sid="foot_left_link" name="foot_left_link"/>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<link sid="head_updown_translation_link" name="head_updown_translation_link">
+													<attachment_full joint="kmodel0/head_bed_to_bedframe_joint">
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<link sid="head_rotated_to_bedframe_link" name="head_rotated_to_bedframe_link">
+															<attachment_full joint="kmodel0/head_bed_leftright_joint">
+																<translate>0.0 0.0 0.0</translate>
+																<rotate>0.0 0.0 1.0 90.0</rotate>
+																<link sid="head_leftright_translation_link" name="head_leftright_translation_link">
+																	<attachment_full joint="kmodel0/head_contact_to_head_center">
+																		<translate>0.091 0.038 0.0</translate>
+																		<rotate>0.983 0.129 0.129 90.976</rotate>
+																		<link sid="head_link" name="head_link">
+																			<attachment_full joint="kmodel0/head_neck_joint1">
+																				<translate>-0.025 0.0 -0.085</translate>
+																				<rotate>0.411 0.645 -0.645 135.34</rotate>
+																				<link sid="neck_rotation" name="neck_rotation">
+																					<attachment_full joint="kmodel0/head_neck_joint2">
+																						<translate>0.0 0.0 0.0</translate>
+																						<rotate>1.0 0.0 0.0 0.0</rotate>
+																						<link sid="neck_link" name="neck_link">
+																							<attachment_full joint="kmodel0/neck_body_joint">
+																								<translate>0.072 0.0 0.0</translate>
+																								<rotate>0.0 -0.0 1.0 38.105</rotate>
+																								<link sid="upper_body_link" name="upper_body_link">
+																									<attachment_full joint="kmodel0/body_arm_left_joint">
+																										<translate>0.097 0.0 -0.175</translate>
+																										<rotate>0.0 0.0 1.0 1.895</rotate>
+																										<link sid="arm_left_link" name="arm_left_link">
+																											<attachment_full joint="kmodel0/arm_forearm_left_joint">
+																												<translate>0.282 -0.011 -0.05</translate>
+																												<rotate>1.0 0.0 0.0 0.0</rotate>
+																												<link sid="forearm_left_link" name="forearm_left_link">
+																													<attachment_full joint="kmodel0/forearm_hand_left_joint">
+																														<translate>0.251 0.0 0.0</translate>
+																														<rotate>1.0 0.0 0.0 0.0</rotate>
+																														<link sid="hand_left_link" name="hand_left_link"/>
 																													</attachment_full>
 																												</link>
 																											</attachment_full>
 																										</link>
 																									</attachment_full>
-																									<attachment_full joint="kmodel0/body_quad_right_joint">
-																										<translate>0.052 0.0 0.086</translate>
-																										<rotate>1.0 0.0 0.0 0.0</rotate>
-																										<link sid="quad_right_link" name="quad_right_link">
-																											<attachment_full joint="kmodel0/quad_calf_right_joint">
-																												<translate>0.412 0.11 0.0</translate>
-																												<rotate>-0.131 0.991 -0.0 180.0</rotate>
-																												<link sid="calf_right_link" name="calf_right_link">
-																													<attachment_full joint="kmodel0/calf_foot_right_joint">
-																														<translate>-0.413 -0.032 0.0</translate>
-																														<rotate>0.0 0.0 1.0 4.416</rotate>
-																														<link sid="foot_right_link" name="foot_right_link"/>
+																									<attachment_full joint="kmodel0/body_arm_right_joint">
+																										<translate>0.097 0.0 0.175</translate>
+																										<rotate>-0.0 0.0 -1.0 0.26</rotate>
+																										<link sid="arm_right_link" name="arm_right_link">
+																											<attachment_full joint="kmodel0/arm_forearm_right_joint">
+																												<translate>0.282 0.0 0.05</translate>
+																												<rotate>0.0 -0.0 1.0 2.155</rotate>
+																												<link sid="forearm_right_link" name="forearm_right_link">
+																													<attachment_full joint="kmodel0/forearm_hand_right_joint">
+																														<translate>0.251 0.0 0.0</translate>
+																														<rotate>1.0 0.0 0.0 0.0</rotate>
+																														<link sid="hand_right_link" name="hand_right_link"/>
+																													</attachment_full>
+																												</link>
+																											</attachment_full>
+																										</link>
+																									</attachment_full>
+																									<attachment_full joint="kmodel0/upper_mid_body_joint">
+																										<translate>0.351 0.0 0.0</translate>
+																										<rotate>0.0 0.0 1.0 20.0</rotate>
+																										<link sid="mid_body_link" name="mid_body_link">
+																											<attachment_full joint="kmodel0/mid_lower_body_joint">
+																												<translate>0.151 0.0 0.0</translate>
+																												<rotate>0.0 0.0 -1.0 33.105</rotate>
+																												<link sid="lower_body_link" name="lower_body_link">
+																													<attachment_full joint="kmodel0/body_quad_left_joint">
+																														<translate>0.052 0.0 -0.086</translate>
+																														<rotate>1.0 0.0 0.0 0.0</rotate>
+																														<link sid="quad_left_link" name="quad_left_link">
+																															<attachment_full joint="kmodel0/quad_calf_left_joint">
+																																<translate>0.412 0.11 0.0</translate>
+																																<rotate>-0.131 0.991 -0.0 180.0</rotate>
+																																<link sid="calf_left_link" name="calf_left_link">
+																																	<attachment_full joint="kmodel0/calf_foot_left_joint">
+																																		<translate>-0.413 -0.032 0.0</translate>
+																																		<rotate>0.0 0.0 1.0 4.416</rotate>
+																																		<link sid="foot_left_link" name="foot_left_link"/>
+																																	</attachment_full>
+																																</link>
+																															</attachment_full>
+																														</link>
+																													</attachment_full>
+																													<attachment_full joint="kmodel0/body_quad_right_joint">
+																														<translate>0.052 0.0 0.086</translate>
+																														<rotate>1.0 0.0 0.0 0.0</rotate>
+																														<link sid="quad_right_link" name="quad_right_link">
+																															<attachment_full joint="kmodel0/quad_calf_right_joint">
+																																<translate>0.412 0.11 0.0</translate>
+																																<rotate>-0.131 0.991 -0.0 180.0</rotate>
+																																<link sid="calf_right_link" name="calf_right_link">
+																																	<attachment_full joint="kmodel0/calf_foot_right_joint">
+																																		<translate>-0.413 -0.032 0.0</translate>
+																																		<rotate>0.0 0.0 1.0 4.416</rotate>
+																																		<link sid="foot_right_link" name="foot_right_link"/>
+																																	</attachment_full>
+																																</link>
+																															</attachment_full>
+																														</link>
 																													</attachment_full>
 																												</link>
 																											</attachment_full>
@@ -2186,6 +2234,18 @@
 					</newparam>
 					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value">
 						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value</SIDREF>
 					</newparam>
 					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0">
 						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0</SIDREF>
@@ -2369,7 +2429,14 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst12"/>
+					<axis_info axis="robot0_kinematics/axis_info_inst12">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
 					<axis_info axis="robot0_kinematics/axis_info_inst13">
 						<speed>
 							<float>0.0</float>
@@ -2378,14 +2445,7 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst14">
-						<speed>
-							<float>0.0</float>
-						</speed>
-						<acceleration>
-							<float>0.0</float>
-						</acceleration>
-					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst14"/>
 					<axis_info axis="robot0_kinematics/axis_info_inst15">
 						<speed>
 							<float>0.0</float>
@@ -2426,7 +2486,14 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst20"/>
+					<axis_info axis="robot0_kinematics/axis_info_inst20">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
 					<axis_info axis="robot0_kinematics/axis_info_inst21">
 						<speed>
 							<float>0.0</float>
@@ -2435,14 +2502,7 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst22">
-						<speed>
-							<float>0.0</float>
-						</speed>
-						<acceleration>
-							<float>0.0</float>
-						</acceleration>
-					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst22"/>
 					<axis_info axis="robot0_kinematics/axis_info_inst23">
 						<speed>
 							<float>0.0</float>
@@ -2452,6 +2512,22 @@
 						</acceleration>
 					</axis_info>
 					<axis_info axis="robot0_kinematics/axis_info_inst24">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst25">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst26">
 						<speed>
 							<float>0.0</float>
 						</speed>
@@ -2532,6 +2608,18 @@
 						<SIDREF>robot0_kinematics/kmodel0_inst/head_bed_leftright_joint/axis0</SIDREF>
 					</newparam>
 					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value">
+						<float>0.0</float>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0">
+						<SIDREF>robot0_kinematics/kmodel0_inst/head_bed_to_bedframe_joint/axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value">
+						<float>0.0</float>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0">
+						<SIDREF>robot0_kinematics/kmodel0_inst/head_bed_to_worldframe_joint/axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value">
 						<float>0.0</float>
 					</newparam>
 					<newparam sid="robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0">
@@ -2774,7 +2862,35 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst11" axis="kmodel0/head_bed_updown_joint/axis0">
+					<axis_info sid="axis_info_inst11" axis="kmodel0/head_bed_to_bedframe_joint/axis0">
+						<active>
+							<bool>true</bool>
+						</active>
+						<locked>
+							<bool>false</bool>
+						</locked>
+						<limits>
+							<min><float>-114.592</float>
+							</min>
+							<max><float>114.592</float>
+							</max>
+						</limits>
+					</axis_info>
+					<axis_info sid="axis_info_inst12" axis="kmodel0/head_bed_to_worldframe_joint/axis0">
+						<active>
+							<bool>true</bool>
+						</active>
+						<locked>
+							<bool>false</bool>
+						</locked>
+						<limits>
+							<min><float>-114.592</float>
+							</min>
+							<max><float>114.592</float>
+							</max>
+						</limits>
+					</axis_info>
+					<axis_info sid="axis_info_inst13" axis="kmodel0/head_bed_updown_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2788,7 +2904,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst12" axis="kmodel0/head_contact_to_head_center/axis0">
+					<axis_info sid="axis_info_inst14" axis="kmodel0/head_contact_to_head_center/axis0">
 						<active>
 							<bool>false</bool>
 						</active>
@@ -2802,7 +2918,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst13" axis="kmodel0/head_neck_joint1/axis0">
+					<axis_info sid="axis_info_inst15" axis="kmodel0/head_neck_joint1/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2816,7 +2932,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst14" axis="kmodel0/head_neck_joint2/axis0">
+					<axis_info sid="axis_info_inst16" axis="kmodel0/head_neck_joint2/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2830,7 +2946,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst15" axis="kmodel0/head_rest_hinge/axis0">
+					<axis_info sid="axis_info_inst17" axis="kmodel0/head_rest_hinge/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2844,7 +2960,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst16" axis="kmodel0/leg_rest_upper_joint/axis0">
+					<axis_info sid="axis_info_inst18" axis="kmodel0/leg_rest_upper_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2858,7 +2974,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst17" axis="kmodel0/leg_rest_upper_lower_joint/axis0">
+					<axis_info sid="axis_info_inst19" axis="kmodel0/leg_rest_upper_lower_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2872,7 +2988,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst18" axis="kmodel0/mid_lower_body_joint/axis0">
+					<axis_info sid="axis_info_inst20" axis="kmodel0/mid_lower_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2886,7 +3002,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst19" axis="kmodel0/neck_body_joint/axis0">
+					<axis_info sid="axis_info_inst21" axis="kmodel0/neck_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2900,7 +3016,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst20" axis="kmodel0/origin_wall_joint/axis0">
+					<axis_info sid="axis_info_inst22" axis="kmodel0/origin_wall_joint/axis0">
 						<active>
 							<bool>false</bool>
 						</active>
@@ -2914,7 +3030,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst21" axis="kmodel0/quad_calf_left_joint/axis0">
+					<axis_info sid="axis_info_inst23" axis="kmodel0/quad_calf_left_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2928,7 +3044,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst22" axis="kmodel0/quad_calf_right_joint/axis0">
+					<axis_info sid="axis_info_inst24" axis="kmodel0/quad_calf_right_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2942,7 +3058,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst23" axis="kmodel0/tele_legs_joint/axis0">
+					<axis_info sid="axis_info_inst25" axis="kmodel0/tele_legs_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2956,7 +3072,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst24" axis="kmodel0/upper_mid_body_joint/axis0">
+					<axis_info sid="axis_info_inst26" axis="kmodel0/upper_mid_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -3045,6 +3161,18 @@
 				</bind>
 				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value">
 					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value"/>
 				</bind>
 				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0">
 					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0"/>
@@ -3162,6 +3290,8 @@
 				<instance_rigid_body body="rigid23" target="#vkmodel0_node23"/>
 				<instance_rigid_body body="rigid24" target="#vkmodel0_node24"/>
 				<instance_rigid_body body="rigid25" target="#vkmodel0_node25"/>
+				<instance_rigid_body body="rigid26" target="#vkmodel0_node26"/>
+				<instance_rigid_body body="rigid27" target="#vkmodel0_node27"/>
 			</instance_physics_model>
 			<technique_common>
 				<gravity>0 0 0</gravity>
@@ -3242,7 +3372,7 @@
 					<mass>0.615189</mass>
 					<mass_frame>
 						<translate>1.862 0.086 0.656</translate>
-						<rotate>-0.048 -0.706 -0.706 174.511</rotate>
+						<rotate>-0.048 -0.706 -0.706 174.512</rotate>
 					</mass_frame>
 					<inertia>0.00305843 0.000403261 0.00332455</inertia>
 				</technique_common>
@@ -3253,7 +3383,7 @@
 					<mass>0.615189</mass>
 					<mass_frame>
 						<translate>1.862 -0.086 0.656</translate>
-						<rotate>-0.048 -0.706 -0.706 174.511</rotate>
+						<rotate>-0.048 -0.706 -0.706 174.512</rotate>
 					</mass_frame>
 					<inertia>0.00305843 0.000403261 0.00332455</inertia>
 				</technique_common>
@@ -3303,15 +3433,7 @@
 				</technique_common>
 			</rigid_body>
 			<rigid_body sid="rigid12" name="head_leftright_translation_link">
-				<technique_common>
-					<dynamic>true</dynamic>
-					<mass>3.93285</mass>
-					<mass_frame>
-						<translate>0.285 -0.0 0.693</translate>
-						<rotate>-0.377 -0.655 -0.655 138.714</rotate>
-					</mass_frame>
-					<inertia>0.0193546 0.0138179 0.0177023</inertia>
-				</technique_common>
+				<technique_common/>
 			</rigid_body>
 			<rigid_body sid="rigid13" name="head_link">
 				<technique_common>
@@ -3325,28 +3447,18 @@
 				</technique_common>
 			</rigid_body>
 			<rigid_body sid="rigid14" name="head_rest_link">
-				<technique_common>
-					<dynamic>true</dynamic>
-					<mass>152.154</mass>
-					<mass_frame>
-						<translate>0.382 -0.0 0.447</translate>
-						<rotate>-0.014 -0.707 -0.707 178.389</rotate>
-					</mass_frame>
-					<inertia>11.3247 16.951 7.04456</inertia>
-				</technique_common>
+				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid15" name="head_updown_translation_link">
-				<technique_common>
-					<dynamic>true</dynamic>
-					<mass>3.93285</mass>
-					<mass_frame>
-						<translate>0.285 -0.0 0.693</translate>
-						<rotate>0.655 -0.655 0.377 138.715</rotate>
-					</mass_frame>
-					<inertia>0.0193546 0.0138179 0.0177023</inertia>
-				</technique_common>
+			<rigid_body sid="rigid15" name="head_rotated_to_bedframe_link">
+				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid16" name="leg_rest_lower_link">
+			<rigid_body sid="rigid16" name="head_rotated_to_worldframe_link">
+				<technique_common/>
+			</rigid_body>
+			<rigid_body sid="rigid17" name="head_updown_translation_link">
+				<technique_common/>
+			</rigid_body>
+			<rigid_body sid="rigid18" name="leg_rest_lower_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>132.583</mass>
@@ -3357,7 +3469,7 @@
 					<inertia>9.73743 14.5104 5.74749</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid17" name="leg_rest_upper_link">
+			<rigid_body sid="rigid19" name="leg_rest_upper_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>71.0955</mass>
@@ -3368,7 +3480,7 @@
 					<inertia>5.22152 5.77133 1.07236</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid18" name="lower_body_link">
+			<rigid_body sid="rigid20" name="lower_body_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>3.76095</mass>
@@ -3379,18 +3491,18 @@
 					<inertia>0.0264188 0.0218802 0.011576</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid19" name="mid_body_link">
+			<rigid_body sid="rigid21" name="mid_body_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>6.76595</mass>
 					<mass_frame>
 						<translate>0.763 -0.0 0.573</translate>
-						<rotate>0.976 -0.155 0.155 91.458</rotate>
+						<rotate>0.976 -0.155 0.156 91.458</rotate>
 					</mass_frame>
 					<inertia>0.0508733 0.0489774 0.0317417</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid20" name="neck_link">
+			<rigid_body sid="rigid22" name="neck_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>1.53149</mass>
@@ -3401,7 +3513,7 @@
 					<inertia>0.00269323 0.00511129 0.00564517</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid21" name="neck_rotation">
+			<rigid_body sid="rigid23" name="neck_rotation">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>1.53149</mass>
@@ -3412,7 +3524,7 @@
 					<inertia>0.00269323 0.00511129 0.00564517</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid22" name="quad_left_link">
+			<rigid_body sid="rigid24" name="quad_left_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>6.89675</mass>
@@ -3423,7 +3535,7 @@
 					<inertia>0.0168102 0.125847 0.126021</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid23" name="quad_right_link">
+			<rigid_body sid="rigid25" name="quad_right_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>6.89675</mass>
@@ -3434,7 +3546,7 @@
 					<inertia>0.0168102 0.125847 0.126021</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid24" name="upper_body_link">
+			<rigid_body sid="rigid26" name="upper_body_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>10.9943</mass>
@@ -3445,7 +3557,7 @@
 					<inertia>0.0988263 0.107887 0.0771159</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid25" name="wall_link">
+			<rigid_body sid="rigid27" name="wall_link">
 				<technique_common>
 					<dynamic>true</dynamic>
 					<mass>182.783</mass>
@@ -3465,7 +3577,7 @@
 			<bind_kinematics_model node="visual0/node2">
 				<param>kscene_kmodel0_inst</param>
 			</bind_kinematics_model>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node8/node_arm_forearm_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node8/node_arm_forearm_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_arm_forearm_left_joint_axis0</param>
 				</axis>
@@ -3473,7 +3585,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_arm_forearm_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node9/node_arm_forearm_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node9/node_arm_forearm_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_arm_forearm_right_joint_axis0</param>
 				</axis>
@@ -3481,7 +3593,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_arm_forearm_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node0/node_body_arm_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node0/node_body_arm_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_arm_left_joint_axis0</param>
 				</axis>
@@ -3489,7 +3601,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_arm_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node1/node_body_arm_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node1/node_body_arm_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_arm_right_joint_axis0</param>
 				</axis>
@@ -3497,7 +3609,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_arm_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node22/node_body_quad_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node24/node_body_quad_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_quad_left_joint_axis0</param>
 				</axis>
@@ -3505,7 +3617,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_quad_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node23/node_body_quad_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node25/node_body_quad_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_quad_right_joint_axis0</param>
 				</axis>
@@ -3513,7 +3625,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_body_quad_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node18/node22/node6/node_calf_foot_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node20/node24/node6/node_calf_foot_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_calf_foot_left_joint_axis0</param>
 				</axis>
@@ -3521,7 +3633,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_calf_foot_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node18/node23/node7/node_calf_foot_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node20/node25/node7/node_calf_foot_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_calf_foot_right_joint_axis0</param>
 				</axis>
@@ -3529,7 +3641,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_calf_foot_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node0/node10/node_forearm_hand_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node0/node10/node_forearm_hand_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_forearm_hand_left_joint_axis0</param>
 				</axis>
@@ -3537,7 +3649,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_forearm_hand_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node1/node11/node_forearm_hand_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node1/node11/node_forearm_hand_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_forearm_hand_right_joint_axis0</param>
 				</axis>
@@ -3545,7 +3657,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_forearm_hand_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node12/node_head_bed_leftright_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node12/node_head_bed_leftright_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0</param>
 				</axis>
@@ -3553,7 +3665,23 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_leftright_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node15/node_head_bed_updown_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node15/node_head_bed_to_bedframe_joint_axis0">
+				<axis>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0</param>
+				</axis>
+				<value>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_bedframe_joint_axis0_value</param>
+				</value>
+			</bind_joint_axis>
+			<bind_joint_axis target="node2/node3/node16/node_head_bed_to_worldframe_joint_axis0">
+				<axis>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0</param>
+				</axis>
+				<value>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_to_worldframe_joint_axis0_value</param>
+				</value>
+			</bind_joint_axis>
+			<bind_joint_axis target="node2/node3/node14/node17/node_head_bed_updown_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0</param>
 				</axis>
@@ -3561,7 +3689,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_bed_updown_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node13/node_head_contact_to_head_center_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node13/node_head_contact_to_head_center_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_contact_to_head_center_axis0</param>
 				</axis>
@@ -3569,7 +3697,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_contact_to_head_center_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node21/node_head_neck_joint1_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node23/node_head_neck_joint1_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_neck_joint1_axis0</param>
 				</axis>
@@ -3577,7 +3705,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_neck_joint1_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node20/node_head_neck_joint2_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node22/node_head_neck_joint2_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_neck_joint2_axis0</param>
 				</axis>
@@ -3593,7 +3721,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_head_rest_hinge_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node17/node_leg_rest_upper_joint_axis0">
+			<bind_joint_axis target="node2/node19/node_leg_rest_upper_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_leg_rest_upper_joint_axis0</param>
 				</axis>
@@ -3601,7 +3729,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_leg_rest_upper_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node16/node_leg_rest_upper_lower_joint_axis0">
+			<bind_joint_axis target="node2/node3/node18/node_leg_rest_upper_lower_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_leg_rest_upper_lower_joint_axis0</param>
 				</axis>
@@ -3609,7 +3737,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_leg_rest_upper_lower_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node18/node_mid_lower_body_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node20/node_mid_lower_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_mid_lower_body_joint_axis0</param>
 				</axis>
@@ -3617,7 +3745,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_mid_lower_body_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node24/node_neck_body_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node26/node_neck_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_neck_body_joint_axis0</param>
 				</axis>
@@ -3625,7 +3753,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_neck_body_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node25/node_origin_wall_joint_axis0">
+			<bind_joint_axis target="node27/node_origin_wall_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_origin_wall_joint_axis0</param>
 				</axis>
@@ -3633,7 +3761,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_origin_wall_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node18/node4/node_quad_calf_left_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node20/node4/node_quad_calf_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_quad_calf_left_joint_axis0</param>
 				</axis>
@@ -3641,7 +3769,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_quad_calf_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node24/node19/node18/node5/node_quad_calf_right_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node26/node21/node20/node5/node_quad_calf_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_quad_calf_right_joint_axis0</param>
 				</axis>
@@ -3657,7 +3785,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_tele_legs_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node14/node15/node12/node13/node21/node20/node19/node_upper_mid_body_joint_axis0">
+			<bind_joint_axis target="node2/node3/node14/node16/node17/node15/node12/node13/node23/node22/node21/node_upper_mid_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_upper_mid_body_joint_axis0</param>
 				</axis>

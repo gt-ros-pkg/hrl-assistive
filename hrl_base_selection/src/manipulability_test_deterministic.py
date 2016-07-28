@@ -45,7 +45,7 @@ class Manipulability_Testing(object):
         # compare = True
         self.visualize_best = visualize_best
 
-        self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
+        self.task = 'face_wiping' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
         self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
         self.tf_listener = tf.TransformListener()
 
@@ -100,7 +100,7 @@ class Manipulability_Testing(object):
         # subject = ''.join(['sub', str(self.test_subj), '_shaver'])
         subject=None
         print 'Reading in raw data from the task.'
-        read_task_data = DataReader_Task(self.task, self.model)
+        read_task_data = DataReader_Task(self.task, self.model,'cma')
         data_start=0
         data_finish='end'
         raw_data, raw_num, raw_reference, self.raw_reference_options = read_task_data.reset_goals()
@@ -546,6 +546,43 @@ class Manipulability_Testing(object):
        # [ 0.69738434,  0.83414354]]
        [ 0.09994156,  0.09994156 ],
        [ 0.69738434,  0.69738434]]
+        base_config = [[ 1.23151836,  0.84031986],
+                       [ 0.78498528, -0.73199084],
+                       [-2.81981806, -4.4666789 ],
+                       [ 0.29643016,  0.03537878],
+                       [ 0.04969906,  0.0708807 ],
+                       [ 1.38750928,  0.29672911]]
+        base_config = [[ 1.23151836],
+                       [ 0.78498528],
+                       [-2.81981806],
+                       [ 0.29643016],
+                       [ 0.04969906],
+                       [ 1.38750928]]
+        base_config = [[ 15.06703334],
+                       [ 0.54141627],
+                       [ 4.59730883],
+                       [ 0.25143195],
+                       [ 0.19654172],
+                       [ 0.72349272]]
+        base_config = [[  7.62396342e-01,   8.12051566e-01],
+                                [ -9.74603160e-01,   8.22424312e-01],
+                                [  4.34234809e-01,   3.14449028e+00],
+                                [  2.30477816e-01,   1.50698285e-01],
+                                [  1.31764785e-01,   4.37829587e-02],
+                                [  2.65512876e-04,   2.33108573e-01]]
+        base_config = [[ 0.66656159],
+                       [ 0.72559452],
+                       [ 3.2687198 ],
+                       [ 0.27121077],
+                       [ 0.18372532],
+       [ 0.15628403]]
+        # base_config = [[  7.62396342e-01],#   8.12051566e-01],
+        #                         [ -9.74603160e-01],#   8.22424312e-01],
+        #                         [  4.34234809e-01],#   3.14449028e+00],
+        #                         [  2.30477816e-01],#   1.50698285e-01],
+        #                         [  1.31764785e-01],#   4.37829587e-02],
+        #                         [  2.65512876e-04]]#,   2.33108573e-01]])
+
         base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
 
         visualize = True

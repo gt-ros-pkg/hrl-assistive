@@ -1,34 +1,20 @@
 <?xml version="1.0"?>
 <robot
-  name="bed_and_body_v3">
+  name="bed_and_body_expanded">
   <link
     name="base_link">
-    <inertial>
-      <origin
-        xyz="1.07 -1.1433776843867E-16 0.0654891108010717"
-        rpy="0 0 0" />
-      <mass
-        value="5.8260172808288" />
-      <inertia
-        ixx="1.14927006759014"
-        ixy="4.44089209850063E-16"
-        ixz="-2.75515108570424E-16"
-        iyy="6.70434113225239"
-        iyz="-1.34851165646458E-15"
-        izz="7.79754704731756" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.79216 0.81961 0.93333 1" />
       </material>
     </visual>
     <collision>
@@ -37,7 +23,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -49,7 +35,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/wall.stl" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/wall_link.STL" />
       </geometry>
       <material
         name="">
@@ -63,7 +49,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/wall.stl" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/wall_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -71,7 +57,7 @@
     name="origin_wall_joint"
     type="fixed">
     <origin
-      xyz="-.12 0. 0"
+      xyz="-.0925 0. 0"
       rpy="0. 0. 0." />
     <parent
       link="base_link" />
@@ -82,32 +68,18 @@
   </joint>
   <link
     name="bed_frame_link">
-    <inertial>
-      <origin
-        xyz="1.0399 -0.27375 0.088166"
-        rpy="0 0 0" />
-      <mass
-        value="182.783" />
-      <inertia
-        ixx="14.1727036705024"
-        ixy="3.00274731894519E-14"
-        ixz="-0.582878793213973"
-        iyy="75.8057802285568"
-        iyz="9.93663151183257E-16"
-        izz="86.6905817538877" />
-    </inertial>
     <visual>
       <origin
-        xyz="10 0 0"
+        xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_real_expanded.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/bed_frame_link.STL" />
       </geometry>
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.79216 0.81961 0.93333 1" />
       </material>
     </visual>
     <collision>
@@ -116,7 +88,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/bed_frame_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -124,7 +96,7 @@
     name="tele_legs_joint"
     type="prismatic">
     <origin
-      xyz="-0.02 0. 0.32"
+      xyz="-0.04 0 0.32"
       rpy="0 0 0" />
     <parent
       link="base_link" />
@@ -139,14 +111,14 @@
       velocity="0" />
   </joint>
   <link
-    name="head_rest_link">
+    name="leg_rest_upper_link">
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/leg_rest_upper_link.STL" />
       </geometry>
       <material
         name="">
@@ -160,7 +132,95 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/leg_rest_upper_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_upper_joint"
+    type="revolute">
+    <origin
+      xyz="1.075 0 0"
+      rpy="1.5708 2.1987E-11 3.9465E-16" />
+    <parent
+      link="bed_frame_link" />
+    <child
+      link="leg_rest_upper_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="leg_rest_lower_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/leg_rest_lower_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/leg_rest_lower_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_upper_lower_joint"
+    type="revolute">
+    <origin
+      xyz="0.37 0 0"
+      rpy="-3.7123E-16 5.9121E-16 3.7854E-11" />
+    <parent
+      link="leg_rest_upper_link" />
+    <child
+      link="leg_rest_lower_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="head_rest_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/head_rest_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/head_rest_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -168,8 +228,8 @@
     name="head_rest_hinge"
     type="revolute">
     <origin
-      xyz="0.775 -.27375 0.26"
-      rpy="1.5708 1.0561E-10 3.1416" />
+      xyz="0.794999999999999 0 0.21"
+      rpy="1.5707963267949 0. 3.14159265358979" />
     <parent
       link="bed_frame_link" />
     <child
@@ -268,27 +328,13 @@
   </joint>
   <link
     name="head_link">
-    <inertial>
-      <origin
-        xyz="0.00931747164111318 -9.91266701204326E-09 0.0105706865051194"
-        rpy="0 0 0" />
-      <mass
-        value="3.9328527892651" />
-      <inertia
-        ixx="0.0165678861121358"
-        ixy="8.90148620513218E-10"
-        ixz="-0.0027682732644648"
-        iyy="0.0177023015774365"
-        iyz="-5.42183952528328E-09"
-        izz="0.0166046206450058" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/head_link.STL" />
       </geometry>
       <material
         name="">
@@ -302,7 +348,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/head_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -321,27 +367,13 @@
   </joint>
   <link
     name="neck_rotation">
-    <inertial>
-      <origin
-        xyz="0.0299911113671753 -1.13479703411912E-09 5.25989263663437E-09"
-        rpy="0 0 0" />
-      <mass
-        value="1.53148702191926" />
-      <inertia
-        ixx="0.00269322706497261"
-        ixy="1.09857620830128E-10"
-        ixz="7.58048241070777E-10"
-        iyy="0.00564516811473134"
-        iyz="9.21844170034423E-09"
-        izz="0.00511128582091916" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/neck_rotation.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -355,7 +387,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/neck_rotation.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -379,27 +411,13 @@
   </joint>
   <link
     name="neck_link">
-    <inertial>
-      <origin
-        xyz="0.0299911113671752 -1.13479703411912E-09 5.2598925958448E-09"
-        rpy="0 0 0" />
-      <mass
-        value="1.53148702191926" />
-      <inertia
-        ixx="0.00269322706497261"
-        ixy="1.09857618011203E-10"
-        ixz="7.58048239319453E-10"
-        iyy="0.00564516811473135"
-        iyz="9.2184417026311E-09"
-        izz="0.00511128582091917" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -413,7 +431,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -437,27 +455,13 @@
   </joint>
   <link
     name="upper_body_link">
-    <inertial>
-      <origin
-        xyz="0.158709266111028 -2.77439784790445E-06 1.07349517852832E-06"
-        rpy="0 0 0" />
-      <mass
-        value="10.994324812456" />
-      <inertia
-        ixx="0.0988263493770442"
-        ixy="1.38503182626169E-06"
-        ixz="-6.9051458787949E-07"
-        iyy="0.107887273916327"
-        iyz="1.87457468166473E-07"
-        izz="0.0771158536159493" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/upper_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -471,7 +475,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/upper_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -495,27 +499,13 @@
   </joint>
   <link
     name="mid_body_link">
-    <inertial>
-      <origin
-        xyz="-0.0123598486303793 -2.47973091949127E-07 4.77082923404006E-06"
-        rpy="0 0 0" />
-      <mass
-        value="6.7659491084038" />
-      <inertia
-        ixx="0.0508733259634872"
-        ixy="-3.30920427328747E-07"
-        ixz="-1.38996093328425E-06"
-        iyy="0.0489774373986986"
-        iyz="-1.12269337166179E-05"
-        izz="0.0317417004953391" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/mid_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -529,7 +519,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/mid_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -553,27 +543,13 @@
   </joint>
   <link
     name="lower_body_link">
-    <inertial>
-      <origin
-        xyz="-0.0424892964347593 -1.55212564689755E-07 -3.05517167826124E-08"
-        rpy="0 0 0" />
-      <mass
-        value="3.76095443118537" />
-      <inertia
-        ixx="0.0264188029132303"
-        ixy="5.26534020954018E-07"
-        ixz="1.13275130192356E-08"
-        iyy="0.021880217675706"
-        iyz="6.6476429005472E-06"
-        izz="0.0115760285735275" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/lower_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -587,7 +563,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/lower_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -611,27 +587,13 @@
   </joint>
   <link
     name="quad_left_link">
-    <inertial>
-      <origin
-        xyz="0.135870836223123 0.036406480838746 1.20320420293751E-14"
-        rpy="0 0 0" />
-      <mass
-        value="6.89674952703915" />
-      <inertia
-        ixx="0.0241142535313263"
-        ixy="0.0272592576621165"
-        ixz="-8.25751406148771E-11"
-        iyy="0.118543092031703"
-        iyz="3.08210707771496E-10"
-        izz="0.126021276865764" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/quad_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -645,7 +607,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/quad_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -669,27 +631,13 @@
   </joint>
   <link
     name="calf_left_link">
-    <inertial>
-      <origin
-        xyz="-0.180906642816524 -0.0139713255979246 1.60067792354113E-12"
-        rpy="0 0 0" />
-      <mass
-        value="3.39536669784164" />
-      <inertia
-        ixx="0.0049226177583511"
-        ixy="0.00333413184068126"
-        ixz="1.26232091450053E-12"
-        iyy="0.0478368760783845"
-        iyz="-4.13932285075363E-12"
-        izz="0.0478732548846709" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/calf_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -703,7 +651,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/calf_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -727,27 +675,13 @@
   </joint>
   <link
     name="foot_left_link">
-    <inertial>
-      <origin
-        xyz="-0.0475610965067932 0.0816676483447464 -4.16333634234434E-17"
-        rpy="0 0 0" />
-      <mass
-        value="0.615189243278472" />
-      <inertia
-        ixx="0.00304936402573348"
-        ixy="-0.000154899374275574"
-        ixz="1.7446046542978E-19"
-        iyy="0.000412328810634253"
-        iyz="-3.97105362266834E-20"
-        izz="0.00332455031530266" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/foot_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -761,7 +695,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/foot_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -785,27 +719,13 @@
   </joint>
   <link
     name="quad_right_link">
-    <inertial>
-      <origin
-        xyz="0.13587083622245 0.0364064808391208 1.19904086659517E-14"
-        rpy="0 0 0" />
-      <mass
-        value="6.89674952703915" />
-      <inertia
-        ixx="0.024114253531194"
-        ixy="0.0272592576618873"
-        ixz="-8.2575179988774E-11"
-        iyy="0.118543092031835"
-        iyz="3.08210697239393E-10"
-        izz="0.126021276865764" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/quad_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -819,7 +739,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/quad_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -843,27 +763,13 @@
   </joint>
   <link
     name="calf_right_link">
-    <inertial>
-      <origin
-        xyz="-0.180906642816537 -0.0139713255970793 1.60067792354113E-12"
-        rpy="0 0 0" />
-      <mass
-        value="3.39536669784164" />
-      <inertia
-        ixx="0.00492261775832246"
-        ixy="0.00333413184049699"
-        ixz="1.26236389002121E-12"
-        iyy="0.0478368760784132"
-        iyz="-4.13931941107381E-12"
-        izz="0.0478732548846708" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/calf_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -877,7 +783,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/calf_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -901,27 +807,13 @@
   </joint>
   <link
     name="foot_right_link">
-    <inertial>
-      <origin
-        xyz="-0.0475610965067859 0.0816676483447651 1.38777878078145E-17"
-        rpy="0 0 0" />
-      <mass
-        value="0.615189243278473" />
-      <inertia
-        ixx="0.00304936402573348"
-        ixy="-0.000154899374275576"
-        ixz="-2.68019252719947E-19"
-        iyy="0.000412328810634254"
-        iyz="3.53080400658611E-18"
-        izz="0.00332455031530267" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/foot_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -935,7 +827,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/foot_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -959,27 +851,13 @@
   </joint>
   <link
     name="arm_left_link">
-    <inertial>
-      <origin
-        xyz="0.1001623892808 -0.00376860746206564 -0.0415301013139193"
-        rpy="0 0 0" />
-      <mass
-        value="2.60960654017703" />
-      <inertia
-        ixx="0.00404950781774846"
-        ixy="-0.000794518553713614"
-        ixz="-0.00213077537777598"
-        iyy="0.0251366223518226"
-        iyz="8.01649819245336E-05"
-        izz="0.0243099855919405" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/arm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -993,7 +871,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/arm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1017,27 +895,13 @@
   </joint>
   <link
     name="forearm_left_link">
-    <inertial>
-      <origin
-        xyz="0.106228215345525 -1.91191507070698E-12 0"
-        rpy="0 0 0" />
-      <mass
-        value="1.32173737819403" />
-      <inertia
-        ixx="0.00119534139517087"
-        ixy="-1.35159335608086E-13"
-        ixz="-5.04149881322934E-19"
-        iyy="0.00870475374464507"
-        iyz="1.19370114943691E-09"
-        izz="0.00856399030741715" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/forearm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1051,7 +915,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/forearm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1075,27 +939,13 @@
   </joint>
   <link
     name="hand_left_link">
-    <inertial>
-      <origin
-        xyz="0.0980143408405634 -1.86517468137026E-12 0.0049795365316434"
-        rpy="0 0 0" />
-      <mass
-        value="1.1356241768054" />
-      <inertia
-        ixx="0.00131058345181311"
-        ixy="-4.85702000140823E-14"
-        ixz="-9.6566899557011E-05"
-        iyy="0.00386297813592635"
-        iyz="1.8376914107142E-15"
-        izz="0.00343338240819095" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/hand_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1109,7 +959,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/hand_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1133,27 +983,13 @@
   </joint>
   <link
     name="arm_right_link">
-    <inertial>
-      <origin
-        xyz="0.100233262071747 3.52074113196821E-08 0.041530101413327"
-        rpy="0 0 0" />
-      <mass
-        value="2.60960651501635" />
-      <inertia
-        ixx="0.00401961437786645"
-        ixy="-7.60885930854E-10"
-        ixz="0.00213228273829607"
-        iyy="0.0251665155968144"
-        iyz="-4.35824513311461E-09"
-        izz="0.0243099854332681" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/arm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1167,7 +1003,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/arm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1191,27 +1027,13 @@
   </joint>
   <link
     name="forearm_right_link">
-    <inertial>
-      <origin
-        xyz="0.106228216482346 -1.30587407554117E-09 -9.51088152678636E-10"
-        rpy="0 0 0" />
-      <mass
-        value="1.32173736893606" />
-      <inertia
-        ixx="0.00119534120618663"
-        ixy="1.414727832101E-10"
-        ixz="1.35038570191339E-10"
-        iyy="0.00870475371023631"
-        iyz="1.17395654858625E-09"
-        izz="0.00856399012619121" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/forearm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1225,7 +1047,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/forearm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1249,27 +1071,13 @@
   </joint>
   <link
     name="hand_right_link">
-    <inertial>
-      <origin
-        xyz="0.0980143408405629 -2.15505391309989E-12 -0.00497953653164337"
-        rpy="0 0 0" />
-      <mass
-        value="1.13562417680541" />
-      <inertia
-        ixx="0.00131058345181312"
-        ixy="-5.61198127715408E-14"
-        ixz="9.65668995570131E-05"
-        iyy="0.00386297813592636"
-        iyz="-2.12313391417147E-15"
-        izz="0.00343338240819096" />
-    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/hand_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1283,7 +1091,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_expanded/meshes/hand_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1297,122 +1105,6 @@
       link="forearm_right_link" />
     <child
       link="hand_right_link" />
-    <axis
-      xyz="0 0 1" />
-    <limit
-      lower="-3"
-      upper="3"
-      effort="0"
-      velocity="0" />
-  </joint>
-  <link
-    name="leg_rest_upper_link">
-    <inertial>
-      <origin
-        xyz="0.184999999999909 0.105000000000441 -2.76269761501025E-16"
-        rpy="0 0 0" />
-      <mass
-        value="71.0955" />
-      <inertia
-        ixx="5.221520128125"
-        ixy="-6.98374142907244E-13"
-        ixz="-6.34687481067045E-16"
-        iyy="5.771325328125"
-        iyz="-1.36920550145777E-16"
-        izz="1.072357125" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/leg_rest_upper_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/leg_rest_upper_link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint
-    name="leg_rest_upper_joint"
-    type="revolute">
-    <origin
-      xyz="1.055 -0.27375 0.05"
-      rpy="1.5708 2.1987E-11 3.9465E-16" />
-    <parent
-      link="bed_frame_link" />
-    <child
-      link="leg_rest_upper_link" />
-    <axis
-      xyz="0 0 1" />
-    <limit
-      lower="-3"
-      upper="3"
-      effort="0"
-      velocity="0" />
-  </joint>
-  <link
-    name="leg_rest_lower_link">
-    <inertial>
-      <origin
-        xyz="0.345000000000193 0.10499999999918 -5.70451144183548E-17"
-        rpy="0 0 0" />
-      <mass
-        value="132.5835" />
-      <inertia
-        ixx="9.73742942812501"
-        ixy="9.56539519154387E-17"
-        ixz="2.44106387255003E-16"
-        iyy="14.510435428125"
-        iyz="1.11598435800825E-16"
-        izz="5.747494725" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/leg_rest_lower_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/leg_rest_lower_link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint
-    name="leg_rest_upper_lower_joint"
-    type="revolute">
-    <origin
-      xyz="0.37 0 0"
-      rpy="-3.7123E-16 5.9121E-16 3.7854E-11" />
-    <parent
-      link="leg_rest_upper_link" />
-    <child
-      link="leg_rest_lower_link" />
     <axis
       xyz="0 0 1" />
     <limit

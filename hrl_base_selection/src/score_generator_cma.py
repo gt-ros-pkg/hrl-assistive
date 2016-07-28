@@ -48,15 +48,15 @@ class ScoreGenerator(object):
 
     def __init__(self, visualize=False, targets='all_goals', reference_names=['head'], goals=None, model='autobed',
                  tf_listener=None):
-        if tf_listener is None:
-            self.tf_listener = tf.TransformListener()
-        else:
-            self.tf_listener = tf_listener
+        # if tf_listener is None:
+        #     self.tf_listener = tf.TransformListener()
+        # else:
+        #     self.tf_listener = tf_listener
         self.visualize = visualize
         self.model = model
         self.goals = goals
         self.pr2_B_reference = []
-        self.origin_B_references = []
+
         self.reference_names = reference_names
 
         self.reachable = {}
@@ -76,6 +76,7 @@ class ScoreGenerator(object):
         pr2_B_head = []
         # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
         # This is only used to visualize in rviz, because the visualization is done before initializing openrave
+        self.origin_B_references = []
         if self.model == 'chair':
             headmodel = self.wheelchair.GetLink('head_center')
         elif self.model == 'autobed':
@@ -144,23 +145,79 @@ class ScoreGenerator(object):
         self.origin_B_grasps = []
         self.weights = []
         self.goal_list = []
-        self.number_goals = len(self.goals)
-        print 'Score generator received a list of desired goal locations on initialization. ' \
-              'It contains ', len(goals), ' goal locations.'
-        self.selection_mat = np.zeros(len(self.goals))
-        self.goal_list = np.zeros([len(self.goals), 4, 4])
-        self.reference_mat = np.zeros(len(self.goals))
-        for it in xrange(len(self.goals)):
-            #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
-            self.reference_mat[it] = int(self.goals[it, 2])
+        if self.goals is not None:
+            self.number_goals = len(self.goals)
+            print 'Score generator received a list of desired goal locations on initialization. ' \
+                  'It contains ', len(goals), ' goal locations.'
+            self.selection_mat = np.zeros(len(self.goals))
+            self.goal_list = np.zeros([len(self.goals), 4, 4])
+            self.reference_mat = np.zeros(len(self.goals))
+            for it in xrange(len(self.goals)):
+                #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
+                self.reference_mat[it] = int(self.goals[it, 2])
 
-            # goal_list is origin_B_goal
-            self.goal_list[it] = copy.copy(self.origin_B_references[int(self.reference_mat[it])]*np.matrix(self.goals[it, 0]))
-            self.selection_mat[it] = self.goals[it, 1]
-        self.set_goals()
+                # goal_list is origin_B_goal
+                self.goal_list[it] = copy.copy(self.origin_B_references[int(self.reference_mat[it])]*np.matrix(self.goals[it, 0]))
+                self.selection_mat[it] = self.goals[it, 1]
+            self.set_goals()
 
-    def receive_new_goals(self, goals):
-        self.goals = goals
+    def receive_new_goals(self, goals, reference_options=None):
+        if reference_options:
+            self.reference_names = reference_options
+            self.origin_B_references = []
+            if self.model == 'chair':
+                headmodel = self.wheelchair.GetLink('head_center')
+            elif self.model == 'autobed':
+                headmodel = self.autobed.GetLink('head_link')
+                ual = self.autobed.GetLink('arm_left_link')
+                uar = self.autobed.GetLink('arm_right_link')
+                fal = self.autobed.GetLink('forearm_left_link')
+                far = self.autobed.GetLink('forearm_right_link')
+                thl = self.autobed.GetLink('quad_left_link')
+                thr = self.autobed.GetLink('quad_right_link')
+                calfl = self.autobed.GetLink('calf_left_link')
+                calfr = self.autobed.GetLink('calf_right_link')
+                ch = self.autobed.GetLink('upper_body_link')
+                origin_B_ual = np.matrix(ual.GetTransform())
+                origin_B_uar = np.matrix(uar.GetTransform())
+                origin_B_fal = np.matrix(fal.GetTransform())
+                origin_B_far = np.matrix(far.GetTransform())
+                origin_B_thl = np.matrix(thl.GetTransform())
+                origin_B_thr = np.matrix(thr.GetTransform())
+                origin_B_calfl = np.matrix(calfl.GetTransform())
+                origin_B_calfr = np.matrix(calfr.GetTransform())
+                origin_B_ch = np.matrix(ch.GetTransform())
+            else:
+                print 'I GOT A BAD MODEL. NOT SURE WHAT TO DO NOW!'
+            origin_B_head = np.matrix(headmodel.GetTransform())
+
+            for y in self.reference_names:
+                if y == 'head':
+                    self.origin_B_references.append(origin_B_head)
+                elif y == 'base_link':
+                    self.origin_B_references.append(origin_B_pr2)
+                elif y == 'upper_arm_left':
+                    self.origin_B_references.append(origin_B_ual)
+                elif y == 'upper_arm_right':
+                    self.origin_B_references.append(origin_B_uar)
+                elif y == 'forearm_left':
+                    self.origin_B_references.append(origin_B_fal)
+                elif y == 'forearm_right':
+                    self.origin_B_references.append(origin_B_far)
+                elif y == 'thigh_left':
+                    self.origin_B_references.append(origin_B_thl)
+                elif y == 'thigh_right':
+                    self.origin_B_references.append(origin_B_thr)
+                elif y == 'knee_left':
+                    self.origin_B_references.append(origin_B_calfl)
+                elif y == 'knee_right':
+                    self.origin_B_references.append(origin_B_calfr)
+                elif y == 'chest':
+                    self.origin_B_references.append(origin_B_ch)
+                else:
+                    print 'The refence options is bogus! I dont know what to do!'
+                    return
+            self.goals = goals
         # print 'Score generator received a new list of desired goal locations. It contains ', len(goals), ' goal ' \
         #                                                                                                  'locations.'
         self.selection_mat = np.zeros(len(self.goals))
@@ -227,7 +284,9 @@ class ScoreGenerator(object):
         start_y_min = 0.0
         start_y_max = 2.0+.01
         start_y_int = 10.
-        head_y_range = (np.arange(3)-1)*.1
+        #head_y_range = (np.arange(5)-2)*.05  #[0]
+        head_y_range = (np.arange(11)-5)*.03
+        #head_y_range = np.array([0])
         if self.model == 'chair':
             bedz_min = 0.
             bedtheta_min = 0.
@@ -264,23 +323,56 @@ class ScoreGenerator(object):
         # cma.show()
         # rospy.sleep(10)
         popsize = m.pow(12, 1)*30
-        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
-                 'scaling_of_variables': [1.0, 1.0, 1.57, 0.075, 0.05, 0.3, 1.0, 1.0, 1.57, 0.075, 0.05, 0.3],
-                 'bounds': [[-3., -3., -2.*m.pi, 0., 0., 0., -3., -3., -2.*m.pi, 0., 0., 0.],
-                            [3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180., 3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180.]]}
-        for self.heady in head_y_range:
-            for self.start_x in np.arange(start_x_min, start_x_max, start_x_int):
-                for self.start_y in np.arange(start_y_min, start_y_max, start_y_int):
-                    # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_configs,
-                    optimization_results[2, self.heady, self.start_x, self.start_y] = cma.fmin(self.objective_function_two_configs,
-                                                                                                             [0.5, 0.75, 0., 0.15, 0.1, 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                                             # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                                             1.,
-                                                                                                             options=opts2)
-                                                                                                   # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
-                                                                                                   # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
-                                                                                                   # for self.heady in np.arange(heady_min, heady_max, heady_int)
+        no_bed_movement = True
+        if no_bed_movement:
+            opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
+                     'scaling_of_variables': [1.0, 1.0, 1.57, 0.075, 1.0, 1.0, 1.57, 0.075],
+                     'bounds': [[-3., -3., -2.*m.pi, 0., -3., -3., -2.*m.pi, 0.],
+                                [3., 3., 2.*m.pi, 0.3, 3., 3., 2.*m.pi, 0.3]]}
+            for self.heady in head_y_range:
+                for self.start_x in np.arange(start_x_min, start_x_max, start_x_int):
+                    for self.start_y in np.arange(start_y_min, start_y_max, start_y_int):
+                        # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_configs,
+                        print 'Working on heady location:', self.heady
+                        optimization_results[2, self.heady, self.start_x, self.start_y] = cma.fmin(self.objective_function_two_configs,
+                                                                                                   [0.5, 0.75, 0., 0.15, 0.5, -0.75, 0., 0.15],
+                                                                                                   # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                                   1.,
+                                                                                                   options=opts2)
+                        # print optimization_results[2, self.heady, self.start_x, self.start_y][0]
+                        config = optimization_results[2, self.heady, self.start_x, self.start_y][0]
+                        score = optimization_results[2, self.heady, self.start_x, self.start_y][1]
+                        config = np.insert(config, 4, 0.)
+                        config = np.insert(config, 4, 0.)
+                        config = np.insert(config, 10, 0.)
+                        config = np.insert(config, 10, 0.)
+                        optimization_results[2, self.heady, self.start_x, self.start_y] = [config, score]
+                        # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 4, 0.)
+                        # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
+                        # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
 
+        else:
+            opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
+                     'scaling_of_variables': [1.0, 1.0, 1.57, 0.075, 0.05, 0.3, 1.0, 1.0, 1.57, 0.075, 0.05, 0.3],
+                     'bounds': [[-3., -3., -2.*m.pi, 0., 0., 0., -3., -3., -2.*m.pi, 0., 0., 0.],
+                                [3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180., 3., 3., 2.*m.pi, 0.3, 0.2, 79.5*m.pi/180.]]}
+
+            for self.heady in head_y_range:
+                for self.start_x in np.arange(start_x_min, start_x_max, start_x_int):
+                    for self.start_y in np.arange(start_y_min, start_y_max, start_y_int):
+                        # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_configs,
+                        print 'Working on heady location:', self.heady
+                        optimization_results[2, self.heady, self.start_x, self.start_y] = cma.fmin(self.objective_function_two_configs,
+                                                                                                                 [0.5, 0.75, 0., 0.15, 0., 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0., 35*m.pi/180],
+                                                                                                                 # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                                                 1.,
+                                                                                                                 options=opts2)
+                                                                                                       # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
+                                                                                                       # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
+                                                                                                       # for self.heady in np.arange(heady_min, heady_max, heady_int)
+                        config = optimization_results[2, self.heady, self.start_x, self.start_y][0]
+                        score = optimization_results[2, self.heady, self.start_x, self.start_y][1]
+                        optimization_results[2, self.heady, self.start_x, self.start_y] = [config, score]
 
         print optimization_results[2, self.heady, self.start_x, self.start_y][0]
         print optimization_results[2, self.heady, self.start_x, self.start_y][1]
@@ -578,12 +670,21 @@ class ScoreGenerator(object):
             return 10.-beta*reach_score-gamma*manip_score  # +zeta*self.distance
 
     def objective_function_two_configs(self, current_parameters):
-        x = [current_parameters[0], current_parameters[6]]
-        y = [current_parameters[1], current_parameters[7]]
-        th = [current_parameters[2], current_parameters[8]]
-        z = [current_parameters[3], current_parameters[9]]
-        bz = [current_parameters[4], current_parameters[10]]
-        bth = [current_parameters[5], current_parameters[11]]
+        # print current_parameters
+        if len(current_parameters) == 12:
+            x = [current_parameters[0], current_parameters[6]]
+            y = [current_parameters[1], current_parameters[7]]
+            th = [current_parameters[2], current_parameters[8]]
+            z = [current_parameters[3], current_parameters[9]]
+            bz = [current_parameters[4], current_parameters[10]]
+            bth = [current_parameters[5], current_parameters[11]]
+        else:
+            x = [current_parameters[0], current_parameters[4]]
+            y = [current_parameters[1], current_parameters[5]]
+            th = [current_parameters[2], current_parameters[6]]
+            z = [current_parameters[3], current_parameters[7]]
+            bz = [0., 0.]
+            bth = [0., 0.]
 
         # planar_difference = np.linalg.norm([x[0]-x[1], y[0]-y[1]])
         # if planar_difference < 0.2:
@@ -594,7 +695,7 @@ class ScoreGenerator(object):
         #           np.linalg.norm([self.start_x - x[1], self.start_y - y[1]])]
         # travel.append(travel[0]+travel[1])
 
-        distance = 10000000.
+        # distance = 10000000.
         out_of_reach = False
 
         reach_score = np.array([0., 0., 0.])
@@ -619,9 +720,10 @@ class ScoreGenerator(object):
                 v = self.robot.GetActiveDOFValues()
                 v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z[config_num]
                 self.robot.SetActiveDOFValues(v)
-                self.env.UpdatePublishedBodies()
+                # self.env.UpdatePublishedBodies()
 
                 if self.model == 'chair':
+                    self.env.UpdatePublishedBodies()
                     headmodel = self.wheelchair.GetLink('head_center')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
@@ -643,6 +745,8 @@ class ScoreGenerator(object):
                     self.selection_mat = np.zeros(1)
                     self.goal_list = np.zeros([1, 4, 4])
                     self.set_autobed(bz[config_num], bth[config_num], self.headx, self.heady)
+                    self.env.UpdatePublishedBodies()
+
                     headmodel = self.autobed.GetLink('head_link')
                     ual = self.autobed.GetLink('arm_left_link')
                     uar = self.autobed.GetLink('arm_right_link')
@@ -688,6 +792,9 @@ class ScoreGenerator(object):
                         self.origin_B_references.append(origin_B_calfr)
                     elif self.reference_names[thing] == 'chest':
                         self.origin_B_references.append(origin_B_ch)
+                    else:
+                        print 'The refence options is bogus! I dont know what to do!'
+                        return
 
                     # for thing in xrange(len(self.goals)):
                     # thing = num
@@ -713,7 +820,55 @@ class ScoreGenerator(object):
                         v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0.
                         v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.
                         self.robot.SetActiveDOFValues(v)
-                        if not self.manip.CheckIndependentCollision(op.CollisionReport()):
+                        self.env.UpdatePublishedBodies()
+                        not_close_to_collision = True
+                        if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            not_close_to_collision = False
+                         
+                        origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]+.06],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]+.06],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                        self.robot.SetTransform(np.array(origin_B_pr2))
+                        self.env.UpdatePublishedBodies()       
+                        if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            not_close_to_collision = False
+
+                        origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]-.06],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]+.06],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                        self.robot.SetTransform(np.array(origin_B_pr2))
+                        self.env.UpdatePublishedBodies()
+                        if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            not_close_to_collision = False
+
+                        origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]-.06],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]-.06],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                        self.robot.SetTransform(np.array(origin_B_pr2))
+                        self.env.UpdatePublishedBodies()
+                        if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            not_close_to_collision = False
+
+                        origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]+.06],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]-.06],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                        self.robot.SetTransform(np.array(origin_B_pr2))
+                        self.env.UpdatePublishedBodies()
+                        if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                            not_close_to_collision = False
+
+                        origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]],
+                                          [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]],
+                                          [        0.,         0.,     1.,        0.],
+                                          [        0.,         0.,     0.,        1.]])
+                        self.robot.SetTransform(np.array(origin_B_pr2))
+                        self.env.UpdatePublishedBodies()
+                            
+                        if not_close_to_collision: 
                             Tgrasp = self.origin_B_grasps[0]
 
                             # print 'no collision!'
@@ -733,6 +888,7 @@ class ScoreGenerator(object):
                                 v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = -1.8417
                                 v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.21436
                                 self.robot.SetActiveDOFValues(v)
+                                self.env.UpdatePublishedBodies()
                                 sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
 
                             if sols != []:  # not None:
@@ -898,9 +1054,10 @@ class ScoreGenerator(object):
                 v = self.robot.GetActiveDOFValues()
                 v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z[config_num]
                 self.robot.SetActiveDOFValues(v)
-                self.env.UpdatePublishedBodies()
+                # self.env.UpdatePublishedBodies()
 
                 if self.model == 'chair':
+                    self.env.UpdatePublishedBodies()
                     headmodel = self.wheelchair.GetLink('head_center')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
@@ -922,6 +1079,7 @@ class ScoreGenerator(object):
                     self.selection_mat = np.zeros(1)
                     self.goal_list = np.zeros([1, 4, 4])
                     self.set_autobed(bz[config_num], bth[config_num], self.headx, self.heady)
+                    self.env.UpdatePublishedBodies()
                     headmodel = self.autobed.GetLink('head_link')
                     ual = self.autobed.GetLink('arm_left_link')
                     uar = self.autobed.GetLink('arm_right_link')
@@ -967,6 +1125,9 @@ class ScoreGenerator(object):
                         self.origin_B_references.append(origin_B_calfr)
                     elif self.reference_names[thing] == 'chest':
                         self.origin_B_references.append(origin_B_ch)
+                    else:
+                        print 'The refence options is bogus! I dont know what to do!'
+                        return
 
                     # for thing in xrange(len(self.goals)):
                     # thing = num
@@ -1038,8 +1199,8 @@ class ScoreGenerator(object):
                                 # rospy.sleep(5)
                                 # print np.degrees(solution)
 
-            manip[2] = np.max(manip)
-            reached[2] = np.max(reached)
+            reached[num, 2] = np.max(reached[num])
+            manip[num, 2] = np.max(manip[num])
             # manip_score[0] += reached[0]*manip[0]*self.weights[0]
             # manip_score[1] += reached[1]*manip[1]*self.weights[0]
             # manip_score[2] += reached[2]*0.95*manip[2]*self.weights[0]
@@ -1189,8 +1350,9 @@ class ScoreGenerator(object):
                 v = self.robot.GetActiveDOFValues()
                 v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
                 self.robot.SetActiveDOFValues(v)
-                self.env.UpdatePublishedBodies()
+
                 if self.model == 'chair':
+                    self.env.UpdatePublishedBodies()
                     headmodel = self.wheelchair.GetLink('head_center')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
@@ -1211,6 +1373,7 @@ class ScoreGenerator(object):
                     self.set_goals()
                 elif self.model == 'autobed':
                     self.set_autobed(bz, bth, error[0], error[1])
+                    self.env.UpdatePublishedBodies()
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
                     headmodel = self.autobed.GetLink('head_link')
@@ -1299,69 +1462,20 @@ class ScoreGenerator(object):
         m_x_e = np.random.normal(0., 0.025/2)
         m_y_e = np.random.normal(0., 0.025/2)
         m_th_e = np.random.normal(0., (m.pi/36)/2)
-        x_e = np.random.normal(0., 0.05)
+        x_e = np.random.normal(0., 0.025)
         y_e = np.random.normal(0., 0.05)
         th_e = np.random.normal(0., (m.pi/36))
         h_e = np.random.normal(0., (m.pi/18)/2)
 
-        # mod_x_err_min = -.025
-        # mod_x_err_max = .025+.02
-        # mod_x_err_int = .025
-        # mod_y_err_min = -.025
-        # mod_y_err_max = .025+.02
-        # mod_y_err_int = .025
-        # mod_th_err_min = -m.pi/36.
-        # mod_th_err_max = m.pi/36.+.02
-        # mod_th_err_int = m.pi/36.
-        # x_err_min = -.05
-        # x_err_max = .05+.02
-        # x_err_int = .05
-        # y_err_min = -.05
-        # y_err_max = .05+.02
-        # y_err_int = .05
-        # th_err_min = -m.pi/36.
-        # th_err_max = m.pi/36.+.02
-        # th_err_int = m.pi/36.
-        # h_err_min = -m.pi/9.
-        # h_err_max = m.pi/9.+.02
-        # h_err_int = m.pi/9.
         if self.model == 'chair':
             modeling_error = np.array([[x_e, y_e, th_e, h_e, m_x_e, m_y_e, m_th_e]])
-            # print modeling_error[0]
-            # modeling_error = np.array([err for err in ([x_e, y_e, th_e, h_e, m_x_e, m_y_e, m_th_e]
-            #                                            for x_e in np.arange(x_err_min, x_err_max, x_err_int)
-            #                                            for y_e in np.arange(y_err_min, y_err_max, y_err_int)
-            #                                            for th_e in np.arange(th_err_min, th_err_max, th_err_int)
-            #                                            for h_e in np.arange(h_err_min, h_err_max, h_err_int)
-            #                                            for m_x_e in np.arange(mod_x_err_min, mod_x_err_max, mod_x_err_int)
-            #                                            for m_y_e in np.arange(mod_y_err_min, mod_y_err_max, mod_y_err_int)
-            #                                            for m_th_e in np.arange(mod_th_err_min, mod_th_err_max, mod_th_err_int)
-            #                                            )
-            #                            ])
-            # modeling_error = np.array([err for err in ([x_e, y_e, th_e, h_e, 0, 0, 0]
-            #                                            for x_e in np.arange(x_err_min, x_err_max, x_err_int)
-            #                                            for y_e in np.arange(y_err_min, y_err_max, y_err_int)
-            #                                            for th_e in np.arange(th_err_min, th_err_max, th_err_int)
-            #                                            for h_e in np.arange(h_err_min, h_err_max, h_err_int)
-            #                                            # for m_x_e in np.arange(mod_x_err_min, mod_x_err_max, mod_x_err_int)
-            #                                            # for m_y_e in np.arange(mod_y_err_min, mod_y_err_max, mod_y_err_int)
-            #                                            # for m_th_e in np.arange(mod_th_err_min, mod_th_err_max, mod_th_err_int)
-            #                                            )
-            #                            ])
         elif self.model == 'autobed':
-            modeling_error = np.array([[x_e, y_e]])
-            # modeling_error = np.array([err for err in ([x_e, y_e]
-            #                                            for x_e in np.arange(x_err_min, x_err_max, x_err_int)
-            #                                            for y_e in np.arange(y_err_min, y_err_max, y_err_int)
-            #                                            )
-            #                            ])
-        # print len(modeling_error)
-        # for error in modeling_error:
-        #     print error
+            # modeling_error = np.array([[x_e, y_e, m_x_e, m_y_e, m_th_e]])
+            modeling_error = np.array([[x_e, y_e, 0., 0., 0.]])
 
         total_length = len(goal_data)
         for error in modeling_error:
-            self.receive_new_goals(goal_data)
+            # self.receive_new_goals(goal_data)
             # origin_B_wheelchair = np.matrix([[m.cos(error[2]), -m.sin(error[2]),     0.,  error[0]],
             #                                  [m.sin(error[2]),  m.cos(error[2]),     0.,  error[1]],
             #                                  [             0.,               0.,     1.,        0.],
@@ -1381,25 +1495,30 @@ class ScoreGenerator(object):
                 self.wheelchair.SetActiveDOFValues(v)
                 self.env.UpdatePublishedBodies()
 
-            for ic in xrange(len(init_config[0][0])):
+            for ic in xrange(len(init_config[0])):
                 delete_index = []
-                x = init_config[0][0][ic]
-                y = init_config[0][1][ic]
-                th = init_config[0][2][ic]
-                z = init_config[0][3][ic]
-                bz = init_config[0][4][ic]
-                bth = init_config[0][5][ic]
+                x = init_config[0][ic]
+                y = init_config[1][ic]
+                th = init_config[2][ic]
+                z = init_config[3][ic]
+                bz = init_config[4][ic]
+                bth = init_config[5][ic]
                 # print 'bth: ', bth
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
-                                          [ m.sin(th),  m.cos(th),     0.,         y],
+                # origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                #                           [ m.sin(th),  m.cos(th),     0.,         y],
+                #                           [        0.,         0.,     1.,        0.],
+                #                           [        0.,         0.,     0.,        1.]])
+                origin_B_pr2 = np.matrix([[ m.cos(th+error[4]), -m.sin(th+error[4]),     0.,         x+error[2]],
+                                          [ m.sin(th+error[4]),  m.cos(th+error[4]),     0.,         y+error[3]],
                                           [        0.,         0.,     1.,        0.],
                                           [        0.,         0.,     0.,        1.]])
                 self.robot.SetTransform(np.array(origin_B_pr2))
                 v = self.robot.GetActiveDOFValues()
                 v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
                 self.robot.SetActiveDOFValues(v)
-                self.env.UpdatePublishedBodies()
+                # self.env.UpdatePublishedBodies()
                 if self.model == 'chair':
+                    self.env.UpdatePublishedBodies()
                     headmodel = self.wheelchair.GetLink('head_center')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
@@ -1420,6 +1539,7 @@ class ScoreGenerator(object):
                     self.set_goals()
                 elif self.model == 'autobed':
                     self.set_autobed(bz, bth, error[0], error[1])
+                    self.env.UpdatePublishedBodies()
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
                     headmodel = self.autobed.GetLink('head_link')
@@ -1467,6 +1587,9 @@ class ScoreGenerator(object):
                             self.origin_B_references[thing] = origin_B_calfr
                         elif self.reference_names[thing] == 'chest':
                             self.origin_B_references[thing] = origin_B_ch
+                        else:
+                            print 'The refence options is bogus! I dont know what to do!'
+                            return
 
                     for thing in xrange(len(self.goals)):
                         self.goal_list[thing] = copy.copy(self.origin_B_references[int(self.reference_mat[thing])]*np.matrix(self.goals[thing, 0]))
@@ -1478,28 +1601,52 @@ class ScoreGenerator(object):
                 # print 'self.goals length: ', len(self.goals)
                 # print 'self.origin_B_grasps length: ', len(self.origin_B_grasps)
                 with self.robot:
-                    if True:
-                    # if not self.manip.CheckIndependentCollision(op.CollisionReport()):
+                    v = self.robot.GetActiveDOFValues()
+                    v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
+                    v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                    v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                    v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
+                    v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = 0.
+                    v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0.
+                    v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.
+                    self.robot.SetActiveDOFValues(v)
+                    self.env.UpdatePublishedBodies()
+                    # if True:
+                    if not self.manip.CheckIndependentCollision(op.CollisionReport()):
                         #print 'not colliding with environment'
                         for num, Tgrasp in enumerate(self.origin_B_grasps):
                             sol = None
                             sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                             # sol = self.manip.FindIKSolution(Tgrasp,filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
+
+                            if sol is None:
+                                v[self.robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -0.023593
+                                v[self.robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
+                                v[self.robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()] = -1.5566882
+                                v[self.robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -2.124408
+                                v[self.robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = -1.4175
+                                v[self.robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = -1.8417
+                                v[self.robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.21436
+                                self.robot.SetActiveDOFValues(v)
+                                self.env.UpdatePublishedBodies()
+                                sol = self.manip.FindIKSolution(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+
                             if sol is not None:
                                 reached += 1.
                                 delete_index.append(num)
                                 if self.visualize:
+                                    # for sol in sols:
                                     self.robot.SetDOFValues(sol, self.manip.GetArmIndices())
                                     self.env.UpdatePublishedBodies()
-                                    rospy.sleep(2)
+                                    rospy.sleep(1)
 
                 # print 'goal list: ', self.goals
                 # print 'delete list: ', delete_index
                 if len(self.goals) > 0:
                     self.goals = np.delete(self.goals, delete_index, 0)
         score = reached/total_length
-        # if score < 0.5:
-        #     print 'Score was less than 0.5. The error added was: ', modeling_error
+        # if score < 0.9:
+        #     print 'Score was less than 0.9. The error added was: ', modeling_error
         # print 'Score is (% of reached goals): ', score
         # print 'Time to score this initial configuration: %fs' % (time.time()-start_time)
         return score
@@ -1582,13 +1729,16 @@ class ScoreGenerator(object):
                                                         [        0.,  0.,        0.,     1.]])
             self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor)
         elif self.model == 'autobed':
-            self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_rounded.dae']))
+            # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_real_expanded_rounded.dae']))
+            self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
 
             #0 degrees, 0 height
             v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = 0.0
             v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = -0.
+            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = 0.
+            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = 0.
             v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = -.1
             v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = .4
             v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = -.72
@@ -1637,6 +1787,8 @@ class ScoreGenerator(object):
             # 0 degrees, 0 height
         if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
             v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = (bth/40)*(0.6981317 - 0)+0
+            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = -((bth/40)*(0.6981317 - 0)+0)
+            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = ((bth/40)*(0.6981317 - 0)+0)
             v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = (bth/40)*(-.2-(-.1))+(-.1)
             v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = (bth/40)*(-.17-.4)+.4
             v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = (bth/40)*(-.76-(-.72))+(-.72)
@@ -1654,6 +1806,8 @@ class ScoreGenerator(object):
             v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()] = -0.1
         elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
             v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
+            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = -(((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
+            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = (((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
             v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
             v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
             v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
@@ -1673,7 +1827,7 @@ class ScoreGenerator(object):
             print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
 
         self.autobed.SetActiveDOFValues(v)
-        self.env.UpdatePublishedBodies()
+        # self.env.UpdatePublishedBodies()
 
     def show_rviz(self):
         #rospy.init_node(''.join(['base_selection_goal_visualization']))

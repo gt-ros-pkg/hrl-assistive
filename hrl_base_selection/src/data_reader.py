@@ -47,10 +47,10 @@ class DataReader(object):
     
     def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1,tf_listener=None):
         self.score_sheet = []
-        if tf_listener is None:
-            self.tf_listener = tf.TransformListener()
-        else:
-            self.tf_listener = tf_listener
+        # if tf_listener is None:
+        #     self.tf_listener = tf.TransformListener()
+        # else:
+        #     self.tf_listener = tf_listener
         if subject == None:
             self.subject = 0
             self.sub_num = 0
@@ -342,8 +342,9 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         #print myGoals
+
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
+                                  goals=myGoals, model=self.model)#, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
         # handle_score_in_memory = memory.cache(selector.handle_score)
@@ -414,7 +415,7 @@ class DataReader(object):
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
 
-        if self.task == 'shaving' or True:
+        if True:#False:#self.task == 'shaving' or True:
             # print 'Using the alternative streaming method for saving data because it is a big data set.'
             # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
             #                     '_score_data.pkl'])
@@ -424,9 +425,13 @@ class DataReader(object):
             # pickler = Pickler(file, -1)
             # pickler.dump(score_sheet)
             # file.close()
-            joblib.dump(score_sheet, filename)
+            output_score = {}
+            output_score[0.,0.] = []
+            for i in xrange(10):
+                output_score[0.,0.].append(score_sheet[0.,0.][i])
+            joblib.dump(output_score, filename, compress=6)
         else:
-            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
+            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, 'brute_score_data.pkl']))
         print 'There was no existing score data for this task. I therefore created a new file. And I was successful at ' \
               'it! Yay!'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
@@ -547,7 +552,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)#,tf_listener=self.tf_listener)
         #print 'Goals: \n',self.clustered_goal_data[0:4]
         #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
         score_sheet = selector.handle_score()
@@ -796,7 +801,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)#,tf_listener=self.tf_listener)
         selector.show_rviz()
 
 
