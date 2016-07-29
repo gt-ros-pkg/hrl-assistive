@@ -83,7 +83,7 @@ class RegisterHeadState(PDDLSmachState):
         self.head_registered = self.get_head_pose()
 
     def on_execute(self):
-        if self.head_registered:
+        if self.get_head_pose():
             return 'succeeded'
         else:
             return 'aborted'
@@ -103,35 +103,21 @@ class CheckBedOccupancyState(PDDLSmachState):
     def __init__(self, domain, *args, **kwargs):
         super(CheckBedOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.autobed_occupied_status = False
+
+    def on_execute(self):
         rospy.wait_for_service('autobed_occ_status')
         try:
             self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
             self.autobed_occupied_status = self.AutobedOcc().data
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
+            return 'aborted'
 
-    def on_execute(self):
-        if self.autobed_occ_status:
+        if self.autobed_occupied_status:
             return 'succeeded'
         else:
             return 'aborted'
 
-class CheckBedOccupancyState(PDDLSmachState):
-    def __init__(self, domain, *args, **kwargs):
-        super(CheckBedOccupancyState, self).__init__(domain=domain, *args, **kwargs)
-        self.autobed_occupied_status = False
-        rospy.wait_for_service('autobed_occ_status')
-        try:
-            self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
-            self.autobed_occupied_status = self.AutobedOcc().data
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
-
-    def on_execute(self):
-        if self.autobed_occ_status:
-            return 'succeeded'
-        else:
-            return 'aborted'
 
 class MoveArmState(PDDLSmachState):
     def __init__(self, task, domain, *args, **kwargs):
@@ -204,15 +190,16 @@ class MoveRobotState(PDDLSmachState):
 
 
 class CallBaseSelectionState(PDDLSmachState):
-    def __init__(self, task, domain, *args, **kwargs):
+    def __init__(self, task, model, domain, *args, **kwargs):
         self.task = task
+        self.model = model
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
-        rospy.wait_for_service("select_base_position")
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-        self.domain = domain
 
     def call_base_selection(self):
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
+        rospy.wait_for_service("select_base_position")
+        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
+        self.domain = domain
         try:
             resp = self.base_selection_client(self.task, self.model)
         except rospy.ServiceException as se:
