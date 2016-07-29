@@ -365,7 +365,8 @@ class learning_hmm(learning_base):
                     if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
                 except:
                     print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                    return False, False # anomaly
+                    continue
+                    ## return False, False # anomaly
                     #continue
 
                 l_likelihood.append( logp )

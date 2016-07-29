@@ -259,13 +259,13 @@ class classifier(learning_base):
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
-            g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
-            g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
+            self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
+            self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
             if parallel:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                       g_mu_list[i],\
-                                                                       g_sig, self.nPosteriors)
+                                                                       self.g_mu_list[i],\
+                                                                       self.g_sig, self.nPosteriors)
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
@@ -273,8 +273,8 @@ class classifier(learning_base):
                 self.ll_mu            = []
                 self.ll_std           = []
                 for i in xrange(self.nPosteriors):
-                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i],\
-                                                  g_sig, self.nPosteriors)
+                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
+                                                  self.g_sig, self.nPosteriors)
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
@@ -721,6 +721,36 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 ## def learn_state_clustering(i, ll_logp, ll_post, g_mu, g_sig, nState):
 ##     return i, 
+
+
+def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, std, nState):
+
+    g_lhood = 0.0
+    weight_sum  = 0.0
+
+    n = len(ll_idx)
+    for j in xrange(n): # per execution
+
+        idx  = ll_idx[j]
+        logp = ll_logp[j]
+        post = ll_post[j]
+
+        weight    = norm(loc=rbf_mu, scale=rbf_sig).pdf(idx)
+
+        if weight < 1e-3: continue
+        print np.shape(logp), np.shape(weight), np.shape(logp * weight)
+        g_lhood  = np.sum(logp * weight)
+        weight_sum = np.sum(weight)
+        if abs(weight_sum)<1e-3: weight_sum=1e-3
+
+        x_new   = g_lhood / weight_sum
+        mu_new  = ( float(N-1)*mu + x_new )/(N)
+        sig_new = np.sqrt( (float(N-1)*( sig*sig - mu*mu)+mu_new*mu_new)/flaot(N) - mu_new*mu_new )
+
+        mu  = mu_new
+        sig = sig_new
+
+    return i, mu, sig
 
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
