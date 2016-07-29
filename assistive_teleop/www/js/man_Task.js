@@ -607,5 +607,9 @@ var initManTaskTab = function() {
     $('#question_send').click(function() {
         assistive_teleop.manTask.question_send();
     });
+    manTask_yes("scooping_questions1_yes");
+    manTask_no("scooping_questions2_no");
+    manTask_yes("feeding_questions1_yes");
+    manTask_no("feeding_questions2_no");
     
 }
