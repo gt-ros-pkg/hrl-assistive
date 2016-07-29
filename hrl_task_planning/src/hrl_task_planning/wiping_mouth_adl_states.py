@@ -11,7 +11,7 @@ from geometry_msgs.msg import PoseStamped
 import tf
 from hrl_task_planning.msg import PDDLState
 from hrl_pr2_ar_servo.msg import ARServoGoalData
-from hrl_base_selection.srv import BaseMove_multi  
+from hrl_base_selection.srv import BaseMove_multi
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 # pylint: disable=W0102
@@ -22,9 +22,6 @@ SPA = ["succeeded", "preempted", "aborted"]
 
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
-    task = args[0]
-    model = args[1]
-    mode = args[2]
     if action == 'FIND_TAG':
         return FindTagState(domain=domain, problem=problem,
                                 action=action, action_args=args,
@@ -49,13 +46,13 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
     elif action == 'CALL_BASE_SELECTION':
-        return CallBaseSelectionState(task=task, domain=domain, problem=problem,
+        return CallBaseSelectionState(task=args[0], model=args[1], domain=domain, problem=problem,
                                   action=action, action_args=args, init_state=init_state,
                                   goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ROBOT':
         return MoveRobotState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ARM':
-        return MoveArmState(task=task, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return MoveArmState(task=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action in ['DO_TASK', 'FIND_TAG']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
@@ -82,7 +79,7 @@ class TrackTagState(PDDLSmachState):
 class RegisterHeadState(PDDLSmachState):
     def __init__(self, domain, *args, **kwargs):
         super(RegisterHeadState, self).__init__(domain=domain, *args, **kwargs)
-        self.listener = TransformListener()
+        self.listener = tf.TransformListener()
         self.head_registered = self.get_head_pose()
 
     def on_execute(self):
@@ -208,7 +205,7 @@ class MoveRobotState(PDDLSmachState):
 
 class CallBaseSelectionState(PDDLSmachState):
     def __init__(self, task, domain, *args, **kwargs):
-        self.task = task 
+        self.task = task
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
         rospy.wait_for_service("select_base_position")
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
@@ -256,8 +253,8 @@ class ConfigureBedRobotState(PDDLSmachState):
         print 'The autobed should be set to a head rest angle of: ', configuration_goals[2], 'degrees'
         if self.bed_state_leg_theta is not None and self.configuration_goal is not None:
             autobed_goal = FloatArrayBare()
-            autobed_goal.data = ([self.configuration_goal[2], 
-                                  self.configuration_goal[1], 
+            autobed_goal.data = ([self.configuration_goal[2],
+                                  self.configuration_goal[1],
                                   self.bed_state_leg_theta])
             self.autobed_pub.publish(autobed_goal)
         else:

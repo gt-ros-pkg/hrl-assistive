@@ -22,9 +22,23 @@ body {
     height: 100%;
     width: 256px;
 }
+#task-menu {
+    display: block;
+    height: 25%;
+    width: 100%;
+    background-color: rgba(200, 200, 210, 0.87);
+}
+#task-menu h3 {
+    display: block;
+    font-size: 1.6em;
+    width: 100%;
+    text-align: center;
+    margin: 0px;
+    padding: 0.4em 0em;
+}
 #main-menu {
     display: block;
-    height: 40%;
+    height: 30%;
     width: 100%;
     background-color: rgba(218, 236, 255, 0.87);
 }

@@ -5,6 +5,7 @@ RFH.Domains.WipingMouthADL = function (options) {
     var ros = options.ros;
     self.name = options.name || 'wiping_mouth_adl';
     self.domain = 'wiping_mouth_adl'
+    var $button = $('#wiping-mouth-adl-button');
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -155,5 +156,6 @@ RFH.Domains.WipingMouthADL = function (options) {
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
+    $button.button().on('click', self.sendTaskGoal);
 
 };

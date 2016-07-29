@@ -873,8 +873,10 @@ class FF(object):
         problem.name = "tmpProblemName"  # FF's parser gets confused by special characters, so don't let it seem them...
         with NamedTemporaryFile() as problem_file:
             problem.to_file(problem_file.name)
+            print "Problem File: ", problem_file.name
             with NamedTemporaryFile() as domain_file:
                 domain.to_file(domain_file.name)
+                print "Domain File: ", domain_file.name
                 try:
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
                     print "FF Output:\n", soln_txt

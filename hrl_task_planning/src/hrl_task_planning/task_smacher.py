@@ -176,6 +176,8 @@ class PDDLTaskThread(Thread):
             with self.problem_lock:
                 # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
                 self.problem_msg.init = self.domain_state
+                if not self.problem_msg.init:
+                    self.problem_msg.init = ['(NOT(TASK-COMPLETED))']
                 # If no goal is specified, use the default problem goal
                 if not self.problem_msg.goal:
                     self.problem_msg.goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
@@ -250,8 +252,9 @@ class PDDLTaskThread(Thread):
             if (attempted_goal == default_goal_now):
                 print "Evaluated to False - totally done"
                 return False
-        print "Keeping going by default"
-        return True  # Keep going by default
+        else:
+            print "Keep going by default"
+            return True
 
 
 class PDDLSmachState(smach.State):

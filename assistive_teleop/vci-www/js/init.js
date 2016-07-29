@@ -114,7 +114,7 @@ var RFH = {
                                                            topic: "/pcl_filters/peek_points",
                                                            maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
-        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+//        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');
