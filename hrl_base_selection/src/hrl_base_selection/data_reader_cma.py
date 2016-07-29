@@ -49,10 +49,10 @@ class DataReader(object):
                  data_start=0, data_finish=5, model='autobed', task='shaving',
                  pos_clust=5, ori_clust=1, tf_listener=None):
         self.score_sheet = []
-        if tf_listener is None:
-            self.tf_listener = tf.TransformListener()
-        else:
-            self.tf_listener = tf_listener
+        # if tf_listener is None:
+        #     self.tf_listener = tf.TransformListener()
+        # else:
+        #     self.tf_listener = tf_listener
         if subject is None:
             self.subject = 0
             self.sub_num = 0
@@ -226,7 +226,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
+                                  goals=myGoals, model=self.model)#, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
         score_sheet = selector.handle_score_generation(plot=plot)
@@ -245,7 +245,11 @@ class DataReader(object):
 
         if self.task == 'shaving' or True:
             # print 'Using the alternative streaming method for saving data because it is a big data set.'
-            filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
+            # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
+            #                     '_score_data.pkl'])
+            # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_cma_real_expanded_',
+            filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_cma_real_expanded_no_bed_movement',
+                                # '_real_expanded_',
                                 '_score_data.pkl'])
             save_pickle(score_sheet, filename)
             # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
@@ -471,7 +475,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)#,tf_listener=self.tf_listener)
         selector.show_rviz()
 
 
@@ -511,6 +515,20 @@ if __name__ == "__main__":
     #runData.plot_score(load=False)
     #print 'Time to plot score: %fs'%(time.time()-start_time)
     rospy.spin()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

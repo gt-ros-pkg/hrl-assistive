@@ -12,11 +12,14 @@ import rospy
 from geometry_msgs.msg import PoseArray, PoseStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
-from data_reader_cma import DataReader
+from data_reader_cma import DataReader as DataReader_cma
+from data_reader import DataReader as DataReader_brute
+
 
 
 class DataReader_Task(object):
-    def __init__(self, task, model, subject=None, visualize=False):
+    def __init__(self, task, model, optimization, subject=None, visualize=False):
+        self.optimization = optimization
         self.visualize = visualize
         self.model = model
         self.task = task
@@ -240,12 +243,65 @@ class DataReader_Task(object):
         # for item in data:
         #     print Bmat_to_pos_quat(item)
         print 'Starting to convert data!'
-        run_data = DataReader(subject=self.subject, model=self.model, task=self.task)
+        if self.optimization == 'cma':
+            run_data = DataReader_cma(subject=self.subject, model=self.model, task=self.task)
+        elif self.optimization == 'brute':
+            run_data = DataReader_brute(subject=self.subject, model=self.model, task=self.task)
+        else:
+            print 'I got a bad optimization type!!'
+            return None
         run_data.receive_input_data(self.goals, self.num, self.reference_options, self.reference)
         run_data.generate_output_goals()
+        print 'Starting to generate the data for the task', self.task
         run_data.generate_score(viz_rviz=True, visualize=self.visualize, plot=False)
 
     def visualize_only(self):
+
+        marker = Marker()
+        #marker.header.frame_id = "/base_footprint"
+        marker.header.frame_id = "/base_link"
+        marker.header.stamp = rospy.Time()
+        marker.id = 0
+        marker.type = Marker.MESH_RESOURCE
+        marker.action = Marker.ADD
+        marker.pose.position.x = 0
+        marker.pose.position.y = 0
+        marker.pose.position.z = 0
+        marker.pose.orientation.x = 0
+        marker.pose.orientation.y = 0
+        marker.pose.orientation.z = 0
+        marker.pose.orientation.w = 1
+        marker.color.a = 1.
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        if self.model == 'chair':
+            name = 'subject_model'
+            marker.mesh_resource = "package://hrl_base_selection/models/wheelchair_and_body_assembly_rviz.STL"
+            marker.scale.x = 1.0
+            marker.scale.y = 1.0
+            marker.scale.z = 1.0
+        elif self.model == 'bed':
+            name = 'subject_model'
+            marker.mesh_resource = "package://hrl_base_selection/models/head_bed.dae"
+            marker.scale.x = 1.0
+            marker.scale.y = 1.0
+            marker.scale.z = 1.0
+        elif self.model == 'autobed':
+            name = 'subject_model'
+            marker.mesh_resource = "package://hrl_base_selection/models/bed_and_body_v3_rviz.dae"
+            marker.scale.x = 1.0
+            marker.scale.y = 1.0
+            marker.scale.z = 1.0
+        else:
+            print 'I got a bad model. What is going on???'
+            return None
+        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        marker.ns = ''.join(['base_service_',name])
+        vis_pub.publish(marker)
+        print 'Published a model of the subject to rviz'
+
+
         ref_vis_pub = rospy.Publisher('~reference_pose', PoseStamped, latch=True)
         ref_pose = PoseStamped()
         ref_pose.header.frame_id = "/base_link"
@@ -297,20 +353,21 @@ class DataReader_Task(object):
 if __name__ == "__main__":
     visualize_only = False
     model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
-    rospy.init_node('knee_scratching_tasks')
-    task = 'face_wiping' # scratching_knee_left # options are: bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
+    optimization = 'cma'  # 'cma' or 'brute'
+    rospy.init_node(optimization+'_feeding')
+    task = 'shaving' # scratching_knee_left # options are: bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
     full_start_time = time.time()
     if visualize_only:
-        shaving_data_reader = DataReader_Task(task, model)
+        shaving_data_reader = DataReader_Task(task, model, optimization)
         shaving_data_reader.visualize_only()
         print 'Visualizing the goals for the task', task, ' only.'
         rospy.spin()
     else:
-        for task in ['shaving']:
+        for task in ['face_wiping', 'scratching_knee_left']: #,'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
         print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)

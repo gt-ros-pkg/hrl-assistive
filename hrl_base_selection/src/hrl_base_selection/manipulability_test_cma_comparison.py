@@ -1,37 +1,25 @@
 #!/usr/bin/env python
-import sys, optparse
 
-import rospy, rospkg
-import openravepy as op
 import numpy as np
-import math as m
-import copy
-from hrl_base_selection.srv import BaseMove_multi
 import roslib; roslib.load_manifest('hrl_haptic_mpc')
-import time
 import roslib
 roslib.load_manifest('hrl_base_selection')
 roslib.load_manifest('hrl_haptic_mpc')
-import rospy, rospkg
-import tf
+import rospkg
+
 roslib.load_manifest('hrl_base_selection')
-import hrl_lib.transforms as tr
-import tf
 import rospy
-from visualization_msgs.msg import Marker
 import time
-from hrl_msgs.msg import FloatArrayBare
-from helper_functions import createBMatrix
-from data_reader_cma import DataReader
+from data_reader_cma import DataReader as DataReader_cma
+from data_reader import DataReader
 from data_reader_task import DataReader_Task
-from score_generator import ScoreGenerator
-from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
+# from score_generator import ScoreGenerator
+from score_generator_cma import ScoreGenerator
 from config_visualize import ConfigVisualize
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
+import scipy.stats
 
 import random
 
-import pickle
 # import sPickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
@@ -39,46 +27,46 @@ import joblib
 
 
 class Manipulability_Testing(object):
-    def __init__(self, visualize_best=False, train_subj=6, test_subj=6):
+    def __init__(self):
+        rospack = rospkg.RosPack()
+        self.pkg_path = rospack.get_path('hrl_base_selection')
+        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/base_selection'
+
+        # self.goal_data = None
+        # self.best_base = None
+        # self.raw_reference_options = None
+
+        self.mc_sim_number = 1000
+
+        self.selector = ScoreGenerator(visualize=False)
+
         output_raw_scores = False
 
         # compare = True
-        self.visualize_best = visualize_best
-
-        self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
-        self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
-        self.tf_listener = tf.TransformListener()
-
-        unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
-                  0.52777768],
-                [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
-                  0.02473747]]
-        a = np.reshape(unformat[0],[6,1])
-        b = np.reshape(unformat[1],[6,1])
-        base_config = np.hstack([a,b])
-        best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
-        self.scores = []
-        self.scores.append(best_base)
+        # self.visualize_best = visualize_best
+        #
+        # self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
+        # self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
+        # self.tf_listener = tf.TransformListener()
+        #
+        # unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
+        #           0.52777768],
+        #         [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
+        #           0.02473747]]
+        # a = np.reshape(unformat[0],[6,1])
+        # b = np.reshape(unformat[1],[6,1])
+        # base_config = np.hstack([a,b])
+        # best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
+        # self.scores = []
+        # self.scores.append(best_base)
 
     def load_scores(self):
-
         self.train_subj = train_subj
         self.test_subj = test_subj
         print 'I will use data that was trained on subject ', self.train_subj
         print 'I will test on data from subject ', self.test_subj
-
-
-
-        pos_clust = 2
-        ori_clust = 2
-
         self.visualize = False
-        data_start = 0
-        data_finish = 'end '  # 2000  # 4000 #'end'
 
-        rospack = rospkg.RosPack()
-        self.pkg_path = rospack.get_path('hrl_base_selection')
-        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/base_selection'
         print 'Loading scores.'
         self.loaded_scores = self.load_task(self.task, self.model, self.train_subj)
         if self.loaded_scores is None:
@@ -96,16 +84,12 @@ class Manipulability_Testing(object):
         if output_raw_scores:
             self.output_scores()
 
-    def load_goals(self):
-        # subject = ''.join(['sub', str(self.test_subj), '_shaver'])
-        subject=None
+    def load_goals(self, task, model):
         print 'Reading in raw data from the task.'
-        read_task_data = DataReader_Task(self.task, self.model)
-        data_start=0
-        data_finish='end'
+        read_task_data = DataReader_Task(task, model)
         raw_data, raw_num, raw_reference, self.raw_reference_options = read_task_data.reset_goals()
         read_data = DataReader(subject=subject, data_start=data_start, reference_options=self.raw_reference_options,
-                               data_finish=data_finish, model=self.model, task=self.task, tf_listener=self.tf_listener)
+                               data_finish=data_finish, model=model, task=task)
 
         # raw_data = read_data.get_raw_data()
         print 'Raw data is ready!'
@@ -132,141 +116,54 @@ class Manipulability_Testing(object):
     def get_best_base(self):
         return self.best_base
 
-    def run_comparisons(self, best_base):
-        print 'The number of base configurations on the score sheet for the default human position with ' \
-              'score > 0 is: ', len(self.scores)
-        comparison_bases = []
-        max_num_of_comparisons = 0 # 400
-        max_num_of_comparisons = np.min([max_num_of_comparisons, len(self.scores)])
-        max_reach_count = 0
-        print 'best base manip score is:', best_base[1][2]
-        for i in xrange(len(self.scores)):
-            if self.scores[i, 1][1] == best_base[1][1] and self.scores[i, 1][1] > 0:
-                max_reach_count += 1
-                # print self.scores[i,1][2]
-        print 'The number of base configurations that can reach all clustered goals is: ', max_reach_count
-        count = 0
-        # max_num_of_comparisons = np.min([max_reach_count, max_num_of_comparisons])
-        # for i in np.arange(int(max_reach_count/max_num_of_comparisons), int(max_reach_count*10),
-        #                    int(max_reach_count/max_num_of_comparisons)):
-        do_first = False
-        # if max_num_of_comparisons < 400:
-        #     do_all = True
-        do_all = False
-        custom = False
-        anova_test = False
-        do_first = True
-        if anova_test:
-            single_score = []
-            for aScore in self.scores:
-                if len(aScore[0][0]) == 1:
-                    single_score.append(aScore)
-            single_score = np.array(sorted(single_score, key=lambda t: (t[1][1], t[1][2]), reverse=True))
-            best_single = single_score[0]
-            print 'The best single configuration is: ', best_single
-            # print best_single[1][1]
-            # print best_base[1][1]
-            # print best_single[1][1]*.98
-            # print best_base[1][1]*.98
-            single_score_selection = []
-            multi_score_selection = []
-            for aScore in self.scores:
-                if (len(aScore[0][0]) == 1) and (aScore[1][1] >= best_single[1][1]*.98):
-                    single_score_selection.append(aScore)
-                elif (len(aScore[0][0]) >= 1) and (aScore[1][1] >= best_base[1][1]*.98):
-                    multi_score_selection.append(aScore)
-            multi_score_selection = np.array(multi_score_selection)
-            single_score_selection = np.array(single_score_selection)
-            print 'Number of single configurations with their max reachability: ', len(single_score_selection)
-            print 'Number of multi configurations with their max reachability: ', len(multi_score_selection)
-            single_score_sample = np.array(random.sample(single_score_selection, np.min([100, len(single_score_selection)])))
-            multi_score_sample = np.array(random.sample(multi_score_selection, np.min([100, len(multi_score_selection)])))
-        if do_all:
-            for j in xrange(len(self.scores)):
-                i = j
-                try:
-                    if self.scores[int(i), 1][1] > 0:
-                        comparison_bases.append(self.scores[i])
-                except IndexError:
-                    print 'there was an index error'
-                    pass
-        elif anova_test:
-            for multi_score in multi_score_selection[0:1]:
-                comparison_bases.append(multi_score)
-            for single_score in single_score_selection[0:1]:
-                comparison_bases.append(single_score)
-            for sample in single_score_sample:
-                comparison_bases.append(sample)
-            for sample in multi_score_sample:
-                comparison_bases.append(sample)
-        elif custom:
-            for j in xrange(1, max_num_of_comparisons):
-                if j <= 10:
-                    i = j
-                elif j <= float(max_num_of_comparisons)/2.:
-                    i = (j-10)*int(2*float(4000)/float(max_num_of_comparisons))+10
-                elif j < 3.*float(max_num_of_comparisons)/4.:
-                    i = (j-int(float(max_num_of_comparisons)/2.))+(len(self.scores)-2643)
+    def run_comparisons(self, tasks, model):
+        print 'I am running comparisons for using the ', model, ' model'
+        for task in tasks:
+            print 'I will use data from the ', task, ' task'
+            for comparison_type in ['brute', 'cma']:
+                print 'Using scores generated by', comparison_type, 'method'
+                loaded_scores = self.load_task_scores(task, model, comparison_type)
+                # print loaded_scores
+                print 'Reading in raw data from the task.'
+                read_task_data = DataReader_Task(task, model, comparison_type)
+                raw_data, raw_num, raw_reference, raw_reference_options = read_task_data.reset_goals()
+                # raw_data = read_data.get_raw_data()
+                print 'Raw data is ready!'
+                if loaded_scores is None:
+                    print 'The scores do not exist. This is bad. Fixes needed in code.'
+                    return
+                if comparison_type == 'cma':
+                    scores = loaded_scores[0., 0., 0.]
+                    best_base = scores[0]
+                    # print 'best base is: ', best_base
+                    read_data = DataReader_cma(reference_options=raw_reference_options,
+                                               model=model, task=task)
                 else:
-                    i += 20
-                try:
-                    if self.scores[int(i), 1][1] > 0:
-                        comparison_bases.append(self.scores[i])
-                except IndexError:
-                    print 'there was an index error'
-                    pass
-        elif do_first:
-            for j in xrange(1, 2):
-                i = j
-                try:
-                    if self.scores[int(i), 1][1] > 0:
-                        comparison_bases.append(self.scores[i])
-                except IndexError:
-                    print 'there was an index error'
-                    pass
-        elif float(max_reach_count)/float(max_num_of_comparisons) > 0.5:
-            for j in xrange(1, max_num_of_comparisons+1):
-                if j <= 10:
-                    i = j
-                elif j <= int(float(max_num_of_comparisons)/2):
-                    i = (j-10)*int(2*float(max_reach_count)/float(max_num_of_comparisons))+10
-                else:
-                    i = max_reach_count + (j-int(float(max_num_of_comparisons)/2))*int(float(len(self.scores) - max_reach_count)*2/(float(max_num_of_comparisons)))
-                # print 'i: ', i
-                try:
-                    if self.scores[int(i), 1][1] > 0:
-                        comparison_bases.append(self.scores[i])
-                except IndexError:
-                    print 'there was an index error'
-                    pass
+                    scores = loaded_scores[0., 0.]
+                    scores = np.array(sorted(scores, key=lambda t: (t[1][1], t[1][2]), reverse=True))
+                    best_base = scores[0][0]
+                    read_data = DataReader(reference_options=raw_reference_options,
+                                           model=model, task=task)
+                goal_data = read_data.generate_output_goals(test_goals=raw_data, test_number=raw_num, test_reference=raw_reference)
+                save_name = ''.join([self.data_path, '/', task, '_', model, '_', comparison_type, '_mc_scores.log'])
+                results_file = open(save_name, 'w')
+                print 'I will now see the percentage of goals reached in', self.mc_sim_number, ' Monte-carlo simulations'
+                print 'I will save the accuracy of each trial in the file', save_name
+                for i in xrange(self.mc_sim_number):
+                    # print 'Monte-carlo simulation number', i, 'out of ', self.mc_sim_number
+                    accuracy = self.evaluate_configuration_mc(model, best_base, goal_data, raw_reference_options)
+                    results_file.write(str(accuracy)+'\n')
+                results_file.close()
+            print 'All done with the comparisons for the task', task
+        print 'All done with all comparisons!!'
 
-        else:
-            for j in xrange(1, max_num_of_comparisons+1):
-                if j <= max_reach_count:
-                    i = j
-                else:
-                    i = (j-max_reach_count-1)*2+max_reach_count+1
-                # print 'i: ', i
-                try:
-                    if self.scores[int(i), 1][1] > 0:
-                        comparison_bases.append(self.scores[i])
-                except IndexError:
-                    print 'there was an index error'
-                    pass
-                # print self.scores[i,1][2]
-                # if self.scores[i, 1][2] <= best_base[1][2]*(max_num_of_comparisons-count)/(max_num_of_comparisons+1):
-                # if self.scores[i, 1][2] <= best_base[1][2]*m.pow(.9, count):
-                    # comparison_bases.append(self.scores[i])
-                    # count += 1
-                    # if count > 5:
-                    #     break
-        print 'There are ', len(comparison_bases), 'number of comparison bases being evaluated'
-        # print 'number of base configurations that can reach all 20 clustered goal locations: ',count
-        # print 'The comparison base locations are:'
-        # for item in comparison_bases:
-        #     print item
-        print 'I may now proceed with comparison evaluation of the base locations with differing manipulability score'
-        self.evaluate_base_locations(best_base, comparison_bases, self.goal_data, self.raw_reference_options)
+    def evaluate_configuration_mc(self, model, config, goals, reference_options):
+        # scorer = ScoreGenerator(goals=goals, model=model, reference_names=reference_options)
+        # rospy.sleep(1)
+        self.selector.receive_new_goals(goals, reference_options)
+        result = self.selector.mc_eval_init_config(config, goals)
+        # print 'The result of this evaluation is: ', result
+        return result
 
     def evaluate_base_locations(self, best_base, comparison_bases, goal_data, reference_options):
         visualize = True
@@ -281,8 +178,7 @@ class Manipulability_Testing(object):
         # best_base[0][3] = [0.3]
         # best_base[0][4] = [0.]
         # best_base[0][5] = [0.]
-        self.selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
+
         rospy.sleep(5)
         start_time = time.time()
         # self.selector.receive_new_goals(goal_data)
@@ -475,20 +371,54 @@ class Manipulability_Testing(object):
         score_save_location.close()
         print 'Saved scores into a file'
 
-    def load_task(self, task, model, subj):
+    def load_task_scores(self, task, model, type):
         # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data.pkl'])
-        if 'scratching' in task.split('_'):
-            split_task = task.split('_')
-            file_name = ''.join([self.data_path, '/', split_task[0], '/', model, '/', split_task[1], '_', split_task[2], '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        split_task = task.split('_')
+        if 'shaving' in split_task:
+            file_name = ''.join([self.data_path, '/', task, '/', model, '/', task, '_', model, '_', type, '_score_data'])
+        elif 'scratching' in split_task:
+
+            if 'upper' in split_task:
+                file_name = ''.join([self.data_path, '/', split_task[0], '/', model, '/', split_task[1], '_', split_task[2], '_', split_task[3], '/', task, '_', model, '_subj_0', '_score_data'])
+            elif 'chest' in split_task:
+                file_name = ''.join([self.data_path, '/', split_task[0], '/', model, '/', split_task[1], '/', task, '_', model, '_subj_0', '_score_data'])
+            else:
+                file_name = ''.join([self.data_path, '/', split_task[0], '/', model, '/', split_task[1], '_', split_task[2], '/', task, '_', model, '_subj_0', '_score_data'])
         else:
-            file_name = ''.join([self.data_path, '/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+            file_name = ''.join([self.data_path, '/', task, '/', model, '/', task, '_', model, '_subj_0', '_score_data'])
         # return self.load_spickle(file_name)
-        print 'loading file with name ', file_name
+        # print 'loading file with name ', file_name
         try:
-            return joblib.load(file_name)
+            if type == 'cma' or 'shaving' in split_task:
+                print 'loading file with name ', file_name+'.pkl'
+                return load_pickle(file_name+'.pkl')
+            else:
+                print 'loading file with name ', file_name
+                return joblib.load(file_name)
         except IOError:
             print 'Load failed, sorry.'
             return None
+
+    def output_statistics(self, tasks, model, comparison_types):
+        print 'Task, model, optimization, mean, std'
+        write_stats_name = ''.join([self.data_path, '/statistics_output.csv'])
+        write_stats = open(write_stats_name, 'w')
+        write_stats.write('Task, model, optimization, mean, std, rank_sum_statistic, rank_sum_p_value\n')
+        for task in tasks:
+            for comparison_type in comparison_types:
+                file_name = ''.join([self.data_path, '/', task, '_', model, '_', comparison_type, '_mc_scores.log'])
+                data = np.loadtxt(file_name)
+                if comparison_type == 'cma':
+                    X = data
+                else:
+                    Y = data
+                print task, ',', model, ',', comparison_type, ',', data.mean(), ',', data.std()
+                write_stats.write(''.join([task, ',', model, ',', comparison_type, ',', str(data.mean()), ',', str(data.std()),'\n']))
+            ranksum = scipy.stats.ranksums(X,Y)
+            print ranksum
+            write_stats.write(''.join([',,,,',str(ranksum[0]),',',str(ranksum[1]),'\n']))
+        write_stats.close()
+
 
     '''
     ## read a pickle and return the object.
@@ -552,6 +482,7 @@ class Manipulability_Testing(object):
        [ 0.29643016,  0.03537878],
        [ 0.04969906,  0.0708807 ],
        [ 1.38750928,  0.29672911]]
+
         base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
 
         visualize = True
@@ -567,25 +498,31 @@ class Manipulability_Testing(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('manipulability_test_shaving_anova')
-    train_subj = 0
-    test_subj = 0
+    rospy.init_node('manipulability_test_cma_comparison')
     visualize_best = True
-    myTest = Manipulability_Testing(visualize_best=visualize_best, train_subj=train_subj, test_subj=test_subj)
+    model = 'autobed'  # 'autobed' or 'chair'
+    tasks = ['feeding']#['face_wiping', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left',
+              # 'scratching_forearm_right', 'scratching_thigh_left', 'scratching_thigh_right',
+              # 'scratching_chest', 'shaving', 'scratching_knee_left', 'scratching_knee_right', 'bathing']
+    optimization_options = ['brute', 'cma']
+    myTest = Manipulability_Testing()
     # best_base = myTest.get_best_base()
-    unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
-                  0.52777768],
-                [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
-                  0.02473747]]
-    a = np.reshape(unformat[0],[6,1])
-    b = np.reshape(unformat[1],[6,1])
-    base_config = np.hstack([a,b])
-    best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
-    myTest.load_goals()
+    # unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
+    #               0.52777768],
+    #             [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
+    #               0.02473747]]
+    # a = np.reshape(unformat[0],[6,1])
+    # b = np.reshape(unformat[1],[6,1])
+    # base_config = np.hstack([a,b])
+    # best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
+    myTest.run_comparisons(tasks, model)
+    myTest.output_statistics(tasks, model, optimization_options)
+    # myTest.load_goals()
     # myTest.run_comparisons(best_base)
-    rospy.spin()
+    # rospy.spin()
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()
+
 
 
 
