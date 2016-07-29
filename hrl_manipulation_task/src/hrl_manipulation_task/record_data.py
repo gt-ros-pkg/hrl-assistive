@@ -134,7 +134,7 @@ class logger:
         self.feedbackMSG = data.data
         print "Logger feedback received"
         if len(self.feedbackMSG) > 1:
-            if self.feedbackMSG[0] == "TRUE" && self.feedbackMSG[1] == "FALSE":
+            if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE":
                 self.feedbackStatus = '1'
             else:#if self.feedbackMSG[0] != "SKIP":
                 self.feedbackStatus = '2'
