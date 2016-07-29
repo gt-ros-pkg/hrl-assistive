@@ -1,0 +1,73 @@
+(define (domain wiping_mouth_adl)
+ (:requirements :typing :conditional-effects)
+ (:types
+  dof tag - physobj
+ )
+
+ (:constants bed - dof
+             bed_tag - tag
+             spine - dof
+ )
+
+ (:predicates
+  (configured ?d - dof)
+  (found-tag)
+  (is-tracking-tag)
+  (base-selected) 
+  (base-reached)
+  (arm-reached)
+  (task-completed)
+ )
+
+
+ (:action find_tag
+  :parameters (?t - tag)
+  :precondition (and (not(found-tag)))
+  :effect (and (found-tag)
+          )
+ )
+
+ (:action track_tag
+  :parameters ()
+  :precondition (and (found-tag)(not(is-tracking-tag)))
+  :effect (and (is-tracking-tag)
+          )
+ )
+
+ (:action call_base_selection
+  :parameters ()
+  :precondition (and (is-tracking-tag)(not(base-selected)))
+  :effect (and (base-selected)
+          )
+ )
+
+ (:action configure_bed_robot
+  :parameters ()
+  :precondition (and (is-tracking-tag)(base-selected))
+  :effect (and (forall(?d - dof)(configured ?d))
+          )
+ )
+
+ (:action move_robot
+  :parameters ()
+  :precondition (and (forall(?d - dof)(configured ?d))
+                     (is-tracking-tag)(not(base-reached)))
+  :effect (and (base-reached)
+          )
+ )
+
+ (:action move_arm
+  :parameters ()
+  :precondition (and (base-selected)(not(arm-reached)))
+  :effect (and (arm-reached)
+          )
+ )
+
+ (:action do_task
+  :parameters ()
+  :precondition (and(base-reached)(arm-reached)(not(task-completed)))
+  :effect (and (task-completed)
+          )
+ )
+
+)
