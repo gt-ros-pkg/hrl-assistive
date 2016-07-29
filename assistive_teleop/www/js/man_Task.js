@@ -7,7 +7,7 @@ function fullscreenStart(div_id) {
                    "height":"100%",
                    "z-index":"10",
                    "position":"fixed"});
-    return {'height':"0%"};
+    return {'width':"0%",'height':"0%"};
 }
 function fullscreenStop(div_id, previous_css) {
     $(div_id).css(previous_css);
@@ -22,6 +22,20 @@ function unglow(div_id) {
                    "-moz-box-shadow": "",
                    "box-shadow": ""});
 }
+function manTask_yes(curr_id) {
+    //var curr_id = event.target.id;
+    glow("#"+curr_id);
+    unglow("#"+curr_id.substring(0, curr_id.length-3) + "no");
+    document.getElementById(curr_id).value="true";
+    document.getElementById(curr_id.substring(0, curr_id.length-3) + "no").value="false";
+}
+function manTask_no(curr_id) {
+    //var curr_id = event.target.id;
+    glow("#"+curr_id);
+    unglow("#"+curr_id.substring(0, curr_id.length-2) + "yes");
+    document.getElementById(curr_id).value="true";
+    document.getElementById(curr_id.substring(0, curr_id.length-2) + "yes").value="false";
+}
 function enableButton(button_id) {
     $(button_id).css("opacity", "1.0");
     $(button_id).css("pointer-events", "auto"); 
@@ -30,7 +44,7 @@ function disableButton(button_id) {
     $(button_id).css("opacity", "0.6");
     $(button_id).css("pointer-events", "none"); 
 }
-var previous_css = {'height':"0%"};
+var previous_css = {'width':"0%",'height':"0%"};
 var ManipulationTask = function (ros) {
     'use strict';
     var manTask = this;
@@ -38,7 +52,7 @@ var ManipulationTask = function (ros) {
     manTask.ros = ros;
     //Topic used in manTask
     manTask.USER_INPUT_TOPIC = "manipulation_task/user_input";
-    manTask.USER_FEEDBACK_TOPIC = "manipulation_task/user_feedback";
+    //manTask.USER_FEEDBACK_TOPIC = "manipulation_task/user_feedback";
     manTask.EMERGENCY_TOPIC = "manipulation_task/emergency";
     manTask.STATUS_TOPIC = "manipulation_task/status";
     manTask.current_step = 1;
@@ -46,10 +60,12 @@ var ManipulationTask = function (ros) {
     manTask.feedback_received = false;
     manTask.feedingDistanceSynched = true;
     manTask.handshaked = false;
+    manTask.current_task = 'Init';
+    manTask.anomaly_detected = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
-        messageType: 'std_msgs/String'
+        messageType: 'std_msgs/String',
     });
     manTask.statusPub.advertise();
     manTask.scoop = function () {
@@ -112,11 +128,20 @@ var ManipulationTask = function (ros) {
     });
     manTask.emergencyPub.advertise();
 
+    /*
     manTask.userFeedbackPub = new manTask.ros.Topic({
         name: manTask.USER_FEEDBACK_TOPIC,
         messageType: 'std_msgs/String'
     });
     manTask.userFeedbackPub.advertise();
+    */
+
+    manTask.questionPub  = new manTask.ros.Topic({
+        name: "manipulation_task/user_feedback",
+        messageType: 'hrl_msgs/StringArray'
+    });
+    manTask.questionPub.advertise();
+
     // Function for start, stop, and continue
 
     manTask.feedingDistancePub = new manTask.ros.Topic({
@@ -167,6 +192,7 @@ var ManipulationTask = function (ros) {
         }
     };
     // Function to report the feedback
+    /*
     manTask.success = function () {
         var msg = new manTask.ros.Message({
           data: 'SUCCESS'
@@ -196,8 +222,65 @@ var ManipulationTask = function (ros) {
         console.log('Reporting the feedback message.');
         manTask.feedback_received = true;
     };
+    */
+    manTask.question_skip = function() {
+        var msg = new manTask.ros.Message({
+            data: ['SKIP']
+        });
+        manTask.questionPub.publish(msg);
+    };
+    manTask.question_send = function() {
+        var question_array = [];
+        if (manTask.current_task == "Scooping") {
+            var curr_table = document.getElementById("scooping_questions");
+            for (var i = 0; i < curr_table.rows.length; i++) {
+
+                if (document.getElementById("scooping_questions" + (i+1) +"_yes").value=="true") {
+                    question_array.push("TRUE");
+                } else {
+                    question_array.push("FALSE");
+                }
+            }
+            //document.getElementById("question_skip").innerHTML = "4";
+        } 
+        if (manTask.current_task == "Feeding") {
+            var curr_table = document.getElementById("feeding_questions");
+            for (var i = 0; i < curr_table.rows.length; i++) {
+                if (document.getElementById("feeding_questions" + (i+1) +"_yes").value=="true") {
+                    question_array.push("TRUE");
+                } else {
+                    question_array.push("FALSE");
+                }
+            }
+            //document.getElementById("question_skip").innerHTML = "4";
+        } 
+        //document.getElementById("question_skip").innerHTML = "hello2";
+        var msg = new manTask.ros.Message({
+            data: question_array
+        });
+        //document.getElementById("question_skip").innerHTML = "hello";
+        manTask.questionPub.publish(msg);
+    }
 
     //part added in 7/18
+    manTask.statusSub = new manTask.ros.Topic({
+        name: manTask.STATUS_TOPIC,
+        messageType: 'std_msgs/String',
+    });
+    manTask.statusSub.subscribe(function (msg) {
+        manTask.current_task = msg.data;
+        if (msg.data == "Scooping") {
+            //document.getElementById("fullscreen_scooping_paragraph").style.visibility='visible';
+            //document.getElementById("fullscreen_feeding_paragraph").style.visibility='hidden';
+            document.getElementById("scooping_questions").style.display='';//setAttribute("hidden", false);//style.visibility='visible';
+            document.getElementById("feeding_questions").style.display='none';//setAttribute("hidden", true);//style.visibility='hidden';
+        } else if (msg.data == "Feeding") {
+            //document.getElementById("fullscreen_scooping_paragraph").style.visibility='hidden';
+            //document.getElementById("fullscreen_feeding_paragraph").style.visibility='visible';
+            document.getElementById("scooping_questions").style.display='none';//visibility='hidden';//setAttribute("hidden", true);//
+            document.getElementById("feeding_questions").style.display='';//visibility='visible';//setAttribute("hidden",false);//
+        }
+    });
     manTask.availableSub = new manTask.ros.Topic({
         name: 'manipulation_task/available',
         messageType: 'std_msgs/String'});
@@ -230,57 +313,7 @@ var ManipulationTask = function (ros) {
         manTask.feedingDistanceSynched = true;
         document.getElementById("man_task_Feeding_dist").disabled = false;
     });
-    //part added.
-    /*
-    manTask.feedbackSub = new manTask.ros.Topic({
-        name: 'manipulation_task/feedbackRequest',
-        messageType: 'std_msgs/String'});
-    manTask.feedbackSub.subscribe(function (msg) {
-        assistive_teleop.log(msg.data);
-        if(msg.data=="Requesting Feedback!") {
-        //assistive_teleop.log("worked?");
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            //enableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            enableButton('#man_task_success');
-            enableButton('#man_task_Fail');
-            disableButton('#man_task_start');
-            enableButton('#man_task_Skip');
-        }
-        if(msg.data=="No feedback requested") {
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            //enableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            enableButton('#man_task_success');
-            enableButton('#man_task_Fail');
-            disableButton('#man_task_start');
-            enableButton('#man_task_Skip');
-            /*
-            enableButton('#man_task_Scooping');
-            enableButton('#man_task_Feeding');
-            enableButton('#man_task_Clean');
-            disableButton('#man_task_start');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            disableButton('#man_task_stop');
-            disableButton('#man_task_Skip');
-            enableButton('#ad_scooping_sense_min');
-            enableButton('#ad_scooping_sense_max');
-            enableButton('#ad_scooping_slider');
-            enableButton('#ad_feeding_sense_min');
-            enableButton('#ad_feeding_sense_max');
-            enableButton('#ad_feeding_slider');
-            */
-    /*
-        }
-        fullscreenStop('#fullscreenOverlay', previous_css);
-    });
-    */
+
 
     manTask.guiStatusSub = new manTask.ros.Topic({
         name: 'manipulation_task/gui_status',
@@ -298,6 +331,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Skip');
 
             fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
             enableButton('#ad_scooping_sense_min');
             enableButton('#ad_scooping_sense_max');
             enableButton('#ad_scooping_slider');
@@ -316,7 +350,13 @@ var ManipulationTask = function (ros) {
             enableButton('#man_task_start');
             disableButton('#man_task_Skip');
 
+            document.getElementById('step_table1').innerHTML = " ";
+            document.getElementById('step_table2').innerHTML = "Waiting for robot";
+            unglow('#step_table2');
+            document.getElementById('step_table3').innerHTML = " ";
             fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
+            manTask.anomaly_detected = false;
             disableButton('#ad_scooping_sense_min');
             disableButton('#ad_scooping_sense_max');
             disableButton('#ad_scooping_slider');
@@ -335,6 +375,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Skip');
 
             previous_css = fullscreenStart('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
             disableButton('#ad_scooping_sense_min');
             disableButton('#ad_scooping_sense_max');
             disableButton('#ad_scooping_slider');
@@ -354,6 +395,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Skip');
 
             fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
             disableButton('#ad_scooping_sense_min');
             disableButton('#ad_scooping_sense_max');
             disableButton('#ad_scooping_slider');
@@ -373,6 +415,7 @@ var ManipulationTask = function (ros) {
             disableButton('#man_task_Skip');
             
             fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
             enableButton('#ad_scooping_sense_min');
             enableButton('#ad_scooping_sense_max');
             enableButton('#ad_scooping_slider');
@@ -380,6 +423,7 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
             manTask.available=true;
+            manTask.anomaly_detected = false;
         } else if (msg.data == 'request feedback') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -392,6 +436,14 @@ var ManipulationTask = function (ros) {
             enableButton('#man_task_Skip');
 
             fullscreenStop('#fullscreenOverlay', previous_css);
+            previous_css = fullscreenStart('#fullscreenOverlay2');
+            /*
+            if (manTask.anomaly_detected) {
+                document.getElementById("fullscreen_anomaly_paragraph").innerHTML = "Anomaly was detected";
+            } else {
+                document.getElementById("fullscreen_anomaly_paragraph").innerHTML = "Anomaly was not detected";
+            }
+            */
             enableButton('#ad_scooping_sense_min');
             enableButton('#ad_scooping_sense_max');
             enableButton('#ad_scooping_slider');
@@ -402,14 +454,6 @@ var ManipulationTask = function (ros) {
         }
         manTask.handshaked = true;
     });
-    /*
-    manTask.adScoopingSliderSub = new manTask.ros.Topic({
-        name: 'scooping/manipulation_task/ad_senstivity_request',
-        messageType:'std_msgs/Float64'});
-    manTask.adScoopingSliderSub.subscribe(function (msg) {
-        
-    });
-    */
     manTask.proceedSub = new manTask.ros.Topic({
         name: 'manipulation_task/proceed',
         messageType: 'std_msgs/String'});
@@ -434,15 +478,6 @@ var ManipulationTask = function (ros) {
             document.getElementById('step_table1').innerHTML = document.getElementById('step_table2').innerHTML;
             document.getElementById('step_table2').innerHTML = document.getElementById('step_table3').innerHTML;
             document.getElementById('step_table3').innerHTML = sub_cmd;
-            /*
-            manTask.current_step = manTask.current_step + 1;
-            if (manTask.current_step <= manTask.max_step) {
-                unglow('#step_table' + (manTask.current_step - 1));
-                glow('#step_table' + manTask.current_step);
-            } else if (manTask.current_step == (manTask.max_step + 1)) {
-                unglow('#step_table' + (manTask.current_step - 1));
-            }
-            */
         } else if (cmd == "Start") {
             var comma_loc = 0;
             var arr       = [];
@@ -472,35 +507,6 @@ var ManipulationTask = function (ros) {
         } else if (cmd == "Done") {
             unglow('#step_table2');
             fullscreenStop('#fullscreenOverlay', previous_css);
-            /*
-            if(manTask.feedback_received) {
-                enableButton('#man_task_Scooping');
-                enableButton('#man_task_Feeding');
-                enableButton('#man_task_Clean');
-                disableButton('#man_task_start');
-                disableButton('#man_task_Continue');
-                disableButton('#man_task_success');
-                disableButton('#man_task_Fail');
-                disableButton('#man_task_stop');
-                disableButton('#man_task_Skip');
-                enableButton('#ad_scooping_sense_min');
-                enableButton('#ad_scooping_sense_max');
-                enableButton('#ad_scooping_slider');
-                enableButton('#ad_feeding_sense_min');
-                enableButton('#ad_feeding_sense_max');
-                enableButton('#ad_feeding_slider');
-            } else {
-                disableButton('#man_task_Scooping');
-                disableButton('#man_task_Feeding');
-                disableButton('#man_task_Clean');
-                disableButton('#man_task_stop');
-                disableButton('#man_task_Continue');
-                enableButton('#man_task_success');
-                enableButton('#man_task_Fail');
-                disableButton('#man_task_start');
-                enableButton('#man_task_Skip');
-            }
-            */
         }
     });
 
@@ -534,35 +540,15 @@ var ManipulationTask = function (ros) {
     });
 
     //part added on 4/7 to accomodate anomaly signal.
-    /*
     manTask.emergencySub = new manTask.ros.Topic({
         name: 'manipulation_task/emergency',
         messageType: 'std_msgs/String'});
     manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
-            manTask.available = false;
-            enableButton('#man_task_Scooping');
-            enableButton('#man_task_Feeding');
-            enableButton('#man_task_Clean');
-            enableButton('#man_task_stop');
-            enableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            disableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-            
-            fullscreenStop('#fullscreenOverlay', previous_css);
-            enableButton('#ad_scooping_sense_min');
-            enableButton('#ad_scooping_sense_max');
-            enableButton('#ad_scooping_slider');
-            enableButton('#ad_feeding_sense_min');
-            enableButton('#ad_feeding_sense_max');
-            enableButton('#ad_feeding_slider');
-
+            manTask.anomaly_detected = true;
         }
 
     });
-    */
 
 
 
@@ -578,242 +564,48 @@ var initManTaskTab = function() {
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.scoop();
         }
-        /*
-        if (assistive_teleop.manTask.scoop()) {
-            /*
-            var table = document.getElementById('step_table');
-            while(table.rows[0]) table.deleteRow(0);
-            var row = table.insertRow(0);
-            for (i = 0; i < assistive_teleop.manTask.max_step; i++) {
-                var cell = row.insertCell(i);
-                cell.id = 'step_table' + (i + 1);
-                cell.innerHTML = "Scooping" + (i + 1);
-            }
-            glow('#step_table' + (1));
-            */
-        /*
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            disableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            enableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-        }
-        */
     });
 
     $('#man_task_Feeding').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.feed();
         }
-        /*
-        if (assistive_teleop.manTask.feed()) {
-            /*
-            var table = document.getElementById('step_table');
-            while(table.rows[0]) table.deleteRow(0);
-            var row = table.insertRow(0);
-            for (i = 0; i < assistive_teleop.manTask.max_step; i++) {
-                var cell = row.insertCell(i);
-                cell.id = 'step_table' + (i + 1);
-                cell.innerHTML = "Feeding" + (i + 1);
-            }
-            glow('#step_table1');
-            */
-        /*
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            disableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            enableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-        }
-        */
     });
 
     $('#man_task_Clean').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.both();
         }
-        /*
-        if(assistive_teleop.manTask.both()) {
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            disableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            enableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-        }
-        */
     });
     $('#man_task_start').click(function(){
-        if(assistive_teleop.manTask.start()) {
-            document.getElementById('step_table1').innerHTML = " ";
-            document.getElementById('step_table2').innerHTML = "Waiting for robot";
-            unglow('#step_table2');
-            document.getElementById('step_table3').innerHTML = " ";
-            /*
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            enableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            disableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-
-            previous_css = fullscreenStart('#fullscreenOverlay');
-            disableButton('#ad_scooping_sense_min');
-            disableButton('#ad_scooping_sense_max');
-            disableButton('#ad_scooping_slider');
-            disableButton('#ad_feeding_sense_min');
-            disableButton('#ad_feeding_sense_max');
-            disableButton('#ad_feeding_slider');
-            */
-        }
-
+        assistive_teleop.manTask.start()
     });
     $('#man_task_stop').click(function(){
         assistive_teleop.manTask.stop();
-        /*
-        enableButton('#man_task_Scooping');
-        enableButton('#man_task_Feeding');
-        enableButton('#man_task_Clean');
-        enableButton('#man_task_stop');
-        enableButton('#man_task_Continue');
-        disableButton('#man_task_success');
-        disableButton('#man_task_Fail');
-        disableButton('#man_task_start');
-        disableButton('#man_task_Skip');
-
-        fullscreenStop('#fullscreenOverlay', previous_css);
-        enableButton('#ad_scooping_sense_min');
-        enableButton('#ad_scooping_sense_max');
-        enableButton('#ad_scooping_slider');
-        enableButton('#ad_feeding_sense_min');
-        enableButton('#ad_feeding_sense_max');
-        enableButton('#ad_feeding_slider');
-        */
     });
     $('#fullscreenOverlay').click(function(){
         assistive_teleop.manTask.stop();
-        /*
-        enableButton('#man_task_Scooping');
-        enableButton('#man_task_Feeding');
-        enableButton('#man_task_Clean');
-        enableButton('#man_task_stop');
-        enableButton('#man_task_Continue');
-        disableButton('#man_task_success');
-        disableButton('#man_task_Fail');
-        disableButton('#man_task_start');
-        disableButton('#man_task_Skip');
-
-        fullscreenStop('#fullscreenOverlay', previous_css);
-        enableButton('#ad_scooping_sense_min');
-        enableButton('#ad_scooping_sense_max');
-        enableButton('#ad_scooping_slider');
-        enableButton('#ad_feeding_sense_min');
-        enableButton('#ad_feeding_sense_max');
-        enableButton('#ad_feeding_slider');
-        */
     });
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
-        /*
-        if (assistive_teleop.manTask.continue_()) {
-            disableButton('#man_task_Scooping');
-            disableButton('#man_task_Feeding');
-            disableButton('#man_task_Clean');
-            enableButton('#man_task_stop');
-            disableButton('#man_task_Continue');
-            disableButton('#man_task_success');
-            disableButton('#man_task_Fail');
-            disableButton('#man_task_start');
-            disableButton('#man_task_Skip');
-
-            previous_css = fullscreenStart('#fullscreenOverlay');
-            disableButton('#ad_scooping_sense_min');
-            disableButton('#ad_scooping_sense_max');
-            disableButton('#ad_scooping_slider');
-            disableButton('#ad_feeding_sense_min');
-            disableButton('#ad_feeding_sense_max');
-            disableButton('#ad_feeding_slider');
-        }
-        */
     });
+    /*
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();
-        /*
-        enableButton('#man_task_Scooping');
-        enableButton('#man_task_Feeding');
-        enableButton('#man_task_Clean');
-        disableButton('#man_task_stop');
-        disableButton('#man_task_Continue');
-        disableButton('#man_task_success');
-        disableButton('#man_task_Fail');
-        disableButton('#man_task_start');
-        disableButton('#man_task_Skip');
-
-        enableButton('#ad_scooping_sense_min');
-        enableButton('#ad_scooping_sense_max');
-        enableButton('#ad_scooping_slider');
-        enableButton('#ad_feeding_sense_min');
-        enableButton('#ad_feeding_sense_max');
-        enableButton('#ad_feeding_slider');
-        */
     });
     $('#man_task_Fail').click(function(){
         assistive_teleop.manTask.failure();
-        /*
-        enableButton('#man_task_Scooping');
-        enableButton('#man_task_Feeding');
-        enableButton('#man_task_Clean');
-        disableButton('#man_task_stop');
-        disableButton('#man_task_Continue');
-        disableButton('#man_task_success');
-        disableButton('#man_task_Fail');
-        disableButton('#man_task_start');
-        disableButton('#man_task_Skip');
-
-        enableButton('#ad_scooping_sense_min');
-        enableButton('#ad_scooping_sense_max');
-        enableButton('#ad_scooping_slider');
-        enableButton('#ad_feeding_sense_min');
-        enableButton('#ad_feeding_sense_max');
-        enableButton('#ad_feeding_slider');
-        */
     });
 
     $('#man_task_Skip').click(function(){
         assistive_teleop.manTask.skip();
-        /*
-        enableButton('#man_task_Scooping');
-        enableButton('#man_task_Feeding');
-        enableButton('#man_task_Clean');
-        disableButton('#man_task_stop');
-        disableButton('#man_task_Continue');
-        disableButton('#man_task_success');
-        disableButton('#man_task_Fail');
-        disableButton('#man_task_start');
-        disableButton('#man_task_Skip');
-
-        enableButton('#ad_scooping_sense_min');
-        enableButton('#ad_scooping_sense_max');
-        enableButton('#ad_scooping_slider');
-        enableButton('#ad_feeding_sense_min');
-        enableButton('#ad_feeding_sense_max');
-        enableButton('#ad_feeding_slider');
-        */
     });
-
-
+    */
+    $('#question_skip').click(function() {
+        assistive_teleop.manTask.question_skip();
+    });
+    $('#question_send').click(function() {
+        assistive_teleop.manTask.question_send();
+    });
+    
 }

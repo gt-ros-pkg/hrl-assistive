@@ -38,6 +38,7 @@ import multiprocessing, threading
 import rospy, roslib
 
 from std_msgs.msg import String, Bool
+from hrl_msgs.msg import StringArray
 
 # HRL library
 from hrl_srvs.srv import String_String, String_StringRequest
@@ -88,7 +89,7 @@ class armReacherGUI:
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
         self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String, self.feedbackCallback)
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", StringArray, self.feedbackCallback)
         self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         self.guiStatusSub = rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
         

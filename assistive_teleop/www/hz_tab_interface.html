@@ -42,28 +42,88 @@
 </head>
 
 <body onload="assistive_teleop.start()" ondragstart="return false;" ondrop="return false;">
-  <div id="fullscreenOverlay2" style="width:100%;height:100%;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:0.6;top:0;left:0;color:white">
-    <div style="width:100%;top:30%;z-index:10;position:fixed;overflow-x:hidden;background-color:black;text-align:center">
+  <div id="fullscreenOverlay2" style="width:0;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:0.6;top:0;left:0">
+    <div style="top:40%;left:20%;width:60%;position:relative;color:white;font-size:40px">
+      <table id="scooping_questions" style="width:100%;table-layout:fixed">
+        <tr>
+          <td colspan='3'>
+            Did robot scoop yogurt?
+          </td>
+          <td id="scooping_questions1_yes" onclick="manTask_yes(this.id)" value="false">
+            <label> yes </label>
+          </td>
+          <td  id="scooping_questions1_no" onclick="manTask_no(this.id)" value="false" >
+            <label> no </label>
+          </td>
+        </tr>
+        <tr>
+          <td colspan='3'>
+            Did robot collided with something?
+          </td>
+          <td id="scooping_questions2_yes" onclick="manTask_yes(this.id)" value="false">
+            <label  > yes </label>
+          </td>
+          <td id="scooping_questions2_no" onclick="manTask_no(this.id)">
+            <label > no </label>
+          </td>
+          </tr>
+      </table>
+      <table id="feeding_questions" style="width:100%;table-layout:fixed">
+        <tr>
+          <td colspan='3'>
+              Did robot fed you a yogurt?
+          </td>
+          <td id="feeding_questions1_yes" onclick="manTask_yes(this.id)" value="false" >
+            <label> yes </label>
+          </td>
+          <td  id="feeding_questions1_no" onclick="manTask_no(this.id)">
+            <label> no </label> 
+          </td>
+          </tr>
+        <tr>
+          <td colspan='3'>
+            Did robot collided with something?
+          </td>
+          <td>
+            <label id="feeding_questions2_yes" onclick="manTask_yes(this.id)" value="false" > yes </label>
+          </td>
+          <td>
+            <label id="feeding_questions2_no" onclick="manTask_no(this.id)"> no </label> 
+          </td>
+        </tr>
+      </table>
+      <table style="width:100%">
+        <tr>
+          <td>
+            <button class="centered man_task_cont" style="font-size:120%" id="question_send"> SEND </button>
+          </td>
+          <td>
+            <button class="centered man_task_cont" style="font-size:120%" id="question_skip"> SKIP </button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!--div style="width:100%;top:30%;position:relative;z-index:10;overflow-x:hidden;background-color:black;text-align:center;color:white">
       <label id="fullscreen_anomaly_paragraph" style="font-size:36px;text-align:center">
         Anomaly was detected
       </label>
-      <p hidden id="fullscreen_scooping_paragraph" style="font-size:36px;text-align:center"> 
+      <p id="fullscreen_scooping_paragraph" style="font-size:36px;text-align:center"> 
         Did anomaly <br>
         (no yogurt scooped and/or unexpected collision)<br>
         occur? <br>
       </p>
-      <p id="fullscreen_feeding_paragraph" style="font-size:36px;text-align:center"> 
+      <p hidden id="fullscreen_feeding_paragraph" style="font-size:36px;text-align:center"> 
         Did anomaly <br>
         (didn't get yogurt in mouth, robot not moving out of mouth<br>
         and/or unexpected collision) <br>
         occur? <br>
       </p>
       <div style="position:relative;left:40%;width:20%">
-        <button class="centered man_task_cont" id='man_task_success' style="font-size:120%; opacity: 1.0">Yes</button>
-        <button class="centered man_task_cont" id='man_task_Fail' style="font-size:120%; opacity: 1.0">No</button>
+        <button class="centered man_task_cont" id='man_task_Fail' style="font-size:120%; opacity: 1.0">Yes</button>
+        <button class="centered man_task_cont" id='man_task_success' style="font-size:120%; opacity: 1.0">No</button>
         <button class="centered man_task_cont" id='man_task_Skip' style="font-size:120%; opacity: 1.0">Skip</button>
       </div>
-    </div>
+    </div-->
   </div>
   <div id="fullscreenOverlay" style="width:0;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:0.6;top:0;left:0">
     <div style="width:100%;top:49%;left:0;position:relative;text-align:center;color:white;font-size:60px">
