@@ -11,6 +11,8 @@
 
  (:predicates
   (configured ?d - dof)
+  (head-registered)
+  (bed-occupied)
   (found-tag)
   (is-tracking-tag)
   (base-selected) 
@@ -27,16 +29,30 @@
           )
  )
 
+ (:action check_bed_occupancy
+  :parameters ()
+  :precondition (and (not(bed-occupied)))
+  :effect (and (bed-occupied)
+          )
+ )
+
+ (:action register_head
+  :parameters ()
+  :precondition (and (not(head-registered)))
+  :effect (and (head-registered)
+          )
+ )
+
  (:action track_tag
   :parameters ()
   :precondition (and (found-tag)(not(is-tracking-tag)))
   :effect (and (is-tracking-tag)
           )
- )
-
+ )   
+ 
  (:action call_base_selection
   :parameters ()
-  :precondition (and (is-tracking-tag)(not(base-selected)))
+  :precondition (and (head-registered)(bed-occupied)(is-tracking-tag)(not(base-selected)))
   :effect (and (base-selected)
           )
  )
