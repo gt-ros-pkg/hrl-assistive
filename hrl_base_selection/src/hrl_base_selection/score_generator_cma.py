@@ -3,6 +3,7 @@
 import numpy as np
 import math as m
 import openravepy as op
+from openravepy.misc import InitOpenRAVELogging
 import copy
 
 import time
@@ -323,8 +324,8 @@ class ScoreGenerator(object):
         # cma.show()
         # rospy.sleep(10)
         popsize = m.pow(12, 1)*30
-        no_bed_movement = True
-        if no_bed_movement:
+        no_bed_movement = False
+        if no_bed_movement or self.model == 'chair':
             opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
                      'scaling_of_variables': [1.0, 1.0, 1.57, 0.075, 1.0, 1.0, 1.57, 0.075],
                      'bounds': [[-3., -3., -2.*m.pi, 0., -3., -3., -2.*m.pi, 0.],
@@ -1653,6 +1654,7 @@ class ScoreGenerator(object):
 
     def setup_openrave(self):
         # Setup Openrave ENV
+        InitOpenRAVELogging()
         self.env = op.Environment()
 
         # Lets you visualize openrave. Uncomment to see visualization. Does not work through ssh.
@@ -1692,10 +1694,14 @@ class ScoreGenerator(object):
         self.robot.SetActiveManipulator('leftarm')
         self.manip = self.robot.GetActiveManipulator()
         ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
+        print '14'
         if not ikmodel.load():
+            print 'IK model not found. Will now generate an IK model. This will take a while!'
             ikmodel.autogenerate()
+        print '15'
         # create the interface for basic manipulation programs
         self.manipprob = op.interfaces.BaseManipulation(self.robot)
+        print '16'
 
         ## Find and load Wheelchair Model
         rospack = rospkg.RosPack()
@@ -1729,8 +1735,10 @@ class ScoreGenerator(object):
                                                         [        0.,  0.,        0.,     1.]])
             self.originsubject_B_originworld = copy.copy(self.originsubject_B_headfloor)
         elif self.model == 'autobed':
+            print '17'
             # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_real_expanded_rounded.dae']))
             self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
+            print '18'
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
 

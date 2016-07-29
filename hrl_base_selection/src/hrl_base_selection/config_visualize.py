@@ -604,9 +604,9 @@ class ConfigVisualize(object):
         # head_x = 0.1
         # head_y = 0.1
         bz = z
-        bz = .1
+        # bz = .2
         bth = m.degrees(headrest_th)
-        bth = 40
+        # bth = 70
         v = self.autobed.GetActiveDOFValues()
         v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = bz
         v[self.autobed.GetJoint('head_bed_updown_joint').GetDOFIndex()] = head_x
