@@ -58,6 +58,7 @@ from sensor.fabric_skin import fabric_skin
 
 ##GUI
 from std_msgs.msg import String
+from hrl_msgs.msg import StringArray
 QUEUE_SIZE = 10
 
 class logger:
@@ -114,7 +115,7 @@ class logger:
         Record data and publish raw data
         '''        
         ##GUI implementation       
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String,
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                                                    self.feedbackCallback)
         
         if self.data_pub:
@@ -132,12 +133,13 @@ class logger:
         #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
-        if self.feedbackMSG == "SUCCESS":
-            self.feedbackStatus = '1'
-        elif self.feedbackMSG == "FAIL":
-            self.feedbackStatus = '2'
-        else:
-            self.feedbackStatus = '3'
+        if len(self.feedbackMSG) > 0:
+            if self.feedbackMSG[0] == "SUCCESS":
+                self.feedbackStatus = '1'
+            elif self.feedbackMSG[0] == "FAIL":
+                self.feedbackStatus = '2'
+            else:
+                self.feedbackStatus = '3'
             
 
     def getLogStatus(self):
