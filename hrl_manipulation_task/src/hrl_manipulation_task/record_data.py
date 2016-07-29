@@ -133,13 +133,13 @@ class logger:
         #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
-        if len(self.feedbackMSG) > 0:
-            if self.feedbackMSG[0] == "SUCCESS":
+        if len(self.feedbackMSG) > 1:
+            if self.feedbackMSG[0] == "TRUE" && self.feedbackMSG[1] == "FALSE":
                 self.feedbackStatus = '1'
-            elif self.feedbackMSG[0] == "FAIL":
+            else:#if self.feedbackMSG[0] != "SKIP":
                 self.feedbackStatus = '2'
-            else:
-                self.feedbackStatus = '3'
+        else:
+            self.feedbackStatus = '3'
             
 
     def getLogStatus(self):
