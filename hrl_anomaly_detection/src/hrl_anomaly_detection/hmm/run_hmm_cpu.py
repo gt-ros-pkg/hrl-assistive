@@ -45,7 +45,8 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, bSave=False):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
+             bSave=False, method='svm'):
 
     ## Parameters
     # data
@@ -218,24 +219,31 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ##                                             test_Y, \
             ##                                             remove_fp=False)
 
-            scaler = preprocessing.StandardScaler()
-            try:
-                X_scaled = scaler.fit_transform(X_train_org)
-            except:
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
+            if method.find('svm')>=0:
+                scaler = preprocessing.StandardScaler()
+                try:
+                    X_scaled = scaler.fit_transform(X_train_org)
+                except:
+                    scores.append(-1.0 * 1e+10)
+                    ret = 'Failure'
+                    break
 
-            X_test = []
-            Y_test = [] 
-            for j in xrange(len(test_X)):
-                if len(test_X[j])==0: continue
-                X = scaler.transform(test_X[j])                                
+                X_test = []
+                Y_test = [] 
+                for j in xrange(len(test_X)):
+                    if len(test_X[j])==0: continue
+                    X = scaler.transform(test_X[j])                                
 
-                X_test.append(X)
-                Y_test.append(test_Y[j])
+                    X_test.append(X)
+                    Y_test.append(test_Y[j])
+                weights = ROC_dict['svm_param_range']
+            else:
+                X_scaled = X_train_org
+                X_test = test_X
+                Y_test = test_Y
+                weights = ROC_dict['progress_param_range']
+                
 
-            weights = ROC_dict['svm_param_range']
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              X_test, Y_test, \
                                                                              nEmissionDim, nLength, \
@@ -373,13 +381,19 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
 
-def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, SVM_dict, weight, \
+def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, \
+                    SVM_dict, weight, method='svm',\
                     verbose=False):
 
     if verbose: print "Run a classifier"
-    dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
+    dtc = cb.classifier( method=method, nPosteriors=nEmissionDim, nLength=nLength )
     dtc.set_params( **SVM_dict )
-    dtc.set_params( class_weight=weight )
+
+    if method.find('svm')>=0:
+        dtc.set_params( class_weight=weight )
+    else:
+        dtc.set_params( ths_mult=weight )
+        
     ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
     if ret is False:
         print "SVM fitting failure!!"
@@ -696,6 +710,8 @@ if __name__ == '__main__':
                  default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+                 help='type the desired method')
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
                  default=False, help='Enable ICRA2017.')
@@ -766,5 +782,6 @@ if __name__ == '__main__':
         print "no existing data file, ", crossVal_pkl
         sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, bSave=opt.bSave)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+             bSave=opt.bSave, method=opt.method)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
