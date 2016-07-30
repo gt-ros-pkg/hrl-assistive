@@ -46,7 +46,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 from joblib import Parallel, delayed
 
 def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
-             bSave=False, method='svm'):
+             bSave=False, method='svm', max_check_fold=None):
 
     ## Parameters
     # data
@@ -64,6 +64,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
+    if max_check_fold is not None:
+        if max_check_fold < len(kFold_list):
+        kFold_list = kFold_list[:max_check_fold]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -776,7 +779,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=5)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+        parameters = {'nState': [25], 'scale': np.linspace(4.0,10.0,10), \
                       'cov': np.linspace(1.0,5.0,5) }
         
 
@@ -794,5 +797,5 @@ if __name__ == '__main__':
         sys.exit()
 
     tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-             bSave=opt.bSave, method=opt.method)
+             bSave=opt.bSave, method=opt.method, max_check_fold=2)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
