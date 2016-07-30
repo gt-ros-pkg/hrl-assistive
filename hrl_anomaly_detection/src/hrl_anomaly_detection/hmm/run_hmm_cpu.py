@@ -190,7 +190,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     ## startIdx=nLength-3, \
                                                                     bPosterior=True)
                                                                     for i in xrange(len(testDataX[0])))
-            _, _, ll_logp, ll_post = zip(*r)
+            _, ll_idx, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
             ll_classifier_test_X, ll_classifier_test_Y = \
@@ -213,14 +213,17 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
             test_idx  = [x for x in range(len(ll_classifier_test_X)) if not x in train_idx]
             
-            train_X = np.array(ll_classifier_test_X)[train_idx]
-            train_Y = np.array(ll_classifier_test_Y)[train_idx]
-            test_X  = np.array(ll_classifier_test_X)[test_idx]
-            test_Y  = np.array(ll_classifier_test_Y)[test_idx]
+            train_X   = np.array(ll_classifier_test_X)[train_idx]
+            train_Y   = np.array(ll_classifier_test_Y)[train_idx]
+            train_idx = np.array(ll_idx)[train_idx]
+            test_X   = np.array(ll_classifier_test_X)[test_idx]
+            test_Y   = np.array(ll_classifier_test_Y)[test_idx]
+            test_idx = np.array(ll_idx)[test_idx]
 
-            X_train_org, Y_train_org, _ = dm.flattenSample(train_X, \
-                                                           train_Y, \
-                                                           remove_fp=True)
+            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(train_X, \
+                                                                       train_Y, \
+                                                                       train_idx,\
+                                                                       remove_fp=True)
             ## X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
             ##                                             test_Y, \
             ##                                             remove_fp=False)
@@ -251,6 +254,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 
 
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                             idx_train_org, \
                                                                              X_test, Y_test, \
                                                                              nEmissionDim, nLength, \
                                                                              SVM_dict, weight=weights[iii], \
@@ -388,7 +392,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
 
-def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, \
+def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, nEmissionDim, nLength, \
                     SVM_dict, weight, method='svm',\
                     verbose=False):
 
@@ -401,7 +405,7 @@ def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nL
     else:
         dtc.set_params( ths_mult=weight )
         
-    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
+    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
     if ret is False:
         print "SVM fitting failure!!"
         return idx, [np.nan], [np.nan], [np.nan], [np.nan]
