@@ -72,7 +72,18 @@
           <td style="text-align:center" id="scooping_questions2_no" onclick="manTask_no(this.id)" value="false">
             <label> no </label>
           </td>
-          </tr>
+        </tr>
+        <tr>
+          <td colspan='3'>
+            Was there unexpected noise between robot scooping?
+          </td>
+          <td style="text-align:center" id="scooping_questions3_yes" onclick="manTask_yes(this.id)" value="false">
+            <label> yes </label>
+          </td>
+          <td style="text-align:center" id="scooping_questions3_no" onclick="manTask_no(this.id)" value="false">
+            <label> no </label>
+          </td>
+        </tr>
       </table>
       <table id="feeding_questions" style="width:100%;table-layout:fixed">
         <tr>
@@ -85,7 +96,7 @@
           <td style="text-align:center" id="feeding_questions1_no" onclick="manTask_no(this.id)" value="false">
             <label> no </label> 
           </td>
-          </tr>
+        </tr>
         <tr>
           <td colspan='3'>
             Did robot collide with something?
@@ -94,6 +105,17 @@
             <label> yes </label>
           </td>
           <td style="text-align:center" id="feeding_questions2_no" onclick="manTask_no(this.id)" value="false">
+            <label> no </label> 
+          </td>
+        </tr>
+        <tr>
+          <td colspan='3'>
+            Was there an unexpected noise when robot fed you?
+          </td>
+          <td style="text-align:center" id="feeding_questions3_yes" onclick="manTask_yes(this.id)" value="false">
+            <label> yes </label>
+          </td>
+          <td style="text-align:center" id="feeding_questions3_no" onclick="manTask_no(this.id)" value="false">
             <label> no </label> 
           </td>
         </tr>
@@ -138,7 +160,7 @@
       <label id="bigStop">Press anywhere to stop</label>    
     </div>
     <!--div style="width:100%;top:74%;left:0;position:relative;color:white;font-size:20px"-->
-      <table id="step_table" style="width:100%;top:74%;left:0;position:relative;color:white;font-size:40px;text-align:center">
+      <table id="step_table" style="width:100%;top:74%;left:0;position:relative;color:white;font-size:40px;text-align:center;table-layout:fixed">
         <tr>
           <td id="step_table1">
           </td>
