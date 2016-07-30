@@ -63,7 +63,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -750,7 +749,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=5)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,20.0,10), \
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,18.0,5), \
                       'cov': np.linspace(1.0,6.0,5) }
         
 
