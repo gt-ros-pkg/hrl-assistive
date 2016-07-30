@@ -262,11 +262,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     successData = d['successData']
     failureData = d['failureData']
-    param_dict  = d['param_dict']
+    param_dict2  = d['param_dict']
     aeSuccessData = d.get('aeSuccessData', None)
     aeFailureData = d.get('aeFailureData', None)
-    if 'timeList' in param_dict.keys():
-        timeList    = param_dict['timeList'][startIdx:]
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
     #-----------------------------------------------------------------------------------------
