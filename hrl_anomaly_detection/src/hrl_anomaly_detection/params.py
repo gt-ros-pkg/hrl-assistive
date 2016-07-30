@@ -518,7 +518,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 8.0,\
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.316, 'gamma': 1.136, 'cost': 2.5,\
+        SVM_param_dict = {'renew': False, 'w_negative': 3.16, 'gamma': 0.08799, 'cost': 1.75,\
                           'hmmosvm_nu': 0.001}
 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
@@ -543,14 +543,14 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.333, \
                               'add_logp_d': True}
-            SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.01, 'cost': 5.0,\
+            SVM_param_dict = {'renew': False, 'w_negative': 0.7498, 'gamma': 6.244, 'cost': 1.75,\
                               'osvm_nu': 0.01,\
                               'hmmosvm_nu': 0.001,
-                              'hmmsvm_diag_w_negative': 1.175, 'hmmsvm_diag_cost': 15.0, \
-                              'hmmsvm_diag_gamma': 0.01,\
+                              'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
+                              'hmmsvm_diag_gamma': 1.005,\
                               'raw_window_size': 5,\
-                              'hmmsvm_dL_w_negative': 0.2, 'hmmsvm_dL_cost': 15.0, \
-                              'hmmsvm_dL_gamma': 1.5024,\
+                              'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 15.0, \
+                              'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_no_dL_w_negative': 2.0, 'hmmsvm_no_dL_cost': 7.5, \
                               'hmmsvm_no_dL_gamma': 0.01,\
                               'bpsvm_cost': 9.75,\
@@ -580,13 +580,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 5.33, \
                           'add_logp_d': True}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.83, 'scale': 7.0, \
-        ##                   'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.749, 'gamma': 0.1, 'cost': 3.25,\
-                          'hmmosvm_nu': 0.000316}
+        SVM_param_dict = {'renew': False, 'w_negative': 3.1622, 'gamma': 0.1, 'cost': 2.5,\
+                          'hmmosvm_nu': 0.001}
         
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
-                          'update_list': [ 'svm' ],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -5.6, nPoints), \
                           'fixed_param_range': np.linspace(0.2, -1., nPoints),\
@@ -600,7 +598,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.5, 'scale': 7.33,\
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.16, 'gamma': 0.1, 'cost': 3.25,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.7498, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.000316}
 
         nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
