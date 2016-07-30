@@ -679,8 +679,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.888, 'scale': 7.222, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 0.1, 'cost': 6.75,\
-                          'hmmosvm_nu': 0.001}
+        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 5.0,\
+                          'hmmosvm_nu': 0.00316}
                           ## 'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm' ],\
@@ -699,17 +699,17 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.888, 'scale': 4.888, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.01, 'cost': 15.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
                           'osvm_nu': 0.00316,\
                           'hmmosvm_nu': 0.001,\
-                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 10.0, \
-                          'hmmsvm_diag_gamma': 0.5075,\
+                          'hmmsvm_diag_w_negative': 1.175, 'hmmsvm_diag_cost': 10.0, \
+                          'hmmsvm_diag_gamma': 0.01,\
                           'raw_window_size': 5,\
-                          'hmmsvm_dL_w_negative': 1.725, 'hmmsvm_dL_cost': 3.25, \
-                          'hmmsvm_dL_gamma': 0.2575,\
-                          'hmmsvm_no_dL_w_negative': 0.85, 'hmmsvm_no_dL_cost': 10.0, \
-                          'hmmsvm_no_dL_gamma': 0.50749,\
+                          'hmmsvm_dL_w_negative': 2.1499, 'hmmsvm_dL_cost': 5.5, \
+                          'hmmsvm_dL_gamma': 0.01,\
+                          'hmmsvm_no_dL_w_negative': 0.2, 'hmmsvm_no_dL_cost': 14.0, \
+                          'hmmsvm_no_dL_gamma': 0.0316,\
                           'bpsvm_cost': 15.25,\
                           'bpsvm_gamma': 1.0, \
                           'bpsvm_w_negative': 1.2589
@@ -737,10 +737,9 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.277, 'scale': 3.333, \
                           'add_logp_d': True}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 10, 'cov': 1.66, 'scale': 10}
-        SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 3.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.01, 'cost': 5.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
-                          'hmmosvm_nu': 0.000316}
+                          'hmmosvm_nu': 0.001}
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
@@ -755,7 +754,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.611, 'scale': 8.00, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.825, 'gamma': 0.1, 'cost': 7.75,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.575, 'gamma': 0.1, 'cost': 7.75,\
                           'hmmosvm_nu': 0.01}                          
         ROC_param_dict = {'methods': [ 'progress_time_cluster', 'svm', 'fixed', 'hmmosvm' ],\
                           'update_list': [ ],\
