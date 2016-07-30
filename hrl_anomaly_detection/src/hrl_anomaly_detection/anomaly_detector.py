@@ -1294,7 +1294,7 @@ class anomaly_detector:
                                                          self.task_name, \
                                                          no_split=True)
 
-        if self.eval_test_X is None:
+        if self.eval_test_X is None or True:
             trainData = dm.getDataList(self.eval_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
                                        downSampleSize = self.downSampleSize, \
@@ -1329,6 +1329,7 @@ class anomaly_detector:
                 self.eval_test_Y.append(Y[i])
             
         print "################ Reference data #####################"
+        print np.shape(self.eval_test_X)
         acc, _, _ = evaluation(list(self.eval_test_X), list(self.eval_test_Y), self.classifier)
         print "#####################################################"
         self.ref_acc_list.append(acc)
@@ -1646,7 +1647,7 @@ if __name__ == '__main__':
     if opt.bSim is False:
         ad.run()
     else:
-        ad.runSim()
+        ad.runSim(subject_names=['park'])
 
 
 
