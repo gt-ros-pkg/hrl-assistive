@@ -240,6 +240,17 @@ if __name__ == '__main__':
                       save_pdf=opt.bSavePdf, solid_color=True,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
 
+    elif opt.bLikelihoodPlot:
+        import hrl_anomaly_detection.data_viz as dv        
+        dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                          decision_boundary_viz=False, \
+                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
+                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                          hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                          verbose=opt.bVerbose)
+                              
+
+
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []

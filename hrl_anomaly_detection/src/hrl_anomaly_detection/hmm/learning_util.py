@@ -160,3 +160,6 @@ def symmetric_entropy(p,q):
     '''
 
     return min(entropy(p,q) , entropy(q,p))
+
+
+

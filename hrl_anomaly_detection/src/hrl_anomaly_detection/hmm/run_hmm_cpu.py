@@ -200,7 +200,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-                
+
+            if np.amean(ll_classifier_test_X[:,-1,0]) < 0:
+                print "Negative likelihoods"
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+            
             
             # split
             import random
@@ -765,7 +771,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=5)
-        parameters = {'nState': [25], 'scale': np.linspace(14.0,24.0,5), \
+        parameters = {'nState': [25], 'scale': np.linspace(14.0,20.0,5), \
                       'cov': np.linspace(1.0,6.0,5) }
         
 
