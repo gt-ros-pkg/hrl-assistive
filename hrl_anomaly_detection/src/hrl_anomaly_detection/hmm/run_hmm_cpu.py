@@ -765,8 +765,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=5)
-        parameters = {'nState': [25], 'scale': np.linspace(14.0,25.0,5), \
-                      'cov': np.linspace(4.0,10.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(14.0,24.0,5), \
+                      'cov': np.linspace(1.0,6.0,5) }
         
 
             
