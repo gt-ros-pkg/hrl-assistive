@@ -261,7 +261,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 200, 'cut_data': None, \
-                      'nNormalFold':1, 'nAbnormalFold':1,\
+                      'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True}
 
