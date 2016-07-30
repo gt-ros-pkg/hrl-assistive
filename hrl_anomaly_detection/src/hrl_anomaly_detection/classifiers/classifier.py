@@ -566,6 +566,11 @@ class classifier(learning_base):
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
             ## joblib.dump(self.dt, fileName)
+        elif self.method.find('progress_time')>=0:
+            d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
+                 'l_statePosterior': self.l_statePosterior,\
+                 'll_mu': self.ll_mu, 'll_std': self.ll_std}
+            ut.save_pickle(d, fileName)            
         else:
             print "Not available method"
 
@@ -581,6 +586,13 @@ class classifier(learning_base):
                 self.dt = pickle.load(f)
                 self.rbf_feature = pickle.load(f)
             ## self.dt = joblib.load(fileName)
+        elif self.method.find('progress_time')>=0:
+            d = ut.load_pickle(fileName)
+            self.g_mu_list = d['g_mu_list']
+            self.g_sig     = d['g_sig']
+            self.l_statePosterior = d['l_statePosterior']
+            self.ll_mu            = d['ll_mu']
+            self.ll_std           = d['ll_std']
         else:
             print "Not available method"
         
@@ -723,7 +735,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 ##     return i, 
 
 
-def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, std, nState):
+def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N):
 
     g_lhood = 0.0
     weight_sum  = 0.0
@@ -737,15 +749,14 @@ def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, std, n
 
         weight    = norm(loc=rbf_mu, scale=rbf_sig).pdf(idx)
 
-        if weight < 1e-3: continue
-        print np.shape(logp), np.shape(weight), np.shape(logp * weight)
+        ## if weight < 1e-3: continue
         g_lhood  = np.sum(logp * weight)
         weight_sum = np.sum(weight)
         if abs(weight_sum)<1e-3: weight_sum=1e-3
 
         x_new   = g_lhood / weight_sum
         mu_new  = ( float(N-1)*mu + x_new )/(N)
-        sig_new = np.sqrt( (float(N-1)*( sig*sig - mu*mu)+mu_new*mu_new)/flaot(N) - mu_new*mu_new )
+        sig_new = np.sqrt( (float(N-1)*( sig*sig + mu*mu)+mu_new*mu_new)/float(N) - mu_new*mu_new )
 
         mu  = mu_new
         sig = sig_new

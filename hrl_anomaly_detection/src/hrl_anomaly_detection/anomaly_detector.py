@@ -383,6 +383,8 @@ class anomaly_detector:
             d['normalTrainData'] = self.normalTrainData = normalTrainData
             ut.save_pickle(d, self.hmm_model_pkl)
 
+        self.nTrainData = len(self.normalTrainData[0])
+
         # Train a scaler and data preparation
         rospy.loginfo( "Start to load/train a scaler model")
         if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
@@ -403,9 +405,9 @@ class anomaly_detector:
           str(np.shape(self.X_train_org))+' '+str( np.shape(self.Y_train_org)))
 
                                
-        if self.bSim:
-            # temp
-            self.w_positive = self.sensitivity_GUI_to_clf(0.5)                
+        ## if self.bSim:
+        ##     # temp
+        ##     self.w_positive = self.sensitivity_GUI_to_clf(0.5)                
     
           
         # Decareing Classifier
@@ -802,13 +804,14 @@ class anomaly_detector:
             elif self.classifier_method.find('progress')>=0:
                 if user_feedback == "SUCCESS":
 
-                    l_mu   = self.classifier.ll_mu
-                    l_std  = self.classifier.ll_std
+                    l_mu   = list(self.classifier.ll_mu)
+                    l_std  = list(self.classifier.ll_std)
 
                     ll_idx = []
                     for i in xrange(len(ll_logp)):
                         ll_idx.append( range(self.nLength-len(ll_logp[0]), self.nLength) )
-                    
+
+
                     # If true negative, update mean and var with new incoming data
                     # If false positive, update mean and var with new incoming data, lower ths mult
                     for i in xrange(len(l_mu)):
@@ -816,7 +819,11 @@ class anomaly_detector:
                                                                        self.classifier.g_mu_list[i],\
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
-                                                                       self.nState)
+                                                                       self.nState,\
+                                                                       self.nTrainData)
+                    print "mu:  ", l_mu
+                    print "std: ", l_std
+                    
                     # update
                     self.classifier.ll_mu = l_mu
                     self.classifier.ll_std = l_std
@@ -833,7 +840,7 @@ class anomaly_detector:
                         self.classifier.ths_mult += 0.5
                     
                 
-                    
+                print "ths_mult: ", self.classifier.ths_mult
             else:
                 rospy.loginfo( "Not available update method")
 
@@ -1084,10 +1091,10 @@ class anomaly_detector:
 
 
         if auto:
-            sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
-            self.w_positive = sensitivity_des                
-            self.classifier.set_params(class_weight=self.w_positive)
-            rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
+            ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
+            ## self.w_positive = sensitivity_des                
+            ## self.classifier.set_params(class_weight=self.w_positive)
+            ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
             test_fileList = util.getSubjectFileList(self.raw_data_path, \
                                                     subject_names, \
                                                     self.task_name, \
