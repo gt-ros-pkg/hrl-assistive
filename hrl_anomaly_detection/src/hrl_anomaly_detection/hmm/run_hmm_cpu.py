@@ -254,6 +254,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                              X_test, Y_test, \
                                                                              nEmissionDim, nLength, \
                                                                              SVM_dict, weight=weights[iii], \
+                                                                             method=method,\
                                                                              verbose=False)\
                                                                              for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
