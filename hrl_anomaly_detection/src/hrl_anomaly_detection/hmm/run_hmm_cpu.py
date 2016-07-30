@@ -66,7 +66,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     kFold_list = cv_dict['kFoldList']
     if max_check_fold is not None:
         if max_check_fold < len(kFold_list):
-        kFold_list = kFold_list[:max_check_fold]
+            kFold_list = kFold_list[:max_check_fold]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
