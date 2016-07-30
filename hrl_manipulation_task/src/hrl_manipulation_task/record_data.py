@@ -133,8 +133,8 @@ class logger:
         #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
-        if len(self.feedbackMSG) > 1:
-            if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE":
+        if len(self.feedbackMSG) > 2:
+            if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE" and self.feedbackMSG[2] == "FALSE":
                 self.feedbackStatus = '1'
             else:#if self.feedbackMSG[0] != "SKIP":
                 self.feedbackStatus = '2'

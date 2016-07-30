@@ -609,7 +609,9 @@ var initManTaskTab = function() {
     });
     manTask_yes("scooping_questions1_yes");
     manTask_no("scooping_questions2_no");
+    manTask_no("scooping_questions3_no");
     manTask_yes("feeding_questions1_yes");
     manTask_no("feeding_questions2_no");
+    manTask_no("feeding_questions3_no");
     
 }
