@@ -63,12 +63,12 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 6.444,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 1.5, 'cost': 5.0,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.9952, 'gamma': 0.0464, 'cost': 6.0,\
                           'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 10.0, \
+                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 0.01,\
                           'osvm_nu': 0.0003, 'raw_window_size': 5,\
-                          'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 7.5, \
+                          'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 12.5, \
                           'hmmsvm_dL_gamma': 0.01,
                           'hmmsvm_no_dL_w_negative': 1.5, 'hmmsvm_no_dL_cost': 17.5, \
                           'hmmsvm_no_dL_gamma': 0.0316,\
@@ -100,7 +100,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 10.0, \
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.047, 'cost': 3.799,\
+        SVM_param_dict = {'renew': False, 'w_negative': 2.25, 'gamma': 1.05925, 'cost': 5.4,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
@@ -121,7 +121,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist' ]
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.333, 'scale': 7.333,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.01, 'cost': 6.2,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
