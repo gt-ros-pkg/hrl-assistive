@@ -261,28 +261,12 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=nPoints)
     
+    nFiles =  2 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
 
 
     if opt.task == 'scooping':
         subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL',\
-                                      'hmmsvm_no_dL'],\
-                          'update_list': [],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-2.5, 0.6, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
 
-        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 4:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -341,23 +325,7 @@ if __name__ == '__main__':
     elif opt.task == 'feeding':
         
         subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
-        ROC_param_dict = {'methods': ['svm'],\
-                          'update_list': [],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-2.0, 1.4, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'osvm_param_range': np.logspace(-4, 0.2, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -420,23 +388,7 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microwhite':
     
         subjects = ['gatsbii']
-        ROC_param_dict = {'methods': ['hmmsvm_LSLS'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
-        param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #9
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -503,22 +455,6 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_toolcase':
     
         subjects = ['gatsbii']
-        ROC_param_dict = {'methods': ['svm'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.3, nPoints),\
-                          'osvm_param_range': np.logspace(-4, 1.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
-
-        nFiles = 4 #9
 
         if opt.method == 'svm':        
             if opt.dim == 5:
@@ -596,23 +532,7 @@ if __name__ == '__main__':
     elif opt.task == 'pushing_microblack':
     
         subjects = ['gatsbii']
-        ROC_param_dict = {'methods': ['svm'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
-                          'osvm_param_range': np.logspace(-3., 1.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-2, 0.8, nPoints),\
-                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
-        param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #9
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
