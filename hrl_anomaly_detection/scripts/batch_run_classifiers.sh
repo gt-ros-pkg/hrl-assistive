@@ -53,7 +53,7 @@ for ((I=2;I<=5;I++)); do
 
     for method in "${METHOD[@]}"
     do
-        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} \;
+        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} --renew \;
     done
 
 done
