@@ -248,6 +248,7 @@ class logger:
             rate = rospy.Rate(2)
             while flag == 0 and not rospy.is_shutdown():
                 flag = self.feedbackStatus
+                self.data['feedback'] = self.feedbackMSG
                 rate.sleep()
 
             if flag == '1':   status = 'success'
