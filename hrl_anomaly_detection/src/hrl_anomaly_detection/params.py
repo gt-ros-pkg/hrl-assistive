@@ -202,15 +202,15 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'progress_state_param_range':np.linspace(-1, -40., nPoints), \
-                          'svm_param_range': np.logspace(-4.0, 1.2, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-2.5, 1.2, nPoints),\
+                          'svm_param_range': np.logspace(-2.15, -0.101, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 0.14, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-2.52, -0.45, nPoints),\
                           'hmmosvm_param_range': np.linspace(0,0.15,nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
+                          'fixed_param_range': np.linspace(0.247, -0.833, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
                           #np.logspace(-8.0, 1.0, nPoints)
     elif dim == 3:
@@ -231,10 +231,10 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
-                          'svm_param_range': np.logspace(-0.8, 2.5, nPoints),\
+                          'svm_param_range': np.logspace(-1.8, 0.67, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-5.0, 0.4, nPoints),\
-                          'fixed_param_range': np.linspace(0.1, -0.1, nPoints),\
+                          'fixed_param_range': np.linspace(0.240, -0.007, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
     elif dim == 2:
 
@@ -253,9 +253,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.3,\
-                          'svm_param_range': np.linspace(0.1, 7.0, nPoints),\
+                          'svm_param_range': np.logspace(-2.7, 5.850, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.25, 0.05, nPoints),\
+                          'fixed_param_range': np.linspace(0.24, 0.05, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
     else:
