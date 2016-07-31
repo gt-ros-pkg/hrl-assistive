@@ -552,15 +552,20 @@ class classifier(learning_base):
 
         
     def save_model(self, fileName):
-        if self.dt is None: 
-            print "No trained classifier"
-            return
         
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+        
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
         elif self.method.find('sgd')>=0:
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+            
             import pickle
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
@@ -587,6 +592,7 @@ class classifier(learning_base):
                 self.rbf_feature = pickle.load(f)
             ## self.dt = joblib.load(fileName)
         elif self.method.find('progress_time')>=0:
+            print "Start to load a progress based classifier"
             d = ut.load_pickle(fileName)
             self.g_mu_list = d['g_mu_list']
             self.g_sig     = d['g_sig']
@@ -735,7 +741,8 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 ##     return i, 
 
 
-def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N):
+def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \
+                        update_weight=2.0):
 
     g_lhood = 0.0
     weight_sum  = 0.0
@@ -752,11 +759,11 @@ def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, n
         ## if weight < 1e-3: continue
         g_lhood  = np.sum(logp * weight)
         weight_sum = np.sum(weight)
-        if abs(weight_sum)<1e-3: weight_sum=1e-3
+        if abs(weight_sum)<1e-3: weight_sum=1e-3        
 
         x_new   = g_lhood / weight_sum
-        mu_new  = ( float(N-1)*mu + x_new )/(N)
-        sig_new = np.sqrt( (float(N-1)*( sig*sig + mu*mu)+mu_new*mu_new)/float(N) - mu_new*mu_new )
+        mu_new  = ( float(N-update_weight)*mu + update_weight*x_new )/(N)
+        sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new )
 
         mu  = mu_new
         sig = sig_new

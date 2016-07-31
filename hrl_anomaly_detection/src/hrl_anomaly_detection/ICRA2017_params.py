@@ -153,7 +153,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 7.33,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 4.66,\
                           'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 3.61, 'cost': 0.1,\
@@ -169,11 +169,12 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_LSLS_w_negative': 1.5,
                           'bpsvm_cost': 12.5,\
                           'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2
+                          'bpsvm_w_negative': 0.2,\
+                          'logp_offset': 30,\
                           }
-                          
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS', 'bpsvm' ],\
-                          'update_list': ['bpsvm'],\
+                    #, 'hmmsvm_LSLS', 'bpsvm'      , 'osvm'
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm' ],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
                           'svm_param_range': np.logspace(-1., 0.7, nPoints),\

@@ -70,7 +70,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'osvm_nu': 0.0003, 'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 12.5, \
                           'hmmsvm_dL_gamma': 0.01,
-                          'hmmsvm_no_dL_w_negative': 1.5, 'hmmsvm_no_dL_cost': 17.5, \
+                          'hmmsvm_no_dL_w_negative': 1.25, 'hmmsvm_no_dL_cost': 15.0, \
                           'hmmsvm_no_dL_gamma': 0.0316,\
                           'bpsvm_cost': 5.0,\
                           'bpsvm_gamma': 0.507, \
@@ -343,8 +343,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_dL_cost': 7.5, \
                               'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_no_dL_w_negative': 3.25, \
-                              'hmmsvm_no_dL_cost': 6.0, \
-                              'hmmsvm_no_dL_gamma': 0.00316,\
+                              'hmmsvm_no_dL_cost': 3.75, \
+                              'hmmsvm_no_dL_gamma': 0.0133,\
                               'bpsvm_cost': 5.0,\
                               'bpsvm_gamma': 0.507, \
                               'bpsvm_w_negative': 1.5,\
@@ -548,7 +548,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 0.01,\
-                              'hmmsvm_no_dL_w_negative': 2.0, 'hmmsvm_no_dL_cost': 7.5, \
+                              'hmmsvm_no_dL_w_negative': 2.0, 'hmmsvm_no_dL_cost': 15.0, \
                               'hmmsvm_no_dL_gamma': 0.01,\
                               'bpsvm_cost': 9.75,\
                               'bpsvm_gamma': 0.5075, \
@@ -705,7 +705,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 2.1499, 'hmmsvm_dL_cost': 5.5, \
                           'hmmsvm_dL_gamma': 0.01,\
-                          'hmmsvm_no_dL_w_negative': 0.2, 'hmmsvm_no_dL_cost': 14.0, \
+                          'hmmsvm_no_dL_w_negative': 1.5, 'hmmsvm_no_dL_cost': 8.0, \
                           'hmmsvm_no_dL_gamma': 0.0316,\
                           'bpsvm_cost': 15.25,\
                           'bpsvm_gamma': 1.0, \
