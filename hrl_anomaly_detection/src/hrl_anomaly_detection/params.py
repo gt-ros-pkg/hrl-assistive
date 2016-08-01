@@ -326,7 +326,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         if ae_swtch:
-            HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.337, 'scale': 5.33}
+            HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 6.0}
             SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 2.5, 'cost': 4.0}
         else:
             HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.341, 'scale': 7.33, \
