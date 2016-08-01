@@ -373,7 +373,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.522, 'scale': 8.,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.788, 'scale': 6.,\
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.0063, 'cost':7.5,\
                           'hmmosvm_nu': 0.001}
@@ -390,7 +390,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.733, 'scale': 10.0,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.788, 'scale': 4.0,\
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.584, 'gamma': 6.0, 'cost': 2.1666,\
                           'hmmosvm_nu': 0.001,
