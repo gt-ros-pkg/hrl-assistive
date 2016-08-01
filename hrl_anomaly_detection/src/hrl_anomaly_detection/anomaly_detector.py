@@ -602,7 +602,9 @@ class anomaly_detector:
         rospy.loginfo( "Classifier is updated!")
 
         self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        if self.bSim: self.acc_ref, _, _ = self.evaluation_ref()
+        if self.bSim:
+            self.acc_ref, _, _ = self.evaluation_ref()
+            print self.acc_ref
 
         msg = FloatArray()
         msg.data = [self.acc_part, self.acc_all]            
@@ -796,7 +798,7 @@ class anomaly_detector:
                                     
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     ## self.classifier.set_params( class_weight=1.0 )
-                    alpha = np.exp(-0.2*self.update_count)
+                    alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
                     nMaxIter = int(5.0*alpha)
                     self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
                                                   self.classifier, \
@@ -1104,7 +1106,11 @@ class anomaly_detector:
                                                     self.task_name, \
                                                     time_sort=True,\
                                                     no_split=True)
-        
+
+        fb = ut.get_keystroke('Hit a key to load a new file')
+        sys.exit()
+
+
         for i in xrange(100):
 
             if auto:
@@ -1344,7 +1350,7 @@ class anomaly_detector:
                 self.eval_test_X.append(X_scaled)
                 self.eval_test_Y.append(Y[i])
 
-        ## acc, nFP, nFN = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        ## acc, nFP, nFN = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)        
         acc, nFP, nFN = evaluation(self.eval_test_X, self.eval_test_Y, self.classifier)
         return acc, nFP, nFN
 
@@ -1398,13 +1404,15 @@ def evaluation(X, Y, clf, verbose=False):
         print "wrong dim: ", np.shape(X), np.shape(Y)
         sys.exit()
 
+
+    print np.shape(X)
     tp_l = []
     fp_l = []
     fn_l = []
     tn_l = []
 
     for i in xrange(len(X)):
-
+   
         anomaly = False
         est_y   = clf.predict(X[i])
         for j in xrange(len(est_y)):
