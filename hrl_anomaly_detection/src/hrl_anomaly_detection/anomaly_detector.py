@@ -43,6 +43,10 @@ import hrl_lib.util as ut
 from collections import deque
 import pickle
 
+# data
+import hrl_manipulation_task.record_data as rd
+
+
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm
 from hrl_anomaly_detection.hmm import learning_util as hmm_util
@@ -56,7 +60,7 @@ from hrl_anomaly_detection.classifiers.classifier_util import *
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
-from hrl_msgs.msg import FloatArray
+from hrl_msgs.msg import FloatArray, StringArray
 
 #
 from matplotlib import pyplot as plt
@@ -230,7 +234,7 @@ class anomaly_detector:
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
-        rospy.Subscriber('/manipulation_task/user_feedback', String, self.userfbCallback)
+        rospy.Subscriber('/manipulation_task/user_feedback', StringArray, self.userfbCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
@@ -621,7 +625,7 @@ class anomaly_detector:
         if self.cur_task is None and self.bSim is False: return        
         if self.cur_task.find(self.task_name) < 0  and self.bSim is False: return
        
-        user_feedback = msg.data
+        user_feedback = rd.feedback_to_label( msg.data )        
         rospy.loginfo( "Logger feedback received: %s", user_feedback)
 
         if (user_feedback == "SUCCESS" or user_feedback.find("FAIL" )>=0 ) and self.auto_update:
@@ -1107,8 +1111,8 @@ class anomaly_detector:
                                                     time_sort=True,\
                                                     no_split=True)
 
-        fb = ut.get_keystroke('Hit a key to load a new file')
-        sys.exit()
+        ## fb = ut.get_keystroke('Hit a key to load a new file')
+        ## sys.exit()
 
 
         for i in xrange(100):
@@ -1178,18 +1182,18 @@ class anomaly_detector:
 
                 self.unused_fileList.append( unused_fileList[j] )
                 # Quick feedback
-                msg = String()
+                msg = StringArray()
                 if label == 1:
-                    msg.data = 'FAILURE'
+                    msg.data = ['FALSE', 'TRUE', 'TRUE']
                     self.userfbCallback(msg)
                 else:
-                    msg.data = 'SUCCESS'
+                    msg.data = ['TRUE', 'FALSE', 'FALSE']
                     self.userfbCallback(msg)
 
-
-
+                    
+                true_label = rd.feedback_to_label(msg.data)
                 update_flag  = False          
-                if msg.data == "SUCCESS":
+                if true_label == "success":
                     if self.anomaly_flag is True:
                         update_flag = True
                 else:
