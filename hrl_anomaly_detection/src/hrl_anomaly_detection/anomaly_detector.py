@@ -466,7 +466,7 @@ class anomaly_detector:
         # info for GUI
         self.pubSensitivity()
         ## self.acc_part, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        if self.bSim: acc, _, _ = self.evaluation_ref()
+        ## if self.bSim: acc, _, _ = self.evaluation_ref()
             
         ## msg = FloatArray()
         ## msg.data = [self.acc_part, self.acc_all]
@@ -608,7 +608,7 @@ class anomaly_detector:
         self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
         if self.bSim:
             self.acc_ref, _, _ = self.evaluation_ref()
-            print self.acc_ref
+            print "acc ref: ", self.acc_ref
 
         msg = FloatArray()
         msg.data = [self.acc_part, self.acc_all]            
@@ -628,7 +628,7 @@ class anomaly_detector:
         user_feedback = rd.feedback_to_label( msg.data )        
         rospy.loginfo( "Logger feedback received: %s", user_feedback)
 
-        if (user_feedback == "SUCCESS" or user_feedback.find("FAIL" )>=0 ) and self.auto_update:
+        if (user_feedback == "success" or user_feedback.find("fail" )>=0 ) and self.auto_update:
             if self.used_file_list == []: return
 
             print "If does not wake, check use_sim_time. If you are not running GAZEBO, it should be false."
@@ -637,7 +637,7 @@ class anomaly_detector:
 
             # 4 cases
             update_flag  = False          
-            if user_feedback == "SUCCESS":
+            if user_feedback == "success":
                 if self.anomaly_flag is False:
                     rospy.loginfo( "Detection Status: True Negative - no update!!")
                 else:
@@ -661,7 +661,8 @@ class anomaly_detector:
                 unused_fileList = [filename for filename in unused_fileList \
                                    if filename not in self.used_file_list]
             else:
-                unused_fileList = self.unused_fileList
+                unused_fileList = self.new_run_file
+                ## unused_fileList = self.unused_fileList
                 
             # Remove no update data
             ## if update_flag is False:
@@ -814,7 +815,7 @@ class anomaly_detector:
 
                 alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
 
-                if user_feedback == "SUCCESS":
+                if user_feedback == "success":
 
                     l_mu   = list(self.classifier.ll_mu)
                     l_std  = list(self.classifier.ll_std)
@@ -884,15 +885,19 @@ class anomaly_detector:
             # update file list
             self.used_file_list += self.unused_fileList
             self.unused_fileList = []
-            self.update_count += 1.0
+            if update_flag: self.update_count += 1.0
             rospy.loginfo( "Update completed!!!")
 
     #-------------------------- General fuctions --------------------------
 
     def pubSensitivity(self):
         sensitivity = self.sensitivity_clf_to_GUI()
-        rospy.loginfo( "Current sensitivity is [0~1]: "+ str(sensitivity)+ \
-                       ', internal weight is '+ str(self.classifier.class_weight) )                
+        if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:        
+            rospy.loginfo( "Current sensitivity is [0~1]: "+ str(sensitivity)+ \
+                           ', internal weight is '+ str(self.classifier.class_weight) )
+        else:
+            rospy.loginfo( "Current sensitivity is [0~1]: "+ str(sensitivity)+ \
+                           ', internal multiplier is '+ str(self.classifier.ths_mult) )
 
         self.sensitivity_pub.publish(sensitivity)                                   
             
@@ -1101,6 +1106,7 @@ class anomaly_detector:
 
 
         if auto:
+            print "get subject files"
             ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
             ## self.w_positive = sensitivity_des                
             ## self.classifier.set_params(class_weight=self.w_positive)
@@ -1111,32 +1117,41 @@ class anomaly_detector:
                                                     time_sort=True,\
                                                     no_split=True)
 
-        ## fb = ut.get_keystroke('Hit a key to load a new file')
+            idx_list = range(len(test_fileList))
+            random.shuffle(idx_list)
+            self.eval_run_fileList = test_fileList[:len(idx_list)/2]
+            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
+
+        fb = ut.get_keystroke('Hit a key to load a new file')
         ## sys.exit()
 
 
         for i in xrange(100):
 
             if auto:
-                if i < len(test_fileList):
-                    import shutil
-                    tgt_dir = os.path.join(self.raw_data_path, 'new_'+self.task_name)
-                    shutil.copy2(test_fileList[i], tgt_dir)
+                if i < len(self.eval_run_fileList):
+                    ## import shutil
+                    ## tgt_dir = os.path.join(self.raw_data_path, 'new_'+self.task_name)
+                    ## shutil.copy2(self.eval_run_fileList[i], tgt_dir)
+                    self.new_run_file = self.eval_run_fileList[i:i+1]
+                    unused_fileList = self.new_run_file
                 else:
+                    print "no more file"
                     sys.exit()
             else:            
                 # load new file            
                 fb = ut.get_keystroke('Hit a key to load a new file')
                 if fb == 'z' or fb == 's': break
                                                           
-            unused_fileList = util.getSubjectFileList(self.raw_data_path, \
-                                                      self.subject_names, \
-                                                      self.task_name, \
-                                                      time_sort=True,\
-                                                      no_split=True)                
-            unused_fileList = [filename for filename in unused_fileList \
-                               if filename not in self.used_file_list]
-            unused_fileList = [filename for filename in unused_fileList if filename not in checked_fileList]
+                unused_fileList = util.getSubjectFileList(self.raw_data_path, \
+                                                          self.subject_names, \
+                                                          self.task_name, \
+                                                          time_sort=True,\
+                                                          no_split=True)                
+                unused_fileList = [filename for filename in unused_fileList \
+                                   if filename not in self.used_file_list]
+                unused_fileList = [filename for filename in unused_fileList if filename not in checked_fileList]
+
 
             rospy.loginfo( "New file list ------------------------")
             for f in unused_fileList:
@@ -1202,7 +1217,8 @@ class anomaly_detector:
 
                 print "############## CUMULATIVE / REF EVAL ###################"
                 self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-                if update_flag:
+                print "######################################################"
+                if update_flag or i==0:
                     self.acc_ref, _, _ = self.evaluation_ref()
                     self.update_list.append(1)
                 else:
@@ -1314,14 +1330,14 @@ class anomaly_detector:
 
     def evaluation_ref(self):
 
-        if self.eval_fileList is None:
-            self.eval_fileList = util.getSubjectFileList(self.raw_data_path, \
+        if self.eval_ref_fileList is None:
+            self.eval_ref_fileList = util.getSubjectFileList(self.raw_data_path, \
                                                          self.param_dict['AD']['eval_target'], \
                                                          self.task_name, \
                                                          no_split=True)
 
         if self.eval_test_X is None:
-            trainData = dm.getDataList(self.eval_fileList, self.rf_center, self.rf_radius,\
+            trainData = dm.getDataList(self.eval_ref_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
                                        downSampleSize = self.downSampleSize, \
                                        cut_data       = self.cut_data,\
@@ -1332,7 +1348,7 @@ class anomaly_detector:
             trainData = self.applying_offset(trainData)
 
             Y_test_org = []
-            for f in self.eval_fileList:
+            for f in self.eval_ref_fileList:
                 if f.find("success")>=0:
                     Y_test_org.append(-1)
                 elif f.find("failure")>=0:
@@ -1409,7 +1425,6 @@ def evaluation(X, Y, clf, verbose=False):
         sys.exit()
 
 
-    print np.shape(X)
     tp_l = []
     fp_l = []
     fn_l = []
@@ -1648,14 +1663,14 @@ if __name__ == '__main__':
 
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
-            subject_names = ['zack', 'hkim', 'ari', 'new'] #, 'zack'
+            subject_names = ['zack', 'hkim', 'ari'] #, 'zack'
             test_subject  = ['sai'] # sim only
             
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
               opt.task+'_demo_data'
             param_dict['SVM'] = {'renew': False, 'w_negative': 4.0, 'gamma': 0.04, 'cost': 4.6, \
-                                 'class_weight': 1.5e-2, 'logp_offset': 0, 'ths_mult': -2.0,\
+                                 'class_weight': 1.5e-2, 'logp_offset': 30, 'ths_mult': -1.0,\
                                  'sgd_gamma':0.32, 'sgd_w_negative':2.5}
 
             param_dict['data_param']['nNormalFold']   = 1

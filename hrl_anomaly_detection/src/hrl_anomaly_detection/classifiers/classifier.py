@@ -742,7 +742,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 
 def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \
-                        update_weight=1.0):
+                        update_weight=5.0):
 
     g_lhood = 0.0
     weight_sum  = 0.0

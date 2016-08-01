@@ -9,4 +9,4 @@ sgd_intercept_min: -3.0
 sgd_w_positive: 1.9952623149688797
 states: 10
 svm_w_positive: 20.0
-progress_ths_mult: -1.0
+progress_ths_mult: -4.0
