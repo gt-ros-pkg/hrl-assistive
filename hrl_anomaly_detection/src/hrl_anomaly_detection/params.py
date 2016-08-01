@@ -684,8 +684,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0.3, 1.6, nPoints)*-1+1.5, \
-                          'svm_param_range': np.logspace(-2.3, -1.2, nPoints),\
-                          'fixed_param_range': np.linspace(0.5, -3.0, nPoints),\
+                          'svm_param_range': np.logspace(-2.16, 0.31, nPoints),\
+                          'fixed_param_range': np.linspace(0.25, -2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.001, 2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
@@ -718,12 +718,12 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
-                          'svm_param_range': np.logspace(-2.0, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(-3.0, -0.3, nPoints),\
+                          'svm_param_range': np.logspace(-1.0, 0.046, nPoints),\
+                          'fixed_param_range': np.linspace(-0.1, -2.5, nPoints),\
                           'change_param_range': np.logspace(0.4, 1.7, nPoints)*-1.0,\
-                          'hmmsvm_diag_param_range': np.logspace(-3, 0.5, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-3, 0.5, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-3, 0.5, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-3, -0.023, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-1.18, 0.132, nPoints),\
+                          'hmmsvm_no_dL_param_range': np.logspace(-3, 0.045, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-4.0, 0.7, nPoints),\
@@ -741,8 +741,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(1., -4., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.4, nPoints),\
-                          'fixed_param_range': np.linspace(2.0, -2.0, nPoints),\
+                          'svm_param_range': np.logspace(-1.087, 0.89, nPoints),\
+                          'fixed_param_range': np.linspace(-0.57, -1.33, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
@@ -757,7 +757,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-8., -1.0, nPoints), \
-                          'svm_param_range': np.logspace(-2., -0.2, nPoints),\
+                          'svm_param_range': np.logspace(-1.087., -0.4, nPoints),\
                           'fixed_param_range': np.linspace(-1.7, -2., nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
