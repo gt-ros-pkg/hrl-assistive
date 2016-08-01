@@ -26,6 +26,8 @@ function manTask_yes(curr_id) {
     //var curr_id = event.target.id;
     glow("#"+curr_id);
     unglow("#"+curr_id.substring(0, curr_id.length-3) + "no");
+    $("#"+curr_id).css({'color':'black','background-color':'white'});
+    $("#"+curr_id.substring(0, curr_id.length-3) + "no").css({'color':'white','background-color':'black'});
     document.getElementById(curr_id).value="true";
     document.getElementById(curr_id.substring(0, curr_id.length-3) + "no").value="false";
 }
@@ -33,6 +35,8 @@ function manTask_no(curr_id) {
     //var curr_id = event.target.id;
     glow("#"+curr_id);
     unglow("#"+curr_id.substring(0, curr_id.length-2) + "yes");
+    $("#"+curr_id).css({'color':'black','background-color':'white'});
+    $("#"+curr_id.substring(0, curr_id.length-2) + "yes").css({'color':'white','background-color':'black'});
     document.getElementById(curr_id).value="true";
     document.getElementById(curr_id.substring(0, curr_id.length-2) + "yes").value="false";
 }
@@ -363,6 +367,7 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_sense_min');
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');
+            manTask.start()
         } else if (msg.data == 'in motion') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
