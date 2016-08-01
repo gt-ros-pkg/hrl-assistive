@@ -204,7 +204,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ret = 'Failure'
                 break
 
-            print np.shape(ll_classifier_test_X)
+            print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_X[0])
             if np.mean(np.array(ll_classifier_test_X)[:len(normalTrainData[0]),-1,0] ) < 0:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
