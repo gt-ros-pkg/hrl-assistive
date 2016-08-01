@@ -206,7 +206,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             logp_l = []
             for i in xrange(len(normalTrainData[0])):
-                logp_l.append(ll_classifier_test_X[i][-1,0])
+                logp_l.append(ll_classifier_test_X[i][-1][0])
                 
             if np.mean( logp_l ) < 0:
                 print "Negative likelihoods"
