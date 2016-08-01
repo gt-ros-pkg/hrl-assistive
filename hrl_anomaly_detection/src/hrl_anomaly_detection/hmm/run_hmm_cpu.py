@@ -755,8 +755,15 @@ if __name__ == '__main__':
                           'cov': np.linspace(2.,5.0,10) }
 
         elif opt.task == 'feeding':
-            parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
-                          'cov': np.linspace(1.0,6.0,5) }
+            if opt.dim == 2:
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,3.0,5), \
+                              'cov': np.linspace(1.0,6.0,5) }
+            elif opt.dim == 3:
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                              'cov': np.linspace(1.0,10.0,10) }
+            else:
+                parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,10), \
+                              'cov': np.linspace(1.0,10.0,10) }
 
         elif opt.task == 'pushing_microwhite':
             if opt.dim == 4:

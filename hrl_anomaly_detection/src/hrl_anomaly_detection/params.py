@@ -177,7 +177,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.25, 'scale': 12.777, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
                           'hmmosvm_nu': 0.001,\
@@ -217,7 +217,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 9.111, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 7.88, \
                           'add_logp_d': True}
         SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 3.911, 'cost': 1.625,\
                           'hmmosvm_nu': 0.001,\
