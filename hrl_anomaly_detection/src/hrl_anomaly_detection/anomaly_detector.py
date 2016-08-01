@@ -207,15 +207,39 @@ class anomaly_detector:
 
         if self.w_positive > self.w_max:
             self.w_positive = self.w_max
-            rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            elif self.classifier_method == 'progress_time_cluster':                    
+                rospy.set_param('progress_ths_mult', float(self.w_positive))                
         elif self.w_positive < self.w_min:
             self.w_positive = self.w_min
-            rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            elif self.classifier_method == 'progress_time_cluster':                    
+                rospy.set_param('progress_ths_mult', float(self.w_positive))
 
         # we use logarlism for the sensitivity
         if self.exp_sensitivity:
             self.w_max = np.log10(self.w_max)
             self.w_min = np.log10(self.w_min)
+
+
+        if self.bSim:
+            rospy.loginfo( "get subject files for simulation" )
+            ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
+            ## self.w_positive = sensitivity_des                
+            ## self.classifier.set_params(class_weight=self.w_positive)
+            ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
+            test_fileList = util.getSubjectFileList(self.raw_data_path, \
+                                                    subject_names, \
+                                                    self.task_name, \
+                                                    time_sort=True,\
+                                                    no_split=True)
+
+            idx_list = range(len(test_fileList))
+            random.shuffle(idx_list)
+            self.eval_run_fileList = test_fileList[:len(idx_list)/2]
+            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
 
 
 
@@ -422,8 +446,10 @@ class anomaly_detector:
         if 'sgd' in self.classifier_method or 'svm' in self.classifier_method:
             self.classifier.set_params( class_weight=self.w_positive )
             self.classifier.set_params( sgd_n_iter=self.sgd_n_iter )
-        elif self.classifier_method == 'progress_time_cluster':                    
-            self.classifier.set_params( ths_mult=self.w_positive )
+        elif self.classifier_method == 'progress_time_cluster':
+            ## ths_mult = np.ones(self.nState)*self.w_positive
+            ths_mult = self.w_positive
+            self.classifier.set_params( ths_mult=ths_mult )
 
         # Load / Fit the classifier
         if os.path.isfile(self.classifier_model_file) and clf_renew is False:
@@ -597,8 +623,10 @@ class anomaly_detector:
             self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org, warm_start=True)
         elif self.classifier_method == 'progress_time_cluster':
             self.w_positive = sensitivity_des
-            self.classifier.set_params( ths_mult=self.w_positive )
-            rospy.set_param(self.classifier_method+'_ths_mult', float(sensitivity_des))            
+            ## ths_mult = np.ones(self.nState)*self.w_positive
+            ths_mult = self.w_positive
+            self.classifier.set_params( ths_mult=ths_mult )
+            rospy.set_param('progress_ths_mult', float(sensitivity_des))            
         else:
             rospy.loginfo( "not supported method")
             sys.exit()
@@ -790,7 +818,6 @@ class anomaly_detector:
                 self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
 
                 if update_flag:
-
                     #weight_list    = np.logspace(-1, 0.0, len(test_X))
                     weight_list    = np.linspace(0.1, 1.0, len(self.X_train_org))
                     ## if s_flag == 0 or f_flag == 0:
@@ -813,7 +840,9 @@ class anomaly_detector:
                     ## self.classifier.set_params( class_weight=self.w_positive )
             elif self.classifier_method.find('progress')>=0:
 
-                alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
+                max_rate = 0.2
+                alpha    = np.exp(-0.16*self.update_count)*1.0 #+ 0.5
+                update_weight = float(self.nTrainData)/20.0
 
                 if user_feedback == "success":
 
@@ -824,7 +853,6 @@ class anomaly_detector:
                     for i in xrange(len(ll_logp)):
                         ll_idx.append( range(self.nLength-len(ll_logp[0]), self.nLength) )
 
-
                     # If true negative, update mean and var with new incoming data
                     # If false positive, update mean and var with new incoming data, lower ths mult
                     for i in xrange(len(l_mu)):
@@ -833,16 +861,23 @@ class anomaly_detector:
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
                                                                        self.nState,\
-                                                                       self.nTrainData)
-
+                                                                       self.nTrainData,\
+                                                                       update_weight=update_weight)
                     # update
                     self.classifier.ll_mu = l_mu
                     self.classifier.ll_std = l_std
 
+                    print "Upppppppppppppppppppppppppp dateeeeeeeeeeeeeeeee!!!!!!!!!!!!!!!",\
+                      update_weight, alpha, self.w_positive                    
+
                     if update_flag:
-                        self.w_positive -= 0.5*alpha
+                        sensitivity = self.sensitivity_clf_to_GUI()
+                        sensitivity -= max_rate*alpha
+                        sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
+                        self.w_positive = sensitivity 
+                        ## self.w_positive -= max_rate*alpha
                         self.classifier.set_params( ths_mult=self.w_positive )
-                        rospy.set_param(self.classifier_method+'_ths_mult', float(self.w_positive) )            
+                        rospy.set_param('progress_ths_mult', float(self.w_positive) )            
                         self.pubSensitivity()
                     
                 else:                    
@@ -851,9 +886,13 @@ class anomaly_detector:
                 
                     # If false negative, raise ths mult
                     if update_flag is False:
-                        self.w_positive += 0.5*alpha
+                        sensitivity = self.sensitivity_clf_to_GUI()
+                        sensitivity += max_rate*alpha
+                        sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
+                        self.w_positive = sensitivity 
+                        ## self.w_positive += max_rate*alpha
                         self.classifier.set_params( ths_mult=self.w_positive )
-                        rospy.set_param(self.classifier_method+'_ths_mult', float(self.w_positive) )            
+                        rospy.set_param('progress_ths_mult', float(self.w_positive) )            
                         self.pubSensitivity()
                 
                 print "ths_mult: ", self.classifier.ths_mult, " internal weight: ", self.sensitivity_clf_to_GUI()
@@ -1104,24 +1143,6 @@ class anomaly_detector:
         checked_fileList = []
         self.unused_fileList = []
 
-
-        if auto:
-            print "get subject files"
-            ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
-            ## self.w_positive = sensitivity_des                
-            ## self.classifier.set_params(class_weight=self.w_positive)
-            ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
-            test_fileList = util.getSubjectFileList(self.raw_data_path, \
-                                                    subject_names, \
-                                                    self.task_name, \
-                                                    time_sort=True,\
-                                                    no_split=True)
-
-            idx_list = range(len(test_fileList))
-            random.shuffle(idx_list)
-            self.eval_run_fileList = test_fileList[:len(idx_list)/2]
-            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
-
         fb = ut.get_keystroke('Hit a key to load a new file')
         ## sys.exit()
 
@@ -1137,7 +1158,7 @@ class anomaly_detector:
                     unused_fileList = self.new_run_file
                 else:
                     print "no more file"
-                    sys.exit()
+                    break
             else:            
                 # load new file            
                 fb = ut.get_keystroke('Hit a key to load a new file')
@@ -1160,7 +1181,7 @@ class anomaly_detector:
 
             if len(unused_fileList)>1:
                 print "Unexpected addition of files"
-                sys.exit()
+                break
 
             for j in xrange(len(unused_fileList)):
                 self.anomaly_flag = False
@@ -1228,6 +1249,7 @@ class anomaly_detector:
                 print self.cum_acc_list
                 print self.ref_acc_list
                 print self.update_list
+                print self.w_positive, self.classifier.ths_mult
                 print "######################################################"
                 ## sys.exit()
 
@@ -1664,7 +1686,7 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
             subject_names = ['zack', 'hkim', 'ari'] #, 'zack'
-            test_subject  = ['sai'] # sim only
+            test_subject  = ['jina'] # sim only
             
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
