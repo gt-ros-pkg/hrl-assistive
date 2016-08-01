@@ -44,7 +44,7 @@ for ((I=2;I<=5;I++)); do
     elif [ $I -eq 3 ]; then        
         METHOD=('svm' );
     elif [ $I -eq 4 ]; then        
-        METHOD=('svm' );
+        METHOD=('svm' 'hmmsvm_diag' );
     elif [ $I -eq 5 ]; then        
         METHOD=('svm' );
     fi
