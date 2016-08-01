@@ -15,15 +15,16 @@ class ARTagTracker(object):
     def __init__(self, domain):
         self.domain = domain
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain)
         rospy.Subscriber('AR_tracking', Bool, self.tracking_ar_tag_cb)
 
     def tracking_ar_tag_cb(self, msg):
         preds = []
         found_ar_tag = msg.data
         if found_ar_tag:
-            preds.append(pddl.Predicate('IS-TRACKING-TAG'))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG'+ ' ' + str(self.model)))
         else:
-            preds.append(pddl.Predicate('IS-TRACKING-TAG', neg=True))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG'+ ' ' + str(self.model), neg=True))
         state_msg = PDDLState()
         state_msg.domain = self.domain
         state_msg.predicates = map(str, preds)

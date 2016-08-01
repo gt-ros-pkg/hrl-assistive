@@ -120,6 +120,16 @@ RFH.Domains.WipingMouthADL = function (options) {
         }
     };
 
+    self.setModelName = function (model_name) {
+        var paramName = '/pddl_tasks/'+self.domain+'/model_name';
+        var modelParam = new ROSLIB.Param({
+            ros: ros,
+            name: paramName
+        });
+        modelParam.set(model_name);
+    };
+
+
     self.setDefaultGoal = function (goal_pred_list) {
         var paramName = '/pddl_tasks/'+self.domain+'/default_goal';
         var goalParam = new ROSLIB.Param({
@@ -151,8 +161,11 @@ RFH.Domains.WipingMouthADL = function (options) {
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'wiping_mouth_adl' + '-' + new Date().getTime().toString();
         msg.domain = 'wiping_mouth_adl';
-        self.setDefaultGoal(['(TASK-COMPLETED)']);
-        self.updatePDDLState(['(NOT (CONFIGURED BED)']);
+        var model = 'autobed';
+        var task = 'wiping_mouth';
+        self.setModelName(model);
+        self.setDefaultGoal(['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']);
+        self.updatePDDLState(['(NOT (CONFIGURED BED WIPING_MOUTH AUTOBED)']);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
