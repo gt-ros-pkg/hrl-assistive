@@ -6,7 +6,7 @@
         <!--<arg name="verbose" value="true"/>-->
     <!--</include>-->
     <include file="$(find hrl_base_selection)/launch/base_selection_assistive_teleop.launch"/>
-   
+    <include file="$(find assistive_teleop)/launch/vci.launch"/>
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
 
     <!-- For arm reacher -->
@@ -22,6 +22,6 @@
 
     <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service_cma.py" output="screen" args="--mode normal --user autobed --load paper"/>
 
-    <node name="task_manager" pkg="hrl_base_selection" type="task_manager.py" output="screen"/>
+    <!-- <node name="task_manager" pkg="hrl_base_selection" type="task_manager.py" output="screen"/> -->
 
 </launch>
