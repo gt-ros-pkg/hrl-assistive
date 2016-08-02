@@ -818,11 +818,11 @@ class anomaly_detector:
                     nLength = len(p_train_X)/self.nTests
                     self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
                     self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
-
                     
+                    sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = np.linspace(0.1, 1.0, len(self.X_train_org))
-                    sample_weights    = np.ones(len(self.X_train_org))
+                    ## sample_weights    = np.ones(len(self.X_train_org))
                     ## if s_flag == 0 or f_flag == 0:
                     ##     sample_weights[-1] *= 1.0
                     ##     sample_weights[-2] *= 1.0
@@ -1547,7 +1547,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(10.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(20.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
