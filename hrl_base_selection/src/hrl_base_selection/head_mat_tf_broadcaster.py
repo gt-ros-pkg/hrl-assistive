@@ -145,7 +145,6 @@ class HeadDetector:
                     except:
                         print 'Head TF broadcaster crashed trying to broadcast!'
                         break
-                    print "Broadcasted Successfully"
                 else:
                     print 'I have no blobs visible on the pressure mat by the head'
             else:
