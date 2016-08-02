@@ -839,8 +839,8 @@ class anomaly_detector:
 
                 max_rate      = 0.0 #0.1
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
-                update_weight = np.exp(-0.16*self.update_count)*15.0 + 1.0
-                #float(self.nTrainData)/30.0
+                update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/4.0 + 1.0
+                #
 
                 if user_feedback == "success":
 
