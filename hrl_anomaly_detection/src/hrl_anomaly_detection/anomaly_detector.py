@@ -822,7 +822,7 @@ class anomaly_detector:
                 ## self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
                 ## self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
 
-                if update_flag or True:
+                if update_flag:
                     nLength = len(p_train_X)/self.nTests
                     self.X_partial_train = np.delete(self.X_partial_train, np.s_[:nLength], 0)
                     self.Y_partial_train = np.delete(self.Y_partial_train, np.s_[:nLength], 0)
@@ -1713,7 +1713,7 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
             subject_names = ['zack', 'hkim', 'ari'] #, 'zack'
-            test_subject  = ['linda'] # sim only
+            test_subject  = ['sai'] # sim only
             
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\

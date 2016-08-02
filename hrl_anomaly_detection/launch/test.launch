@@ -7,7 +7,7 @@
 
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
             type="anomaly_detector.py" args="--task feeding --dim 4
-                                             --m progress_time_cluster
+                                             --m sgd
                                              --au --sim --cr
                                              "
             output="screen" />
