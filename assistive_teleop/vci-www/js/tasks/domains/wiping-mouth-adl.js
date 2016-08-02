@@ -75,7 +75,7 @@ RFH.Domains.WipingMouthADL = function (options) {
             case 'REGISTER_HEAD':
                 return "Register Head.";
             case 'CALL_BASE_SELECTION':
-                return "Call BS.";
+                return "Base Select";
             case 'CONFIGURE_MODEL_ROBOT':
                 return "Setup Bed & Robot.";
             case 'MOVE_ROBOT':

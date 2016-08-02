@@ -72,17 +72,20 @@ class FindTagState(PDDLSmachState):
         self.ar_tag_found = False
 
     def on_execute(self, ud):
+        print "Start Looking For Tag"
         self.start_finding_AR_publisher.publish(True)
+        print "Waiting to see if tag found"
         rospy.Subscriber('AR_acquired', Bool, self.found_ar_tag_cb)
         while not rospy.is_shutdown():
             if self.ar_tag_found:
+                print "Tag FOUND"
                 rospy.loginfo("AR Tag Found")
                 state_update = PDDLState()
                 state_update.domain = self.domain
-                state_update.predicates = ['FOUND-TAG' + ' ' + str(self.model)]
+                state_update.predicates = ['(FOUND-TAG %s)' % self.model)]
                 print "Publishing (FOUND-TAG) update"
                 self.state_pub.publish(state_update)
-                self.goal_reached = False
+                return 
             rospy.sleep(1)
 
     def found_ar_tag_cb(self, msg):
@@ -98,6 +101,7 @@ class TrackTagState(PDDLSmachState):
         self.model = model
 
     def on_execute(self, ud):
+        print "Starting to track AR Tag"
         self.start_tracking_AR_publisher.publish(True)
 
 
@@ -115,7 +119,7 @@ class RegisterHeadState(PDDLSmachState):
             print "Head Found."
             state_update = PDDLState()
             state_update.domain = self.domain
-            state_update.predicates = ['HEAD-REGISTERED' + ' ' + str(self.model)]
+            state_update.predicates = ['(HEAD-REGISTERED %s)' % self.model]
             print "Publishing (HEAD-REGISTERED) update"
             self.state_pub.publish(state_update)
         else:
@@ -267,7 +271,7 @@ class MoveRobotState(PDDLSmachState):
                 rospy.loginfo("Base Goal Reached")
                 state_update = PDDLState()
                 state_update.domain = self.domain
-                state_update.predicates = ['BASE-REACHED' + ' ' + str(self.task) + ' ' + str(self.model)]
+                state_update.predicates = ['(BASE-REACHED %s %s)' % (self.task, self.model)]
                 print "Publishing (BASE-REACHED) update"
                 self.state_pub.publish(state_update)
                 self.goal_reached = False
@@ -313,7 +317,7 @@ class CallBaseSelectionState(PDDLSmachState):
         rospy.set_param('/pddl_tasks/%s/configuration_goals' % self.domain, configuration_goals)
         state_update = PDDLState()
         state_update.domain = self.domain
-        state_update.predicates = ['BASE-SELECTED' + ' ' + str(self.task) + ' ' + str(self.model)]
+        state_update.predicates = ['(BASE-SELECTED %s %s) % (self.task, self.model)]
         print "Publishing (BASE-SELECTED) update"
         self.state_pub.publish(state_update)
 
@@ -411,14 +415,14 @@ class ConfigureModelRobotState(PDDLSmachState):
                     rospy.loginfo("Bed Goal Reached")
                     state_update = PDDLState()
                     state_update.domain = self.domain
-                    state_update.predicates = ['CONFIGURED BED' + ' ' + str(self.task) + ' ' + str(self.model)]
+                    state_update.predicates = ['(CONFIGURED BED %s %s)' % (self.task, self.model)]
                     print "Publishing (CONFIGURED BED) update"
                     self.state_pub.publish(state_update)
                 if self.torso_reached:
                     rospy.loginfo("Torso Goal Reached")
                     state_update = PDDLState()
                     state_update.domain = self.domain
-                    state_update.predicates = ['CONFIGURED SPINE' + ' ' + str(self.task) + ' ' + str(self.model)]
+                    state_update.predicates = ['(CONFIGURED SPINE %s %s)' % (self.task, self.model)]
                     print "Publishing (CONFIGURED SPINE) update"
                     self.state_pub.publish(state_update)
                 rospy.sleep(1)
