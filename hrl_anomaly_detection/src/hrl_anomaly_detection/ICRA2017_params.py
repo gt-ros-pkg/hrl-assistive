@@ -167,7 +167,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'bpsvm_cost': 12.5,\
                           'bpsvm_gamma': 0.01, \
                           'bpsvm_w_negative': 0.2,\
-                          'logp_offset': 30,\
+                          'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5
                           }
                     #, 'bpsvm'      , 'osvm'

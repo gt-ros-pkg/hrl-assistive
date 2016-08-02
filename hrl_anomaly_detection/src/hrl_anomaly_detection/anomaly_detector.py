@@ -72,7 +72,7 @@ class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict, data_renew=False, hmm_renew=False, clf_renew=False, viz=False, \
                  auto_update=False, \
-                 debug=False, sim=False):
+                 debug=False, sim=False, sim_subject_names=None):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names   = subject_names
@@ -109,7 +109,7 @@ class anomaly_detector:
         if self.bSim: self.cur_task = self.task_name
         else:         self.cur_task = None
         ## self.t1 = datetime.datetime.now()
-
+        self.sim_subject_names = sim_subject_names
 
 
         # evaluation test
@@ -131,17 +131,25 @@ class anomaly_detector:
         self.acc_all  = 100.0
         self.acc_ref  = 100.0
 
+
         # Comms
         self.lock = threading.Lock()        
+
+        ## # temp
+        ## self.fig = plt.figure()
+
 
         self.initParams()
         self.initComms()
         self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew, clf_renew=clf_renew)
 
+        ## self.plt.show()
+
         self.viz = viz
         if viz:
             rospy.loginfo( "Visualization enabled!!!")
             self.figure_flag = False
+
         
         self.reset()
         rospy.loginfo( "==========================================================")
@@ -231,15 +239,15 @@ class anomaly_detector:
             ## self.classifier.set_params(class_weight=self.w_positive)
             ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
             test_fileList = util.getSubjectFileList(self.raw_data_path, \
-                                                    subject_names, \
+                                                    self.sim_subject_names, \
                                                     self.task_name, \
                                                     time_sort=True,\
                                                     no_split=True)
 
             idx_list = range(len(test_fileList))
             random.shuffle(idx_list)
-            self.eval_run_fileList = test_fileList[:len(idx_list)/2]
-            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
+            self.eval_run_fileList = test_fileList[len(idx_list)/2:]
+            self.eval_ref_fileList = test_fileList[:len(idx_list)/2] #test_fileList[len(idx_list)/2:]
 
 
 
@@ -304,6 +312,10 @@ class anomaly_detector:
                 sys.exit()
 
         else:
+            if self.task_name == 'feeding':
+                max_time = 7.0
+            else:
+                max_time = None
             rospy.loginfo( "Start to train an hmm model of %s", self.task_name)
             rospy.loginfo( "Started get data set")
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
@@ -315,7 +327,7 @@ class anomaly_detector:
                                handFeatures=self.handFeatures, \
                                cut_data=self.cut_data,\
                                data_renew=data_renew, \
-                               time_sort=True)
+                               time_sort=True, max_time=max_time)
 
             self.handFeatureParams = dd['param_dict']
 
@@ -503,8 +515,10 @@ class anomaly_detector:
         ## msg = FloatArray()
         ## msg.data = [self.acc_part, self.acc_all]
         ## self.accuracy_pub.publish(msg)
-        ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
-
+        ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier)
+        self.ll_classifier_train_X = ll_classifier_train_X
+        self.ll_classifier_train_Y = ll_classifier_train_Y
+        
         
 
     #-------------------------- Communication fuctions --------------------------
@@ -862,7 +876,7 @@ class anomaly_detector:
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
                 update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/10.0 + 1.0
                 ## update_weight = np.exp(-0.32*self.update_count)*0.7 + 0.3
-                update_weight = 10.0
+                update_weight = 2.0
 
                 if user_feedback == "success":
 
@@ -884,9 +898,10 @@ class anomaly_detector:
                                                                        self.nTrainData,\
                                                                        ## self.nTrainData+len(self.update_list)-1,\
                                                                        update_weight=update_weight)
+
                     # update
-                    self.classifier.ll_mu = l_mu
-                    self.classifier.ll_std = l_std
+                    self.classifier.set_params(ll_mu = l_mu)
+                    self.classifier.set_params(ll_std = l_std)
 
                     if update_flag:
                         print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
@@ -914,6 +929,11 @@ class anomaly_detector:
                         self.classifier.set_params( ths_mult=self.w_positive )
                         rospy.set_param('progress_ths_mult', float(self.w_positive) )            
                         self.pubSensitivity()
+
+
+                ## fig = plt.figure()
+                ## plt.plot()
+                ## plt.show()
                 
                 print "ths_mult: ", self.classifier.ths_mult, " internal weight: ", self.sensitivity_clf_to_GUI()
             else:
@@ -946,6 +966,9 @@ class anomaly_detector:
             self.unused_fileList = []
             self.update_count += 1.0
             rospy.loginfo( "Update completed!!!")
+
+            ## self.vizDecisionBoundary2(X, Y, self.classifier)
+            
 
     #-------------------------- General fuctions --------------------------
 
@@ -1229,17 +1252,17 @@ class anomaly_detector:
                 # scaling and subtracting offset
                 trainData = np.array(trainData)*self.scale
                 trainData = self.applying_offset(trainData)
-                
-                
+                                
                 ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
                 X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, [label])
                 X_test, Y_train_org, _ = dm.flattenSample(X, Y)
                 
                 if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                     X_scaled = self.scaler.transform(X_test)
+                    y_est    = self.classifier.predict(X_scaled)
                 else:
                     X_scaled = X_test
-                y_est    = self.classifier.predict(X_scaled)
+                    y_est    = self.classifier.predict(X_scaled)
 
                 for ii in xrange(len(y_est[self.startCheckIdx:])):
                     if y_est[ii] > 0.0:
@@ -1283,9 +1306,7 @@ class anomaly_detector:
                 print self.w_positive, self.classifier.ths_mult
                 print "######################################################"
                 ## sys.exit()
-
-                
-                
+                                
                 ## if (label ==1 and self.anomaly_flag is False) or \
                 ##   (label ==-1 and self.anomaly_flag is True):
                 ##     print "Before######################################33"
@@ -1380,6 +1401,61 @@ class anomaly_detector:
             rate = rospy.Rate(5) # 25Hz, nominally.            
             while not rospy.is_shutdown():
                 continue
+
+
+    def vizDecisionBoundary2(self, X_test, Y_test, clf):
+
+        if self.figure_flag is False:
+            fig = plt.figure()
+            self.ax = fig.add_subplot(111)
+            plt.ion()
+            plt.show()
+
+        del self.ax.collections[:]
+
+        if self.figure_flag is False and False:
+            X_train = self.ll_classifier_train_X
+            Y_train = self.ll_classifier_train_Y
+            
+            # train
+            max_logp = 0
+            for i in xrange(len(X_train)):
+                self.ax.plot(np.array(X_train[i])[:,0], 'b-')
+                logp = np.amax(np.array(X_train[i])[:,0])
+                if max_logp < logp: max_logp = logp
+
+            self.ax.set_ylim([-200, max_logp ])
+
+        if self.figure_flag is False:
+            max_logp = 0
+            for i in xrange(len(self.eval_test_X)):
+                if self.eval_test_Y[i][0] < 0:                
+                    self.ax.plot(np.array(self.eval_test_X[i])[:,0], 'b-')
+                    logp = np.amax(np.array(self.eval_test_X[i])[:,0])
+                    if max_logp < logp: max_logp = logp                    
+                else:
+                    self.ax.plot(np.array(self.eval_test_X[i])[:,0], 'm-')
+            self.ax.set_ylim([-200, max_logp ])
+            
+
+        # test
+        for i in xrange(len(X_test)):
+            if Y_test[i][0] < 0:                
+                self.ax.plot(np.array(X_test[i])[:,0], 'g-', lw=3.0)                
+            else:
+                self.ax.plot(np.array(X_test[i])[:,0], 'm-', lw=3.0)
+
+            exp_log_l = []
+            for j in xrange(len(X_test[i])):
+                exp_logp = clf.predict(X_test[i][j])[0] + X_test[i][j][0]
+                exp_log_l.append(exp_logp)
+            self.ax.plot(exp_log_l, 'r-', lw=3.0)
+
+        ## plt.axis('tight')
+        plt.draw()
+        self.figure_flag = True
+        ut.get_keystroke('Hit a key')
+
 
     def evaluation_ref(self):
 
@@ -1738,7 +1814,7 @@ if __name__ == '__main__':
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
                           clf_renew=opt.bCLFRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
-                          debug=opt.bDebug, sim=opt.bSim )
+                          debug=opt.bDebug, sim=opt.bSim, sim_subject_names=test_subject )
     if opt.bSim is False:
         ad.run()
     else:
