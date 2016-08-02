@@ -4,7 +4,7 @@ feature_list: [unimodal_ftForce, crossmodal_targetEEDist]
 rf_center: kinEEPos
 rf_radius: 0.15
 sgd_intercept: 0.15
-sgd_w_positive: 1.9952623149688797
+sgd_w_positive: 0.59952623149688797
 states: 10
 svm_w_positive: 20.0
 progress_ths_mult: -2.0
