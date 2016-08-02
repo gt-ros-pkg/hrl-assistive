@@ -78,7 +78,7 @@ class AR_Tag_Tracking(object):
         # self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
 
         self.AR_tag_acquired = rospy.Publisher('AR_acquired', Bool, queue_size=1)
-
+        self.AR_tag_tracking = rospy.Publisher('/AR_tracking', Bool, queue_size=1, latch=True)
         self.start_tracking_AR_subscriber = rospy.Subscriber('track_AR_now', Bool, self.start_tracking_AR_cb)
         # self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
@@ -135,6 +135,10 @@ class AR_Tag_Tracking(object):
             # self.tracking_AR()
         elif not msg.data and self.currently_tracking_AR:
             print 'THINGS AND STUFF Stopping tracking the AR tag!'
+
+        failure = Bool()
+        failure.data = False
+        self.AR_tag_tracking.publish(failure)
         self.currently_tracking_AR = msg.data
 
     def tracking_AR(self):
@@ -366,6 +370,14 @@ class AR_Tag_Tracking(object):
 
                         self.action_goal.goal = self.goal
                         self.head_track_AR_pub.publish(self.action_goal)
+                        success = Bool()
+                        success.data = True
+                        self.AR_tag_tracking.publish(success)
+                    else:
+                        failure= Bool()
+                        failure.data = False
+                        self.AR_tag_tracking.publish(failure)
+                       
                         # ps = PoseStamped()
                         # ps.header.frame_id = 'torso_lift_link'  # markers[i].pose.header.frame_id
                         # ps.header.stamp = rospy.Time.now()  # markers[i].pose.header.stamp
