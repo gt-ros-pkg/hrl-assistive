@@ -829,8 +829,8 @@ class anomaly_detector:
                     ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
                     ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
                     
-                    ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_partial_train), 1.0 ) )
-                    sample_weights    = np.ones(len(self.X_partial_train)) #*4.0
+                    sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_partial_train), 1.0 ) )
+                    ## sample_weights    = np.ones(len(self.X_partial_train)) #*4.0
                     ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = np.linspace(0.1, 1.0, len(self.X_train_org))
@@ -846,7 +846,7 @@ class anomaly_detector:
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     ## self.classifier.set_params( class_weight=1.0 )
                     alpha    = 1.0 #np.exp(-0.16*self.update_count)*0.8 + 0.2
-                    nMaxIter = 1 #int(5.0*alpha)
+                    nMaxIter = 2 #int(5.0*alpha)
                     ## alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
                     ## nMaxIter = int(5.0*alpha)
                     self.classifier = partial_fit(self.X_partial_train, self.Y_partial_train, p_train_W, \
