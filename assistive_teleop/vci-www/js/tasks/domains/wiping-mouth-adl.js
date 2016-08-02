@@ -33,7 +33,7 @@ RFH.Domains.WipingMouthADL = function (options) {
         switch (name){
             case 'FIND_TAG':
             case 'TRACK_TAG':
-            case 'CHECK_BED_OCCUPANCY':
+            case 'CHECK_OCCUPANCY':
             case 'REGISTER_HEAD':
             case 'CALL_BASE_SELECTION':
                 startFunc = function () {
@@ -47,13 +47,14 @@ RFH.Domains.WipingMouthADL = function (options) {
                     RFH.taskMenu.startTask('drivingTask');
                 }
                 break;
-            case 'CONFIGURE_BED_ROBOT':
+            case 'CONFIGURE_MODEL_ROBOT':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                     RFH.taskMenu.startTask('torsoTask');
                 }
                 break;
             case 'MOVE_ARM':
+            case 'DO_TASK':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                     RFH.taskMenu.startTask('rEECartTask');
@@ -63,20 +64,19 @@ RFH.Domains.WipingMouthADL = function (options) {
         return startFunc;
     };
 
-
     self.getActionLabel = function (name, args) {
         switch (name){
             case 'FIND_TAG':
                 return "Finding AR Tag.";
             case 'TRACK_TAG':
                 return "Tracking AR Tag.";
-            case 'CHECK_BED_OCCUPANCY':
+            case 'CHECK_OCCUPANCY':
                 return "Checking Bed Occupancy.";
             case 'REGISTER_HEAD':
                 return "Registering Occupant Head.";
             case 'CALL_BASE_SELECTION':
                 return "Calling Base Selection.";
-            case 'CONFIGURE_BED_ROBOT':
+            case 'CONFIGURE_MODEL_ROBOT':
                 return "Configuring Bed and Robot.";
             case 'MOVE_ROBOT':
                 return "Moving PR2 Base.";
@@ -93,13 +93,13 @@ RFH.Domains.WipingMouthADL = function (options) {
                 return "Use the controls to look at the AR Tag attached to the bed.";
             case 'TRACK_TAG':
                 return "Currently Tracking AR Tag.";
-            case 'CHECK_BED_OCCUPANCY':
+            case 'CHECK_OCCUPANCY':
                 return "Checking if the bed is occupied. Please occupy Autobed to proceed.";
             case 'REGISTER_HEAD':
                 return "Trying to find your head in the mat. Please rest your head on the bed.";
             case 'CALL_BASE_SELECTION':
                 return "Please wait while the PR2 finds a good location to perform task...";
-            case 'CONFIGURE_BED_ROBOT':
+            case 'CONFIGURE_MODEL_ROBOT':
                 return "Please wait while we finish repositioning your bed and the robot's height...";
             case 'MOVE_ROBOT':
                 return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";

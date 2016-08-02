@@ -2,7 +2,6 @@
 
 import sys
 import argparse
-from collections import deque
 
 import rospy
 from std_msgs.msg import Bool
@@ -15,16 +14,21 @@ class ARTagTracker(object):
     def __init__(self, domain):
         self.domain = domain
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
-        self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain)
+        self.model = None
         rospy.Subscriber('AR_tracking', Bool, self.tracking_ar_tag_cb)
 
     def tracking_ar_tag_cb(self, msg):
+        try:
+            self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')
+        except KeyError:
+            rospy.logwarn("[%s] Tracking AR Tag, but current model unknown! Cannot update PDDLState", rospy.get_name())
+            return
         preds = []
         found_ar_tag = msg.data
         if found_ar_tag:
-            preds.append(pddl.Predicate('IS-TRACKING-TAG'+ ' ' + str(self.model)))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG' + ' ' + str(self.model)))
         else:
-            preds.append(pddl.Predicate('IS-TRACKING-TAG'+ ' ' + str(self.model), neg=True))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG' + ' ' + str(self.model), neg=True))
         state_msg = PDDLState()
         state_msg.domain = self.domain
         state_msg.predicates = map(str, preds)

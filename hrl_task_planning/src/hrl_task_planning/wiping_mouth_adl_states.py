@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+from collections import deque
+
 import rospy, rosparam, rospkg, roslib
 import actionlib
 from threading import RLock
@@ -23,38 +27,38 @@ SPA = ["succeeded", "preempted", "aborted"]
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
     if action == 'FIND_TAG':
-        return FindTagState(domain=domain, model = args[1], problem=problem,
-                                action=action, action_args=args,
-                                init_state=init_state, goal_state=goal_state,
-                                outcomes=SPA)
+        return FindTagState(domain=domain, model=args[0], problem=problem,
+                            action=action, action_args=args,
+                            init_state=init_state, goal_state=goal_state,
+                            outcomes=SPA)
     if action == 'TRACK_TAG':
-        return TrackTagState(domain=domain, model = args[1], problem=problem,
-                                action=action, action_args=args,
-                                init_state=init_state, goal_state=goal_state,
-                                outcomes=SPA)
+        return TrackTagState(domain=domain, model=args[0], problem=problem,
+                             action=action, action_args=args,
+                             init_state=init_state, goal_state=goal_state,
+                             outcomes=SPA)
     elif action == 'CONFIGURE_MODEL_ROBOT':
-        return ConfigureModelRobotState(domain=domain, task = args[0], model = args[1], problem=problem,
-                                action=action, action_args=args,
-                                init_state=init_state, goal_state=goal_state,
-                                outcomes=SPA)
+        return ConfigureModelRobotState(domain=domain, task=args[0], model=args[1], problem=problem,
+                                        action=action, action_args=args,
+                                        init_state=init_state, goal_state=goal_state,
+                                        outcomes=SPA)
     elif action == 'CHECK_OCCUPANCY':
-        return CheckOccupancyState(domain=domain, model=args[1], problem=problem,
-                                  action=action, action_args=args, init_state=init_state,
-                                  goal_state=goal_state, outcomes=SPA)
+        return CheckOccupancyState(domain=domain, model=args[0], problem=problem,
+                                   action=action, action_args=args, init_state=init_state,
+                                   goal_state=goal_state, outcomes=SPA)
     elif action == 'REGISTER_HEAD':
-        return RegisterHeadState(domain=domain, model = args[1], problem=problem,
-                                  action=action, action_args=args, init_state=init_state,
-                                  goal_state=goal_state, outcomes=SPA)
+        return RegisterHeadState(domain=domain, model=args[0], problem=problem,
+                                 action=action, action_args=args, init_state=init_state,
+                                 goal_state=goal_state, outcomes=SPA)
     elif action == 'CALL_BASE_SELECTION':
         return CallBaseSelectionState(task=args[0], model=args[1], domain=domain, problem=problem,
-                                  action=action, action_args=args, init_state=init_state,
-                                  goal_state=goal_state, outcomes=SPA)
+                                      action=action, action_args=args, init_state=init_state,
+                                      goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ROBOT':
-        return MoveRobotState(domain=domain, task = args[0], model = args[1], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return MoveRobotState(domain=domain, task=args[0], model=args[1], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
-        return PDDLSmachState(domain, task=args[0], model=args[1], problem, action, args, init_state, goal_state, outcomes=SPA)
+        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
 
 
@@ -67,7 +71,7 @@ class FindTagState(PDDLSmachState):
         self.model = model
         self.ar_tag_found = False
 
-    def on_execute(self):
+    def on_execute(self, ud):
         self.start_finding_AR_publisher.publish(True)
         rospy.Subscriber('AR_acquired', Bool, self.found_ar_tag_cb)
         while not rospy.is_shutdown():
@@ -94,7 +98,7 @@ class TrackTagState(PDDLSmachState):
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
         self.model = model
 
-    def on_execute(self):
+    def on_execute(self, ud):
         self.start_tracking_AR_publisher.publish(True)
 
 
@@ -105,7 +109,7 @@ class RegisterHeadState(PDDLSmachState):
         self.head_registered = self.get_head_pose()
         self.model = model
 
-    def on_execute(self):
+    def on_execute(self, ud):
         if self.get_head_pose():
             return 'succeeded'
         else:
@@ -124,13 +128,13 @@ class RegisterHeadState(PDDLSmachState):
 
 class CheckOccupancyState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
-        super(CheckBedOccupancyState, self).__init__(domain=domain, *args, **kwargs)
+        super(CheckOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
-        if model = 'autobed':
+        if model == 'autobed':
             self.autobed_occupied_status = False
 
-    def on_execute(self):
-        if self.model = 'autobed':
+    def on_execute(self, ud):
+        if self.model == 'autobed':
             rospy.wait_for_service('autobed_occ_status')
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
@@ -184,10 +188,10 @@ class MoveArmState(PDDLSmachState):
             print log_msg
         else:
             log_msg = 'I dont know where I should be reaching!!'
-            return 
+            return
         self.l_arm_pose_pub.publish(goal)
 
-    def on_execute(self):
+    def on_execute(self, ud):
         self.publish_goal()
         #Now that goal is published, we wait until goal is reached
         rospy.Subscriber("haptic_mpc/in_deadzone", std_msgs.msg.Bool, self.arm_reach_goal_cb)
@@ -203,7 +207,7 @@ class MoveArmState(PDDLSmachState):
                 return 'succeeded'
             rospy.sleep(1)
 
-                 
+
 class MoveRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(MoveRobotState, self).__init__(domain=domain, *args, **kwargs)
@@ -212,31 +216,34 @@ class MoveRobotState(PDDLSmachState):
         self.domain = domain
         self.goal_reached = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
-        base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain, base_goals)
-        self.pr2_goal_pose = PoseStamped()
-        self.pr2_goal_pose.header.stamp = rospy.Time.now()
-        self.pr2_goal_pose.header.frame_id = 'base_footprint'
-        trans_out = base_goals[:3]
-        rot_out = base_goals[3:]
-        self.pr2_goal_pose.pose.position.x = trans_out[0]
-        self.pr2_goal_pose.pose.position.y = trans_out[1]
-        self.pr2_goal_pose.pose.position.z = trans_out[2]
-        self.pr2_goal_pose.pose.orientation.x = rot_out[0]
-        self.pr2_goal_pose.pose.orientation.y = rot_out[1]
-        self.pr2_goal_pose.pose.orientation.z = rot_out[2]
-        self.pr2_goal_pose.pose.orientation.w = rot_out[3]
         rospy.loginfo('Ready to move! Click to move PR2 base!')
         rospy.loginfo('Remember: The AR tag must be tracked before moving!')
         print 'Ready to move! Click to move PR2 base!'
 
-
-    def on_execute(self):
+    def on_execute(self, ud):
         log_msg = 'Moving PR2 base'
         print log_msg
+        try:
+            base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain, base_goals)
+        except:
+            rospy.logwarn("[%s] MoveRobotState - Cannot find base location on parameter server", rospy.get_name())
+            return 'aborted'
+        pr2_goal_pose = PoseStamped()
+        pr2_goal_pose.header.stamp = rospy.Time.now()
+        pr2_goal_pose.header.frame_id = 'base_footprint'
+        trans_out = base_goals[:3]
+        rot_out = base_goals[3:]
+        pr2_goal_pose.pose.position.x = trans_out[0]
+        pr2_goal_pose.pose.position.y = trans_out[1]
+        pr2_goal_pose.pose.position.z = trans_out[2]
+        pr2_goal_pose.pose.orientation.x = rot_out[0]
+        pr2_goal_pose.pose.orientation.y = rot_out[1]
+        pr2_goal_pose.pose.orientation.z = rot_out[2]
+        pr2_goal_pose.pose.orientation.w = rot_out[3]
         goal = ARServoGoalData()
         goal.tag_id = 4
         goal.marker_topic = '/ar_pose_marker'
-        goal.tag_goal_pose = self.pr2_goal_pose
+        goal.tag_goal_pose = pr2_goal_pose
         self.servo_goal_pub.publish(goal)
         rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
         while not rospy.is_shutdown():
@@ -274,7 +281,7 @@ class CallBaseSelectionState(PDDLSmachState):
             return None
         return resp.base_goal, resp.configuration_goal
 
-    def on_execute(self):
+    def on_execute(self, ud):
         goal_array, config_array = self.call_base_selection()
         if goal_array == None or config_array == None:
             print "Base Selection Returned None"
@@ -346,8 +353,8 @@ class ConfigureModelRobotState(PDDLSmachState):
     def bed_status_cb(self, data):
         self.model_reached = data.data
 
-    def on_execute(self):
-        if self.model = 'autobed':
+    def on_execute(self, ud):
+        if self.model == 'autobed':
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
             self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % domain, configuration_goals)
             while (self.bed_state_leg_theta is None):
@@ -365,8 +372,8 @@ class ConfigureModelRobotState(PDDLSmachState):
                 rospy.loginfo("Some problem in getting TORSO HEIGHT from base selection")
                 return 'aborted'
             rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
-            rospy.Subscriber('torso_controller/position_joint_action/goal', 
-                             SingleJointPositionActionGoal, 
+            rospy.Subscriber('torso_controller/position_joint_action/goal',
+                             SingleJointPositionActionGoal,
                              self.torso_goal_cb)
             while not rospy.is_shutdown():
                 self.update_torso_state()
@@ -388,4 +395,4 @@ class ConfigureModelRobotState(PDDLSmachState):
                     state_update.predicates = ['CONFIGURED SPINE' + ' ' + str(self.task) + ' ' + str(self.model)]
                     print "Publishing (CONFIGURED SPINE) update"
                     self.state_pub.publish(state_update)
-                rospy.sleep(1)  
+                rospy.sleep(1)

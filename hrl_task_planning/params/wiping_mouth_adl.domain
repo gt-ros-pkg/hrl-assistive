@@ -1,7 +1,7 @@
 (define (domain wiping_mouth_adl)
  (:requirements :typing :conditional-effects)
  (:types
-  dof tag params - physobj
+  dof tag - physobj
   task model - params 
  )
 
@@ -55,21 +55,21 @@
  )   
  
  (:action call_base_selection
-  :parameters (?t - task, ?m - model)
+  :parameters (?t - task ?m - model)
   :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m))
   :effect (and (base-selected ?t ?m)
           )
  )
 
  (:action configure_model_robot
-  :parameters (?t - task, ?m - model)
+  :parameters (?t - task ?m - model)
   :precondition (and (found-tag ?m)(base-selected ?t ?m))
   :effect (and (forall(?d - dof)(configured ?d ?t ?m))
           )
  )
 
  (:action move_robot
-  :parameters (?t - task, ?m - model)
+  :parameters (?t - task ?m - model)
   :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))
                      (is-tracking-tag ?m))
   :effect (and (base-reached ?t ?m)
@@ -77,14 +77,14 @@
  )
 
  (:action move_arm
-  :parameters (?t - task, ?m - model)
+  :parameters (?t - task ?m - model)
   :precondition (and (base-selected ?t ?m))
   :effect (and (arm-reached ?t ?m)
           )
  )
 
  (:action do_task
-  :parameters (?t - task, ?m - model)
+  :parameters (?t - task ?m - model)
   :precondition (and(base-selected ?t ?m)(base-reached ?t ?m)(arm-reached ?t ?m))
   :effect (and (task-completed ?t ?m)
           )
