@@ -829,7 +829,7 @@ class anomaly_detector:
                     ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
                     ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
                     
-                    sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_partial_train), 1.0 ) )
+                    sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_partial_train), 1.0 ) )
                     ## sample_weights    = np.ones(len(self.X_partial_train)) #*4.0
                     ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
