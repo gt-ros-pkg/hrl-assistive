@@ -1716,7 +1716,7 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             ## subject_names = ['test'] 
             subject_names = ['zack', 'hkim', 'ari'] #, 'zack'
-            test_subject  = ['jina'] # sim only
+            test_subject  = ['sai'] # sim only
             
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\
