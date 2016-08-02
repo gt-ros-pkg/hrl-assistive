@@ -428,9 +428,9 @@ class anomaly_detector:
             self.Y_train_org   = Y_train_org
             self.idx_train_org = idx_train_org
 
-            self.X_partial_train   = self.X_train_org[len(self.X_train_org)/4]
-            self.Y_partial_train   = self.Y_train_org[len(self.Y_train_org)/4]
-            self.idx_partial_train = self.idx_train_org[len(self.idx_train_org)/4]            
+            self.X_partial_train   = self.X_train_org[len(self.X_train_org)/2]
+            self.Y_partial_train   = self.Y_train_org[len(self.Y_train_org)/2]
+            self.idx_partial_train = self.idx_train_org[len(self.idx_train_org)/2]            
         else:
             self.X_train_org = X_train_org
             self.Y_train_org   = Y_train_org
@@ -824,8 +824,8 @@ class anomaly_detector:
 
                 if update_flag or True:
                     nLength = len(p_train_X)/self.nTests
-                    self.X_partial_train = np.delete(self.X_partial_train, np.s_[:nLength], 0)
-                    self.Y_partial_train = np.delete(self.Y_partial_train, np.s_[:nLength], 0)
+                    ## self.X_partial_train = np.delete(self.X_partial_train, np.s_[:nLength], 0)
+                    ## self.Y_partial_train = np.delete(self.Y_partial_train, np.s_[:nLength], 0)
                     ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
                     ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
                     
