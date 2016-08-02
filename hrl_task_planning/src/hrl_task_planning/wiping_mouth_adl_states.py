@@ -130,22 +130,28 @@ class CheckOccupancyState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(CheckOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
-        if model == 'autobed':
+        print "Check Occupancy of Model: %s" % model
+        if model.upper() == 'AUTOBED':
+            print "Recognized model as Autobed"
             self.autobed_occupied_status = False
 
     def on_execute(self, ud):
-        if self.model == 'autobed':
+        if self.model.upper() == 'AUTOBED':
+            print "[%s] Check Occupancy State Waiting for Service" % rospy.get_name()
             rospy.wait_for_service('autobed_occ_status')
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+                print "Calling autobed occ service"
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
                 return 'aborted'
 
             if self.autobed_occupied_status:
+                print "autobed occupied"
                 return 'succeeded'
             else:
+                print "autobed NOT occupied"
                 return 'aborted'
 
 

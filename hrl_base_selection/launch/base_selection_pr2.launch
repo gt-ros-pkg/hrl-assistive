@@ -5,8 +5,8 @@
         <!--<arg name="arm" value="l"/>-->
         <!--<arg name="verbose" value="true"/>-->
     <!--</include>-->
-    <include file="$(find hrl_base_selection)/launch/base_selection_assistive_teleop.launch"/>
-    <include file="$(find assistive_teleop)/launch/vci.launch"/>
+<!--    <include file="$(find hrl_base_selection)/launch/base_selection_assistive_teleop.launch"/>-->
+<!--    <include file="$(find assistive_teleop)/launch/vci.launch"/>-->
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
 
     <!-- For arm reacher -->

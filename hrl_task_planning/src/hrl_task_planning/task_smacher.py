@@ -286,7 +286,9 @@ class PDDLSmachState(smach.State):
         plan_step_msg.action = self.action
         plan_step_msg.args = self.action_args
         self.action_pub.publish(plan_step_msg)
-        self.on_execute(ud)
+        res = self.on_execute(ud)
+        if res in ['preempted', 'aborted']:
+            return res
         rospy.loginfo("State %s waiting for current state", self.action)
         while self.current_state is None:
             rospy.sleep(0.2)
