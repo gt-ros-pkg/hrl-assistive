@@ -8,7 +8,7 @@
       <node name="anomaly_detector" pkg="hrl_anomaly_detection"
             type="anomaly_detector.py" args="--task feeding --dim 4
                                              --m sgd
-                                             --au --sim --hr --cr
+                                             --au --sim --cr
                                              "
             output="screen" />
     </group>
