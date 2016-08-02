@@ -1269,8 +1269,8 @@ class anomaly_detector:
                 print "############## CUMULATIVE / REF EVAL ###################"
                 self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
                 print "######################################################"
-                if update_flag or i==0:
-                    self.acc_ref, _, _ = self.evaluation_ref()
+                self.acc_ref, _, _ = self.evaluation_ref()
+                if update_flag:
                     self.update_list.append(1)
                 else:
                     self.update_list.append(0)
