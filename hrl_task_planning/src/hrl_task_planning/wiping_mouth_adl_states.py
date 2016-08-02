@@ -100,10 +100,12 @@ class TrackTagState(PDDLSmachState):
     def on_execute(self, ud):
         self.start_tracking_AR_publisher.publish(True)
 
+
 class RegisterHeadState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(RegisterHeadState, self).__init__(domain=domain, *args, **kwargs)
         self.listener = tf.TransformListener()
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.model = model
         print "Looking for head of person on: %s" % model
 
@@ -136,9 +138,9 @@ class CheckOccupancyState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(CheckOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
-        print "Check Occupancy of Model: %s" % model
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+#        print "Check Occupancy of Model: %s" % model
         if model.upper() == 'AUTOBED':
-            print "Recognized model as Autobed"
             self.autobed_occupied_status = False
 
     def on_execute(self, ud):
@@ -147,22 +149,18 @@ class CheckOccupancyState(PDDLSmachState):
             rospy.wait_for_service('autobed_occ_status')
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
-                print "Calling autobed occ service"
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
                 print "Service call failed: %s" % e
                 return 'aborted'
 
             if self.autobed_occupied_status:
-                print "autobed occupied"
                 state_update = PDDLState()
                 state_update.domain = self.domain
-                state_update.predicates = ['OCCUPIED' + ' ' + str(self.model)]
-                print "Publishing (OCCUPIED) update"
+                state_update.predicates = ['(OCCUPIED %s)' % self.model]
                 self.state_pub.publish(state_update)
                 self.goal_reached = False
             else:
-                print "autobed NOT occupied"
                 self.goal_reached = False
                 return 'aborted'
 
@@ -283,6 +281,7 @@ class MoveRobotState(PDDLSmachState):
 class CallBaseSelectionState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         print "Base Selection Called for task: %s and Model: %s" %(task, model)
         self.task = task
         self.model = model

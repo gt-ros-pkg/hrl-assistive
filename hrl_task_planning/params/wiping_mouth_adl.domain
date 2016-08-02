@@ -42,7 +42,7 @@
 
  (:action register_head
   :parameters (?m - model)
-  :precondition (and (not(head-registered ?m)))
+  :precondition (and (found-tag ?m) (not(head-registered ?m)))
   :effect (and (head-registered ?m)
           )
  )
