@@ -428,9 +428,9 @@ class anomaly_detector:
             self.Y_train_org   = Y_train_org
             self.idx_train_org = idx_train_org
 
-            self.X_partial_train   = self.X_train_org[len(self.X_train_org)/16]
-            self.Y_partial_train   = self.Y_train_org[len(self.Y_train_org)/16]
-            self.idx_partial_train = self.idx_train_org[len(self.idx_train_org)/16]            
+            self.X_partial_train   = self.X_train_org[len(self.X_train_org)/4]
+            self.Y_partial_train   = self.Y_train_org[len(self.Y_train_org)/4]
+            self.idx_partial_train = self.idx_train_org[len(self.idx_train_org)/4]            
         else:
             self.X_train_org = X_train_org
             self.Y_train_org   = Y_train_org
@@ -1560,7 +1560,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(20.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(5.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
