@@ -646,9 +646,6 @@ class anomaly_detector:
 
         
     def userfbCallback(self, msg):
-        ## #temp
-        ## self.cur_task     = 'feeding'
-        ## self.anomaly_flag = False
         
         if self.cur_task is None and self.bSim is False: return        
         if self.cur_task.find(self.task_name) < 0  and self.bSim is False: return
@@ -842,7 +839,8 @@ class anomaly_detector:
 
                 max_rate      = 0.0 #0.1
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
-                update_weight = 1.0 #float(self.nTrainData)/30.0
+                update_weight = np.exp(-0.16*self.update_count)*4.0 + 1.0
+                #float(self.nTrainData)/30.0
 
                 if user_feedback == "success":
 
@@ -1143,7 +1141,7 @@ class anomaly_detector:
         checked_fileList = []
         self.unused_fileList = []
 
-        fb = ut.get_keystroke('Hit a key to load a new file')
+        ## fb = ut.get_keystroke('Hit a key to load a new file')
         ## sys.exit()
 
 
