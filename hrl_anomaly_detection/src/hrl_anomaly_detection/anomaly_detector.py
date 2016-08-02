@@ -1547,7 +1547,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(20.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(40.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
