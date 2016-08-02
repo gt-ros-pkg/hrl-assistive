@@ -815,7 +815,7 @@ class anomaly_detector:
                 self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
 
                 if update_flag or True:
-                    sample_weights    = 1.0-np.exp( np.arange(0., len(test_X), 1.0 ) )
+                    sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = np.linspace(0.1, 1.0, len(self.X_train_org))
                     ## sample_weights    = np.ones(len(self.X_train_org))
                     ## if s_flag == 0 or f_flag == 0:
