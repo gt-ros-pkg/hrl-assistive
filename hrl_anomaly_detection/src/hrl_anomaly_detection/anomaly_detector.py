@@ -881,7 +881,8 @@ class anomaly_detector:
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
                                                                        self.nState,\
-                                                                       self.nTrainData+len(self.update_list)-1,\
+                                                                       self.nTrainData,\
+                                                                       ## self.nTrainData+len(self.update_list)-1,\
                                                                        update_weight=update_weight)
                     # update
                     self.classifier.ll_mu = l_mu
