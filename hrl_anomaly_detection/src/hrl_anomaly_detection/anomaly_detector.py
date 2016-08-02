@@ -886,9 +886,6 @@ class anomaly_detector:
                     self.classifier.ll_mu = l_mu
                     self.classifier.ll_std = l_std
 
-                    print "Upppppppppppppppppppppppppp dateeeeeeeeeeeeeeeee!!!!!!!!!!!!!!!",\
-                      update_weight, alpha, self.w_positive                    
-
                     if update_flag:
                         sensitivity = self.sensitivity_clf_to_GUI()
                         sensitivity -= max_rate*alpha
