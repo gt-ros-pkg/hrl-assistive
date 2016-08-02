@@ -846,7 +846,7 @@ class anomaly_detector:
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     ## self.classifier.set_params( class_weight=1.0 )
                     alpha    = 1.0 #np.exp(-0.16*self.update_count)*0.8 + 0.2
-                    nMaxIter = 2 #int(5.0*alpha)
+                    nMaxIter = 4 #int(5.0*alpha)
                     ## alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
                     ## nMaxIter = int(5.0*alpha)
                     self.classifier = partial_fit(self.X_partial_train, self.Y_partial_train, p_train_W, \
