@@ -919,7 +919,7 @@ class anomaly_detector:
                     if self.anomaly_flag: return
                 
                     # If false negative, raise ths mult
-                    if update_flag is False and False:
+                    if update_flag is False:
                         print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
                         sensitivity = self.sensitivity_clf_to_GUI()
                         sensitivity += max_rate*alpha
