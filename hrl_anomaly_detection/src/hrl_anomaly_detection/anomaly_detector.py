@@ -239,7 +239,7 @@ class anomaly_detector:
             idx_list = range(len(test_fileList))
             random.shuffle(idx_list)
             self.eval_run_fileList = test_fileList[:len(idx_list)/2]
-            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
+            self.eval_ref_fileList = test_fileList[:len(idx_list)/2] #test_fileList[len(idx_list)/2:]
 
 
 
@@ -862,7 +862,7 @@ class anomaly_detector:
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
                 update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/10.0 + 1.0
                 ## update_weight = np.exp(-0.32*self.update_count)*0.7 + 0.3
-                ## update_weight = 20.0
+                update_weight = 1.0
 
                 if user_feedback == "success":
 
@@ -881,13 +881,15 @@ class anomaly_detector:
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
                                                                        self.nState,\
-                                                                       self.nTrainData+len(self.update_list)-1,\
+                                                                       self.nTrainData,\
+                                                                       ## self.nTrainData+len(self.update_list)-1,\
                                                                        update_weight=update_weight)
                     # update
                     self.classifier.ll_mu = l_mu
                     self.classifier.ll_std = l_std
 
                     if update_flag:
+                        print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
                         sensitivity = self.sensitivity_clf_to_GUI()
                         sensitivity -= max_rate*alpha
                         sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
@@ -902,7 +904,8 @@ class anomaly_detector:
                     if self.anomaly_flag: return
                 
                     # If false negative, raise ths mult
-                    if update_flag is False:
+                    if update_flag is False and False:
+                        print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
                         sensitivity = self.sensitivity_clf_to_GUI()
                         sensitivity += max_rate*alpha
                         sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
