@@ -769,7 +769,7 @@ def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, n
         except:
             print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
             print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
-        sig_new = sig
+        ## sig_new = sig
 
         ## mu_new  = ( float(N)*mu + x_new )/(N+1.0)
         ## try:
