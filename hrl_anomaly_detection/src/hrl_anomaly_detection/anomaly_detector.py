@@ -98,7 +98,7 @@ class anomaly_detector:
         self.param_dict = param_dict        
         self.classifier_method = check_method
         self.startOffsetSize = 4
-        self.startCheckIdx   = 20
+        self.startCheckIdx   = 10
         self.nUpdateFreq = 3
         self.sgd_n_iter = 100
         
@@ -239,7 +239,7 @@ class anomaly_detector:
             idx_list = range(len(test_fileList))
             random.shuffle(idx_list)
             self.eval_run_fileList = test_fileList[:len(idx_list)/2]
-            self.eval_ref_fileList = test_fileList[:len(idx_list)/2] #test_fileList[len(idx_list)/2:]
+            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
 
 
 
@@ -862,7 +862,7 @@ class anomaly_detector:
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
                 update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/10.0 + 1.0
                 ## update_weight = np.exp(-0.32*self.update_count)*0.7 + 0.3
-                update_weight = 1.0
+                update_weight = 5.0
 
                 if user_feedback == "success":
 
@@ -1489,7 +1489,7 @@ def evaluation(X, Y, clf, verbose=False):
         est_y   = clf.predict(X[i])
         for j in xrange(len(est_y)):
 
-            if j < 4: continue
+            if j < 10: continue
             if est_y[j] > 0:
                 anomaly = True
                 break
