@@ -83,7 +83,6 @@ class FindTagState(PDDLSmachState):
                 print "Publishing (FOUND-TAG) update"
                 self.state_pub.publish(state_update)
                 self.goal_reached = False
-                return 'succeeded'
             rospy.sleep(1)
 
     def found_ar_tag_cb(self, msg):
@@ -101,23 +100,30 @@ class TrackTagState(PDDLSmachState):
     def on_execute(self, ud):
         self.start_tracking_AR_publisher.publish(True)
 
-
 class RegisterHeadState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(RegisterHeadState, self).__init__(domain=domain, *args, **kwargs)
         self.listener = tf.TransformListener()
-        self.head_registered = self.get_head_pose()
         self.model = model
+        print "Looking for head of person on: %s" % model
 
     def on_execute(self, ud):
-        if self.get_head_pose():
-            return 'succeeded'
+        head_registered = self.get_head_pose()
+        if head_registered:
+            print "Head Found."
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['HEAD-REGISTERED' + ' ' + str(self.model)]
+            print "Publishing (HEAD-REGISTERED) update"
+            self.state_pub.publish(state_update)
         else:
+            print "Head NOT Found"
             return 'aborted'
 
     def get_head_pose(self, head_frame="/user_head_link"):
         try:
             now = rospy.Time.now()
+            print "[%s] Register Head State Waiting for Head Transform" % rospy.get_name()
             self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
             pos, quat = self.listener.lookupTransform("/base_link", head_frame, now)
             return True
@@ -149,9 +155,15 @@ class CheckOccupancyState(PDDLSmachState):
 
             if self.autobed_occupied_status:
                 print "autobed occupied"
-                return 'succeeded'
+                state_update = PDDLState()
+                state_update.domain = self.domain
+                state_update.predicates = ['OCCUPIED' + ' ' + str(self.model)]
+                print "Publishing (OCCUPIED) update"
+                self.state_pub.publish(state_update)
+                self.goal_reached = False
             else:
                 print "autobed NOT occupied"
+                self.goal_reached = False
                 return 'aborted'
 
 
@@ -261,7 +273,6 @@ class MoveRobotState(PDDLSmachState):
                 print "Publishing (BASE-REACHED) update"
                 self.state_pub.publish(state_update)
                 self.goal_reached = False
-                return 'succeeded'
             rospy.sleep(1)
 
     def base_servoing_cb(self, msg):
@@ -272,6 +283,7 @@ class MoveRobotState(PDDLSmachState):
 class CallBaseSelectionState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
+        print "Base Selection Called for task: %s and Model: %s" %(task, model)
         self.task = task
         self.model = model
 
@@ -300,7 +312,11 @@ class CallBaseSelectionState(PDDLSmachState):
         print "Configuration Goals returned:\r\n", configuration_goals
         rospy.set_param('/pddl_tasks/%s/base_goals' % self.domain, base_goals)
         rospy.set_param('/pddl_tasks/%s/configuration_goals' % self.domain, configuration_goals)
-        return 'succeeded'
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.predicates = ['BASE-SELECTED' + ' ' + str(self.task) + ' ' + str(self.model)]
+        print "Publishing (BASE-SELECTED) update"
+        self.state_pub.publish(state_update)
 
 
 class ConfigureModelRobotState(PDDLSmachState):
@@ -309,26 +325,28 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.domain = domain
         self.task = task
         self.model = model
-        if self.model == 'autobed':
+        print "Configuring Model and Robot for task: %s and Model: %s" %(task, model)
+        if self.model.upper() == 'AUTOBED':
             self.model_reached = False
         else:
             self.model_reached = True
         self.torso_reached = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
-        if self.model == 'autobed':
+        if self.model.upper() == 'AUTOBED':
             self.bed_state_leg_theta = None
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
         self.torso_state_deque = deque([None]*24, 24)
         self.goal_level = -100.0
 
     def get_torso_height(self):
+        rospy.loginfo("[%s] Waiting to get torso height." %rospy.get_name())
         rospy.wait_for_service("return_joint_states")
         try:
             s = rospy.ServiceProxy("return_joint_states", ReturnJointStates)
             resp = s('torso_lift_joint')
         except rospy.ServiceException, e:
             print "error when calling return_joint_states: %s"%e
-            sys.exit(1)
+            resp.position = None
         return resp.position
 
     def update_torso_state(self):
@@ -360,9 +378,13 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.model_reached = data.data
 
     def on_execute(self, ud):
-        if self.model == 'autobed':
+        if self.model.upper() == 'AUTOBED':
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-            self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % domain, configuration_goals)
+            try:
+                self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % domain, configuration_goals)
+            except:
+                rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server", rospy.get_name())
+                return 'aborted'
             while (self.bed_state_leg_theta is None):
                 rospy.sleep(1)
             autobed_goal = FloatArrayBare()
@@ -386,7 +408,6 @@ class ConfigureModelRobotState(PDDLSmachState):
                 if self.model_reached and self.torso_reached:
                     self.model_reached = False
                     self.torso_reached = False
-                    return 'succeeded'
                 if self.model_reached:
                     rospy.loginfo("Bed Goal Reached")
                     state_update = PDDLState()
