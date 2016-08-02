@@ -425,10 +425,16 @@ class anomaly_detector:
             else:
                 self.scaler      = preprocessing.StandardScaler()
                 self.X_train_org = self.scaler.fit_transform(X_train_org)
+            self.Y_train_org   = Y_train_org
+            self.idx_train_org = idx_train_org
+
+            self.X_partial_train   = self.X_train_org[len(self.X_train_org)/4]
+            self.Y_partial_train   = self.Y_train_org[len(self.Y_train_org)/4]
+            self.idx_partial_train = self.idx_train_org[len(self.idx_train_org)/4]            
         else:
             self.X_train_org = X_train_org
-        self.Y_train_org   = Y_train_org
-        self.idx_train_org = idx_train_org
+            self.Y_train_org   = Y_train_org
+            self.idx_train_org = idx_train_org
 
         rospy.loginfo( self.classifier_method+" : Before classification : "+ \
           str(np.shape(self.X_train_org))+' '+str( np.shape(self.Y_train_org)))
@@ -811,15 +817,21 @@ class anomaly_detector:
             elif self.classifier_method.find('sgd')>=0:
                 #remove fp and flattening     
                 p_train_X, p_train_Y, _ = getProcessSGDdata(test_X, test_Y)
-                self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
-                self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
+                self.X_partial_train = np.vstack([ self.X_partial_train, p_train_X ])
+                self.Y_partial_train = np.hstack([ self.Y_partial_train, p_train_Y ])
+                ## self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
+                ## self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
 
                 if update_flag or True:
                     nLength = len(p_train_X)/self.nTests
-                    self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
-                    self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
+                    self.X_partial_train = np.delete(self.X_partial_train, np.s_[:nLength], 0)
+                    self.Y_partial_train = np.delete(self.Y_partial_train, np.s_[:nLength], 0)
+                    ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
+                    ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
                     
-                    sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
+                    ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_partial_train), 1.0 ) )
+                    sample_weights    = np.ones(len(self.X_partial_train))
+                    ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
                     ## sample_weights    = np.linspace(0.1, 1.0, len(self.X_train_org))
                     ## sample_weights    = np.ones(len(self.X_train_org))
@@ -837,10 +849,11 @@ class anomaly_detector:
                     nMaxIter = 1 #int(5.0*alpha)
                     ## alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
                     ## nMaxIter = int(5.0*alpha)
-                    self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
+                    self.classifier = partial_fit(self.X_partial_train, self.Y_partial_train, p_train_W, \
                                                   self.classifier, \
                                                   test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
-                    ## self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
+                    ## self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
+                    ##                               self.classifier, \
                     ##                               test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
                     ## self.classifier.set_params( class_weight=self.w_positive )
             elif self.classifier_method.find('progress')>=0:
@@ -1547,7 +1560,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(80.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(40.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
