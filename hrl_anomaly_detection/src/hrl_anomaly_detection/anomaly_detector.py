@@ -827,8 +827,10 @@ class anomaly_detector:
                                     
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     ## self.classifier.set_params( class_weight=1.0 )
-                    alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
-                    nMaxIter = int(5.0*alpha)
+                    alpha    = 1.0 #np.exp(-0.16*self.update_count)*0.8 + 0.2
+                    nMaxIter = 1 #int(5.0*alpha)
+                    ## alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
+                    ## nMaxIter = int(5.0*alpha)
                     self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
                                                   self.classifier, \
                                                   test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
@@ -1539,7 +1541,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(40.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(20.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
