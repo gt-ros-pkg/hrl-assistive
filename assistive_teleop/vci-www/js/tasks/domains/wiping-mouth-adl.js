@@ -57,7 +57,7 @@ RFH.Domains.WipingMouthADL = function (options) {
             case 'DO_TASK':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                    RFH.taskMenu.startTask('rEECartTask');
+                    RFH.taskMenu.startTask('lEECartTask');
                 }
                 break;
         }
@@ -67,21 +67,21 @@ RFH.Domains.WipingMouthADL = function (options) {
     self.getActionLabel = function (name, args) {
         switch (name){
             case 'FIND_TAG':
-                return "Finding AR Tag.";
+                return "Finding Tag.";
             case 'TRACK_TAG':
-                return "Tracking AR Tag.";
+                return "Tracking Tag.";
             case 'CHECK_OCCUPANCY':
-                return "Checking Bed Occupancy.";
+                return "Bed Occ";
             case 'REGISTER_HEAD':
-                return "Registering Occupant Head.";
+                return "Register Head.";
             case 'CALL_BASE_SELECTION':
-                return "Calling Base Selection.";
+                return "Call BS.";
             case 'CONFIGURE_MODEL_ROBOT':
-                return "Configuring Bed and Robot.";
+                return "Setup Bed & Robot.";
             case 'MOVE_ROBOT':
-                return "Moving PR2 Base.";
+                return "Moving Base.";
             case 'MOVE_ARM':
-                return "Moving PR2 Arm."
+                return "Moving Arm."
             case 'DO_TASK':
                 return "Manual Task.";
         }
