@@ -82,10 +82,10 @@ class FindTagState(PDDLSmachState):
                 rospy.loginfo("AR Tag Found")
                 state_update = PDDLState()
                 state_update.domain = self.domain
-                state_update.predicates = ['(FOUND-TAG %s)' % self.model)]
+                state_update.predicates = ['(FOUND-TAG %s)' % self.model]
                 print "Publishing (FOUND-TAG) update"
                 self.state_pub.publish(state_update)
-                return 
+                return
             rospy.sleep(1)
 
     def found_ar_tag_cb(self, msg):
@@ -317,7 +317,7 @@ class CallBaseSelectionState(PDDLSmachState):
         rospy.set_param('/pddl_tasks/%s/configuration_goals' % self.domain, configuration_goals)
         state_update = PDDLState()
         state_update.domain = self.domain
-        state_update.predicates = ['(BASE-SELECTED %s %s) % (self.task, self.model)]
+        state_update.predicates = ['(BASE-SELECTED %s %s)' % (self.task, self.model)]
         print "Publishing (BASE-SELECTED) update"
         self.state_pub.publish(state_update)
 
