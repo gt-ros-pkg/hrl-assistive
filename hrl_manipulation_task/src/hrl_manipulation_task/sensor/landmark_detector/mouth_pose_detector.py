@@ -54,7 +54,10 @@ class MouthPoseDetector:
         #for initializing frontal face data
         self.save_loc          = save_loc
         if self.save_loc is not None:
-            self.save_loc = os.path.expanduser('~') + save_loc
+            if save_loc[0] != '/':
+                self.save_loc = os.path.expanduser('~') + '/' +  save_loc
+            else:
+                self.save_loc = os.path.expanduser('~') + save_loc
         self.first                 = True
         self.relation              = None
         self.dist                  = []
@@ -75,7 +78,10 @@ class MouthPoseDetector:
         self.previous_orientation  = (0.0, 0.0, 0.0, 0.0)
 
         if load_loc is not None:
-            self.load_loc = os.path.expanduser('~') + load_loc
+            if load_loc[0] != '/':
+                self.load_loc = os.path.expanduser('~') + '/' + load_loc
+            else:
+                self.load_loc = os.path.expanduser('~') + load_loc
             self.load(self.load_loc)
 
         #subscribers
@@ -103,12 +109,16 @@ class MouthPoseDetector:
             for i in xrange(200):
                 self.poly_pub.append(rospy.Publisher('/poly_pub' + str(i), PolygonStamped, queue_size=10))        
 
+        self.success_count_down = 10
         while not self.subscribed_success or not self.frame_ready:
             if not self.frame_ready:
                 print "frame data was not registered"
             if not self.subscribed_success:
                 print "data is either not published or not synchronized"
-                time.sleep(1)
+            self.success_count_down -= 1
+            if self.success_count_down <= 0:
+                break
+            time.sleep(1)
 
         print "successfully initialized"
 
@@ -129,7 +139,15 @@ class MouthPoseDetector:
         self.lm_coor           = d['lm_coor']
         self.gripper_to_sensor = d['gripper_to_sensor']
         self.wrong_coor        = d['wrong_coor']
-        self.previous_position = (0.0, 0.0, 0.0)
+        self.min_w             = d['min_w']
+        self.min_h             = d['min_h']
+        self.registered_faces  = d['registered_faces']
+        self.registered_eye_vertical = d['registered_eye_vertical']
+        self.registered_eye_horizontal = d['registered_eye_horizontal']
+        self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
+        self.eye_vertical_model   = self.find_mean_var(self.registered_eye_vertical)
+        self.previous_face        = d['previous_face']
+        self.previous_position    = (0.0, 0.0, 0.0)
         self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
         
 
@@ -148,8 +166,14 @@ class MouthPoseDetector:
         d['lm_coor']           = self.lm_coor
         d['gripper_to_sensor'] = self.gripper_to_sensor
         d['wrong_coor']        = self.wrong_coor
+        d['min_w']             = self.min_w
+        d['min_h']             = self.min_h
+        d['previous_face']     = self.previous_face
         d['previous_position'] = self.previous_position
         d['previous_orientation'] = self.previous_orientation
+        d['registered_faces']  = self.registered_faces 
+        d['registered_eye_vertical']   = self.registered_eye_vertical 
+        d['registered_eye_horizontal'] = self.registered_eye_horizontal
         ut.save_pickle(d, save_loc)
 
     def callback(self, data, depth_data, gripper_pose):
@@ -287,6 +311,8 @@ class MouthPoseDetector:
                         self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
                         self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
                         print self.eye_horizontal_model
+                        if self.save_loc is not None:
+                            self.save(self.save_loc)
                         #print "finished registering!"
                         #print self.registered_vertical
                 if self.display_2d:
@@ -379,8 +405,6 @@ class MouthPoseDetector:
                             print lm_point
                             self.wrong_coor = lm_point
                     self.first = False 
-                    if self.save_loc is not None:
-                        self.save(self.save_loc)
                 else:
                     if self.registered_faces >= 45 and not self.face_detected:
                         time_to_align = time.time()
@@ -448,7 +472,6 @@ class MouthPoseDetector:
                         valid_amount.append(0)
                     for i in xrange(30,31):
                         if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
-                            #print self.get_dist(current_lm[i], self.lm_coor[i])
                             if self.get_dist(current_lm[i], self.lm_coor[i]) < 0.05:
                                 for j in xrange(len(current_lm)):
                                     if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
@@ -517,9 +540,6 @@ class MouthPoseDetector:
             except:
                 print "failed"
         self.mouth_pub.publish(best_pose)
-        if best_point_set is not None:
-            print "best was ", best
-            time.sleep(2)
         ## self.mouth_pub.publish(pnp_pose)
         print time.time() - time1
 
