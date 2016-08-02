@@ -763,7 +763,12 @@ def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, n
 
         x_new   = g_lhood / weight_sum
         mu_new  = ( float(N-update_weight)*mu + update_weight*x_new )/(N)
-        sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new )
+        try:
+            sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new )
+        except:
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
+        ## sig_new = sig
 
         mu  = mu_new
         sig = sig_new

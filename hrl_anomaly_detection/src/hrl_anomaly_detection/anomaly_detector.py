@@ -840,9 +840,9 @@ class anomaly_detector:
                     ## self.classifier.set_params( class_weight=self.w_positive )
             elif self.classifier_method.find('progress')>=0:
 
-                max_rate = 0.2
-                alpha    = np.exp(-0.16*self.update_count)*1.0 #+ 0.5
-                update_weight = float(self.nTrainData)/20.0
+                max_rate      = 0.0 #0.1
+                alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
+                update_weight = 1.0 #float(self.nTrainData)/30.0
 
                 if user_feedback == "success":
 
@@ -1147,7 +1147,18 @@ class anomaly_detector:
         ## sys.exit()
 
 
+        print "############## CUMULATIVE / REF EVAL ###################"
+        self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        self.acc_ref, _, _ = self.evaluation_ref()
+        self.update_list.append(0)
+        self.cum_acc_list.append(self.acc_all)
+        self.ref_acc_list.append(self.acc_ref)
+        print "######################################################"
+
+
         for i in xrange(100):
+
+            if rospy.is_shutdown(): break
 
             if auto:
                 if i < len(self.eval_run_fileList):
