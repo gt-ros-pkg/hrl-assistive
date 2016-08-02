@@ -839,9 +839,8 @@ class anomaly_detector:
 
                 max_rate      = 0.0 #0.1
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
-                update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/6.0 + 1.0
-                update_weight = 1. #5.0  #float(self.nTrainData)/6.0
-                #
+                update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/5.0 + 1.0
+                update_weight = 10.0
 
                 if user_feedback == "success":
 
@@ -860,7 +859,7 @@ class anomaly_detector:
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
                                                                        self.nState,\
-                                                                       self.nTrainData,\
+                                                                       self.nTrainData+len(self.update_list)-1,\
                                                                        update_weight=update_weight)
                     # update
                     self.classifier.ll_mu = l_mu
