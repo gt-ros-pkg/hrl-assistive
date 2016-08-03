@@ -396,6 +396,23 @@ class anomaly_detector:
                     Y_train_org.append(ll_classifier_train_Y[i][j])
                     idx_train_org.append(ll_classifier_train_idx[i][j])
 
+            # Add failure safe data
+            ## safe_train_X = []
+            ## safe_train_Y = []
+            ## safe_train_idx = []
+            for i in xrange(self.ml.nState):
+                v                     = np.zeros(self.ml.nState*2+1)
+                v[0]                  = -500
+                v[i+1]                = 1.0
+                v[i+1+self.ml.nState] = 1.0                
+                X_train_org.append(v.tolist())
+                Y_train_org.append(1)
+                idx_train_org.append(i)
+
+              
+
+
+
             d                  = {}
             d['A']             = self.ml.A
             d['B']             = self.ml.B
@@ -1742,8 +1759,8 @@ if __name__ == '__main__':
             param_dict['AD']['eval_target'] = ['ref']
 
         elif opt.task == 'feeding':
-            ## subject_names = ['test'] 
-            subject_names = ['zack', 'hkim', 'ari'] #, 'zack'
+            # for adaptation, please add 'new' to the following list. 
+            subject_names = ['zack', 'hkim', 'ari', 'new'] #, 'zack'
             test_subject  = ['sai'] # sim only
             
             check_method      = opt.method

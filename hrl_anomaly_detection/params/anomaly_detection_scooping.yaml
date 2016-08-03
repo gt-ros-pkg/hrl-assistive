@@ -1,7 +1,7 @@
 cov_mult: 10.0
 downSampleSize: 200
 feature_list: [unimodal_ftForce, crossmodal_targetEEDist]
-progress_ths_mult: -2.0
+progress_ths_mult: -1.75
 rf_center: kinEEPos
 rf_radius: 0.15
 sgd_intercept: 0.15
