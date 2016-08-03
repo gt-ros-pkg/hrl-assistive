@@ -700,7 +700,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
                           'osvm_nu': 0.00316,\
                           'hmmosvm_nu': 0.001,\
-                          'hmmsvm_diag_w_negative': 1.175, 'hmmsvm_diag_cost': 10.0, \
+                          'hmmsvm_diag_w_negative': 1.711, 'hmmsvm_diag_cost': 3.0, \
                           'hmmsvm_diag_gamma': 0.01,\
                           'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 2.1499, 'hmmsvm_dL_cost': 5.5, \
@@ -714,7 +714,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
 
         # 'bpsvm', 'osvm', 
         ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'svm', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'hmmsvm_no_dL' ],\
-                          'update_list': [ 'svm', 'change', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'hmmsvm_no_dL' ],\
+                          'update_list': [ 'hmmsvm_diag' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
