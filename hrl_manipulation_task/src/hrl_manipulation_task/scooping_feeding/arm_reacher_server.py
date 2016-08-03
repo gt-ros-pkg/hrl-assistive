@@ -190,7 +190,7 @@ class armReachAction(mpcBaseAction):
 
         ## Init arms ---------------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
-        self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.005, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
+        self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
                                                 ['PAUSE', 3.0],\
                                                 ['MOVEL', '[ 0.0, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
         self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\

@@ -460,7 +460,7 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
-                     subject="linda", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None

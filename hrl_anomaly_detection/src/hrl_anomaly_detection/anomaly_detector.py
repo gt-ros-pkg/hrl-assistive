@@ -135,15 +135,9 @@ class anomaly_detector:
         # Comms
         self.lock = threading.Lock()        
 
-        ## # temp
-        ## self.fig = plt.figure()
-
-
         self.initParams()
         self.initComms()
         self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew, clf_renew=clf_renew)
-
-        ## self.plt.show()
 
         self.viz = viz
         if viz:
