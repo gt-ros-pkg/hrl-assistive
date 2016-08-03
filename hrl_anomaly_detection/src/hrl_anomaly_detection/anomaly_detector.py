@@ -617,6 +617,7 @@ class anomaly_detector:
         '''
         if self.classifier is None: return
         sensitivity_des = self.sensitivity_GUI_to_clf(msg.data)
+        rospy.loginfo( "Started to update the classifier!")
 
         if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
             self.w_positive = sensitivity_des
@@ -639,6 +640,8 @@ class anomaly_detector:
         if self.bSim:
             self.acc_ref, _, _ = self.evaluation_ref()
             print "acc ref: ", self.acc_ref
+
+        rospy.loginfo( "Evaluatoin is completed! : %s", str(self.acc_all))
 
         msg = FloatArray()
         msg.data = [self.acc_part, self.acc_all]            
@@ -908,7 +911,8 @@ class anomaly_detector:
             if self.bSim is False:
                 self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
                 self.cum_acc_list.append(self.acc_all)
-                   
+                rospy.loginfo( "Evaluatoin is completed! : %s", str(self.acc_all))
+   
             # pub accuracy
             msg = FloatArray()
             msg.data = [self.acc_part, self.acc_all]
