@@ -72,7 +72,7 @@ class anomaly_detector:
     def __init__(self, subject_names, task_name, check_method, raw_data_path, save_data_path,\
                  param_dict, data_renew=False, hmm_renew=False, clf_renew=False, viz=False, \
                  auto_update=False, \
-                 debug=False, sim=False):
+                 debug=False, sim=False, sim_subject_names=None):
         rospy.loginfo('Initializing anomaly detector')
 
         self.subject_names   = subject_names
@@ -98,7 +98,7 @@ class anomaly_detector:
         self.param_dict = param_dict        
         self.classifier_method = check_method
         self.startOffsetSize = 4
-        self.startCheckIdx   = 20
+        self.startCheckIdx   = 10
         self.nUpdateFreq = 3
         self.sgd_n_iter = 100
         
@@ -109,7 +109,7 @@ class anomaly_detector:
         if self.bSim: self.cur_task = self.task_name
         else:         self.cur_task = None
         ## self.t1 = datetime.datetime.now()
-
+        self.sim_subject_names = sim_subject_names
 
 
         # evaluation test
@@ -131,17 +131,25 @@ class anomaly_detector:
         self.acc_all  = 100.0
         self.acc_ref  = 100.0
 
+
         # Comms
         self.lock = threading.Lock()        
+
+        ## # temp
+        ## self.fig = plt.figure()
+
 
         self.initParams()
         self.initComms()
         self.initDetector(data_renew=data_renew, hmm_renew=hmm_renew, clf_renew=clf_renew)
 
+        ## self.plt.show()
+
         self.viz = viz
         if viz:
             rospy.loginfo( "Visualization enabled!!!")
             self.figure_flag = False
+
         
         self.reset()
         rospy.loginfo( "==========================================================")
@@ -207,15 +215,39 @@ class anomaly_detector:
 
         if self.w_positive > self.w_max:
             self.w_positive = self.w_max
-            rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            elif self.classifier_method == 'progress_time_cluster':                    
+                rospy.set_param('progress_ths_mult', float(self.w_positive))                
         elif self.w_positive < self.w_min:
             self.w_positive = self.w_min
-            rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
+                rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
+            elif self.classifier_method == 'progress_time_cluster':                    
+                rospy.set_param('progress_ths_mult', float(self.w_positive))
 
         # we use logarlism for the sensitivity
         if self.exp_sensitivity:
             self.w_max = np.log10(self.w_max)
             self.w_min = np.log10(self.w_min)
+
+
+        if self.bSim:
+            rospy.loginfo( "get subject files for simulation" )
+            ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
+            ## self.w_positive = sensitivity_des                
+            ## self.classifier.set_params(class_weight=self.w_positive)
+            ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
+            test_fileList = util.getSubjectFileList(self.raw_data_path, \
+                                                    self.sim_subject_names, \
+                                                    self.task_name, \
+                                                    time_sort=True,\
+                                                    no_split=True)
+
+            idx_list = range(len(test_fileList))
+            random.shuffle(idx_list)
+            self.eval_run_fileList = test_fileList[len(idx_list)/2:]
+            self.eval_ref_fileList = test_fileList[:len(idx_list)/2] #test_fileList[len(idx_list)/2:]
 
 
 
@@ -280,6 +312,10 @@ class anomaly_detector:
                 sys.exit()
 
         else:
+            if self.task_name == 'feeding':
+                max_time = 7.0
+            else:
+                max_time = None
             rospy.loginfo( "Start to train an hmm model of %s", self.task_name)
             rospy.loginfo( "Started get data set")
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
@@ -291,7 +327,7 @@ class anomaly_detector:
                                handFeatures=self.handFeatures, \
                                cut_data=self.cut_data,\
                                data_renew=data_renew, \
-                               time_sort=True)
+                               time_sort=True, max_time=max_time)
 
             self.handFeatureParams = dd['param_dict']
 
@@ -401,10 +437,16 @@ class anomaly_detector:
             else:
                 self.scaler      = preprocessing.StandardScaler()
                 self.X_train_org = self.scaler.fit_transform(X_train_org)
+            self.Y_train_org   = Y_train_org
+            self.idx_train_org = idx_train_org
+
+            self.X_partial_train   = self.X_train_org[:len(self.X_train_org)/10]
+            self.Y_partial_train   = self.Y_train_org[:len(self.Y_train_org)/10]
+            self.idx_partial_train = self.idx_train_org[:len(self.idx_train_org)/10]            
         else:
             self.X_train_org = X_train_org
-        self.Y_train_org   = Y_train_org
-        self.idx_train_org = idx_train_org
+            self.Y_train_org   = Y_train_org
+            self.idx_train_org = idx_train_org
 
         rospy.loginfo( self.classifier_method+" : Before classification : "+ \
           str(np.shape(self.X_train_org))+' '+str( np.shape(self.Y_train_org)))
@@ -422,8 +464,10 @@ class anomaly_detector:
         if 'sgd' in self.classifier_method or 'svm' in self.classifier_method:
             self.classifier.set_params( class_weight=self.w_positive )
             self.classifier.set_params( sgd_n_iter=self.sgd_n_iter )
-        elif self.classifier_method == 'progress_time_cluster':                    
-            self.classifier.set_params( ths_mult=self.w_positive )
+        elif self.classifier_method == 'progress_time_cluster':
+            ## ths_mult = np.ones(self.nState)*self.w_positive
+            ths_mult = self.w_positive
+            self.classifier.set_params( ths_mult=ths_mult )
 
         # Load / Fit the classifier
         if os.path.isfile(self.classifier_model_file) and clf_renew is False:
@@ -471,8 +515,10 @@ class anomaly_detector:
         ## msg = FloatArray()
         ## msg.data = [self.acc_part, self.acc_all]
         ## self.accuracy_pub.publish(msg)
-        ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier, self.classifier.rbf_feature)
-
+        ## vizDecisionBoundary(self.X_train_org, self.Y_train_org, self.classifier)
+        self.ll_classifier_train_X = ll_classifier_train_X
+        self.ll_classifier_train_Y = ll_classifier_train_Y
+        
         
 
     #-------------------------- Communication fuctions --------------------------
@@ -597,8 +643,10 @@ class anomaly_detector:
             self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org, warm_start=True)
         elif self.classifier_method == 'progress_time_cluster':
             self.w_positive = sensitivity_des
-            self.classifier.set_params( ths_mult=self.w_positive )
-            rospy.set_param(self.classifier_method+'_ths_mult', float(sensitivity_des))            
+            ## ths_mult = np.ones(self.nState)*self.w_positive
+            ths_mult = self.w_positive
+            self.classifier.set_params( ths_mult=ths_mult )
+            rospy.set_param('progress_ths_mult', float(sensitivity_des))            
         else:
             rospy.loginfo( "not supported method")
             sys.exit()
@@ -618,9 +666,6 @@ class anomaly_detector:
 
         
     def userfbCallback(self, msg):
-        ## #temp
-        ## self.cur_task     = 'feeding'
-        ## self.anomaly_flag = False
         
         if self.cur_task is None and self.bSim is False: return        
         if self.cur_task.find(self.task_name) < 0  and self.bSim is False: return
@@ -786,34 +831,52 @@ class anomaly_detector:
             elif self.classifier_method.find('sgd')>=0:
                 #remove fp and flattening     
                 p_train_X, p_train_Y, _ = getProcessSGDdata(test_X, test_Y)
-                self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
-                self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
+                self.X_partial_train = np.vstack([ self.X_partial_train, p_train_X ])
+                self.Y_partial_train = np.hstack([ self.Y_partial_train, p_train_Y ])
+                ## self.X_train_org = np.vstack([ self.X_train_org, p_train_X ])
+                ## self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y ])
 
                 if update_flag:
-
-                    #weight_list    = np.logspace(-1, 0.0, len(test_X))
-                    weight_list    = np.linspace(0.1, 1.0, len(self.X_train_org))
+                    nLength = len(p_train_X)/self.nTests
+                    self.X_partial_train = np.delete(self.X_partial_train, np.s_[:nLength], 0)
+                    self.Y_partial_train = np.delete(self.Y_partial_train, np.s_[:nLength], 0)
+                    ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
+                    ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
+                    
+                    sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_partial_train), 1.0 ) )
+                    ## sample_weights    = np.ones(len(self.X_partial_train)) #*4.0
+                    ## sample_weights    = 1.0-np.exp( -0.0001* np.arange(0., len(self.X_train_org), 1.0 ) )
+                    ## sample_weights    = 1.0-np.exp( -0.00001* np.arange(0., len(self.X_train_org), 1.0 ) )
+                    ## sample_weights    = np.linspace(0.1, 1.0, len(self.X_train_org))
+                    ## sample_weights    = np.ones(len(self.X_train_org))
                     ## if s_flag == 0 or f_flag == 0:
-                    ##     weight_list[-1] *= 1.0
-                    ##     weight_list[-2] *= 1.0
+                    ##     sample_weights[-1] *= 1.0
+                    ##     sample_weights[-2] *= 1.0
                     ## else:
-                    ##     weight_list[-1] *= 1.0
-                    ## weight_list[-2] = 20.0
-                    p_train_W = weight_list
+                    ##     sample_weights[-1] *= 1.0
+                    ## sample_weights[-2] = 20.0
+                    p_train_W = sample_weights
                                     
                     rospy.loginfo("Start to Update!!! with %s data", str(len(test_X)) )
                     ## self.classifier.set_params( class_weight=1.0 )
-                    alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
-                    nMaxIter = int(5.0*alpha)
-                    self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
+                    alpha    = 1.0 #np.exp(-0.16*self.update_count)*0.8 + 0.2
+                    nMaxIter = 1 #int(5.0*alpha)
+                    ## alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
+                    ## nMaxIter = int(5.0*alpha)
+                    self.classifier = partial_fit(self.X_partial_train, self.Y_partial_train, p_train_W, \
                                                   self.classifier, \
                                                   test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
-                    ## self.classifier = partial_fit(p_train_X, p_train_Y, p_train_W, self.classifier, \
+                    ## self.classifier = partial_fit(self.X_train_org, self.Y_train_org, p_train_W, \
+                    ##                               self.classifier, \
                     ##                               test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
                     ## self.classifier.set_params( class_weight=self.w_positive )
             elif self.classifier_method.find('progress')>=0:
 
-                alpha = np.exp(-0.16*self.update_count)*0.8 + 0.2
+                max_rate      = 0.0 #0.1
+                alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
+                update_weight = np.exp(-0.16*self.update_count)*float(self.nTrainData)/10.0 + 1.0
+                ## update_weight = np.exp(-0.32*self.update_count)*0.7 + 0.3
+                update_weight = 10.0
 
                 if user_feedback == "success":
 
@@ -824,7 +887,6 @@ class anomaly_detector:
                     for i in xrange(len(ll_logp)):
                         ll_idx.append( range(self.nLength-len(ll_logp[0]), self.nLength) )
 
-
                     # If true negative, update mean and var with new incoming data
                     # If false positive, update mean and var with new incoming data, lower ths mult
                     for i in xrange(len(l_mu)):
@@ -833,16 +895,23 @@ class anomaly_detector:
                                                                        self.classifier.g_sig, \
                                                                        l_mu[i], l_std[i],\
                                                                        self.nState,\
-                                                                       self.nTrainData)
+                                                                       self.nTrainData,\
+                                                                       ## self.nTrainData+len(self.update_list)-1,\
+                                                                       update_weight=update_weight)
 
                     # update
-                    self.classifier.ll_mu = l_mu
-                    self.classifier.ll_std = l_std
+                    self.classifier.set_params(ll_mu = l_mu)
+                    self.classifier.set_params(ll_std = l_std)
 
                     if update_flag:
-                        self.w_positive -= 0.5*alpha
+                        print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+                        sensitivity = self.sensitivity_clf_to_GUI()
+                        sensitivity -= max_rate*alpha
+                        sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
+                        self.w_positive = sensitivity 
+                        ## self.w_positive -= max_rate*alpha
                         self.classifier.set_params( ths_mult=self.w_positive )
-                        rospy.set_param(self.classifier_method+'_ths_mult', float(self.w_positive) )            
+                        rospy.set_param('progress_ths_mult', float(self.w_positive) )            
                         self.pubSensitivity()
                     
                 else:                    
@@ -851,10 +920,20 @@ class anomaly_detector:
                 
                     # If false negative, raise ths mult
                     if update_flag is False:
-                        self.w_positive += 0.5*alpha
+                        print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+                        sensitivity = self.sensitivity_clf_to_GUI()
+                        sensitivity += max_rate*alpha
+                        sensitivity = self.sensitivity_GUI_to_clf(sensitivity)
+                        self.w_positive = sensitivity 
+                        ## self.w_positive += max_rate*alpha
                         self.classifier.set_params( ths_mult=self.w_positive )
-                        rospy.set_param(self.classifier_method+'_ths_mult', float(self.w_positive) )            
+                        rospy.set_param('progress_ths_mult', float(self.w_positive) )            
                         self.pubSensitivity()
+
+
+                ## fig = plt.figure()
+                ## plt.plot()
+                ## plt.show()
                 
                 print "ths_mult: ", self.classifier.ths_mult, " internal weight: ", self.sensitivity_clf_to_GUI()
             else:
@@ -885,8 +964,11 @@ class anomaly_detector:
             # update file list
             self.used_file_list += self.unused_fileList
             self.unused_fileList = []
-            if update_flag: self.update_count += 1.0
+            self.update_count += 1.0
             rospy.loginfo( "Update completed!!!")
+
+            ## self.vizDecisionBoundary2(X, Y, self.classifier)
+            
 
     #-------------------------- General fuctions --------------------------
 
@@ -1104,29 +1186,22 @@ class anomaly_detector:
         checked_fileList = []
         self.unused_fileList = []
 
-
-        if auto:
-            print "get subject files"
-            ## sensitivity_des = self.sensitivity_GUI_to_clf(0.5)
-            ## self.w_positive = sensitivity_des                
-            ## self.classifier.set_params(class_weight=self.w_positive)
-            ## rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))            
-            test_fileList = util.getSubjectFileList(self.raw_data_path, \
-                                                    subject_names, \
-                                                    self.task_name, \
-                                                    time_sort=True,\
-                                                    no_split=True)
-
-            idx_list = range(len(test_fileList))
-            random.shuffle(idx_list)
-            self.eval_run_fileList = test_fileList[:len(idx_list)/2]
-            self.eval_ref_fileList = test_fileList[len(idx_list)/2:]
-
-        fb = ut.get_keystroke('Hit a key to load a new file')
+        ## fb = ut.get_keystroke('Hit a key to load a new file')
         ## sys.exit()
 
 
+        print "############## CUMULATIVE / REF EVAL ###################"
+        self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
+        self.acc_ref, _, _ = self.evaluation_ref()
+        self.update_list.append(0)
+        self.cum_acc_list.append(self.acc_all)
+        self.ref_acc_list.append(self.acc_ref)
+        print "######################################################"
+
+
         for i in xrange(100):
+
+            if rospy.is_shutdown(): break
 
             if auto:
                 if i < len(self.eval_run_fileList):
@@ -1137,7 +1212,7 @@ class anomaly_detector:
                     unused_fileList = self.new_run_file
                 else:
                     print "no more file"
-                    sys.exit()
+                    break
             else:            
                 # load new file            
                 fb = ut.get_keystroke('Hit a key to load a new file')
@@ -1160,7 +1235,7 @@ class anomaly_detector:
 
             if len(unused_fileList)>1:
                 print "Unexpected addition of files"
-                sys.exit()
+                break
 
             for j in xrange(len(unused_fileList)):
                 self.anomaly_flag = False
@@ -1177,17 +1252,17 @@ class anomaly_detector:
                 # scaling and subtracting offset
                 trainData = np.array(trainData)*self.scale
                 trainData = self.applying_offset(trainData)
-                
-                
+                                
                 ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
                 X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, [label])
                 X_test, Y_train_org, _ = dm.flattenSample(X, Y)
                 
                 if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                     X_scaled = self.scaler.transform(X_test)
+                    y_est    = self.classifier.predict(X_scaled)
                 else:
                     X_scaled = X_test
-                y_est    = self.classifier.predict(X_scaled)
+                    y_est    = self.classifier.predict(X_scaled)
 
                 for ii in xrange(len(y_est[self.startCheckIdx:])):
                     if y_est[ii] > 0.0:
@@ -1218,8 +1293,8 @@ class anomaly_detector:
                 print "############## CUMULATIVE / REF EVAL ###################"
                 self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
                 print "######################################################"
-                if update_flag or i==0:
-                    self.acc_ref, _, _ = self.evaluation_ref()
+                self.acc_ref, _, _ = self.evaluation_ref()
+                if update_flag:
                     self.update_list.append(1)
                 else:
                     self.update_list.append(0)
@@ -1228,11 +1303,10 @@ class anomaly_detector:
                 print self.cum_acc_list
                 print self.ref_acc_list
                 print self.update_list
+                print self.w_positive, self.classifier.ths_mult
                 print "######################################################"
                 ## sys.exit()
-
-                
-                
+                                
                 ## if (label ==1 and self.anomaly_flag is False) or \
                 ##   (label ==-1 and self.anomaly_flag is True):
                 ##     print "Before######################################33"
@@ -1327,6 +1401,61 @@ class anomaly_detector:
             rate = rospy.Rate(5) # 25Hz, nominally.            
             while not rospy.is_shutdown():
                 continue
+
+
+    def vizDecisionBoundary2(self, X_test, Y_test, clf):
+
+        if self.figure_flag is False:
+            fig = plt.figure()
+            self.ax = fig.add_subplot(111)
+            plt.ion()
+            plt.show()
+
+        del self.ax.collections[:]
+
+        if self.figure_flag is False and False:
+            X_train = self.ll_classifier_train_X
+            Y_train = self.ll_classifier_train_Y
+            
+            # train
+            max_logp = 0
+            for i in xrange(len(X_train)):
+                self.ax.plot(np.array(X_train[i])[:,0], 'b-')
+                logp = np.amax(np.array(X_train[i])[:,0])
+                if max_logp < logp: max_logp = logp
+
+            self.ax.set_ylim([-200, max_logp ])
+
+        if self.figure_flag is False:
+            max_logp = 0
+            for i in xrange(len(self.eval_test_X)):
+                if self.eval_test_Y[i][0] < 0:                
+                    self.ax.plot(np.array(self.eval_test_X[i])[:,0], 'b-')
+                    logp = np.amax(np.array(self.eval_test_X[i])[:,0])
+                    if max_logp < logp: max_logp = logp                    
+                else:
+                    self.ax.plot(np.array(self.eval_test_X[i])[:,0], 'm-')
+            self.ax.set_ylim([-200, max_logp ])
+            
+
+        # test
+        for i in xrange(len(X_test)):
+            if Y_test[i][0] < 0:                
+                self.ax.plot(np.array(X_test[i])[:,0], 'g-', lw=3.0)                
+            else:
+                self.ax.plot(np.array(X_test[i])[:,0], 'm-', lw=3.0)
+
+            exp_log_l = []
+            for j in xrange(len(X_test[i])):
+                exp_logp = clf.predict(X_test[i][j])[0] + X_test[i][j][0]
+                exp_log_l.append(exp_logp)
+            self.ax.plot(exp_log_l, 'r-', lw=3.0)
+
+        ## plt.axis('tight')
+        plt.draw()
+        self.figure_flag = True
+        ut.get_keystroke('Hit a key')
+
 
     def evaluation_ref(self):
 
@@ -1436,7 +1565,7 @@ def evaluation(X, Y, clf, verbose=False):
         est_y   = clf.predict(X[i])
         for j in xrange(len(est_y)):
 
-            if j < 4: continue
+            if j < 10: continue
             if est_y[j] > 0:
                 anomaly = True
                 break
@@ -1508,7 +1637,7 @@ def partial_fit(X, Y, W, clf, XX, YY, nMaxIter=100, shuffle=True, alpha=1.0 ):
 
     for i in xrange(nMaxIter):
 
-        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(40.*alpha), sample_weight=W, shuffle=shuffle)
+        clf.partial_fit(X,Y, classes=[-1,1],n_iter=int(100.*alpha), sample_weight=W, shuffle=shuffle)
         cost = evaluation_cost(XX, YY, clf)
         print "cost: ", cost, "dCost: ", cost-last_cost
         if cost < 0.005: break
@@ -1685,7 +1814,7 @@ if __name__ == '__main__':
                           param_dict, data_renew=opt.bDataRenew, hmm_renew=opt.bHMMRenew, \
                           clf_renew=opt.bCLFRenew, \
                           viz=opt.bViz, auto_update=opt.bAutoUpdate,\
-                          debug=opt.bDebug, sim=opt.bSim )
+                          debug=opt.bDebug, sim=opt.bSim, sim_subject_names=test_subject )
     if opt.bSim is False:
         ad.run()
     else:

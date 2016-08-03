@@ -37,7 +37,11 @@ import numpy as np
 import math
 import pyaudio
 import struct
-from features import mfcc
+try:
+    from features import mfcc
+except:
+    from python_speech_features import mfcc
+
 
 FRAME_SIZE = 4096 # frame per buffer
 RATE       = 44100 # sampling rate

@@ -42,7 +42,10 @@ import math
 import pyaudio
 import struct
 import array
-from features import mfcc
+try:
+    from features import mfcc
+except:
+    from python_speech_features import mfcc
 
 QUEUE_SIZE = 10
 

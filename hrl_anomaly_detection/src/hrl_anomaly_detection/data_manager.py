@@ -155,7 +155,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False,\
-               time_sort=False):
+               time_sort=False, max_time=None):
     '''
     If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
@@ -198,8 +198,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
                                          downSampleSize=downSampleSize,\
                                          local_range=local_range, rf_center=rf_center,\
-                                         renew=data_renew, save_pkl=all_data_pkl)
+                                         renew=data_renew, save_pkl=all_data_pkl,\
+                                         max_time=max_time)
         max_time = all_data_dict['timesList'][0][-1]
+        print "max time is ", max_time
 
         # data set
         success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\

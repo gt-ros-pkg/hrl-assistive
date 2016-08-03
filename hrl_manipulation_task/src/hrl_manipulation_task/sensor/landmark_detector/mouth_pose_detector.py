@@ -14,7 +14,8 @@ import random
 import hrl_lib.util as ut
 import hrl_lib.quaternion as qt
 from sensor_msgs.msg import CameraInfo, Image, PointCloud2
-from geometry_msgs.msg import PoseStamped, PoseArray, Pose, Point32, PolygonStamped, Vector3
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose, Point32, PolygonStamped, Vector3, Quaternion
+from std_msgs.msg import Float32 as rosFloat
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 from skimage.transform import radon, rescale
@@ -54,7 +55,10 @@ class MouthPoseDetector:
         #for initializing frontal face data
         self.save_loc          = save_loc
         if self.save_loc is not None:
-            self.save_loc = os.path.expanduser('~') + save_loc
+            if save_loc[0] != '/':
+                self.save_loc = os.path.expanduser('~') + '/' +  save_loc
+            else:
+                self.save_loc = os.path.expanduser('~') + save_loc
         self.first                 = True
         self.relation              = None
         self.dist                  = []
@@ -75,13 +79,16 @@ class MouthPoseDetector:
         self.previous_orientation  = (0.0, 0.0, 0.0, 0.0)
 
         if load_loc is not None:
-            self.load_loc = os.path.expanduser('~') + load_loc
+            if load_loc[0] != '/':
+                self.load_loc = os.path.expanduser('~') + '/' + load_loc
+            else:
+                self.load_loc = os.path.expanduser('~') + load_loc
             self.load(self.load_loc)
 
         #subscribers
-        self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=10)
-        self.depth_sub      = message_filters.Subscriber(depth_image, Image, queue_size=10)
-        self.gripper_sub    = message_filters.Subscriber(gripper, PoseStamped, queue_size=10)
+        self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=1)
+        self.depth_sub      = message_filters.Subscriber(depth_image, Image, queue_size=1)
+        self.gripper_sub    = message_filters.Subscriber(gripper, PoseStamped, queue_size=1)
         self.rgb_info_sub   = message_filters.Subscriber(rgb_info, CameraInfo, queue_size=10)
         self.depth_info_sub = message_filters.Subscriber(depth_info, CameraInfo, queue_size=10)
         self.info_ts        = message_filters.ApproximateTimeSynchronizer([self.rgb_info_sub,  self.depth_info_sub], 10, 100)
@@ -94,8 +101,9 @@ class MouthPoseDetector:
         
         #publishers
         self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pnp_pose', PoseStamped, queue_size=10)
-        self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
-
+        #self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
+        self.mouth_calc_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_unfiltered', PoseStamped, queue_size=10)
+        self.quat_pub = rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_quat', Quaternion, queue_size=10)
         
         #displays
         if display_3d:
@@ -103,12 +111,17 @@ class MouthPoseDetector:
             for i in xrange(200):
                 self.poly_pub.append(rospy.Publisher('/poly_pub' + str(i), PolygonStamped, queue_size=10))        
 
+        self.success_count_down = 10
         while not self.subscribed_success or not self.frame_ready:
             if not self.frame_ready:
                 print "frame data was not registered"
             if not self.subscribed_success:
                 print "data is either not published or not synchronized"
-                time.sleep(1)
+            self.success_count_down -= 1
+            if self.success_count_down <= 0:
+                print "failed to initialize"
+                break
+            time.sleep(1)
 
         print "successfully initialized"
 
@@ -129,7 +142,15 @@ class MouthPoseDetector:
         self.lm_coor           = d['lm_coor']
         self.gripper_to_sensor = d['gripper_to_sensor']
         self.wrong_coor        = d['wrong_coor']
-        self.previous_position = (0.0, 0.0, 0.0)
+        self.min_w             = d['min_w']
+        self.min_h             = d['min_h']
+        self.registered_faces  = d['registered_faces']
+        self.registered_eye_vertical = d['registered_eye_vertical']
+        self.registered_eye_horizontal = d['registered_eye_horizontal']
+        self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
+        self.eye_vertical_model   = self.find_mean_var(self.registered_eye_vertical)
+        self.previous_face        = d['previous_face']
+        self.previous_position    = (0.0, 0.0, 0.0)
         self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
         
 
@@ -148,14 +169,21 @@ class MouthPoseDetector:
         d['lm_coor']           = self.lm_coor
         d['gripper_to_sensor'] = self.gripper_to_sensor
         d['wrong_coor']        = self.wrong_coor
+        d['min_w']             = self.min_w
+        d['min_h']             = self.min_h
+        d['previous_face']     = self.previous_face
         d['previous_position'] = self.previous_position
         d['previous_orientation'] = self.previous_orientation
+        d['registered_faces']  = self.registered_faces 
+        d['registered_eye_vertical']   = self.registered_eye_vertical 
+        d['registered_eye_horizontal'] = self.registered_eye_horizontal
         ut.save_pickle(d, save_loc)
 
     def callback(self, data, depth_data, gripper_pose):
         #if data is not recent enough, reject
         time1= time.time()
         self.subscribed_success = True
+
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:
             return
         print "hello world"
@@ -192,9 +220,13 @@ class MouthPoseDetector:
             if self.first:
                 return
             faces = dlib.dlib.rectangles()
-            for i in xrange(3):
-                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 10 * (i + 1), self.previous_face[0].bottom()))
-                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 10 * (i + 1), self.previous_face[0].bottom()))
+            if self.registered_faces < 45:
+                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
+                faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))                
+            else:
+                for i in xrange(3):
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 10 * (i + 1), self.previous_face[0].bottom()))
+                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 10 * (i + 1), self.previous_face[0].bottom()))
             """
                 for j in xrange(1):
                     faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top() - (5 * (j+1)), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom() - (5 * (j+1))))
@@ -204,8 +236,7 @@ class MouthPoseDetector:
             """
             #faces.append(self.previous_face[0])
 
-            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
-            faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))
+
             faces.append(self.previous_face[0])
             #faces = self.previous_face
             self.face_detected = False
@@ -287,6 +318,8 @@ class MouthPoseDetector:
                         self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
                         self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
                         print self.eye_horizontal_model
+                        if self.save_loc is not None:
+                            self.save(self.save_loc)
                         #print "finished registering!"
                         #print self.registered_vertical
                 if self.display_2d:
@@ -379,8 +412,6 @@ class MouthPoseDetector:
                             print lm_point
                             self.wrong_coor = lm_point
                     self.first = False 
-                    if self.save_loc is not None:
-                        self.save(self.save_loc)
                 else:
                     if self.registered_faces >= 45 and not self.face_detected:
                         time_to_align = time.time()
@@ -448,7 +479,6 @@ class MouthPoseDetector:
                         valid_amount.append(0)
                     for i in xrange(30,31):
                         if not np.allclose(current_lm[i], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[i], (0.0, 0.0, 0.0)):
-                            #print self.get_dist(current_lm[i], self.lm_coor[i])
                             if self.get_dist(current_lm[i], self.lm_coor[i]) < 0.05:
                                 for j in xrange(len(current_lm)):
                                     if not np.allclose(current_lm[j], (0.0, 0.0, 0.0)) and not np.allclose(self.lm_coor[j], (0.0, 0.0, 0.0)):
@@ -508,18 +538,16 @@ class MouthPoseDetector:
         ## if self.display_3d:
         ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x) and (curr_angle < 45 or curr_angle > 135):
+            self.quat_pub.publish(temp_pose.pose.orientation)
             try:
                 temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
-                #temp_pose.header.frame_id = "torso_lift_link"
+                temp_pose.header.frame_id = "torso_lift_link"
                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
                 self.mouth_calc_pub.publish(temp_pose)
                                 
             except:
                 print "failed"
         self.mouth_pub.publish(best_pose)
-        if best_point_set is not None:
-            print "best was ", best
-            time.sleep(2)
         ## self.mouth_pub.publish(pnp_pose)
         print time.time() - time1
 
