@@ -440,9 +440,9 @@ class anomaly_detector:
             self.Y_train_org   = Y_train_org
             self.idx_train_org = idx_train_org
 
-            self.X_partial_train   = self.X_train_org[:len(self.X_train_org)/10]
-            self.Y_partial_train   = self.Y_train_org[:len(self.Y_train_org)/10]
-            self.idx_partial_train = self.idx_train_org[:len(self.idx_train_org)/10]            
+            self.X_partial_train   = self.X_train_org[:len(self.X_train_org)/6]
+            self.Y_partial_train   = self.Y_train_org[:len(self.Y_train_org)/6]
+            self.idx_partial_train = self.idx_train_org[:len(self.idx_train_org)/6]            
         else:
             self.X_train_org = X_train_org
             self.Y_train_org   = Y_train_org
