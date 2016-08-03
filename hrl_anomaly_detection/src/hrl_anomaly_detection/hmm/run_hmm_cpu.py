@@ -756,8 +756,8 @@ if __name__ == '__main__':
 
         elif opt.task == 'feeding':
             if opt.dim == 2:
-                parameters = {'nState': [25], 'scale': np.linspace(1.0,3.0,5), \
-                              'cov': np.linspace(1.0,6.0,5) }
+                parameters = {'nState': [25], 'scale': np.linspace(0.5,3.0,5), \
+                              'cov': np.linspace(1.0,10.0,10) }
             elif opt.dim == 3:
                 parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
                               'cov': np.linspace(1.0,10.0,10) }
