@@ -287,6 +287,7 @@ class CallBaseSelectionState(PDDLSmachState):
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         print "Base Selection Called for task: %s and Model: %s" %(task, model)
+        self.domain = domain
         self.task = task
         self.model = model
 
@@ -294,12 +295,13 @@ class CallBaseSelectionState(PDDLSmachState):
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
         rospy.wait_for_service("select_base_position")
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
-        self.domain = domain
         try:
+            self.model = 'autobed'
+            self.task = 'wiping_face'
             resp = self.base_selection_client(self.task, self.model)
         except rospy.ServiceException as se:
             rospy.logerr(se)
-            return None
+            return [None, None]
         return resp.base_goal, resp.configuration_goal
 
     def on_execute(self, ud):

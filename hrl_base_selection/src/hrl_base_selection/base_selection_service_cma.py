@@ -471,7 +471,7 @@ class BaseSelector(object):
         start_time = time.time()
         if self.scores_dict[model, task] is None:
             print 'For whatever reason, the data for this task was not previously loaded. I will now try to load it.'
-            all_scores = self.load_task(task, model)
+            all_scores = self.load_task(task, model, 0)
             if all_scores is None:
                 print 'Failed to load precomputed reachability data. That is a problem. Abort!'
                 return None, None

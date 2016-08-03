@@ -26,11 +26,9 @@ class ARTagTracker(object):
         preds = []
         found_ar_tag = msg.data
         if found_ar_tag:
-            print "Tracking AR Tag"
-            preds.append(pddl.Predicate('(IS-TRACKING-TAG %s)' % self.model))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG', [self.model]))
         else:
-            print "Lost AR Tag"
-            preds.append(pddl.Predicate('(IS-TRACKING-TAG %s)' % self.model, neg=True))
+            preds.append(pddl.Predicate('IS-TRACKING-TAG', [self.model], neg=True))
         state_msg = PDDLState()
         state_msg.domain = self.domain
         state_msg.predicates = map(str, preds)
