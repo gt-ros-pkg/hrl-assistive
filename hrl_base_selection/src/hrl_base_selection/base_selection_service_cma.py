@@ -753,16 +753,17 @@ class BaseSelector(object):
     def load_task(self, task, model, subj):
         home = expanduser("~")
         if 'wiping' in task:
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            #file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            file_name = ''.join([home, '/catkin_ws/src/hrl-assistive/hrl_base_selection/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
             return load_pickle(file_name)
 
         elif 'scratching' not in task:
             # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+            file_name = ''.join([home, '/catkin_ws/src/hrl-assistive/hrl_base_selection/data/base_selection/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
         else:
             task_name = 'scratching'
             task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            file_name = ''.join([home, '/catkin_ws/src/hrl-assistive/hrl_base_selection/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
             return load_pickle(file_name)
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
