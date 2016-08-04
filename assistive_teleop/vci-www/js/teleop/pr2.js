@@ -396,12 +396,12 @@ var PR2ArmMPC = function (options) {
     self.jointStateTopic = options.jointStateTopic || self.side[0]+'_arm_controller/state';
     self.poseGoalTopic = options.poseGoalTopic || 'haptic_mpc/goal_pose';
     self.trajectoryGoalTopic = options.trajectoryGoalTopic || 'haptic_mpc/joint_trajectory';
+    self.enableMPCServiceName = options.enableMPCServiceName || 'haptic_mpc/enable_mpc';
     self.plannerServiceName = options.plannerServiceName;
     self.state = null;
     self.jointNames = [];
     self.ros.getMsgDetails('geometry_msgs/PoseStamped');
     self.ros.getMsgDetails('trajectory_msgs/JointTrajectory');
-
 
     self.getState = function () {
         return self.state;
@@ -453,7 +453,6 @@ var PR2ArmMPC = function (options) {
     });
     self.jointStateSubscriber.subscribe(self.getJointNames);
 
-
     self.trajectoryGoalPublisher = new ROSLIB.Topic({
         ros: self.ros,
         name: self.trajectoryGoalTopic,
@@ -472,6 +471,33 @@ var PR2ArmMPC = function (options) {
         traj.joint_names = self.jointNames;
         traj.points.push(trajPoint);
         self.trajectoryGoalPublisher.publish(traj);
+    };
+
+    self.enableMPCService = new ROSLIB.Service({
+        ros: self.ros,
+        name: self.enableMPCServiceName,
+        serviceType: 'hrl_haptic_manipulation_in_clutter_srvs/EnableHapticMPC'
+    })
+
+    self.enableMPC = function () {
+        var enabled_cb = function(resp) {
+            console.log(resp);
+        };
+        var req = new ROSLIB.ServiceRequest({'new_state': 'enabled'});
+        self.enableMPCService.Call(req, enabled_cb);
+    };
+
+    self.disableMPC = function () {
+        var traj = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
+        self.trajectoryGoalPublisher.publish(traj);
+        var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
+        self.goalPosePublisher.publish(pose);
+        var enabled_cb = function(resp) {
+            console.log(resp);
+        };
+        var req = new ROSLIB.ServiceRequest({'new_state': 'disabled'});
+        self.enableMPCService.Call(req, enabled_cb);
+        
     };
 
     self.moveitPlannerClient = new ROSLIB.Service({
@@ -517,6 +543,7 @@ var PR2 = function (ros) {
                                      ee_frame:'r_gripper_tool_frame',
                                      jointStateTopic:'r_arm_controller/state',
                                      trajectoryGoalTopic: '/right_arm/haptic_mpc/joint_trajectory',
+                                     enableMPCServiceName: '/right_arm/haptic_mpc/enable_mpc',
                                      plannerServiceName:'/moveit_plan/right_arm'});
     self.l_arm_cart = new PR2ArmMPC({side:'left',
                                      ros: ros,
@@ -525,5 +552,6 @@ var PR2 = function (ros) {
                                      ee_frame:'l_gripper_tool_frame',
                                      jointStateTopic:'l_arm_controller/state',
                                      trajectoryGoalTopic: '/left_arm/haptic_mpc/joint_trajectory',
+                                     enableMPCServiceName: '/left_arm/haptic_mpc/enable_mpc',
                                      plannerServiceName:'/moveit_plan/left_arm'});
 };
