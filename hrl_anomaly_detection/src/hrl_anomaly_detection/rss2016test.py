@@ -73,329 +73,6 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
    
-def likelihoodOfSequences(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                          decision_boundary_viz=False, \
-                          useTrain=True, useNormalTest=True, useAbnormalTest=False,\
-                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                          data_renew=False, hmm_renew=False, save_pdf=False, verbose=False):
-
-    ## Parameters
-    # data
-    data_dict  = param_dict['data_param']
-    # AE
-    AE_dict     = param_dict['AE']
-    # HMM
-    HMM_dict = param_dict['HMM']
-    nState   = HMM_dict['nState']
-    cov      = HMM_dict['cov']
-    # SVM
-    
-    #------------------------------------------
-
-    if AE_dict['switch']:
-        
-        AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_0.pkl')
-        d = ut.load_pickle(AE_proc_data)
-        if AE_dict['filter']:
-            # Bottle features with variance filtering
-            successData = d['normTrainDataFiltered']
-            failureData = d['abnormTrainDataFiltered']
-        else:
-            # Bottle features without filtering
-            successData = d['normTrainData']
-            failureData = d['abnormTrainData']
-
-        if AE_dict['add_option'] is not None:
-            newHandSuccessData = handSuccessData = d['handNormTrainData']
-            newHandFailureData = handFailureData = d['handAbnormTrainData']
-            
-            ## for i in xrange(AE_dict['nAugment']):
-            ##     newHandSuccessData = stackSample(newHandSuccessData, handSuccessData)
-            ##     newHandFailureData = stackSample(newHandFailureData, handFailureData)
-
-            successData = combineData( successData, newHandSuccessData, \
-                                       AE_dict['add_option'], d['handFeatureNames'] )
-            failureData = combineData( failureData, newHandFailureData, \
-                                       AE_dict['add_option'], d['handFeatureNames'] )
-
-            ## # reduce dimension by pooling
-            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-            ## successData, pooling_param_dict = dm.variancePooling(successData, \
-            ##                                                   pooling_param_dict)
-            ## failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
-            
-            
-        successData *= HMM_dict['scale']
-        failureData *= HMM_dict['scale']
-        
-    else:
-        dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                           processed_data_path, data_dict['rf_center'], \
-                           data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'], \
-                           scale=1.0,\
-                           ae_data=False,\
-                           handFeatures=data_dict['handFeatures'], \
-                           cut_data=data_dict['cut_data'],\
-                           data_renew=data_dict['renew'])
-                           
-        successData = dd['successData'] * HMM_dict['scale']
-        failureData = dd['failureData'] * HMM_dict['scale']
-                           
-
-    normalTestData = None                                    
-    print "======================================"
-    print "Success data: ", np.shape(successData)
-    ## print "Normal test data: ", np.shape(normalTestData)
-    print "Failure data: ", np.shape(failureData)
-    print "======================================"
-
-    kFold_list = dm.kFold_data_index2(len(successData[0]),\
-                                      len(failureData[0]),\
-                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
-    normalTrainData   = successData[:, normalTrainIdx, :] 
-    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-    normalTestData    = successData[:, normalTestIdx, :] 
-    abnormalTestData  = failureData[:, abnormalTestIdx, :] 
-    
-    # training hmm
-    nEmissionDim = len(normalTrainData)
-    ## hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
-    cov_mult = [cov]*(nEmissionDim**2)
-
-    # generative model
-    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-    if data_dict['handFeatures_noise']:
-        ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                     cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
-    else:
-        ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
-        
-    ## ths = threshold
-    startIdx = 4
-        
-    if ret == 'Failure': 
-        print "-------------------------"
-        print "HMM returned failure!!   "
-        print "-------------------------"
-        return (-1,-1,-1,-1)
-
-    if decision_boundary_viz:
-        ## testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
-        ## testDataX = np.swapaxes(testDataX, 0, 1)
-        ## testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-        ##                         np.ones(len(abnormalTrainData[0])) ])
-        testDataX = normalTrainData
-        testDataY = -np.ones(len(normalTrainData[0]))
-                                
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [testDataX[j][i] for j in \
-                                                                 xrange(nEmissionDim)], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-
-
-        ## if True:
-        ##     from hrl_anomaly_detection.hmm import learning_util as hmm_util                        
-        ##     ll_classifier_test_X, ll_classifier_test_Y = \
-        ##       hmm.getHMMinducedFeatures(ll_logp, ll_post, c=1.0)
-
-        ##     fig = plt.figure()
-        ##     ax1 = fig.add_subplot(211)
-        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,0], 0,1) )
-        ##     ax1 = fig.add_subplot(212)
-        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,1], 0,1) )
-        ##     plt.show()
-        ##     sys.exit()
-              
-        ##     ll_delta_logp = []
-        ##     ll_delta_post = []
-        ##     ll_delta_logp_post = []
-        ##     ll_delta_logp_post2 = []
-        ##     for i in xrange(len(ll_post)):
-        ##         l_delta_logp = []
-        ##         l_delta_post = []
-        ##         l_delta_logp_post = []
-        ##         for j in xrange(len(ll_post[i])-1):
-        ##             l_delta_logp.append( ll_logp[i][j+1] - ll_logp[i][j] )
-        ##             l_delta_post.append( hmm_util.symmetric_entropy(ll_post[i][j], ll_post[i][j+1]) )
-        ##         ll_delta_logp.append( l_delta_logp )
-        ##         ll_delta_post.append( l_delta_post )
-        ##         ll_delta_logp_post.append( np.array(l_delta_logp)/(np.array(l_delta_post)+0.1) )
-        ##         ll_delta_logp_post2.append( np.array(l_delta_logp)/(np.array(l_delta_post)+1.0) )
-
-
-        ##     fig = plt.figure()
-        ##     ax1 = fig.add_subplot(411)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp,0,1))
-        ##     ax1 = fig.add_subplot(412)            
-        ##     plt.plot(np.swapaxes(ll_delta_post,0,1))
-        ##     ax1 = fig.add_subplot(413)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp_post,0,1))
-        ##     ax1 = fig.add_subplot(414)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp_post2,0,1))
-        ##     ## plt.plot(np.swapaxes(ll_delta_post,0,1))
-        ##     ## plt.plot( np.swapaxes( np.array(ll_delta_logp)/np.array(ll_delta_post), 0,1) )
-        ##     plt.show()
-        ##     sys.exit()
-
-
-        ll_classifier_train_X = []
-        ll_classifier_train_Y = []
-        for i in xrange(len(ll_logp)):
-            l_X = []
-            l_Y = []
-            for j in xrange(len(ll_logp[i])):        
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                if testDataY[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-            ll_classifier_train_X.append(l_X)
-            ll_classifier_train_Y.append(l_Y)
-
-        # flatten the data
-        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
-                                                                ll_classifier_train_Y, \
-                                                                ll_classifier_train_idx)
-        
-        # discriminative classifier
-        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
-        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
-
-
-
-
-
-    print "----------------------------------------------------------------------------"
-    fig = plt.figure()
-    min_logp = 0.0
-    max_logp = 0.0
-    target_idx = 1
-
-    # training data
-    if useTrain and False:
-
-        log_ll = []
-        exp_log_ll = []        
-        for i in xrange(len(normalTrainData[0])):
-
-            log_ll.append([])
-            exp_log_ll.append([])
-            for j in range(startIdx, len(normalTrainData[0][i])):
-
-                X = [x[i,:j] for x in normalTrainData]
-                logp = ml.loglikelihood(X)
-                log_ll[i].append(logp)
-
-                if decision_boundary_viz and i==target_idx:
-                    if j>=len(ll_logp[i]): continue
-                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-
-                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                    exp_log_ll[i].append(exp_logp)
-
-
-            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
-                
-            # disp
-            if useTrain_color: plt.plot(log_ll[i], label=str(i))
-            else: plt.plot(log_ll[i], 'b-')
-
-            ## # temp
-            ## if show_plot:
-            ##     plt.plot(log_ll[i], 'b-', lw=3.0)
-            ##     plt.plot(exp_log_ll[i], 'm-')                            
-            ##     plt.show()
-            ##     fig = plt.figure()
-
-        if useTrain_color: 
-            plt.legend(loc=3,prop={'size':16})
-            
-        ## plt.plot(log_ll[target_idx], 'k-', lw=3.0)
-        if decision_boundary_viz:
-            plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
-
-            
-    # normal test data
-    if useNormalTest:
-
-        log_ll = []
-        ## exp_log_ll = []        
-        for i in xrange(len(normalTestData[0])):
-
-            log_ll.append([])
-            ## exp_log_ll.append([])
-            for j in range(startIdx, len(normalTestData[0][i])):
-                X = [x[i,:j] for x in normalTestData] # by dim
-                logp = ml.loglikelihood(X)
-                log_ll[i].append(logp)
-
-                ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
-                ## log_ll[i].append(logp)
-                ## exp_log_ll[i].append(exp_logp)
-
-            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
-
-            # disp 
-            if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
-            else: plt.plot(log_ll[i], 'b-')
-
-            ## plt.plot(exp_log_ll[i], 'r*-')
-
-        if useNormalTest_color: 
-            plt.legend(loc=3,prop={'size':16})
-
-    # abnormal test data
-    if useAbnormalTest:
-        log_ll = []
-        exp_log_ll = []        
-        for i in xrange(len(abnormalTestData[0])):
-
-            log_ll.append([])
-            exp_log_ll.append([])
-
-            for j in range(startIdx, len(abnormalTestData[0][i])):
-                X = [x[i,:j] for x in abnormalTestData]                
-                try:
-                    logp = ml.loglikelihood(X)
-                except:
-                    print "Too different input profile that cannot be expressed by emission matrix"
-                    return [], 0.0 # error
-
-                log_ll[i].append(logp)
-
-                if decision_boundary_viz and i==target_idx:
-                    if j>=len(ll_logp[i]): continue
-                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                    exp_log_ll[i].append(exp_logp)
-
-
-            # disp
-            plt.plot(log_ll[i], 'r-')
-            plt.plot(exp_log_ll[i], 'r*-')
-        plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
-
-
-    plt.ylim([min_logp, max_logp])
-    if save_pdf == True:
-        fig.savefig('test.pdf')
-        fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
-    else:
-        plt.show()        
-
-    return
 
 
     
@@ -585,11 +262,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     successData = d['successData']
     failureData = d['failureData']
-    param_dict  = d['param_dict']
+    param_dict2  = d['param_dict']
     aeSuccessData = d.get('aeSuccessData', None)
     aeFailureData = d.get('aeFailureData', None)
-    if 'timeList' in param_dict.keys():
-        timeList    = param_dict['timeList'][startIdx:]
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
     #-----------------------------------------------------------------------------------------
@@ -888,7 +565,261 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
              timeList=timeList)
-                       
+
+
+def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                          no_plot=False, delay_plot=False, find_param=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    dim        = len(data_dict['handFeatures'])
+    # AE
+    AE_dict    = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', True)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # reference data #TODO
+    ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
+                                 '_'+str(dim))
+    modeling_pkl_prefix = 'hmm_step_'+task_name
+
+
+    #------------------------------------------
+    # Get features
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(ref_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    successData = d['successData']
+    failureData = d['failureData']
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+
+    #-----------------------------------------------------------------------------------------
+    # Training HMM, and getting classifier training and testing data
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        if verbose: print idx, " : training hmm and getting classifier training and testing data"
+            
+        ref_modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        if os.path.isfile(ref_modeling_pkl) is False:
+            print "No reference modeling file exists"
+            sys.exit()
+        
+        modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
+
+        # dim x sample x length
+        normalTestData    = successData[:, normalTestIdx, :] 
+
+        # scaling
+        if verbose: print "scaling data"
+        normalTestData    *= HMM_dict['scale']
+
+        # training hmm
+        if verbose: print "start to fit hmm"
+        dd = ut.load_pickle(ref_modeling_pkl)
+        nEmissionDim = dd['nEmissionDim']
+        A  = dd['A']
+        B  = dd['B']
+        pi = dd['pi']
+        F  = dd['F']
+        
+        nLength      = len(normalTestData[0][0]) - startIdx
+        
+        #-----------------------------------------------------------------------------------------
+        # Classifier test data
+        #-----------------------------------------------------------------------------------------
+        testDataX = []
+        testDataY = []
+        for i in xrange(nEmissionDim):
+            temp = np.vstack([normalTestData[i], normalTestData[i]])
+            testDataX.append( temp )
+
+        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                np.ones(len(normalTestData[0])) ])
+
+
+        # random step noise
+        samples = []
+        step_idx_l = []
+        step_mag = 10000000000
+        for i in xrange(len(testDataX[0])):
+            if testDataY[i] < 0: continue
+            
+            start_idx = np.random.randint(0, nLength/2, 1)[0]
+            
+            if start_idx < startIdx: start_idx=startIdx
+            testDataX[:,i,start_idx:] += step_mag
+            step_idx_l.append(start_idx)
+
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, A, B, pi, F, \
+                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                nEmissionDim, nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(testDataX[0])))
+        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+
+        # nSample x nLength
+        ll_classifier_test_X, ll_classifier_test_Y = \
+          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+
+        #-----------------------------------------------------------------------------------------
+        d = {}
+        d['nEmissionDim'] = nEmissionDim
+        d['A']            = A 
+        d['B']            = B 
+        d['pi']           = pi
+        d['F']            = F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_train_X']   = dd['ll_classifier_train_X']
+        d['ll_classifier_train_Y']   = dd['ll_classifier_train_Y']
+        d['ll_classifier_train_idx'] = dd['ll_classifier_train_idx']
+        d['ll_classifier_test_X']    = ll_classifier_test_X
+        d['ll_classifier_test_Y']    = ll_classifier_test_Y            
+        d['ll_classifier_test_idx']  = ll_classifier_test_idx
+        d['nLength']      = nLength
+        d['step_idx_l']   = drop_idx_l
+        d['drop_length']  = drop_length
+        ut.save_pickle(d, modeling_pkl)
+
+    ## fig = plt.figure()
+    ## ## modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
+    ## ## modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
+    ## d = ut.load_pickle(modeling_pkl)
+    ## ll_classifier_test_X = d['ll_classifier_test_X']
+    ## ll_classifier_test_Y = d['ll_classifier_test_Y']
+    ## print np.shape(ll_classifier_test_Y)
+    ## for i in xrange(len(ll_classifier_test_X)):        
+    ##     if ll_classifier_test_Y[i][0] > 0: continue
+    ##     print "test normal: ", np.shape(ll_classifier_test_X[i])        
+    ##     x = ll_classifier_test_X[i]
+    ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
+    ## plt.show()
+
+    ## sys.exit()
+
+
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_drop_'+task_name+'.pkl')
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
+        ROC_data = {}
+    else:
+        ROC_data = ut.load_pickle(roc_pkl)
+        
+    for i, method in enumerate(method_list):
+        if method not in ROC_data.keys() or method in ROC_dict['update_list']:            
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+
+
+    osvm_data = None ; bpsvm_data = None
+    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
+
+        # get ll_cut_idx only for pos data
+        pos_dict  = []
+        drop_dict = []
+        for idx in xrange(len(kFold_list)):
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
+            d            = ut.load_pickle(modeling_pkl)
+            ll_classifier_train_X   = d['ll_classifier_train_X']
+            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+            ll_classifier_train_idx = d['ll_classifier_train_idx']
+            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
+                                         ll_classifier_train_Y, \
+                                         ll_classifier_train_idx)
+            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
+            pos_dict.append(idx_dict)
+            drop_dict.append([d['drop_idx_l'], d['drop_length']])
+                    
+        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                   window=SVM_dict['raw_window_size'], \
+                                   pos_dict=pos_dict, use_test=True, use_pca=False,
+                                   test_drop_elements=drop_dict)
+
+
+    if find_param:
+        for method in method_list:
+            if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
+            find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
+                                 modeling_pkl_prefix='hmm_drop_'+task_name, \
+                                 add_print="eval_drop")
+            
+        sys.exit()
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
+                                                                 method, ROC_data, \
+                                                                 ROC_dict, AE_dict, \
+                                                                 SVM_dict, HMM_dict, \
+                                                                 raw_data=(osvm_data,bpsvm_data),\
+                                                                 startIdx=startIdx, nState=nState,\
+                                                                 modeling_pkl_prefix=modeling_pkl_prefix) \
+                                                                 for idx in xrange(len(kFold_list)) \
+                                                                 for method in method_list )
+                                                                  
+    l_data = r
+    print "finished to run run_classifiers"
+
+    for i in xrange(len(l_data)):
+        for j in xrange(nPoints):
+            try:
+                method = l_data[i].keys()[0]
+            except:
+                print l_data[i]
+                sys.exit()
+            if ROC_data[method]['complete'] == True: continue
+            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
+            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
+            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
+            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+
+    for i, method in enumerate(method_list):
+        ROC_data[method]['complete'] = True
+
+    ut.save_pickle(ROC_data, roc_pkl)
+        
+    #-----------------------------------------------------------------------------------------
+    # ---------------- ROC Visualization ----------------------
+    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+             
 
 def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                      data_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -1941,7 +1872,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
+    method_list = ['svm', 'progress_time_cluster', 'fixed']
     ref_method = 'svm'
 
     delay_dict = {}
@@ -2310,12 +2241,13 @@ if __name__ == '__main__':
 
 
     elif opt.bLikelihoodPlot:
-        likelihoodOfSequences(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                              decision_boundary_viz=False, \
-                              useTrain=False, useNormalTest=True, useAbnormalTest=True,\
-                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                              verbose=opt.bVerbose)
+        import hrl_anomaly_detection.data_viz as dv        
+        dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                          decision_boundary_viz=False, \
+                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
+                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                          hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                          verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']

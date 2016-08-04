@@ -45,7 +45,8 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, bSave=False):
+def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
+             bSave=False, method='svm', max_check_fold=None):
 
     ## Parameters
     # data
@@ -63,7 +64,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     #------------------------------------------
     kFold_list = cv_dict['kFoldList']
-    kFold_list = kFold_list
+    if max_check_fold is not None:
+        if max_check_fold < len(kFold_list):
+            kFold_list = kFold_list[:max_check_fold]
 
     # sample x dim x length
     param_list = list(ParameterGrid(parameters))
@@ -190,7 +193,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     ## startIdx=nLength-3, \
                                                                     bPosterior=True)
                                                                     for i in xrange(len(testDataX[0])))
-            _, _, ll_logp, ll_post = zip(*r)
+            _, ll_idx, ll_logp, ll_post = zip(*r)
 
             # nSample x nLength
             ll_classifier_test_X, ll_classifier_test_Y = \
@@ -200,47 +203,69 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
+
+            logp_l = []
+            for i in xrange(len(normalTrainData[0])):
+                logp_l.append(ll_classifier_test_X[i][-1][0])
                 
+            if np.mean( logp_l ) < 0:
+                print "Negative likelihoods"
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+            
             
             # split
             import random
             train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
             test_idx  = [x for x in range(len(ll_classifier_test_X)) if not x in train_idx]
             
-            train_X = np.array(ll_classifier_test_X)[train_idx]
-            train_Y = np.array(ll_classifier_test_Y)[train_idx]
-            test_X  = np.array(ll_classifier_test_X)[test_idx]
-            test_Y  = np.array(ll_classifier_test_Y)[test_idx]
+            train_X   = np.array(ll_classifier_test_X)[train_idx]
+            train_Y   = np.array(ll_classifier_test_Y)[train_idx]
+            train_idx = np.array(ll_idx)[train_idx]
+            test_X   = np.array(ll_classifier_test_X)[test_idx]
+            test_Y   = np.array(ll_classifier_test_Y)[test_idx]
+            test_idx = np.array(ll_idx)[test_idx]
 
-            X_train_org, Y_train_org, _ = dm.flattenSample(train_X, \
-                                                           train_Y, \
-                                                           remove_fp=True)
+            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(train_X, \
+                                                                       train_Y, \
+                                                                       train_idx,\
+                                                                       remove_fp=True)
             ## X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
             ##                                             test_Y, \
             ##                                             remove_fp=False)
 
-            scaler = preprocessing.StandardScaler()
-            try:
-                X_scaled = scaler.fit_transform(X_train_org)
-            except:
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
+            if method.find('svm')>=0:
+                scaler = preprocessing.StandardScaler()
+                try:
+                    X_scaled = scaler.fit_transform(X_train_org)
+                except:
+                    scores.append(-1.0 * 1e+10)
+                    ret = 'Failure'
+                    break
 
-            X_test = []
-            Y_test = [] 
-            for j in xrange(len(test_X)):
-                if len(test_X[j])==0: continue
-                X = scaler.transform(test_X[j])                                
+                X_test = []
+                Y_test = [] 
+                for j in xrange(len(test_X)):
+                    if len(test_X[j])==0: continue
+                    X = scaler.transform(test_X[j])                                
 
-                X_test.append(X)
-                Y_test.append(test_Y[j])
+                    X_test.append(X)
+                    Y_test.append(test_Y[j])
+                weights = ROC_dict['svm_param_range']
+            else:
+                X_scaled = X_train_org
+                X_test = test_X
+                Y_test = test_Y
+                weights = ROC_dict['progress_param_range']
+                
 
-            weights = ROC_dict['svm_param_range']
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                             idx_train_org, \
                                                                              X_test, Y_test, \
                                                                              nEmissionDim, nLength, \
                                                                              SVM_dict, weight=weights[iii], \
+                                                                             method=method,\
                                                                              verbose=False)\
                                                                              for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
@@ -374,14 +399,20 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
 
-def run_classifiers(idx, X_scaled, Y_train_org, X_test, Y_test, nEmissionDim, nLength, SVM_dict, weight, \
+def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, nEmissionDim, nLength, \
+                    SVM_dict, weight, method='svm',\
                     verbose=False):
 
     if verbose: print "Run a classifier"
-    dtc = cb.classifier( method='svm', nPosteriors=nEmissionDim, nLength=nLength )
+    dtc = cb.classifier( method=method, nPosteriors=nEmissionDim, nLength=nLength )
     dtc.set_params( **SVM_dict )
-    dtc.set_params( class_weight=weight )
-    ret = dtc.fit(X_scaled, Y_train_org, parallel=False)
+
+    if method.find('svm')>=0:
+        dtc.set_params( class_weight=weight )
+    else:
+        dtc.set_params( ths_mult=weight )
+        
+    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
     if ret is False:
         print "SVM fitting failure!!"
         return idx, [np.nan], [np.nan], [np.nan], [np.nan]
@@ -697,6 +728,8 @@ if __name__ == '__main__':
                  default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+                 help='type the desired method')
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
                  default=False, help='Enable ICRA2017.')
@@ -722,8 +755,15 @@ if __name__ == '__main__':
                           'cov': np.linspace(2.,5.0,10) }
 
         elif opt.task == 'feeding':
-            parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10), \
-                          'cov': np.linspace(1.0,6.0,5) }
+            if opt.dim == 2:
+                parameters = {'nState': [25], 'scale': np.linspace(0.5,3.0,5), \
+                              'cov': np.linspace(1.0,10.0,10) }
+            elif opt.dim == 3:
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                              'cov': np.linspace(1.0,10.0,10) }
+            else:
+                parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,10), \
+                              'cov': np.linspace(1.0,10.0,10) }
 
         elif opt.task == 'pushing_microwhite':
             if opt.dim == 4:
@@ -749,9 +789,9 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
-                                                              nPoints=5)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,20.0,10), \
-                      'cov': np.linspace(1.0,6.0,5) }
+                                                              nPoints=7)
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
+                      'cov': np.linspace(1.0,5.0,10) }
         
 
             
@@ -767,5 +807,6 @@ if __name__ == '__main__':
         print "no existing data file, ", crossVal_pkl
         sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, bSave=opt.bSave)
+    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+             bSave=opt.bSave, method=opt.method, max_check_fold=2)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)

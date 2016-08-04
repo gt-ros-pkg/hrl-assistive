@@ -259,13 +259,13 @@ class classifier(learning_base):
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
-            g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
-            g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
+            self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
+            self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
             if parallel:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                       g_mu_list[i],\
-                                                                       g_sig, self.nPosteriors)
+                                                                       self.g_mu_list[i],\
+                                                                       self.g_sig, self.nPosteriors)
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
@@ -273,8 +273,8 @@ class classifier(learning_base):
                 self.ll_mu            = []
                 self.ll_std           = []
                 for i in xrange(self.nPosteriors):
-                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i],\
-                                                  g_sig, self.nPosteriors)
+                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
+                                                  self.g_sig, self.nPosteriors)
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
@@ -396,7 +396,7 @@ class classifier(learning_base):
             sys.exit()
 
 
-    def predict(self, X, y=None):
+    def predict(self, X, y=None, temp=True):
         '''
         X is single sample
         return predicted values (not necessarily binaries)
@@ -443,9 +443,10 @@ class classifier(learning_base):
 
                 if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                     type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset                        
                 else:
                     err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+
                 l_err.append(err)
             return l_err
 
@@ -552,20 +553,30 @@ class classifier(learning_base):
 
         
     def save_model(self, fileName):
-        if self.dt is None: 
-            print "No trained classifier"
-            return
         
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+        
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
         elif self.method.find('sgd')>=0:
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+            
             import pickle
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
             ## joblib.dump(self.dt, fileName)
+        elif self.method.find('progress_time')>=0:
+            d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
+                 'l_statePosterior': self.l_statePosterior,\
+                 'll_mu': self.ll_mu, 'll_std': self.ll_std}
+            ut.save_pickle(d, fileName)            
         else:
             print "Not available method"
 
@@ -581,6 +592,14 @@ class classifier(learning_base):
                 self.dt = pickle.load(f)
                 self.rbf_feature = pickle.load(f)
             ## self.dt = joblib.load(fileName)
+        elif self.method.find('progress_time')>=0:
+            print "Start to load a progress based classifier"
+            d = ut.load_pickle(fileName)
+            self.g_mu_list = d['g_mu_list']
+            self.g_sig     = d['g_sig']
+            self.l_statePosterior = d['l_statePosterior']
+            self.ll_mu            = d['ll_mu']
+            self.ll_std           = d['ll_std']
         else:
             print "Not available method"
         
@@ -721,6 +740,52 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 ## def learn_state_clustering(i, ll_logp, ll_post, g_mu, g_sig, nState):
 ##     return i, 
+
+
+def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \
+                        update_weight=1.0):
+
+    g_lhood = 0.0
+    weight_sum  = 0.0
+
+    n = len(ll_idx)
+    for j in xrange(n): # per execution
+
+        idx  = ll_idx[j]
+        logp = ll_logp[j]
+        post = ll_post[j]
+
+        weight    = norm(loc=rbf_mu, scale=rbf_sig).pdf(idx)
+
+        ## if weight < 1e-3: continue
+        g_lhood  = np.sum(logp * weight)
+        weight_sum = np.sum(weight)
+        if abs(weight_sum)<1e-3: weight_sum=1e-3        
+
+        x_new   = g_lhood / weight_sum
+        mu_new  = ( float(N-update_weight)*mu + update_weight*x_new )/(N)
+        try:
+            sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) \
+                               - mu_new*mu_new )
+        except:
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
+        ## sig_new = sig
+
+        ## mu_new  = ( float(N)*mu + x_new )/(N+1.0)
+        ## try:
+        ##     sig_new = np.sqrt( (float(N)*( sig*sig + mu*mu)+mu_new*mu_new)/float(N+1.0) \
+        ##                        - mu_new*mu_new )
+        ## except:
+        ##     print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
+        ##     print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
+        ## sig_new = sig*0.9
+
+
+        mu  = mu_new
+        sig = sig_new
+
+    return i, mu, sig
 
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \

@@ -6,14 +6,14 @@ import hrl_lib.circular_buffer as cb
 import hrl_lib.quaternion as qt
 from tf_conversions import posemath
 
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 
 class MouthPoseFilter():
     def __init__(self):
         self.mouth_pos  = np.zeros((3, 1))
         self.mouth_quat = np.zeros((4, 1))
-        self.pos_buf    = cb.CircularBuffer(10, (3,))
-        self.quat_buf   = cb.CircularBuffer(10, (4,))
+        self.pos_buf    = cb.CircularBuffer(4, (3,))
+        self.quat_buf   = cb.CircularBuffer(4, (4,))
 
         self.lock = threading.Lock()
 
@@ -24,8 +24,9 @@ class MouthPoseFilter():
             print "no max or min, assuming no limit"
             self.min = [-999, -999, -999]
             self.max = [999, 999, 999]
-        self.sub=rospy.Subscriber('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, self.callback, queue_size=10)
-        self.pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_filtered', PoseStamped, queue_size=10)
+        self.sub=rospy.Subscriber('/hrl_manipulation_task/mouth_pose_backpack_unfiltered', PoseStamped, self.callback, queue_size=10)
+        self.pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
+        self.quat_pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_filtered_quat', Quaternion, queue_size=10)
 
     def callback(self, pose):
         self.time = pose.header.stamp
@@ -46,7 +47,7 @@ class MouthPoseFilter():
                     first_q = self.quat_buf[-1]
                     
                     if np.dot(cur_q, first_q) < 0.0:
-                        cur_q *= 1.0
+                        cur_q *= -1.0
 
                     self.pos_buf.append(cur_p)
                     self.quat_buf.append(cur_q)
@@ -84,7 +85,7 @@ class MouthPoseFilter():
         pose.header.frame_id = "torso_lift_link"
 
         self.pub.publish(pose)
-                
+        self.quat_pub.publish(pose.pose.orientation)
 
     def inRange(self, pose, max, min):
         position = pose.pose.position
