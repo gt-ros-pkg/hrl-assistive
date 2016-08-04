@@ -111,8 +111,8 @@ RFH.initTaskMenu = function (divId) {
                                        targetDiv: 'mjpeg-image',
                                        camera: RFH.mjpeg.cameraModel,
                                        head: RFH.pr2.head,
-                                       left_arm: RFH.pr2.left_arm,
-                                       right_arm: RFH.pr2.right_arm,
+                                       left_arm: RFH.pr2.l_arm_cart,
+                                       right_arm: RFH.pr2.r_arm_cart,
                                        base: RFH.pr2.base,
                                        forwardOnly: true}));
 //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));

@@ -484,7 +484,7 @@ var PR2ArmMPC = function (options) {
             console.log(resp);
         };
         var req = new ROSLIB.ServiceRequest({'new_state': 'enabled'});
-        self.enableMPCService.Call(req, enabled_cb);
+        self.enableMPCService.callService(req, enabled_cb);
     };
 
     self.disableMPC = function () {
@@ -496,7 +496,7 @@ var PR2ArmMPC = function (options) {
             console.log(resp);
         };
         var req = new ROSLIB.ServiceRequest({'new_state': 'disabled'});
-        self.enableMPCService.Call(req, enabled_cb);
+        self.enableMPCService.callService(req, enabled_cb);
         
     };
 
