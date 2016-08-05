@@ -236,6 +236,7 @@ class MoveRobotState(PDDLSmachState):
         self.domain = domain
         self.goal_reached = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.servo_goal_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData, queue_size=1)
         rospy.loginfo('[%s] Ready to move! Click to move PR2 base!' % rospy.get_name())
         rospy.loginfo('[%s] Remember: The AR tag must be tracked before moving!' % rospy.get_name())
 
@@ -256,6 +257,8 @@ class MoveRobotState(PDDLSmachState):
         pr2_goal_pose.header.frame_id = 'base_footprint'
         trans_out = base_goals[:3]
         rot_out = base_goals[3:]
+        print "MOVING TO:"
+        print trans_out, rot_out
         pr2_goal_pose.pose.position.x = trans_out[0]
         pr2_goal_pose.pose.position.y = trans_out[1]
         pr2_goal_pose.pose.position.z = trans_out[2]
@@ -268,7 +271,9 @@ class MoveRobotState(PDDLSmachState):
         goal.marker_topic = '/ar_pose_marker'
         goal.tag_goal_pose = pr2_goal_pose
         self.servo_goal_pub.publish(goal)
+        rospy.loginfo("[%s] Successfully Published Base Location to AR Servo" % rospy.get_name())
         rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
+        rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
         while not rospy.is_shutdown() and not self.goal_reached:
             rospy.sleep(1)
         if self.goal_reached:
@@ -386,8 +391,6 @@ class ConfigureModelRobotState(PDDLSmachState):
             if self.configuration_goal[0] is not None:
                 torso_lift_msg = SingleJointPositionGoal()
                 torso_lift_msg.position = self.configuration_goal[0]
-                print "TORSO!!! Move TO:"
-                print self.configuration_goal[0]
                 self.torso_client.send_goal(torso_lift_msg)
             else:
                 rospy.logwarn("[%s] Some problem in getting TORSO HEIGHT from base selection" % rospy.get_name())
