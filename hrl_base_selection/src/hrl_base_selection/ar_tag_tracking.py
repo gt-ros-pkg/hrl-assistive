@@ -354,7 +354,6 @@ class AR_Tag_Tracking(object):
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-
                     print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
