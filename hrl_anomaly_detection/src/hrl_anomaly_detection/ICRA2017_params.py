@@ -171,10 +171,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5
                           }
                     #, 'bpsvm'      , 'osvm'
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm' ],\
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'change', 'svm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': np.linspace(0.5, -8.0, nPoints),\
+                          'mbkmean_param_range': np.linspace(0.5, -8.0, nPoints),\
                           'svm_param_range': np.logspace(-1., 0.7, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\

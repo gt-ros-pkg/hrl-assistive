@@ -195,6 +195,11 @@ class anomaly_detector:
             self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
             self.w_min = self.param_dict['ROC']['progress_param_range'][0]
             self.exp_sensitivity = False
+        elif self.classifier_method == 'mbkmean':                    
+            self.w_positive = rospy.get_param(self.classifier_method+'_ths_mult')
+            self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
+            self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
+            self.exp_sensitivity = False
         else:
             rospy.loginfo( "sensitivity info is not available")
             sys.exit()
@@ -210,12 +215,16 @@ class anomaly_detector:
                 rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
             elif self.classifier_method == 'progress_time_cluster':                    
                 rospy.set_param('progress_ths_mult', float(self.w_positive))                
+            elif self.classifier_method == 'mbkmean':                    
+                rospy.set_param('mbkmean_ths_mult', float(self.w_positive))                
         elif self.w_positive < self.w_min:
             self.w_positive = self.w_min
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                 rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
             elif self.classifier_method == 'progress_time_cluster':                    
                 rospy.set_param('progress_ths_mult', float(self.w_positive))
+            elif self.classifier_method == 'mbkmean':                    
+                rospy.set_param('mbkmean_ths_mult', float(self.w_positive))                
 
         # we use logarlism for the sensitivity
         if self.exp_sensitivity:
@@ -462,8 +471,8 @@ class anomaly_detector:
         if 'sgd' in self.classifier_method or 'svm' in self.classifier_method:
             self.classifier.set_params( class_weight=self.w_positive )
             self.classifier.set_params( sgd_n_iter=self.sgd_n_iter )
-        elif self.classifier_method == 'progress_time_cluster':
-            ## ths_mult = np.ones(self.nState)*self.w_positive
+        elif self.classifier_method == 'progress_time_cluster' or \
+          self.classifier_method == 'mbkmean' :
             ths_mult = self.w_positive
             self.classifier.set_params( ths_mult=ths_mult )
 
@@ -635,15 +644,11 @@ class anomaly_detector:
             self.classifier.set_params(class_weight=self.w_positive)
             rospy.set_param(self.classifier_method+'_w_positive', float(sensitivity_des))
             self.classifier.fit(self.X_train_org, self.Y_train_org, self.idx_train_org, warm_start=True)
-        elif self.classifier_method == 'progress_time_cluster':
+        else:
             self.w_positive = sensitivity_des
-            ## ths_mult = np.ones(self.nState)*self.w_positive
             ths_mult = self.w_positive
             self.classifier.set_params( ths_mult=ths_mult )
             rospy.set_param('progress_ths_mult', float(sensitivity_des))            
-        else:
-            rospy.loginfo( "not supported method")
-            sys.exit()
 
         rospy.loginfo( "Classifier is updated!")
 
@@ -846,7 +851,7 @@ class anomaly_detector:
                     ##                               self.classifier, \
                     ##                               test_X, test_Y, nMaxIter=nMaxIter, shuffle=True, alpha=alpha)
                     ## self.classifier.set_params( class_weight=self.w_positive )
-            elif self.classifier_method.find('progress')>=0:
+            elif self.classifier_method.find('progress')>=0 :
 
                 max_rate      = 0.0 #0.1
                 alpha         = np.exp(-0.16*self.update_count)*0.5 + 0.5
@@ -905,6 +910,12 @@ class anomaly_detector:
                         self.pubSensitivity()
 
                 print "ths_mult: ", self.classifier.ths_mult, " internal weight: ", self.sensitivity_clf_to_GUI()
+            elif self.classifier_method.find('mbkmean')>=0:
+
+                if user_feedback == "success":
+                    p_train_X, p_train_Y, _ = dm.flattenSample(test_X, test_Y)
+                    self.classifier.partial_fit(p_train_X, p_train_Y)
+                
             else:
                 rospy.loginfo( "Not available update method")
 
@@ -1761,7 +1772,7 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             # for adaptation, please add 'new' to the following list. 
             subject_names = ['zack', 'hkim', 'ari', 'new'] #, 'zack'
-            test_subject  = ['sai'] # sim only
+            test_subject  = ['jina'] # sim only
             
             check_method      = opt.method
             save_data_path    = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'+\

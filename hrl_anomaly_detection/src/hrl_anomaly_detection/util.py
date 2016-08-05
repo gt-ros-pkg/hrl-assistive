@@ -1299,7 +1299,7 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None):
+             timeList=None, only_tpr=False):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
@@ -1344,8 +1344,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
+            if only_tpr is False:
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
@@ -1362,7 +1363,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print method
         print tpr_l
         print fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        if only_tpr is False:
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
