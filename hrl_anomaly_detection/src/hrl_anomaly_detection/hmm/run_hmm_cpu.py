@@ -790,11 +790,11 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=7)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,5), \
-                      'cov': np.linspace(1.0,5.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,6.0,5), \
+                      'cov': np.linspace(3.0,6.0,5) }
         
 
-            
+    max_check_fold = 2
 
     #--------------------------------------------------------------------------------------
     # test change of logp
@@ -808,5 +808,5 @@ if __name__ == '__main__':
         sys.exit()
 
     tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-             bSave=opt.bSave, method=opt.method, max_check_fold=2)
+             bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
