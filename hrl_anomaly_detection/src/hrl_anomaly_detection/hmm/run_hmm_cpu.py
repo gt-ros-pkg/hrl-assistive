@@ -790,8 +790,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=7)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,6.0,5), \
-                      'cov': np.linspace(3.0,6.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(8.0,12.0,5), \
+                      'cov': np.linspace(4.0,8.0,5) }
         
 
     max_check_fold = 2
