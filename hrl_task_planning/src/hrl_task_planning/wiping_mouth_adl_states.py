@@ -17,6 +17,7 @@ from hrl_task_planning.msg import PDDLState
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove_multi
 from hrl_srvs.srv import None_Bool, None_BoolResponse
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
@@ -210,15 +211,16 @@ class MoveArmState(PDDLSmachState):
             return False
         self.l_arm_pose_pub.publish(goal)
         return True
+
     def on_execute(self, ud):
         publish_stat = self.publish_goal()
         if not publish_stat:
-            return 'aborted' 
+            return 'aborted'
         #Now that goal is published, we wait until goal is reached
         rospy.Subscriber("haptic_mpc/in_deadzone", std_msgs.msg.Bool, self.arm_reach_goal_cb)
         while not rospy.is_shutdown() and not self.goal_reached:
             rospy.sleep(1)
-            
+
         if self.goal_reached:
             rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
             state_update = PDDLState()
@@ -237,7 +239,7 @@ class MoveRobotState(PDDLSmachState):
         self.goal_reached = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.servo_goal_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData, queue_size=1)
-        rospy.loginfo('[%s] Ready to move! Click to move PR2 base!' % rospy.get_name())
+        self.start_servoing = rospy.Publisher("/pr2_ar_servo/tag_confirm", Bool, queue_size=1, latch=True)
         rospy.loginfo('[%s] Remember: The AR tag must be tracked before moving!' % rospy.get_name())
 
     def base_servoing_cb(self, msg):
@@ -272,6 +274,8 @@ class MoveRobotState(PDDLSmachState):
         goal.tag_goal_pose = pr2_goal_pose
         self.servo_goal_pub.publish(goal)
         rospy.loginfo("[%s] Successfully Published Base Location to AR Servo" % rospy.get_name())
+        rospy.sleep(5)
+        self.start_servoing.publish(True)
         rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
         rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
         while not rospy.is_shutdown() and not self.goal_reached:
@@ -354,6 +358,18 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action',
                                                          SingleJointPositionAction)
+        self.define_reset()
+        self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory',
+                                         JointTrajectory,
+                                         queue_size=1)
+        self.l_arm_pub = rospy.Publisher('/left_arm/haptic_mpc/joint_trajectory',
+                                          JointTrajectory,
+                                          queue_size=1)
+
+        self.l_reset_traj = None
+        self.r_reset_traj = None
+
+
         if self.model.upper() == 'AUTOBED':
             self.bed_state_leg_theta = None
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
@@ -363,6 +379,42 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def bed_status_cb(self, data):
         self.model_reached = data.data
+
+    def define_reset(self):
+        r_reset_traj_point = JointTrajectoryPoint()
+        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1.5, 0.0]
+
+        r_reset_traj_point.velocities = [0.0]*7
+        r_reset_traj_point.accelerations = [0.0]*7
+        r_reset_traj_point.time_from_start = rospy.Duration(5)
+        self.r_reset_traj = JointTrajectory()
+        self.r_reset_traj.joint_names = ['r_shoulder_pan_joint',
+                                         'r_shoulder_lift_joint',
+                                         'r_upper_arm_roll_joint',
+                                         'r_elbow_flex_joint',
+                                         'r_forearm_roll_joint',
+                                         'r_wrist_flex_joint',
+                                         'r_wrist_roll_joint']
+        self.r_reset_traj.points.append(r_reset_traj_point)
+        l_reset_traj_point = JointTrajectoryPoint()
+        # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
+        l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
+                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
+        l_reset_traj_point.velocities = [0.0]*7
+        l_reset_traj_point.accelerations = [0.0]*7
+        l_reset_traj_point.time_from_start = rospy.Duration(5)
+        self.l_reset_traj = JointTrajectory()
+        self.l_reset_traj.joint_names = ['l_shoulder_pan_joint',
+                                         'l_shoulder_lift_joint',
+                                         'l_upper_arm_roll_joint',
+                                         'l_elbow_flex_joint',
+                                         'l_forearm_roll_joint',
+                                         'l_wrist_flex_joint',
+                                         'l_wrist_roll_joint']
+        self.l_reset_traj.points.append(l_reset_traj_point)
+
+    def arm_reach_goal_cb(self, msg):
+        self.goal_reached = msg.data
 
     def on_execute(self, ud):
         rospy.loginfo("[%s] Waiting for torso_controller/position_joint_action server" % rospy.get_name())
@@ -411,7 +463,7 @@ class ConfigureModelRobotState(PDDLSmachState):
 
             while not rospy.is_shutdown() and not self.model_reached:
                 rospy.sleep(1)
-            
+
             rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
             if self.model_reached:
                 rospy.loginfo("[%s] Bed Goal Reached" % rospy.get_name())
@@ -421,3 +473,22 @@ class ConfigureModelRobotState(PDDLSmachState):
                 print "Publishing (CONFIGURED BED) update"
                 self.state_pub.publish(state_update)
 
+
+            rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
+            self.r_arm_pub.publish(self.r_reset_traj)
+            self.l_arm_pub.publish(self.l_reset_traj)
+
+            #Now that goal is published, we wait until goal is reached
+            rospy.Subscriber("haptic_mpc/in_deadzone", std_msgs.msg.Bool, self.arm_reach_goal_cb)
+            while not rospy.is_shutdown() and not self.goal_reached:
+                rospy.sleep(1)
+
+            rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
+            while not rospy.is_shutdown():
+                rospy.sleep(1)
+            if self.goal_reached:
+                state_update = PDDLState()
+                state_update.domain = self.domain
+                state_update.predicates = ['ARM-HOME']
+                print "Publishing (ARM-HOME) update"
+                self.state_pub.publish(state_update)
