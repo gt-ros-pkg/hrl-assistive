@@ -153,8 +153,10 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 14.0,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 11.0,\
                           'add_logp_d': True}
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 4.66,\
+        ##                   'add_logp_d': True}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
         SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 3.61, 'cost': 0.1,\
                           'hmmosvm_nu': 0.000316,\
@@ -164,22 +166,21 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
-                          'hmmsvm_LSLS_cost': 15.0,\
-                          'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 1.5,
                           'bpsvm_cost': 12.5,\
                           'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2
+                          'bpsvm_w_negative': 0.2,\
+                          'logp_offset': 0,\
+                          'sgd_gamma':0.32, 'sgd_w_negative':2.5
                           }
-                          
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS', 'bpsvm' ],\
-                          'update_list': ['bpsvm'],\
+                    #, 'bpsvm'      , 'osvm'
+        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'change', 'svm' ],\
+                          'update_list': ['svm', 'progress_time_cluster'],\
                           'nPoints': nPoints,\
-                          'progress_param_range': -np.logspace(0., 1.2, nPoints),\
-                          'svm_param_range': np.logspace(-1., 0.7, nPoints),\
+                          'progress_param_range': np.linspace(0.3, -5.0, nPoints),\
+                          'mbkmean_param_range': np.linspace(0.5, -8.0, nPoints),\
+                          'svm_param_range': np.logspace(-0.8, 0.7, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
@@ -261,7 +262,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 200, 'cut_data': None, \
-                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True}
 

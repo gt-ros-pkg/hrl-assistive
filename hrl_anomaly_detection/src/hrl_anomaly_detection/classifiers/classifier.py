@@ -104,6 +104,8 @@ class classifier(learning_base):
                  sgd_gamma      = 2.0,\
                  sgd_w_negative = 1.0,\
                  sgd_n_iter     = 10,\
+                 # minibatchkmean
+                 mbkmean_batch_size = 100,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -179,6 +181,13 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
+        elif self.method == 'mbkmean':
+            self.mbkmean_batch_size = mbkmean_batch_size
+            self.ths_mult = ths_mult
+            self.nPosteriors = nPosteriors
+            self.ll_mu  = np.zeros(nPosteriors)
+            self.ll_std = np.zeros(nPosteriors) 
+            
                         
         learning_base.__init__(self)
 
@@ -259,13 +268,13 @@ class classifier(learning_base):
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
-            g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
-            g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
+            self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
+            self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
             if parallel:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                       g_mu_list[i],\
-                                                                       g_sig, self.nPosteriors)
+                                                                       self.g_mu_list[i],\
+                                                                       self.g_sig, self.nPosteriors)
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
@@ -273,8 +282,8 @@ class classifier(learning_base):
                 self.ll_mu            = []
                 self.ll_std           = []
                 for i in xrange(self.nPosteriors):
-                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu_list[i],\
-                                                  g_sig, self.nPosteriors)
+                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
+                                                  self.g_sig, self.nPosteriors)
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
@@ -347,7 +356,6 @@ class classifier(learning_base):
             else:
                 n_components = max_components
                 
-
             ## from sklearn.kernel_approximation import RBFSampler
             ## self.rbf_feature = RBFSampler(gamma=self.gamma, n_components=1000, random_state=1)
             from sklearn.kernel_approximation import Nystroem
@@ -368,8 +376,34 @@ class classifier(learning_base):
                                         eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
             self.dt.fit(X_features, y)
 
+        elif self.method == 'mbkmean':
+            from sklearn.cluster import MiniBatchKMeans
+            init_list = []
+            for i in xrange(self.nPosteriors):
+                init_array = np.zeros(self.nPosteriors)
+                init_array[i] = 1.0
+                init_list.append(init_array)
+                
+            if type(X) == list: X = np.array(X)
+            posts = X[:,-self.nPosteriors:]
+            logps = X[:,0]
+                
+            self.dt = MiniBatchKMeans(n_clusters=self.nPosteriors, \
+                                      batch_size=self.mbkmean_batch_size,\
+                                      init=np.array(init_list))
+            labels = self.dt.fit_predict(posts)
+            # clustering likelihoods
+            ll_logp = [[] for i in xrange(self.nPosteriors)]
+            for i, label in enumerate(labels):
+                ll_logp[label].append(logps[i])
+            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
+            for i in xrange(self.nPosteriors):
+                self.ll_mu[i]  = np.mean(ll_logp[i])
+                self.ll_std[i] = np.std(ll_logp[i])
+            
 
-    def partial_fit(self, X, y, classes=None, sample_weight=None, n_iter=1, shuffle=True):
+
+    def partial_fit(self, X, y=None, classes=None, sample_weight=None, n_iter=1, shuffle=True):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -391,12 +425,32 @@ class classifier(learning_base):
             X_features = self.rbf_feature.transform(X)
             for i in xrange(n_iter):
                 self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
+        elif self.method == 'mbkmean':
+            if type(X) == list: X = np.array(X)
+            posts = X[:,-self.nPosteriors:]
+            logps = X[:,0]
+            labels = self.dt.predict(posts)
+            # clustering likelihoods
+            ll_logp = [[] for i in xrange(self.nPosteriors)]
+            for i, label in enumerate(labels):
+                ll_logp[label].append(logps[i])
+            for i in xrange(self.nPosteriors):
+                n = float(len(ll_logp[i]))
+                N = float(self.ll_nData[i])
+                last_mu  = self.ll_mu[i]
+                last_std = self.ll_std[i] 
+                self.ll_mu[i] = ((N)*last_mu + n*np.sum(ll_logp[i])) / N+n
+                self.ll_std[i]= np.sqrt( ((N)*( last_std*last_std + last_mu*last_mu)+\
+                                          n*self.ll_mu[i]*self.ll_mu[i])/\
+                                          (N+n) - self.ll_mu[i]*self.ll_mu[i] )
+                
+            
         else:
             print "Not available method, ", self.method
             sys.exit()
 
 
-    def predict(self, X, y=None):
+    def predict(self, X, y=None, temp=True):
         '''
         X is single sample
         return predicted values (not necessarily binaries)
@@ -443,9 +497,10 @@ class classifier(learning_base):
 
                 if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                     type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset
+                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset                        
                 else:
                     err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
+
                 l_err.append(err)
             return l_err
 
@@ -490,7 +545,18 @@ class classifier(learning_base):
             X_features = self.rbf_feature.transform(X)
             return self.dt.predict(X_features)
 
-        
+        elif self.method == 'mbkmean':
+            if type(X) == list: X = np.array(X)
+            posts = X[:,-self.nPosteriors:]            
+            labels = self.dt.predict(posts)
+
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]                
+                err = self.ll_mu[labels[i]]+self.ths_mult*self.ll_std[labels[i]] - logp
+                l_err.append(err)
+
+            return l_err
 
     ## def predict_batch(self, X, y, idx):
 
@@ -552,20 +618,38 @@ class classifier(learning_base):
 
         
     def save_model(self, fileName):
-        if self.dt is None: 
-            print "No trained classifier"
-            return
         
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+        
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
         elif self.method.find('sgd')>=0:
+            if self.dt is None: 
+                print "No trained classifier"
+                return
+            
             import pickle
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
             ## joblib.dump(self.dt, fileName)
+        elif self.method.find('progress_time')>=0:
+            d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
+                 'l_statePosterior': self.l_statePosterior,\
+                 'll_mu': self.ll_mu, 'll_std': self.ll_std}
+            ut.save_pickle(d, fileName)            
+        elif self.method.find('mbkmean')>=0:
+            ## d = {'ll_mu': self.ll_mu, 'll_std': self.ll_std}
+            ## ut.save_pickle(d, fileName)            
+            ## import pickle
+            ## with open(fileName, 'wb') as f:
+            ##     pickle.dump(self.dt, f)
+            print "Not able to save mbkmean"
+            
         else:
             print "Not available method"
 
@@ -581,6 +665,14 @@ class classifier(learning_base):
                 self.dt = pickle.load(f)
                 self.rbf_feature = pickle.load(f)
             ## self.dt = joblib.load(fileName)
+        elif self.method.find('progress_time')>=0:
+            print "Start to load a progress based classifier"
+            d = ut.load_pickle(fileName)
+            self.g_mu_list = d['g_mu_list']
+            self.g_sig     = d['g_sig']
+            self.l_statePosterior = d['l_statePosterior']
+            self.ll_mu            = d['ll_mu']
+            self.ll_std           = d['ll_std']
         else:
             print "Not available method"
         
@@ -721,6 +813,52 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
 ## def learn_state_clustering(i, ll_logp, ll_post, g_mu, g_sig, nState):
 ##     return i, 
+
+
+def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \
+                        update_weight=1.0):
+
+    g_lhood = 0.0
+    weight_sum  = 0.0
+
+    n = len(ll_idx)
+    for j in xrange(n): # per execution
+
+        idx  = ll_idx[j]
+        logp = ll_logp[j]
+        post = ll_post[j]
+
+        weight    = norm(loc=rbf_mu, scale=rbf_sig).pdf(idx)
+
+        ## if weight < 1e-3: continue
+        g_lhood  = np.sum(logp * weight)
+        weight_sum = np.sum(weight)
+        if abs(weight_sum)<1e-3: weight_sum=1e-3        
+
+        x_new   = g_lhood / weight_sum
+        mu_new  = ( float(N-update_weight)*mu + update_weight*x_new )/(N)
+        try:
+            sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) \
+                               - mu_new*mu_new )
+        except:
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
+            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
+        ## sig_new = sig
+
+        ## mu_new  = ( float(N)*mu + x_new )/(N+1.0)
+        ## try:
+        ##     sig_new = np.sqrt( (float(N)*( sig*sig + mu*mu)+mu_new*mu_new)/float(N+1.0) \
+        ##                        - mu_new*mu_new )
+        ## except:
+        ##     print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
+        ##     print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
+        ## sig_new = sig*0.9
+
+
+        mu  = mu_new
+        sig = sig_new
+
+    return i, mu, sig
 
 
 def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
@@ -988,6 +1126,19 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_Y, \
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
+
+        if (method.find('svm')>=0 or method.find('sgd')>=0) and True:
+            # Add failure safe data
+            for i in xrange(nState):
+                v                     = np.zeros(nState*2+1)
+                v[0]                  = -500
+                v[i+1]                = 1.0
+                v[i+1+self.ml.nState] = 1.0                
+                X_train_org.append(v.tolist())
+                Y_train_org.append(1)
+                idx_train_org.append(i)
+
+                                                                   
                                                                    
 
 

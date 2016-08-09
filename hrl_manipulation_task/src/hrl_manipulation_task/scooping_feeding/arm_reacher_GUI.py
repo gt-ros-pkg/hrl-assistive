@@ -49,7 +49,7 @@ from hrl_manipulation_task.record_data import logger
 
 class armReacherGUI:
 
-    def __init__(self, detection_flag=False, log=None):
+    def __init__(self, detection_flag=False, log=None, quick_feeding=False):
         '''Initialize GUI'''
 
         #variables
@@ -70,6 +70,8 @@ class armReacherGUI:
         self.guiStatusReady = False
         self.gui_status = None
         self.feedback_received = False
+        self.quick_feeding = quick_feeding
+        self.quick_feeding_ready=False
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
@@ -134,6 +136,7 @@ class armReacherGUI:
             #    return
         self.emergencyStatus = True
         self.inputStatus = False
+        self.quick_feeding_ready = False
 
         temp_gui_status = self.gui_status
         if self.gui_status == "in motion":
@@ -212,6 +215,7 @@ class armReacherGUI:
             self.debugPub2.publish(self.emergencyStatus)
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
+                self.quick_feeding_ready = False
                 rospy.loginfo("Scooping Starting...")
                 self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
             elif self.inputStatus and self.actionStatus == 'Feeding':
@@ -220,6 +224,7 @@ class armReacherGUI:
                 self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
             elif self.inputStatus and self.actionStatus == 'Clean':
                 self.inputStatus = False
+                self.quick_feeding_ready = False
                 rospy.loginfo("Clean motion...")
                 # TODO: cleaning motion
                 self.cleanMotion(self.armReachActionLeft, self.armReachActionRight)
@@ -301,12 +306,12 @@ class armReacherGUI:
                 self.log.setTask('feeding' )
                 self.log.initParams()
 
-            if self.FeedNumber < 1:
+            if self.FeedNumber < 1 and self.quick_feeding_ready is False:
                 ## Feeding -----------------------------------
                 rospy.loginfo("Initializing left arm for feeding")
                 self.proceedPub.publish("Set: , Feeding 1, Feeding 2")
-                self.ServiceCallLeft("lookToRight")
-                if self.emergencyStatus: break
+                ## self.ServiceCallLeft("lookToRight")
+                ## if self.emergencyStatus: break
                 self.ServiceCallLeft("initFeeding1")
                 if self.emergencyStatus: break
                 self.ServiceCallRight("getHeadPos")
@@ -359,7 +364,9 @@ class armReacherGUI:
                 # Returning motion
                 self.ServiceCallLeft("initFeeding2")
                 if self.emergencyStatus: break
-            self.FeedNumber = 0
+                self.quick_feeding_ready = True
+
+            self.FeedNumber = 0            
             break
 
 
@@ -437,6 +444,8 @@ if __name__ == '__main__':
                  default=False, help='Enable anomaly detector.')
     p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
                  default=False, help='Enable logger.')
+    p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
+                 default=False, help='Enable a quick feeding mode.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
                  default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
                  help='Enter a record data path')
@@ -449,6 +458,7 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
     
     if opt.bLog or opt.bDataPub:
+        # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
                      subject="new", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
@@ -456,10 +466,7 @@ if __name__ == '__main__':
     else:
         log = None
 
-    last_trial  = '4'
-    last_detect = '2'
-
-    gui = armReacherGUI(detection_flag=opt.bAD, log=log)
+    gui = armReacherGUI(detection_flag=opt.bAD, log=log, quick_feeding=opt.bQuickFeeding)
     rospy.spin()
 
 
