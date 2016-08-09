@@ -1133,7 +1133,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 v                     = np.zeros(nState*2+1)
                 v[0]                  = -500
                 v[i+1]                = 1.0
-                v[i+1+self.ml.nState] = 1.0                
+                v[i+1+nState] = 1.0                
                 X_train_org.append(v.tolist())
                 Y_train_org.append(1)
                 idx_train_org.append(i)
