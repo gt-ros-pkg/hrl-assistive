@@ -67,23 +67,25 @@ RFH.Domains.WipingMouthADL = function (options) {
     self.getActionLabel = function (name, args) {
         switch (name){
             case 'FIND_TAG':
-                return "Finding Tag.";
+                return "Finding Tag";
             case 'TRACK_TAG':
-                return "Tracking Tag.";
+                return "Tracking Tag";
             case 'CHECK_OCCUPANCY':
                 return "Bed Occ";
             case 'REGISTER_HEAD':
-                return "Register Head.";
+                return "Register Head";
             case 'CALL_BASE_SELECTION':
                 return "Base Select";
             case 'CONFIGURE_MODEL_ROBOT':
-                return "Setup Bed & Robot.";
+                return "Setup Bed & Robot";
             case 'MOVE_ROBOT':
-                return "Moving Base.";
+                return "Moving Base";
+            case 'STOP_TRACKING':
+                return "Stop Tracking";
             case 'MOVE_ARM':
-                return "Moving Arm."
+                return "Moving Arm"
             case 'DO_TASK':
-                return "Manual Task.";
+                return "Manual Task";
         }
     };
 
@@ -103,6 +105,8 @@ RFH.Domains.WipingMouthADL = function (options) {
                 return "Please wait while we finish repositioning your bed and the robot's height...";
             case 'MOVE_ROBOT':
                 return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";
+            case 'STOP_TRACKING':
+                return "Stopping AR Tag Tracking";
             case 'MOVE_ARM':
                 return "Robot moving its arm towards your face. Please wait patiently...";
             case 'DO_TASK':
@@ -165,7 +169,7 @@ RFH.Domains.WipingMouthADL = function (options) {
         var task = 'wiping_mouth';
         self.setModelName(model);
         self.setDefaultGoal(['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']);
-        self.updatePDDLState(['(NOT (CONFIGURED BED WIPING_MOUTH AUTOBED)']);
+        self.updatePDDLState(['AND (NOT(BASE-REACHED WIPING_MOUTH AUTOBED))(NOT(ARM-REACHED WIPING_MOUTH AUTOBED))(NOT (BASE-SELECTED WIPING_MOUTH AUTOBED)']);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
