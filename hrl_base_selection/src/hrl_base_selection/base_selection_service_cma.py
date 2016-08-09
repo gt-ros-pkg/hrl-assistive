@@ -428,7 +428,7 @@ class BaseSelector(object):
             head_possibilities = (np.arange(11)-5)*30
             neigh = KNeighborsClassifier(n_neighbors=1)
             neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
-            heady = neigh.predict(int(model_B_head[1, 3]*1000))[0]*.00
+            heady = neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
 
             headx = 0.
             #heady = 0.

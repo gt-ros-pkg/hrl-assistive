@@ -56,6 +56,8 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
                                       goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ROBOT':
         return MoveRobotState(domain=domain, task=args[0], model=args[1], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+    elif action == 'STOP_TRACKING':
+        return StopTrackingState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
@@ -102,8 +104,18 @@ class TrackTagState(PDDLSmachState):
         self.model = model
 
     def on_execute(self, ud):
-        print "Starting to track AR Tag"
+        rospy.loginfo('[%s] Starting AR Tag Tracking' % rospy.get_name())
         self.start_tracking_AR_publisher.publish(True)
+
+
+class StopTrackingState(PDDLSmachState):
+    def __init__(self, domain, *args, **kwargs):
+        super(StopTrackingState, self).__init__(domain=domain, *args, **kwargs)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
+
+    def on_execute(self, ud):
+        rospy.loginfo('[%s] Stopping AR Tag Tracking' % rospy.get_name())
+        self.stop_tracking_AR_publisher.publish(False)
 
 
 class RegisterHeadState(PDDLSmachState):
@@ -168,6 +180,12 @@ class CheckOccupancyState(PDDLSmachState):
             else:
                 self.goal_reached = False
                 return 'aborted'
+        else:
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(OCCUPIED %s)' % self.model]
+            self.state_pub.publish(state_update)
+            self.goal_reached = False
 
 
 class MoveArmState(PDDLSmachState):
@@ -185,7 +203,7 @@ class MoveArmState(PDDLSmachState):
 
     def publish_goal(self):
         goal = PoseStamped()
-        if self.task == 'scratching_knee_left':
+        if self.task.upper() == 'SCRATCHING_KNEE_LEFT':
             goal.pose.position.x = -0.06310556
             goal.pose.position.y = 0.07347758+0.05
             goal.pose.position.z = 0.00485197
@@ -196,7 +214,7 @@ class MoveArmState(PDDLSmachState):
             goal.header.frame_id = '/autobed/calf_left_link'
             rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
-        elif self.task == 'wiping_mouth':
+        elif self.task.upper() == 'WIPING_MOUTH':
             goal.pose.position.x = 0.17
             goal.pose.position.y = 0.
             goal.pose.position.z = -0.16
@@ -207,7 +225,7 @@ class MoveArmState(PDDLSmachState):
             goal.header.frame_id = '/autobed/head_link'
             rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
         else:
-            rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task?' % rospy.get_name())
+            rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
             return False
         self.l_arm_pose_pub.publish(goal)
         return True
@@ -217,7 +235,7 @@ class MoveArmState(PDDLSmachState):
         if not publish_stat:
             return 'aborted'
         #Now that goal is published, we wait until goal is reached
-        rospy.Subscriber("haptic_mpc/in_deadzone", std_msgs.msg.Bool, self.arm_reach_goal_cb)
+        rospy.Subscriber("/left_arm/haptic_mpc/in_deadzone", Bool, self.arm_reach_goal_cb)
         while not rospy.is_shutdown() and not self.goal_reached:
             rospy.sleep(1)
 
@@ -225,10 +243,10 @@ class MoveArmState(PDDLSmachState):
             rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
             state_update = PDDLState()
             state_update.domain = self.domain
-            state_update.predicates = ['ARM-REACHED' + ' ' + str(self.task) + ' ' + str(self.model)]
+            state_update.predicates = ['(ARM-REACHED %s %s)' % (self.task, self.model)]
             print "Publishing (ARM-REACHED) update"
             self.state_pub.publish(state_update)
-
+            return
 
 class MoveRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
@@ -358,16 +376,16 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action',
                                                          SingleJointPositionAction)
+        self.l_reset_traj = None
+        self.r_reset_traj = None
         self.define_reset()
+        self.goal_reached = False
         self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory',
                                          JointTrajectory,
                                          queue_size=1)
         self.l_arm_pub = rospy.Publisher('/left_arm/haptic_mpc/joint_trajectory',
                                           JointTrajectory,
                                           queue_size=1)
-
-        self.l_reset_traj = None
-        self.r_reset_traj = None
 
 
         if self.model.upper() == 'AUTOBED':
@@ -478,17 +496,10 @@ class ConfigureModelRobotState(PDDLSmachState):
             self.r_arm_pub.publish(self.r_reset_traj)
             self.l_arm_pub.publish(self.l_reset_traj)
 
-            #Now that goal is published, we wait until goal is reached
-            rospy.Subscriber("haptic_mpc/in_deadzone", std_msgs.msg.Bool, self.arm_reach_goal_cb)
-            while not rospy.is_shutdown() and not self.goal_reached:
-                rospy.sleep(1)
-
+            rospy.sleep(10)
             rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
-            while not rospy.is_shutdown():
-                rospy.sleep(1)
-            if self.goal_reached:
-                state_update = PDDLState()
-                state_update.domain = self.domain
-                state_update.predicates = ['ARM-HOME']
-                print "Publishing (ARM-HOME) update"
-                self.state_pub.publish(state_update)
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(ARM-HOME %s %s)' % (self.task, self.model)]
+            print "Publishing (ARM-HOME) update"
+            self.state_pub.publish(state_update)

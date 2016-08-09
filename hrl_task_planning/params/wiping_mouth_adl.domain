@@ -24,7 +24,7 @@
   (base-reached ?t - task ?m - model)
   (arm-reached ?t - task ?m - model)
   (task-completed ?t - task ?m - model)
-  (arm-home)
+  (arm-home ?t - task ?m - model)
  )
 
 
@@ -65,7 +65,7 @@
  (:action configure_model_robot
   :parameters (?t - task ?m - model)
   :precondition (and (found-tag ?m)(base-selected ?t ?m))
-  :effect (and (forall(?d - dof)(configured ?d ?t ?m))(arm-home))
+  :effect (and (forall(?d - dof)(configured ?d ?t ?m))(arm-home ?t ?m))
  )
 
  (:action move_robot
@@ -76,9 +76,16 @@
           )
  )
 
+ (:action stop_tracking
+  :parameters ()
+  :effect (and (forall(?m - model)(not(is-tracking-tag ?m)))
+          )
+ )
+
+
  (:action move_arm
   :parameters (?t - task ?m - model)
-  :precondition (and (base-selected ?t ?m)(arm-home))
+  :precondition (and (not(is-tracking-tag ?m))(base-selected ?t ?m)(arm-home ?t ?m))
   :effect (and (arm-reached ?t ?m)
           )
  )
