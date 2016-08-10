@@ -336,10 +336,16 @@ if __name__ == '__main__':
                               'w_negative': np.linspace(0.1,3.0,5) }
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
-                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(0.1,6.0,5),\
-                              'gamma': np.linspace(0.1,8.0,5), \
-                              'w_negative': np.linspace(0.1,2.0,5) }
+                if opt.bICRA2017:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.logspace(-2,0,5),\
+                                  'gamma': np.linspace(1.0,5.0,5), \
+                                  'w_negative': np.linspace(0.1,2.0,5) }
+                else:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.linspace(0.1,6.0,5),\
+                                  'gamma': np.linspace(0.1,8.0,5), \
+                                  'w_negative': np.linspace(0.1,2.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
                           'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
