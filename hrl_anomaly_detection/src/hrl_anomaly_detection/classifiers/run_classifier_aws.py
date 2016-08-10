@@ -261,11 +261,10 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=nPoints)
     
-    nFiles =  2 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+    nFiles =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
 
 
     if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
 
         if opt.method == 'svm':
             if opt.dim == 4:
@@ -324,8 +323,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
-
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -340,8 +337,8 @@ if __name__ == '__main__':
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(0.1,6.0,10),\
-                              'gamma': np.linspace(0.1,8.0,10), \
+                              'cost': np.linspace(0.1,6.0,5),\
+                              'gamma': np.linspace(0.1,8.0,5), \
                               'w_negative': np.linspace(0.1,2.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
@@ -387,7 +384,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
     
-        subjects = ['gatsbii']
 
         if opt.method == 'svm':
             if opt.dim == 2:
@@ -454,8 +450,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
     
-        subjects = ['gatsbii']
-
         if opt.method == 'svm':        
             if opt.dim == 5:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -531,8 +525,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
     
-        subjects = ['gatsbii']
-
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
