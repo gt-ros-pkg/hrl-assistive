@@ -114,6 +114,10 @@ var RFH = {
                                                            topic: "/pcl_filters/peek_points",
                                                            maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
+        RFH.realtime_base_selection_right = new RFH.RealtimeBaseSelection({ros: RFH.ros,
+                                                                           arm: 'right'});
+        RFH.realtime_base_selection_left = new RFH.RealtimeBaseSelection({ros: RFH.ros,
+                                                                          arm: 'left'});
         RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
 //        initClickableActions();
 //        initPr2(); 

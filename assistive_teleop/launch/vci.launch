@@ -42,6 +42,8 @@
   </node>
 
   <!--  <node name="moveit_relay" pkg="assistive_teleop" type="moveit_relay" output="screen" />-->
+  <!--  Tuck arms action server -->
+  <include file="$(find pr2_tuckarm)/launch/tuck_arms.launch"/>
 
   <!-- Filtered PointCloud for 3D visualization -->
   <include file="$(find assistive_teleop)/launch/pcl_filter.launch"/>
