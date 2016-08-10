@@ -285,6 +285,17 @@ class ScoreGenerator(object):
         print 'The task was just set. The set of goals selected was: ',task
         return self.selection_mat
 
+    def set_arm(self, arm):
+        ## Set robot manipulators, ik, planner
+        print 'Setting the arm being used by base selection to ', arm
+        self.robot.SetActiveManipulator(arm)
+        self.manip = self.robot.GetActiveManipulator()
+        ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
+        if not ikmodel.load():
+            print 'IK model not found. Will now generate an IK model. This will take a while!'
+            ikmodel.autogenerate()
+        self.manipprob = op.interfaces.BaseManipulation(self.robot)
+
     def real_time_scoring(self):
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'

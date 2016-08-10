@@ -174,7 +174,7 @@ class BaseSelector(object):
         # print 'ROS time to load all requested data: ', (rospy.Time.now() - ros_start_time).to_sec()
 
         # Initialize the services
-        self.base_selection_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
+        self.base_selection_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
         
         # Subscriber to update robot joint state
         #self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
@@ -284,23 +284,40 @@ class BaseSelector(object):
 
         # This is real-time base selection mode. Used to find a base configuration for simple tasks with respect to a
         # reference AR tag.
+
+        if 'r' in req.ee_frame[0:2]:
+            arm = 'rightarm'
+        elif 'l' in req.ee_frame[0:2]:
+            arm = 'leftarm'
+        else:
+            'ERROR'
+            'I do not know whether to use the left or right arm'
+            return None
+
         self.origin_B_pr2 = np.matrix(np.eye(4))
         self.pr2_B_ar = np.matrix(np.eye(4))
         pos = req.pose_target.pose.postion
         rot = req.pose_target.pose.orientation
         target_reference_frame = req.pose_target.header.frame_id
-        if not target_reference_frame == 'base_footprint':
-            print 'ERROR!!'
-            print 'Base selection currently requires goals in the base footprint frame when in real-time mode.'
-            print 'But it was given in following frame: ', target_reference_frame
-            return None
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_footprint', target_reference_frame, now, rospy.Duration(15))
+        (trans, rot) = self.listener.lookupTransform('/base_footprint', target_reference_frame, now)
 
-        base_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
+        # if not target_reference_frame == 'base_footprint':
+        #     print 'ERROR!!'
+        #     print 'Base selection currently requires goals in the base footprint frame when in real-time mode.'
+        #     print 'But it was given in following frame: ', target_reference_frame
+        #     return None
+
+        reference_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
+        base_footprint_B_reference = createBMatrix(trans, rot)
+        base_footprint_B_goal_pose = base_footprint_B_reference*reference_B_goal_pose
         base_selection_goal = []
-        base_selection_goal.append([base_B_goal_pose, 1, 0])
+        base_selection_goal.append([base_footprint_B_goal_pose, 1, 0])
         base_selection_goal = np.array(base_selection_goal)
         # self.real_time_score_generator.generate_environment_model()
-        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=[target_reference_frame])
+        self.real_time_score_generator.set_arm(arm)
+        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=['base_footprint'])
         config, score = self.real_time_score_generator.real_time_scoring()
         self.score = [[[config[0]], [config[1]], [config[2]], [config[3]], [0], [0]], score]
         print 'Time for TOC service to run start to finish: %fs' % (time.time()-service_initial_time)
