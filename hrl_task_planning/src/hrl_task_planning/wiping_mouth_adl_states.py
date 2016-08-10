@@ -204,7 +204,7 @@ class MoveArmState(PDDLSmachState):
 
     def publish_goal(self):
         goal = PoseStamped()
-        if self.task.upper() == 'SCRATCHING_KNEE_LEFT':
+        if self.task.upper() == 'SCRATCHING':
             goal.pose.position.x = -0.06310556
             goal.pose.position.y = 0.07347758+0.05
             goal.pose.position.z = 0.00485197
@@ -333,7 +333,7 @@ class CallBaseSelectionState(PDDLSmachState):
         elif self.task.upper() == 'SCRATCHING':
             local_task_name = 'scratching_knee_left'
 
-        if self.model.upper() == 'AUTOBED'
+        if self.model.upper() == 'AUTOBED':
             try:
                 self.model = 'autobed'
                 resp = self.base_selection_client(local_task_name, self.model)
