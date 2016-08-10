@@ -1,5 +1,6 @@
-geometry_msgs/PoseStamped goal
-geometry_msgs/PoseStamped head
+string task
+string model
 ---
-geometry_msgs/PoseStamped base_goal
-
+float64[] base_goal
+float64[] configuration_goal
+float64[] distance_to_goal

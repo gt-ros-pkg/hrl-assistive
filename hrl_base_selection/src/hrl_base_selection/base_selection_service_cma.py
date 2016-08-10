@@ -23,7 +23,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
 import sensor_msgs.point_cloud2 as pc2
-from hrl_base_selection.srv import BaseMove_multi, Base_Read_Model, BaseMove_realtime
+from hrl_base_selection.srv import BaseMove, setBaseModel, realtimeBaseMove
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from data_reader_task import DataReader_Task
@@ -161,8 +161,8 @@ class BaseSelector(object):
             # self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
             # self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
             self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
-            self.model_read_service = rospy.Service('read_environment_model', Base_Read_Model, self.handle_read_in_environment_model)
-            self.real_time_base_selection_service = rospy.Service('select_base_position', BaseMove_realtime, self.realtime_base_selection)
+            self.model_read_service = rospy.Service('set_environment_model', setBaseModel, self.handle_read_in_environment_model)
+            self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', realtimeBaseMove, self.realtime_base_selection)
 
         else:
             self.scores_dict[model, load] = self.load_task(load, model)
