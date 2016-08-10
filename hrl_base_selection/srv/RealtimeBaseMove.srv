@@ -1,4 +1,5 @@
 geometry_msgs/PoseStamped pose_target
+string ee_frame
 ---
 float64[] base_goal
 float64[] configuration_goal

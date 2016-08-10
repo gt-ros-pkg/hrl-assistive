@@ -23,7 +23,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
 import sensor_msgs.point_cloud2 as pc2
-from hrl_base_selection.srv import BaseMove_multi, Base_Read_Model, BaseMove_realtime
+from hrl_base_selection.srv import BaseMove, SetBaseModel, RealtimeBaseMove
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from data_reader_task import DataReader_Task
@@ -51,6 +51,7 @@ class BaseSelector(object):
         self.mode = mode
         self.model = model
         self.load = load
+        self.score = None
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
         self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseArray, queue_size=1, latch=True)
 
@@ -161,9 +162,8 @@ class BaseSelector(object):
             # self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
             # self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
             self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
-            self.model_read_service = rospy.Service('read_environment_model', Base_Read_Model, self.handle_read_in_environment_model)
-            self.real_time_base_selection_service = rospy.Service('select_base_position', BaseMove_realtime, self.realtime_base_selection)
-
+            self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
+            self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
         else:
             self.scores_dict[model, load] = self.load_task(load, model)
 
@@ -174,7 +174,7 @@ class BaseSelector(object):
         # print 'ROS time to load all requested data: ', (rospy.Time.now() - ros_start_time).to_sec()
 
         # Initialize the services
-        self.base_selection_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
+        self.base_selection_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
         
         # Subscriber to update robot joint state
         #self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
@@ -284,23 +284,40 @@ class BaseSelector(object):
 
         # This is real-time base selection mode. Used to find a base configuration for simple tasks with respect to a
         # reference AR tag.
+
+        if 'r' in req.ee_frame[0:2]:
+            arm = 'rightarm'
+        elif 'l' in req.ee_frame[0:2]:
+            arm = 'leftarm'
+        else:
+            'ERROR'
+            'I do not know whether to use the left or right arm'
+            return None
+
         self.origin_B_pr2 = np.matrix(np.eye(4))
         self.pr2_B_ar = np.matrix(np.eye(4))
         pos = req.pose_target.pose.postion
         rot = req.pose_target.pose.orientation
         target_reference_frame = req.pose_target.header.frame_id
-        if not target_reference_frame == 'base_footprint':
-            print 'ERROR!!'
-            print 'Base selection currently requires goals in the base footprint frame when in real-time mode.'
-            print 'But it was given in following frame: ', target_reference_frame
-            return None
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_footprint', target_reference_frame, now, rospy.Duration(15))
+        (trans, rot) = self.listener.lookupTransform('/base_footprint', target_reference_frame, now)
 
-        base_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
+        # if not target_reference_frame == 'base_footprint':
+        #     print 'ERROR!!'
+        #     print 'Base selection currently requires goals in the base footprint frame when in real-time mode.'
+        #     print 'But it was given in following frame: ', target_reference_frame
+        #     return None
+
+        reference_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
+        base_footprint_B_reference = createBMatrix(trans, rot)
+        base_footprint_B_goal_pose = base_footprint_B_reference*reference_B_goal_pose
         base_selection_goal = []
-        base_selection_goal.append([base_B_goal_pose, 1, 0])
+        base_selection_goal.append([base_footprint_B_goal_pose, 1, 0])
         base_selection_goal = np.array(base_selection_goal)
         # self.real_time_score_generator.generate_environment_model()
-        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=[target_reference_frame])
+        self.real_time_score_generator.set_arm(arm)
+        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=['base_footprint'])
         config, score = self.real_time_score_generator.real_time_scoring()
         self.score = [[[config[0]], [config[1]], [config[2]], [config[3]], [0], [0]], score]
         print 'Time for TOC service to run start to finish: %fs' % (time.time()-service_initial_time)
