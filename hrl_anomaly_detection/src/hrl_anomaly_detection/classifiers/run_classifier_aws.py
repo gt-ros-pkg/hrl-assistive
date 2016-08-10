@@ -261,7 +261,7 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=nPoints)
     
-    nFiles =  2 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+    nFiles =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
 
 
     if opt.task == 'scooping':
