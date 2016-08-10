@@ -51,6 +51,7 @@ class BaseSelector(object):
         self.mode = mode
         self.model = model
         self.load = load
+        self.score = None
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
         self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseArray, queue_size=1, latch=True)
 
@@ -163,7 +164,6 @@ class BaseSelector(object):
             self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
             self.model_read_service = rospy.Service('set_environment_model', setBaseModel, self.handle_read_in_environment_model)
             self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', realtimeBaseMove, self.realtime_base_selection)
-
         else:
             self.scores_dict[model, load] = self.load_task(load, model)
 
