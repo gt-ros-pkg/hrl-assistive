@@ -1,0 +1,5 @@
+trajectory_msgs/JointTrajectory sweep_trajectory
+---
+std_msgs/String state
+---
+sensor_msgs/PointCloud2 merged_pointcloud
