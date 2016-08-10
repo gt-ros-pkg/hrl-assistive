@@ -8,8 +8,8 @@ catkin_python_setup()
 add_service_files(
     DIRECTORY srv  
     FILES BaseMove.srv 
-    FILES realtimeBaseMove.srv
-    FILES setBaseModel.srv
+    FILES RealtimeBaseMove.srv
+    FILES SetBaseModel.srv
 )
 
 generate_messages(
