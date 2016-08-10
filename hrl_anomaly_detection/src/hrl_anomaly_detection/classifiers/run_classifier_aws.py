@@ -337,8 +337,8 @@ if __name__ == '__main__':
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(0.1,6.0,10),\
-                              'gamma': np.linspace(0.1,8.0,10), \
+                              'cost': np.linspace(0.1,6.0,5),\
+                              'gamma': np.linspace(0.1,8.0,5), \
                               'w_negative': np.linspace(0.1,2.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
