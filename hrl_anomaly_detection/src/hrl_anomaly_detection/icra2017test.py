@@ -256,7 +256,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_path, processed_data_path, \
                      param_dict,\
                      data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                     no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                     no_plot=False, delay_plot=False, find_param=False, data_gen=False):
 
     ## Parameters
     # data
@@ -492,7 +492,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                      no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                      no_plot=False, delay_plot=False, find_param=False, data_gen=False):
 
     ## Parameters
     # data
