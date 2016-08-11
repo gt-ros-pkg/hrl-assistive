@@ -1,0 +1,9 @@
+(DEFINE
+(PROBLEM test_problem)
+(:DOMAIN realtime_base_selection)
+(:OBJECTS)
+(:INIT  (KNOWN EE_FRAME) 
+            (NOT(AT BASE_GOAL))
+)
+(:GOAL (AND (AT BASE_GOAL)(NOT(TORSO_SET BASE_GOAL))))
+)
