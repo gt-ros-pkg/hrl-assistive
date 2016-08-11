@@ -8,7 +8,7 @@ from std_msgs.msg import Bool
 
 from hrl_task_planning import pddl_utils as pddl
 from hrl_task_planning.msg import PDDLState
-
+from pr2_controllers_msgs.msg import PointHeadGoal, PointHeadActionGoal
 
 class ARTagTracker(object):
     def __init__(self, domain):
@@ -16,7 +16,24 @@ class ARTagTracker(object):
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.model = None
         rospy.Subscriber('/AR_tracking', Bool, self.tracking_ar_tag_cb)
+        rospy.Subscriber('/head_traj_controller/point_head_action/goal', PointHeadActionGoal, self.ar_distance_check_cb)
 
+
+    def ar_distance_check_cb(self, msg):
+	ar_dist_y = msg.goal.target.point.y
+	preds = []
+        BED_HARD_THRESH = 1.3
+	if abs(ar_dist_y) < BED_HARD_THRESH:
+	    preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
+        else:
+            preds.append(pddl.Predicate('TOO-CLOSE', [self.model], neg=True))
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.predicates = map(str, preds)
+        self.state_pub.publish(state_msg)
+
+    
+		
     def tracking_ar_tag_cb(self, msg):
         try:
             self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')

@@ -25,6 +25,7 @@
   (arm-reached ?t - task ?m - model)
   (task-completed ?t - task ?m - model)
   (arm-home ?t - task ?m - model)
+  (too-close ?m - model)
  )
 
 
@@ -55,9 +56,14 @@
           )
  )   
  
+ (:action move_back
+  :precondition (and (forall(?m - model)(too-close ?m)))
+  :effect (and (forall(?m - model)(not(too-close ?m))))
+ )
+
  (:action call_base_selection
   :parameters (?t - task ?m - model)
-  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m))
+  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m)(not(too-close ?m)))
   :effect (and (base-selected ?t ?m)
           )
  )

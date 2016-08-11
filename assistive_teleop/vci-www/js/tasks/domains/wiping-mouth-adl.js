@@ -41,6 +41,7 @@ RFH.Domains.WipingMouthADL = function (options) {
                     RFH.taskMenu.startTask('LookingTask');
                 }
                 break;
+	    case 'MOVE_BACK':
             case 'MOVE_ROBOT':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -78,6 +79,8 @@ RFH.Domains.WipingMouthADL = function (options) {
                 return "Base Select";
             case 'CONFIGURE_MODEL_ROBOT':
                 return "Setup Bed & Robot";
+            case 'MOVE_BACK':
+                return "Move Back";
             case 'MOVE_ROBOT':
                 return "Moving Base";
             case 'STOP_TRACKING':
@@ -103,6 +106,8 @@ RFH.Domains.WipingMouthADL = function (options) {
                 return "Please wait while the PR2 finds a good location to perform task...";
             case 'CONFIGURE_MODEL_ROBOT':
                 return "Please wait while we finish repositioning your bed and the robot's height...";
+            case 'MOVE_BACK':
+                return "Move back, you must!";
             case 'MOVE_ROBOT':
                 return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";
             case 'STOP_TRACKING':

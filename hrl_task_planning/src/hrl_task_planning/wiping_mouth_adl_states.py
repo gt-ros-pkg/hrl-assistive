@@ -60,6 +60,8 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return StopTrackingState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+    elif action == 'MOVE_BACK':
+        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -75,21 +77,28 @@ class FindTagState(PDDLSmachState):
         self.ar_tag_found = False
 
     def on_execute(self, ud):
-        print "Start Looking For Tag"
+        rospy.loginfo("[%s] Start Looking For Tag" % rospy.get_name())
         self.start_finding_AR_publisher.publish(True)
-        print "Waiting to see if tag found"
+        rospy.loginfo("[%s] Waiting to see if tag found" % rospy.get_name())
         rospy.Subscriber('AR_acquired', Bool, self.found_ar_tag_cb)
-        while not rospy.is_shutdown():
-            if self.ar_tag_found:
-                print "Tag FOUND"
-                rospy.loginfo("AR Tag Found")
-                state_update = PDDLState()
-                state_update.domain = self.domain
-                state_update.predicates = ['(FOUND-TAG %s)' % self.model]
-                print "Publishing (FOUND-TAG) update"
-                self.state_pub.publish(state_update)
-                return
+        while not rospy.is_shutdown() and not self.ar_tag_found:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Cancelling action." % rospy.get_name())
+                return 
             rospy.sleep(1)
+
+        if self.ar_tag_found:
+	    print "Tag FOUND"
+	    rospy.loginfo("AR Tag Found")
+	    state_update = PDDLState()
+	    state_update.domain = self.domain
+	    state_update.predicates = ['(FOUND-TAG %s)' % self.model]
+	    print "Publishing (FOUND-TAG) update"
+	    self.state_pub.publish(state_update)
+	else:
+	    rospy.logwarn('[%s] Something went wrong in finding AR Tag. Tag not found' % rospy.get_name())
+	    return 'aborted'
+	return
 
     def found_ar_tag_cb(self, msg):
         found_ar_tag = msg.data
