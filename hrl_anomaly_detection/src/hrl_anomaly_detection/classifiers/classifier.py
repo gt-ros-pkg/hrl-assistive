@@ -1149,7 +1149,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
-        if (method.find('svm')>=0 or method.find('sgd')>=0) and True:
+        if (method.find('svm')>=0 or method.find('sgd')>=0) and False:
             # Add failure safe data
             for i in xrange(nState):
                 v                     = np.zeros(nState*2+1)

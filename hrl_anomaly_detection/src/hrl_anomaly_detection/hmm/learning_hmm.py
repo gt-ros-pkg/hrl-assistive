@@ -71,6 +71,13 @@ class learning_hmm(learning_base):
         self.F = ghmm.Float()  
 
 
+    def get_hmm_object(self):
+        
+        [A, B, pi] = self.ml.asMatrices()
+        [out_a_num, vec_num, mat_num, u_denom] = self.ml.getBaumWelchParams()
+
+        return [A, B, pi, out_a_num, vec_num, mat_num, u_denom]
+
     def set_hmm_object(self, A, B, pi, out_a_num=None, vec_num=None, mat_num=None, u_denom=None):
 
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
