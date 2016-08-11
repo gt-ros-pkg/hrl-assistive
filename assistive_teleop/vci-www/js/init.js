@@ -115,9 +115,11 @@ var RFH = {
                                                            maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
         RFH.realtime_base_selection_right = new RFH.RealtimeBaseSelection({ros: RFH.ros,
-                                                                           arm: 'right'});
+                                                                           arm: 'right',
+                                                                           camera: RFH.mjpeg.cameraModel});
         RFH.realtime_base_selection_left = new RFH.RealtimeBaseSelection({ros: RFH.ros,
-                                                                          arm: 'left'});
+                                                                          arm: 'left',
+                                                                          camera: RFH.mjpeg.cameraModel});
         RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
 //        initClickableActions();
 //        initPr2(); 

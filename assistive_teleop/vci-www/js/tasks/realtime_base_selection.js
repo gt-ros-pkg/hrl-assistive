@@ -2,7 +2,31 @@ RFH.RealtimeBaseSelection = function (options){
     'use strict';
     var self = this;
     var ros = options.ros;
-    self.arm = options.arm;
+    var arm = options.arm;
+    var camera = options.camera;
+    var $image = $('#mjpeg-image');
+
+    var pixel23d = new RFH.Pixel23DClient({
+        ros: ros,
+        cameraInfoTopic: camera.infoTopic
+    });
+
+    var poseCB = function(pose_msg) {
+        console.log("Original Pose msg: ", pose_msg);
+        $image.removeClass('cursor-wait');
+    };
+
+    var clickCB = function(event, ui) {
+        var pt = RFH.positionInElement(event);
+        var px = (pt[0]/event.target.clientWidth);
+        var py = (pt[1]/event.target.clientHeight);
+        try {
+            pixel23d.callRelativeScale(px, py, poseCB);
+            $image.addClass('cursor-wait');
+        } catch(err) {
+            log(err);
+        }
+    };
 
     // Load msg details
     ros.getMsgDetails('trajectory_msgs/JointTrajectory');
@@ -44,10 +68,10 @@ RFH.RealtimeBaseSelection = function (options){
         });
         goal.on('result', scanResultCB);
         goal.send();
-        console.log("Call head sweep for " + self.arm + " arm");
+        console.log("Call head sweep for " + arm + " arm");
     };
 
     // Set up button with callback
-    $('#controls > div.rtbs.'+self.arm).button().on('click.rfh', approachButtonCB);
+    $('#controls > div.rtbs.'+arm).button().on('click.rfh', approachButtonCB);
 
 };
