@@ -683,8 +683,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     print "Start the incremental evaluation"
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         if idx > 1: continue
-        data = run_online_classifier(idx, processed_data_path, task_name, HMM_dict,\
-                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, ROC_dict,\
+        data = run_online_classifier(idx, processed_data_path, task_name, \
+                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, param_dict,\
                                      normalData, abnormalData)
 
         for i, method in enumerate(method_list):
@@ -707,11 +707,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
              only_tpr=False)
              
 
-def run_online_classifier(idx, processed_data_path, task_name, HMM_dict, nPtrainData,\
-                          nTrainOffset, nTrainTimes, ROC_data, ROC_dict, \
+def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
+                          nTrainOffset, nTrainTimes, ROC_data, param_dict, \
                           normalData, abnormalData, verbose=True):
     '''
     '''
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC']
+    
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     add_logp_d = False #HMM_dict.get('add_logp_d', True)
