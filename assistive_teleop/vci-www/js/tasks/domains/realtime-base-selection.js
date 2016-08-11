@@ -4,7 +4,7 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
     var self = this;
     var ros = options.ros;
     self.name = options.name || 'realtime_base_selection';
-    self.domain = 'pick';
+    self.domain = 'realtime_base_selection';
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -163,7 +163,7 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
 
     self.sendTaskGoal = function (side, goal) {
         self.clearParams(['EE_GOAL','BASE_GOAL','EE_FRAME']);
-        var ee_frame = if side[0] === 'r' ? 'r_gripper_tool_frame' : 'l_gripper_tool_frame'
+        var ee_frame = side[0] === 'r' ? 'r_gripper_tool_frame' : 'l_gripper_tool_frame'
         self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/EE_FRAME', ee_frame);
 //        self.setDefaultGoal(['(AT BASE_GOAL)']);
         self.updatePDDLState(['(NOT (AT BASE_GOAL))', 

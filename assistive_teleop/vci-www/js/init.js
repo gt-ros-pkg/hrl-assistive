@@ -120,7 +120,7 @@ var RFH = {
         RFH.realtime_base_selection_left = new RFH.RealtimeBaseSelection({ros: RFH.ros,
                                                                           arm: 'left',
                                                                           camera: RFH.mjpeg.cameraModel});
-        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+//        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');

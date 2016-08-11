@@ -46,6 +46,9 @@ RFH.CartesianEEControl = function (options) {
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
+    self.$baseSelectionButton = $('.'+self.side[0]+'-arm-ctrl.rtbs').button();
+
+    self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.tasks['realtime_base_selection'].sendTaskGoal(self.side)});
 
     var tuckAside = function (event) {
         console.log("Tuck Arm To Side!");

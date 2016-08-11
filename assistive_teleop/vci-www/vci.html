@@ -52,6 +52,7 @@
   <script type="text/javascript" src="js/tasks/domains/pick.js"></script>
   <script type="text/javascript" src="js/tasks/domains/place.js"></script>
   <script type="text/javascript" src="js/tasks/domains/pick-and-place.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/realtime-base-selection.js"></script>
   <script type="text/javascript" src="js/tasks/publish-location.js"></script>
   <script type="text/javascript" src="js/tasks/param-location.js"></script>
   <script type="text/javascript" src="js/tasks/smach-display.js"></script>
@@ -98,15 +99,13 @@
      <div id="controls">
         <h3>Controls</h3>
         <!-- Lookinging Controls -->
-        <div class="look-ctrl rtbs left">Approach (Left Arm)</div>
-        <div class="look-ctrl rtbs right">Approach (Right Arm)</div>
         <!-- Driving Controls -->
-        <div class="tuck-driving drive-ctrl" style="display:none">Tuck Arms</div>
+        <div class="tuck-driving drive-ctrl">Tuck Arms</div>
         <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
-        <h4 class="drive-ctrl" style="display:none">Click on video to drive.</h4>
+        <h4 class="drive-ctrl">Click on video to drive.</h4>
 
         <!-- Shared Arm Controls
-        <div id="ee-mode-set" class="arm-ctrl" style="display:none">
+        <div id="ee-mode-set" class="arm-ctrl">
             <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
             <label for="ee-mode-table">Table</label>
             <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
@@ -118,34 +117,36 @@
         <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>-->
 <!--        <input type="checkbox" id="select-focus-toggle"/>
         <label id="select-focus-toggle-label" for="select-focus-toggle">Use Target Spot</label>
-        <button id="wristCW" style="display:none">CW</button>
-        <button id="wristCCW" style="display:none">CCW</button>-->
+        <button id="wristCW" >CW</button>
+        <button id="wristCCW">CCW</button>-->
 
         <!-- Right Arm Controls -->
-        <div class="pick-and-place r-arm-ctrl" style="display:none"></div>
-        <div class="camera-swing r-arm-ctrl" style="display:none">3D Peek</div>
-        <div class="arm-cam r-arm-ctrl" style="display:none">Forearm Camera</div>
-        <div id="r-posrot-set" class="r-arm-ctrl posrot-set" style="display:none">
+        <div class="pick-and-place r-arm-ctrl"></div>
+        <div class="r-arm-ctrl rtbs">Approach</div>
+        <div class="camera-swing r-arm-ctrl">3D Peek</div>
+        <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>
+        <div id="r-posrot-set" class="r-arm-ctrl posrot-set">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
             <label for="r-posrot-pos">Hand Position</label>
             <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
             <label for="r-posrot-rot">Wrist Rotation</label>
         </div>
-        <div class="tuck-side r-arm-ctrl" style="display:none">Tuck Aside</div>
+        <div class="tuck-side r-arm-ctrl">Tuck Aside</div>
 
         <!-- Left Arm Controls -->
-        <div class="pick-and-place l-arm-ctrl" style="display:none"></div>
-        <div class="camera-swing l-arm-ctrl" style="display:none">3D Peek</div>
-        <div class="arm-cam l-arm-ctrl" style="display:none">Forearm Camera</div>
-        <div id="l-posrot-set" class="l-arm-ctrl posrot-set" style="display:none">
+        <div class="pick-and-place l-arm-ctrl"></div>
+        <div class="l-arm-ctrl rtbs">Approach</div>
+        <div class="camera-swing l-arm-ctrl">3D Peek</div>
+        <div class="arm-cam l-arm-ctrl">Forearm Camera</div>
+        <div id="l-posrot-set" class="l-arm-ctrl posrot-set">
             <h4>Position/Rotation</h4>
             <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
             <label for="l-posrot-pos">Hand Position</label>
             <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
             <label for="l-posrot-rot">Wrist Rotation</label>
         </div>
-        <div class="tuck-side l-arm-ctrl" style="display:none">Tuck Aside</div>
+        <div class="tuck-side l-arm-ctrl">Tuck Aside</div>
 
         <!-- Step size controls -->
         <div id="speedOptions" class="arm-ctrl">
@@ -191,7 +192,7 @@
      <img id="shortIcon" src="./css/icons/short.png"></img>
      <div id="torsoSlider"></div>
      <!-- divs for arm controls -->
-     <div id='armCtrlContainer' class="ctrlContainer arm-ctrl" style="display:none">
+     <div id='armCtrlContainer' class="ctrlContainer arm-ctrl">
          <!--<div class="slider"></div>-->
          <div id="ctrl-ring" class="default">
              <div class="arrow n big"></div>
