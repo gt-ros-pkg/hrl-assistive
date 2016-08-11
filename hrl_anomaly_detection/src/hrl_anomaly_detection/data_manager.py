@@ -484,7 +484,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             plt.show()
 
     print "---------------------------------------------------"
-    print "s/f data: ", np.shape(successData), np.shape(failureData)
+    print "s/f data: ", np.shape(successDataList), np.shape(failureDataList)
     print "---------------------------------------------------"
     return data_dict
 

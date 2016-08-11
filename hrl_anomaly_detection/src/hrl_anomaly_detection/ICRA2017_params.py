@@ -175,7 +175,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           }
                     #, 'bpsvm'      , 'osvm'
         ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'change', 'svm' ],\
-                          'update_list': ['progress_time_cluster', 'svm'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
                           'mbkmean_param_range': np.linspace(0.5, -8.0, nPoints),\

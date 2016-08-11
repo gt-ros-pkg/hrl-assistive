@@ -489,7 +489,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
              only_tpr=False)
 
 
-def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, processed_data_path, \
+def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
                       no_plot=False, delay_plot=True, find_param=False, data_gen=False):
@@ -532,6 +532,7 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
+    nPtrainData = 10
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -540,24 +541,35 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
         test_idx  = idx_list[idx:idx+1]        
-        kFold_list.append([train, test])
+        kFold_list.append([train_idx, test_idx])
            
         # Training HMM, and getting classifier training and testing data
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print "learned hmm exists"
         else:
+            # person x dim x sample x length => sample x dim x length
+            for i, tidx in enumerate(train_idx):
+                if i == 0:
+                    normalTrainData = np.swapaxes(d['successDataList'][tidx], 0, 1)
+                    abnormalTrainData = np.swapaxes(d['failureDataList'][tidx], 0, 1)
+                else:
+                    normalTrainData = np.vstack([normalTrainData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
+                    abnormalTrainData = np.vstack([abnormalTrainData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
+            for i, tidx in enumerate(test_idx):
+                if i == 0:
+                    normalTestData = np.swapaxes(d['successDataList'][tidx], 0, 1)
+                    abnormalTestData = np.swapaxes(d['failureDataList'][tidx], 0, 1)
+                else:
+                    normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
+                    abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
+            
 
-            print np.shape(d['successDataList'][train_idx])
-            print "aaaaaaaaaaaaaaaaaa"
-            sys.exit()
-
-            # dim x sample x length
-            normalTrainData   = d['successDataList'][train_idx]
-            abnormalTrainData = d['failureDataList'][train_idx]
-            normalTestData    = d['successDataList'][test_idx]
-            abnormalTestData  = d['failureDataList'][test_idx]
+            normalTrainData = np.swapaxes(normalTrainData, 0, 1)
+            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
+            normalTestData = np.swapaxes(normalTestData, 0, 1)
+            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1)
             handFeatureParams = d['param_dict']
 
             # scaling
@@ -611,27 +623,34 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
             ll_classifier_train_X, ll_classifier_train_Y = \
               hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
+            #-----------------------------------------------------------------------------------------
+            # Classifier partial train/test data
+            #-----------------------------------------------------------------------------------------
+            l = range(len(normalTestData[0]))
+            random.shuffle(l)
+            normalPtrainData = normalTestData[:,l[:nPtrainData],:]
 
             #-----------------------------------------------------------------------------------------
             [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = ml.get_hmm_object()
 
-            d = {}
-            d['nEmissionDim'] = ml.nEmissionDim
-            d['F']            = ml.F
-            d['nState']       = nState
-            d['A']            = A 
-            d['B']            = B 
-            d['pi']           = pi
-            d['out_a_num']    = out_a_num
-            d['vec_num']      = vec_num
-            d['mat_num']      = mat_num
-            d['u_denom']      = u_denom
-            d['startIdx']     = startIdx
-            d['ll_classifier_train_X']  = ll_classifier_train_X
-            d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-            d['ll_classifier_train_idx']= ll_classifier_train_idx
-            d['nLength']      = nLength
-            ut.save_pickle(d, modeling_pkl)
+            dd = {}
+            dd['nEmissionDim'] = ml.nEmissionDim
+            dd['F']            = ml.F
+            dd['nState']       = nState
+            dd['A']            = A 
+            dd['B']            = B 
+            dd['pi']           = pi
+            dd['out_a_num']    = out_a_num
+            dd['vec_num']      = vec_num
+            dd['mat_num']      = mat_num
+            dd['u_denom']      = u_denom
+            dd['startIdx']     = startIdx
+            dd['ll_classifier_train_X']  = ll_classifier_train_X
+            dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
+            dd['ll_classifier_train_idx']= ll_classifier_train_idx
+            dd['normalPtrainData'] = normalPtrainData
+            dd['nLength']      = nLength
+            ut.save_pickle(dd, modeling_pkl)
 
 
     #-----------------------------------------------------------------------------------------
@@ -640,38 +659,45 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
         ROC_data = {}
     else:
         ROC_data = ut.load_pickle(roc_pkl)
-        
+
+
+    nTrainOffset = 2
+    nTrainTimes  = 3
     for i, method in enumerate(method_list):
         if method not in ROC_data.keys() or method in ROC_dict['update_list']:            
-            ROC_data[method] = {}
-            ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method] = []
+            for j in xrange(nTrainTimes+1):
+                data = {}
+                data['complete'] = False 
+                data['tp_l']     = [ [] for j in xrange(nPoints) ]
+                data['fp_l']     = [ [] for j in xrange(nPoints) ]
+                data['tn_l']     = [ [] for j in xrange(nPoints) ]
+                data['fn_l']     = [ [] for j in xrange(nPoints) ]
+                data['delay_l']  = [ [] for j in xrange(nPoints) ]
+                data['tp_idx_l']  = [ [] for j in xrange(nPoints) ]
+                ROC_data[method].append(data)
 
     # Incremental evaluation
+    print "Start the incremental evaluation"
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        d = util.load_pickle(modeling_pkl)
+        dd = ut.load_pickle(modeling_pkl)
 
-        nEmissionDim = d['nEmissionDim']
-        nState    = d['nState']       
-        A         = d['A']      
-        B         = d['B']      
-        pi        = d['pi']     
-        out_a_num = d['out_a_num']
-        vec_num   = d['vec_num']  
-        mat_num   = d['mat_num']  
-        u_denom   = d['u_denom']  
-        startIdx  = d['startIdx']
+        nEmissionDim = dd['nEmissionDim']
+        nState    = dd['nState']       
+        A         = dd['A']      
+        B         = dd['B']      
+        pi        = dd['pi']     
+        out_a_num = dd['out_a_num']
+        vec_num   = dd['vec_num']  
+        mat_num   = dd['mat_num']  
+        u_denom   = dd['u_denom']  
+        startIdx  = dd['startIdx']
+        nLength   = dd['nLength']
+        normalPtrainData = dd['normalPtrainData']
         
-        ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
-        
-        normalData    = d['successDataList'][test_idx]
-        abnormalData  = d['failureDataList'][test_idx]
+        normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
+        abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
         normalData    *= HMM_dict['scale']
         abnormalData  *= HMM_dict['scale']
         
@@ -681,58 +707,89 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
         random.shuffle(normalDataIdx)
         random.shuffle(abnormalDataIdx)
         
-        normalTrainData = normalDataIdx[:,:len(normalDataIdx)/2,:]
-        normalTestData  = normalDataIdx[:,len(normalDataIdx)/2:,:]
-        abnormalTrainData = abnormalDataIdx[:,:len(abnormalDataIdx)/2,:]
-        abnormalTestData  = abnormalDataIdx[:,len(abnormalDataIdx)/2:,:]
+        normalTrainData = normalData[:,:len(normalDataIdx)/2,:]
+        normalTestData  = normalData[:,len(normalDataIdx)/2:,:]
+        abnormalTrainData = abnormalData[:,:len(abnormalDataIdx)/2,:]
+        abnormalTestData  = abnormalData[:,len(abnormalDataIdx)/2:,:]
 
-        # classifier # TODO: need to make it efficient!!
-        dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
+        testDataX = np.vstack([ np.swapaxes(normalTestData,0,1), np.swapaxes(abnormalTestData,0,1) ])
+        testDataX = np.swapaxes(testDataX, 0,1)
+        testDataY = np.hstack([-np.ones(len(normalTestData[0])), np.ones(len(abnormalTestData[0])) ])
 
-        for i in xrange(len(normalTrainData[0])):
+        if len(normalPtrainData[0]) < nPtrainData:
+            print "size of normal train data: ", len(normalPtrainData[0])
+            sys.exit()
+        if len(normalTrainData[0]) < nTrainOffset*nTrainTimes:
+            print "size of normal partial fitting data for hmm: ", len(normalTrainData[0])
+            print subject_names[test_idx[0]]
+            sys.exit()
+            
 
-            # partial fitting
-            ml.partial_fit(normalData[:,0])
+        ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
 
-            # last 10 sample to train classifier
-            ll_logp, ll_post = ml.loglikelihoods(X, True, startIdx=startIdx)
-            testDataY = -np.ones(len(normalTrainData[0]))
+        for i in xrange(-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
 
+            # partial fitting with
+            if i > -1:
+                print "Run partial fitting with online HMM : ", i
+                ml.partial_fit(normalTrainData[:,i:i+nTrainOffset])
+
+            # last 10 sample to train classifier --------------------------------------------
+            ll_logp, ll_post = ml.loglikelihoods(normalPtrainData, True, startIdx=startIdx)
             ll_classifier_train_X, ll_classifier_train_Y = \
-              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
-
+              hmm.getHMMinducedFeatures(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])), \
+                                        c=1.0, add_delta_logp=add_logp_d)
+            ll_classifier_train_idx = []
+            for ii in xrange(len(normalPtrainData[0])):
+                l_idx = []
+                for jj in xrange(startIdx, len(normalPtrainData[0][ii])):
+                    l_idx.append( jj )
+                ll_classifier_train_idx.append(l_idx)
+              
             if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
             else: remove_fp = False
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx,\
                                                                        remove_fp=remove_fp)
-            X_scaled = X_train_org
+            # -------------------------------------------------------------------------------
 
-
-            # get test data
-            ll_logp, ll_post = ml.loglikelihoods(X, True, startIdx=startIdx)
-            testDataY = -np.ones(len(normalTrainData[0]))
-
+            # Test data
+            ll_logp, ll_post = ml.loglikelihoods(testDataX, True, startIdx=startIdx)
             ll_classifier_test_X, ll_classifier_test_Y = \
               hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+            ll_classifier_test_idx = []
+            for ii in xrange(len(testDataX[0])):
+                l_idx = []
+                for jj in xrange(startIdx, len(testDataX[0][ii])):
+                    l_idx.append( jj )
+                ll_classifier_test_idx.append(l_idx)
+                
+            X_test = ll_classifier_test_X
+            Y_test = ll_classifier_test_Y
             
-
-            
+            # -------------------------------------------------------------------------------
+                       
             # update kmean
             # classification
+            dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
             for j in xrange(nPoints):
                 dtc.set_params( **SVM_dict )
 
+                print "Update classifier"
                 if method == 'progress_time_cluster' or method == 'progress' or method == 'kmean':
-                    thresholds = ROC_dict[method+'_param_range']
+                    if method == 'progress_time_cluster':
+                        thresholds = ROC_dict['progress_param_range']
+                    else:
+                        thresholds = ROC_dict[method+'_param_range']
                     dtc.set_params( ths_mult = thresholds[j] )
-                    if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+                    if j==0: ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
                 else:
+                    print "Not available method = ", method
                     sys.exit()
 
-
-                # evaluate the classifier
+                # evaluate the classifier wrt new never seen data
                 tp_l = []
                 fp_l = []
                 tn_l = []
@@ -752,8 +809,6 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
                     anomaly = False
                     for jj in xrange(len(est_y)):
                         if est_y[jj] > 0.0:
-                            ## if Y_test[ii][0] <0:
-                            ##     print "anomaly idx", jj, " true label: ", Y_test[ii][0] #, X_test[ii][jj]
 
                             if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
                                 try:
@@ -775,34 +830,18 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
                         if anomaly: fp_l.append(1)
                         else: tn_l.append(1)
 
-                data[method]['tp_l'][j] += tp_l
-                data[method]['fp_l'][j] += fp_l
-                data[method]['fn_l'][j] += fn_l
-                data[method]['tn_l'][j] += tn_l
-                data[method]['delay_l'][j] += delay_l
-                data[method]['tp_idx_l'][j] += tp_idx_l
+                ROC_data[method][i/nTrainOffset+1]['tp_l'][j] += tp_l
+                ROC_data[method][i/nTrainOffset+1]['fp_l'][j] += fp_l
+                ROC_data[method][i/nTrainOffset+1]['fn_l'][j] += fn_l
+                ROC_data[method][i/nTrainOffset+1]['tn_l'][j] += tn_l
+                ROC_data[method][i/nTrainOffset+1]['delay_l'][j] += delay_l
+                ROC_data[method][i/nTrainOffset+1]['tp_idx_l'][j] += tp_idx_l
                     
-
-    
-    l_data = r
-    print "finished to run run_classifiers"
-
-    for i in xrange(len(l_data)):
-        for j in xrange(nPoints):
-            try:
-                method = l_data[i].keys()[0]
-            except:
-                print l_data[i]
-                sys.exit()
-            if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-
+                
     for i, method in enumerate(method_list):
-        ROC_data[method]['complete'] = True
+        for j in xrange(-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
+            print len(ROC_data[method]), j
+            ROC_data[method][j/nTrainOffset+1]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)
         
@@ -864,6 +903,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation.')
     p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
                  default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_online', '--eo', action='store_true', dest='bOnlineEval',
+                 default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
                  
@@ -971,14 +1012,14 @@ if __name__ == '__main__':
 
     elif opt.bOnlineEval:
         subjects        = ['zack', 'hkim', 'ari', 'park', 'jina']        
-        target_subjects = ['linda']
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['progress_time_cluster'] 
+        param_dict['ROC']['methods'] = ['progress_time_cluster']
+        param_dict['ROC']['nPoints'] = 3
 
-        evaluation_online(subjects, target_subjects, opt.task, raw_data_path, save_data_path, \
+        evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                          find_param=False, data_gen=opt.bDataGen)
