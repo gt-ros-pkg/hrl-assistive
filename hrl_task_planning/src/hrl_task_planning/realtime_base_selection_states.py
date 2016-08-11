@@ -28,6 +28,8 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return AdjustTorsoState(base_goal_param, domain, problem, action, args, init_state, goal_state, outcomes=SPA)
     elif action == 'CLEAR_TORSO_SET':
         return ClearTorsoSetState(args[0], domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+    elif action == 'CLEAR_AT_GOAL':
+        return ClearAtGoalState(args[0], domain, problem, action, args, init_state, goal_state, outcomes=SPA)
     elif action in ['CLEAR_EE_GOAL', 'CLEAR_BASE_GOAL', 'CLEAR_FRAME']:
         param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
         return DeleteParamState(param, domain=domain, problem=problem,
@@ -137,6 +139,15 @@ class ClearTorsoSetState(PDDLSmachState):
     def on_execute(self, ud):
         self.pddl_pub.publish('(NOT (TORSO_SET %s))', self.base_goal_arg)
 
+
+class ClearAtGoalState(PDDLSmachState):
+    def __init__(self, at_goal_arg, *args, **kwargs):
+        super(ClearAtGoalState, self).__init__(self, *args, **kwargs)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.at_goal_arg = at_goal_arg
+
+    def on_execute(self, ud):
+        self.pddl_pub.publish('(NOT (TORSO_SET %s))', self.at_goal_arg)
 
 from assistive_teleop.msg import HeadSweepAction, HeadSweepActionGoal
 import actionlib
