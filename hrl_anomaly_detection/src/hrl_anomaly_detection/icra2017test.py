@@ -738,6 +738,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             if i > 0:
                 print "Run partial fitting with online HMM : ", i
                 ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset] )
+                normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+                normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                               np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],0,1)\
+                                               ])
+                normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+                
 
             # last 10 sample to train classifier --------------------------------------------
             ll_logp, ll_post = ml.loglikelihoods(normalPtrainData, True, startIdx=startIdx)
@@ -757,9 +763,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx,\
                                                                        remove_fp=remove_fp)
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:1],1)
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), np.swapaxes(normalTrainData,0,1) ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
                                                                        
             # -------------------------------------------------------------------------------
 
