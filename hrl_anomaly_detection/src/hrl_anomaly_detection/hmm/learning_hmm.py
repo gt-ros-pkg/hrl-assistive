@@ -218,7 +218,7 @@ class learning_hmm(learning_base):
 
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
 
-        for i in xrange(len(X)):            
+        for i in xrange(len(X_train)):            
             final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
             ret = self.ml.baumWelch(final_seq, nrSteps=1, learningRate=learningRate)
             print 'Baum Welch return:', ret
