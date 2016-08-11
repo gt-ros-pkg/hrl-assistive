@@ -714,6 +714,7 @@ def run_online_classifier(idx, processed_data_path, task_name, HMM_dict, nPtrain
     '''
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
+    add_logp_d = False #HMM_dict.get('add_logp_d', True)
     
     ROC_data_cur = {}
     for i, method in enumerate(method_list):
