@@ -181,7 +181,7 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
-        elif self.method == 'mbkmean' or self.method == 'mbkmean':
+        elif self.method == 'mbkmean' or self.method == 'kmean':
             self.mbkmean_batch_size = mbkmean_batch_size
             self.ths_mult = ths_mult
             self.nPosteriors = nPosteriors

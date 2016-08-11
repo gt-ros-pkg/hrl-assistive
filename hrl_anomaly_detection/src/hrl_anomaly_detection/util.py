@@ -1320,7 +1320,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
-    for method in method_list:
+    for method in ROC_data.keys():
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
