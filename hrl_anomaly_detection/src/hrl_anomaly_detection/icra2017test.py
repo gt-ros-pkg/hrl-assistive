@@ -677,11 +677,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 ROC_data[method+'_'+str(j)] = data
 
     # Incremental evaluation
+    normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
+    abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
+    
     print "Start the incremental evaluation"
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         if idx > 1: continue
-        data = run_online_classifier(idx, processed_data_path, task_name, train_idx, test_idx, HMM_dict,\
-                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, ROC_dict)
+        data = run_online_classifier(idx, processed_data_path, task_name, HMM_dict,\
+                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, ROC_dict,\
+                                     normalData, abnormalData)
 
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
@@ -703,8 +707,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
              only_tpr=False)
              
 
-def run_online_classifier(idx, processed_data_path, task_name, train_idx, test_idx, HMM_dict, nPtrainData,\
-                          nTrainOffset, nTrainTimes, ROC_data, ROC_dict):
+def run_online_classifier(idx, processed_data_path, task_name, HMM_dict, nPtrainData,\
+                          nTrainOffset, nTrainTimes, ROC_data, ROC_dict, \
+                          normalData, abnormalData):
     '''
     '''
     method_list = ROC_dict['methods'] 
@@ -740,10 +745,8 @@ def run_online_classifier(idx, processed_data_path, task_name, train_idx, test_i
     nLength   = dd['nLength']
     normalPtrainData = dd['normalPtrainData']
 
-    normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
-    abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
-    normalData    *= HMM_dict['scale']
-    abnormalData  *= HMM_dict['scale']
+    normalData   = normalData * HMM_dict['scale']
+    abnormalData = abnormalData * HMM_dict['scale']
 
     # random split into two groups
     normalDataIdx   = range(len(normalData[0]))
