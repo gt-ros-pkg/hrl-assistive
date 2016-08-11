@@ -3,9 +3,10 @@
     <include file="$(find hrl_task_planning)/launch/pick.launch" />
     <include file="$(find hrl_task_planning)/launch/place.launch" />
     <include file="$(find hrl_task_planning)/launch/pick_and_place.launch" />
+    <include file="$(find hrl_task_planning)/launch/realtime_base_selection.launch" />
 
     <node name="task_planner" pkg="hrl_task_planning" type="pddl_planner" output="screen" args="$(find hrl_task_planning)/src/ff"/>
     <node name="task_smacher" pkg="hrl_task_planning" type="task_smacher" output="screen" />
-    <node name="domain_state_aggregator" pkg="hrl_task_planning" type="domain_state_aggregator" output="screen" args="-d pick place pick_and_place"/>
+    <node name="domain_state_aggregator" pkg="hrl_task_planning" type="domain_state_aggregator" output="screen" args="-d pick place pick_and_place realtime_base_selection"/>
 
 </launch>

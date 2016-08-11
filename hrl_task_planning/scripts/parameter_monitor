@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from hrl_task_planning.known_location_monitor import main
+from hrl_task_planning.parameter_monitor import main
 
 if __name__ == '__main__':
     main()

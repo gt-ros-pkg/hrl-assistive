@@ -73,4 +73,9 @@
     :precondition (torso_set ?bg)
     :effect (at ?bg)
  )
+
+ (:action clear_at_goal
+    :parameters (?bg - base_pose)
+    :effect (not (at ?bg))
+ )
 )
