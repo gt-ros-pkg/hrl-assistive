@@ -275,31 +275,46 @@ class PDDLSmachState(smach.State):
         """ Override to create task-specific functionality before waiting for state update in main execute."""
         pass
 
-    def execute(self, ud):
-        # Watch for task state to match goal state, then return successful
+    def _publish_current_step(self):
         plan_step_msg = PDDLPlanStep()
         plan_step_msg.domain = self.domain
         plan_step_msg.problem = self.problem
         plan_step_msg.action = self.action
         plan_step_msg.args = self.action_args
         self.action_pub.publish(plan_step_msg)
-        self.on_execute(ud)
-        rospy.loginfo("State %s waiting for current state", self.action)
+
+    def _wait_for_state(self):
         while self.current_state is None:
+            rospy.loginfo("State %s waiting for current state", self.action)
             rospy.sleep(0.2)
         rospy.loginfo("State %s received current state", self.action)
+
+    def _start_execute(self):
+        self._publish_current_step()
+        self._wait_for_state()
+
+    def _check_pddl_status(self):
+        if self.preempt_requested():
+            rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
+            self.service_preempt()
+            return 'preempted'
+        if self.goal_state.is_satisfied(self.current_state):
+            return 'succeeded'
+        progress = self.init_state.difference(self.current_state)
+        for pred in progress:
+            if pred not in self.state_delta:
+                return 'aborted'
+        return None  # Adding explicitly for clarity
+
+    def execute(self, ud):
+        # Watch for task state to match goal state, then return successful
+        self._start_execute()
+        self.on_execute(ud)
         rate = rospy.Rate(20)
         while not rospy.is_shutdown():
-            if self.preempt_requested():
-                rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
-                self.service_preempt()
-                return 'preempted'
-            if self.goal_state.is_satisfied(self.current_state):
-                return 'succeeded'
-            progress = self.init_state.difference(self.current_state)
-            for pred in progress:
-                if pred not in self.state_delta:
-                    return 'aborted'
+            result = self._check_pddl_status()
+            if result is not None:
+                return result
             rate.sleep()
         return 'preempted'
 
