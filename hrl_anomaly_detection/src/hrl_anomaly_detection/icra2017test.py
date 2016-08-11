@@ -681,7 +681,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         if idx > 1: continue
         data = run_online_classifier(idx, processed_data_path, task_name, train_idx, test_idx, HMM_dict,\
-                                     nPtrainData, nTrainOffset, nTrainTimes, method_list, ROC_data, ROC_dict)
+                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, ROC_dict)
 
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
@@ -704,9 +704,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
              
 
 def run_online_classifier(idx, processed_data_path, task_name, train_idx, test_idx, HMM_dict, nPtrainData,\
-                          nTrainOffset, nTrainTimes, method_list, ROC_data, ROC_dict):
+                          nTrainOffset, nTrainTimes, ROC_data, ROC_dict):
     '''
     '''
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
     ROC_data_cur = {}
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
