@@ -664,24 +664,27 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nTrainOffset = 2
     nTrainTimes  = 3
     for i, method in enumerate(method_list):
-        if method not in ROC_data.keys() or method in ROC_dict['update_list']:            
-            ROC_data[method] = []
-            for j in xrange(nTrainTimes+1):
+        for j in xrange(nTrainTimes+1):
+            if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list']:            
                 data = {}
                 data['complete'] = False 
-                data['tp_l']     = [ [] for j in xrange(nPoints) ]
-                data['fp_l']     = [ [] for j in xrange(nPoints) ]
-                data['tn_l']     = [ [] for j in xrange(nPoints) ]
-                data['fn_l']     = [ [] for j in xrange(nPoints) ]
-                data['delay_l']  = [ [] for j in xrange(nPoints) ]
-                data['tp_idx_l']  = [ [] for j in xrange(nPoints) ]
-                ROC_data[method].append(data)
+                data['tp_l']     = [ [] for jj in xrange(nPoints) ]
+                data['fp_l']     = [ [] for jj in xrange(nPoints) ]
+                data['tn_l']     = [ [] for jj in xrange(nPoints) ]
+                data['fn_l']     = [ [] for jj in xrange(nPoints) ]
+                data['delay_l']  = [ [] for jj in xrange(nPoints) ]
+                data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
+                ROC_data[method+'_'+str(j)] = data
 
     # Incremental evaluation
     print "Start the incremental evaluation"
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
         dd = ut.load_pickle(modeling_pkl)
+
+        # temp
+        if idx > 0:
+            continue
 
         nEmissionDim = dd['nEmissionDim']
         nState    = dd['nState']       
@@ -728,12 +731,13 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
 
-        for i in xrange(-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
+        for i in xrange(nTrainTimes+1): #-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
 
+            if ROC_data[method+'_'+str(i)]['complete']: continue
             # partial fitting with
-            if i > -1:
+            if i > 0:
                 print "Run partial fitting with online HMM : ", i
-                ml.partial_fit(normalTrainData[:,i:i+nTrainOffset])
+                ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset] )
 
             # last 10 sample to train classifier --------------------------------------------
             ll_logp, ll_post = ml.loglikelihoods(normalPtrainData, True, startIdx=startIdx)
@@ -753,6 +757,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx,\
                                                                        remove_fp=remove_fp)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:1],1)
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), np.swapaxes(normalTrainData,0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+                                                                       
             # -------------------------------------------------------------------------------
 
             # Test data
@@ -830,18 +838,18 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                         if anomaly: fp_l.append(1)
                         else: tn_l.append(1)
 
-                ROC_data[method][i/nTrainOffset+1]['tp_l'][j] += tp_l
-                ROC_data[method][i/nTrainOffset+1]['fp_l'][j] += fp_l
-                ROC_data[method][i/nTrainOffset+1]['fn_l'][j] += fn_l
-                ROC_data[method][i/nTrainOffset+1]['tn_l'][j] += tn_l
-                ROC_data[method][i/nTrainOffset+1]['delay_l'][j] += delay_l
-                ROC_data[method][i/nTrainOffset+1]['tp_idx_l'][j] += tp_idx_l
+                ROC_data[method+'_'+str(i)]['tp_l'][j] += tp_l
+                ROC_data[method+'_'+str(i)]['fp_l'][j] += fp_l
+                ROC_data[method+'_'+str(i)]['fn_l'][j] += fn_l
+                ROC_data[method+'_'+str(i)]['tn_l'][j] += tn_l
+                ROC_data[method+'_'+str(i)]['delay_l'][j] += delay_l
+                ROC_data[method+'_'+str(i)]['tp_idx_l'][j] += tp_idx_l
                     
                 
     for i, method in enumerate(method_list):
-        for j in xrange(-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
-            print len(ROC_data[method]), j
-            ROC_data[method][j/nTrainOffset+1]['complete'] = True
+        for j in xrange(nTrainTimes+1):
+            print len(ROC_data[method+'_'+str(j)]), j
+            ROC_data[method+'_'+str(j)]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)
         
@@ -1017,7 +1025,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['nPoints'] = 3
+        param_dict['ROC']['nPoints'] = 10
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
