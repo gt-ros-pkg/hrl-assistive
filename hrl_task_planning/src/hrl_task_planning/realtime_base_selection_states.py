@@ -46,45 +46,46 @@ class CallBaseSelectionState(PDDLSmachState):
         super(CallBaseSelectionState, self).__init__(*args, **kwargs)
         self.ee_goal_param = ee_goal_param
         self.ee_frame_param = ee_frame_param
-        try:
-            self.ee_goal = rospy.get_param(self.ee_goal_param)
-            self.ee_frame = rospy.get_param(self.ee_frame_param)
-        except (KeyError, rospy.ROSException):
-            rospy.logerror("[%s] CallBaseSelectionState - Error trying to access params", rospy.get_name())
-            return 'aborted'
         self.base_goal_param = base_goal_param
         self.bs_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
 
     def on_execute(self, ud):
+        try:
+            ee_goal = rospy.get_param(self.ee_goal_param)
+            ee_frame = rospy.get_param(self.ee_frame_param)
+        except (KeyError, rospy.ROSException):
+            rospy.logerr("[%s] CallBaseSelectionState - Error trying to access params", rospy.get_name())
+            return 'aborted'
         req = RealtimeBaseMoveRequest()
-        req.ee_frame = self.ee_frame
-        req.pose_target = self.ee_goal
+        req.ee_frame = ee_frame
+        req.pose_target = ee_goal
         try:
             res = self.base_selection_service.call(req)
         except rospy.ServiceException as se:
-            rospy.logerror("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
+            rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
             return 'aborted'
         goal_data = res.base_goal[0:3]  # X, Y, Theta
         goal_data.append(res.configuration_goal[0])  # Torso height
         try:
             rospy.set_param(self.base_goal_param, goal_data)
         except rospy.ROSException:
-            rospy.logerror("[%s] %s - Failed to load base goal to parameter server", rospy.get_name(), self.__class__.__name__)
+            rospy.logerr("[%s] %s - Failed to load base goal to parameter server", rospy.get_name(), self.__class__.__name__)
             return 'aborted'
 
 
 class ServoOpenLoopState(PDDLSmachState):
     def __init__(self, base_goal_param, *args, **kwargs):
         super(ServoOpenLoopState, self).__init__(*args, **kwargs)
-        try:
-            self.base_goal = rospy.get_param(base_goal_param)
-        except (KeyError, rospy.ROSException):
-            rospy.logerror("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, base_goal_param)
-            return 'aborted'
-        self.xyt = self.base_goal[0:3]
+        self.base_goal_param = base_goal_param
 
     def execute(self, ud):
         self._start_execute()
+        try:
+            base_goal = rospy.get_param(self.base_goal_param)
+        except (KeyError, rospy.ROSException):
+            rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
+            return 'aborted'
+        self.xyt = base_goal[0:3]
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
             result = self._check_pddl_status()
@@ -101,17 +102,17 @@ class AdjustTorsoState(PDDLSmachState):
         super(AdjustTorsoState, self).__init__(*args, **kwargs)
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
-        try:
-            base_goal = rospy.get_param(base_goal_param)
-        except (KeyError, rospy.ROSException):
-            rospy.logerror("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, base_goal_param)
-            return 'aborted'
-        self.torso_goal = base_goal[3]
+        self.base_goal_param = base_goal_param
 
     def execute(self, ud):
         self._start_execute()
+        try:
+            base_goal = rospy.get_param(self.base_goal_param)
+        except (KeyError, rospy.ROSException):
+            rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
+            return 'aborted'
         sjpg = SingleJointPositionGoal()
-        sjpg.position = self.torso_goal
+        sjpg.position = base_goal[3]
         self.torso_client.send_goal(sjpg)
         rate = rospy.Rate(5)
         result_published = False
@@ -149,7 +150,7 @@ class ClearAtGoalState(PDDLSmachState):
     def on_execute(self, ud):
         self.pddl_pub.publish('(NOT (TORSO_SET %s))', self.at_goal_arg)
 
-from assistive_teleop.msg import HeadSweepAction, HeadSweepActionGoal
+from assistive_teleop.msg import HeadSweepAction, HeadSweepGoal
 import actionlib
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -161,7 +162,7 @@ class ScanEnvironmentState(PDDLSmachState):
         self.scan_actioin_client = actionlib.SimpleActionClient('/head_sweep_action', HeadSweepAction)
         found = self.scan_actioin_client.wait_for_server(rospy.Duration(5))
         if not found:
-            rospy.logerror("[%s] Failed to find head_sweep_action serer", rospy.get_name())
+            rospy.logerr("[%s] Failed to find head_sweep_action serer", rospy.get_name())
             raise RuntimeError("Scan Environment State failed to connect to head_sweep_action server")
 
     def run_sweep(self):
@@ -176,7 +177,7 @@ class ScanEnvironmentState(PDDLSmachState):
         jt.joint_names = ['head_pan_joint', 'head_tilt_joint']
         jt.points = [jtp_start, jtp_end]
         # Fill out goal with trajectory
-        goal = HeadSweepActionGoal()
+        goal = HeadSweepGoal()
         goal.sweep_trajectory = jt
         # Send goal
         self.scan_actioin_client.send_goal(goal)

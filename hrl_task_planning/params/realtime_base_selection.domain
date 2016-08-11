@@ -48,7 +48,7 @@
 
  (:action call_base_selection
     :parameters (?eg - ee_pose ?f - frame ?bg - base_pose)
-    :precondition (and (scan_complete)(known ?eg)(known ?f))
+    :precondition (and (scan_complete) (known ?eg) (known ?f))
     :effect (known ?bg)
  )
 
@@ -59,18 +59,18 @@
 
  (:action adjust_torso
     :parameters (?bg - base_pose)
-    :precondition (known ?bg)
+    :precondition (and (known ?bg))
     :effect (torso_set ?bg)
  )
 
  (:action clear_torso_set
-    :parameters(?bg - base_pose)
+    :parameters (?bg - base_pose)
     :effect (not (torso_set ?bg))
  )
 
  (:action servo_open_loop
     :parameters(?bg - base_pose)
-    :precondition (torso_set ?bg)
+    :precondition (and (torso_set ?bg))
     :effect (at ?bg)
  )
 

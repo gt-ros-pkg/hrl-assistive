@@ -134,12 +134,12 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
     };
 
     self.setParam = function (param, data) {
-        var poseParam = new ROSLIB.Param({
+        var param = new ROSLIB.Param({
             ros: ros,
             name: param
         });
-        console.log("Setting Param " + param + ":", ps_msg);
-        poseParam.set(data);
+        console.log("Setting Param " + param + ":", data);
+        param.set(data);
     }
 
     self.clearParams = function (known_list) {

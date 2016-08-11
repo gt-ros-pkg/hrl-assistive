@@ -1,2 +1,2 @@
 constant_predicates: []
-default_goal: '(AT BASE_GOAL)'
+default_goal: ['(AT BASE_GOAL)']
