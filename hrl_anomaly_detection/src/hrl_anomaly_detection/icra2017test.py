@@ -709,7 +709,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 def run_online_classifier(idx, processed_data_path, task_name, HMM_dict, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, ROC_dict, \
-                          normalData, abnormalData):
+                          normalData, abnormalData, verbose=True):
     '''
     '''
     method_list = ROC_dict['methods'] 
