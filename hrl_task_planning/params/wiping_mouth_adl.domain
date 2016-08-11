@@ -57,8 +57,9 @@
  )   
  
  (:action move_back
-  :precondition (and (forall(?m - model)(too-close ?m)))
-  :effect (and (forall(?m - model)(not(too-close ?m))))
+  :parameters (?m - model)
+  :precondition (and (too-close ?m)(is-tracking-tag ?m))
+  :effect (and (not(too-close ?m)))
  )
 
  (:action call_base_selection
