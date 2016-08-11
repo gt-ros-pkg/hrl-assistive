@@ -687,16 +687,16 @@ def evaluation_online(subject_names, target_subjects, task_name, raw_data_path, 
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-    # parallelization
-    if debug: n_jobs=1
-    else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
-                                                                 method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
-                                                                 SVM_dict, HMM_dict, \
-                                                                 startIdx=startIdx, nState=nState,)\
-                                                                 for method in method_list )
-                                                                  
+    # Incremental evaluation
+    
+    
+
+
+
+
+
+
+    
     l_data = r
     print "finished to run run_classifiers"
 
@@ -888,6 +888,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['progress_time_cluster'] 
 
         evaluation_online(subjects, target_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
