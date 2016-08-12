@@ -792,6 +792,12 @@ if __name__ == '__main__':
                                                               nPoints=10)
         parameters = {'nState': [25], 'scale': np.linspace(8.0,12.0,5), \
                       'cov': np.linspace(4.0,8.0,5) }
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+                      
         
 
     max_check_fold = 2

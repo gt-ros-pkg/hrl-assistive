@@ -1066,15 +1066,24 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects        = ['linda', 'jina', 'sai', 'park']        
+        ## subjects        = ['linda', 'jina', 'sai', 'park']        
+        subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
         param_dict['ROC']['methods'] = ['progress_time_cluster']
         param_dict['ROC']['nPoints'] = 10
 
+        
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+        ##                verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+        ##                find_param=False, data_gen=opt.bDataGen)
+
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, save_pdf=opt.bSavePdf, \
                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
