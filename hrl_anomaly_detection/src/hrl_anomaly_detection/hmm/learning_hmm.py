@@ -253,7 +253,7 @@ class learning_hmm(learning_base):
         return logp
 
 
-    def loglikelihoods(self, X, bPosterior=False, startIdx=1):
+    def loglikelihoods(self, X, bPosterior=False, bIdx=False, startIdx=1):
         '''
         X: dimension x sample x length
         return: the likelihoods over time (in single data)
@@ -290,11 +290,21 @@ class learning_hmm(learning_base):
 
             ll_likelihoods.append(l_likelihood)
             if bPosterior: ll_posteriors.append(l_posterior)
-
-        if bPosterior:
-            return ll_likelihoods, ll_posteriors
+        
+        if bIdx:
+            ll_idx = []
+            for ii in xrange(len(X[0])):
+                l_idx = []
+                for jj in xrange(startIdx, len(X[0][ii])):
+                    l_idx.append( jj )
+                ll_idx.append(l_idx)
+            
+            if bPosterior: return ll_likelihoods, ll_posteriors, ll_idx
+            else:          return ll_likelihoods, ll_idx
         else:
-            return ll_likelihoods
+            if bPosterior: return ll_likelihoods, ll_posteriors
+            else:          return ll_likelihoods
+            
             
             
     def getLoglikelihoods(self, xData, posterior=False, startIdx=1, n_jobs=-1):

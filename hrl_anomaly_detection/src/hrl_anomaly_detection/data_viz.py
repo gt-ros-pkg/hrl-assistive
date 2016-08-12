@@ -360,7 +360,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
 
 
-    plt.ylim([min_logp, max_logp])
+    ## plt.ylim([min_logp, max_logp])
+    plt.ylim([0, max_logp])
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -379,7 +380,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               successData=False, failureData=True,\
               continuousPlot=False, \
               ## trainingData=True, normalTestData=False, abnormalTestData=False,\
-              modality_list=['audio'], data_renew=False, verbose=False):    
+              modality_list=['audio'], data_renew=False, max_time=None, verbose=False):    
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
@@ -404,7 +405,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
                                                        global_data=global_data, \
-                                                       renew=data_renew, save_pkl=data_pkl, verbose=verbose)
+                                                       renew=data_renew, save_pkl=data_pkl, \
+                                                       max_time=max_time, verbose=verbose)
         else:
             if verbose: print "Load failure data"
             data_pkl = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
@@ -413,7 +415,8 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                        downSampleSize=downSampleSize,\
                                                        local_range=local_range, rf_center=rf_center,\
                                                        global_data=global_data,\
-                                                       renew=data_renew, save_pkl=data_pkl, verbose=verbose)
+                                                       renew=data_renew, save_pkl=data_pkl, \
+                                                       max_time=max_time, verbose=verbose)
             
         ## plt.show()
         ## sys.exit()
