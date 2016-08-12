@@ -1,0 +1,12 @@
+<launch>
+    <!-- Service to merge and filter a stream of pointclouds -->
+        <node name="merge_pointclouds" pkg="merge_pointclouds" type="merge_pointclouds" output="screen" >
+            <remap from="~input_pc" to="/head_mount_kinect/sd/points"/>
+        </node>
+
+    <!-- Action Server for sweep/scan head motion -->
+    <node name="head_sweep_action" pkg="assistive_teleop" type="head_sweep_action" output="screen" />
+
+    <!-- Base Selection (realtime version) -->
+
+</launch>

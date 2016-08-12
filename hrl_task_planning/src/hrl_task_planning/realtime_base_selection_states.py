@@ -4,32 +4,33 @@
 import rospy
 from task_smacher import PDDLSmachState
 from hrl_task_planning.msg import PDDLState
+from actionlib_msgs.msg import GoalStatus
 
 SPA = ["succeeded", "preempted", "aborted"]
 
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
     if action in ['GET_EE_GOAL', 'GET_FRAME']:
-        return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'SCAN_ENVIRONMENT':
-        return ScanEnvironmentState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return ScanEnvironmentState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CLEAR_ENVIRONMENT':
-        return ClearEnvironmentState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return ClearEnvironmentState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CALL_BASE_SELECTION':
         ee_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
         ee_frame_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[1])
         base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[2])
-        return CallBaseSelectionState(ee_goal_param, ee_frame_param, base_goal_param, domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return CallBaseSelectionState(ee_goal_param, ee_frame_param, base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'SERVO_OPEN_LOOP':
         base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
-        return ServoOpenLoopState(base_goal_param, domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return ServoOpenLoopState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'ADJUST_TORSO':
         base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
-        return AdjustTorsoState(base_goal_param, domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return AdjustTorsoState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CLEAR_TORSO_SET':
-        return ClearTorsoSetState(args[0], domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return ClearTorsoSetState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CLEAR_AT_GOAL':
-        return ClearAtGoalState(args[0], domain, problem, action, args, init_state, goal_state, outcomes=SPA)
+        return ClearAtGoalState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action in ['CLEAR_EE_GOAL', 'CLEAR_BASE_GOAL', 'CLEAR_FRAME']:
         param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
         return DeleteParamState(param, domain=domain, problem=problem,
@@ -39,6 +40,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
 
 
 from hrl_base_selection.srv import RealtimeBaseMove, RealtimeBaseMoveRequest
+from geometry_msgs.msg import PoseStamped
 
 
 class CallBaseSelectionState(PDDLSmachState):
@@ -47,14 +49,35 @@ class CallBaseSelectionState(PDDLSmachState):
         self.ee_goal_param = ee_goal_param
         self.ee_frame_param = ee_frame_param
         self.base_goal_param = base_goal_param
-        self.bs_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
+        self.base_selection_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
+
+    @staticmethod
+    def _dict_to_pose_stamped(ps_dict):
+        ps = PoseStamped()
+        ps.header.seq = ps_dict['header']['seq']
+        ps.header.stamp.secs = ps_dict['header']['stamp']['secs']
+        ps.header.stamp.nsecs = ps_dict['header']['stamp']['nsecs']
+        ps.header.frame_id = ps_dict['header']['frame_id']
+        ps.pose.position.x = ps_dict['pose']['position']['x']
+        ps.pose.position.y = ps_dict['pose']['position']['y']
+        ps.pose.position.z = ps_dict['pose']['position']['z']
+        ps.pose.orientation.x = ps_dict['pose']['orientation']['x']
+        ps.pose.orientation.y = ps_dict['pose']['orientation']['y']
+        ps.pose.orientation.z = ps_dict['pose']['orientation']['z']
+        ps.pose.orientation.w = ps_dict['pose']['orientation']['w']
+        return ps
 
     def on_execute(self, ud):
         try:
-            ee_goal = rospy.get_param(self.ee_goal_param)
+            ee_goal_dict = rospy.get_param(self.ee_goal_param)
+            ee_goal = self._dict_to_pose_stamped(ee_goal_dict)
+        except (KeyError, rospy.ROSException):
+            rospy.logerr("[%s] %s - Error trying to access param: %s", rospy.get_name(), self.__class__.__name__, self.ee_goal_param)
+            return 'aborted'
+        try:
             ee_frame = rospy.get_param(self.ee_frame_param)
         except (KeyError, rospy.ROSException):
-            rospy.logerr("[%s] CallBaseSelectionState - Error trying to access params", rospy.get_name())
+            rospy.logerr("[%s] %s - Error trying to access param: %s", rospy.get_name(), self.__class__.__name__, self.ee_frame_param)
             return 'aborted'
         req = RealtimeBaseMoveRequest()
         req.ee_frame = ee_frame
@@ -100,6 +123,8 @@ from pr2_controllers_msgs.msg import SingleJointPositionAction, SingleJointPosit
 class AdjustTorsoState(PDDLSmachState):
     def __init__(self, base_goal_param, *args, **kwargs):
         super(AdjustTorsoState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
         self.base_goal_param = base_goal_param
@@ -118,11 +143,15 @@ class AdjustTorsoState(PDDLSmachState):
         result_published = False
         while not rospy.is_shutdown():
             action_state = self.torso_client.get_state()
-            if action_state == 'SUCCEEDED':
+            if action_state == GoalStatus.SUCCEEDED:
                 if not result_published:
-                    self.pddl_pub.publish('(AT_GOAL - TORSO)')
+                    state_msg = PDDLState()
+                    state_msg.domain = self.domain
+                    state_msg.problem = self.problem
+                    state_msg.predicates = ['(AT_GOAL - TORSO)']
+                    self.pddl_pub.publish(state_msg)
                     result_published = True
-            elif action_state != 'ACTIVE':
+            elif action_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
                 rospy.logwarn("[%s] %s - Move Torso Action Failed", rospy.get_name(), self.__class__.__name__)
                 return 'aborted'
             result = self._check_pddl_status()
@@ -132,23 +161,35 @@ class AdjustTorsoState(PDDLSmachState):
 
 
 class ClearTorsoSetState(PDDLSmachState):
-    def __init__(self, base_goal_arg, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ClearTorsoSetState, self).__init__(self, *args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
-        self.base_goal_arg = base_goal_arg
+        self.base_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
-        self.pddl_pub.publish('(NOT (TORSO_SET %s))', self.base_goal_arg)
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.problem = self.problem
+        state_msg.predicates = ['(NOT (TORSO_SET %s))' % self.base_goal_arg]
+        self.pddl_pub.publish(state_msg)
 
 
 class ClearAtGoalState(PDDLSmachState):
-    def __init__(self, at_goal_arg, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ClearAtGoalState, self).__init__(self, *args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
-        self.at_goal_arg = at_goal_arg
+        self.at_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
-        self.pddl_pub.publish('(NOT (TORSO_SET %s))', self.at_goal_arg)
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.problem = self.problem
+        state_msg.predicates = ['(NOT (AT_GOAL %s))', self.at_goal_arg]
+        self.pddl_pub.publish(state_msg)
 
 from assistive_teleop.msg import HeadSweepAction, HeadSweepGoal
 import actionlib
@@ -158,6 +199,8 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 class ScanEnvironmentState(PDDLSmachState):
     def __init__(self, *args, **kwargs):
         super(ScanEnvironmentState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
         self.scan_actioin_client = actionlib.SimpleActionClient('/head_sweep_action', HeadSweepAction)
         found = self.scan_actioin_client.wait_for_server(rospy.Duration(5))
@@ -191,11 +234,15 @@ class ScanEnvironmentState(PDDLSmachState):
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
             scan_state = self.scan_actioin_client.get_state()
-            if scan_state == 'SUCCEEDED':
+            if scan_state == GoalStatus.SUCCEEDED:
                 if not published_pddl:
-                    self.pddl_pub.publish('(SCAN-COMPLETE)')
+                    state_msg = PDDLState()
+                    state_msg.domain = self.domain
+                    state_msg.problem = self.problem
+                    state_msg.predicates = ['(SCAN_COMPLETE)']
+                    self.pddl_pub.publish(state_msg)
                     published_pddl = True  # Avoids repeated publishing
-            elif scan_state != 'ACTIVE':
+            elif scan_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
                 rospy.logwarn("[%s] ScanEnvironmentState - Scan Environment Action Failed", rospy.get_name())
                 return 'aborted'
             # Wait for updated state
@@ -208,10 +255,16 @@ class ScanEnvironmentState(PDDLSmachState):
 class ClearEnvironmentState(PDDLSmachState):
     def __init__(self, *args, **kwargs):
         super(ClearEnvironmentState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
 
     def on_execute(self, ud):
-        self.pddl_pub.publish('(NOT (SCAN-COMPLETE))')
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.problem = self.problem
+        state_msg.predicates = ['(NOT (SCAN_COMPLETE))']
+        self.pddl_pub.publish(state_msg)
 
 
 class DeleteParamState(PDDLSmachState):

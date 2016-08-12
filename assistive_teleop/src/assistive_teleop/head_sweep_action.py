@@ -59,7 +59,8 @@ class HeadSweepActionServer(object):
                 self.report_failure("Bad timing.")
                 return
             self.head_joint_action.send_goal(head_scan_traj)
-            self.head_joint_action.wait_for_result(goal_msg.sweep_trajectory.points[-1].time_from_start + rospy.Duration(3))
+            timeout = goal_msg.sweep_trajectory.points[-1].time_from_start + rospy.Duration(3)
+            self.head_joint_action.wait_for_result(timeout)
         except Exception as e:
             self.report_failure(e)
             return
