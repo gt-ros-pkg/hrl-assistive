@@ -665,7 +665,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nTrainTimes  = 1
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
-            if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list']:            
+            if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
+              SVM_dict['renew']:            
                 data = {}
                 data['complete'] = False 
                 data['tp_l']     = [ [] for jj in xrange(nPoints) ]
@@ -1032,7 +1033,7 @@ if __name__ == '__main__':
                                                           opt.bAERenew, opt.bHMMRenew, opt.dim,\
                                                           rf_center, local_range, \
                                                           bAESwitch=opt.bAESwitch)
-        
+    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
     
     #---------------------------------------------------------------------------           
     if opt.bRawDataPlot or opt.bInterpDataPlot:
@@ -1115,8 +1116,7 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['nPoints'] = 10
-
+        param_dict['ROC']['nPoints'] = 10        
         
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
