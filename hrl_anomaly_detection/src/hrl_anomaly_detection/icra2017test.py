@@ -534,8 +534,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
-    nTrainOffset = 20
-    nTrainTimes  = 1
+    nTrainOffset = 4
+    nTrainTimes  = 5
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -688,7 +688,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
                                                            normalData, abnormalData, verbose=debug)
-                                                           for idx in xrange(len(kFold_list)))
+                                                           for idx in xrange(len(kFold_list[0:1])))
 
     l_data = r
     for data in l_data:
@@ -808,11 +808,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.0000001 )
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.15 )
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],0,1)\
-                                           ])
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
 
@@ -822,6 +822,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         ll_classifier_train_X, ll_classifier_train_Y = \
           hmm.getHMMinducedFeatures(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])), \
                                     c=1.0, add_delta_logp=add_logp_d)
+
+        # temp
+        ## vizLikelihoods(ll_logp, ll_post)
 
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -948,6 +951,22 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
                  continuousPlot=True, \
                  modality_list=modality_list, data_renew=data_renew, \
                  max_time=max_time, verbose=verbose)
+
+def vizLikelihoods(ll_logp, ll_post):
+
+    fig = plt.figure(1)
+
+    print np.shape(ll_logp), np.shape(ll_post)
+
+    for i in xrange(len(ll_logp)):
+
+        l_logp  = ll_logp[i]
+        l_state = np.argmax(ll_post[i], axis=1)
+
+        plt.plot(l_state, l_logp, 'b-')
+
+    plt.show()
+
 
 
 if __name__ == '__main__':
