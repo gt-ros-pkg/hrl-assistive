@@ -66,6 +66,7 @@ from sklearn import metrics
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
+import hrl_anomaly_detection.data_viz as dv
 
 import itertools
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
@@ -119,7 +120,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew)
+                           data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
@@ -922,6 +923,29 @@ def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
     return data
 
 
+def data_selection(subject_names, task_name, raw_data_path, processed_data_path, \
+                  downSampleSize=200, \
+                  local_range=0.3, rf_center='kinEEPos', \
+                  success_viz=True, failure_viz=False, \
+                  raw_viz=False, save_pdf=False, \
+                  modality_list=['audio'], data_renew=False, \
+                  max_time=None, verbose=False):
+    '''
+    '''
+
+    # Success data
+    successData = success_viz
+    failureData = failure_viz
+
+    dv.data_plot(subject_names, task_name, raw_data_path, processed_data_path,\
+                 downSampleSize=downSampleSize, \
+                 local_range=local_range, rf_center=rf_center, \
+                 raw_viz=True, interp_viz=False, save_pdf=save_pdf,\
+                 successData=successData, failureData=failureData,\
+                 continuousPlot=True, \
+                 modality_list=modality_list, data_renew=data_renew, \
+                 max_time=max_time, verbose=verbose)
+
 
 if __name__ == '__main__':
 
@@ -993,7 +1017,8 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
+        subjects = [ 'sai', 'jina', 'linda']
+        ## subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
         ## subjects = [ 'zack']
         ## subjects = [ ]
     else:
@@ -1016,7 +1041,6 @@ if __name__ == '__main__':
         failureData = False
         modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
 
-        import hrl_anomaly_detection.data_viz as dv
         dv.data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \
                   local_range=local_range, rf_center=rf_center, \
@@ -1024,9 +1048,27 @@ if __name__ == '__main__':
                   successData=successData, failureData=failureData,\
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
+    elif opt.bDataSelection:
+        '''
+        Manually select and filter bad data out
+        '''
+        ## modality_list   = ['kinematics', 'audioWrist','audio', 'fabric', 'ft', \
+        ##                    'vision_artag', 'vision_change', 'pps']
+        modality_list   = ['kinematics', 'ft']
+        success_viz = True
+        failure_viz = False
+
+        data_selection(subjects, opt.task, raw_data_path, save_data_path,\
+                       downSampleSize=param_dict['data_param']['downSampleSize'], \
+                       local_range=local_range, rf_center=rf_center, \
+                       success_viz=success_viz, failure_viz=failure_viz,\
+                       raw_viz=opt.bRawDataPlot, save_pdf=opt.bSavePdf,\
+                       modality_list=modality_list, data_renew=opt.bDataRenew, \
+                       max_time=param_dict['data_param']['max_time'], verbose=opt.bVerbose)        
+
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = True
+        failure_viz = False
         
         dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
@@ -1035,13 +1077,14 @@ if __name__ == '__main__':
                       ae_data=False,\
                       cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=True,\
-                      handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
+                      handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
+                      max_time=param_dict['data_param']['max_time'])
 
     elif opt.bLikelihoodPlot:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, \
-                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
+                          useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
