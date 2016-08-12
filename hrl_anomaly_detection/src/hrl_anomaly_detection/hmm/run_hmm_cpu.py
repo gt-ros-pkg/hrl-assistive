@@ -797,9 +797,6 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-                      
-        
-
     max_check_fold = 2
 
     #--------------------------------------------------------------------------------------
