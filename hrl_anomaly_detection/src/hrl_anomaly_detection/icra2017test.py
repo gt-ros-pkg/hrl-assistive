@@ -782,8 +782,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     normalTrainData = normalData[:,:len(normalDataIdx)/2,:]
     normalTestData  = normalData[:,len(normalDataIdx)/2:,:]
-    abnormalTrainData = abnormalData[:,:len(abnormalDataIdx)/2,:]
-    abnormalTestData  = abnormalData[:,len(abnormalDataIdx)/2:,:]
+    ## abnormalTrainData = abnormalData[:,:len(abnormalDataIdx)/2,:]
+    ## abnormalTestData  = abnormalData[:,len(abnormalDataIdx)/2:,:]
+    abnormalTestData  = abnormalData
 
     testDataX = np.vstack([ np.swapaxes(normalTestData,0,1), np.swapaxes(abnormalTestData,0,1) ])
     testDataX = np.swapaxes(testDataX, 0,1)
