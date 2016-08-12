@@ -500,7 +500,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     # AE
-    AE_dict     = param_dict['AE']
+    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -510,7 +510,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     SVM_dict   = param_dict['SVM']
 
     # ROC
-    ROC_dict = param_dict['ROC']
+    ROC_dict   = param_dict['ROC']
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -809,11 +809,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             print "Run partial fitting with online HMM : ", i
             ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.0 )
             # Update last 10 samples
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],0,1)\
-                                           ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],0,1)\
+            ##                                ])
+            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
 
 
         # Get classifier training data using last 10 samples
