@@ -823,9 +823,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFeatures(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])), \
                                     c=1.0, add_delta_logp=add_logp_d)
 
-        # temp
-        ## vizLikelihoods(ll_logp, ll_post)
-
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
@@ -842,6 +839,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
+
+        # temp
+        vizLikelihoods(ll_logp, ll_post, testDataY)
+        continue
+
 
         # -------------------------------------------------------------------------------
         # update kmean
@@ -952,7 +954,7 @@ def data_selection(subject_names, task_name, raw_data_path, processed_data_path,
                  modality_list=modality_list, data_renew=data_renew, \
                  max_time=max_time, verbose=verbose)
 
-def vizLikelihoods(ll_logp, ll_post):
+def vizLikelihoods(ll_logp, ll_post, l_y):
 
     fig = plt.figure(1)
 
@@ -963,8 +965,13 @@ def vizLikelihoods(ll_logp, ll_post):
         l_logp  = ll_logp[i]
         l_state = np.argmax(ll_post[i], axis=1)
 
-        plt.plot(l_state, l_logp, 'b-')
+        ## plt.plot(l_state, l_logp, 'b-')
+        if l_y[i] < 0:
+            plt.plot(l_logp, 'b-')
+        else:
+            plt.plot(l_logp, 'r-')
 
+    plt.ylim([0, np.amax(ll_logp) ])
     plt.show()
 
 
