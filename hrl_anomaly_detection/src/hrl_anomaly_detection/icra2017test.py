@@ -532,7 +532,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 10
+    nPtrainData = 20
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -660,8 +660,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-    nTrainOffset = 2
-    nTrainTimes  = 3
+    nTrainOffset = 10
+    nTrainTimes  = 2
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
             if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list']:            
@@ -680,13 +680,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
     
     print "Start the incremental evaluation"
-    r = Parallel(n_jobs=-1)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
+    if debug: n_jobs = 1
+    else: n_jobs = -1
+    r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
-                                                           normalData, abnormalData)
+                                                           normalData, abnormalData, verbose=debug)
                                                            for idx in xrange(len(kFold_list)))
 
-    l_data = zip(*r)
+    l_data = r
     for data in l_data:
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
@@ -725,7 +727,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
-                          normalData, abnormalData, verbose=True):
+                          normalData, abnormalData, verbose=False):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -748,6 +750,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             data['delay_l']  = [ [] for jj in xrange(nPoints) ]
             data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
             ROC_data_cur[method+'_'+str(j)] = data
+
+    return ROC_data_cur
 
     #
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
@@ -802,7 +806,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset] )
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.0 )
             # Update last 10 samples
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -1074,6 +1078,6 @@ if __name__ == '__main__':
         param_dict['ROC']['nPoints'] = 10
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-                         param_dict, save_pdf=opt.bSavePdf, \
-                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                         find_param=False, data_gen=opt.bDataGen)
+                          param_dict, save_pdf=opt.bSavePdf, \
+                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                          find_param=False, data_gen=opt.bDataGen)
