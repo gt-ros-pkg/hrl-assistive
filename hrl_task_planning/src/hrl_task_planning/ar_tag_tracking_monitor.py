@@ -7,6 +7,7 @@ import rospy
 from std_msgs.msg import Bool
 
 from hrl_task_planning import pddl_utils as pddl
+from hrl_msgs.msg import FloatArrayBare
 from hrl_task_planning.msg import PDDLState
 from pr2_controllers_msgs.msg import PointHeadGoal, PointHeadActionGoal
 
@@ -16,11 +17,11 @@ class ARTagTracker(object):
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.model = None
         rospy.Subscriber('/AR_tracking', Bool, self.tracking_ar_tag_cb)
-        rospy.Subscriber('/head_traj_controller/point_head_action/goal', PointHeadActionGoal, self.ar_distance_check_cb)
+        rospy.Subscriber('/ar_tag_distance', FloatArrayBare, self.ar_distance_check_cb)
 
 
     def ar_distance_check_cb(self, msg):
-	ar_dist_y = msg.goal.target.point.y
+	ar_dist_y = msg.data[1]
 	preds = []
         BED_HARD_THRESH = 1.3
 	if abs(ar_dist_y) < BED_HARD_THRESH:

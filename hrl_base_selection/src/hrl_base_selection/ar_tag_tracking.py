@@ -81,7 +81,7 @@ class AR_Tag_Tracking(object):
         self.AR_tag_tracking = rospy.Publisher('/AR_tracking', Bool, queue_size=1, latch=True)
         self.start_tracking_AR_subscriber = rospy.Subscriber('track_AR_now', Bool, self.start_tracking_AR_cb)
         # self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
-
+        self.ar_tag_distance_pub = rospy.Publisher('/ar_tag_distance', FloatArrayBare, queue_size = 1)
         self.head_track_AR_pub = rospy.Publisher('/head_traj_controller/point_head_action/goal', PointHeadActionGoal, queue_size=1)
 
         self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
@@ -354,7 +354,7 @@ class AR_Tag_Tracking(object):
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-                    print self.currently_tracking_AR, self.finished_acquiring_AR_tag
+                    #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]
@@ -369,6 +369,7 @@ class AR_Tag_Tracking(object):
                         self.goal.pointing_axis.z = 0
 
                         self.action_goal.goal = self.goal
+                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                         self.head_track_AR_pub.publish(self.action_goal)
                         success = Bool()
                         success.data = True
