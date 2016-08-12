@@ -793,9 +793,9 @@ if __name__ == '__main__':
         parameters = {'nState': [25], 'scale': np.linspace(6.0,15.0,10), \
                       'cov': np.linspace(1.0,1.0,1) }
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     max_check_fold = 2
 
