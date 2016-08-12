@@ -1959,8 +1959,24 @@ class ScoreGenerator(object):
         self.manip = self.robot.GetActiveManipulator()
         ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
         if not ikmodel.load():
-            print 'IK model not found. Will now generate an IK model. This will take a while!'
+            print 'IK model not found for leftarm. Will now generate an IK model. This will take a while!'
             ikmodel.autogenerate()
+
+        if self.model is None:
+            ## Set robot manipulators, ik, planner
+            self.robot.SetActiveManipulator('rightarm')
+            self.manip = self.robot.GetActiveManipulator()
+            ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
+            if not ikmodel.load():
+                print 'IK model not found for rightarm. Will now generate an IK model. This will take a while!'
+                ikmodel.autogenerate()
+            ## Set robot manipulators, ik, planner
+            self.robot.SetActiveManipulator('leftarm')
+            self.manip = self.robot.GetActiveManipulator()
+            ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.robot, iktype=op.IkParameterization.Type.Transform6D)
+            if not ikmodel.load():
+                print 'IK model not found for leftarm. Will now generate an IK model. This will take a while!'
+                ikmodel.autogenerate()
         # create the interface for basic manipulation programs
         self.manipprob = op.interfaces.BaseManipulation(self.robot)
 
