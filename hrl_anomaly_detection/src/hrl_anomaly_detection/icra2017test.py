@@ -660,7 +660,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-
     nTrainOffset = 2
     nTrainTimes  = 3
     for i, method in enumerate(method_list):
@@ -681,18 +680,35 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
     
     print "Start the incremental evaluation"
-    for idx, (train_idx, test_idx) in enumerate(kFold_list):
-        if idx > 1: continue
-        data = run_online_classifier(idx, processed_data_path, task_name, \
-                                     nPtrainData, nTrainOffset, nTrainTimes, ROC_data, param_dict,\
-                                     normalData, abnormalData)
+    r = Parallel(n_jobs=-1)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
+                                                           nPtrainData, nTrainOffset, nTrainTimes, \
+                                                           ROC_data, param_dict,\
+                                                           normalData, abnormalData)
+                                                           for idx in xrange(len(kFold_list)))
 
+    l_data = zip(*r)
+    for data in l_data:
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
+                if ROC_data[method+'_'+str(j)]['complete']: continue
                 for key in ROC_data[method+'_'+str(j)].keys():
-                    if key is 'complete': continue
+                    if key.find('complete')>=0: continue
                     for jj in xrange(nPoints):
                         ROC_data[method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
+
+        
+    ## for idx, (train_idx, test_idx) in enumerate(kFold_list):
+    ##     if idx > 1: continue
+    ##     data = run_online_classifier(idx, processed_data_path, task_name, \
+    ##                                  nPtrainData, nTrainOffset, nTrainTimes, ROC_data, param_dict,\
+    ##                                  normalData, abnormalData)
+
+    ##     for i, method in enumerate(method_list):
+    ##         for j in xrange(nTrainTimes+1):
+    ##             for key in ROC_data[method+'_'+str(j)].keys():
+    ##                 if key is 'complete': continue
+    ##                 for jj in xrange(nPoints):
+    ##                     ROC_data[method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
                 
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
@@ -730,7 +746,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             data['tn_l']     = [ [] for jj in xrange(nPoints) ]
             data['fn_l']     = [ [] for jj in xrange(nPoints) ]
             data['delay_l']  = [ [] for jj in xrange(nPoints) ]
-            data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
+            data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
             ROC_data_cur[method+'_'+str(j)] = data
 
     #
@@ -780,7 +796,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
 
-    for i in xrange(nTrainTimes+1): #-nTrainOffset, len(normalTrainData[0]),nTrainOffset):
+    for i in xrange(nTrainTimes+1): 
 
         if ROC_data[method+'_'+str(i)]['complete']: continue
         # partial fitting with
@@ -1048,7 +1064,8 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects        = ['zack', 'hkim', 'ari', 'park', 'jina']        
+        subjects        = ['linda', 'jina', 'sai']        
+        ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
