@@ -288,11 +288,9 @@ class anomaly_detector:
             d = ut.load_pickle(self.hmm_model_pkl)
             # HMM
             self.nEmissionDim = d['nEmissionDim']
-            self.A            = d['A']
-            self.B            = d['B']
-            self.pi           = d['pi']
             self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
-            self.ml.set_hmm_object(self.A, self.B, self.pi)
+            self.ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+                                   d['mat_num'], d['u_denom'])
             
             ll_classifier_train_X = d['ll_classifier_train_X']
             ll_classifier_train_Y = d['ll_classifier_train_Y']
@@ -313,7 +311,6 @@ class anomaly_detector:
             else:
                 max_time = None
             rospy.loginfo( "Start to train an hmm model of %s", self.task_name)
-            rospy.loginfo( "Started get data set")
             dd = dm.getDataSet(self.subject_names, self.task_name, self.raw_data_path, \
                                self.save_data_path, self.rf_center, \
                                self.rf_radius,\
@@ -327,7 +324,7 @@ class anomaly_detector:
 
             self.handFeatureParams = dd['param_dict']
 
-            # do we need folding????????????????
+            # do we need folding?
             if self.nNormalFold > 1:
                 # Task-oriented hand-crafted features        
                 kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
@@ -351,19 +348,15 @@ class anomaly_detector:
                 self.visualization()
                 sys.exit()
 
-
             # training hmm
             self.nEmissionDim   = len(normalTrainData)
-            #detection_param_pkl = os.path.join(self.save_data_path, 'hmm_'+self.task_name+'_demo.pkl')
             self.ml = learning_hmm.learning_hmm(self.nState, self.nEmissionDim, verbose=False)
             if self.param_dict['data_param']['handFeatures_noise']:
                 ret = self.ml.fit(normalTrainData+
                                   np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*self.scale, \
                                   cov_mult=[self.cov]*(self.nEmissionDim**2))
-                                  ## ml_pkl=detection_param_pkl, use_pkl=(not hmm_renew))
             else:
                 ret = self.ml.fit(normalTrainData, cov_mult=[self.cov]*(self.nEmissionDim**2))
-                                  ## ml_pkl=detection_param_pkl, use_pkl=(not hmm_renew))
 
             if ret == 'Failure':
                 rospy.loginfo( "-------------------------")
@@ -406,26 +399,27 @@ class anomaly_detector:
                     idx_train_org.append(ll_classifier_train_idx[i][j])
 
             # Add failure safe data
-            ## safe_train_X = []
-            ## safe_train_Y = []
-            ## safe_train_idx = []
-            for i in xrange(self.ml.nState):
-                v                     = np.zeros(self.ml.nState*2+1)
-                v[0]                  = -500
-                v[i+1]                = 1.0
-                v[i+1+self.ml.nState] = 1.0                
-                X_train_org.append(v.tolist())
-                Y_train_org.append(1)
-                idx_train_org.append(i)
-
-              
-
-
-
+            ## ## safe_train_X = []
+            ## ## safe_train_Y = []
+            ## ## safe_train_idx = []
+            ## for i in xrange(self.ml.nState):
+            ##     v                     = np.zeros(self.ml.nState*2+1)
+            ##     v[0]                  = -500
+            ##     v[i+1]                = 1.0
+            ##     v[i+1+self.ml.nState] = 1.0                
+            ##     X_train_org.append(v.tolist())
+            ##     Y_train_org.append(1)
+            ##     idx_train_org.append(i)
+           
+            [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = self.ml.get_hmm_object()
             d                  = {}
-            d['A']             = self.ml.A
-            d['B']             = self.ml.B
-            d['pi']            = self.ml.pi
+            d['A']            = A 
+            d['B']            = B 
+            d['pi']           = pi
+            d['out_a_num']    = out_a_num
+            d['vec_num']      = vec_num
+            d['mat_num']      = mat_num
+            d['u_denom']      = u_denom            
             d['nEmissionDim']  = self.nEmissionDim
             d['ll_classifier_train_X'] = ll_classifier_train_X
             d['ll_classifier_train_Y'] = ll_classifier_train_Y
@@ -784,8 +778,11 @@ class anomaly_detector:
             trainData = np.array(trainData)*self.scale
             trainData = self.applying_offset(trainData)
 
-            # update
-            ## HMM
+            # update HMM
+            ml.partial_fit(trainData)
+
+            
+            
             ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
             X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, Y_test_org)
 
@@ -915,21 +912,17 @@ class anomaly_detector:
                 if user_feedback == "success":
                     p_train_X, p_train_Y, _ = dm.flattenSample(test_X, test_Y)
                     self.classifier.partial_fit(p_train_X, p_train_Y)
-                
+
+            elif self.classifier_method.find('kmean')>=0:
+
+                if user_feedback == "success":
+                    p_train_X, p_train_Y, _ = dm.flattenSample(test_X, test_Y)
+                    self.classifier.partial_fit(p_train_X, p_train_Y)
+                    
             else:
                 rospy.loginfo( "Not available update method")
 
-            # TODO: remove fake data
-            ## nLength = len(p_train_X)/self.nTests
-            ## self.X_train_org = np.delete(self.X_train_org, np.s_[:nLength], 0)
-            ## self.Y_train_org = np.delete(self.Y_train_org, np.s_[:nLength], 0)
-            ## self.X_train_org = np.vstack([ self.X_train_org, p_train_X[-nLength:] ])
-            ## self.Y_train_org = np.hstack([ self.Y_train_org, p_train_Y[-nLength:] ])
-
             # ------------------------------------------------------------------------------------------
-            ## print "################ Only recent data ####################"
-            ## self.acc_part, _, _ = evaluation(list(test_X)[:3], list(test_Y)[:3], \
-            ##                        self.classifier)
             if self.bSim is False:
                 self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
                 self.cum_acc_list.append(self.acc_all)
@@ -1235,7 +1228,7 @@ class anomaly_detector:
                 ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
                 X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, [label])
                 X_test, Y_train_org, _ = dm.flattenSample(X, Y)
-                
+
                 if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                     X_scaled = self.scaler.transform(X_test)
                     y_est    = self.classifier.predict(X_scaled)

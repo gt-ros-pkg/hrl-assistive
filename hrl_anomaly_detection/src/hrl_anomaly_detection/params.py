@@ -76,8 +76,8 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'bpsvm_gamma': 0.507, \
                           'bpsvm_w_negative': 0.2                          
                           }
-        
-        ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress_time_cluster', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'svm', 'hmmsvm_no_dL' ],\
+        # , 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'svm', 'hmmsvm_no_dL'
+        ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress_time_cluster', 'progress_state', 'osvm', 'progress_diag', ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \

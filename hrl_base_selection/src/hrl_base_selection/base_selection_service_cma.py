@@ -175,10 +175,10 @@ class BaseSelector(object):
 
         # Initialize the services
         self.base_selection_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
-        
+
         # Subscriber to update robot joint state
         #self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
-        
+
         print "Ready to select base."
 
     # This gets the joint states of the entire robot and saves only the robot's z-axis state.
@@ -706,11 +706,11 @@ class BaseSelector(object):
                             temp.append(item[3])
                     if temp != []:
                         score2d_temp.append([i,j,np.max(temp)])
-    
+
             seen_items = []
-            score2d = [] 
+            score2d = []
             for item in score2d_temp:
-    
+
                 #print 'seen_items is: ',seen_items
                 #print 'item is: ',item
                 #print (any((item == x) for x in seen_items))
@@ -721,9 +721,9 @@ class BaseSelector(object):
                     seen_items.append(item)
             score2d = np.array(score2d)
             #print 'score2d with no repetitions',score2d
-        
+
             fig, ax = plt.subplots()
-                
+
             X  = score2d[:,0]
             Y  = score2d[:,1]
             #Th = score_sheet[:,2]
@@ -734,17 +734,17 @@ class BaseSelector(object):
             ax.set_xlabel('X Axis')
             ax.set_ylabel('Y Axis')
             #ax.set_zlabel('Theta Axis')
-       
+
             fig.colorbar(surf, shrink=0.5, aspect=5)
-    
-    
+
+
             verts_wc = [(-.438, -.32885), # left, bottom
                         (-.438, .32885), # left, top
                         (.6397, .32885), # right, top
                         (.6397, -.32885), # right, bottom
                         (0., 0.), # ignored
                         ]
-            
+
             verts_pr2 = [(-1.5,  -1.5), # left, bottom
                          ( -1.5, -.835), # left, top
                          (-.835, -.835), # right, top
@@ -758,11 +758,11 @@ class BaseSelector(object):
                      Path.LINETO,
                      Path.CLOSEPOLY,
                      ]
-           
+
             path_wc = Path(verts_wc, codes)
             path_pr2 = Path(verts_pr2, codes)
-    
-            patch_wc = patches.PathPatch(path_wc, facecolor='orange', lw=2)        
+
+            patch_wc = patches.PathPatch(path_wc, facecolor='orange', lw=2)
             patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
 
             ax.add_patch(patch_wc)

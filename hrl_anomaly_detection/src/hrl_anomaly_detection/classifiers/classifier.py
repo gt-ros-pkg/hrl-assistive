@@ -181,13 +181,12 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
-        elif self.method == 'mbkmean':
+        elif self.method == 'mbkmean' or self.method == 'kmean':
             self.mbkmean_batch_size = mbkmean_batch_size
             self.ths_mult = ths_mult
             self.nPosteriors = nPosteriors
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors) 
-            
                         
         learning_base.__init__(self)
 
@@ -401,6 +400,29 @@ class classifier(learning_base):
                 self.ll_mu[i]  = np.mean(ll_logp[i])
                 self.ll_std[i] = np.std(ll_logp[i])
             
+        elif self.method == 'kmean':
+            from sklearn.cluster import KMeans
+            init_list = []
+            for i in xrange(self.nPosteriors):
+                init_array = np.zeros(self.nPosteriors)
+                init_array[i] = 1.0
+                init_list.append(init_array)
+                
+            if type(X) == list: X = np.array(X)
+            posts = X[:,-self.nPosteriors:]
+            logps = X[:,0]
+                
+            self.dt = KMeans(n_clusters=self.nPosteriors, \
+                             init=np.array(init_list))
+            labels = self.dt.fit_predict(posts)
+            # clustering likelihoods
+            ll_logp = [[] for i in xrange(self.nPosteriors)]
+            for i, label in enumerate(labels):
+                ll_logp[label].append(logps[i])
+            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
+            for i in xrange(self.nPosteriors):
+                self.ll_mu[i]  = np.mean(ll_logp[i])
+                self.ll_std[i] = np.std(ll_logp[i])
 
 
     def partial_fit(self, X, y=None, classes=None, sample_weight=None, n_iter=1, shuffle=True):
@@ -545,7 +567,7 @@ class classifier(learning_base):
             X_features = self.rbf_feature.transform(X)
             return self.dt.predict(X_features)
 
-        elif self.method == 'mbkmean':
+        elif self.method == 'mbkmean' or self.method == 'kmean':
             if type(X) == list: X = np.array(X)
             posts = X[:,-self.nPosteriors:]            
             labels = self.dt.predict(posts)
@@ -642,13 +664,13 @@ class classifier(learning_base):
                  'l_statePosterior': self.l_statePosterior,\
                  'll_mu': self.ll_mu, 'll_std': self.ll_std}
             ut.save_pickle(d, fileName)            
-        elif self.method.find('mbkmean')>=0:
+        elif self.method.find('mbkmean')>=0 or self.method.find('kmean')>=0:
             ## d = {'ll_mu': self.ll_mu, 'll_std': self.ll_std}
             ## ut.save_pickle(d, fileName)            
             ## import pickle
             ## with open(fileName, 'wb') as f:
             ##     pickle.dump(self.dt, f)
-            print "Not able to save mbkmean"
+            print "Not able to save mbkmean or kmean"
             
         else:
             print "Not available method"
@@ -1127,7 +1149,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
-        if (method.find('svm')>=0 or method.find('sgd')>=0) and True:
+        if (method.find('svm')>=0 or method.find('sgd')>=0) and False:
             # Add failure safe data
             for i in xrange(nState):
                 v                     = np.zeros(nState*2+1)
