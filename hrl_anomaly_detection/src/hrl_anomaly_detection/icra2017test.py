@@ -751,8 +751,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
             ROC_data_cur[method+'_'+str(j)] = data
 
-    return ROC_data_cur
-
     #
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
     dd = ut.load_pickle(modeling_pkl)
