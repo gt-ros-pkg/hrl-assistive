@@ -534,6 +534,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
+    nTrainOffset = 20
+    nTrainTimes  = 1
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -661,8 +663,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-    nTrainOffset = 20
-    nTrainTimes  = 1
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
             if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
@@ -808,15 +808,13 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.0 )
             # Update last 10 samples
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
                                            np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],0,1)\
                                            ])
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-
-        print "ptraindatasize: ", np.shape(normalPtrainData)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
 
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
@@ -834,7 +832,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
-
         # Test data
         ll_logp, ll_post, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
                                                                      startIdx=startIdx)
@@ -1118,7 +1115,7 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['nPoints'] = 5
+        param_dict['ROC']['nPoints'] = 10
         
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
