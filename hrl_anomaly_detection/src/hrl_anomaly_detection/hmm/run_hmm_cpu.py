@@ -790,8 +790,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=10)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,12.0,5), \
-                      'cov': np.linspace(1.0,6.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(6.0,15.0,10), \
+                      'cov': np.linspace(1.0,1.0,1) }
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\

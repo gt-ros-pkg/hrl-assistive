@@ -808,7 +808,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
             # Update last 10 samples
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -1118,7 +1118,7 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['nPoints'] = 10        
+        param_dict['ROC']['nPoints'] = 5
         
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
