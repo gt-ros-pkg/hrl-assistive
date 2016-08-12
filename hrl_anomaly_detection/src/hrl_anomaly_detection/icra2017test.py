@@ -751,7 +751,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             data['delay_l']  = [ [] for jj in xrange(nPoints) ]
             data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
             ROC_data_cur[method+'_'+str(j)] = data
-
+    method = method_list[0]
+    
     #
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
     dd = ut.load_pickle(modeling_pkl)
@@ -827,6 +828,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                                                                    ll_classifier_train_Y, \
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
+        if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
 
@@ -842,17 +844,18 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # update kmean
         # classification
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+        ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
+        
         for j in xrange(nPoints):
             dtc.set_params( **SVM_dict )
 
-            print "Update classifier"
+            if verbose: print "Update classifier"
             if method == 'progress_time_cluster' or method == 'progress' or method == 'kmean':
                 if method == 'progress_time_cluster':
                     thresholds = ROC_dict['progress_param_range']
                 else:
                     thresholds = ROC_dict[method+'_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
-                if j==0: ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
             else:
                 print "Not available method = ", method
                 sys.exit()
@@ -1109,7 +1112,7 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects        = ['linda', 'jina', 'sai']        
+        ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
         param_dict['ROC']['nPoints'] = 10
