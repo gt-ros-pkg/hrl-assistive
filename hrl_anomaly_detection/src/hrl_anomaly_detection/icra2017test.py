@@ -660,8 +660,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-    nTrainOffset = 10
-    nTrainTimes  = 2
+    nTrainOffset = 15
+    nTrainTimes  = 1
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
             if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list']:            
