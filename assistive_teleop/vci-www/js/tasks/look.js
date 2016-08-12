@@ -2,7 +2,7 @@ RFH.Look = function (options) {
     'use strict';
     var self = this;
     self.name = options.name || 'lookingTask';
-    self.ros = options.ros;
+    var ros = options.ros;
     self.showButton = true;
     self.buttonText = "Look";
     self.toolTipText = "Move the head to look around";
@@ -10,7 +10,12 @@ RFH.Look = function (options) {
     self.imageDiv = $("#" + imageDivId);
     self.mapLookDivs = $(".map-look");
     self.camera = options.camera || new RFH.ROSCameraModel();
-    self.head = options.head || new Pr2Head(self.ros);
+    self.head = options.head || new Pr2Head(ros);
+    self.$zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', zoomIn)
+    self.$zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', zoomOut);
+    self.zoomServiceClient = new ROSLIB.ServiceClient({
+
+    });
     
     var hfov = 1;
     var vfov = 0.75; //FOV of kinect is ~1 radians wide, 0.75 radians tall
@@ -35,6 +40,15 @@ RFH.Look = function (options) {
         var py = (pt[1]/e.target.clientHeight) * self.camera.height;
         var xyz =  self.camera.projectPixel(px, py);
         self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
+    };
+
+    var zoomIn = function (e) {
+        
+
+    };
+
+    var zoomOut = function (e) {
+
     };
 
     self.start = function () {
