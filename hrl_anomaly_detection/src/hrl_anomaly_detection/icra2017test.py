@@ -661,7 +661,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-    nTrainOffset = 15
+    nTrainOffset = 20
     nTrainTimes  = 1
     for i, method in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
@@ -808,7 +808,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.2 )
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
             # Update last 10 samples
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -816,6 +816,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                                            ])
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
 
+        print "ptraindatasize: ", np.shape(normalPtrainData)
 
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
