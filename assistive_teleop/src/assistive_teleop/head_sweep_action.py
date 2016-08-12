@@ -51,6 +51,7 @@ class HeadSweepActionServer(object):
         except Exception as e:
             self.report_failure(e)
             return
+        rospy.sleep(0.5)
         # Move along sweep path
         try:
             jtp.positions = goal_msg.sweep_trajectory.points[-1].positions
