@@ -1066,7 +1066,7 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects        = ['linda', 'jina', 'sai']        
+        subjects        = ['linda', 'jina', 'sai', 'park']        
         ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
