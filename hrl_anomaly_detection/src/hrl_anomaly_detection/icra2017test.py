@@ -729,7 +729,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
-                          normalData, abnormalData, verbose=False):
+                          normalDataX, abnormalDataX, verbose=False):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -771,8 +771,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     nLength   = dd['nLength']
     normalPtrainData = dd['normalPtrainData']
 
-    normalData   = normalData * HMM_dict['scale']
-    abnormalData = abnormalData * HMM_dict['scale']
+    normalData   = copy.copy(normalDataX) * HMM_dict['scale']
+    abnormalData = copy.copy(abnormalDataX) * HMM_dict['scale']
 
     # random split into two groups
     normalDataIdx   = range(len(normalData[0]))
@@ -808,7 +808,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
+            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
             # Update last 10 samples
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
