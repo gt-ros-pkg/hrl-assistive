@@ -423,7 +423,42 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     
     return X, Y
 
+def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=True,\
+                                 remove_fp=False, remove_outlier=False):
+
+    # remove outliers from normal data (upper 5% and lower 5%)
+    # Check only last likelihoods
+    if len(ll_logp)>2 and remove_outlier:
+        logp_lst = []
+        idx_lst  = []
+        for i in xrange(len(ll_logp)):
+            if l_labels is None or l_labels[i] < 0:
+                logp_lst.append(ll_logp[i][-1])
+                idx_lst.append(i)
+
+        logp_lst, idx_lst = zip(*sorted(zip(logp_lst, idx_lst)))
+        nOutlier = int(0.05*len(ll_logp))
+        if nOutlier < 1: nOutlier = 1
+
+        upper_lst = idx_lst[:nOutlier]
+        lower_lst = idx_lst[-nOutlier:]
+        indices = upper_lst + lower_lst
+        indices = sorted(list(indices), reverse=True)
+        for i in indices:
+            del ll_logp[i]
+            del ll_post[i]
+            del ll_idx[i]
+            if type(l_labels) is not list: l_labels = l_labels.tolist()
+            del l_labels[i]
+            
+
+    ll_X, ll_Y = getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
     
+    X_flat, Y_flat, idx_flat = dm.flattenSample(ll_X, ll_Y, ll_idx, remove_fp=remove_fp)
+    return X_flat, Y_flat, idx_flat
+    
+
+
 ####################################################################
 # functions for paralell computation
 ####################################################################

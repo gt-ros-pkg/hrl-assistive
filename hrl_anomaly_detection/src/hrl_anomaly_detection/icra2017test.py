@@ -819,16 +819,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
                                                                       startIdx=startIdx)
-        ll_classifier_train_X, ll_classifier_train_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])), \
-                                    c=1.0, add_delta_logp=add_logp_d)
-
+                                                                      
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
-        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
-                                                                   ll_classifier_train_Y, \
-                                                                   ll_classifier_train_idx,\
-                                                                   remove_fp=remove_fp)
+        X_train_org, Y_train_org, idx_train_org = \
+          hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
+                                           -np.ones(len(normalPtrainData[0])), \
+                                           c=1.0, add_delta_logp=add_logp_d,\
+                                           remove_fp=remove_fp, remove_outlier=True)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
