@@ -796,7 +796,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=10)
-        parameters = {'nState': [25], 'scale': np.linspace(9.0,14.0,5), \
+        parameters = {'nState': [25], 'scale': np.linspace(6.0,14.0,10), \
                       'cov': np.linspace(1.0,2.0,2) }
 
         ## save_data_path = os.path.expanduser('~')+\

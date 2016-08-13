@@ -798,6 +798,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         print subject_names[test_idx[0]]
         sys.exit()
 
+    #temp
+    normalPtrainDataY = -np.ones(len(normalPtrainData[0]))
+
 
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
@@ -815,11 +818,15 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                                                        0,1) ])
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            
+            normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
+            normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
 
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
                                                                       startIdx=startIdx)
                                                                       
+
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
         X_train_org, Y_train_org, idx_train_org = \
@@ -831,16 +838,18 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         # -------------------------------------------------------------------------------
         # Test data
-        ll_logp, ll_post, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
+        ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
                                                                      startIdx=startIdx)
         ll_classifier_test_X, ll_classifier_test_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+          hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, testDataY, c=1.0, add_delta_logp=add_logp_d)
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
 
+
         ## # temp
-        ## vizLikelihoods(ll_logp, ll_post, testDataY)
-        ## continue
+        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+                        ll_logp_test, ll_post_test, testDataY)
+        continue
 
 
         # -------------------------------------------------------------------------------
@@ -968,6 +977,38 @@ def vizLikelihoods(ll_logp, ll_post, l_y):
             plt.plot(l_logp, 'b-')
         else:
             plt.plot(l_logp, 'r-')
+
+    plt.ylim([0, np.amax(ll_logp) ])
+    plt.show()
+
+def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
+
+    fig = plt.figure(1)
+
+    print np.shape(ll_logp), np.shape(ll_post)
+
+    for i in xrange(len(ll_logp)):
+
+        l_logp  = ll_logp[i]
+        l_state = np.argmax(ll_post[i], axis=1)
+
+        ## plt.plot(l_state, l_logp, 'b-')
+        if l_y[i] < 0:
+            plt.plot(l_logp, 'b-')
+        ## else:
+        ##     plt.plot(l_logp, 'r-')
+
+    for i in xrange(len(ll_logp2)):
+
+        l_logp  = ll_logp2[i]
+        l_state = np.argmax(ll_post2[i], axis=1)
+
+        ## plt.plot(l_state, l_logp, 'b-')
+        if l_y2[i] < 0:
+            plt.plot(l_logp, 'k-')
+        ## else:
+        ##     plt.plot(l_logp, 'm-')
+
 
     plt.ylim([0, np.amax(ll_logp) ])
     plt.show()
