@@ -791,7 +791,7 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=10)
         parameters = {'nState': [25], 'scale': np.linspace(14.0,14.0,1), \
-                      'cov': np.linspace(0.5,2.0,3) }
+                      'cov': np.linspace(0.7,1.5,5) }
 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
