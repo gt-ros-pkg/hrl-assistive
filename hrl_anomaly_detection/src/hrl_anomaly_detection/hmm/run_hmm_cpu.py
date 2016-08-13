@@ -195,45 +195,51 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     for i in xrange(len(testDataX[0])))
             _, ll_idx, ll_logp, ll_post = zip(*r)
 
-            # nSample x nLength
-            ll_classifier_test_X, ll_classifier_test_Y = \
-              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=True)
-            if ll_classifier_test_X == []:
-                print "HMM-induced vector is wrong", param['scale'], param['cov']
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
 
             logp_l = []
             for i in xrange(len(normalTrainData[0])):
-                logp_l.append(ll_classifier_test_X[i][-1][0])
+                logp_l.append(ll_logp[i][-1])
                 
             if np.mean( logp_l ) < 0:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-            
-            
+
+
             # split
             import random
-            train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
-            test_idx  = [x for x in range(len(ll_classifier_test_X)) if not x in train_idx]
-            
-            train_X   = np.array(ll_classifier_test_X)[train_idx]
-            train_Y   = np.array(ll_classifier_test_Y)[train_idx]
-            train_idx = np.array(ll_idx)[train_idx]
-            test_X   = np.array(ll_classifier_test_X)[test_idx]
-            test_Y   = np.array(ll_classifier_test_Y)[test_idx]
-            test_idx = np.array(ll_idx)[test_idx]
+            train_idx = random.sample(range(len(ll_logp)), int( 0.5*len(ll_logp)) )
+            test_idx  = [x for x in range(len(ll_logp)) if not x in train_idx]
 
-            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(train_X, \
-                                                                       train_Y, \
-                                                                       train_idx,\
-                                                                       remove_fp=True)
-            ## X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
-            ##                                             test_Y, \
-            ##                                             remove_fp=False)
+            ll_logp_train = np.array(ll_logp)[train_idx].tolist()
+            ll_post_train = np.array(ll_post)[train_idx].tolist()
+            ll_idx_train  = np.array(ll_idx)[train_idx].tolist()
+            l_label_train = testDataY[train_idx].tolist()
+            ll_logp_test = np.array(ll_logp)[test_idx].tolist()
+            ll_post_test = np.array(ll_post)[test_idx].tolist()
+            l_label_test = testDataY[test_idx].tolist()
+
+            X_train_org, Y_train_org, idx_train_org = \
+              hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
+                                               l_label_train, \
+                                               c=1.0, add_delta_logp=True,\
+                                               remove_fp=True, remove_outlier=True)
+
+            if X_train_org == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+            
+            # nSample x nLength
+            test_X, test_Y = \
+              hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, l_label_test, c=1.0, add_delta_logp=True)
+            if test_X == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
 
             if method.find('svm')>=0:
                 scaler = preprocessing.StandardScaler()
@@ -790,8 +796,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=10)
-        parameters = {'nState': [25], 'scale': np.linspace(14.0,14.0,1), \
-                      'cov': np.linspace(0.7,1.5,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(9.0,14.0,5), \
+                      'cov': np.linspace(1.0,2.0,2) }
 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\

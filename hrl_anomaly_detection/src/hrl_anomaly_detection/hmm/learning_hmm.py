@@ -388,6 +388,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
     It returns [logp, last_post, post].
     '''
+    if type(ll_logp) is not list: ll_logp = list(ll_logp)
+    if type(ll_post) is not list: ll_post = list(ll_post)
 
     X = []
     Y = []
@@ -398,16 +400,16 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
             if add_delta_logp:                    
                 if j == 0:
                     ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() + ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j] + ll_post[i][j] )
                 else:
                     ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
                     ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
                     ## l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
                     ##             ll_post[i][j].tolist() )
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j-1].tolist() + \
-                                ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j-1] + \
+                                ll_post[i][j] )
             else:
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j] )
 
             if l_labels is not None:
                 if l_labels[i] > 0.0: l_Y.append(1)
@@ -454,6 +456,7 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
             
 
     ll_X, ll_Y = getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
+    if ll_X == []: return [],[],[]
     
     X_flat, Y_flat, idx_flat = dm.flattenSample(ll_X, ll_Y, ll_idx, remove_fp=remove_fp)
     return X_flat, Y_flat, idx_flat

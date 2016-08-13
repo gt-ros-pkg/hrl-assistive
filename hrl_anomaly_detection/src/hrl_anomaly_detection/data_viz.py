@@ -113,7 +113,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                            ae_data=False,\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'],\
-                           data_renew=data_dict['renew'])
+                           data_renew=data_dict['renew'], max_time=data_dict['max_time'])
                            
         successData = dd['successData'] * HMM_dict['scale']
         failureData = dd['failureData'] * HMM_dict['scale']
