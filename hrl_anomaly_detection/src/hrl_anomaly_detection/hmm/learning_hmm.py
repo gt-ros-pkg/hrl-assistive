@@ -425,6 +425,7 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
 
 def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=True,\
                                  remove_fp=False, remove_outlier=False):
+    from hrl_anomaly_detection import data_manager as dm
 
     # remove outliers from normal data (upper 5% and lower 5%)
     # Check only last likelihoods
