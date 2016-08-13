@@ -525,7 +525,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                        downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                        handFeatures=data_dict['handFeatures'], \
                        cut_data=data_dict['cut_data'], \
-                       data_renew=data_renew)
+                       data_renew=data_renew, max_time=data_dict['max_time'])
     if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
@@ -534,8 +534,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
-    nTrainOffset = 4
-    nTrainTimes  = 5
+    nTrainOffset = 10
+    nTrainTimes  = 2
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -677,9 +677,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
                 ROC_data[method+'_'+str(j)] = data
 
-    # Incremental evaluation
-    normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
-    abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
     
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
@@ -687,8 +684,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
-                                                           normalData, abnormalData, verbose=debug)
-                                                           for idx in xrange(len(kFold_list[0:1])))
+                                                           np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                                           np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                                           verbose=debug)
+                                                           for idx in xrange(len(kFold_list)))
 
     l_data = r
     for data in l_data:
@@ -771,6 +770,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     nLength   = dd['nLength']
     normalPtrainData = dd['normalPtrainData']
 
+    # Incremental evaluation
+    ## normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
+    ## abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
     normalData   = copy.copy(normalDataX) * HMM_dict['scale']
     abnormalData = copy.copy(abnormalDataX) * HMM_dict['scale']
 
@@ -795,6 +797,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         sys.exit()
     if len(normalTrainData[0]) < nTrainOffset*nTrainTimes:
         print "size of normal partial fitting data for hmm: ", len(normalTrainData[0])
+        print np.shape(normalDataX)
         print subject_names[test_idx[0]]
         sys.exit()
 
@@ -847,9 +850,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
 
         ## # temp
-        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
-                        ll_logp_test, ll_post_test, testDataY)
-        continue
+        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+        ##                 ll_logp_test, ll_post_test, testDataY)
+        ## continue
 
 
         # -------------------------------------------------------------------------------
@@ -1148,7 +1151,7 @@ if __name__ == '__main__':
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                       max_time=param_dict['data_param']['max_time'])
 
-    elif opt.bLikelihoodPlot:
+    elif opt.bLikelihoodPlot and opt.bOnlineEval is not True:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, \
@@ -1178,10 +1181,15 @@ if __name__ == '__main__':
 
     elif opt.bOnlineEval:
         ## subjects        = ['linda', 'jina', 'sai']        
-        ## subjects        = ['zack', 'hkim', 'ari', 'park', 'jina', 'sai']        
+        ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
         param_dict['ROC']['nPoints'] = 10
-        
+
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 13.0,\
+        ##                      'add_logp_d': True}
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 12.0, 'scale': 9.0,\
+                             'add_logp_d': True}
+                             
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1193,7 +1201,17 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-                          param_dict, save_pdf=opt.bSavePdf, \
-                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                          find_param=False, data_gen=opt.bDataGen)
+
+        if opt.bLikelihoodPlot:
+            import hrl_anomaly_detection.data_viz as dv        
+            dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                              decision_boundary_viz=False, \
+                              useTrain=True, useNormalTest=True, useAbnormalTest=False,\
+                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                              verbose=opt.bVerbose)
+        else:          
+            evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
+                              param_dict, save_pdf=opt.bSavePdf, \
+                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                              find_param=False, data_gen=opt.bDataGen)

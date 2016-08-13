@@ -180,9 +180,29 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             param_dict      = data_dict.get('aeParamDict', [])
         else:        
             # Task-oriented hand-crafted features
-            allData         = data_dict['allData']
-            successData     = data_dict['successData'] 
-            failureData     = data_dict['failureData']
+            ## allData         = data_dict['allData']
+            if 'successData' not in data_dict.keys():
+                successDataList = data_dict['successDataList'] 
+                failureDataList = data_dict['failureDataList']
+
+                for i in xrange(len(successDataList)):
+                    if i == 0:
+                        successData = successDataList[i]
+                        failureData = failureDataList[i]
+                    else:
+                        successData = np.vstack([ np.swapaxes(successData,0,1), \
+                                                  np.swapaxes(successDataList[i], 0,1)])
+                        failureData = np.vstack([ np.swapaxes(failureData,0,1), \
+                                                  np.swapaxes(failureDataList[i], 0,1)])
+                        successData = np.swapaxes(successData, 0, 1)
+                        failureData = np.swapaxes(failureData, 0, 1)
+                data_dict['successData'] = successData
+                data_dict['failureData'] = failureData
+                
+            else:
+                successData = data_dict['successData'] 
+                failureData = data_dict['failureData']
+                
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
