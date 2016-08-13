@@ -338,9 +338,9 @@ if __name__ == '__main__':
             else:
                 if opt.bICRA2017:
                     parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                                  'cost': np.logspace(-2,0,5),\
-                                  'gamma': np.linspace(1.0,5.0,5), \
-                                  'w_negative': np.linspace(0.1,2.0,5) }
+                                  'cost': np.logspace(-0.5,0.5,3),\
+                                  'gamma': np.linspace(4.0,10.0,3), \
+                                  'w_negative': np.linspace(0.1,2.0,3) }
                 else:
                     parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
                                   'cost': np.linspace(0.1,6.0,5),\
