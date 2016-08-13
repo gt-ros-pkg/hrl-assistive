@@ -273,6 +273,9 @@ class BaseSelector(object):
     def handle_read_in_environment_model(self, req):
         service_start_time = time.time()
         print 'Reading in environment model!'
+        if req.cloud.data == []:
+            print 'I got an empty cloud!'
+            return False
         success = self.real_time_score_generator.initialize_environment_model(req.cloud)
         print 'Time to complete service call (reading in environment model to openrave): %fs' % (time.time()-service_start_time)
         return success
@@ -301,7 +304,7 @@ class BaseSelector(object):
         target_reference_frame = req.pose_target.header.frame_id
         now = rospy.Time.now()
         self.listener.waitForTransform('/base_footprint', target_reference_frame, now, rospy.Duration(15))
-        (trans, rot) = self.listener.lookupTransform('/base_footprint', target_reference_frame, now)
+        (trans, ori) = self.listener.lookupTransform('/base_footprint', target_reference_frame, now)
 
         # if not target_reference_frame == 'base_footprint':
         #     print 'ERROR!!'
@@ -310,14 +313,14 @@ class BaseSelector(object):
         #     return None
 
         reference_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
-        base_footprint_B_reference = createBMatrix(trans, rot)
+        base_footprint_B_reference = createBMatrix(trans, ori)
         base_footprint_B_goal_pose = base_footprint_B_reference*reference_B_goal_pose
         base_selection_goal = []
         base_selection_goal.append([base_footprint_B_goal_pose, 1, 0])
         base_selection_goal = np.array(base_selection_goal)
         # self.real_time_score_generator.generate_environment_model()
         self.real_time_score_generator.set_arm(arm)
-        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=['base_footprint'])
+        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=['base_link'])
         config, score = self.real_time_score_generator.real_time_scoring()
         self.score = [[[config[0]], [config[1]], [config[2]], [config[3]], [0], [0]], score]
         print 'Time for TOC service to run start to finish: %fs' % (time.time()-service_initial_time)
@@ -512,10 +515,12 @@ class BaseSelector(object):
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(11)-5)*30
-            neigh = KNeighborsClassifier(n_neighbors=1)
-            neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities)
-            heady = neigh.predict(int(model_B_head[1, 3]*1000))[0]*.00
+            heady_possibilities = (np.arange(11)-5)*30
+            heady_neigh = KNeighborsClassifier(n_neighbors=1)
+            heady_neigh.fit(np.reshape(heady_possibilities,[len(heady_possibilities),1]), heady_possibilities)
+            heady = heady_neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
+
+
 
             headx = 0.
             #heady = 0.
@@ -565,7 +570,18 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        self.score = all_scores[heady, 0., 0.]
+        max_num_configs = 2
+
+        head_rest_angle = -5
+        allow_bed_movement = 1
+
+        if not head_rest_angle < -1:
+            head_rest_possibilities = np.arange(-10, 80.1, 10)
+            head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
+            head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
+            head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
+
+        self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
 
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score

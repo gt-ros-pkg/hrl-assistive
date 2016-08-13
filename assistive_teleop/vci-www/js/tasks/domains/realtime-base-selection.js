@@ -33,8 +33,11 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         switch (name){
             case 'GET_EE_GOAL':
                 startFunc = function () {
-                    RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
-                    RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
+                    RFH.taskMenu.tasks.paramLocationTask.setOffset({position:{x:0.05,y:0,z:0},
+                                                                    //rotation: {x:0.70710678, y:0.0, z:-0.70710678, w:0.0}});
+                                                                    rotation: {x:0.0, y:1.0, z:0.0, w:0.0}});
+                    RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({x:0, y:0, z:0, w:1});
+                    //RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({x:0.70710678, y:0, z: -0.70710678, w:0}); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
                     RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -80,23 +83,23 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
             case 'GET_FRAME':
                 return "Choose Hand";
             case 'SCAN_ENVIRONMENT':
-                return 'Scan Area';
+                return 'Scannig Area';
             case 'SERVO_OPEN_LOOP':
-                return 'Move Robot';
+                return 'Moving Robot';
             case 'ADJUST_TORSO':
-                return 'Adjust Torso';
+                return 'Adjusting Torso';
             case 'CLEAR_ENVIRONMENT':
-                return 'Clear Scan';
+                return 'Clearing Scan';
             case 'CLEAR_TORSO_SET':
-                return 'Clear Torso Status';
+                return 'Clearing Torso Status';
             case 'CLEAR_EE_GOAL':
-                return "Clear Object Selection";
+                return "Clearing Object Selection";
             case 'CLEAR_BASE_GOAL':
-                return 'Clear Result';
+                return 'Clearing Result';
             case 'CLEAR_FRAME':
-                return 'Clear Hand Selection';
+                return 'Clearing Hand Selection';
             case 'CALL_BASE_SELECTION':
-                return 'Get Good Position';
+                return 'Getting Good Position';
         };
     }
 

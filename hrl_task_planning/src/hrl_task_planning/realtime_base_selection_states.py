@@ -50,6 +50,7 @@ class CallBaseSelectionState(PDDLSmachState):
         self.ee_frame_param = ee_frame_param
         self.base_goal_param = base_goal_param
         self.base_selection_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
+        self.ee_pose_pub = rospy.Publisher('/rtbs_ee_goal', PoseStamped, latch=True)
 
     @staticmethod
     def _dict_to_pose_stamped(ps_dict):
@@ -71,6 +72,7 @@ class CallBaseSelectionState(PDDLSmachState):
         try:
             ee_goal_dict = rospy.get_param(self.ee_goal_param)
             ee_goal = self._dict_to_pose_stamped(ee_goal_dict)
+            self.ee_pose_pub.publish(ee_goal)
         except (KeyError, rospy.ROSException):
             rospy.logerr("[%s] %s - Error trying to access param: %s", rospy.get_name(), self.__class__.__name__, self.ee_goal_param)
             return 'aborted'
@@ -82,12 +84,14 @@ class CallBaseSelectionState(PDDLSmachState):
         req = RealtimeBaseMoveRequest()
         req.ee_frame = ee_frame
         req.pose_target = ee_goal
+        print "Request:\n", req
         try:
             res = self.base_selection_service.call(req)
         except rospy.ServiceException as se:
             rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
             return 'aborted'
-        goal_data = res.base_goal[0:3]  # X, Y, Theta
+        print "Response:\n", res
+        goal_data = list(res.base_goal[0:7])  # X, Y, Theta
         goal_data.append(res.configuration_goal[0])  # Torso height
         try:
             rospy.set_param(self.base_goal_param, goal_data)
@@ -128,6 +132,7 @@ class AdjustTorsoState(PDDLSmachState):
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
         self.base_goal_param = base_goal_param
+        self.base_goal_arg = kwargs['action_args'][0]
 
     def execute(self, ud):
         self._start_execute()
@@ -137,7 +142,7 @@ class AdjustTorsoState(PDDLSmachState):
             rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
             return 'aborted'
         sjpg = SingleJointPositionGoal()
-        sjpg.position = base_goal[3]
+        sjpg.position = base_goal[-1]  # Should always be the final entry...
         self.torso_client.send_goal(sjpg)
         rate = rospy.Rate(5)
         result_published = False
@@ -148,7 +153,7 @@ class AdjustTorsoState(PDDLSmachState):
                     state_msg = PDDLState()
                     state_msg.domain = self.domain
                     state_msg.problem = self.problem
-                    state_msg.predicates = ['(AT_GOAL - TORSO)']
+                    state_msg.predicates = ['(TORSO_SET %s)' % self.base_goal_arg]
                     self.pddl_pub.publish(state_msg)
                     result_published = True
             elif action_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
@@ -211,10 +216,10 @@ class ScanEnvironmentState(PDDLSmachState):
     def run_sweep(self):
         # Create scan trajectory start + end points
         jtp_start = JointTrajectoryPoint()
-        jtp_start.positions = [1.1, 0.73]
+        jtp_start.positions = [0.9, 0.73]
         jtp_end = JointTrajectoryPoint()
-        jtp_end.positions = [-1.1, 0.73]
-        jtp_end.time_from_start = rospy.Duration(5)
+        jtp_end.positions = [-0.9, 0.73]
+        jtp_end.time_from_start = rospy.Duration(3)
         # Create scan trajectory
         jt = JointTrajectory()
         jt.joint_names = ['head_pan_joint', 'head_tilt_joint']

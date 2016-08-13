@@ -352,7 +352,7 @@ class DataReader_Task(object):
 
 if __name__ == "__main__":
     visualize_only = False
-    model = 'chair'  # options are: 'chair', 'bed', 'autobed', 'wall'
+    model = 'autobed'  # options are: 'chair', 'bed', 'autobed', 'wall'
     optimization = 'cma'  # 'cma' or 'brute'
     rospy.init_node(optimization+'_feeding')
     task = 'shaving' # scratching_knee_left # options are: bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
