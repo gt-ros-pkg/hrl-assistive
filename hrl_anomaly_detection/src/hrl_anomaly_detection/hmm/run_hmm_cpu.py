@@ -116,6 +116,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
                 break
+            ## if ret/float(len(normalTrainData[0])) < -100:
+            print "Mean likelihoods: ", ret/float(len(normalTrainData[0]))
 
             #-----------------------------------------------------------------------------------------
             # Classifier train data
