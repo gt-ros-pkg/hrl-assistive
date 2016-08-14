@@ -140,7 +140,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             _, ll_idx, ll_logp, ll_post = zip(*r)
 
             # remove outliers
-            ll_logp, ll_post, ll_idx, l_labels = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels)
+            ll_logp, ll_post, ll_idx, _ = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx)
 
 
             logp_l = []
