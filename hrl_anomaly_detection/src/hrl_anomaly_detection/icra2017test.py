@@ -725,7 +725,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             only_tpr=False)
+             only_tpr=False, legend=True)
     ## acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
     ##          only_tpr=False)
              
@@ -818,7 +818,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=0.1 )
+            for j in xrange(nTrainOffset):
+                alpha = np.exp(-0.5*float(i*nTrainOffset+j) )
+                ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
                                            np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\

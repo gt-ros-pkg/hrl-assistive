@@ -1299,7 +1299,7 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False):
+             timeList=None, only_tpr=False, legend=False):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
@@ -1443,11 +1443,11 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
-    ## if no_plot is False:
-    ##     if delay_plot:
-    ##         plt.legend(loc='upper right', prop={'size':24})
-    ##     else:
-    ##         plt.legend(loc='lower right', prop={'size':24})
+    if no_plot is False and legend:
+        if delay_plot:
+            plt.legend(loc='upper right', prop={'size':24})
+        else:
+            plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
         ## task = 'feeding'
