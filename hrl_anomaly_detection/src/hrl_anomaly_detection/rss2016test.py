@@ -304,52 +304,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             sys.exit()
             return (-1,-1,-1,-1)
 
-        #-----------------------------------------------------------------------------------------
         # Classifier training data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-            testDataX.append( temp )
+        ll_classifier_train_X, ll_classifier_train_Y =\
+          getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-
-        ll_classifier_train_X, ll_classifier_train_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
-
-        #-----------------------------------------------------------------------------------------
         # Classifier test data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
-            testDataX.append( temp )
-
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
-
-        # nSample x nLength
-        ll_classifier_test_X, ll_classifier_test_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+        ll_classifier_test_X, ll_classifier_test_Y =\
+          getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -415,6 +376,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False)
+    if 'progress_diag' in method_list or 'kmean_diag' in method_list or 'hmmsvm_diag' in method_list:
         
 
     if find_param:

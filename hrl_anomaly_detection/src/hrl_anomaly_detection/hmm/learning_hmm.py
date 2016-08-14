@@ -425,6 +425,7 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     
     return X, Y
 
+
 def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=True,\
                                  remove_fp=False, remove_outlier=False):
     from hrl_anomaly_detection import data_manager as dm
@@ -460,8 +461,32 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     
     X_flat, Y_flat, idx_flat = dm.flattenSample(ll_X, ll_Y, ll_idx, remove_fp=remove_fp)
     return X_flat, Y_flat, idx_flat
-    
 
+
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False):
+
+    testDataX = []
+    testDataY = []
+    for i in xrange(ml.nEmissionDim):
+        temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+        testDataX.append( temp )
+
+    testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                            np.ones(len(abnormalTrainData[0])) ])
+
+    r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                        [ testDataX[j][i] for j in \
+                                                          xrange(ml.nEmissionDim) ], \
+                                                          ml.nEmissionDim, ml.nState,\
+                                                          startIdx=startIdx, \
+                                                          bPosterior=True)
+                                                          for i in xrange(len(testDataX[0])))
+    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+    ll_classifier_train_X, ll_classifier_train_Y = \
+      getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+
+    return ll_classifier_train_X, ll_classifier_train_Y
 
 ####################################################################
 # functions for paralell computation
