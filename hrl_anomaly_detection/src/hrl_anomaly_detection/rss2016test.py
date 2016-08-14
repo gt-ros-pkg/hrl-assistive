@@ -255,7 +255,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     successData = d['successData']
     failureData = d['failureData']
-    param_dict2  = d['param_dict']
+    param_dict2 = d['param_dict']
     if 'timeList' in param_dict2.keys():
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
@@ -270,18 +270,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-        normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
-
-        # scaling
-        if verbose: print "scaling data"
-        normalTrainData   *= HMM_dict['scale']
-        abnormalTrainData *= HMM_dict['scale']
-        normalTestData    *= HMM_dict['scale']
-        abnormalTestData  *= HMM_dict['scale']
+        # scaling with size dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
+        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -289,6 +282,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         cov_mult     = [cov]*(nEmissionDim**2)
         nLength      = len(normalTrainData[0][0]) - startIdx
 
+
+        #-----------------------------------------------------------------------------------------
+        # Full co-variance
+        #-----------------------------------------------------------------------------------------
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
@@ -305,12 +302,39 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             return (-1,-1,-1,-1)
 
         # Classifier training data
-        ll_classifier_train_X, ll_classifier_train_Y =\
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
         # Classifier test data
-        ll_classifier_test_X, ll_classifier_test_Y =\
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+
+        #-----------------------------------------------------------------------------------------
+        # Diagonal co-variance
+        #-----------------------------------------------------------------------------------------
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        if data_dict['handFeatures_noise']:
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+        else:
+            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            sys.exit()
+            return (-1,-1,-1,-1)
+
+        # Classifier training data
+        ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
+          getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+
+        # Classifier test data
+        ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
+          getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -327,6 +351,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['ll_classifier_test_X']   = ll_classifier_test_X
         d['ll_classifier_test_Y']   = ll_classifier_test_Y            
         d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
+        d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            
+        d['ll_classifier_diag_train_idx']= ll_classifier_diag_train_idx
+        d['ll_classifier_diag_test_X']   = ll_classifier_diag_test_X
+        d['ll_classifier_diag_test_Y']   = ll_classifier_diag_test_Y            
+        d['ll_classifier_diag_test_idx'] = ll_classifier_diag_test_idx
         d['nLength']      = nLength
         ut.save_pickle(d, modeling_pkl)
 

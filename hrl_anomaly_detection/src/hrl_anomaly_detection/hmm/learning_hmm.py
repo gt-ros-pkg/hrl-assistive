@@ -486,7 +486,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
     ll_classifier_train_X, ll_classifier_train_Y = \
       getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
-    return ll_classifier_train_X, ll_classifier_train_Y
+    return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
 ####################################################################
 # functions for paralell computation
