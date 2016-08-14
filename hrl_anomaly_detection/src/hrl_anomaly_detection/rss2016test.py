@@ -376,7 +376,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False)
-    if 'progress_diag' in method_list or 'kmean_diag' in method_list or 'hmmsvm_diag' in method_list:
+    ## if 'progress_diag' in method_list or 'kmean_diag' in method_list or 'hmmsvm_diag' in method_list:
+        
         
 
     if find_param:
