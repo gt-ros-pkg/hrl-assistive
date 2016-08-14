@@ -309,7 +309,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.0316, 'cost': 4.0,\
                           'hmmosvm_nu': 0.00316}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
+        ROC_param_dict = {'methods': ['fixed', 'progress'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
@@ -350,13 +350,17 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'bpsvm_w_negative': 1.5,\
                               }
 
-        ROC_param_dict = {'methods': [ 'change','fixed','progress_time_cluster', 'svm' , 'hmmosvm', \
-                                       'hmmsvm_diag', 'hmmsvm_dL', 'progress_state',\
-                                       'hmmsvm_no_dL'],\
+        # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'
+        ROC_param_dict = {'methods': [ 'change','fixed','progress', 'progress_state',\
+                                       'progress_diag', 'kmean'],\
                           'update_list': [  ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.6, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.6, 3.5, nPoints)*-1.0+0.4, \
+                          'fixed_param_range': np.linspace(-1.495, 0.171, nPoints),\
+                          'change_param_range': np.logspace(0.2, 1.5, nPoints)*-1.0,\
+                          'osvm_param_range': np.logspace(-6, 0.0, nPoints),\                          
+                          'progress_diag_param_range':np.logspace(0, 1.6, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-1.236, 0.7, nPoints),\
                           'bpsvm_param_range': np.logspace(-3., 0.4, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-1.85, 0.486, nPoints),\
@@ -364,9 +368,6 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_no_dL_param_range': np.logspace(-1.346, 0.8, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'fixed_param_range': np.linspace(-1.495, 0.171, nPoints),\
-                          'change_param_range': np.logspace(0.2, 1.5, nPoints)*-1.0,\
-                          'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         
     elif dim == 3:
@@ -378,7 +379,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.0063, 'cost':7.5,\
                           'hmmosvm_nu': 0.001}
         
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm','hmmosvm' ],\
+        ROC_param_dict = {'methods': ['fixed', 'progress'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0.0, 0.8, nPoints)*-1.0, \
@@ -398,7 +399,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_diag_gamma': 0.01}
                           
 
-        ROC_param_dict = {'methods': ['fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['fixed', 'progress'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
@@ -432,69 +433,15 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True}
 
-    if AE_param_dict['method']=='pca':      
-        # filtered dim 4
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
-        data_param_dict['downSampleSize'] = 150
-        AE_param_dict['layer_sizes']      = [64,dim]
-        AE_param_dict['nAugment']         = 0
-
-    elif AE_param_dict['method']=='ae' and pre_train:
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
-        data_param_dict['downSampleSize'] = 200
-        AE_param_dict['layer_sizes'] = [64,dim]
-        AE_param_dict['add_option']  = None
-        AE_param_dict['learning_rate'] = 1e-6
-        
-    else:
-        data_param_dict['downSampleSize'] = 200
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
-          str(data_param_dict['downSampleSize'])+'_'+str(dim)
-        AE_param_dict['layer_sizes'] = [64,dim]
-        AE_param_dict['add_option'] = None
-        AE_param_dict['add_noise_option'] = []
-        AE_param_dict['learning_rate'] = 1e-6
-        AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model_'+str(dim)+'.pkl')
-            
-        
-            ## # filtered dim 1
-            ## save_data_path = os.path.expanduser('~')+\
-            ##   '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150_1'
-            ## data_param_dict['downSampleSize'] = 150
-            ## AE_param_dict['layer_sizes'] = [64,8]
-            ## ## add_option = ['audioWristRMS']
-            ## AE_param_dict['add_option'] = ['ftForce_mag','audioWristRMS','targetEEDist', 'targetEEAng']
-            ## AE_param_dict['add_noise_option'] = ['ftForce_mag']
-            
-
-    ## if AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag','targetEEDist','targetEEAng']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 1.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag','targetEEDist']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS', 'ftForce_mag']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['audioWristRMS']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.334, 'cost': 2.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 4.0, 'scale': 1.5}
-    ##     ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.0, 'scale': 1.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['ftForce_mag']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 1.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['add_option'] is ['targetEEDist']:            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 6.0, 'gamma': 0.173, 'cost': 4.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.5, 'scale': 1.0}
-    ## elif AE_param_dict['switch'] and AE_param_dict['method']=='pca':            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
-    ## elif AE_param_dict['switch'] and AE_param_dict['method']=='ae':            
-    ##     SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
-    ##     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 2.0}
+    data_param_dict['downSampleSize'] = 200
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      str(data_param_dict['downSampleSize'])+'_'+str(dim)
+    AE_param_dict['layer_sizes'] = [64,dim]
+    AE_param_dict['add_option'] = None
+    AE_param_dict['add_noise_option'] = []
+    AE_param_dict['learning_rate'] = 1e-6
+    AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model_'+str(dim)+'.pkl')
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict}

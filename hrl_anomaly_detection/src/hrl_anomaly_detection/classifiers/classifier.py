@@ -1056,6 +1056,15 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
         ## nLength      = d['nLength']
 
+        if 'diag' in method:
+            ll_classifier_train_X = ll_classifier_diag_train_X
+            ll_classifier_train_Y = ll_classifier_diag_train_Y
+            ll_classifier_train_idx = ll_classifier_diag_train_idx
+            ll_classifier_test_X = ll_classifier_diag_test_X
+            ll_classifier_test_Y = ll_classifier_diag_test_Y
+            ll_classifier_test_idx = ll_classifier_diag_test_idx
+
+
         if method == 'hmmosvm':
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
