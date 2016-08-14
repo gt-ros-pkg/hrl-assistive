@@ -1099,7 +1099,7 @@ if __name__ == '__main__':
 
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 13.0,\
         ##                      'add_logp_d': True}
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 2.0, 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
                              'add_logp_d': True}
                              
         ## save_data_path = os.path.expanduser('~')+\
