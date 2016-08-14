@@ -145,15 +145,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_logp, ll_post, ll_idx, _ = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx)
 
 
-            logp_l = []
-            for i in xrange(len(ll_logp)):
-                logp_l.append(ll_logp[i][-1])
+            ## logp_l = []
+            ## for i in xrange(len(ll_logp)):
+            ##     logp_l.append(ll_logp[i][-1])
                 
-            if np.mean( logp_l ) < 0:
-                print "Negative likelihoods"
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
+            ## if np.mean( logp_l ) < 0:
+            ##     print "Negative likelihoods"
+            ##     scores.append(-1.0 * 1e+10)
+            ##     ret = 'Failure'
+            ##     break
 
 
             # split
