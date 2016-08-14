@@ -475,9 +475,9 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
 def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):        
     ''' remove outliers from normal data (upper 5% and lower 5%)
     '''
-    if type(ll_logp) is tuple: list(ll_logp)
-    if type(ll_post) is tuple: list(ll_post)
-    if type(ll_idx) is tuple: list(ll_idx)
+    if type(ll_logp) is tuple: ll_logp = list(ll_logp)
+    if type(ll_post) is tuple: ll_post = list(ll_post)
+    if type(ll_idx) is tuple: ll_idx = list(ll_idx)
     
     # Check only last likelihoods
     logp_lst = []
