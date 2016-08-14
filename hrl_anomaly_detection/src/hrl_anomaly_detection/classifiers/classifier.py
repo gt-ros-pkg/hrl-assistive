@@ -159,7 +159,7 @@ class classifier(learning_base):
             self.cssvm_gamma      = cssvm_gamma 
             self.cssvm_cost       = cssvm_cost 
             self.cssvm_w_negative = cssvm_w_negative 
-        elif self.method == 'progress' or self.method == 'progress_state':
+        elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
             self.std_coff  = 1.0
             self.nPosteriors = nPosteriors
@@ -256,7 +256,7 @@ class classifier(learning_base):
             except: return False
             return True
             
-        elif self.method == 'progress':
+        elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             ## ll_logp = X[:,0:1]
             ## ll_post = X[:,1:]
@@ -498,7 +498,7 @@ class classifier(learning_base):
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
             return p_labels
         
-        elif self.method == 'progress':
+        elif self.method == 'progress' or self.method == 'progress_diag':
             if len(np.shape(X))==1: X = [X]
 
             l_err = []
@@ -659,7 +659,7 @@ class classifier(learning_base):
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
             ## joblib.dump(self.dt, fileName)
-        elif self.method.find('progress')>=0:
+        elif self.method.find('progress')>=0 :
             d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
                  'l_statePosterior': self.l_statePosterior,\
                  'll_mu': self.ll_mu, 'll_std': self.ll_std}
@@ -909,7 +909,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
-    elif method == 'progress' or method == 'progress_state' or method == 'fixed' or method == 'kmean':
+    elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
+      or method == 'kmean':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
@@ -1205,7 +1206,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
-        elif method == 'progress' or method == 'progress_state' or method == 'fixed' or method == 'kmean' :
+        elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
+          method == 'fixed' or method == 'kmean' :
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
@@ -1214,7 +1216,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
         else:
-            print "Not available method"
+            print "Not available method", method
             return "Not available method", -1, params
 
         if ret is False:
