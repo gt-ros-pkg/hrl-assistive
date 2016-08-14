@@ -473,6 +473,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.2, 1.2, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(-0.2, 1.2, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-0.907, 0.296, nPoints),\
                           'svm_param_range': np.logspace(-1.5, 0.45, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
@@ -512,6 +513,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
@@ -537,6 +540,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -5.6, nPoints), \
+                          'kmean_param_range':np.linspace(-0.8, -5.6, nPoints), \
                           'fixed_param_range': np.linspace(-1.833, -0.043, nPoints),\
                           'svm_param_range': np.logspace(-2.0, 0.592, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
@@ -555,6 +559,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0.0, 1.5, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(0.0, 1.5, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-2.643, 0.196, nPoints),\
                           'svm_param_range': np.logspace(-2.523, 0.0484, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
