@@ -350,8 +350,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'bpsvm_w_negative': 1.5,\
                               }
 
-        # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'
-        ROC_param_dict = {'methods': [ 'change','fixed','progress', 'progress_state',\
+        # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 'progress_state'
+        ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
                           'update_list': [  ],\
                           'nPoints': nPoints,\
