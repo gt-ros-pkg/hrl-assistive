@@ -472,7 +472,7 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
 
-def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels):        
+def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):        
     ''' remove outliers from normal data (upper 5% and lower 5%)
     '''
     
@@ -496,6 +496,7 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels):
         del ll_logp[i]
         del ll_post[i]
         del ll_idx[i]
+        if l_labels is None: continue
         if type(l_labels) is not list: l_labels = l_labels.tolist()
         del l_labels[i]
 
