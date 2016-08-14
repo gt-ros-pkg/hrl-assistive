@@ -1045,14 +1045,16 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
-        nState       = d['nState']        
-        ll_classifier_train_X   = d['ll_classifier_train_X']
-        ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-        ll_classifier_train_idx = d['ll_classifier_train_idx']
-        ll_classifier_test_X    = d['ll_classifier_test_X']  
-        ll_classifier_test_Y    = d['ll_classifier_test_Y']
-        ll_classifier_test_idx  = d['ll_classifier_test_idx']
-        nLength      = d['nLength']
+        for k, v in d.iteritems():
+            exec '%s = v' % k        
+        ## nState       = d['nState']        
+        ## ll_classifier_train_X   = d['ll_classifier_train_X']
+        ## ll_classifier_train_Y   = d['ll_classifier_train_Y']         
+        ## ll_classifier_train_idx = d['ll_classifier_train_idx']
+        ## ll_classifier_test_X    = d['ll_classifier_test_X']  
+        ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
+        ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
+        ## nLength      = d['nLength']
 
         if method == 'hmmosvm':
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
