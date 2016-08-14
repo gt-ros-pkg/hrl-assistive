@@ -1041,15 +1041,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if modeling_pkl_prefix is not None:
             modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
         else:        
-            if AE_dict['switch'] and AE_dict['add_option'] is not None:
-                tag = ''
-                for ft in AE_dict['add_option']: tag += ft[:2]
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+\
-                                            str(idx)+'.pkl')
-            elif AE_dict['switch'] and AE_dict['add_option'] is None:
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
-            else:
-                modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
         print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)

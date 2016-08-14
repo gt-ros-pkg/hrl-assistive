@@ -219,8 +219,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ROC_dict = param_dict['ROC']
     
     #------------------------------------------
-
-   
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
@@ -242,14 +240,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew)
                            
-        if AE_dict['switch']:
-            # Task-oriented raw features        
-            kFold_list = dm.kFold_data_index2(len(d['aeSuccessData'][0]), len(d['aeFailureData'][0]), \
-                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-        else:
-            # Task-oriented hand-crafted features        
-            kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
-                                              data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        # Task-oriented hand-crafted features        
+        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
     if data_gen: sys.exit()
@@ -263,8 +256,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     successData = d['successData']
     failureData = d['failureData']
     param_dict2  = d['param_dict']
-    aeSuccessData = d.get('aeSuccessData', None)
-    aeFailureData = d.get('aeFailureData', None)
     if 'timeList' in param_dict2.keys():
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
@@ -276,94 +267,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
             
-
-        if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            tag = ''
-            for ft in AE_dict['add_option']:
-                tag += ft[:2]
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
-        elif AE_dict['switch'] and AE_dict['add_option'] is None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
-        else:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
-        if AE_dict['switch']:
-            if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
-
-            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-
-            # From dim x sample x length
-            # To reduced_dim x sample x length
-            d = dm.getAEdataSet(idx, aeSuccessData, aeFailureData, \
-                                successData, failureData, param_dict,\
-                                normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
-                                AE_dict['time_window'], AE_dict['nAugment'], \
-                                AE_proc_data, \
-                                # data param
-                                processed_data_path, \
-                                # AE param
-                                layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
-                                learning_rate_decay=AE_dict['learning_rate_decay'], \
-                                momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
-                                lambda_reg=AE_dict['lambda_reg'], \
-                                max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
-                                cuda=False, \
-                                filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
-                                verbose=False)
-
-            if AE_dict['filter']:
-                # NOTE: pooling dimension should vary on each auto encoder.
-                # Filtering using variances
-                normalTrainData   = d['normTrainDataFiltered']
-                abnormalTrainData = d['abnormTrainDataFiltered']
-                normalTestData    = d['normTestDataFiltered']
-                abnormalTestData  = d['abnormTestDataFiltered']
-            else:
-                normalTrainData   = d['normTrainData']
-                abnormalTrainData = d['abnormTrainData']
-                normalTestData    = d['normTestData']
-                abnormalTestData  = d['abnormTestData']
-        else:
-            # dim x sample x length
-            normalTrainData   = successData[:, normalTrainIdx, :] 
-            abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-            normalTestData    = successData[:, normalTestIdx, :] 
-            abnormalTestData  = failureData[:, abnormalTestIdx, :] 
-
-
-        if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            print "add hand-crafted features.."
-            newHandSuccTrData = handSuccTrData = d['handNormTrainData']
-            newHandFailTrData = handFailTrData = d['handAbnormTrainData']
-            handSuccTeData = d['handNormTestData']
-            handFailTeData = d['handAbnormTestData']
-
-            ## for i in xrange(AE_dict['nAugment']):
-            ##     newHandSuccTrData = stackSample(newHandSuccTrData, handSuccTrData)
-            ##     newHandFailTrData = stackSample(newHandFailTrData, handFailTrData)
-
-            normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
-                                             AE_dict['add_option'], d['handFeatureNames'], \
-                                             add_noise_features=AE_dict['add_noise_option'] )
-            abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
-                                             AE_dict['add_option'], d['handFeatureNames'])
-            normalTestData   = combineData( normalTestData, handSuccTeData,\
-                                            AE_dict['add_option'], d['handFeatureNames'])
-            abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
-                                             AE_dict['add_option'], d['handFeatureNames'])
-
-            ## # reduce dimension by pooling
-            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-            ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-            ##                                                          pooling_param_dict)
-            ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-            ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-            ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
-
-        ## # add noise
-        ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
+        # dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] 
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        normalTestData    = successData[:, normalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
         # scaling
         if verbose: print "scaling data"
@@ -460,15 +371,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     #-----------------------------------------------------------------------------------------
-    if AE_dict['switch'] and AE_dict['add_option'] is not None:
-        tag = ''
-        for ft in AE_dict['add_option']:
-            tag += ft[:2]
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw_'+tag+'.pkl')
-    elif AE_dict['switch'] and AE_dict['add_option'] is None:
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_raw.pkl')
-    else:
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
 
         
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
@@ -490,7 +393,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        ## nFiles = data_dict['nNormalFold']*data_dict['nAbnormalFold']
         osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False)
