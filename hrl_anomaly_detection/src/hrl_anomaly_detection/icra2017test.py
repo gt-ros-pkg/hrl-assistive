@@ -534,8 +534,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
-    nTrainOffset = 10
-    nTrainTimes  = 2
+    nTrainOffset = 20
+    nTrainTimes  = 1
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -629,9 +629,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             #-----------------------------------------------------------------------------------------
             # Classifier partial train/test data
             #-----------------------------------------------------------------------------------------
-            l = range(len(normalTestData[0]))
+            l = range(len(normalTrainData[0]))
             random.shuffle(l)
-            normalPtrainData = normalTestData[:,l[:nPtrainData],:]
+            normalPtrainData = normalTrainData[:,l[:nPtrainData],:]
 
             #-----------------------------------------------------------------------------------------
             [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = ml.get_hmm_object()
@@ -684,8 +684,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
-                                                           np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                                           np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                                           np.array([d['successDataList'][i] for i in \
+                                                                     kFold_list[idx][1]])[0],\
+                                                           np.array([d['failureDataList'][i] for i in \
+                                                                     kFold_list[idx][1]])[0],\
                                                            verbose=debug)
                                                            for idx in xrange(len(kFold_list)))
 
@@ -778,9 +780,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     # random split into two groups
     normalDataIdx   = range(len(normalData[0]))
-    abnormalDataIdx = range(len(normalData[0]))
+    ## abnormalDataIdx = range(len(abnormalData[0]))
     random.shuffle(normalDataIdx)
-    random.shuffle(abnormalDataIdx)
+    ## random.shuffle(abnormalDataIdx)
 
     normalTrainData = normalData[:,:len(normalDataIdx)/2,:]
     normalTestData  = normalData[:,len(normalDataIdx)/2:,:]
@@ -1141,15 +1143,18 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
         
-        dm.getDataSet(subjects, opt.task, raw_data_path, save_data_path,
-                      param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
-                      downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
-                      success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=False,\
-                      cut_data=param_dict['data_param']['cut_data'],\
-                      save_pdf=opt.bSavePdf, solid_color=True,\
-                      handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
-                      max_time=param_dict['data_param']['max_time'])
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
+                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
+                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
+                       success_viz=success_viz, failure_viz=failure_viz,\
+                       ae_data=False,\
+                       cut_data=param_dict['data_param']['cut_data'],\
+                       save_pdf=opt.bSavePdf, solid_color=True,\
+                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
+                       max_time=param_dict['data_param']['max_time'])
 
     elif opt.bLikelihoodPlot and opt.bOnlineEval is not True:
         import hrl_anomaly_detection.data_viz as dv        

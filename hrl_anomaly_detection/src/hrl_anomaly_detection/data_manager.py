@@ -350,7 +350,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
                 time_sort=False, max_time=None):
     '''
-    If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
+    Get data per subject
     '''
 
     if os.path.isdir(processed_data_path) is False:
@@ -447,32 +447,35 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     AddFeature_names    = feature_names
 
     # -------------------- Display ---------------------
-    if success_viz or failure_viz:
-        print "Need to combine data"
-        sys.exit()
     
     fig = None
     if success_viz:
 
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+
         fig = plt.figure()
-        n,m,k = np.shape(successData)
-        ## if nPlot is None:
-        ##     if n%2==0: nPlot = n
-        ##     else: nPlot = n+1
-        nPlot = n
 
-        for i in xrange(n):
-            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-            ax = fig.add_subplot(n*100+10+i)
-            if solid_color: ax.plot(successData[i].T, c='b')
-            else: ax.plot(successData[i].T)
+        for successData in successDataList:
+            n,m,k = np.shape(successData)
+            ## if nPlot is None:
+            ##     if n%2==0: nPlot = n
+            ##     else: nPlot = n+1
+            nPlot = n
+            color = colors.next()
 
-            print AddFeature_names[i]
-            if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
-            elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
-            elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
-            else: ax.set_ylabel(AddFeature_names[i])
-                ## ax.set_title( AddFeature_names[i] )
+            for i in xrange(n):
+                ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+                ax = fig.add_subplot(n*100+10+i)
+                if solid_color: ax.plot(successData[i].T, c=color)
+                else: ax.plot(successData[i].T)
+
+                if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
+                elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
+                elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
+                else: ax.set_ylabel(AddFeature_names[i])
+                    ## ax.set_title( AddFeature_names[i] )
 
     if failure_viz:
         if fig is None: fig = plt.figure()
