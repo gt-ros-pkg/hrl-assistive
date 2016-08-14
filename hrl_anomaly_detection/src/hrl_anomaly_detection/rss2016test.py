@@ -1933,8 +1933,6 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
         ## rects2 = ax2.boxplot(delay_data, positions=ind+width*1.5+0.05, widths=width)                         
         rects2 = ax2.errorbar(ind+width*1.5+0.05, delay_mean_l, delay_std_l, linestyle='None', marker='o',\
                               )
-        print rects2[0]
-        
         ax2.set_ylabel("Detection Time [sec]", fontsize=22)
         ## plt.legend( (rects1[0], rects1[0]), ('Max Accuracy', 'Detection Delay') )
         plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
