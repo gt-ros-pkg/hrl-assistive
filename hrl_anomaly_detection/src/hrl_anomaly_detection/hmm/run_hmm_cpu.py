@@ -139,9 +139,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     for i in xrange(len(testDataX[0])))
             _, ll_idx, ll_logp, ll_post = zip(*r)
 
+            # remove outliers
+            ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels)
+
 
             logp_l = []
-            for i in xrange(len(normalTrainData[0])):
+            for i in xrange(len(ll_logp)):
                 logp_l.append(ll_logp[i][-1])
                 
             if np.mean( logp_l ) < 0:

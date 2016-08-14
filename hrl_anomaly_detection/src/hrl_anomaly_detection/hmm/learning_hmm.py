@@ -430,30 +430,8 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
                                  remove_fp=False, remove_outlier=False):
     from hrl_anomaly_detection import data_manager as dm
 
-    # remove outliers from normal data (upper 5% and lower 5%)
-    # Check only last likelihoods
     if len(ll_logp)>2 and remove_outlier:
-        logp_lst = []
-        idx_lst  = []
-        for i in xrange(len(ll_logp)):
-            if l_labels is None or l_labels[i] < 0:
-                logp_lst.append(ll_logp[i][-1])
-                idx_lst.append(i)
-
-        logp_lst, idx_lst = zip(*sorted(zip(logp_lst, idx_lst)))
-        nOutlier = int(0.05*len(ll_logp))
-        if nOutlier < 1: nOutlier = 1
-
-        upper_lst = idx_lst[:nOutlier]
-        lower_lst = idx_lst[-nOutlier:]
-        indices = upper_lst + lower_lst
-        indices = sorted(list(indices), reverse=True)
-        for i in indices:
-            del ll_logp[i]
-            del ll_post[i]
-            del ll_idx[i]
-            if type(l_labels) is not list: l_labels = l_labels.tolist()
-            del l_labels[i]
+        ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels)
             
 
     ll_X, ll_Y = getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
@@ -493,6 +471,35 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
+
+def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels):        
+    ''' remove outliers from normal data (upper 5% and lower 5%)
+    '''
+    
+    # Check only last likelihoods
+    logp_lst = []
+    idx_lst  = []
+    for i in xrange(len(ll_logp)):
+        if l_labels is None or l_labels[i] < 0:
+            logp_lst.append(ll_logp[i][-1])
+            idx_lst.append(i)
+
+    logp_lst, idx_lst = zip(*sorted(zip(logp_lst, idx_lst)))
+    nOutlier = int(0.05*len(ll_logp))
+    if nOutlier < 1: nOutlier = 1
+
+    upper_lst = idx_lst[:nOutlier]
+    lower_lst = idx_lst[-nOutlier:]
+    indices = upper_lst + lower_lst
+    indices = sorted(list(indices), reverse=True)
+    for i in indices:
+        del ll_logp[i]
+        del ll_post[i]
+        del ll_idx[i]
+        if type(l_labels) is not list: l_labels = l_labels.tolist()
+        del l_labels[i]
+
+    return ll_logp, ll_post, ll_idx, l_labels
 
 ####################################################################
 # functions for paralell computation
