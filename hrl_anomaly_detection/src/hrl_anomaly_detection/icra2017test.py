@@ -534,8 +534,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
-    nTrainOffset = 20
-    nTrainTimes  = 1
+    nTrainOffset = 5
+    nTrainTimes  = 4
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
