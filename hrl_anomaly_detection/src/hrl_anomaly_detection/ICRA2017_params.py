@@ -76,7 +76,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -5., nPoints), \
@@ -97,7 +97,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -8., nPoints), \
@@ -174,7 +174,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           }
                     #, 'bpsvm'      , 'osvm'
                           ## 'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'change', 'svm' ],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'change', 'svm' ],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0, 3.0, nPoints),\
@@ -205,7 +205,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 0.2
                           }
                           
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
@@ -232,7 +232,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'svm','fixed', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.1,\

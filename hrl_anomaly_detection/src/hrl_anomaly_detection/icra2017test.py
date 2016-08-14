@@ -773,8 +773,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             dtc.set_params( **SVM_dict )
 
             if verbose: print "Update classifier"
-            if method == 'progress_time_cluster' or method == 'progress' or method == 'kmean':
-                if method == 'progress_time_cluster':
+            if method == 'progress' or method == 'progress' or method == 'kmean':
+                if method == 'progress':
                     thresholds = ROC_dict['progress_param_range']
                 else:
                     thresholds = ROC_dict[method+'_param_range']
@@ -1072,7 +1072,7 @@ if __name__ == '__main__':
                           verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
@@ -1093,7 +1093,7 @@ if __name__ == '__main__':
     elif opt.bOnlineEval:
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
-        param_dict['ROC']['methods'] = ['progress_time_cluster']
+        param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['methods'] = ['kmean']
         param_dict['ROC']['nPoints'] = 16
 

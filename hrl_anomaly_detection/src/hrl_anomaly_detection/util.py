@@ -1368,7 +1368,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
-        elif method == 'progress_time_cluster': label='HMM-D'
+        elif method == 'progress': label='HMM-D'
         elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
         elif method == 'fixed': label='HMM-F'
         elif method == 'change': label='HMM-C'
@@ -1387,9 +1387,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ax1 = fig.add_subplot(111)
 
             if delay_plot:
-                if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                if method not in ['fixed', 'progress', 'svm']: continue
                 if method == 'fixed': color = 'y'
-                if method == 'progress_time_cluster': color = 'g'
+                if method == 'progress': color = 'g'
                 if method == 'svm': color = 'b'
                 plt.plot(acc_l, delay_mean_l, '-'+color, label=label, linewidth=2.0)
                 ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)

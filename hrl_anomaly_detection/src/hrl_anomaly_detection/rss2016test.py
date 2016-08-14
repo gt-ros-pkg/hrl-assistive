@@ -224,7 +224,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         d = ut.load_pickle(crossVal_pkl)
         kFold_list  = d['kFoldList']
     else:
@@ -245,7 +245,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-    if data_gen: sys.exit()
+        if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # parameters
@@ -1644,7 +1644,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
     # -----------------------------------------------------------------------------
     print "Run classifier"
     methods = ['svm']
-    methods = ['progress_time_cluster']
+    methods = ['progress']
 
     from matplotlib import rc
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
@@ -1681,13 +1681,8 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                     weights = ROC_dict['cssvm_param_range']
                     dtc.set_params( class_weight=weights[j] )
                     ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
-                elif method == 'progress_time_cluster':
-                    weights = ROC_dict['progress_param_range']
-                    dtc.set_params( ths_mult=weights[j] )
-                    if j==startPoint:
-                        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
-                elif method == 'fixed':
-                    weights = ROC_dict['fixed_param_range']
+                elif method == 'progress' or method == 'fixed':
+                    weights = ROC_dict[method+'_param_range']
                     dtc.set_params( ths_mult=weights[j] )
                     if j==startPoint:
                         ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
@@ -1764,7 +1759,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['svm', 'progress_time_cluster', 'fixed']
+    method_list = ['svm', 'progress', 'fixed']
     ref_method = 'svm'
 
     delay_dict = {}
@@ -2109,7 +2104,7 @@ if __name__ == '__main__':
     elif opt.bDecisionBoundary:
         success_viz = True
         failure_viz = False
-        methods     = ['svm', 'progress_time_cluster']
+        methods     = ['svm', 'progress']
 
         plotDecisionBoundaries(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                methods,\
@@ -2140,16 +2135,16 @@ if __name__ == '__main__':
                           verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress_time_cluster'] #, 'change']
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         if opt.bPlotProgressVSHMMOSVM:
-            param_dict['ROC']['methods'] = ['hmmosvm', 'progress_time_cluster'] 
+            param_dict['ROC']['methods'] = ['hmmosvm', 'progress'] 
             param_dict['ROC']['update_list'] = []
             param_dict['HMM']['renew'] = False
             param_dict['SVM']['renew'] = False
         if opt.bEvaluationDelay:
-            param_dict['ROC']['methods'] = ['svm', 'progress_time_cluster', 'fixed', 'osvm'] 
-            param_dict['ROC']['update_list'] = ['svm', 'progress_time_cluster', 'fixed', 'osvm']
+            param_dict['ROC']['methods']     = [ 'progress', 'fixed', 'osvm'] 
+            param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'osvm']
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \

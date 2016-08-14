@@ -190,7 +190,7 @@ class anomaly_detector:
             self.w_max = self.param_dict['ROC'][self.classifier_method+'_param_range'][-1]
             self.w_min = self.param_dict['ROC'][self.classifier_method+'_param_range'][0]
             self.exp_sensitivity = True
-        elif self.classifier_method == 'progress_time_cluster':                    
+        elif self.classifier_method == 'progress':                    
             self.w_positive = rospy.get_param('progress_ths_mult')
             self.w_max = self.param_dict['ROC']['progress_param_range'][-1]
             self.w_min = self.param_dict['ROC']['progress_param_range'][0]
@@ -213,7 +213,7 @@ class anomaly_detector:
             self.w_positive = self.w_max
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                 rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
-            elif self.classifier_method == 'progress_time_cluster':                    
+            elif self.classifier_method == 'progress':                    
                 rospy.set_param('progress_ths_mult', float(self.w_positive))                
             elif self.classifier_method == 'mbkmean':                    
                 rospy.set_param('mbkmean_ths_mult', float(self.w_positive))                
@@ -221,7 +221,7 @@ class anomaly_detector:
             self.w_positive = self.w_min
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                 rospy.set_param(self.classifier_method+'_w_positive', float(self.w_positive))
-            elif self.classifier_method == 'progress_time_cluster':                    
+            elif self.classifier_method == 'progress':                    
                 rospy.set_param('progress_ths_mult', float(self.w_positive))
             elif self.classifier_method == 'mbkmean':                    
                 rospy.set_param('mbkmean_ths_mult', float(self.w_positive))                
@@ -465,7 +465,7 @@ class anomaly_detector:
         if 'sgd' in self.classifier_method or 'svm' in self.classifier_method:
             self.classifier.set_params( class_weight=self.w_positive )
             self.classifier.set_params( sgd_n_iter=self.sgd_n_iter )
-        elif self.classifier_method == 'progress_time_cluster' or \
+        elif self.classifier_method == 'progress' or \
           self.classifier_method == 'mbkmean' :
             ths_mult = self.w_positive
             self.classifier.set_params( ths_mult=ths_mult )
@@ -1123,7 +1123,7 @@ class anomaly_detector:
 
             if 'svm' in self.classifier_method or 'sgd' in self.classifier_method:
                 X = self.scaler.transform([ll_classifier_test_X])
-            elif self.classifier_method == 'progress_time_cluster' or \
+            elif self.classifier_method == 'progress' or \
               self.classifier_method == 'fixed':
                 X = ll_classifier_test_X
             else:

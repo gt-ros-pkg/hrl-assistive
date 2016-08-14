@@ -782,7 +782,7 @@ if __name__ == '__main__':
 ##     for ii in xrange(len(ll_classifier_test_X)):
 ##         if 'svm' in method:
 ##             X = scaler.transform(ll_classifier_test_X[ii])                                
-##         elif method == 'progress_time_cluster' or method == 'fixed':
+##         elif method == 'progress' or method == 'fixed':
 ##             X = ll_classifier_test_X[ii]
 ##         X_test.append(X)
 
@@ -845,7 +845,7 @@ if __name__ == '__main__':
 ##     elif method == 'cssvm':
 ##         weights = ROC_dict['cssvm_param_range']
 ##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'progress_time_cluster':
+##     elif method == 'progress':
 ##         thresholds = ROC_dict['progress_param_range']
 ##         dtc.set_params( ths_mult = thresholds[j] )
 ##     elif method == 'fixed':
