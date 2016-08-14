@@ -819,8 +819,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         if i > 0:
             print "Run partial fitting with online HMM : ", i
             for j in xrange(nTrainOffset):
-                alpha = np.exp(-0.5*float(i*nTrainOffset+j) )
-                ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
+                alpha = np.exp(-0.5*float((i-1)*nTrainOffset+j) )
+                ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:i*nTrainOffset+j+1], learningRate=alpha )
+            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
+            
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
                                            np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
