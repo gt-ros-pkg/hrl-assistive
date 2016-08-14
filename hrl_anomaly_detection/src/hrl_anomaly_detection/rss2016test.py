@@ -303,11 +303,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance
@@ -329,11 +329,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         # Classifier training data
         ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
-          getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
         # Classifier test data
         ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
-          getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
 
         #-----------------------------------------------------------------------------------------
