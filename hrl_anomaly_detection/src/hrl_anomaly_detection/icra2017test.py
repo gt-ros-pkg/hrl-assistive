@@ -105,7 +105,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -128,7 +128,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-    if data_gen: sys.exit()
+        if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # parameters
@@ -154,17 +154,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-        normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
-
-        # scaling
-        if verbose: print "scaling data"
-        normalTrainData   *= HMM_dict['scale']
-        abnormalTrainData *= HMM_dict['scale']
-        normalTestData    *= HMM_dict['scale']
-        abnormalTestData  *= HMM_dict['scale']
+        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
+        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -187,52 +180,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             sys.exit()
             return (-1,-1,-1,-1)
 
-        #-----------------------------------------------------------------------------------------
         # Classifier training data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-            testDataX.append( temp )
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-
-        ll_classifier_train_X, ll_classifier_train_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
-
-        #-----------------------------------------------------------------------------------------
         # Classifier test data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
-            testDataX.append( temp )
-
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
-
-        # nSample x nLength
-        ll_classifier_test_X, ll_classifier_test_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -282,7 +236,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
     else:
         '''
@@ -295,7 +249,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew)
+                           data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
@@ -327,13 +281,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         else: timeList = None
         
         # dim x sample x length
-        normalTrainData   = successData 
-        abnormalTrainData = failureData
-
-        # scaling
-        if verbose: print "scaling data"
-        normalTrainData   *= HMM_dict['scale']
-        abnormalTrainData *= HMM_dict['scale']
+        normalTrainData   = successData * HMM_dict['scale']
+        abnormalTrainData = failureData * HMM_dict['scale']
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -359,25 +308,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         #-----------------------------------------------------------------------------------------
         # Classifier training data
         #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-            testDataX.append( temp )
-
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
-
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-
-        ll_classifier_train_X, ll_classifier_train_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
@@ -404,17 +336,9 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
             elif f.find("failure")>=0:
                 testDataY.append(1)
 
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
-
-        # nSample x nLength
-        ll_classifier_test_X, ll_classifier_test_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+        # Classifier test data
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -461,7 +385,6 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                                                                  SVM_dict, HMM_dict, \
                                                                  startIdx=startIdx, nState=nState,)\
                                                                  for method in method_list )
-                                                                  
     l_data = r
     print "finished to run run_classifiers"
 
@@ -569,18 +492,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
             
 
-            normalTrainData = np.swapaxes(normalTrainData, 0, 1)
-            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1)
-            normalTestData = np.swapaxes(normalTestData, 0, 1)
-            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1)
+            normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
+            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
+            normalTestData = np.swapaxes(normalTestData, 0, 1) * HMM_dict['scale']
+            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) * HMM_dict['scale']
             handFeatureParams = d['param_dict']
-
-            # scaling
-            if verbose: print "scaling data"
-            normalTrainData   *= HMM_dict['scale']
-            abnormalTrainData *= HMM_dict['scale']
-            normalTestData    *= HMM_dict['scale']
-            abnormalTestData  *= HMM_dict['scale']
 
             # training hmm
             if verbose: print "start to fit hmm"
@@ -606,25 +522,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             #-----------------------------------------------------------------------------------------
             # Classifier training data
             #-----------------------------------------------------------------------------------------
-            testDataX = []
-            testDataY = []
-            for i in xrange(nEmissionDim):
-                temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-                testDataX.append( temp )
-
-            testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                    np.ones(len(abnormalTrainData[0])) ])
-
-            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                    [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                    ml.nEmissionDim, ml.nState,\
-                                                                    startIdx=startIdx, \
-                                                                    bPosterior=True)
-                                                                    for i in xrange(len(testDataX[0])))
-            _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-
-            ll_classifier_train_X, ll_classifier_train_Y = \
-              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
 
             #-----------------------------------------------------------------------------------------
             # Classifier partial train/test data
@@ -1195,7 +1094,8 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress_time_cluster']
-        param_dict['ROC']['nPoints'] = 10
+        param_dict['ROC']['methods'] = ['kmean']
+        param_dict['ROC']['nPoints'] = 16
 
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 13.0,\
         ##                      'add_logp_d': True}

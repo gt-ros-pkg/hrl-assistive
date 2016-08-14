@@ -474,19 +474,25 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
     testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                             np.ones(len(abnormalTrainData[0])) ])
 
+    return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, add_logp_d)
+
+
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False):
+    
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                        [ testDataX[j][i] for j in \
+                                                        [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
                                                           ml.nEmissionDim, ml.nState,\
                                                           startIdx=startIdx, \
                                                           bPosterior=True)
-                                                          for i in xrange(len(testDataX[0])))
+                                                          for i in xrange(len(dataX[0])))
     _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
     ll_classifier_train_X, ll_classifier_train_Y = \
-      getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+      getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
+
 
 ####################################################################
 # functions for paralell computation
