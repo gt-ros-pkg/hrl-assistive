@@ -85,67 +85,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-            if AE_dict['switch']:
-                if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
-
-                AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-                d = ut.load_pickle(AE_proc_data)
-                
-                if AE_dict['filter']:
-                    # NOTE: pooling dimension should vary on each auto encoder.
-                    # Filtering using variances
-                    normalTrainData   = d['normTrainDataFiltered']
-                    abnormalTrainData = d['abnormTrainDataFiltered']
-                    normalTestData    = d['normTestDataFiltered']
-                    abnormalTestData  = d['abnormTestDataFiltered']
-                    ## import data_viz as dv
-                    ## dv.viz(normalTrainData)
-                    ## continue                   
-                else:
-                    normalTrainData   = d['normTrainData']
-                    abnormalTrainData = d['abnormTrainData']
-                    normalTestData    = d['normTestData']
-                    abnormalTestData  = d['abnormTestData']
-                
-            else:
-                # dim x sample x length
-                normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] 
-                abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] 
-                normalTestData    = cv_dict['successData'][:, normalTestIdx, :] 
-                abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] 
-
-
-            if AE_dict['add_option'] is not None:
-                print "add feature!!"
-                newHandSuccTrData = handSuccTrData = d['handNormTrainData']
-                newHandFailTrData = handFailTrData = d['handAbnormTrainData']
-                handSuccTeData = d['handNormTestData']
-                handFailTeData = d['handAbnormTestData']
-
-                print d['handFeatureNames']
-                ## sys.exit()
-                normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'], \
-                                                 add_noise_features=AE_dict['add_noise_option'])
-                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-                normalTestData    = combineData( normalTestData, handSuccTeData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-                abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-
-                
-                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
-                ## normalTrainData, abnormalTrainData,pooling_param_dict \
-                ##   = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
-                ## normalTestData, abnormalTestData, _ \
-                ##   = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
-                
-                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-                ##                                                          pooling_param_dict)
-                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)                
+          # dim x sample x length
+            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] 
+            abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] 
+            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] 
+            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] 
 
             # scaling
             if verbose: print "scaling data ", idx, " / ", len(kFold_list)
@@ -224,7 +168,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
               hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
                                                l_label_train, \
                                                c=1.0, add_delta_logp=True,\
-                                               remove_fp=True, remove_outlier=True)
+                                               remove_fp=False, remove_outlier=True)
 
             if X_train_org == []:
                 print "HMM-induced vector is wrong", param['scale'], param['cov']
