@@ -206,7 +206,7 @@ class learning_hmm(learning_base):
             return ret
 
 
-    def partial_fit(self, xData, learningRate=0.2):
+    def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
         ''' Online update of HMM using online Baum-Welch algorithm
         '''
         
@@ -220,9 +220,10 @@ class learning_hmm(learning_base):
 
         for i in xrange(len(X_train)):            
             final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-            ret = self.ml.baumWelch(final_seq, nrSteps=1, learningRate=learningRate)
-            print 'Baum Welch return:', ret
-            if np.isnan(ret): return 'Failure'
+            ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+            if np.isnan(ret): break #return 'Failure'
+        print 'Baum Welch return:', ret
+                
         return ret
 
         
