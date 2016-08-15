@@ -311,21 +311,46 @@ class classifier(learning_base):
             
             self.ll_logp = np.array(ll_logp)
             
-            ## # mean and variance of likelihoods
-            ## l = []
-            ## for i in xrange(self.nPosteriors):
-            ##     l.append([])
-
-            ## for i, idx in enumerate(idx_list):
-            ##     l[idx].append(likelihood_mat[0][i]) 
-
-            ## self.ll_mu = []
-            ## self.ll_std = []
-            ## for i in xrange(self.nState):
-            ##     self.ll_mu.append( np.mean(l[i]) )
-            ##     self.ll_std.append( np.std(l[i]) )
-            
             return True
+
+        elif self.method == 'progress_redu':
+            '''
+            Reduced-progress-vector based classifier
+            '''
+            # extract only negatives
+            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
+            direc_delta = np.zeros(self.nPosteriors)
+
+            new_X = []
+            for i in xrange(len(ll_logp)):
+
+                max_states  = argmax(ll_post[i], axis=1)
+                for j, state in enumerate(max_states):
+                    direc_delta *= 0.0
+                    direc_delta[state] = 1.0
+                    
+                    selfInfo = entropy(direc_delta+1e-6, ll_post[i][j]+1e-6)
+
+                    new_X.append([ll_logp[i,j], float(state), selfInfo])
+
+            # run kmean? osvm?
+            self.scaler = preprocessing.StandardScaler()
+            X_scaled = self.scaler.fit_transform(new_X)
+            
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
+            svm_type    = 2
+            kernel_type = 2 
+
+            commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)+' -d '+str(self.degree)\
+              +' -w1 '+str(self.class_weight)\
+              +' -r '+str(self.coef0)
+            commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
+              +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
+
+
+            
         
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
