@@ -1,4 +1,4 @@
-RFH.ParamLocation = function(options) {
+RFH.GetClickedPose = function(options) {
     'use strict';
     var self = this;
     var ros = options.ros;
@@ -37,35 +37,35 @@ RFH.ParamLocation = function(options) {
         return !cb.once;
     };
 
-    self.poseCB = function(poseMsg) {
-        self.$image.removeClass('cursor-wait');
+    var poseCB = function(poseMsg) {
+        $image.removeClass('cursor-wait');
         for (var i=0; i < resultCBList.length; i +=1) {
             resultCBList[i].fn(poseMsg);
         }
         resultCBList = resultCBList.filter(removeOnceCalled);
     };
 
-    clickCB = function(event, ui) {
+    var clickCB = function(event, ui) {
         var pt = RFH.positionInElement(event);
         var px = (pt[0]/event.target.clientWidth);
         var py = (pt[1]/event.target.clientHeight);
         try {
-            self.pixel23d.callRelativeScale(px, py, self.poseCB);
-            self.$image.addClass('cursor-wait');
+            pixel23d.callRelativeScale(px, py, poseCB);
+            $image.addClass('cursor-wait');
         } catch(err) {
             log(err);
         }
     };
 
     self.start = function() {
-        self.$edges.addClass('visible').show();
-        self.$image.addClass('cursor-select');
-        self.$image.on('click.id-location', clickCB);
+        $edges.addClass('visible').show();
+        $image.addClass('cursor-select');
+        $image.on('click.id-location', clickCB);
     };
 
     self.stop = function() {
-        self.$edges.removeClass('visible').hide();
-        self.$image.removeClass('cursor-select');
-        self.$image.off('click.id-location');
+        $edges.removeClass('visible').hide();
+        $image.removeClass('cursor-select');
+        $image.off('click.id-location');
     };
 };
