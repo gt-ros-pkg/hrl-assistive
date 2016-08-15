@@ -2095,7 +2095,7 @@ if __name__ == '__main__':
                           verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] #, 'change']
+        ## if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         if opt.bPlotProgressVSHMMOSVM:
             param_dict['ROC']['methods'] = ['hmmosvm', 'progress'] 

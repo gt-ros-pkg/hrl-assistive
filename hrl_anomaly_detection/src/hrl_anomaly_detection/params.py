@@ -49,6 +49,14 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
         print "Selected task name is not available."
         sys.exit()
 
+    if dim == 4:
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_state', 'progress_diag', \
+                                         'osvm', 'hmmosvm', 'kmean']
+    else:
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean']
+
+
+
     return raw_data_path, save_data_path, param_dict
     
 
@@ -360,8 +368,8 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'bpsvm_w_negative': 1.5,\
                               }
 
-        # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 'progress_state'
-        ROC_param_dict = {'methods': [ 'change','fixed','progress',\
+        # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 
+        ROC_param_dict = {'methods': [ 'change','fixed','progress', 'progress_state', \
                                        'progress_diag', 'kmean', 'osvm', 'hmmosvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
@@ -519,7 +527,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## ROC_param_dict = {'methods': ['fixed', 'change','progress', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_no_dL' ],\
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
-                          'update_list': [ 'progress','progress_diag', 'kmean' ],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
@@ -682,7 +690,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         # 'bpsvm', 'osvm', 
         ROC_param_dict = {'methods': ['change','fixed','progress',\
                                        'progress_diag', 'kmean' ],\
-                          'update_list': [ 'hmmsvm_diag' ],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
