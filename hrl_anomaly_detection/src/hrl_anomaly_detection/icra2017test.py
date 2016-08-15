@@ -310,7 +310,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         #-----------------------------------------------------------------------------------------
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
-        print np.shape(ll_classifier_train_X)
+        print np.shape(ll_classifier_train_X), add_logp_d
+        sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
@@ -880,7 +881,7 @@ def vizLikelihoods(ll_logp, ll_post, l_y):
 
     fig = plt.figure(1)
 
-    print np.shape(ll_logp), np.shape(ll_post)
+    print "viz likelihood ", np.shape(ll_logp), np.shape(ll_post)
 
     for i in xrange(len(ll_logp)):
 
@@ -900,7 +901,7 @@ def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
 
     fig = plt.figure(1)
 
-    print np.shape(ll_logp), np.shape(ll_post)
+    print "viz likelihoood2 :", np.shape(ll_logp), np.shape(ll_post)
 
     for i in xrange(len(ll_logp)):
 
