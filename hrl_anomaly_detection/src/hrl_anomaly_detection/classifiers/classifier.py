@@ -1143,8 +1143,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if (method.find('svm')>=0 or method.find('sgd')>=0) and failsafe:
             # Add failure safe data
+            
             for i in xrange(nState):
-                if add_logp_d:
+                if len(X_train_org[0])>nState+1:
                     v                     = np.zeros(nState*2+1)
                     v[0]                  = -500
                     v[i+1]                = 1.0
@@ -1153,6 +1154,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     v                     = np.zeros(nState+1)
                     v[0]                  = -500
                     v[i+1]                = 1.0
+                print np.shape(v), np.shape(X_train_org[0])
                 X_train_org.append(v.tolist())
                 Y_train_org.append(1)
                 idx_train_org.append(i)

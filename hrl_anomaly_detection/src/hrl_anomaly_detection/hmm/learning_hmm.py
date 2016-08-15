@@ -388,8 +388,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
     It returns [logp, last_post, post].
     '''
-    if type(ll_logp) is not list: ll_logp = list(ll_logp)
-    if type(ll_post) is not list: ll_post = list(ll_post)
+    if type(ll_logp) is tuple: ll_logp = list(ll_logp)
+    if type(ll_post) is tuple: ll_post = list(ll_post)
 
     X = []
     Y = []
@@ -401,6 +401,9 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
                 if j == 0:
                     ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
                     l_X.append( [ll_logp[i][j]] + ll_post[i][j] + ll_post[i][j] )
+                    ## print np.shape(l_X), add_delta_logp, np.shape(ll_logp), np.shape(ll_post), i,j
+                    ## print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
+                    ## sys.exit()
                 else:
                     ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
                     ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
@@ -410,6 +413,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
                                 ll_post[i][j] )
             else:
                 l_X.append( [ll_logp[i][j]] + ll_post[i][j] )
+
+
 
             if l_labels is not None:
                 if l_labels[i] > 0.0: l_Y.append(1)
@@ -452,7 +457,8 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
     testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                             np.ones(len(abnormalTrainData[0])) ])
 
-    return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, add_logp_d)
+    return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
+                                                        add_logp_d=add_logp_d)
 
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False):
