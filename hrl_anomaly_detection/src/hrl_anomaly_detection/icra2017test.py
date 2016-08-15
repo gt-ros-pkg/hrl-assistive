@@ -383,7 +383,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
-                                                                 startIdx=startIdx, nState=nState,)\
+                                                                 startIdx=startIdx, nState=nState,\
+                                                                 failsafe=True)\
                                                                  for method in method_list )
     l_data = r
     print "finished to run run_classifiers"
@@ -1084,7 +1085,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm'] 
+        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm']
+        param_dict['ROC']['update_list'] = ['svm']
 
         evaluation_unexp(subjects, unexp_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \

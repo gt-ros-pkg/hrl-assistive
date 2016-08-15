@@ -989,7 +989,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None):
+                    modeling_pkl_prefix=None, failsafe=False):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
@@ -1141,7 +1141,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
-        if (method.find('svm')>=0 or method.find('sgd')>=0) and False:
+        if (method.find('svm')>=0 or method.find('sgd')>=0) and failsafe:
             # Add failure safe data
             for i in xrange(nState):
                 v                     = np.zeros(nState*2+1)

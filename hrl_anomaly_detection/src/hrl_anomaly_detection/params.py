@@ -354,7 +354,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 'progress_state'
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
-                          'update_list': [ 'progress_diag', 'kmean' ],\
+                          'update_list': [ 'progress_diag' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
@@ -406,9 +406,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
-                          'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
+                          'kmean_param_range':np.logspace(-0.5, 0.6, nPoints)*-1.0 -1., \
                           'svm_param_range': np.logspace(-3.0, -0.3458, nPoints),\
-                          'fixed_param_range': np.linspace(-0.25, -1.9, nPoints),\
+                          'fixed_param_range': np.linspace(-1.0, -5.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.linspace(0.1, 1.0, nPoints),\
