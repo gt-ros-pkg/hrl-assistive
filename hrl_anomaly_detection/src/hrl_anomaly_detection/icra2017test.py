@@ -1088,8 +1088,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm']
-        param_dict['ROC']['update_list'] = ['svm']
+        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change']
+        param_dict['ROC']['update_list'] = ['fixed', 'change']
 
         evaluation_unexp(subjects, unexp_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
