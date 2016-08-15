@@ -718,7 +718,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         if i > 0:
             print "Run partial fitting with online HMM : ", i
             for j in xrange(nTrainOffset):
-                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.1
+                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.05
                 print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
                 ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha )
             ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
@@ -1084,6 +1084,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm'] 
 
         evaluation_unexp(subjects, unexp_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \

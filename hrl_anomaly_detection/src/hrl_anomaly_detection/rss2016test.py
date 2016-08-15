@@ -482,7 +482,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     add_logp_d = HMM_dict.get('add_logp_d', True)
     # SVM
     SVM_dict   = param_dict['SVM']
-
     # ROC
     ROC_dict = param_dict['ROC']
 
@@ -490,7 +489,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
     modeling_pkl_prefix = 'hmm_step_'+task_name
-
 
     #------------------------------------------
     # Get features
@@ -517,7 +515,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         timeList = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
-
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -534,11 +531,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
-        normalTestData    = successData[:, normalTestIdx, :] 
-
-        # scaling
-        if verbose: print "scaling data"
-        normalTestData    *= HMM_dict['scale']
+        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -550,45 +543,24 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         F  = dd['F']
         
         nLength      = len(normalTestData[0][0]) - startIdx
-        
-        #-----------------------------------------------------------------------------------------
+
         # Classifier test data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTestData[i], normalTestData[i]])
-            testDataX.append( temp )
-
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(normalTestData[0])) ])
-
-
         # random step noise
+        abnormalTestData = copy.copy(normalTestData)
         samples = []
         step_idx_l = []
         step_mag = 10000000000
-        for i in xrange(len(testDataX[0])):
-            if testDataY[i] < 0: continue
-            
+        for i in xrange(len(abnormalTestData[0])):
             start_idx = np.random.randint(0, nLength/2, 1)[0]
             
             if start_idx < startIdx: start_idx=startIdx
-            testDataX[:,i,start_idx:] += step_mag
+            abnormalTestData[:,i,start_idx:] += step_mag
             step_idx_l.append(start_idx)
 
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, A, B, pi, F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                nEmissionDim, nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
-
-        # nSample x nLength
-        ll_classifier_test_X, ll_classifier_test_Y = \
-          hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
-
+        # Classifier test data
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+        
         #-----------------------------------------------------------------------------------------
         d = {}
         d['nEmissionDim'] = nEmissionDim
@@ -605,8 +577,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         d['ll_classifier_test_Y']    = ll_classifier_test_Y            
         d['ll_classifier_test_idx']  = ll_classifier_test_idx
         d['nLength']      = nLength
-        d['step_idx_l']   = drop_idx_l
-        d['drop_length']  = drop_length
+        d['step_idx_l']   = step_idx_l
         ut.save_pickle(d, modeling_pkl)
 
     ## fig = plt.figure()
@@ -2156,7 +2127,7 @@ if __name__ == '__main__':
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['svm']
+        param_dict['ROC']['methods']     = ['progress']
         param_dict['ROC']['update_list'] = []
         param_dict['ROC']['nPoints']     = 20
         param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, param_dict['ROC']['nPoints'])
