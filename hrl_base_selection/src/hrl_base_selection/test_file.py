@@ -5,32 +5,22 @@ import numpy
 
 import os
 
-from openravepy.misc import InitOpenRAVELogging 
-InitOpenRAVELogging() 
+#from openravepy.misc import InitOpenRAVELogging 
+#InitOpenRAVELogging() 
 
-a = os.path.dirname(os.path.abspath(__file__))
-b = a.split('/')
-print a
-print b
+from openravepy import *
+import numpy, time
+env = Environment() # create openrave environment
+env.SetViewer('qtcoin') # attach viewer (optional)
+with env:
+    body = RaveCreateKinBody(env,'')
+    body.SetName('testbody')
+    body.InitFromBoxes(numpy.array([[0.0,0,0,0.2,0.2,.2]]),True) # set geometry as one box of extents 0.1, 0.2, 0.3
+    env.AddKinBody(body)
 
-env = op.Environment() # create the environment
-env.SetViewer('qtcoin') # start the viewer
-env.Load('data/pr2test1.env.xml') # load a scene
-robot = env.GetRobots()[0] # get the first robot
-
-manip = robot.SetActiveManipulator('leftarm_torso') # set the manipulator to leftarm
-ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot,iktype=op.IkParameterization.Type.Transform6D)
-#ikmodel.autogenerate()
-if not ikmodel.load():
-    ikmodel.autogenerate()
-
-with env: # lock environment
-    Tgoal = numpy.array([[0,-1,0,-0.21],[-1,0,0,0.04],[0,0,-1,0.92],[0,0,0,1]])
-    sol = manip.FindIKSolution(Tgoal, op.IkFilterOptions.CheckEnvCollisions) # get collision-free solution
-    with robot: # save robot state
-        robot.SetDOFValues(sol,manip.GetArmIndices()) # set the current solution
-        Tee = manip.GetEndEffectorTransform()
-        env.UpdatePublishedBodies() # allow viewer to update new robot
-        raw_input('press any key')
-
-    op.raveLogInfo('Tee is: '+repr(Tee))
+#time.sleep(4) # sleep 4 seconds
+with env:
+    env.Remove(body)
+    body.InitFromBoxes(numpy.array([[0.5,0.5,0.5,0.2,0.2,0.2],[0.5,0.25,0.5,0.05,0.05,0.05],[0.,0.,0,0.,0.0,0.0]]),True) # set geometry as two boxes
+    env.AddKinBody(body)
+time.sleep(18) # sleep 4 seconds

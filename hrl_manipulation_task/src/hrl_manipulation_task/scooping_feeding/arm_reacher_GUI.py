@@ -458,15 +458,13 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
     
     if opt.bLog or opt.bDataPub:
+        # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
                      subject="new", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None
-
-    last_trial  = '4'
-    last_detect = '2'
 
     gui = armReacherGUI(detection_flag=opt.bAD, log=log, quick_feeding=opt.bQuickFeeding)
     rospy.spin()

@@ -39,8 +39,11 @@ import numpy as np
 import math
 import pyaudio
 import struct
-from features import mfcc
-
+try:
+    from features import mfcc
+except:
+    from python_speech_features import mfcc
+    
 
 class wrist_audio():
     ## ## FRAME_SIZE = 4096 #8192 # frame per buffer

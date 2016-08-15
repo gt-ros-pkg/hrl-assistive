@@ -30,21 +30,30 @@ for ((I=2;I<=5;I++)); do
         python ../src/hrl_anomaly_detection/rss2016test.py --task $1 --dim $I --ea --hr --np;
     fi
 
+    #if [ $I -eq 2 ]; then
+    #    METHOD=('svm' 'hmmosvm' );
+    #elif [ $I -eq 3 ]; then        
+    #    METHOD=('svm' 'hmmosvm' );
+    #elif [ $I -eq 4 ]; then        
+    #    METHOD=('svm' 'hmmosvm' 'hmmsvm_diag' 'hmmsvm_dL' 'hmmsvm_no_dL');
+    #elif [ $I -eq 5 ]; then        
+    #    METHOD=('svm' 'hmmosvm' );
+    #fi
     if [ $I -eq 2 ]; then
-        METHOD=('svm' 'hmmosvm' );
+        METHOD=('svm' );
     elif [ $I -eq 3 ]; then        
-        METHOD=('svm' 'hmmosvm' );
+        METHOD=('svm' );
     elif [ $I -eq 4 ]; then        
-        METHOD=('svm' 'hmmosvm' 'hmmsvm_diag' 'hmmsvm_dL' 'hmmsvm_no_dL');
+        METHOD=('svm' );
     elif [ $I -eq 5 ]; then        
-        METHOD=('svm' 'hmmosvm' );
+        METHOD=('svm' );
     fi
     #METHOD=('hmmosvm' );
 
 
     for method in "${METHOD[@]}"
     do
-        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} \;
+        python ../src/hrl_anomaly_detection/classifiers/run_classifier_aws.py --task $1 --dim $I --save --method ${method} --renew \;
     done
 
 done

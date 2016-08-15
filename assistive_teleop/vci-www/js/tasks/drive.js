@@ -7,6 +7,8 @@ RFH.Drive = function (options) {
     var divId = options.targetDiv || 'video-main'; 
     self.showButton = true;
     var head = options.head;
+    var l_arm = options.left_arm;
+    var r_arm = options.right_arm;
     var camera = options.camera;
     var base = options.base;
     self.$div = $('#'+divId);
@@ -30,6 +32,8 @@ RFH.Drive = function (options) {
 
     RFH.ros.getMsgDetails('pr2_common_action_msgs/TuckArmsGoal');
     var tuckArms = function (event) {
+        l_arm.disableMPC();
+        r_arm.disableMPC();
         var goal_msg = RFH.ros.composeMsg('pr2_common_action_msgs/TuckArmsGoal');
         goal_msg.tuck_left = true;
         goal_msg.tuck_right = true;
@@ -37,6 +41,12 @@ RFH.Drive = function (options) {
             actionClient: tuckActionClient,
             goalMessage: goal_msg
         });
+
+        var resultCB = function (result) {
+            l_arm.enableMPC();
+            r_arm.enableMPC();
+        };
+        goal.on('result', resultCB);
         goal.send();
     }
     $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms);

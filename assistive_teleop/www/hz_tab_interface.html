@@ -47,13 +47,12 @@
       <div style="text-align:center">
         <label style="font-size:120%">
           Please provide feedback <br>
-            
         </label>
       </div>
       <table id="scooping_questions" style="width:100%;table-layout:fixed">
         <tr>
           <td colspan='3'>
-            Did robot scoop yogurt?
+            Did the robot scoop yogurt?
           </td>
           <td style="text-align:center" id="scooping_questions1_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -64,7 +63,7 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Did robot collided with something?
+            Did any unexpected collisions occur?
           </td>
           <td style="text-align:center" id="scooping_questions2_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -75,7 +74,8 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Was there unexpected noise between robot scooping?
+            Was there unexpected noise during scooping? <br>
+            (excluding noise from the robot)
           </td>
           <td style="text-align:center" id="scooping_questions3_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -88,7 +88,7 @@
       <table id="feeding_questions" style="width:100%;table-layout:fixed">
         <tr>
           <td colspan='3'>
-              Did robot fed you a yogurt?
+              Did the robot feed you yogurt?
           </td>
           <td style="text-align:center" id="feeding_questions1_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -99,7 +99,7 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Did robot collide with something?
+            Did the robot cause any uncomfortable collisions?
           </td>
           <td style="text-align:center" id="feeding_questions2_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -110,7 +110,8 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Was there an unexpected noise when robot fed you?
+            Was there any unexpected noise during feeding? <br>
+            (excluding noise from robot)
           </td>
           <td style="text-align:center" id="feeding_questions3_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -355,14 +356,29 @@
 
                 <div id="tabTasks"></div>
 
-                <div id="tabManTasks">
+                <div id="tabManTasks" style="width:600px">
                   <table id="man_task_layout">
                     <tr>
-                      <td>
-                        <table id="man_task_status">
+                      <td colspan='5'>
+                        <table>
                           <tr>
-                            <th style="text-align:center">1. Select a Task</th>
+                            <td style="width:250px;text-align:center">
+                              <strong> 1. Select a Task </strong>
+                            </td>
+                            <td style="width:50px"> </td>
+                            <td style="width:250px;text-align:center">
+                              <strong> 2. Select an Action </strong>
+                            </td>
                           </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan='2'>
+                        <table id="man_task_status" style="width:250px">
+                          <!--tr>
+                            <th style="text-align:center">1. Select a Task</th>
+                          </tr-->
                           <tr>
                             <td>
                               <button class="centered man_task_cont" id='man_task_Scooping' style="font-size:120%">Scooping</button>
@@ -380,15 +396,15 @@
                           </tr>
                         </table>
                       </td>
-                      <td>
+                      <td align="center">
                         <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
                       </td>
-                      <td>
-                        <table id="man_task_buttons">
-                          <tr>
+                      <td colspan='2'>
+                        <table id="man_task_buttons" style="width:250px">
+                          <!--tr>
                             <th style="text-align:center">2. Select an Action</th>
-                          </tr>
-                          <tr>
+                          </tr-->
+                          <tr hidden>
                             <td>
                               <button class="centered man_task_cont" id='man_task_start' style="font-size:120%; opacity: 0.6">Start</button>
                             </td>
@@ -405,10 +421,10 @@
                           </tr>
                         </table>
                       </td>
-                      <td>
+                      <td hidden>
                         <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
                       </td>
-                      <td>
+                      <td hidden>
                         <table id="man_task_feedback">
                           <tr>
                             <th style="text-align:center">3.Select a Feedback</th>
@@ -431,40 +447,37 @@
                         </table>
                       </td>
                     </tr>
+                    <tr style="height:10px"><td></td></tr>
                     <tr>
-                      <td></td>
-                      <th colspan='3'
+                      <th colspan='5'
                       style="text-align:center">Scooping Anomaly Detection Sensitivity</th>
                     </tr>
                     <tr>
-                      <td colspan='1'>
-                        <button class="centered man_task_cont" id='ad_scooping_sense_min' style="font-size:80%;">Down</button>
-                      </td>
-                      <td colspan='3'>
-                        <div class="slider" id="ad_scooping_slider"></div>
-                      </td>
-                      <td colspan='1'>
-                        <button  class="centered man_task_cont" id='ad_scooping_sense_max' style="font-size:80%;">Up</button>
+                      <td colspan='5'>
+                        <table>
+                          <tr>
+                            <td>
+                              <button class="centered man_task_cont" id='ad_scooping_sense_min' style="font-size:80%">Down</button>
+                            </td>
+                            <td>
+                              <div class="slider" style="width:450px" id="ad_scooping_slider"></div>
+                            </td>
+                            <td>
+                              <button  class="centered man_task_cont" id='ad_scooping_sense_max' style="font-size:80%">Up</button>
+                            </td>
+                          </tr>
+                        </table>
                       </td>
                     </tr>
                     <tr>
                       <td colspan='5'>
                         <table style="width:100%">
                           <tr>
-                            <!--td colspan='1'>
-                              <p>
-                                success ratio with <br>
-                                most recent 4 data
-                              </p>
-                            </td>
-                            <td colspan='1'>
-                              <label id="ad_scooping_result_1" style="text-align:center">  0.0% </label>
-                            </td-->
                             <td colspan='1' style="width:50%;text-align:right">
-                              <p>
-                                success ratio with <br>
+                              <label>
+                                Accuracy with <br>
                                 most recent 10 data
-                              </p>
+                              </label>
                             </td>
                             <td colspan='1' style="width:50%;font-size:200%;text-align:left">
                               :
@@ -474,40 +487,37 @@
                         </table>
                       </td>
                     </tr>
+                    <tr style="height:20px"><td></td></tr>
                     <tr>
-                      <td></td>
-                      <th colspan='3'
+                      <th colspan='5'
                       style="text-align:center">Feeding Anomaly Detection Sensitivity</th>
                     </tr>
                     <tr>
-                      <td colspan='1'>
-                        <button class="centered man_task_cont" id='ad_feeding_sense_min' style="font-size:80%;">Down</button>
-                      </td>
-                      <td colspan='3'>
-                        <div class="slider" id="ad_feeding_slider"></div>
-                      </td>
-                      <td colspan='1'>
-                        <button  class="centered man_task_cont" id='ad_feeding_sense_max' style="font-size:80%;">Up</button>
+                      <td colspan='5'>
+                        <table>
+                          <tr>
+                            <td>
+                              <button class="centered man_task_cont" id='ad_feeding_sense_min' style="font-size:80%;">Down</button>
+                            </td>
+                            <td style="width:450px">
+                              <div class="slider" id="ad_feeding_slider"></div>
+                            </td>
+                            <td>
+                              <button  class="centered man_task_cont" id='ad_feeding_sense_max' style="font-size:80%;">Up</button>
+                            </td>
+                          </tr>
+                        </table>
                       </td>
                     </tr>
                     <tr>
                       <td colspan='5'>
                         <table style="width:100%">
                           <tr>
-                            <!--td> 
-                              <p>
-                                success ratio with <br>
-                                most recent 4 data
-                              </p>
-                            </td>
-                            <td>
-                              <label id="ad_feeding_result_1" style="text-align:center">  0.0% </label>
-                            </td-->
                             <td colspan='1' style="width:50%;text-align:right">
-                              <p>
-                                success ratio with <br>
+                              <label>
+                                Accuracy with <br>
                                 most recent 10 data
-                              </p>
+                              </label>
                             </td>
                             <td colspan='1' style="width:50%;text-align:left;font-size:200%">
                               :

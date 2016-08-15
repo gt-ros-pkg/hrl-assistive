@@ -1,0 +1,8 @@
+(DEFINE
+(PROBLEM test_problem)
+(:DOMAIN realtime_base_selection)
+(:OBJECTS)
+(:INIT  
+)
+(:GOAL (AND (AT BASE_GOAL)(NOT(TORSO_SET BASE_GOAL))))
+)

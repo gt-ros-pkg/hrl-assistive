@@ -615,7 +615,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim):
 def plotROC(method, nPoints, ROC_data, fit_method=None, fig=None):
     #-------------------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
-    elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+    elif method == 'progress': label='HMMs with a dynamic threshold'
     elif method == 'fixed': label='HMMs with a fixed threshold'
     elif method == 'cssvm': label='HMM-CSSVM'
     elif method == 'sgd': label='SGD'
@@ -741,7 +741,7 @@ def plotPLR(method, task, nPoints, nPartialFit, ROC_data, fit_method=None, fig=N
     # Plot a positive likelihood ratio graph
     #----------------------------------------------------------------------------
     if method == 'svm': label='HMM-SVM'
-    elif method == 'progress_time_cluster': label='HMMs with a dynamic threshold'
+    elif method == 'progress': label='HMMs with a dynamic threshold'
     elif method == 'fixed': label='HMMs with a fixed threshold'
     elif method == 'cssvm': label='HMM-CSSVM'
     elif method == 'sgd': label='SGD'
@@ -916,7 +916,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         for j in xrange(len(ll_classifier_train_X)):
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_train_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            elif method == 'progress' or method == 'fixed':
                 X = ll_classifier_train_X[j]
 
             train_X.append(X)
@@ -954,7 +954,7 @@ def run_classifiers(idx, save_data_path, task, method, ROC_data, ROC_dict, AE_di
         try:
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            elif method == 'progress' or method == 'fixed':
                 X = ll_classifier_test_X[j]
         except:
             print ll_classifier_test_X[j]
@@ -1176,7 +1176,7 @@ def run_classifiers_incremental(idx, save_data_path, task, method, ROC_data, ROC
         try:
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            elif method == 'progress' or method == 'fixed':
                 X = ll_classifier_test_X[j]
         except:
             print ll_classifier_test_X[j]
@@ -1476,7 +1476,7 @@ def run_classifiers_incremental_ICRA(idx, save_data_path, task, method, ROC_data
         try:
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            elif method == 'progress' or method == 'fixed':
                 X = ll_classifier_test_X[j]
         except:
             print ll_classifier_test_X[j]
@@ -1849,7 +1849,7 @@ def run_classifiers_diff( idx, task, raw_data_path, save_data_path, param_dict, 
         try:
             if method.find('svm')>=0 or method.find('sgd')>=0:
                 X = scaler.transform(ll_classifier_test_X[j])                                
-            elif method == 'progress_time_cluster' or method == 'fixed':
+            elif method == 'progress' or method == 'fixed':
                 X = ll_classifier_test_X[j]
         except:
             print ll_classifier_test_X[j]

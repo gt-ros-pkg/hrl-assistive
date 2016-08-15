@@ -83,12 +83,8 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
     n_iter = 10
     nPoints = ROC_dict['nPoints'] = 4
 
-    if method == 'progress_time_cluster':
-        org_start_param = ROC_dict['progress_param_range'][0]
-        org_end_param = ROC_dict['progress_param_range'][-1]
-    else:
-        org_start_param = ROC_dict[method+'_param_range'][0]
-        org_end_param = ROC_dict[method+'_param_range'][-1]
+    org_start_param = ROC_dict[method+'_param_range'][0]
+    org_end_param = ROC_dict[method+'_param_range'][-1]
         
     if org_start_param > org_end_param:
         temp = org_start_param

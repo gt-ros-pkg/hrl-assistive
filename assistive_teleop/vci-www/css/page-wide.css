@@ -75,7 +75,7 @@ body {
     text-align: center;
 }
 #controls h4 {
-    display: block;
+    display: none;
     font-size: 1.2em;
     width: 100%;
     margin-bottom: 0.1em;

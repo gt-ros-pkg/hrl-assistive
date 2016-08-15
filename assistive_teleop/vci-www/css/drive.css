@@ -1,14 +1,14 @@
 .drive-ctrl {
-    display:none; /*Initialize hidden*/
+    display: none; /*Initialize hidden*/
 }
 
 .tuck-driving {
-    display: block;
     margin: 0% 10%;
     padding: 0.25em;
 }
 
 h4.drive-ctrl {
+    display:none;
     margin-top:0em;
 }
 
