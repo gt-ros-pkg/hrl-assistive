@@ -12,6 +12,8 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         messageType: 'hrl_task_planning/PDDLProblem'
     });
     self.taskPublisher.advertise();
+    var offset = {position: {x:0.06, y:0.0, z:0.0},
+                  rotation: {x:0.0, y:Math.PI, z:0.0}};
 
     ros.getMsgDetails('hrl_task_planning/PDDLState');
     self.pddlStateUpdatePub = new ROSLIB.Topic({
@@ -28,20 +30,20 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         self.pddlStateUpdatePub.publish(msg);
     };
 
+
+
     self.getActionFunction = function (name, args) {
         var startFunc;
         switch (name){
             case 'GET_EE_GOAL':
                 startFunc = function () {
-                    RFH.taskMenu.tasks.paramLocationTask.setOffset({position:{x:0.05,y:0,z:0},
-                                                                    //rotation: {x:0.70710678, y:0.0, z:-0.70710678, w:0.0}});
-                                                                    rotation: {x:0.0, y:1.0, z:0.0, w:0.0}});
-                    RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({x:0, y:0, z:0, w:1});
-                    //RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride({x:0.70710678, y:0, z: -0.70710678, w:0}); // No override
-                    RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
-                    RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                    var getPoseCB = function (pose) {
+                        var eeGoalPose = applyOffset(pose);
+                        self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], pose);
+                    };
+                    RFH.taskMenu.tasks.getClickedPoseTask.registerPoseCB(getPoseCB, true);
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                    RFH.taskMenu.startTask('paramLocationTask');
+                    RFH.taskMenu.startTask('getClickedPoseTask');
                 }
                 break;
             case 'GET_FRAME':
@@ -155,20 +157,10 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         }
     };
 
-//    self.setDefaultGoal = function (goal_pred_list) {
-//        var paramName = '/pddl_tasks/'+self.domain+'/default_goal';
-//        var goalParam = new ROSLIB.Param({
-//            ros: ros,
-//            name: paramName
-//        });
-//        goalParam.set(goal_pred_list);
-//    };
-
     self.sendTaskGoal = function (side, goal) {
         self.clearParams(['EE_GOAL','BASE_GOAL','EE_FRAME']);
         var ee_frame = side[0] === 'r' ? 'r_gripper_tool_frame' : 'l_gripper_tool_frame'
         self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/EE_FRAME', ee_frame);
-//        self.setDefaultGoal(['(AT BASE_GOAL)']);
         self.updatePDDLState(['(NOT (AT BASE_GOAL))', 
                               '(NOT (SCAN_COMPLETE))',
                               '(NOT (TORSO_SET BASE_GOAL))',
@@ -181,4 +173,36 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         msg.goal = goal || [];  // Empty goal will use default for task
         setTimeout(function(){self.taskPublisher.publish(msg);}, 750); // Wait for everything else to settle first...
     };
+
+    var applyOffset = function (pose_msg) {
+        var pose = pose_msg.pose;
+        var quat = new THREE.Quaternion(pose.orientation.x,
+                                        pose.orientation.y,
+                                        pose.orientation.z,
+                                        pose.orientation.w);
+        var poseRotMat = new THREE.Matrix4().makeRotationFromQuaternion(quat);
+        var offsetVec = new THREE.Vector3(offset.position.x, 
+                                          offset.position.y,
+                                          offset.position.z); //Get to x dist from point along normal
+        offsetVec.applyMatrix4(poseRotMat);
+        var desRotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(offset.rotation.x,
+                                                                                  offset.rotation.y,
+                                                                                  offset.rotation.z));
+        poseRotMat.multiply(desRotMat);
+        poseRotMat.setPosition(new THREE.Vector3(pose.position.x + offsetVec.x,
+                                                 pose.position.y + offsetVec.y,
+                                                 pose.position.z + offsetVec.z));
+        var trans = new THREE.Matrix4();
+        var scale = new THREE.Vector3();
+        poseRotMat.decompose(trans, quat, scale);
+        pose.position.x = trans.x;
+        pose.position.y = trans.y;
+        pose.position.z = trans.z;
+        pose.orientation.x = quat.x;
+        pose.orientation.y = quat.y;
+        pose.orientation.z = quat.z;
+        pose.orientation.w = quat.w;
+        return pose;
+    };
+
 };
