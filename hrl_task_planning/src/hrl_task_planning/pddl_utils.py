@@ -3,6 +3,7 @@
 import copy
 import itertools as it
 
+
 def _separate_string(string):
     """ Space out parentheses and split to separate items in a lisp string."""
     string = string.replace(')', ' ) ')
@@ -253,8 +254,12 @@ class GoalState(State):
 
     def is_satisfied(self, state):
         for pred in self.predicates:
-            if (pred.neg and pred in state) or (not pred.neg and pred not in state):
-                return False
+            if not pred.neg:
+                if pred not in state:
+                    return False
+            else:
+                if Predicate(pred.name, pred.args) in state:
+                    return False
         return True
 
 
@@ -390,6 +395,7 @@ class Action(object):
 
     def get_parameter_types(self):
         return [param.type for param in self.parameters]
+
 
 class Domain(object):
     """ A class describing a domain instance in PDDL."""
@@ -759,23 +765,15 @@ class Situation(object):
             while added_state:
                 added_state = False
                 for state in states_list:
-#                print "In State: ", str(state)
                     for action in self.domain.actions.itervalues():
                         arg_sets = self._get_arg_sets(action.get_parameter_types())
                         for arg_set in arg_sets:
                             try:
-#                            print "Try: %s( " % action.name, map(str, arg_set), " )"
                                 new_state = self.apply_action(action, arg_set, state)
-#                            print "New State:", str(new_state)
-                                #print "States list:", map(str, states_list)
                                 if new_state not in states_list:
                                     states_list.append(new_state)
                                     added_state = True
-#                                    print "\n%s\n--%s(%s)-->\n%s" % (state, action.name, ', '.join(map(str,arg_set)),  new_state)
-                            #    else:
-#                                print "Result State Already Visited"
-                            except ActionException as ae:
-#                            print ae.message
+                            except ActionException:
                                 continue
             for state in states_list:
                 if state not in full_states_list:
