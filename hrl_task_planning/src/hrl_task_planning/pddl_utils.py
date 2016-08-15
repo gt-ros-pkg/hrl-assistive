@@ -253,8 +253,12 @@ class GoalState(State):
 
     def is_satisfied(self, state):
         for pred in self.predicates:
-            if (pred.neg and pred in state) or (not pred.neg and pred not in state):
+            if not pred.neg and pred not in state:
                 return False
+            if pred.neg:
+                test = Predicate(pred.name, pred.args)
+                if test in state:
+                    return False
         return True
 
 
