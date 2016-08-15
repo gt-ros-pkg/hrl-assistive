@@ -81,7 +81,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2., nPoints)*-1+2.0, \
+                          'kmean_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2, 0.2553, nPoints),\
                           'change_param_range': np.logspace(0.1, 1.8, nPoints)*-1.0,\
                           'fixed_param_range': np.linspace(-0.541, 0.292, nPoints),\
@@ -105,10 +107,11 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-1.2, -5., nPoints), \
+                          'kmean_param_range':np.linspace(-1.2, -5., nPoints), \
                           'svm_param_range': np.logspace(-2.523, 0.34, nPoints),\
                           'fixed_param_range': np.linspace(0.235, -0.63, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
@@ -124,10 +127,11 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
                           'hmmosvm_nu': 0.00316}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.5, -7.5, nPoints), \
+                          'kmean_param_range':np.linspace(-0.5, -7.5, nPoints), \
                           'svm_param_range': np.logspace(-2.0, -0.3307, nPoints),\
                           'fixed_param_range': np.linspace(0.220, -0.089, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
