@@ -410,7 +410,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             only_tpr=False)
+             only_tpr=False, legend=True)
 
 
 def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
@@ -718,7 +718,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         if i > 0:
             print "Run partial fitting with online HMM : ", i
             for j in xrange(nTrainOffset):
-                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.05
+                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.15
                 print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
                 ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha )
             ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
