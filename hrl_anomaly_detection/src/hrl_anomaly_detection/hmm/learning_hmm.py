@@ -206,7 +206,7 @@ class learning_hmm(learning_base):
             return ret
 
 
-    def partial_fit(self, xData, learningRate=0.2):
+    def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
         ''' Online update of HMM using online Baum-Welch algorithm
         '''
         
@@ -220,9 +220,10 @@ class learning_hmm(learning_base):
 
         for i in xrange(len(X_train)):            
             final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-            ret = self.ml.baumWelch(final_seq, nrSteps=1, learningRate=learningRate)
-            print 'Baum Welch return:', ret
-            if np.isnan(ret): return 'Failure'
+            ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+            if np.isnan(ret): break #return 'Failure'
+        print 'Baum Welch return:', ret
+                
         return ret
 
         
@@ -388,8 +389,10 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
     It returns [logp, last_post, post].
     '''
+    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
     if type(ll_logp) is tuple: ll_logp = list(ll_logp)
     if type(ll_post) is tuple: ll_post = list(ll_post)
+    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
 
     X = []
     Y = []
@@ -402,7 +405,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
                     ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
                     l_X.append( [ll_logp[i][j]] + ll_post[i][j] + ll_post[i][j] )
                     ## print np.shape(l_X), add_delta_logp, np.shape(ll_logp), np.shape(ll_post), i,j
-                    ## print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
+                    print type([ll_logp[i][j]]), type(ll_post[i][j])
+                    print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
                     ## sys.exit()
                 else:
                     ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
@@ -411,6 +415,9 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
                     ##             ll_post[i][j].tolist() )
                     l_X.append( [ll_logp[i][j]] + ll_post[i][j-1] + \
                                 ll_post[i][j] )
+                print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                print np.shape(l_X)
+                sys.exit()
             else:
                 l_X.append( [ll_logp[i][j]] + ll_post[i][j] )
 
