@@ -1,0 +1,229 @@
+<robot
+  name="wheelchair_and_body_assembly">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.46024 0.0005839 0.36704"
+        rpy="0 0 0" />
+      <mass
+        value="63.649" />
+      <inertia
+        ixx="7.6415"
+        ixy="0.010955"
+        ixz="-0.8336"
+        iyy="7.458"
+        iyz="-0.0088095"
+        izz="9.3029" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="body_th_move_link">
+    <inertial>
+      <origin
+        xyz="0.18305 -1.2796E-06 0.23201"
+        rpy="0 0 0" />
+      <mass
+        value="55.001" />
+      <inertia
+        ixx="3.0819"
+        ixy="5.9955E-06"
+        ixz="-1.705"
+        iyy="5.2603"
+        iyz="-1.2806E-05"
+        izz="3.7779" />
+    </inertial>
+  </link>
+  <joint
+    name="wheelchair_body_rotation_joint"
+    type="revolute">
+    <origin
+      xyz="0.40278 0 0.47"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="body_th_move_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="body_x_move_link">
+    <inertial>
+      <origin
+        xyz="0.183048783561467 -1.27956259822018E-06 0.232006948172354"
+        rpy="0 0 0" />
+      <mass
+        value="55.0007697502791" />
+      <inertia
+        ixx="3.08185658910265"
+        ixy="5.99546569961251E-06"
+        ixz="-1.70498227335547"
+        iyy="5.26029069554681"
+        iyz="-1.28061648714539E-05"
+        izz="3.77789307592805" />
+    </inertial>
+  </link>
+  <joint
+    name="wheelchair_body_x_joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="body_th_move_link" />
+    <child
+      link="body_x_move_link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="body_y_move_link">
+    <inertial>
+      <origin
+        xyz="0.18305 -1.2796E-06 0.23201"
+        rpy="0 0 0" />
+      <mass
+        value="55.001" />
+      <inertia
+        ixx="3.0819"
+        ixy="5.9955E-06"
+        ixz="-1.705"
+        iyy="5.2603"
+        iyz="-1.2806E-05"
+        izz="3.7779" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/body_y_move_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/body_y_move_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair_body_y_joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="body_x_move_link" />
+    <child
+      link="body_y_move_link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="head_center">
+    <inertial>
+      <origin
+        xyz="0.00931749480580107 -9.08739055739473E-09 0.010570689538842"
+        rpy="0 0 0" />
+      <mass
+        value="3.93285195403502" />
+      <inertia
+        ixx="0.0165678835477896"
+        ixy="1.68315764857987E-09"
+        ixz="-0.00276827212446779"
+        iyy="0.0177022968298913"
+        iyz="-6.23554424236189E-09"
+        izz="0.016604615159401" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/head_center.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_and_body_assembly/meshes/head_center.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_neck_joint"
+    type="revolute">
+    <origin
+      xyz="0.048166 0 0.76169"
+      rpy="0 0 0" />
+    <parent
+      link="body_y_move_link" />
+    <child
+      link="head_center" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

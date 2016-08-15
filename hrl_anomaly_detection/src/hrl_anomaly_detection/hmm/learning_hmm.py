@@ -71,13 +71,26 @@ class learning_hmm(learning_base):
         self.F = ghmm.Float()  
 
 
-    def set_hmm_object(self, A, B, pi):
+    def get_hmm_object(self):
+        
+        [A, B, pi] = self.ml.asMatrices()
+        [out_a_num, vec_num, mat_num, u_denom] = self.ml.getBaumWelchParams()
+
+        return [A, B, pi, out_a_num, vec_num, mat_num, u_denom]
+
+    def set_hmm_object(self, A, B, pi, out_a_num=None, vec_num=None, mat_num=None, u_denom=None):
 
         self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                        A, B, pi)
         self.A = A
         self.B = B
         self.pi = pi
+
+        try:
+            self.ml.setBaumWelchParams(out_a_num, vec_num, mat_num, u_denom)
+        except:
+            print "Install new ghmm!!"
+            
         return self.ml
 
 
@@ -107,6 +120,14 @@ class learning_hmm(learning_base):
             self.pi = param_dict['pi']                       
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                            self.A, self.B, self.pi)
+
+            out_a_num = param_dict.get('out_a_num', None)
+            vec_num   = param_dict.get('vec_num', None)
+            mat_num   = param_dict.get('mat_num', None)
+            u_denom   = param_dict.get('u_denom', None)
+            if out_a_num is not None:
+                self.ml.setBaumWelchParams(out_a_num, vec_num, mat_num, u_denom)
+                                           
             return True
         else:
            
@@ -172,148 +193,44 @@ class learning_hmm(learning_base):
             param_dict['B'] = self.B
             param_dict['pi'] = self.pi
 
+            try:
+                [out_a_num, vec_num, mat_num, u_denom] = self.ml.getBaumWelchParams()            
+                param_dict['out_a_num'] = out_a_num
+                param_dict['vec_num']   = vec_num
+                param_dict['mat_num']   = mat_num
+                param_dict['u_denom']   = u_denom
+            except:
+                print "Install new ghmm!!"
+
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
             return ret
 
-    def partial_fit(self, xData, nTrain, scale, weight=8.0):
+
+    def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
+        ''' Online update of HMM using online Baum-Welch algorithm
         '''
-        data: dimension x sample x length
+        
+        X = [np.array(data) for data in xData]
+
+        # print 'Creating Training Data'            
+        X_train = util.convert_sequence(X) # Training input
+        X_train = X_train.tolist()
+
+        if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
+
+        for i in xrange(len(X_train)):            
+            final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
+            ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+            if np.isnan(ret): break #return 'Failure'
+        print 'Baum Welch return:', ret
+                
+        return ret
+
+        
+    def predict(self, X):
         '''
-        A  = copy.copy(self.A)
-        B  = copy.copy(self.B)
-        pi = copy.copy(self.pi)
-
-        new_B = copy.copy(self.B)
-
-        t_features = []
-        mus        = []
-        covs       = []
-        for i in xrange(self.nState):
-            t_features.append( B[i][0] + [ float(i) / float(self.nState)*scale/2.0 ])
-            mus.append( B[i][0] )
-            covs.append( B[i][1] )
-        t_features = np.array(t_features)
-        mus        = np.array(mus)
-        covs       = np.array(covs)
-
-        # update b ------------------------------------------------------------
-        # mu
-        x_l = [[] for i in xrange(self.nState)]
-        X   = np.swapaxes(xData, 0, 1) # sample x dim x length
-        seq_len = len(X[0][0])
-        for i in xrange(len(X)):
-            sample = np.swapaxes(X[i], 0, 1) # length x dim
-
-            idx_l = []
-            for j in xrange(len(sample)):
-                feature = np.array( sample[j].tolist() + [float(j)/float(len(sample))*scale/2.0 ] )
-
-                min_dist = 10000
-                min_idx  = 0
-                for idx, t_feature in enumerate(t_features):
-                    dist = np.linalg.norm(t_feature-feature)
-                    if dist < min_dist:
-                        min_dist = dist
-                        min_idx  = idx
-
-                x_l[min_idx].append(feature[:-1].tolist())
-
-        for i in xrange(len(mus)):
-            if len(x_l[i]) > 0:
-                avg_x = np.mean(x_l[i], axis=0)
-                new_B[i][0] = list( ( float(nTrain-1)*mus[i] + avg_x*weight ) / float(nTrain+(weight-1) ) ) # specialized for single input
-
-
-        # Normalize the state prior and transition values.
-        A_sum = np.sum(A, axis=1)
-        for i in xrange(self.nState):
-            A[i,:] /= A_sum[i]
-        pi /= np.sum(pi)
-
-        # Daehyung: What is the shape and type of input data?
-        xData = [np.array(data) for data in xData]
-        X_ptrain = util.convert_sequence(xData) # Training input
-        X_ptrain = np.squeeze(X_ptrain)
-
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_ptrain.tolist())        
-        (alpha, scale) = self.ml.forward(final_ts_obj)
-        beta = self.ml.backward(final_ts_obj, scale)
-
-        ## print np.shape(alpha), np.shape(beta), type(alpha), type(beta)
-
-        est_A = np.zeros((self.nState, self.nState))
-        new_A = np.zeros((self.nState, self.nState))
-        for i in xrange(self.nState):
-            for j in xrange(self.nState):
-
-                temp1 = 0.0
-                temp2 = 0.0
-                for t in xrange(seq_len):
-                    p = multivariate_normal.pdf( X[0][:,t], mean=mus[j], \
-                                                 cov=np.reshape(covs[j], \
-                                                                (self.nEmissionDim, self.nEmissionDim)))
-                    temp1 += alpha[t-1][i] * A[i,j] * p * beta[t][j]
-                    temp2 += alpha[t-1][i] * beta[t][j]
-
-                if temp1 == 0.0 or temp2 == 0.0: est_A[i,j] = 0
-                else: est_A[i,j] = temp1/temp2
-                    
-                new_A[i,j] = (float(nTrain-len(xData))*A[i,j] + est_A[i,j]*weight) / float(nTrain + (weight-1.0) )
-
-        # Normalize the state prior and transition values.
-        A_sum = np.sum(new_A, axis=1)
-        for i in xrange(self.nState):
-            new_A[i,:] /= A_sum[i]
-        pi /= np.sum(pi)
-            
-        self.set_hmm_object(new_A, new_B, pi)
-        return new_A, new_B, pi
-        
-
-    ## def predict(self, X):
-    ##     '''
-    ##     ???????????????????
-    ##     HMM is just a generative model. What will be prediction result?
-    ##     Which code is using this fuction?
-    ##     '''
-    ##     X = np.squeeze(X)
-    ##     X_test = X.tolist()
-
-    ##     mu_l = np.zeros(self.nEmissionDim)
-    ##     cov_l = np.zeros(self.nEmissionDim**2)
-
-    ##     if self.verbose: print self.F
-    ##     final_ts_obj = ghmm.EmissionSequence(self.F, X_test) # is it neccessary?
-
-    ##     try:
-    ##         # alpha: X_test length y # latent States at the moment t when state i is ended
-    ##         # test_profile_length x number_of_hidden_state
-    ##         (alpha, scale) = self.ml.forward(final_ts_obj)
-    ##         alpha = np.array(alpha)
-    ##     except:
-    ##         if self.verbose: print "No alpha is available !!"
-            
-    ##     f = lambda x: round(x, 12)
-    ##     for i in range(len(alpha)):
-    ##         alpha[i] = map(f, alpha[i])
-    ##     alpha[-1] = map(f, alpha[-1])
-        
-    ##     n = len(X_test)
-    ##     pred_numerator = 0.0
-
-    ##     for j in xrange(self.nState): # N+1
-    ##         total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
-    ##         [mus, covars] = self.B[j]
-
-    ##         ## print mu1, mu2, cov11, cov12, cov21, cov22, total
-    ##         pred_numerator += total
-
-    ##         for i in xrange(mu_l.size):
-    ##             mu_l[i] += mus[i]*total
-    ##         for i in xrange(cov_l.size):
-    ##             cov_l[i] += covars[i] * (total**2)
-
-    ##     return mu_l, cov_l
+        '''
+        return
 
 
     def loglikelihood(self, X, bPosterior=False):
@@ -337,7 +254,7 @@ class learning_hmm(learning_base):
         return logp
 
 
-    def loglikelihoods(self, X, bPosterior=False, startIdx=1):
+    def loglikelihoods(self, X, bPosterior=False, bIdx=False, startIdx=1):
         '''
         X: dimension x sample x length
         return: the likelihoods over time (in single data)
@@ -357,16 +274,16 @@ class learning_hmm(learning_base):
                 try:
                     final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
                 except:
-                    if self.verbose: print "failed to make sequence"
+                    print "failed to make sequence"
                     continue
 
                 try:
                     logp = self.ml.loglikelihood(final_ts_obj)
                     if bPosterior: post = np.array(self.ml.posterior(final_ts_obj))
                 except:
-                    if self.verbose: 
-                        print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-                    return False, False # anomaly
+                    print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+                    continue
+                    ## return False, False # anomaly
                     #continue
 
                 l_likelihood.append( logp )
@@ -374,11 +291,21 @@ class learning_hmm(learning_base):
 
             ll_likelihoods.append(l_likelihood)
             if bPosterior: ll_posteriors.append(l_posterior)
-
-        if bPosterior:
-            return ll_likelihoods, ll_posteriors
+        
+        if bIdx:
+            ll_idx = []
+            for ii in xrange(len(X[0])):
+                l_idx = []
+                for jj in xrange(startIdx, len(X[0][ii])):
+                    l_idx.append( jj )
+                ll_idx.append(l_idx)
+            
+            if bPosterior: return ll_likelihoods, ll_posteriors, ll_idx
+            else:          return ll_likelihoods, ll_idx
         else:
-            return ll_likelihoods
+            if bPosterior: return ll_likelihoods, ll_posteriors
+            else:          return ll_likelihoods
+            
             
             
     def getLoglikelihoods(self, xData, posterior=False, startIdx=1, n_jobs=-1):
@@ -460,8 +387,12 @@ class learning_hmm(learning_base):
 def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp=True):
     '''
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
-    It returns [logp, d_logp/(d_post+c), post].
+    It returns [logp, last_post, post].
     '''
+    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
+    if type(ll_logp) is tuple: ll_logp = list(ll_logp)
+    if type(ll_post) is tuple: ll_post = list(ll_post)
+    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
 
     X = []
     Y = []
@@ -471,14 +402,26 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
         for j in xrange(1,len(ll_logp[i])):
             if add_delta_logp:                    
                 if j == 0:
-                    l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                    ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j] + ll_post[i][j] )
+                    ## print np.shape(l_X), add_delta_logp, np.shape(ll_logp), np.shape(ll_post), i,j
+                    print type([ll_logp[i][j]]), type(ll_post[i][j])
+                    print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
+                    ## sys.exit()
                 else:
-                    d_logp = ll_logp[i][j]-ll_logp[i][j-1]
-                    d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
-                    l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
-                                ll_post[i][j].tolist() )
+                    ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
+                    ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
+                    ## l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
+                    ##             ll_post[i][j].tolist() )
+                    l_X.append( [ll_logp[i][j]] + ll_post[i][j-1] + \
+                                ll_post[i][j] )
+                print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                print np.shape(l_X)
+                sys.exit()
             else:
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j] )
+
+
 
             if l_labels is not None:
                 if l_labels[i] > 0.0: l_Y.append(1)
@@ -494,7 +437,87 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     
     return X, Y
 
+
+def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=True,\
+                                 remove_fp=False, remove_outlier=False):
+    from hrl_anomaly_detection import data_manager as dm
+
+    if len(ll_logp)>2 and remove_outlier:
+        ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels)
+            
+
+    ll_X, ll_Y = getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
+    if ll_X == []: return [],[],[]
     
+    X_flat, Y_flat, idx_flat = dm.flattenSample(ll_X, ll_Y, ll_idx, remove_fp=remove_fp)
+    return X_flat, Y_flat, idx_flat
+
+
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False):
+
+    testDataX = []
+    testDataY = []
+    for i in xrange(ml.nEmissionDim):
+        temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+        testDataX.append( temp )
+
+    testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                            np.ones(len(abnormalTrainData[0])) ])
+
+    return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
+                                                        add_logp_d=add_logp_d)
+
+
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False):
+    
+    r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                        [ dataX[j][i] for j in \
+                                                          xrange(ml.nEmissionDim) ], \
+                                                          ml.nEmissionDim, ml.nState,\
+                                                          startIdx=startIdx, \
+                                                          bPosterior=True)
+                                                          for i in xrange(len(dataX[0])))
+    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+    ll_classifier_train_X, ll_classifier_train_Y = \
+      getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
+
+    return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
+
+
+def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):        
+    ''' remove outliers from normal data (upper 5% and lower 5%)
+    '''
+    if type(ll_logp) is tuple: ll_logp = list(ll_logp)
+    if type(ll_post) is tuple: ll_post = list(ll_post)
+    if type(ll_idx) is tuple: ll_idx = list(ll_idx)
+    
+    # Check only last likelihoods
+    logp_lst = []
+    idx_lst  = []
+    for i in xrange(len(ll_logp)):
+        if l_labels is None or l_labels[i] < 0:
+            logp_lst.append(ll_logp[i][-1])
+            idx_lst.append(i)
+
+    logp_lst, idx_lst = zip(*sorted(zip(logp_lst, idx_lst)))
+    nOutlier = int(0.05*len(ll_logp))
+    if nOutlier < 1: nOutlier = 1
+
+    upper_lst = idx_lst[:nOutlier]
+    lower_lst = idx_lst[-nOutlier:]
+    indices = upper_lst + lower_lst
+    indices = sorted(list(indices), reverse=True)
+    for i in indices:
+        del ll_logp[i]
+        del ll_post[i]
+        del ll_idx[i]
+        if l_labels is None: continue
+        if type(l_labels) is not list: l_labels = l_labels.tolist()
+        del l_labels[i]
+
+    return ll_logp, ll_post, ll_idx, l_labels
+
 ####################################################################
 # functions for paralell computation
 ####################################################################
@@ -582,3 +605,233 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         return idx, l_idx, l_likelihood
 
 
+####################################################################
+# functions for data generation
+####################################################################
+
+def computeHMMfeatures(task_name, processed_data_path, param_dict, data_renew=False, verbose=False):
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else:
+        print "No cv data"
+        sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    successData = d['successData']
+    failureData = d['failureData']
+    param_dict  = d['param_dict']
+    aeSuccessData = d.get('aeSuccessData', None)
+    aeFailureData = d.get('aeFailureData', None)
+    if 'timeList' in param_dict.keys():
+        timeList    = param_dict['timeList'][startIdx:]
+    else: timeList = None
+
+    #-----------------------------------------------------------------------------------------
+    # Training HMM, and getting classifier training and testing data
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        if verbose: print idx, " : training hmm and getting classifier training and testing data"
+
+        if AE_dict['switch'] and AE_dict['add_option'] is not None:
+            tag = ''
+            for ft in AE_dict['add_option']:
+                tag += ft[:2]
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
+        elif AE_dict['switch'] and AE_dict['add_option'] is None:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
+        else:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
+
+        if AE_dict['switch']:
+            if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+
+            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
+
+            # From dim x sample x length
+            # To reduced_dim x sample x length
+            d = dm.getAEdataSet(idx, aeSuccessData, aeFailureData, \
+                                successData, failureData, param_dict,\
+                                normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
+                                AE_dict['time_window'], AE_dict['nAugment'], \
+                                AE_proc_data, \
+                                # data param
+                                processed_data_path, \
+                                # AE param
+                                layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
+                                learning_rate_decay=AE_dict['learning_rate_decay'], \
+                                momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
+                                lambda_reg=AE_dict['lambda_reg'], \
+                                max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+                                cuda=False, \
+                                filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+                                verbose=False)
+
+            if AE_dict['filter']:
+                # NOTE: pooling dimension should vary on each auto encoder.
+                # Filtering using variances
+                normalTrainData   = d['normTrainDataFiltered']
+                abnormalTrainData = d['abnormTrainDataFiltered']
+                normalTestData    = d['normTestDataFiltered']
+                abnormalTestData  = d['abnormTestDataFiltered']
+            else:
+                normalTrainData   = d['normTrainData']
+                abnormalTrainData = d['abnormTrainData']
+                normalTestData    = d['normTestData']
+                abnormalTestData  = d['abnormTestData']
+        else:
+            # dim x sample x length
+            normalTrainData   = successData[:, normalTrainIdx, :] 
+            abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+            normalTestData    = successData[:, normalTestIdx, :] 
+            abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+
+
+        if AE_dict['switch'] and AE_dict['add_option'] is not None:
+            print "add hand-crafted features.."
+            newHandSuccTrData = handSuccTrData = d['handNormTrainData']
+            newHandFailTrData = handFailTrData = d['handAbnormTrainData']
+            handSuccTeData = d['handNormTestData']
+            handFailTeData = d['handAbnormTestData']
+
+            normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
+                                             AE_dict['add_option'], d['handFeatureNames'], \
+                                             add_noise_features=AE_dict['add_noise_option'] )
+            abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
+                                             AE_dict['add_option'], d['handFeatureNames'])
+            normalTestData   = combineData( normalTestData, handSuccTeData,\
+                                            AE_dict['add_option'], d['handFeatureNames'])
+            abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
+                                             AE_dict['add_option'], d['handFeatureNames'])
+
+            ## # reduce dimension by pooling
+            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+            ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+            ##                                                          pooling_param_dict)
+            ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+            ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+            ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+
+        ## # add noise
+        ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
+
+        # scaling
+        if verbose: print "scaling data"
+        normalTrainData   *= HMM_dict['scale']
+        abnormalTrainData *= HMM_dict['scale']
+        normalTestData    *= HMM_dict['scale']
+        abnormalTestData  *= HMM_dict['scale']
+
+        # training hmm
+        if verbose: print "start to fit hmm"
+        nEmissionDim = len(normalTrainData)
+        cov_mult     = [cov]*(nEmissionDim**2)
+        nLength      = len(normalTrainData[0][0]) - startIdx
+
+        ml  = learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        if data_dict['handFeatures_noise']:
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         cov_mult=cov_mult, use_pkl=False)
+        else:
+            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
+
+        if ret == 'Failure': 
+            print "-------------------------"
+            print "HMM returned failure!!   "
+            print "-------------------------"
+            sys.exit()
+            return (-1,-1,-1,-1)
+
+        #-----------------------------------------------------------------------------------------
+        # Classifier training data
+        #-----------------------------------------------------------------------------------------
+        testDataX = []
+        testDataY = []
+        for i in xrange(nEmissionDim):
+            temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+            testDataX.append( temp )
+
+        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                np.ones(len(abnormalTrainData[0])) ])
+
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                ml.nEmissionDim, ml.nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(testDataX[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+        ll_classifier_train_X, ll_classifier_train_Y = \
+          getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+
+        #-----------------------------------------------------------------------------------------
+        # Classifier test data
+        #-----------------------------------------------------------------------------------------
+        testDataX = []
+        testDataY = []
+        for i in xrange(nEmissionDim):
+            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
+            testDataX.append( temp )
+
+        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+                                np.ones(len(abnormalTestData[0])) ])
+
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+                                                                ml.nEmissionDim, ml.nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(testDataX[0])))
+        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+
+        # nSample x nLength
+        ll_classifier_test_X, ll_classifier_test_Y = \
+          getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+
+        #-----------------------------------------------------------------------------------------
+        d = {}
+        d['nEmissionDim'] = ml.nEmissionDim
+        d['A']            = ml.A 
+        d['B']            = ml.B 
+        d['pi']           = ml.pi
+        d['F']            = ml.F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_train_X']  = ll_classifier_train_X
+        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']= ll_classifier_train_idx
+        d['ll_classifier_test_X']   = ll_classifier_test_X
+        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['nLength']      = nLength
+        ut.save_pickle(d, modeling_pkl)
+    
+    return

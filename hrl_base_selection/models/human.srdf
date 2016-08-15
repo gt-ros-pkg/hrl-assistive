@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+
+ <!--&lt;!&ndash; This does not replace URDF, and is not an extension of URDF.-->
+      <!--This is a format for representing semantic information about the robot structure.-->
+      <!--A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined &ndash;&gt;-->
+ <!--<robot name="human_model">-->
+
+   <!--<group name="group1">-->
+      <!--&lt;!&ndash; when a link is specified, the parent joint of that link (if it exists) is automatically included &ndash;&gt;-->
+      <!--<link name="..."/>-->
+      <!--<link name="..."/>-->
+
+      <!--&lt;!&ndash; when a joint is specified, the child link of that joint (which will always exist) is automatically included &ndash;&gt;-->
+      <!--<joint name="..." />-->
+
+      <!--&lt;!&ndash; when a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group &ndash;&gt;-->
+      <!--<chain base_link="l_shoulder_pan_link" tip_link="l_wrist_roll_link"/>-->
+      <!--<chain base_link="r_shoulder_pan_link" tip_link="r_wrist_roll_link"/>-->
+   <!--</group>-->
+
+   <!--&lt;!&ndash; groups can also be formed by referencing to already defined group names &ndash;&gt;-->
+   <!--<group name="arms">-->
+      <!--<group name="left_arm"/>-->
+      <!--<group name="right_arm"/>-->
+      <!--<link name="..." />-->
+   <!--</group>-->
+
+   <!--&lt;!&ndash; define a named state/configuration of a group &ndash;&gt;-->
+   <!--<group_state name="name of this state" group="name of group the state is for">-->
+      <!--<joint name="name of joint in group" value="" />-->
+      <!--&lt;!&ndash; all joints must be specified for the state to be valid &ndash;&gt;-->
+   <!--</group_state>-->
+
+   <!--&lt;!&ndash; Define how the robot moves in its environment, i.e., connection to robot's root link &ndash;&gt;-->
+   <!--<virtual_joint name="world_joint" type="planar" parent_frame="some fixed frame" child_link="robot's root link name"/> &lt;!&ndash; type can be planar, floating or fixed &ndash;&gt;-->
+
+   <!--&lt;!&ndash; We can then include the virtual joint in groups &ndash;&gt;-->
+   <!--<group name="whole_body">-->
+      <!--<group name="arms"/>-->
+      <!--<joint name="world_joint"/>-->
+   <!--</group>-->
+
+
+   <!--&lt;!&ndash; define end effectors &ndash;&gt;-->
+   <!--<end_effector name="some diff name" parent_link="..." group="group_name"/>-->
+
+   <!--&lt;!&ndash; By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. There can be many such tags in this file.&ndash;&gt;-->
+   <!--<disable_collisions link1="link1" link2="link2" />-->
+
+<!--</robot>-->
+
+<robot name="human_model">
+
+   <!--<virtual_joint name="world_joint" type="planar" parent_frame="odom" child_link="base_footprint"/>-->
+
+   <group name="right_arm">
+      <chain base_link="human_model/shoulder_right_link" tip_link="human_model/fist_right_link"/>
+   </group>
+
+   <group name="left_arm">
+      <chain base_link="human_model/shoulder_left_link" tip_link="human_model/fist_left_link"/>
+   </group>
+
+   <group name="arms">
+      <group name="left_arm"/>
+      <group name="right_arm"/>
+   </group>
+
+   <!--<group_state name="tuck_arms" group="arms">-->
+      <!--<joint name="l_shoulder_pan_joint" value="0.2" />-->
+      <!-- ... the rest of the joint values... -->
+   <!--</group_state>-->
+
+   <!--<group name="base">-->
+      <!--<joint name="world_joint"/>-->
+   <!--</group>-->
+
+   <group name="whole_body">
+      <group name="arms"/>
+      <group name="base"/>
+      <joint name="torso_lift_joint"/>
+   </group>
+
+   <group name="l_end_effector">
+      <joint name="human_model/shoulder_bicep_left_x_joint" />
+      <joint name="human_model/shoulder_bicep_left_y_joint" />
+      <joint name="human_model/shoulder_bicep_left_z_joint" />
+      <!--<joint name="human_model/bicep_lower_left_joint" />-->
+      <!--<joint name="human_model/bicep_elbow_left_joint" />-->
+      <joint name="human_model/elbow_forearm_left_joint" />
+      <!--<joint name="human_model/forearm_wrist_left_joint" />-->
+      <joint name="human_model/wrist_hand_left_x_joint" />
+      <joint name="human_model/wrist_hand_left_y_joint" />
+      <joint name="human_model/wrist_hand_left_z_joint" />
+      <!--<joint name="human_model/hand_fist_left_joint" />-->
+   </group>
+
+   <group name="r_end_effector">
+      <joint name="human_model/shoulder_bicep_right_x_joint" />
+      <joint name="human_model/shoulder_bicep_right_y_joint" />
+      <joint name="human_model/shoulder_bicep_right_z_joint" />
+      <!--<joint name="human_model/bicep_lower_right_joint" />-->
+      <!--<joint name="human_model/bicep_elbow_right_joint" />-->
+      <joint name="human_model/elbow_forearm_right_joint" />
+      <!--<joint name="human_model/forearm_wrist_right_joint" />-->
+      <joint name="human_model/wrist_hand_right_x_joint" />
+      <joint name="human_model/wrist_hand_right_y_joint" />
+      <joint name="human_model/wrist_hand_right_z_joint" />
+      <!--<joint name="human_model/hand_fist_right_joint" />-->
+   </group>
+
+   <end_effector name="r_end_effector" parent_link="human_model/fist_right_link" group="r_end_effector"/>
+   <end_effector name="l_end_effector" parent_link="human_model/fist_left_link" group="l_end_effector"/>
+
+   <!--Disable collisions-->
+   <!--Head-->
+   <disable_collisions link1="human_model/head_link" link2="human_model/skull_front_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/skull_back_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/skull_back_base_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/skull_core_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/face_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/nose_link" />
+   <disable_collisions link1="human_model/head_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/face_link" link2="human_model/mouth_link" />
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/skull_back_link" />
+
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/skull_back_base_link" />
+   <disable_collisions link1="human_model/skull_back_link" link2="human_model/skull_back_base_link" />
+
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/skull_core_link" />
+   <disable_collisions link1="human_model/skull_back_link" link2="human_model/skull_core_link" />
+   <disable_collisions link1="human_model/skull_back_base_link" link2="human_model/skull_core_link" />
+
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/face_link" />
+   <disable_collisions link1="human_model/skull_back_link" link2="human_model/face_link" />
+   <disable_collisions link1="human_model/skull_back_base_link" link2="human_model/face_link" />
+   <disable_collisions link1="human_model/skull_core_link" link2="human_model/face_link" />
+
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/nose_link" />
+   <disable_collisions link1="human_model/skull_back_link" link2="human_model/nose_link" />
+   <disable_collisions link1="human_model/skull_back_base_link" link2="human_model/nose_link" />
+   <disable_collisions link1="human_model/skull_core_link" link2="human_model/nose_link" />
+   <disable_collisions link1="human_model/face_link" link2="human_model/nose_link" />
+
+   <disable_collisions link1="human_model/skull_front_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/skull_back_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/skull_back_base_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/skull_core_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/face_link" link2="human_model/skull_base_link" />
+   <disable_collisions link1="human_model/nose_link" link2="human_model/skull_base_link" />
+
+   <!--Torso-->
+   <disable_collisions link1="human_model/skull_base_link" link2="human_model/neck_link" />
+   <disable_collisions link1="human_model/face_link" link2="human_model/neck_link" />
+   <disable_collisions link1="human_model/neck_link" link2="human_model/upper_body_top_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/upper_body_bottom_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/mid_body_link" />
+   <disable_collisions link1="human_model/upper_body_bottom_link" link2="human_model/mid_body_link" />
+   <disable_collisions link1="human_model/mid_body_link" link2="human_model/pelvis_link" />
+   <disable_collisions link1="human_model/pelvis_link" link2="human_model/pelvis_floor_link" />
+   <disable_collisions link1="human_model/pelvis_link" link2="human_model/hip_left_link" />
+   <disable_collisions link1="human_model/pelvis_link" link2="human_model/hip_right_link" />
+   <disable_collisions link1="human_model/pelvis_floor_link" link2="human_model/hip_left_link" />
+   <disable_collisions link1="human_model/pelvis_floor_link" link2="human_model/hip_right_link" />
+
+   <!--Left Leg-->
+   <disable_collisions link1="human_model/pelvis_link" link2="human_model/thigh_left_link" />
+   <disable_collisions link1="human_model/pelvis_floor_link" link2="human_model/thigh_left_link" />
+   <disable_collisions link1="human_model/hip_left_link" link2="human_model/thigh_left_link" />
+   <disable_collisions link1="human_model/thigh_left_link" link2="human_model/thigh_lower_left_link" />
+   <disable_collisions link1="human_model/thigh_lower_left_link" link2="human_model/knee_left_link" />
+   <disable_collisions link1="human_model/thigh_lower_left_link" link2="human_model/calf_left_link" />
+   <disable_collisions link1="human_model/knee_left_link" link2="human_model/calf_left_link" />
+   <disable_collisions link1="human_model/calf_left_link" link2="human_model/ankle_left_link" />
+   <disable_collisions link1="human_model/calf_left_link" link2="human_model/foot_left_link" />
+   <disable_collisions link1="human_model/ankle_left_link" link2="human_model/foot_left_link" />
+
+   <!--Right Leg-->
+   <disable_collisions link1="human_model/pelvis_link" link2="human_model/thigh_right_link" />
+   <disable_collisions link1="human_model/pelvis_floor_link" link2="human_model/thigh_right_link" />
+   <disable_collisions link1="human_model/hip_right_link" link2="human_model/thigh_right_link" />
+   <disable_collisions link1="human_model/thigh_right_link" link2="human_model/thigh_lower_right_link" />
+   <disable_collisions link1="human_model/thigh_lower_right_link" link2="human_model/knee_right_link" />
+   <disable_collisions link1="human_model/thigh_lower_right_link" link2="human_model/calf_right_link" />
+   <disable_collisions link1="human_model/knee_right_link" link2="human_model/calf_right_link" />
+   <disable_collisions link1="human_model/calf_right_link" link2="human_model/ankle_right_link" />
+   <disable_collisions link1="human_model/calf_right_link" link2="human_model/foot_right_link" />
+   <disable_collisions link1="human_model/ankle_right_link" link2="human_model/foot_right_link" />
+
+   <!--Left Arm-->
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/shoulder_left_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/bicep_left_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/scapula_left_link" />
+   <disable_collisions link1="human_model/scapula_left_link" link2="human_model/shoulder_left_link" />
+   <disable_collisions link1="human_model/scapula_left_link" link2="human_model/bicep_left_link" />
+   <disable_collisions link1="human_model/shoulder_left_link" link2="human_model/bicep_left_link" />
+   <disable_collisions link1="human_model/bicep_left_link" link2="human_model/bicep_lower_left_link" />
+   <disable_collisions link1="human_model/bicep_lower_left_link" link2="human_model/elbow_left_link" />
+   <disable_collisions link1="human_model/bicep_lower_left_link" link2="human_model/forearm_left_link" />
+   <disable_collisions link1="human_model/elbow_left_link" link2="human_model/forearm_left_link" />
+   <disable_collisions link1="human_model/forearm_left_link" link2="human_model/wrist_left_link" />
+   <disable_collisions link1="human_model/forearm_left_link" link2="human_model/hand_left_link" />
+   <disable_collisions link1="human_model/wrist_left_link" link2="human_model/hand_left_link" />
+   <disable_collisions link1="human_model/hand_left_link" link2="human_model/fist_left_link" />
+   <disable_collisions link1="human_model/wrist_left_link" link2="human_model/fist_left_link" />
+
+
+   <!--Right Arm-->
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/shoulder_right_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/bicep_right_link" />
+   <disable_collisions link1="human_model/upper_body_top_link" link2="human_model/scapula_right_link" />
+   <disable_collisions link1="human_model/scapula_right_link" link2="human_model/shoulder_right_link" />
+   <disable_collisions link1="human_model/scapula_right_link" link2="human_model/bicep_right_link" />
+   <disable_collisions link1="human_model/shoulder_right_link" link2="human_model/bicep_right_link" />
+   <disable_collisions link1="human_model/bicep_right_link" link2="human_model/bicep_lower_right_link" />
+   <disable_collisions link1="human_model/bicep_lower_right_link" link2="human_model/elbow_right_link" />
+   <disable_collisions link1="human_model/bicep_lower_right_link" link2="human_model/forearm_right_link" />
+   <disable_collisions link1="human_model/elbow_right_link" link2="human_model/forearm_right_link" />
+   <disable_collisions link1="human_model/forearm_right_link" link2="human_model/wrist_right_link" />
+   <disable_collisions link1="human_model/forearm_right_link" link2="human_model/hand_right_link" />
+   <disable_collisions link1="human_model/wrist_right_link" link2="human_model/hand_right_link" />
+   <disable_collisions link1="human_model/hand_right_link" link2="human_model/fist_right_link" />
+   <disable_collisions link1="human_model/wrist_right_link" link2="human_model/fist_right_link" />
+
+    <!-- and any more disable_collisions tags -->
+
+</robot>

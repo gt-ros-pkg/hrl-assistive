@@ -22,7 +22,7 @@ from visualization_msgs.msg import Marker
 import time
 from hrl_msgs.msg import FloatArrayBare
 from helper_functions import createBMatrix
-from data_reader import DataReader
+from data_reader_cma import DataReader
 from data_reader_task import DataReader_Task
 from score_generator import ScoreGenerator
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
@@ -32,7 +32,7 @@ from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
 import random
 
 import pickle
-import sPickle as pkl
+# import sPickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 import joblib
@@ -45,14 +45,29 @@ class Manipulability_Testing(object):
         # compare = True
         self.visualize_best = visualize_best
 
+        self.task = 'face_wiping' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
+        self.model = 'autobed'  # options are: 'chair', 'bed', 'autobed'
         self.tf_listener = tf.TransformListener()
+
+        unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
+                  0.52777768],
+                [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
+                  0.02473747]]
+        a = np.reshape(unformat[0],[6,1])
+        b = np.reshape(unformat[1],[6,1])
+        base_config = np.hstack([a,b])
+        best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
+        self.scores = []
+        self.scores.append(best_base)
+
+    def load_scores(self):
+
         self.train_subj = train_subj
         self.test_subj = test_subj
         print 'I will use data that was trained on subject ', self.train_subj
         print 'I will test on data from subject ', self.test_subj
 
-        self.task = 'shaving' # options are: bathing, brushing, feeding, shaving, scratching_upper_arm/forearm/thigh/chest/knee
-        self.model = 'chair'  # options are: 'chair', 'bed', 'autobed'
+
 
         pos_clust = 2
         ori_clust = 2
@@ -63,11 +78,12 @@ class Manipulability_Testing(object):
 
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
+        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/base_selection'
         print 'Loading scores.'
         self.loaded_scores = self.load_task(self.task, self.model, self.train_subj)
         if self.loaded_scores is None:
             print 'The scores do not exist. Must generate scores! This may take a long time...'
-            self.generate_scores(data_start, data_finish, pos_clust, ori_clust)
+            # self.generate_scores(data_start, data_finish, pos_clust, ori_clust)
             print 'Scores generated. I will now continue.'
             print 'Now loading the scores I just generated'
             self.loaded_scores = self.load_task(self.task, self.model, self.train_subj)
@@ -79,9 +95,14 @@ class Manipulability_Testing(object):
         self.scores = self.loaded_scores[headx, heady]
         if output_raw_scores:
             self.output_scores()
-        subject = ''.join(['sub', str(self.test_subj), '_shaver'])
+
+    def load_goals(self):
+        # subject = ''.join(['sub', str(self.test_subj), '_shaver'])
+        subject=None
         print 'Reading in raw data from the task.'
-        read_task_data = DataReader_Task(self.task, self.model)
+        read_task_data = DataReader_Task(self.task, self.model,'cma')
+        data_start=0
+        data_finish='end'
         raw_data, raw_num, raw_reference, self.raw_reference_options = read_task_data.reset_goals()
         read_data = DataReader(subject=subject, data_start=data_start, reference_options=self.raw_reference_options,
                                data_finish=data_finish, model=self.model, task=self.task, tf_listener=self.tf_listener)
@@ -104,7 +125,7 @@ class Manipulability_Testing(object):
         if self.best_base[1][1] == 0:
             print 'There are no base locations with reachable goals. Something went wrong in the scoring or the setup'
         print 'The best base location is: \n', self.best_base
-
+        visualize_best = True
         if visualize_best:
             self.visualize_base_config(self.best_base, self.goal_data, self.raw_reference_options)
 
@@ -115,7 +136,7 @@ class Manipulability_Testing(object):
         print 'The number of base configurations on the score sheet for the default human position with ' \
               'score > 0 is: ', len(self.scores)
         comparison_bases = []
-        max_num_of_comparisons = 400
+        max_num_of_comparisons = 0 # 400
         max_num_of_comparisons = np.min([max_num_of_comparisons, len(self.scores)])
         max_reach_count = 0
         print 'best base manip score is:', best_base[1][2]
@@ -133,7 +154,8 @@ class Manipulability_Testing(object):
         #     do_all = True
         do_all = False
         custom = False
-        anova_test = True
+        anova_test = False
+        do_first = True
         if anova_test:
             single_score = []
             for aScore in self.scores:
@@ -194,7 +216,7 @@ class Manipulability_Testing(object):
                     print 'there was an index error'
                     pass
         elif do_first:
-            for j in xrange(1, 11):
+            for j in xrange(1, 2):
                 i = j
                 try:
                     if self.scores[int(i), 1][1] > 0:
@@ -247,7 +269,7 @@ class Manipulability_Testing(object):
         self.evaluate_base_locations(best_base, comparison_bases, self.goal_data, self.raw_reference_options)
 
     def evaluate_base_locations(self, best_base, comparison_bases, goal_data, reference_options):
-        visualize = False
+        visualize = True
         mytargets = 'all_goals'
         # reference_options = []
         # reference_options.append('head')
@@ -259,26 +281,26 @@ class Manipulability_Testing(object):
         # best_base[0][3] = [0.3]
         # best_base[0][4] = [0.]
         # best_base[0][5] = [0.]
-        selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
+        self.selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
                                   goals=myGoals, model=self.model, tf_listener=self.tf_listener)
         rospy.sleep(5)
         start_time = time.time()
-        # selector.receive_new_goals(goal_data)
-        # selector.show_rviz()
-        best_base_score = selector.eval_init_config(best_base, goal_data)
+        # self.selector.receive_new_goals(goal_data)
+        # self.selector.show_rviz()
+        best_base_score = self.selector.eval_init_config(best_base, goal_data)
 
         print 'The score for the best base was: ', best_base_score
         comparison_base_scores = []
         for item in comparison_bases:
-            selector.receive_new_goals(goal_data)
-            comparison_base_scores.append(selector.eval_init_config(item, goal_data))
+            self.selector.receive_new_goals(goal_data)
+            comparison_base_scores.append(self.selector.eval_init_config(item, goal_data))
         print 'The best base location is: \n', best_base
         print 'The score for the best base was: ', best_base_score
         # for i in xrange(len(comparison_base_scores)):
             # print 'A comparison base score for base: \n', comparison_bases[i]
             # print 'The score was: ', comparison_base_scores[i]
         print 'Time to generate all scores for comparison and best bases: %fs' % (time.time()-start_time)
-        locations = open(''.join([self.pkg_path, '/data/', self.task, '_', self.model, '_base_configs.log']), 'w')
+        locations = open(''.join([self.data_path, '/', self.task, '_', self.model, '_base_configs.log']), 'w')
         # manip_scores = open(''.join([self.pkg_path,'/data/manip_scores.log']), 'w')
         # reach_scores = open(''.join([self.pkg_path,'/data/manip_scores.log']), 'w')
         if self.model == 'chair':
@@ -411,7 +433,7 @@ class Manipulability_Testing(object):
         print 'Done generating the score sheet for this task and subject'
 
     def output_scores(self):
-        score_save_location = open(''.join([self.pkg_path, '/data/score_output.log']), 'w')
+        score_save_location = open(''.join([self.data_path, '/score_output.log']), 'w')
         for score in self.scores:
             if self.model == 'chair':
                 if len(score[0][0]) == 1:
@@ -455,7 +477,11 @@ class Manipulability_Testing(object):
 
     def load_task(self, task, model, subj):
         # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data.pkl'])
-        file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        if 'scratching' in task.split('_'):
+            split_task = task.split('_')
+            file_name = ''.join([self.data_path, '/', split_task[0], '/', model, '/', split_task[1], '_', split_task[2], '/', task, '_', model, '_subj_', str(subj), '_score_data'])
+        else:
+            file_name = ''.join([self.data_path, '/', task, '/', model, '/', task, '_', model, '_subj_', str(subj), '_score_data'])
         # return self.load_spickle(file_name)
         print 'loading file with name ', file_name
         try:
@@ -464,6 +490,7 @@ class Manipulability_Testing(object):
             print 'Load failed, sorry.'
             return None
 
+    '''
     ## read a pickle and return the object.
     # @param filename - name of the pkl
     # @return - object that had been pickled.
@@ -482,28 +509,111 @@ class Manipulability_Testing(object):
             picklelicious = pkl.load(p)
         p.close()
         return picklelicious
+    '''
 
     def visualize_base_config(self, base, goal_data, reference_options):
+        print base
+        base = [[[0.46289771], [-0.72847723], [0.1949910376461335], [0.29444783399999996],
+                 [0.0030885365000000026], [0.06484810062059854]],
+                [0.057329581427009745, 1.0, 0.36352068257210146]]
+        base = [[[0.623102892598], [-0.762012001042], [-0.0294729879325], [0.0902860705641],
+                 [0.00648402460469], [1.23414184526]],
+                [0.057329581427009745, 1.0, 0.36352068257210146]]
+        base = [[[0.67848577, -0.81211008], [0.70119037, -0.01048174], [3.63956937, -0.14257091], [0.13847594, 0.04083888],
+                 [0.01491837, 0.10748585], [0.18010711, 0.139652]],
+                [0.057329581427009745, 1.0, 0.36352068257210146]]
+        unformat = [[ 0.4580933 ,  1.00806015, -2.66855508,  0.17084372,  0.13866491,
+         0.83056839],
+        [ 0.82132058, -0.82340737,  0.68550188,  0.19356394,  0.09474543,
+         0.15645363]]
+        unformat = [[ 0.71440993, -0.7706963 ,  0.17108766,  0.2724865 ,  0.17209647,
+                      0.31666851],
+                    [ 1.13256279, -0.95259745,  0.23538584,  0.2464303 ,  0.10706364,
+                      1.00092141]]
+        unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
+                      0.52777768],
+                    [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
+                      0.02473747]]
+
+        a = np.reshape(unformat[0],[6,1])
+        b = np.reshape(unformat[1],[6,1])
+        base_config = np.hstack([a,b])
+        base_config = [[ 0.96138881,  0.83774071],
+       [ 0.63033125, -1.07430128],
+       [-2.0599323 , -0.17919976],
+       [ 0.0974726 ,  0.23857654],
+       # [ 0.09994156,  0.1857015 ],
+       # [ 0.69738434,  0.83414354]]
+       [ 0.09994156,  0.09994156 ],
+       [ 0.69738434,  0.69738434]]
+        base_config = [[ 1.23151836,  0.84031986],
+                       [ 0.78498528, -0.73199084],
+                       [-2.81981806, -4.4666789 ],
+                       [ 0.29643016,  0.03537878],
+                       [ 0.04969906,  0.0708807 ],
+                       [ 1.38750928,  0.29672911]]
+        base_config = [[ 1.23151836],
+                       [ 0.78498528],
+                       [-2.81981806],
+                       [ 0.29643016],
+                       [ 0.04969906],
+                       [ 1.38750928]]
+        base_config = [[ 15.06703334],
+                       [ 0.54141627],
+                       [ 4.59730883],
+                       [ 0.25143195],
+                       [ 0.19654172],
+                       [ 0.72349272]]
+        base_config = [[  7.62396342e-01,   8.12051566e-01],
+                                [ -9.74603160e-01,   8.22424312e-01],
+                                [  4.34234809e-01,   3.14449028e+00],
+                                [  2.30477816e-01,   1.50698285e-01],
+                                [  1.31764785e-01,   4.37829587e-02],
+                                [  2.65512876e-04,   2.33108573e-01]]
+        base_config = [[ 0.66656159],
+                       [ 0.72559452],
+                       [ 3.2687198 ],
+                       [ 0.27121077],
+                       [ 0.18372532],
+                       [ 0.15628403]]
+        # base_config = [[  7.62396342e-01],#   8.12051566e-01],
+        #                         [ -9.74603160e-01],#   8.22424312e-01],
+        #                         [  4.34234809e-01],#   3.14449028e+00],
+        #                         [  2.30477816e-01],#   1.50698285e-01],
+        #                         [  1.31764785e-01],#   4.37829587e-02],
+        #                         [  2.65512876e-04]]#,   2.33108573e-01]])
+
+        base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
+
         visualize = True
         mytargets = 'all_goals'
-        # reference_options = []
-        # reference_options.append('head')
+        reference_options = []
+        reference_options.append('head')
         myReferenceNames = reference_options
         myGoals = goal_data
         visualizer = ConfigVisualize(base, goal_data, visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
                                      model=self.model, tf_listener=self.tf_listener)
         rospy.sleep(5)
-        selector.visualize_config(best_base, goal_data)
+        self.selector.visualize_config(best_base, goal_data)
 
 
 if __name__ == "__main__":
     rospy.init_node('manipulability_test_shaving_anova')
     train_subj = 0
     test_subj = 0
-    visualize_best = False
+    visualize_best = True
     myTest = Manipulability_Testing(visualize_best=visualize_best, train_subj=train_subj, test_subj=test_subj)
-    best_base = myTest.get_best_base()
-    myTest.run_comparisons(best_base)
+    # best_base = myTest.get_best_base()
+    unformat = [[ 0.51690126, -1.05729766, -0.36703181,  0.17778619,  0.06917491,
+                  0.52777768],
+                [ 0.48857319,  0.7939337 , -2.67601689,  0.25041255,  0.16480721,
+                  0.02473747]]
+    a = np.reshape(unformat[0],[6,1])
+    b = np.reshape(unformat[1],[6,1])
+    base_config = np.hstack([a,b])
+    best_base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
+    myTest.load_goals()
+    # myTest.run_comparisons(best_base)
     rospy.spin()
     # myTest.initialize_test_conditions()
     # myTest.evaluate_task()

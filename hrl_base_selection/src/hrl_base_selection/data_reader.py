@@ -24,7 +24,7 @@ import matplotlib.patches as patches
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
-# from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove, BaseMove_multi
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -33,10 +33,10 @@ from matplotlib.cbook import flatten
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
-# from sPickle import Pickler
+#from sPickle import Pickler
 import tf.transformations as tft
 from score_generator import ScoreGenerator
-import data_clustering as clust
+#import data_clustering as clust
 import joblib
 from joblib import Memory
 from tempfile import mkdtemp
@@ -47,10 +47,10 @@ class DataReader(object):
     
     def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1,tf_listener=None):
         self.score_sheet = []
-        if tf_listener is None:
-            self.tf_listener = tf.TransformListener()
-        else:
-            self.tf_listener = tf_listener
+        # if tf_listener is None:
+        #     self.tf_listener = tf.TransformListener()
+        # else:
+        #     self.tf_listener = tf_listener
         if subject == None:
             self.subject = 0
             self.sub_num = 0
@@ -191,14 +191,13 @@ class DataReader(object):
         self.raw_goal_data = np.array(self.raw_goal_data)
         print 'Minimum distance between center of head and goal location from raw data = ', np.min(np.array(self.distance))
         return self.raw_goal_data
-
+    '''
     def cluster_data(self):
         self.pos_clust = np.min([len(self.raw_goal_data), self.pos_clust])
         self.ori_clust = np.min([len(self.raw_goal_data), self.ori_clust])
         self.clustered_goal_data = np.zeros([1, 4, 4])
         self.clustered_number = np.zeros([1, 1])
         self.clustered_reference = np.zeros([1, 1])
-
         # Clusters should be done separately for goals with different reference frames. Here I separate the data by
         # reference frame, run clustering, then recombine the data.
         for i in xrange(len(self.reference_options)):
@@ -233,7 +232,6 @@ class DataReader(object):
         self.clustered_goal_data = np.delete(self.clustered_goal_data, 0, 0)
         self.clustered_number = np.delete(self.clustered_number, 0, 0)
         self.clustered_reference = np.delete(self.clustered_reference, 0, 0)
-
         self.cluster_distance = []
         for item in self.clustered_goal_data:
             self.cluster_distance.append(np.linalg.norm(item[0:3, 3]))
@@ -241,7 +239,6 @@ class DataReader(object):
         #print 'Raw data: \n',self.raw_goal_data#[0:20]
         #print 'Clustered data: \n',self.clustered_goal_data#[0:20]
         return self.clustered_goal_data, self.clustered_number, self.clustered_reference
-
         #print 'Now finding how many unique goals there are. Please wait; this can take up to a couple of minutes.'
         #seen_items = []
         #self.goal_unique = [] 
@@ -259,6 +256,7 @@ class DataReader(object):
         #                self.goal_unique[num][1]=1.0/len(self.clustered_goal_data)+self.goal_unique[num][1]
         #self.goal_unique = np.array(self.goal_unique)
         #print 'final score unique is: ',self.goal_unique
+    '''
 
     def sample_raw_data(self, raw_data, num):
         sampled = []
@@ -341,8 +339,9 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         #print myGoals
+
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, tf_listener=self.tf_listener)
+                                  goals=myGoals, model=self.model)#, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
         # handle_score_in_memory = memory.cache(selector.handle_score)
@@ -413,7 +412,7 @@ class DataReader(object):
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
 
-        if self.task == 'shaving' or True:
+        if True:#False:#self.task == 'shaving' or True:
             # print 'Using the alternative streaming method for saving data because it is a big data set.'
             # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
             #                     '_score_data.pkl'])
@@ -423,9 +422,13 @@ class DataReader(object):
             # pickler = Pickler(file, -1)
             # pickler.dump(score_sheet)
             # file.close()
-            joblib.dump(score_sheet, filename)
+            output_score = {}
+            output_score[0.,0.] = []
+            for i in xrange(10):
+                output_score[0.,0.].append(score_sheet[0.,0.][i])
+            joblib.dump(output_score, filename, compress=6)
         else:
-            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, '_quick_score_data.pkl']))
+            save_pickle(score_sheet, ''.join([pkg_path, '/data/', self.task, '_', self.model, 'brute_score_data.pkl']))
         print 'There was no existing score data for this task. I therefore created a new file. And I was successful at ' \
               'it! Yay!'
 #        if os.path.isfile(''.join([pkg_path, '/data/',self.task,'_score_data.pkl'])):
@@ -445,8 +448,6 @@ class DataReader(object):
         return score_sheet
     '''
     def dangling_code(self):
-
-
         prev_max_reachable = 0
         for i in xrange(len(reachable)):
             if np.count_non_zero(reachable[i])>prev_max_reachable:
@@ -472,23 +473,8 @@ class DataReader(object):
                     if num_base_locations>2:
                         for k in xrange(j+1,len(reachable)):
                             return
-
-
-
-
-
-
-
-
-
-
-
-
                 
                 
-
-
-
     '''
 #        old_max_score = np.max(self.score_sheet[:,4])
 #        print 'The max reach score (% out of 1.00) I got when using only 1 base position was: ', np.max(self.score_sheet[:,4])
@@ -546,7 +532,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)#,tf_listener=self.tf_listener)
         #print 'Goals: \n',self.clustered_goal_data[0:4]
         #print tft.quaternion_from_matrix(self.clustered_goal_data[0])
         score_sheet = selector.handle_score()
@@ -795,7 +781,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)#[self.data_start:self.data_finish]
         print 'There are ',len(myGoals),' goals being sent to score generator.'
         #print myGoals
-        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model,tf_listener=self.tf_listener)
+        selector = ScoreGenerator(visualize=False,targets=mytargets,goals = myGoals,model=self.model)#,tf_listener=self.tf_listener)
         selector.show_rviz()
 
 
@@ -835,8 +821,6 @@ if __name__ == "__main__":
     #runData.plot_score(load=False)
     #print 'Time to plot score: %fs'%(time.time()-start_time)
     rospy.spin()
-
-
 
 
 

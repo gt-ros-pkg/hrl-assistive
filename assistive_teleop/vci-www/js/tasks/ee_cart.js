@@ -46,6 +46,42 @@ RFH.CartesianEEControl = function (options) {
     $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
     $('#armCtrlContainer').css('zIndex',5);
     $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
+    self.$baseSelectionButton = $('.'+self.side[0]+'-arm-ctrl.rtbs').button();
+
+    self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.tasks['realtime_base_selection'].sendTaskGoal(self.side)});
+
+    var tuckAside = function (event) {
+        console.log("Tuck Arm To Side!");
+        var tuckSideAngles;
+        if (self.side[0] == 'r') {
+            tuckSideAngles = [-1.8, 1.25, -1.9, -2.0, 3.5,  -1.5, 0];
+        } else if (self.side[0] === 'l') {
+            tuckSideAngles = [1.8,  1.25,  1.9, -2.0, 2.8, -1.5, 0];
+        }
+        self.arm.sendJointAngleGoal(tuckSideAngles);
+    };
+    $('#controls > .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
+
+    var armCameraOn = false;
+    var showArmCamera = function (event) {
+        RFH.mjpeg.setParam('topic', self.side[0]+'_forearm_cam/image_color_rotated');
+        $('#armCtrlContainer').hide();
+        self.rotationControl.setActive(false);
+        armCameraOn = true;
+    };
+    var hideArmCamera = function (event) {
+        RFH.mjpeg.setParam('topic', '/head_mount_kinect/qhd/image_color');
+        self.setPositionCtrls();
+        armCameraOn = false;
+    };
+    var toggleArmCamera = function (event) {
+        if (armCameraOn) {
+            hideArmCamera();
+        } else {
+            showArmCamera();
+        }
+    };
+    $('#controls > .arm-cam.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', toggleArmCamera);
 
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...
@@ -618,6 +654,9 @@ RFH.CartesianEEControl = function (options) {
         self.trackHand(false);
         self.active = false;
         self.rotationControl.hide();
+        if (armCameraOn) {
+            hideArmCamera();
+        };
 //        for (var dir in self.rotArrows) {
 //            self.rotArrows[dir].mesh.visible = false;
 //            self.rotArrows[dir].edges.visible = false;

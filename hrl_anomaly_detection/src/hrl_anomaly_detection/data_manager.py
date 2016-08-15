@@ -122,7 +122,8 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
                 cut_data=None, \
-                handFeatures=['crossmodal_targetEEDist']):
+                handFeatures=['crossmodal_targetEEDist'], \
+                renew_minmax=False):
     '''
     Load a list of files and return hand-engineered feature set of each file.
     The feature is scaled by the param dict.
@@ -133,12 +134,16 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
             print "Error>> there is no recorded file: ", fileName
             sys.exit()
 
+    max_time = param_dict['timeList'][-1]
+    print "max time is ", max_time
+    
     _, data_dict = util.loadData(fileNames, isTrainingData=False,
                                  downSampleSize=downSampleSize,
-                                 local_range=local_range, rf_center=rf_center)
+                                 local_range=local_range, rf_center=rf_center, max_time=max_time)
    
     features, _ = extractHandFeature(data_dict, handFeatures, \
-                                     param_dict=param_dict, cut_data=cut_data)
+                                     init_param_dict=param_dict, cut_data=cut_data,\
+                                     renew_minmax=renew_minmax)
 
     return features
 
@@ -149,7 +154,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
                cut_data=None, init_param_dict=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
-               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False):
+               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False,\
+               time_sort=False, max_time=None):
     '''
     If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
@@ -174,15 +180,36 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             param_dict      = data_dict.get('aeParamDict', [])
         else:        
             # Task-oriented hand-crafted features
-            allData         = data_dict['allData']
-            successData     = data_dict['successData'] 
-            failureData     = data_dict['failureData']
+            ## allData         = data_dict['allData']
+            if 'successData' not in data_dict.keys():
+                successDataList = data_dict['successDataList'] 
+                failureDataList = data_dict['failureDataList']
+
+                for i in xrange(len(successDataList)):
+                    if i == 0:
+                        successData = successDataList[i]
+                        failureData = failureDataList[i]
+                    else:
+                        successData = np.vstack([ np.swapaxes(successData,0,1), \
+                                                  np.swapaxes(successDataList[i], 0,1)])
+                        failureData = np.vstack([ np.swapaxes(failureData,0,1), \
+                                                  np.swapaxes(failureDataList[i], 0,1)])
+                        successData = np.swapaxes(successData, 0, 1)
+                        failureData = np.swapaxes(failureData, 0, 1)
+                data_dict['successData'] = successData
+                data_dict['failureData'] = failureData
+                
+            else:
+                successData = data_dict['successData'] 
+                failureData = data_dict['failureData']
+                
             failureNameList = None #data_dict['abnormalTestNameList']
             param_dict      = data_dict['param_dict']
 
     else:
         ## data_renew = False #temp        
-        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
+        success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
+                                                             time_sort=time_sort)
 
         print "start to load data"
         # loading and time-sync    
@@ -191,8 +218,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
                                          downSampleSize=downSampleSize,\
                                          local_range=local_range, rf_center=rf_center,\
-                                         ##global_data=True,\
-                                         renew=data_renew, save_pkl=all_data_pkl)
+                                         renew=data_renew, save_pkl=all_data_pkl,\
+                                         max_time=max_time)
+        max_time = all_data_dict['timesList'][0][-1]
+        print "max time is ", max_time
 
         # data set
         success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
@@ -200,27 +229,31 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         _, success_data_dict = util.loadData(success_list, isTrainingData=True,
                                              downSampleSize=downSampleSize,\
                                              local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=success_data_pkl)
+                                             renew=data_renew, save_pkl=success_data_pkl,\
+                                             max_time=max_time)
 
         failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
                                             '_'+str(local_range))
         _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
                                              downSampleSize=downSampleSize,\
                                              local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=failure_data_pkl)
+                                             renew=data_renew, save_pkl=failure_data_pkl,\
+                                             max_time=max_time)
 
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
             allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                            param_dict=init_param_dict, cut_data=cut_data)
+                                            init_param_dict=init_param_dict, cut_data=cut_data)
             param_dict=init_param_dict                                            
         else:
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
-                                                     cut_data=cut_data)            
+                                                     cut_data=cut_data)
+        print " --------------------- Success -----------------------------"  
         successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
+                                                 init_param_dict=param_dict, cut_data=cut_data)
+        print " --------------------- Failure -----------------------------"  
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
-                                                 param_dict=param_dict, cut_data=cut_data)
+                                                 init_param_dict=param_dict, cut_data=cut_data)
 
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
@@ -290,6 +323,10 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     if success_viz or failure_viz:
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+        for i in xrange(n):
+            ax = fig.add_subplot(n*100+10+i)
+            ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
+            ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -300,6 +337,177 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
     print "---------------------------------------------------"
     print "s/f data: ", np.shape(successData), np.shape(failureData)
+    print "---------------------------------------------------"
+    return data_dict
+
+
+def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
+                local_range, \
+                downSampleSize=200, scale=1.0, ae_data=False, \
+                cut_data=None, init_param_dict=None, \
+                success_viz=False, failure_viz=False, \
+                save_pdf=False, solid_color=True, \
+                handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
+                time_sort=False, max_time=None):
+    '''
+    Get data per subject
+    '''
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+\
+                            str(local_range) )
+            
+    if os.path.isfile(save_pkl) and data_renew is False:
+        print "--------------------------------------"
+        print "Load saved data"
+        print "--------------------------------------"
+        data_dict = ut.load_pickle(save_pkl)
+        # Task-oriented hand-crafted features
+        successDataList = data_dict['successDataList']
+        failureDataList = data_dict['failureDataList']
+        failureNameList = None #failure_data_dict['fileNameList']
+        param_dict      = data_dict['param_dict']
+
+    else:
+        ## data_renew = False #temp        
+        file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
+                                            time_sort=time_sort, no_split=True)
+
+        print "start to load data"
+        # loading and time-sync    
+        all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
+                                        '_'+str(local_range))
+        _, all_data_dict = util.loadData(file_list, isTrainingData=False,
+                                         downSampleSize=downSampleSize,\
+                                         local_range=local_range, rf_center=rf_center,\
+                                         renew=data_renew, save_pkl=all_data_pkl,\
+                                         max_time=max_time)
+        max_time = all_data_dict['timesList'][0][-1]
+        print "max time is ", max_time
+
+        # Task-oriented hand-crafted features
+        if init_param_dict is not None:
+            allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                            init_param_dict=init_param_dict, cut_data=cut_data)
+            param_dict=init_param_dict                                            
+        else:
+            allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+                                                     cut_data=cut_data)
+
+        # leave-one-person-out
+        successDataList = []
+        failureDataList = []
+        for i in xrange(len(subject_names)):
+
+            ## train_subjects = subject_names[:i]+subject_names[i+1:]
+            success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
+                                                                 task_name,\
+                                                                 time_sort=time_sort)
+
+            # data set
+            _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+                                                 downSampleSize=downSampleSize,\
+                                                 local_range=local_range, rf_center=rf_center,\
+                                                 renew=data_renew,\
+                                                 max_time=max_time)
+
+            _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                                 downSampleSize=downSampleSize,\
+                                                 local_range=local_range, rf_center=rf_center,\
+                                                 renew=data_renew,\
+                                                 max_time=max_time)
+
+            print " --------------------- Success -----------------------------"  
+            successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+                                                     init_param_dict=param_dict, cut_data=cut_data)
+            print " --------------------- Failure -----------------------------"  
+            failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+                                                     init_param_dict=param_dict, cut_data=cut_data)
+
+            successDataList.append(successData)
+            failureDataList.append(failureData)
+
+
+        data_dict = {}
+        data_dict['successDataList'] = successDataList
+        data_dict['failureDataList'] = failureDataList
+        data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
+        data_dict['param_dict']      = param_dict
+        
+        ut.save_pickle(data_dict, save_pkl)
+
+    #-----------------------------------------------------------------------------
+    ## All data
+    nPlot = None
+
+    # almost deprecated??
+    feature_names = np.array(param_dict.get('feature_names', handFeatures))
+    AddFeature_names    = feature_names
+
+    # -------------------- Display ---------------------
+    
+    fig = None
+    if success_viz:
+
+        import itertools
+        colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+        shapes = itertools.cycle(['x','v', 'o', '+'])
+
+        fig = plt.figure()
+
+        for successData in successDataList:
+            n,m,k = np.shape(successData)
+            ## if nPlot is None:
+            ##     if n%2==0: nPlot = n
+            ##     else: nPlot = n+1
+            nPlot = n
+            color = colors.next()
+
+            for i in xrange(n):
+                ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+                ax = fig.add_subplot(n*100+10+i)
+                if solid_color: ax.plot(successData[i].T, c=color)
+                else: ax.plot(successData[i].T)
+
+                if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
+                elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
+                elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
+                else: ax.set_ylabel(AddFeature_names[i])
+                    ## ax.set_title( AddFeature_names[i] )
+
+    if failure_viz:
+        if fig is None: fig = plt.figure()
+        n,m,k = np.shape(failureData)
+        ## if nPlot is None:
+        ##     if n%2==0: nPlot = n
+        ##     else: nPlot = n+1
+        nPlot = n
+
+        for i in xrange(n):
+            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+            ax = fig.add_subplot(n*100+10+i)
+            if solid_color: ax.plot(failureData[i].T, c='r')
+            else: ax.plot(failureData[i].T)
+            ax.set_title( AddFeature_names[i] )
+
+    if success_viz or failure_viz:
+        plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+        for i in xrange(n):
+            ax = fig.add_subplot(n*100+10+i)
+            ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
+            ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
+
+        if save_pdf:
+            fig.savefig('test.pdf')
+            fig.savefig('test.png')
+            os.system('cp test.p* ~/Dropbox/HRL/')        
+        else:
+            plt.show()
+
+    print "---------------------------------------------------"
+    print "s/f data: ", np.shape(successDataList), np.shape(failureDataList)
     print "---------------------------------------------------"
     return data_dict
 
@@ -994,17 +1202,15 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=None, verbose=False):
+def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dict=None, verbose=False, \
+                       renew_minmax=False):
 
-    if param_dict is None:
+    if init_param_dict is None:
         isTrainingData=True
         param_dict = {}
         param_dict['timeList'] = d['timesList'][0]
 
         if 'unimodal_audioPower' in feature_list:
-            ## power_max = np.amax(d['audioPowerList'])
-            ## power_min = np.amin(d['audioPowerList'])
-            ## power_min = np.mean(np.array(d['audioPowerList'])[:,:10])
             power_min = 10000
             power_max = 0
             for pwr in d['audioPowerList']:
@@ -1012,7 +1218,6 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 p_max = np.amax(pwr)
                 if power_min > p_min:
                     power_min = p_min
-                ## if p_max < 50 and power_max < p_max:
                 if power_max < p_max:
                     power_max = p_max
 
@@ -1056,6 +1261,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
 
         param_dict['feature_names'] = []
     else:
+        param_dict = copy.copy(init_param_dict)
         isTrainingData=False
             
 
@@ -1077,6 +1283,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
             ## audioAzimuth = d['audioAzimuthList'][idx]
             audioPower   = d['audioPowerList'][idx]            
             unimodal_audioPower = audioPower
+            print idx, np.amax(audioPower)
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
@@ -1116,7 +1323,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
                 # individual force
                 ## unimodal_ftForce_ind = ftForce[2:3,:]
-                if offset_flag:
+                if offset_flag: #correct???????
                     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
@@ -1139,26 +1346,26 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
                 if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
 
-            ## ftPos   = d['kinEEPosList'][idx]
-            ## ftForce_pca = param_dict['unimodal_ftForce_pca']
 
-            ## unimodal_ftForce = None
-            ## for time_idx in xrange(len(timeList)):
-            ##     if unimodal_ftForce is None:
-            ##         unimodal_ftForce = ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T
-            ##     else:
-            ##         unimodal_ftForce = np.hstack([ unimodal_ftForce, \
-            ##                                        ftForce_pca.transform(ftForce[:,time_idx:time_idx+1].T).T ])
-
-            ## unimodal_ftForce -= np.array([np.mean(unimodal_ftForce[:,:5], axis=1)]).T
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForceZ' in feature_list:
+            ftForce = d['ftForceList'][idx]
             
-            ## if 'ftForce_1' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_1')
-            ##     param_dict['feature_names'].append('ftForce_2')
-            ## if 'ftForce_x' not in param_dict['feature_names']:
-            ##     param_dict['feature_names'].append('ftForce_x')
-            ##     param_dict['feature_names'].append('ftForce_y')
-            ##     param_dict['feature_names'].append('ftForce_z')
+            # magnitude
+            if len(np.shape(ftForce)) > 1:
+                unimodal_ftForce_z = ftForce[2:3,:]
+                if offset_flag:
+                    unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:,:startOffsetSize])
+            else:                
+                unimodal_ftForce_z = ftForce
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_z)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_z])
+
+            if 'ftForce_z' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_z')
+
+
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in feature_list:
@@ -1457,15 +1664,18 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, param_dict=Non
         features = features[:,:,cut_data[0]:cut_data[1]]
 
     # Scaling ------------------------------------------------------------
-    if isTrainingData:
+    if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
-        print "Before scaling, max is: ", param_dict['feature_max']
-        print "Before scaling, min is: ", param_dict['feature_min']
+        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]    
+    ## print "Before scaling, max is: ", param_dict['feature_max']
+    ## print "Before scaling, min is: ", param_dict['feature_min']
+    ## print "Cur scale, max is: ", [ np.max(np.array(feature).flatten()) for feature in features ]
+    ## print "Cur scale, min is: ", [ np.min(np.array(feature).flatten()) for feature in features ]
+    ## print "-----------------------------------------------------------------"
                 
     scaled_features = []
     for i, feature in enumerate(features):
-
+        ## print np.amax(feature), np.amin(feature)
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
@@ -1990,7 +2200,6 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
     elif len(np.shape(ll_X))==2:
         if ll_idx is not None: flatten_idx = ll_idx[-1]
         for j in xrange(0, len(ll_X)-nOffset):
-            ## print j, ll_X[j+nOffset][0]-ll_X[j][0]
             if ll_X[j+nOffset][0]-ll_X[j][0] < 0 : #and X[j+1][0]-X[j][0] < 0:
                 if type(ll_X[j:]) is list:
                     flatten_X += ll_X[j:]
@@ -2000,7 +2209,7 @@ def getEstTruePositive(ll_X, ll_idx=None, nOffset=5):
                 break
     else:
         warnings.warn("Not available dimension of data X")
-                
+
     flatten_Y = [1]*len(flatten_X)
 
     if ll_idx is None:

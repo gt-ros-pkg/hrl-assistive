@@ -230,6 +230,9 @@ if __name__ == '__main__':
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
 
+    p.add_option('--icra2017', action='store_true', dest='bICRA2017',
+                 default=False, help='Enable ICRA2017.')
+
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
     p.add_option('--cpu', '--c', action='store_true', dest='bCPU', default=True,
@@ -240,33 +243,29 @@ if __name__ == '__main__':
 
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
+    nPoints        = 10
+
+
+    if opt.bICRA2017 is False:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    else:
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=nPoints)
+    
+    nFiles =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+
 
     if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
-        raw_data_path, save_data_path, param_dict = getScooping(opt.task, False, \
-                                                                False, False,\
-                                                                rf_center, local_range,\
-                                                                ae_swtch=opt.bAESwitch, dim=opt.dim)
 
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm', 'hmmsvm_dL',\
-                                      'hmmsvm_no_dL'],\
-                          'update_list': [],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-2.5, 0.6, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': -np.logspace(0.0, 0.9, nPoints)+1.2,\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
-
-        nFiles = param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 4:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -324,29 +323,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
-        raw_data_path, save_data_path, param_dict = getFeeding(opt.task, False, \
-                                                               False, False,\
-                                                               rf_center, local_range,\
-                                                               ae_swtch=opt.bAESwitch, dim=opt.dim)
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['svm'],\
-                          'update_list': [],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':-np.linspace(0., 10.0, nPoints), \
-                          'svm_param_range': np.logspace(-2.0, 1.4, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'osvm_param_range': np.logspace(-4, 0.2, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
-
-        nFiles = 4 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -360,10 +336,16 @@ if __name__ == '__main__':
                               'w_negative': np.linspace(0.1,3.0,5) }
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
-                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(0.1,6.0,10),\
-                              'gamma': np.linspace(0.1,8.0,10), \
-                              'w_negative': np.linspace(0.1,2.0,5) }
+                if opt.bICRA2017:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.logspace(-0.5,0.5,3),\
+                                  'gamma': np.linspace(4.0,10.0,3), \
+                                  'w_negative': np.linspace(0.1,2.0,3) }
+                else:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.linspace(0.1,6.0,5),\
+                                  'gamma': np.linspace(0.1,8.0,5), \
+                                  'w_negative': np.linspace(0.1,2.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
                           'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
@@ -408,30 +390,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
     
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroWhite(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['hmmsvm_LSLS'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
-                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
-        param_dict['ROC'] = ROC_param_dict
 
-        nFiles = 4 #9
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -497,31 +456,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
     
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingToolCase(opt.task, False, \
-                                                                       False, False,\
-                                                                       rf_center, local_range,\
-                                                                       ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['svm'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0.3, nPoints),\
-                          'osvm_param_range': np.logspace(-4, 1.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-3, 1.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-3.0, -0.5, nPoints) }
-        param_dict['ROC'] = ROC_param_dict
-
-        nFiles = 4 #9
-
         if opt.method == 'svm':        
             if opt.dim == 5:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -597,31 +531,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
     
-        subjects = ['gatsbii']
-        raw_data_path, save_data_path, param_dict = getPushingMicroBlack(opt.task, False, \
-                                                                         False, False,\
-                                                                         rf_center, local_range,\
-                                                                         ae_swtch=opt.bAESwitch, dim=opt.dim)
-        
-        #temp
-        nPoints        = 10
-        ROC_param_dict = {'methods': ['svm'],\
-                          'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-1., -10., nPoints), \
-                          'svm_param_range': np.logspace(-2, 0, nPoints),\
-                          'fixed_param_range': np.linspace(1.0, -3.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-3.5, 0.5, nPoints),\
-                          'osvm_param_range': np.logspace(-3., 1.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_no_dL_param_range': np.logspace(-2, 0.8, nPoints),\
-                          'sgd_param_range': np.logspace(-1.0, -0.0, nPoints)}
-        param_dict['ROC'] = ROC_param_dict
-
-        nFiles = 4 #9
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -873,7 +782,7 @@ if __name__ == '__main__':
 ##     for ii in xrange(len(ll_classifier_test_X)):
 ##         if 'svm' in method:
 ##             X = scaler.transform(ll_classifier_test_X[ii])                                
-##         elif method == 'progress_time_cluster' or method == 'fixed':
+##         elif method == 'progress' or method == 'fixed':
 ##             X = ll_classifier_test_X[ii]
 ##         X_test.append(X)
 
@@ -936,7 +845,7 @@ if __name__ == '__main__':
 ##     elif method == 'cssvm':
 ##         weights = ROC_dict['cssvm_param_range']
 ##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'progress_time_cluster':
+##     elif method == 'progress':
 ##         thresholds = ROC_dict['progress_param_range']
 ##         dtc.set_params( ths_mult = thresholds[j] )
 ##     elif method == 'fixed':

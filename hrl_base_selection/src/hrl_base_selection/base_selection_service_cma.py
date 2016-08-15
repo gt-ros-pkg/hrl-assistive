@@ -22,9 +22,12 @@ from sklearn.neighbors import KNeighborsClassifier
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove_multi
+import sensor_msgs.point_cloud2 as pc2
+from hrl_base_selection.srv import BaseMove, SetBaseModel, RealtimeBaseMove
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
+from data_reader_task import DataReader_Task
+from score_generator_cma import ScoreGenerator
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from itertools import combinations as comb
 import tf.transformations as tft
@@ -48,6 +51,7 @@ class BaseSelector(object):
         self.mode = mode
         self.model = model
         self.load = load
+        self.score = None
         self.vis_pub = rospy.Publisher("~service_subject_model", Marker, queue_size=1, latch=True)
         self.goal_viz_publisher = rospy.Publisher('base_goal_pose_viz', PoseArray, queue_size=1, latch=True)
 
@@ -114,31 +118,54 @@ class BaseSelector(object):
         # Now load the desired files
         if load == 'all':
             if model == 'chair':
-                self.scores_dict[model, 'shaving'] = self.load_task('shaving', model, 0)
-                self.scores_dict[model, 'feeding'] = self.load_task('feeding', model, 0)
-                self.scores_dict[model, 'brushing'] = self.load_task('brushing', model, 0)
+                self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+                self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
+                self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
             elif model == 'autobed':
-                self.scores_dict['autobed', 'shaving'] = self.load_task('shaving', model, 0)
-                self.scores_dict['autobed', 'feeding'] = self.load_task('feeding', model, 0)
-                self.scores_dict['autobed', 'bathing'] = self.load_task('bathing', model, 0)
-                self.scores_dict['autobed', 'scratching_chest'] = self.load_task('scratching_chest', model, 0)
-                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'scratching_knee_right'] = self.load_task('scratching_knee_right', model, 0)
-                self.scores_dict['autobed', 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model, 0)
-                self.scores_dict['autobed', 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model, 0)
-                self.scores_dict['autobed', 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model, 0)
-                self.scores_dict['autobed', 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model, 0)
-                self.scores_dict['autobed', 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model, 0)
-                self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model, 0)
+                self.scores_dict['autobed', 'shaving'] = self.load_task('shaving', model)
+                self.scores_dict['autobed', 'feeding'] = self.load_task('feeding', model)
+                self.scores_dict['autobed', 'bathing'] = self.load_task('bathing', model)
+                self.scores_dict['autobed', 'scratching_chest'] = self.load_task('scratching_chest', model)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+                self.scores_dict['autobed', 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+                self.scores_dict['autobed', 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model)
+                self.scores_dict['autobed', 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model)
+                self.scores_dict['autobed', 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+                self.scores_dict['autobed', 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
+                self.scores_dict['autobed', 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+                self.scores_dict['autobed', 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
         elif load == 'paper':
             if model == 'autobed':
-                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model, 0)
-                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model, 0)
+                self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
+        elif load == 'henry':
+            # model = 'chair'
+            # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
+            # self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
+            # model = 'autobed'
+            # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+            # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
+            # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
+            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            # self.scores_dict[model, 'scratching_chest'] = self.load_task('scratching_chest', model)
+            # self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+            # self.scores_dict[model, 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model)
+            # self.scores_dict[model, 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model)
+            # self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            # self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
+            # self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            # self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
+            self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
+            self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
         else:
-            self.scores_dict[model, load] = self.load_task(load, model, 0)
+            self.scores_dict[model, load] = self.load_task(load, model)
 
         # self.chair_scores = self.load_task('yogurt', 'chair')
         # self.autobed_scores = self.load_task('feeding_quick', 'autobed', 0)
@@ -146,12 +173,12 @@ class BaseSelector(object):
         print 'Time to load all requested data: %fs' % (time.time()-start_time)
         # print 'ROS time to load all requested data: ', (rospy.Time.now() - ros_start_time).to_sec()
 
-        # Initialize the service
-        self.base_service = rospy.Service('select_base_position', BaseMove_multi, self.handle_select_base)
-        
+        # Initialize the services
+        self.base_selection_service = rospy.Service('select_base_position', BaseMove, self.handle_select_base)
+
         # Subscriber to update robot joint state
         #self.joint_state_sub = rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
-        
+
         print "Ready to select base."
 
     # This gets the joint states of the entire robot and saves only the robot's z-axis state.
@@ -165,7 +192,7 @@ class BaseSelector(object):
     def publish_sub_marker(self, pos, ori):
         marker = Marker()
         #marker.header.frame_id = "/base_footprint"
-        marker.header.frame_id = "/base_link"
+        marker.header.frame_id = "/base_footprint"
         marker.header.stamp = rospy.Time()
         marker.id = 0
         marker.type = Marker.MESH_RESOURCE
@@ -197,6 +224,8 @@ class BaseSelector(object):
             marker.scale.x = 1.0
             marker.scale.y = 1.0
             marker.scale.z = 1.0
+        elif self.model is None:
+            print 'Not publishing a marker, no specific model is being used'
         else:
             print 'I got a bad model. What is going on???'
             return None
@@ -241,6 +270,63 @@ class BaseSelector(object):
                data.pose.orientation.w]
         self.pr2_B_ar = createBMatrix(trans, rot)
 
+    def handle_read_in_environment_model(self, req):
+        service_start_time = time.time()
+        print 'Reading in environment model!'
+        if req.cloud.data == []:
+            print 'I got an empty cloud!'
+            return False
+        success = self.real_time_score_generator.initialize_environment_model(req.cloud)
+        print 'Time to complete service call (reading in environment model to openrave): %fs' % (time.time()-service_start_time)
+        return success
+
+    def realtime_base_selection(self, req):
+        service_initial_time = time.time()
+        start_time = time.time()
+        print 'The real-time configuration selection service has been called!'
+
+        # This is real-time base selection mode. Used to find a base configuration for simple tasks with respect to a
+        # reference AR tag.
+
+        if 'r' in req.ee_frame[0:2]:
+            arm = 'rightarm'
+        elif 'l' in req.ee_frame[0:2]:
+            arm = 'leftarm'
+        else:
+            'ERROR'
+            'I do not know whether to use the left or right arm'
+            return None
+
+        self.origin_B_pr2 = np.matrix(np.eye(4))
+        self.pr2_B_ar = np.matrix(np.eye(4))
+        pos = req.pose_target.pose.position
+        rot = req.pose_target.pose.orientation
+        target_reference_frame = req.pose_target.header.frame_id
+        now = rospy.Time.now()
+        self.listener.waitForTransform('/base_footprint', target_reference_frame, now, rospy.Duration(15))
+        (trans, ori) = self.listener.lookupTransform('/base_footprint', target_reference_frame, now)
+
+        # if not target_reference_frame == 'base_footprint':
+        #     print 'ERROR!!'
+        #     print 'Base selection currently requires goals in the base footprint frame when in real-time mode.'
+        #     print 'But it was given in following frame: ', target_reference_frame
+        #     return None
+
+        reference_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
+        base_footprint_B_reference = createBMatrix(trans, ori)
+        base_footprint_B_goal_pose = base_footprint_B_reference*reference_B_goal_pose
+        base_selection_goal = []
+        base_selection_goal.append([base_footprint_B_goal_pose, 1, 0])
+        base_selection_goal = np.array(base_selection_goal)
+        # self.real_time_score_generator.generate_environment_model()
+        self.real_time_score_generator.set_arm(arm)
+        self.real_time_score_generator.receive_new_goals(base_selection_goal, reference_options=['base_link'])
+        config, score = self.real_time_score_generator.real_time_scoring()
+        self.score = [[[config[0]], [config[1]], [config[2]], [config[3]], [0], [0]], score]
+        print 'Time for TOC service to run start to finish: %fs' % (time.time()-service_initial_time)
+        return self.handle_returning_base_goals()
+
+
     # The service call function that determines a good base location to be able to reach the goal location.
     # Takes as input the service's inputs. Outputs lists with initial configurations.
     def handle_select_base(self, req):
@@ -252,13 +338,17 @@ class BaseSelector(object):
         self.task = task
 
         # Check if we have previously loaded this task/model (assuming the data file exists).
-        if self.model != model:
-            print 'The model in the service request differs from what was given to the service on initialization. As' \
-                  'a result, data for a user in that location (autobed/chair) has not been loaded!'
+        if self.load == 'henry':
+            self.model = model
+        else:
+            if self.model != model:
+                print 'The model in the service request differs from what was given to the service on initialization. As' \
+                      'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task and self.load != 'paper':
+            if self.load != task and self.load != 'paper' and self.load != 'henry':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
+                # print 'As a result, only the runtime version of base selection is active.'
 
         # Subscribe to the autobed state if we are using autobed
         if model == 'autobed':
@@ -271,13 +361,13 @@ class BaseSelector(object):
         elif self.mode == 'normal':
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/user_head_link', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_link', '/user_head_link', now)
+                self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
+                (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
@@ -329,18 +419,18 @@ class BaseSelector(object):
         elif self.mode == 'demo':
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_link', '/head_frame', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_link', '/head_frame', now)
+                self.listener.waitForTransform('/base_footprint', '/head_frame', now, rospy.Duration(15))
+                (trans, rot) = self.listener.lookupTransform('/base_footprint', '/head_frame', now)
                 self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/ar_marker', now)
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_link', '/reference', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_link', '/reference', now)
+                    self.listener.waitForTransform('/base_footprint', '/reference', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/reference', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     ar_trans_B_model = np.eye(4)
                     # -.445 if right side of body. .445 if left side.
@@ -398,7 +488,7 @@ class BaseSelector(object):
 
         headx = 0
         heady = 0
-        
+
         # Sets the location of the robot with respect to the person based using a few homogeneous transforms.
         if model == 'chair':
             self.origin_B_pr2 = copy.copy(self.pr2_B_headfloor.I)
@@ -418,17 +508,19 @@ class BaseSelector(object):
             self.origin_B_pr2 = self.headfloor_B_head * self.pr2_B_head.I
         # Slightly more complicated for autobed because the person can move around on the bed.
         elif model == 'autobed':
-            
+
             self.model_B_pr2 = self.pr2_B_model.I
             # self.model_B_pr2 = self.model_B_ar * self.pr2_B_ar.I
             self.origin_B_pr2 = copy.copy(self.model_B_pr2)
             model_B_head = self.model_B_pr2 * self.pr2_B_headfloor
 
             # Use the heady of the nearest neighbor from the data.
-            head_possibilities = (np.arange(11)-5)*30
-            neigh = KNeighborsClassifier(n_neighbors=1)
-            neigh.fit(np.reshape(head_possibilities,[len(head_possibilities),1]), head_possibilities) 
-            heady = neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
+            heady_possibilities = (np.arange(11)-5)*30
+            heady_neigh = KNeighborsClassifier(n_neighbors=1)
+            heady_neigh.fit(np.reshape(heady_possibilities,[len(heady_possibilities),1]), heady_possibilities)
+            heady = heady_neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
+
+
 
             headx = 0.
             #heady = 0.
@@ -478,72 +570,26 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        self.score = all_scores[heady, 0., 0.]
-        '''
-        ## Set the weights for the different scores.
-        alpha = 0.0001  # Weight on base's closeness to goal
-        beta = 1.  # Weight on number of reachable goals
-        gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = .0007  #.0007  # Weight on distance to move to get to that goal location
+        max_num_configs = 2
 
-        # For the optimization, we currently only care about x-y distance moved by the base and rotation of the base
-        # This should be updated to have a normalized range of values and to saturate at some distance. If the robot
-        # if 3m away, it probably doesn't matter if it has to move 0.5m more or less.
-        pr2_loc = np.array([self.origin_B_pr2[0, 3], self.origin_B_pr2[1, 3]])
-        length = len(scores)
-        temp_scores = np.zeros([length, 1])
-        temp_locations = scores[:, 0]
-        # print 'Original number of scores: ', length
-        print 'Time to prepare data for processing: %fs' % (time.time()-start_time)
-        start_time = time.time()
-        for j in xrange(length):
-            dist_score = 0
-            for i in xrange(len(scores[j, 0][0])):
-                current_x = np.array([self.origin_B_pr2[0, 0], self.origin_B_pr2[1, 0], self.origin_B_pr2[2, 0]])
-                des_x = np.array([m.cos(scores[j, 0][2][i]), m.sin(scores[j, 0][2][i]), 0])
-                angle_change = m.acos(np.dot(current_x, des_x)/(np.linalg.norm(current_x)*np.linalg.norm(des_x)))
-                if scores[j, 0][1][i] < 0.1:
-                    dist_score += 100000
-                # if scores[j, 0][4][i] >0.02 or scores[j, 0][5][i] >0.02:
-                #     dist_score += 100000
-                # dist_score += np.linalg.norm([pr2_loc[0]-scores[j, 0][0][i], pr2_loc[1]-scores[j, 0][1][i]])
-                dist_score += 1000*angle_change
-                # I should eventually use the following line instead, because it normalizes to 0-1 range. This way the
-                # weights can be compared better.
-                # dist_score += angle_change/(2*m.pi)
-            # This adds to dist score a cost for moving the robot in the z axis. Commented out currently.
-            # dist_score += np.max([t for t in ((np.linalg.norm(self.robot_z - scores[j, 0][3][i]))
-            #                                   for i in xrange(len(scores[j, 0][0]))
-            #                                   )
-            #                       ])
+        head_rest_angle = -5
+        allow_bed_movement = 1
 
-            # Summing the scores
-            thisScore = -alpha*scores[j, 1][0]+beta*scores[j, 1][1]+gamma*scores[j, 1][2]-zeta*dist_score
+        if not head_rest_angle < -1:
+            head_rest_possibilities = np.arange(-10, 80.1, 10)
+            head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
+            head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
+            head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
-            # Don't want scores less than 0.
-            # if thisScore < 0:
-            #     thisScore = 0
-            temp_scores[j, 0] = copy.copy(thisScore)
+        self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
 
-        out_score = []
-        for i in xrange(length):
-            out_score.append([temp_locations[i], temp_scores[i]])
-        out_score = np.array(out_score)
-
-        print 'Final version of scores is: \n', out_score[0]
-        self.score_sheet = np.array(sorted(out_score, key=lambda t:t[1], reverse=True))
-        '''
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score
         # print 'Number of scores in score sheet: ', self.score_length
 
         print 'I have finished preparing the data for the task!'
         print 'Time to perform optimization: %fs' % (time.time()-start_time)
-        '''
-        if self.score_sheet[0, 1] == 0:
-            print 'There are no base locations with a score greater than 0. There are no good base locations!!'
-            return None, None
-        '''
+
         # Published the wheelchair location to create a marker in rviz for visualization to compare where the service believes the wheelchair is to
         # where the person is (seen via kinect).
         pos_goal, ori_goal = Bmat_to_pos_quat(subject_location)
@@ -582,6 +628,7 @@ class BaseSelector(object):
 
         pr2_base_output = []
         configuration_output = []
+        distance_output = []
 
         pose_array = PoseArray()
         pose_array.header.stamp = rospy.Time.now()
@@ -605,7 +652,6 @@ class BaseSelector(object):
             print origin_B_goal
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
             now = rospy.Time.now()
-            now = rospy.Time.now()
             self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
             (trans, rot) = self.listener.lookupTransform('/odom_combined', '/base_footprint', now)
             world_B_pr2 = createBMatrix(trans, rot)
@@ -626,6 +672,8 @@ class BaseSelector(object):
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
+            distance_to_goal = np.linalg.norm([pr2_B_goal[0, 3],pr2_B_goal[1, 3]])
+            distance_output.append(distance_to_goal)
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
             # pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
             pos_goal, ori_goal = Bmat_to_pos_quat(goal_B_ar)
@@ -637,7 +685,7 @@ class BaseSelector(object):
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 #        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
-        return list(flatten(pr2_base_output)), list(flatten(configuration_output))
+        return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
     # with the current state of the environment
@@ -658,11 +706,11 @@ class BaseSelector(object):
                             temp.append(item[3])
                     if temp != []:
                         score2d_temp.append([i,j,np.max(temp)])
-    
+
             seen_items = []
-            score2d = [] 
+            score2d = []
             for item in score2d_temp:
-    
+
                 #print 'seen_items is: ',seen_items
                 #print 'item is: ',item
                 #print (any((item == x) for x in seen_items))
@@ -673,9 +721,9 @@ class BaseSelector(object):
                     seen_items.append(item)
             score2d = np.array(score2d)
             #print 'score2d with no repetitions',score2d
-        
+
             fig, ax = plt.subplots()
-                
+
             X  = score2d[:,0]
             Y  = score2d[:,1]
             #Th = score_sheet[:,2]
@@ -686,17 +734,17 @@ class BaseSelector(object):
             ax.set_xlabel('X Axis')
             ax.set_ylabel('Y Axis')
             #ax.set_zlabel('Theta Axis')
-       
+
             fig.colorbar(surf, shrink=0.5, aspect=5)
-    
-    
+
+
             verts_wc = [(-.438, -.32885), # left, bottom
                         (-.438, .32885), # left, top
                         (.6397, .32885), # right, top
                         (.6397, -.32885), # right, bottom
                         (0., 0.), # ignored
                         ]
-            
+
             verts_pr2 = [(-1.5,  -1.5), # left, bottom
                          ( -1.5, -.835), # left, top
                          (-.835, -.835), # right, top
@@ -710,11 +758,11 @@ class BaseSelector(object):
                      Path.LINETO,
                      Path.CLOSEPOLY,
                      ]
-           
+
             path_wc = Path(verts_wc, codes)
             path_pr2 = Path(verts_pr2, codes)
-    
-            patch_wc = patches.PathPatch(path_wc, facecolor='orange', lw=2)        
+
+            patch_wc = patches.PathPatch(path_wc, facecolor='orange', lw=2)
             patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
 
             ax.add_patch(patch_wc)
@@ -750,11 +798,13 @@ class BaseSelector(object):
     # Takes as input subj, which is the subject number. This is typically 0. Could use other numbers to differentiate
     # between users or user preference.
     # Set to load from svn now, where I have put the data files.
-    def load_task(self, task, model, subj):
+    def load_task(self, task, model):
         home = expanduser("~")
         if 'wiping' in task:
             #file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
             file_name = ''.join([home, '/catkin_ws/src/hrl-assistive/hrl_base_selection/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_real_expanded_score_data.pkl'])
+            return load_pickle(file_name)
+
             return load_pickle(file_name)
 
         elif 'scratching' not in task:

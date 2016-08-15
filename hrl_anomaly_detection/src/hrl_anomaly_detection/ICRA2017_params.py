@@ -2,8 +2,36 @@ import os, sys
 import numpy as np
 
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
-                ae_swtch=False, dim=4):
+def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
+              local_range=10.0, bAESwitch=False, nPoints=None ):
+
+    #---------------------------------------------------------------------------
+    if task == 'scooping':
+        raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
+                                                                bAERenew, bHMMRenew,\
+                                                                rf_center, local_range,\
+                                                                ae_swtch=bAESwitch, dim=dim,\
+                                                                nPoints=nPoints)
+        
+    #---------------------------------------------------------------------------
+    elif task == 'feeding':
+        raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
+                                                               bAERenew, bHMMRenew,\
+                                                               rf_center, local_range,\
+                                                               ae_swtch=bAESwitch, dim=dim,\
+                                                               nPoints=nPoints)
+        
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    return raw_data_path, save_data_path, param_dict
+
+def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', local_range=10.0, \
+                pre_train=False,\
+                ae_swtch=False, dim=4, nPoints=None):
+
+    if nPoints is None: nPoints = 20  
 
     if dim == 4:
         handFeatures = ['unimodal_ftForce',\
@@ -12,33 +40,28 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.566, 'scale': 1.0,
                           'add_logp_d': True}
-        SVM_param_dict = {'renew': False, 'w_negative': 4.0, 'gamma': 0.039, 'cost': 4.59,\
+        SVM_param_dict = {'renew': False, 'w_negative': 0.2, 'gamma': 0.01, 'cost': 15.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
                           'osvm_nu': 0.000215, 'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,
-                          'hmmsvm_LSLS_cost': 15.0,\
-                          'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 0.2,
                           }
         
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
         ROC_param_dict = {'methods': [ 'svm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
-                          'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                           'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                          'sgd_param_range': np.logspace(-2.5, 1.0, nPoints)}
+                          'sgd_param_range': np.logspace(-4.0, 1.3, nPoints)}
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
         
@@ -53,8 +76,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -5., nPoints), \
@@ -75,8 +97,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        nPoints        = 20  # 'progress_time_cluster',,'fixed' , 'svm' , 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -8., nPoints), \
@@ -92,9 +113,9 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
                    'ft' ]                                
-    modality_list = ['kinematics', 'audioWrist', 'ft', 'vision_landmark', \
-                     'vision_change', 'pps']
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017/'
+    modality_list = ['kinematics', 'audioWrist', 'ft', \
+                     'pps']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
@@ -111,7 +132,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': None}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
@@ -123,16 +144,21 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4):
+def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local_range=10.0, \
+               ae_swtch=False, dim=4, nPoints=None):
+
+    if nPoints is None: nPoints = 20 
 
     if dim == 4:
 
-        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
                           'add_logp_d': True}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.55, 'gamma': 4.455, 'cost': 2.25,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
+        ##                   'add_logp_d': True}
+        ## SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 3.61, 'cost': 0.1,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.52, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
@@ -140,31 +166,29 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
-                          'hmmsvm_LSLS_cost': 15.0,\
-                          'hmmsvm_LSLS_gamma': 0.01, \
-                          'hmmsvm_LSLS_w_negative': 1.5,
                           'bpsvm_cost': 12.5,\
                           'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2
+                          'bpsvm_w_negative': 0.2,\
+                          'logp_offset': 0,\
+                          'sgd_gamma':0.32, 'sgd_w_negative':2.5
                           }
-                          
-
-        nPoints        = 20 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'osvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_LSLS', 'bpsvm' ],\
-                          'update_list': ['bpsvm'],\
+                    #, 'bpsvm'      , 'osvm'
+                          ## 'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'change'],\
+                          'update_list': [],\
                           'nPoints': nPoints,\
-                          'progress_param_range': -np.logspace(0., 1.2, nPoints),\
-                          'svm_param_range': np.logspace(-1.8, 1.0, nPoints),\
+                          'progress_param_range': -np.logspace(0, 3.0, nPoints),\
+                          'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
+                          'svm_param_range': np.logspace(-0.8, 0.7, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_LSLS_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-2.5, 1.0, nPoints)}
+                          'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
                           
@@ -181,9 +205,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_bpsvm_w_negative': 0.2
                           }
                           
-
-        nPoints        = 20 #'svm','hmmosvm'
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
@@ -210,8 +232,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        nPoints        = 20 #, 'hmmosvm'
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'svm','fixed', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.1,\
@@ -226,12 +247,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
-                   'ft' ]
-                   #'relativePose_landmark_EE', \
+                   'ft',\
+                   'relativePose_landmark_EE']
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
-    raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017/'
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/ICRA2017/'
 
     AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
@@ -243,9 +263,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 200, 'cut_data': None, \
-                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\

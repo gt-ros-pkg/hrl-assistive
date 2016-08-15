@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find pr2_machine)/pr2.machine" />
+    <node pkg="nodelet" type="nodelet" name="kinect_crop_decimate" machine="pr2-head" args="standalone image_proc/crop_decimate">
+        <remap from="camera/image_raw" to="/head_mount_kinect/hd/image_color"/>
+        <remap from="camera/camera_info" to="/head_mount_kinect/hd/camera_info"/>
+        <remap from="camera_out/image_raw" to="web_interface_video/image_color"/>
+        <remap from="camera_out/camera_info" to="web_interface_video/camera_info"/>
+    </node>
+</launch>

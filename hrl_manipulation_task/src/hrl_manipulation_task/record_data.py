@@ -58,6 +58,7 @@ from sensor.fabric_skin import fabric_skin
 
 ##GUI
 from std_msgs.msg import String
+from hrl_msgs.msg import StringArray
 QUEUE_SIZE = 10
 
 class logger:
@@ -74,6 +75,7 @@ class logger:
         self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
+        self.enable_log_thread = False
 
         # GUI
         self.feedbackMSG = 0
@@ -113,9 +115,7 @@ class logger:
         Record data and publish raw data
         '''        
         ##GUI implementation       
-        self.consolePub = rospy.Publisher('/manipulation_task/feedbackRequest',String,
-                                                 queue_size=QUEUE_SIZE)
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", String,
+        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                                                    self.feedbackCallback)
         
         if self.data_pub:
@@ -133,12 +133,15 @@ class logger:
         #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
-        if self.feedbackMSG == "SUCCESS":
-            self.feedbackStatus = '1'
-        elif self.feedbackMSG == "FAIL":
-            self.feedbackStatus = '2'
-        else:
-            self.feedbackStatus = '3'
+        self.feedbackStatus = feedback_to_label(data.data)
+        
+        ## if len(self.feedbackMSG) > 2:
+        ##     if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE" and self.feedbackMSG[2] == "FALSE":
+        ##         self.feedbackStatus = '1'
+        ##     else:#if self.feedbackMSG[0] != "SKIP":
+        ##         self.feedbackStatus = '2'
+        ## else:
+        ##     self.feedbackStatus = '3'
             
 
     def getLogStatus(self):
@@ -241,18 +244,16 @@ class logger:
 
         flag = 0
         self.feedbackStatus = 0
-        self.consolePub.publish("Requesting Feedback!") 
         if bCont:
             status = last_status
         else:
+            rate = rospy.Rate(2)
             while flag == 0 and not rospy.is_shutdown():
                 flag = self.feedbackStatus
-                #print "Enter Feedback"
-                #print self.feedbackStatus
-            if flag == '1':   status = 'success'
-            elif flag == '2': status = 'failure'
-            elif flag == '3': status = 'skip'
-            else: status = flag
+                self.data['feedback'] = self.feedbackMSG
+                rate.sleep()
+
+            status = flag
             print flag
             self.feedbackStatus=0
             print status
@@ -612,7 +613,20 @@ class logger:
                     
             if self.enable_log_thread == False: break
             rate.sleep()
-                
+
+
+def feedback_to_label(data):
+    '''
+    data is a string list
+    '''
+    if len(data) > 2:
+        if data[0] == "TRUE" and data[1] == "FALSE" and data[2] == "FALSE":
+            label = 'success'
+        else:
+            label = 'failure'
+    else:
+        label = 'skip'
+    return label
             
 if __name__ == '__main__':
 

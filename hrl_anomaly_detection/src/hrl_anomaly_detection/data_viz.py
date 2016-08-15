@@ -45,6 +45,586 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
 
 
+
+def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                   decision_boundary_viz=False, \
+                   useTrain=True, useNormalTest=True, useAbnormalTest=False,\
+                   useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False):
+
+    from hrl_anomaly_detection import data_manager as dm
+    from hrl_anomaly_detection.hmm import learning_hmm as hmm
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict = param_dict['HMM']
+    nState   = HMM_dict['nState']
+    cov      = HMM_dict['cov']
+    # SVM
+    
+    #------------------------------------------
+
+    if AE_dict['switch']:
+        
+        AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_0.pkl')
+        d = ut.load_pickle(AE_proc_data)
+        if AE_dict['filter']:
+            # Bottle features with variance filtering
+            successData = d['normTrainDataFiltered']
+            failureData = d['abnormTrainDataFiltered']
+        else:
+            # Bottle features without filtering
+            successData = d['normTrainData']
+            failureData = d['abnormTrainData']
+
+        if AE_dict['add_option'] is not None:
+            newHandSuccessData = handSuccessData = d['handNormTrainData']
+            newHandFailureData = handFailureData = d['handAbnormTrainData']
+            
+            ## for i in xrange(AE_dict['nAugment']):
+            ##     newHandSuccessData = stackSample(newHandSuccessData, handSuccessData)
+            ##     newHandFailureData = stackSample(newHandFailureData, handFailureData)
+
+            successData = combineData( successData, newHandSuccessData, \
+                                       AE_dict['add_option'], d['handFeatureNames'] )
+            failureData = combineData( failureData, newHandFailureData, \
+                                       AE_dict['add_option'], d['handFeatureNames'] )
+
+            ## # reduce dimension by pooling
+            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+            ## successData, pooling_param_dict = dm.variancePooling(successData, \
+            ##                                                   pooling_param_dict)
+            ## failureData, _ = dm.variancePooling(failureData, pooling_param_dict)
+            
+            
+        successData *= HMM_dict['scale']
+        failureData *= HMM_dict['scale']
+        
+    else:
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], \
+                           data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], \
+                           scale=1.0,\
+                           ae_data=False,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'],\
+                           data_renew=data_dict['renew'], max_time=data_dict.get('max_time', None))
+                           
+        successData = dd['successData'] * HMM_dict['scale']
+        failureData = dd['failureData'] * HMM_dict['scale']
+                           
+
+    normalTestData = None                                    
+    print "======================================"
+    print "Success data: ", np.shape(successData)
+    ## print "Normal test data: ", np.shape(normalTestData)
+    print "Failure data: ", np.shape(failureData)
+    print "======================================"
+
+    kFold_list = dm.kFold_data_index2(len(successData[0]),\
+                                      len(failureData[0]),\
+                                      data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
+    normalTrainData   = successData[:, normalTrainIdx, :] 
+    abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+    normalTestData    = successData[:, normalTestIdx, :] 
+    abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+    
+    # training hmm
+    nEmissionDim = len(normalTrainData)
+    ## hmm_param_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'.pkl')    
+    cov_mult = [cov]*(nEmissionDim**2)
+
+    # generative model
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+    if data_dict['handFeatures_noise']:
+        ret = ml.fit(normalTrainData+\
+                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                     cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    else:
+        ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+        
+    ## ths = threshold
+    startIdx = 4
+        
+    if ret == 'Failure': 
+        print "-------------------------"
+        print "HMM returned failure!!   "
+        print "-------------------------"
+        return (-1,-1,-1,-1)
+
+    if decision_boundary_viz:
+        ## testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
+        ## testDataX = np.swapaxes(testDataX, 0, 1)
+        ## testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+        ##                         np.ones(len(abnormalTrainData[0])) ])
+        testDataX = normalTrainData
+        testDataY = -np.ones(len(normalTrainData[0]))
+                                
+
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [testDataX[j][i] for j in \
+                                                                 xrange(nEmissionDim)], \
+                                                                ml.nEmissionDim, ml.nState,\
+                                                                startIdx=startIdx, \
+                                                                bPosterior=True)
+                                                                for i in xrange(len(testDataX[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+
+        ## if True:
+        ##     from hrl_anomaly_detection.hmm import learning_util as hmm_util                        
+        ##     ll_classifier_test_X, ll_classifier_test_Y = \
+        ##       hmm.getHMMinducedFeatures(ll_logp, ll_post, c=1.0)
+
+        ##     fig = plt.figure()
+        ##     ax1 = fig.add_subplot(211)
+        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,0], 0,1) )
+        ##     ax1 = fig.add_subplot(212)
+        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,1], 0,1) )
+        ##     plt.show()
+        ##     sys.exit()
+              
+        ##     ll_delta_logp = []
+        ##     ll_delta_post = []
+        ##     ll_delta_logp_post = []
+        ##     ll_delta_logp_post2 = []
+        ##     for i in xrange(len(ll_post)):
+        ##         l_delta_logp = []
+        ##         l_delta_post = []
+        ##         l_delta_logp_post = []
+        ##         for j in xrange(len(ll_post[i])-1):
+        ##             l_delta_logp.append( ll_logp[i][j+1] - ll_logp[i][j] )
+        ##             l_delta_post.append( hmm_util.symmetric_entropy(ll_post[i][j], ll_post[i][j+1]) )
+        ##         ll_delta_logp.append( l_delta_logp )
+        ##         ll_delta_post.append( l_delta_post )
+        ##         ll_delta_logp_post.append( np.array(l_delta_logp)/(np.array(l_delta_post)+0.1) )
+        ##         ll_delta_logp_post2.append( np.array(l_delta_logp)/(np.array(l_delta_post)+1.0) )
+
+
+        ##     fig = plt.figure()
+        ##     ax1 = fig.add_subplot(411)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp,0,1))
+        ##     ax1 = fig.add_subplot(412)            
+        ##     plt.plot(np.swapaxes(ll_delta_post,0,1))
+        ##     ax1 = fig.add_subplot(413)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp_post,0,1))
+        ##     ax1 = fig.add_subplot(414)            
+        ##     plt.plot(np.swapaxes(ll_delta_logp_post2,0,1))
+        ##     ## plt.plot(np.swapaxes(ll_delta_post,0,1))
+        ##     ## plt.plot( np.swapaxes( np.array(ll_delta_logp)/np.array(ll_delta_post), 0,1) )
+        ##     plt.show()
+        ##     sys.exit()
+
+
+        ll_classifier_train_X = []
+        ll_classifier_train_Y = []
+        for i in xrange(len(ll_logp)):
+            l_X = []
+            l_Y = []
+            for j in xrange(len(ll_logp[i])):        
+                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
+
+                if testDataY[i] > 0.0: l_Y.append(1)
+                else: l_Y.append(-1)
+
+            ll_classifier_train_X.append(l_X)
+            ll_classifier_train_Y.append(l_Y)
+
+        # flatten the data
+        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
+                                                                ll_classifier_train_Y, \
+                                                                ll_classifier_train_idx)
+        
+        # discriminative classifier
+        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
+                             nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+
+
+    print "----------------------------------------------------------------------------"
+    fig = plt.figure()
+    min_logp = 0.0
+    max_logp = 0.0
+    target_idx = 1
+
+    # training data
+    if useTrain and False:
+
+        log_ll = []
+        exp_log_ll = []        
+        for i in xrange(len(normalTrainData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+            for j in range(startIdx, len(normalTrainData[0][i])):
+
+                X = [x[i,:j] for x in normalTrainData]
+                logp = ml.loglikelihood(X)
+                log_ll[i].append(logp)
+
+                if decision_boundary_viz and i==target_idx:
+                    if j>=len(ll_logp[i]): continue
+                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+
+                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
+                    exp_log_ll[i].append(exp_logp)
+
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+                
+            # disp
+            if useTrain_color: plt.plot(log_ll[i], label=str(i))
+            else: plt.plot(log_ll[i], 'b-')
+
+            ## # temp
+            ## if show_plot:
+            ##     plt.plot(log_ll[i], 'b-', lw=3.0)
+            ##     plt.plot(exp_log_ll[i], 'm-')                            
+            ##     plt.show()
+            ##     fig = plt.figure()
+
+        if useTrain_color: 
+            plt.legend(loc=3,prop={'size':16})
+            
+        ## plt.plot(log_ll[target_idx], 'k-', lw=3.0)
+        if decision_boundary_viz:
+            plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
+
+            
+    # normal test data
+    if useNormalTest:
+
+        log_ll = []
+        ## exp_log_ll = []        
+        for i in xrange(len(normalTestData[0])):
+
+            log_ll.append([])
+            ## exp_log_ll.append([])
+            for j in range(startIdx, len(normalTestData[0][i])):
+                X = [x[i,:j] for x in normalTestData] # by dim
+                logp = ml.loglikelihood(X)
+                log_ll[i].append(logp)
+
+                ## exp_logp, logp = ml.expLoglikelihood(X, ths, bLoglikelihood=True)
+                ## log_ll[i].append(logp)
+                ## exp_log_ll[i].append(exp_logp)
+
+            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
+            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
+
+            # disp 
+            if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
+            else: plt.plot(log_ll[i], 'b-')
+
+            ## plt.plot(exp_log_ll[i], 'r*-')
+
+        if useNormalTest_color: 
+            plt.legend(loc=3,prop={'size':16})
+
+    # abnormal test data
+    if useAbnormalTest:
+        log_ll = []
+        exp_log_ll = []        
+        for i in xrange(len(abnormalTestData[0])):
+
+            log_ll.append([])
+            exp_log_ll.append([])
+
+            for j in range(startIdx, len(abnormalTestData[0][i])):
+                X = [x[i,:j] for x in abnormalTestData]                
+                try:
+                    logp = ml.loglikelihood(X)
+                except:
+                    print "Too different input profile that cannot be expressed by emission matrix"
+                    return [], 0.0 # error
+
+                log_ll[i].append(logp)
+
+                if decision_boundary_viz and i==target_idx:
+                    if j>=len(ll_logp[i]): continue
+                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
+                    exp_log_ll[i].append(exp_logp)
+
+
+            # disp
+            plt.plot(log_ll[i], 'r-')
+            plt.plot(exp_log_ll[i], 'r*-')
+        plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
+
+
+    ## plt.ylim([min_logp, max_logp])
+    plt.ylim([0, max_logp])
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
+
+    return
+
+
+def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
+              downSampleSize=200, \
+              local_range=0.3, rf_center='kinEEPos', global_data=False, \
+              success_viz=True, failure_viz=False, \
+              raw_viz=False, interp_viz=False, save_pdf=False, \
+              successData=False, failureData=True,\
+              continuousPlot=False, \
+              ## trainingData=True, normalTestData=False, abnormalTestData=False,\
+              modality_list=['audio'], data_renew=False, max_time=None, verbose=False):    
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name)
+
+    fig = plt.figure('all')
+    time_lim    = [0.01, 0] 
+    nPlot       = len(modality_list)
+
+    for idx, file_list in enumerate([success_list, failure_list]):
+        if idx == 0 and successData is not True: continue
+        elif idx == 1 and failureData is not True: continue        
+
+        ## fig = plt.figure('loadData')                        
+        # loading and time-sync
+        if idx == 0:
+            if verbose: print "Load success data"
+            data_pkl = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
+                                    '_'+str(local_range))
+            raw_data_dict, interp_data_dict = util.loadData(success_list, isTrainingData=True,
+                                                       downSampleSize=downSampleSize,\
+                                                       local_range=local_range, rf_center=rf_center,\
+                                                       global_data=global_data, \
+                                                       renew=data_renew, save_pkl=data_pkl, \
+                                                       max_time=max_time, verbose=verbose)
+        else:
+            if verbose: print "Load failure data"
+            data_pkl = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
+                                    '_'+str(local_range))
+            raw_data_dict, interp_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                                       downSampleSize=downSampleSize,\
+                                                       local_range=local_range, rf_center=rf_center,\
+                                                       global_data=global_data,\
+                                                       renew=data_renew, save_pkl=data_pkl, \
+                                                       max_time=max_time, verbose=verbose)
+            
+        ## plt.show()
+        ## sys.exit()
+        if raw_viz: target_dict = raw_data_dict
+        else: target_dict = interp_data_dict
+
+        # check only training data to get time limit (TEMP)
+        if idx == 0:
+            for key in interp_data_dict.keys():
+                if key.find('timesList')>=0:
+                    time_list = interp_data_dict[key]
+                    if len(time_list)==0: continue
+                    for tl in time_list:
+                        ## print tl[-1]
+                        time_lim[-1] = max(time_lim[-1], tl[-1])
+            ## continue
+
+        # for each file in success or failure set
+        for fidx in xrange(len(file_list)):
+                        
+            count = 0
+            for modality in modality_list:
+                count +=1
+
+                if 'audioWrist' in modality:
+                    time_list = target_dict['audioWristTimesList']
+                    data_list = target_dict['audioWristRMSList']
+                    
+                elif 'audio' in modality:
+                    time_list = target_dict['audioTimesList']
+                    data_list = target_dict['audioPowerList']
+
+                elif 'kinematics' in modality:
+                    time_list = target_dict['kinTimesList']
+                    data_list = target_dict['kinPosList']
+
+                    # distance
+                    new_data_list = []
+                    for d in data_list:
+                        new_data_list.append( np.linalg.norm(d, axis=0) )
+                    data_list = new_data_list
+
+                elif 'ft' in modality:
+                    time_list = target_dict['ftTimesList']
+                    data_list = target_dict['ftForceList']
+
+                    # distance
+                    if len(np.shape(data_list[0])) > 1:
+                        new_data_list = []
+                        for d in data_list:
+                            new_data_list.append( np.linalg.norm(d, axis=0) )
+                        data_list = new_data_list
+
+                elif 'vision_artag' in modality:
+                    time_list = target_dict['visionArtagTimesList']
+                    data_list = target_dict['visionArtagPosList']
+
+                    # distance
+                    new_data_list = []
+                    for d in data_list:                    
+                        new_data_list.append( np.linalg.norm(d[:3], axis=0) )
+                    data_list = new_data_list
+
+                elif 'vision_landmark' in modality:
+                    time_list = target_dict['visionLandmarkTimesList']
+                    data_list = target_dict['visionLandmarkPosList']
+
+                    # distance
+                    new_data_list = []
+                    for d in data_list:                    
+                        new_data_list.append( np.linalg.norm(d[:3], axis=0) )
+                    data_list = new_data_list
+
+                elif 'vision_change' in modality:
+                    time_list = target_dict['visionChangeTimesList']
+                    data_list = target_dict['visionChangeMagList']
+
+                elif 'pps' in modality:
+                    time_list = target_dict['ppsTimesList']
+                    data_list1 = target_dict['ppsLeftList']
+                    data_list2 = target_dict['ppsRightList']
+
+                    # magnitude
+                    new_data_list = []
+                    for i in xrange(len(data_list1)):
+                        d1 = np.array(data_list1[i])
+                        d2 = np.array(data_list2[i])
+                        d = np.vstack([d1, d2])
+                        new_data_list.append( np.sum(d, axis=0) )
+
+                    data_list = new_data_list
+
+                elif 'fabric' in modality:
+                    time_list = target_dict['fabricTimesList']
+                    ## data_list = target_dict['fabricValueList']
+                    data_list = target_dict['fabricMagList']
+
+
+                    ## for ii, d in enumerate(data_list):
+                    ##     print np.max(d), target_dict['fileNameList'][ii]
+
+                    ## # magnitude
+                    ## new_data_list = []
+                    ## for d in data_list:
+
+                    ##     # d is 3xN-length in which each element has multiple float values
+                    ##     sample = []
+                    ##     if len(d) != 0 and len(d[0]) != 0:
+                    ##         for i in xrange(len(d[0])):
+                    ##             if d[0][i] == []:
+                    ##                 sample.append( 0 )
+                    ##             else:                                                               
+                    ##                 s = np.array([d[0][i], d[1][i], d[2][i]])
+                    ##                 v = np.mean(np.linalg.norm(s, axis=0)) # correct?
+                    ##                 sample.append(v)
+                    ##     else:
+                    ##         print "WRONG data size in fabric data"
+
+                    ##     new_data_list.append(sample)
+                    ## data_list = new_data_list
+
+                    ## fig_fabric = plt.figure('fabric')
+                    ## ax_fabric = fig_fabric.add_subplot(111) #, projection='3d')
+                    ## for d in data_list:
+                    ##     color = colors.next()
+                    ##     for i in xrange(len(d[0])):
+                    ##         if d[0][i] == []: continue
+                    ##         ax_fabric.scatter(d[1][i], d[0][i], c=color)
+                    ##         ## ax_fabric.scatter(d[0][i], d[1][i], d[2][i])
+                    ## ax_fabric.set_xlabel('x')
+                    ## ax_fabric.set_ylabel('y')
+                    ## ## ax_fabric.set_zlabel('z')
+                    ## if save_pdf is False:
+                    ##     plt.show()
+                    ## else:
+                    ##     fig_fabric.savefig('test_fabric.pdf')
+                    ##     fig_fabric.savefig('test_fabric.png')
+                    ##     os.system('mv test*.p* ~/Dropbox/HRL/')
+
+                ax = fig.add_subplot(nPlot*100+10+count)
+                if idx == 0: color = 'b'
+                else: color = 'r'            
+
+                if raw_viz:
+                    combined_time_list = []
+                    if data_list == []: continue
+
+                    ## for t in time_list:
+                    ##     temp = np.array(t[1:])-np.array(t[:-1])
+                    ##     combined_time_list.append([ [0.0]  + list(temp)] )
+                    ##     print modality, " : ", np.mean(temp), np.std(temp), np.max(temp)
+                    ##     ## ax.plot(temp, label=modality)
+
+                    for i in xrange(len(time_list)):
+                        if len(time_list[i]) > len(data_list[i]):
+                            ax.plot(time_list[i][:len(data_list[i])], data_list[i], c=color)
+                        else:
+                            ax.plot(time_list[i], data_list[i][:len(time_list[i])], c=color)
+
+                    if continuousPlot:
+                        new_color = 'm'
+                        i         = fidx
+                        if len(time_list[i]) > len(data_list[i]):
+                            ax.plot(time_list[i][:len(data_list[i])], data_list[i], c=new_color, lw=3.0)
+                        else:
+                            ax.plot(time_list[i], data_list[i][:len(time_list[i])], c=new_color, lw=3.0)
+                                                    
+                else:
+                    interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
+                    for i in xrange(len(data_list)):
+                        ax.plot(interp_time, data_list[i], c=color)                
+                
+                ax.set_xlim(time_lim)
+                ax.set_title(modality)
+
+            #------------------------------------------------------------------------------    
+            if continuousPlot is False: break
+            else:
+                        
+                print "-----------------------------------------------"
+                print file_list[fidx]
+                print "-----------------------------------------------"
+
+                plt.tight_layout(pad=0.1, w_pad=0.5, h_pad=0.0)
+
+                if save_pdf is False:
+                    plt.show()
+                else:
+                    print "Save pdf to Dropbox folder"
+                    fig.savefig('test.pdf')
+                    fig.savefig('test.png')
+                    os.system('mv test.p* ~/Dropbox/HRL/')
+
+                fig = plt.figure('all')
+
+                
+    plt.tight_layout(pad=0.1, w_pad=0.5, h_pad=0.0)
+
+    if save_pdf is False:
+        plt.show()
+    else:
+        print "Save pdf to Dropbox folder"
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('mv test.p* ~/Dropbox/HRL/')
+
+
+
 def ft_disp(timeList, ftForce, ftForceLocal=None):
 
     fig = plt.figure()            
@@ -493,6 +1073,9 @@ class data_viz:
         
         plt.show()
             
+
+
+
 
 if __name__ == '__main__':
 

@@ -1,0 +1,6 @@
+<package>
+  <description brief="wheelchair_and_body_assembly">wheelchair_and_body_assembly</description>
+  <depend package="gazebo" />
+  <author>me</author>
+  <license>BSD</license>
+</package>
