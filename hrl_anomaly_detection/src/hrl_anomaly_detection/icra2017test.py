@@ -724,8 +724,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
             ##     ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha )
 
-            ## alpha = np.exp(-0.5*float(i-1) )*0.2
-            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
+            alpha = np.exp(-0.5*float(i-1) )*0.1
+            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha )
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
