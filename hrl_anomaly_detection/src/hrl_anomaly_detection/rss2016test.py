@@ -282,7 +282,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         cov_mult     = [cov]*(nEmissionDim**2)
         nLength      = len(normalTrainData[0][0]) - startIdx
 
-
         #-----------------------------------------------------------------------------------------
         # Full co-variance
         #-----------------------------------------------------------------------------------------
@@ -294,12 +293,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure': sys.exit()
 
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
@@ -324,13 +318,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 for k in xrange(nEmissionDim):
                     if j != k:
                         ml.B[i][1][j*nEmissionDim+k] = 0.0
-
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure': sys.exit()
 
         # Classifier training data
         ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
@@ -339,7 +327,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         # Classifier test data
         ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
-
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -368,7 +355,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-
         
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
         ROC_data = {}
@@ -432,7 +418,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
                                                                   
-    #l_data = zip(*r)
     l_data = r
     print "finished to run run_classifiers"
 
@@ -540,8 +525,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         A  = dd['A']
         B  = dd['B']
         pi = dd['pi']
-        F  = dd['F']
-        
+        F  = dd['F']        
         nLength      = len(normalTestData[0][0]) - startIdx
 
         # Classifier test data
@@ -639,7 +623,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                    pos_dict=pos_dict, use_test=True, use_pca=False,
                                    test_drop_elements=drop_dict)
 
-
     if find_param:
         for method in method_list:
             if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
@@ -686,7 +669,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+    ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+    delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf)
              
 
 def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -2129,12 +2113,14 @@ if __name__ == '__main__':
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['progress']
         param_dict['ROC']['update_list'] = []
-        param_dict['ROC']['nPoints']     = 20
-        param_dict['ROC']['svm_param_range'] = np.linspace(0.0001, 1.8, param_dict['ROC']['nPoints'])
-        param_dict['ROC']['progress_param_range'] = np.linspace(-1, -16., param_dict['ROC']['nPoints'])
         
-        evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+        ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+        ##                  save_pdf=opt.bSavePdf, \
+        ##                  verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
+        evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                              save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                              no_plot=opt.bNoPlot, delay_plot=True)
+
 
     elif opt.bEvaluationWithDrop:
 
