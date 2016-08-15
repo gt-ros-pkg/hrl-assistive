@@ -201,10 +201,13 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'bpsvm_w_negative': 1.175
                           }
                           
-        ROC_param_dict = {'methods': ['fixed', 'progress', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'],\
+        ## ROC_param_dict = {'methods': ['fixed', 'progress', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
                           'update_list': [  ],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.2, nPoints),\
+                          'progress_diag_param_range': -np.logspace(0., 1.2, nPoints),\
+                          'kmean_param_range': -np.logspace(0., 1.2, nPoints),\
                           'progress_state_param_range':np.linspace(-1, -40., nPoints), \
                           'svm_param_range': np.logspace(-2.15, -0.101, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
@@ -231,10 +234,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           }
                           
 
-        ROC_param_dict = {'methods': ['progress', 'fixed', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
+                          'kmean_param_range': -np.logspace(0., 1.5, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 0.67, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-5.0, 0.4, nPoints),\
@@ -253,10 +257,11 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        ROC_param_dict = {'methods': ['progress', 'svm','fixed', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.3,\
+                          'kmean_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.3,\
                           'svm_param_range': np.logspace(-2.7, 5.850, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.24, 0.05, nPoints),\
