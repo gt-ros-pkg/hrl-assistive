@@ -218,10 +218,13 @@ class learning_hmm(learning_base):
 
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
 
-        for i in xrange(len(X_train)):            
-            final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-            ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
-            if np.isnan(ret): break #return 'Failure'
+        final_seq = ghmm.SequenceSet(self.F, X_train)
+        ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+
+        ## for i in xrange(len(X_train)):            
+        ##     final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
+        ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+        ##     if np.isnan(ret): break #return 'Failure'
         print 'Baum Welch return:', ret
                 
         return ret
