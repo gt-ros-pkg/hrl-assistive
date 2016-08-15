@@ -389,37 +389,29 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
     It returns [logp, last_post, post].
     '''
-    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
     if type(ll_logp) is tuple: ll_logp = list(ll_logp)
     if type(ll_post) is tuple: ll_post = list(ll_post)
-    print type(ll_logp), type(ll_post), np.shape(ll_logp), np.shape(ll_post)
 
     X = []
     Y = []
     for i in xrange(len(ll_logp)):
         l_X = []
         l_Y = []
-        for j in xrange(1,len(ll_logp[i])):
+        for j in xrange(len(ll_logp[i])):
             if add_delta_logp:                    
                 if j == 0:
                     ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j] + ll_post[i][j] )
-                    ## print np.shape(l_X), add_delta_logp, np.shape(ll_logp), np.shape(ll_post), i,j
-                    print type([ll_logp[i][j]]), type(ll_post[i][j])
-                    print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
-                    ## sys.exit()
+                    l_X.append( [ll_logp[i][j]] + list(ll_post[i][j]) + list(ll_post[i][j]) )
+                    ## print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
                 else:
                     ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
                     ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
                     ## l_X.append( [ll_logp[i][j]] + [ d_logp/(d_post+c) ] + \
                     ##             ll_post[i][j].tolist() )
-                    l_X.append( [ll_logp[i][j]] + ll_post[i][j-1] + \
-                                ll_post[i][j] )
-                print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                print np.shape(l_X)
-                sys.exit()
+                    l_X.append( [ll_logp[i][j]] + list(ll_post[i][j-1]) + \
+                                list(ll_post[i][j]) )
             else:
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j] )
+                l_X.append( [ll_logp[i][j]] + list(ll_post[i][j]) )
 
 
 

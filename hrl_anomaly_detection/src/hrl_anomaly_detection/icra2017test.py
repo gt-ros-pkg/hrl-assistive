@@ -310,8 +310,6 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         #-----------------------------------------------------------------------------------------
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
-        print np.shape(ll_classifier_train_X), add_logp_d
-        sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
