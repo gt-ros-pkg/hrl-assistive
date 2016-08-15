@@ -15,13 +15,13 @@ from geometry_msgs.msg import PoseStamped
 import tf
 from hrl_task_planning.msg import PDDLState
 from hrl_pr2_ar_servo.msg import ARServoGoalData
-from hrl_base_selection.srv import BaseMove_multi
+from hrl_base_selection.srv import BaseMove
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
-
+from hrl_task_planning.pddl_utils import PlanStep, State, GoalState, Predicate
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -61,7 +61,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_BACK':
-        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return MoveBackState(domain=domain, model=args[0], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -261,6 +261,42 @@ class MoveArmState(PDDLSmachState):
             self.state_pub.publish(state_update)
             return
 
+
+class MoveBackState(PDDLSmachState):
+    def __init__(self, model, domain, *args, **kwargs):
+        super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
+        self.model = model
+        #self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
+
+    def domain_state_cb(self, state_msg):
+        self.current_state = State(map(Predicate.from_string, state_msg.predicates))
+        print "Init State: %s" % self.init_state
+        print "Current State: %s" % self.current_state
+        print "Goal State: %s" % self.goal_state
+        print "\n\n"
+
+    def _check_pddl_status(self):
+        if self.preempt_requested():
+            rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
+            self.service_preempt()
+            return 'preempted'
+        if self.goal_state.is_satisfied(self.current_state):
+            print "succeeded - goal satisfied"
+            print "Init State: %s" % self.init_state
+            print "Current State: %s" % self.current_state
+            print "Goal State: %s" % self.goal_state
+            print "\n\n"
+            raw_input("Check success of %s" % self.__class__.__name__)
+            return 'succeeded'
+        progress = self.init_state.difference(self.current_state)
+        for pred in progress:
+            if pred not in self.state_delta:
+                print "aborted - bad transition"
+                return 'aborted'
+        return None  # Adding explicitly for clarity
+
+
+
 class MoveRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(MoveRobotState, self).__init__(domain=domain, *args, **kwargs)
@@ -335,7 +371,7 @@ class CallBaseSelectionState(PDDLSmachState):
     def call_base_selection(self):
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
         rospy.wait_for_service("select_base_position")
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove_multi)
+        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         if self.task.upper() == 'WIPING_MOUTH':
             local_task_name = 'wiping_face'
