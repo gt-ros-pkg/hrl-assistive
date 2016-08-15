@@ -36,9 +36,10 @@ class DomainStateAggregator(object):
         new_preds = [pddl.Predicate.from_string(pred) for pred in state_update_msg.predicates]
         for pred in new_preds:
             if pred.name in self.predicates:
-                self.state.add(pred)
-        # Publish updates full state
-        self.publish_state()
+                if pred not in self.state:
+                    self.state.add(pred)
+                    # Publish updates full state
+                    self.publish_state()
 
     def publish_state(self, event=None):
         state_msg = PDDLState()
