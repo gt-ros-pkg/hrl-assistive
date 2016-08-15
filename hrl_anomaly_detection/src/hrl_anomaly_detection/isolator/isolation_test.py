@@ -109,7 +109,8 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
 
     successData = d['successData']
     failureData = d['failureData']
-
+    successFiles = d['successFiles']
+    failureFiles = d['failureFiles']
 
     
 
