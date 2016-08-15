@@ -11,5 +11,6 @@
     <node name="head_sweep_action" pkg="assistive_teleop" type="head_sweep_action" output="screen" />
 
     <!-- Base Selection (realtime version) -->
+    <node name="base_selection_cma" pkg="hrl_base_selection" type="base_selection_service_cma.py" args="--load=henry --user=None" output="screen" />
 
 </launch>

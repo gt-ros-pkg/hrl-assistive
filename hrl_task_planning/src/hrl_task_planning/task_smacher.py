@@ -266,7 +266,7 @@ class PDDLSmachState(smach.State):
         self.action = action
         self.action_args = action_args
         self.init_state = init_state
-        self.goal_state = GoalState(goal_state.predicates)
+        self.goal_state = GoalState(self.init_state.difference(goal_state))
         self.state_delta = self.init_state.difference(self.goal_state)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         self.current_state = None
