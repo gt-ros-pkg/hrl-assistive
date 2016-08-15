@@ -577,6 +577,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
                 ROC_data[method+'_'+str(j)] = data
 
+
+    # temp
+    kFold_list = kFold_list[:1]
     
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
