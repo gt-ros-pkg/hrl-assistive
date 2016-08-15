@@ -384,7 +384,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  startIdx=startIdx, nState=nState,\
-                                                                 failsafe=True)\
+                                                                 failsafe=False)\
                                                                  for method in method_list )
     l_data = r
     print "finished to run run_classifiers"
@@ -723,9 +723,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
             ##     ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha )
 
-            alpha = np.exp(-0.5*float(i-1) )*0.03
-            ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                            nrSteps=100)
+            ## alpha = np.exp(-0.5*float(i-1) )*0.03
+            ## ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+            ##                 nrSteps=10)
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
