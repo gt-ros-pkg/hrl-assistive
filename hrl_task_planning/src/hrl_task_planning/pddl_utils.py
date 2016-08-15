@@ -247,6 +247,7 @@ class GoalState(State):
                 self.predicates.remove(Predicate(new_pred.name, new_pred.args))  # Use equivalent non-negated (avoids switching negation flag on predicate itself)
             except ValueError:
                 pass  # Positive predicate not in list, so don't need to remove
+            self.predicates.append(new_pred)
         if new_pred not in self.predicates:
             self.predicates.append(new_pred)
 
