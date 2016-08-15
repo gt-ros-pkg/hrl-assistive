@@ -174,7 +174,7 @@ RFH.Domains.WipingMouthADL = function (options) {
         var task = 'wiping_mouth';
         self.setModelName(model);
         self.setDefaultGoal(['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']);
-        self.updatePDDLState(['AND (NOT(BASE-REACHED WIPING_MOUTH AUTOBED))(NOT(ARM-REACHED WIPING_MOUTH AUTOBED))(NOT (BASE-SELECTED WIPING_MOUTH AUTOBED)']);
+        self.updatePDDLState(['(TOO-CLOSE AUTOBED)']);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };

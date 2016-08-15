@@ -58,26 +58,25 @@
  
  (:action move_back
   :parameters (?m - model)
-  :precondition (and (too-close ?m)(is-tracking-tag ?m))
-  :effect (and (not(too-close ?m)))
+  :effect (not (too-close ?m))
  )
 
  (:action call_base_selection
   :parameters (?t - task ?m - model)
-  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m)(not(too-close ?m)))
+  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m)(not (too-close ?m)))
   :effect (and (base-selected ?t ?m)
           )
  )
 
  (:action configure_model_robot
   :parameters (?t - task ?m - model)
-  :precondition (and (found-tag ?m)(base-selected ?t ?m))
+  :precondition (and (found-tag ?m)(base-selected ?t ?m)(not (too-close ?m)))
   :effect (and (forall(?d - dof)(configured ?d ?t ?m))(arm-home ?t ?m))
  )
 
  (:action move_robot
   :parameters (?t - task ?m - model)
-  :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))
+  :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))(not(too-close ?m))
                      (is-tracking-tag ?m))
   :effect (and (base-reached ?t ?m)
           )
