@@ -623,10 +623,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             only_tpr=False, legend=True)
-    ## acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-    ##          only_tpr=False)
+    ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
+    ##          only_tpr=False, legend=True)
+    acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
+             only_tpr=False)
              
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\

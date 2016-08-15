@@ -510,11 +510,11 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## ROC_param_dict = {'methods': ['fixed', 'change','progress', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_no_dL' ],\
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
-                          'update_list': [ ],\
+                          'update_list': [ 'progress','progress_diag', 'kmean' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
-                          'progress_diag_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
-                          'kmean_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(0.1, 0.5, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
