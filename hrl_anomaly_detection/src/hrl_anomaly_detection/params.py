@@ -403,7 +403,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           
 
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
-                          'update_list': [ ],\
+                          'update_list': ['fixed', 'kmean' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(0.0, -8.0, nPoints), \
                           'kmean_param_range':np.logspace(-0.5, 0.6, nPoints)*-1.0 -1., \
