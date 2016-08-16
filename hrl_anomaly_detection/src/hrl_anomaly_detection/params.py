@@ -662,6 +662,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0.3, 1.6, nPoints)*-1+1.5, \
+                          'kmean_param_range':np.logspace(0.3, 1.6, nPoints)*-1+1.5, \
                           'svm_param_range': np.logspace(-2.16, 0.31, nPoints),\
                           'fixed_param_range': np.linspace(0.25, -2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
@@ -696,6 +697,8 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-1.0, 0.046, nPoints),\
                           'fixed_param_range': np.linspace(-0.1, -2.5, nPoints),\
@@ -720,6 +723,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(1., -4., nPoints), \
+                          'kmean_param_range':np.linspace(1., -4., nPoints), \
                           'svm_param_range': np.logspace(-1.087, 0.89, nPoints),\
                           'fixed_param_range': np.linspace(-0.57, -1.33, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
@@ -736,6 +740,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'update_list': [  ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-8., -1.0, nPoints), \
+                          'kmean_param_range':np.linspace(-8., -1.0, nPoints), \
                           'svm_param_range': np.logspace(-1.087, -0.4, nPoints),\
                           'fixed_param_range': np.linspace(-1.7, -2., nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
