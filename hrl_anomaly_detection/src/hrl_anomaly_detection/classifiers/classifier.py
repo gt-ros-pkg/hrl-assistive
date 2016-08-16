@@ -368,7 +368,10 @@ class classifier(learning_base):
             print np.shape(X), np.shape(y)
                 
             l_idx = range(len(X))
-            l_idx = [ i for i in l_idx if y[i][0]<0 ]
+            if len(np.shape(y))==1:
+                l_idx = [ i for i in l_idx if y[i][0]<0 ]
+            else:
+                l_idx = [ i for i in l_idx if y[i]<0 ]
 
             X_logp    = X[l_idx,:,0:1]
             X_logp_d = X_logp[:,1:,0]-X_logp[:,:-1,0]
