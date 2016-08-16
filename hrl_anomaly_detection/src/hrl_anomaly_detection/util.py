@@ -1320,7 +1320,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
-    for method in ROC_data.keys():
+
+    auc_rates = {}
+    for method in sorted(ROC_data.keys()):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1364,7 +1366,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print tpr_l
         print fpr_l
         if only_tpr is False:
-            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc_rates[method] = auc
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
@@ -1458,6 +1461,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
+
+    return auc_rates
     
 
 def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\

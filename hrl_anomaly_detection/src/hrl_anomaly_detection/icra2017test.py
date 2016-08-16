@@ -559,11 +559,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
-        ROC_data = {}
+        ROC_data = []
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
     for kFold_idx in xrange(len(kFold_list)):
+        ROC_data.append({})
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
                 if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
@@ -576,7 +577,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     data['fn_l']     = [ [] for jj in xrange(nPoints) ]
                     data['delay_l']  = [ [] for jj in xrange(nPoints) ]
                     data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
-                    ROC_data[method+'_'+str(j)] = data
+                    ROC_data[kFold_idx][method+'_'+str(j)] = data
 
 
     # temp
@@ -603,7 +604,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 for key in ROC_data[method+'_'+str(j)].keys():
                     if key.find('complete')>=0: continue
                     for jj in xrange(nPoints):
-                        ROC_data[method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
+                        ROC_data[kFold_idx][method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
 
         
     ## for idx, (train_idx, test_idx) in enumerate(kFold_list):
@@ -619,19 +620,32 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     ##                 for jj in xrange(nPoints):
     ##                     ROC_data[method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
                 
-    for i, method in enumerate(method_list):
-        for j in xrange(nTrainTimes+1):
-            print len(ROC_data[method+'_'+str(j)]), j
-            ROC_data[method+'_'+str(j)]['complete'] = True
+    for kFold_idx in xrange(len(kFold_list)):
+        for i, method in enumerate(method_list):
+            for j in xrange(nTrainTimes+1):
+                print len(ROC_data[method+'_'+str(j)]), j
+                ROC_data[kFold_idx][method+'_'+str(j)]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-    ##          only_tpr=False, legend=True)
-    acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             only_tpr=False)
+    l_auc = []
+    for kFold_idx in xrange(len(kFold_list)):
+        auc_rates = roc_info(method_list, ROC_data[kFold_idx], nPoints, delay_plot=delay_plot, \
+                             no_plot=no_plot, \
+                             save_pdf=save_pdf, \
+                             only_tpr=False, legend=True)
+        print auc_rates
+        l_auc.append(auc_rates.tolist())
+
+    if len(kFold_list)>1:
+        print "Mean: ", np.mean(l_auc, axis=1)
+        print "Std:  ", np.std(l_auc, axis=1)
+
+        
+    ## acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
+    ##          only_tpr=False)
              
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
@@ -718,7 +732,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     for i in xrange(nTrainTimes+1): 
 
-        if ROC_data[method+'_'+str(i)]['complete']: continue
+        if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
