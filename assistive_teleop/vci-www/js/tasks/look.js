@@ -8,12 +8,12 @@ RFH.Look = function (options) {
     self.toolTipText = "Move the head to look around";
     var imageDivId = options.imageDivId || 'mjpeg-image';
     var $imageDiv = $("#" + imageDivId);
-    self.mapLookDivs = $(".map-look");
-    self.camera = options.camera || new RFH.ROSCameraModel();
-    self.head = options.head || new Pr2Head(ros);
+    var $mapLookDivs = $('.map-look');
+    var camera = options.camera || new RFH.ROSCameraModel();
+    var head = options.head || new Pr2Head(ros);
     var zoomLevel = 1.0;
     var maxZoom = 4;
-    self.zoomServiceClient = new ROSLIB.Service({
+    var zoomServiceClient = new ROSLIB.Service({
         ros: ros,
         name: '/set_cropdecimate',
         serviceType: 'assistive_teleop/SetCropDecimateParams'
@@ -29,45 +29,51 @@ RFH.Look = function (options) {
         if (classes.contains("bottom")) { dy = SCALE  * vfov/zoomLevel; }
         if (classes.contains("left")) { dx = SCALE * hfov/zoomLevel; }
         if (classes.contains("right")) { dx = -SCALE * hfov/zoomLevel; }
-        self.head.delPosition(dx, dy); 
+        head.delPosition(dx, dy); 
         event.stopPropagation();
     };
-    var lookAreas = $('.map-look').on('click.rfh-look', edgeLook);
+    $mapLookDivs.on('click.rfh-look', edgeLook);
 
-    self.pointHead = function (e) {
+    var pointHead = function (e) {
         var pt = RFH.positionInElement(e); 
         var pctOffset = (50 - (50/zoomLevel))/100;
-        var px = ((pt[0]/e.target.clientWidth)/zoomLevel + pctOffset) * self.camera.width;
-        var py = ((pt[1]/e.target.clientHeight)/zoomLevel + pctOffset) * self.camera.height;
-        var xyz =  self.camera.projectPixel(px, py);
-        self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
+        var px = ((pt[0]/e.target.clientWidth)/zoomLevel + pctOffset) * camera.width;
+        var py = ((pt[1]/e.target.clientHeight)/zoomLevel + pctOffset) * camera.height;
+        var xyz =  camera.projectPixel(px, py);
+        head.pointHead(xyz[0], xyz[1], xyz[2], camera.frame_id);
     };
+    $imageDiv.on("click.rfh-look", pointHead);
 
-    var zoomIn = function (e) {
-        zoomLevel += 1;
+    var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', function(e){self.setZoom(zoomLevel*2)});
+    var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', function(e){self.setZoom(zoomLevel*0.5)}).button('disable');
+
+    self.setZoom = function (newZoomLevel) {
         $zoomOutButton.button('enable');
-        if (zoomLevel >= maxZoom) { $zoomInButton.button('disable'); };
+        $zoomInButton.button('enable');
+        if (newZoomLevel <= 1) {
+            newZoomLevel = 1;
+            $zoomOutButton.button('disable');
+        };
+        if (newZoomLevel >= maxZoom) {
+            newZoomLevel = maxZoom;
+            $zoomInButton.button('disable');
+        }
+        zoomLevel = newZoomLevel; 
         $imageDiv.css({transform:'scale('+zoomLevel+')'});
     };
-    var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', zoomIn)
-
-    var zoomOut = function (e) {
-        zoomLevel -= 1;
-        $zoomInButton.button('enable');;
-        if (zoomLevel <= 1) { $zoomOutButton.button('disable'); };
-        $imageDiv.css({transform:'scale('+zoomLevel+')'});
-    };
-    var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', zoomOut).button('disable');
 
     self.start = function () {
-        $imageDiv.addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
-        self.mapLookDivs.css("display","block");
+        $imageDiv.addClass("cursor-eyes").on("click.rfh-look", pointHead);
+        $mapLookDivs.show();
+        $('.zoom').show();
         console.log('Looking task started');
     };
 
     self.stop = function () {
-        $imageDiv.removeClass("cursor-eyes").off("click.rfh-look");
-        self.mapLookDivs.css("display","none");
+        self.setZoom(1);
+        $imageDiv.removeClass("cursor-eyes");
+        $mapLookDivs.hide();
+        $('.zoom').hide();
         console.log('Looking task stopped');
     };
 };

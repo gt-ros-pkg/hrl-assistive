@@ -18,10 +18,16 @@ def VideoZoomManager(object):
         config['height'] = roi_req.height
         config['x_offset'] = roi_req.x_offset
         config['y_offset'] = roi_req.y_offset
+        if roi_req.width > 960 and roi_req.height >= 540:
+            config['decimation_x'] = 2
+            config['decimation_y'] = 2
+        else:
+            config['decimation_x'] = 1
+            config['decimation_y'] = 1
         return self.dynparam_client.update_configuration(config)
 
 
 def main():
     rospy.init_node('video_zoom_manager')
-    zoom_manager = VideoZoomManager('/head_mount_kinect/hd/image_proc_crop_decimate')
+    zoom_manager = VideoZoomManager('/kinect_crop_decimate')
     rospy.spin()
