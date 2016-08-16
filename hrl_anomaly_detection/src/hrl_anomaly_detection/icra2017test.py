@@ -567,7 +567,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         ROC_data.append({})
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
-                if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
+                if method+'_'+str(j) not in ROC_data[kFold_idx].keys() or method in ROC_dict['update_list'] or\
                   SVM_dict['renew']:            
                     data = {}
                     data['complete'] = False 
@@ -600,8 +600,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     for kFold_idx, data in enumerate(l_data):
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
-                if ROC_data[method+'_'+str(j)]['complete']: continue
-                for key in ROC_data[method+'_'+str(j)].keys():
+                if ROC_data[kFold_idx][method+'_'+str(j)]['complete']: continue
+                for key in ROC_data[kFold_idx][method+'_'+str(j)].keys():
                     if key.find('complete')>=0: continue
                     for jj in xrange(nPoints):
                         ROC_data[kFold_idx][method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
@@ -623,7 +623,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     for kFold_idx in xrange(len(kFold_list)):
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
-                print len(ROC_data[method+'_'+str(j)]), j
+                print len(ROC_data[kFold_idx][method+'_'+str(j)]), j
                 ROC_data[kFold_idx][method+'_'+str(j)]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)
