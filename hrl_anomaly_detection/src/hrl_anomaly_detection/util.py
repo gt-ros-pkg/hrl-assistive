@@ -1462,6 +1462,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
 
+    for key in auc_rates.keys():
+        print key, " : ", auc_rates[key]
+
     return auc_rates
     
 
@@ -1486,6 +1489,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
+    acc_rates = {}
     for method in ROC_data.keys():
 
         tp_ll = ROC_data[method]['tp_l']
@@ -1516,6 +1520,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print acc_l
         if only_tpr is False:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        acc_rates[method] = acc_l
         print "--------------------------------"
 
         label = method
@@ -1547,6 +1552,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
     
+    return acc_rates
 
 
 def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
