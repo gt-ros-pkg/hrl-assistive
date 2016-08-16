@@ -42,6 +42,7 @@ catkin_install_python(PROGRAMS
     scripts/smach_status_relay
     scripts/overhead_grasp_action
     scripts/head_sweep_action
+    scripts/servo_action
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/
