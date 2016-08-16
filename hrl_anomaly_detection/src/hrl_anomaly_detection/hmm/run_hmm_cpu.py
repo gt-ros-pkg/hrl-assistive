@@ -46,7 +46,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 from joblib import Parallel, delayed
 
 def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
-             bSave=False, method='svm', max_check_fold=None):
+             bSave=False, method='svm', max_check_fold=None, no_cov=False):
 
     ## Parameters
     # data
@@ -93,7 +93,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             #
             nEmissionDim = len(normalTrainData)
-            cov_mult     = [param['cov']]*(nEmissionDim**2)
+            if no_cov:
+                cov_mult     = [HMM_dict['scale']]*(nEmissionDim**2)
+            else:
+                cov_mult     = [param['cov']]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0])
 
             # scaling
@@ -659,6 +662,7 @@ if __name__ == '__main__':
         else:
             print "Not available task"
         max_check_fold = 2
+        no_cov = False
 
     else:
 
@@ -669,7 +673,7 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=8)
         parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(1.0,15.0,10) }
+                      'cov': np.linspace(1.0,15.0,1) }
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -677,6 +681,7 @@ if __name__ == '__main__':
 
         max_check_fold = None
         ## max_check_fold = 3
+        no_cov = True
 
     #--------------------------------------------------------------------------------------
     # test change of logp
@@ -690,5 +695,5 @@ if __name__ == '__main__':
         sys.exit()
 
     tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-             bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold)
+             bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
