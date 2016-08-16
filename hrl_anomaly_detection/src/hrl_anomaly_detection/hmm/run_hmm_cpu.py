@@ -608,7 +608,7 @@ if __name__ == '__main__':
                  default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
-    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='progress',
                  help='type the desired method')
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
