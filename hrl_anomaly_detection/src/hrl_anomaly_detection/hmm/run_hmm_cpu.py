@@ -668,15 +668,15 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=8)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,5), \
-                      'cov': np.linspace(1.0,5.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,15.0,10) }
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
         max_check_fold = None
-        max_check_fold = 1
+        ## max_check_fold = 3
 
     #--------------------------------------------------------------------------------------
     # test change of logp
