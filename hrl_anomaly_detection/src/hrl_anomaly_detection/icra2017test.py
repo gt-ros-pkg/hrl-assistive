@@ -1036,9 +1036,9 @@ if __name__ == '__main__':
     p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
                  default=False, help='Renew Classifiers.')
 
-    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
+    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
                  help='type the desired task name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
+    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
                  help='type the desired dimension')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
