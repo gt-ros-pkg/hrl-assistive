@@ -17,7 +17,6 @@ class ServoingServer(object):
         rospy.Subscriber('robot_pose_ekf/odom_combined',
                          PoseWithCovarianceStamped,
                          self.update_position)
-        rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
         self.servoing_as = actionlib.SimpleActionServer('servoing_action',
                                                         ServoAction,
                                                         self.goal_cb, False)
@@ -41,6 +40,7 @@ class ServoingServer(object):
         self.left = [[], []]
         self.right = [[], []]
         self.front = [[], []]
+        rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
         self.servoing_as.start()
 
     def goal_cb(self, goal):
@@ -84,8 +84,8 @@ class ServoingServer(object):
             rospy.logwarn('Cannot find /odom_combined transform')
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
         self.goal_out.publish(self.odom_goal)
-        ang_to_goal = np.atan2(self.bfp_goal.pose.position.y,
-                               self.bfp_goal.pose.position.x)
+        ang_to_goal = np.arctan2(self.bfp_goal.pose.position.y,
+                                 self.bfp_goal.pose.position.x)
         # (current angle in odom, plus the robot-relative change to face goal)
         self.ang_goal = self.curr_ang[2] + ang_to_goal
         rospy.logwarn(self.odom_goal)
@@ -120,18 +120,20 @@ class ServoingServer(object):
         ranges = np.array(msg.ranges)
         angles = np.arange(msg.angle_min, msg.angle_max, msg.angle_increment)
         # Filter out noise(<0.003), points >1m, leaves obstacles
-        near_angles = np.extract(np.logical_and(ranges < 1, ranges > 0.003), angles)
-        near_ranges = np.extract(np.logical_and(ranges < 1, ranges > 0.003), ranges)
-        self.bad_side = np.sign(near_angles[np.argmax(abs(near_angles))])
+        good_idxs = np.logical_and(ranges < 30, ranges > 0.05)
+        near_ranges = np.extract(good_idxs, ranges)
+        near_angles = np.extract(good_idxs, angles)
+#        print "Near:", near_ranges
+        # bad_side = np.sign(near_angles[np.argmax(abs(near_angles))])
         # print "bad side: %s" %bad_side # (1 (pos) = left, -1 = right)
-        # print "Min in Ranges: %s" %min(ranges)
+        print "Range of Ranges: (%f -- %f)" % (min(near_ranges), max(near_ranges))
 
         # if len(near_ranges) > 0:
         xs = near_ranges * np.cos(near_angles)
         ys = near_ranges * np.sin(near_angles)
         # print "xs: %s" %xs
-        self.points = np.vstack((xs, ys))
-        # print "Points: %s" %points
+        points = np.vstack((xs, ys))
+        print "Points: %s" %points
         self.bfp_points = np.vstack((np.add(0.275, xs), ys))
         # print "bfp Points: %s" %bfp_points
         self.bfp_dists = np.sqrt(np.add(np.square(self.bfp_points[0][:]),
@@ -144,7 +146,7 @@ class ServoingServer(object):
                 self.rot_safe = False
         else:
             self.rot_safe = True
-
+        left_idxs = np.nonzero(ys > 0.35)
         self.left = np.vstack((xs[np.nonzero(ys > 0.35)[0]],
                                ys[np.nonzero(ys > 0.35)[0]]))
         self.right = np.vstack((xs[np.nonzero(ys < -0.35)[0]],
