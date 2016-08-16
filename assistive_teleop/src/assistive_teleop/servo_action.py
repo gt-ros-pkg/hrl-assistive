@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import math
 import numpy as np
 
 import rospy
@@ -15,7 +14,6 @@ from assistive_teleop.msg import ServoAction, ServoResult, ServoFeedback
 
 class ServoingServer(object):
     def __init__(self):
-        rospy.init_node('relative_servoing')
         rospy.Subscriber('robot_pose_ekf/odom_combined',
                          PoseWithCovarianceStamped,
                          self.update_position)
@@ -34,18 +32,11 @@ class ServoingServer(object):
         self.rot_safe = True
         self.bfp_goal = PoseStamped()
         self.odom_goal = PoseStamped()
-        self.x_max = 0.5
-        self.x_min = 0.05
-        self.y_man = 0.3
-        self.y_min = 0.05
-        self.z_max = 0.5
-        self.z_min = 0.05
         self.ang_goal = 0.0
         self.ang_thresh_small = 0.01
         self.ang_thresh_big = 0.04
         self.ang_thresh = self.ang_thresh_big
         self.retreat_thresh = 0.3
-        self.curr_pos = PoseWithCovarianceStamped()
         self.dist_thresh = 0.15
         self.left = [[], []]
         self.right = [[], []]
@@ -93,8 +84,8 @@ class ServoingServer(object):
             rospy.logwarn('Cannot find /odom_combined transform')
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
         self.goal_out.publish(self.odom_goal)
-        ang_to_goal = math.atan2(self.bfp_goal.pose.position.y,
-                                 self.bfp_goal.pose.position.x)
+        ang_to_goal = np.atan2(self.bfp_goal.pose.position.y,
+                               self.bfp_goal.pose.position.x)
         # (current angle in odom, plus the robot-relative change to face goal)
         self.ang_goal = self.curr_ang[2] + ang_to_goal
         rospy.logwarn(self.odom_goal)
@@ -213,7 +204,7 @@ class ServoingServer(object):
                 return 0.0
 
     def get_trans_x(self):
-        if (abs(self.ang_diff) < math.pi/6 and self.dist_to_goal > self.dist_thresh):
+        if (abs(self.ang_diff) < np.pi/6 and self.dist_to_goal > self.dist_thresh):
             return np.clip(self.dist_to_goal*0.125, 0.05, 0.3)
         else:
             return 0.0
@@ -276,7 +267,8 @@ class ServoingServer(object):
                 self.retreat_thresh = 0.3
         return (x, y, z)
 
-    def left_clear(self):  # Base Laser cannot see obstacles beside the back edge of the robot, which could cause problems, especially just after passing through doorways...
+    def left_clear(self):
+        # Base Laser cannot see obstacles beside the back edge of the robot, which could cause problems, especially just after passing through doorways...
         if len(self.left[0][:]) > 0:
             # Find points directly to the right or left of the robot (not in front or behind)
             # x<0.1 (not in front), x>-0.8 (not behind)
@@ -306,6 +298,7 @@ class ServoingServer(object):
 
 
 def main():
-    servoer = ServoingServer()
+    rospy.init_node('relative_servoing')
+    servoing_action_server = ServoingServer()
     while not rospy.is_shutdown():
         rospy.spin()
