@@ -581,7 +581,8 @@ class BaseSelector(object):
             head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
             head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
-        self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
+        self.score = all_scores[heady, 0, 0]
+        #self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
 
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score

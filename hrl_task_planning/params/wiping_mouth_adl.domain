@@ -58,6 +58,7 @@
  
  (:action move_back
   :parameters (?m - model)
+  :precondition (and (too-close ?m))
   :effect (not (too-close ?m))
  )
 

@@ -354,6 +354,9 @@ class AR_Tag_Tracking(object):
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
+                        print "BED IS AT DISTANCE"
+                        print self.map_B_ar_pos
+                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                     #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
@@ -369,7 +372,6 @@ class AR_Tag_Tracking(object):
                         self.goal.pointing_axis.z = 0
 
                         self.action_goal.goal = self.goal
-                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                         self.head_track_AR_pub.publish(self.action_goal)
                         success = Bool()
                         success.data = True

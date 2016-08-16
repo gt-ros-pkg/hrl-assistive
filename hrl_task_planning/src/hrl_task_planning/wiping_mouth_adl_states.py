@@ -61,7 +61,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_BACK':
-        return MoveBackState(domain=domain, model=args[0], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -281,12 +281,6 @@ class MoveBackState(PDDLSmachState):
             self.service_preempt()
             return 'preempted'
         if self.goal_state.is_satisfied(self.current_state):
-            print "succeeded - goal satisfied"
-            print "Init State: %s" % self.init_state
-            print "Current State: %s" % self.current_state
-            print "Goal State: %s" % self.goal_state
-            print "\n\n"
-            raw_input("Check success of %s" % self.__class__.__name__)
             return 'succeeded'
         progress = self.init_state.difference(self.current_state)
         for pred in progress:

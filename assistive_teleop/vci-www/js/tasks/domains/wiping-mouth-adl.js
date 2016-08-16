@@ -41,7 +41,7 @@ RFH.Domains.WipingMouthADL = function (options) {
                     RFH.taskMenu.startTask('LookingTask');
                 }
                 break;
-	    case 'MOVE_BACK':
+            case 'MOVE_BACK':
             case 'MOVE_ROBOT':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -174,7 +174,18 @@ RFH.Domains.WipingMouthADL = function (options) {
         var task = 'wiping_mouth';
         self.setModelName(model);
         self.setDefaultGoal(['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']);
-        self.updatePDDLState(['(TOO-CLOSE AUTOBED)']);
+        self.updatePDDLState(['(NOT (CONFIGURED BED WIPING_MOUTH AUTOBED))', 
+                              '(NOT (IS-TRACKING-TAG AUTOBED))',
+                              '(NOT (CONFIGURED SPINE WIPING_MOUTH AUTOBED))',
+                              '(NOT (HEAD-REGISTERED AUTOBED))',
+                              '(NOT (OCCUPIED AUTOBED))',
+                              '(NOT (FOUND-TAG AUTOBED))',
+                              '(NOT (BASE-SELECTED WIPING_MOUTH AUTOBED))',
+                              '(NOT (BASE-REACHED WIPING_MOUTH AUTOBED))',
+                              '(NOT (ARM-REACHED WIPING_MOUTH AUTOBED))',
+                              '(NOT (ARM-HOME WIPING_MOUTH AUTOBED))',
+                              '(NOT (TOO-CLOSE AUTOBED))',
+                              '(NOT (TASK-COMPLETED WIPING_MOUTH AUTOBED))']);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
