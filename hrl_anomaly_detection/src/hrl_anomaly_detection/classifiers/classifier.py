@@ -231,6 +231,9 @@ class classifier(learning_base):
             elif self.method == 'bpsvm':
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.bpsvm_gamma)\
                   +' -w-1 '+str(self.bpsvm_w_negative)+' -c '+str(self.bpsvm_cost)
+            elif self.method == 'progress_osvm':
+                commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
+                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
@@ -313,44 +316,44 @@ class classifier(learning_base):
             
             return True
 
-        elif self.method == 'progress_osvm':
-            '''
-            Reduced-progress-vector based classifier
-            '''
-            # extract only negatives
-            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-            direc_delta = np.zeros(self.nPosteriors)
+        ## elif self.method == 'progress_osvm':
+        ##     '''
+        ##     Reduced-progress-vector based classifier
+        ##     '''
+        ##     # extract only negatives
+        ##     ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+        ##     ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
+        ##     direc_delta = np.zeros(self.nPosteriors)
 
-            new_X = []
-            for i in xrange(len(ll_logp)):
+        ##     new_X = []
+        ##     for i in xrange(len(ll_logp)):
 
-                max_states  = argmax(ll_post[i], axis=1)
-                for j, state in enumerate(max_states):
-                    direc_delta *= 0.0
-                    direc_delta[state] = 1.0
+        ##         max_states  = argmax(ll_post[i], axis=1)
+        ##         for j, state in enumerate(max_states):
+        ##             direc_delta *= 0.0
+        ##             direc_delta[state] = 1.0
                     
-                    selfInfo = entropy(direc_delta+1e-6, ll_post[i][j]+1e-6)
+        ##             selfInfo = entropy(direc_delta+1e-6, ll_post[i][j]+1e-6)
 
-                    new_X.append([ll_logp[i,j], float(state), selfInfo])
+        ##             new_X.append([ll_logp[i,j], float(state), selfInfo])
 
-            # run kmean? osvm?
-            self.scaler = preprocessing.StandardScaler()
-            X_scaled = self.scaler.fit_transform(new_X)
+        ##     # run kmean? osvm?
+        ##     self.scaler = preprocessing.StandardScaler()
+        ##     X_scaled = self.scaler.fit_transform(new_X)
             
-            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
-            import svmutil as svm
-            svm_type    = 2
-            kernel_type = 2 
+        ##     sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+        ##     import svmutil as svm
+        ##     svm_type    = 2
+        ##     kernel_type = 2 
 
-            commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)+' -d '+str(self.degree)\
-              +' -w1 '+str(self.class_weight)\
-              +' -r '+str(self.coef0)
-            commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
-              +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
+        ##     commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)+' -d '+str(self.degree)\
+        ##       +' -w1 '+str(self.class_weight)\
+        ##       +' -r '+str(self.coef0)
+        ##     commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
+        ##       +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
 
-            self.dt = svm.svm_train(y, X_scaled, commands )
-            return True
+        ##     self.dt = svm.svm_train(y, X_scaled, commands )
+        ##     return True
         
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -567,29 +570,29 @@ class classifier(learning_base):
 
             return l_err
 
-        elif self.method == 'progress_osvm':
-            if len(np.shape(X))==1: X = [X]
+        ## elif self.method == 'progress_osvm':
+        ##     if len(np.shape(X))==1: X = [X]
 
-            l_logp = [ X[i,0] for i in xrange(len(X)) ]
-            l_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
-            direc_delta = np.zeros(self.nPosteriors)
+        ##     l_logp = [ X[i,0] for i in xrange(len(X)) ]
+        ##     l_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
+        ##     direc_delta = np.zeros(self.nPosteriors)
             
-            new_X       = []
-            max_states  = argmax(l_post, axis=1)
-            for i, state in enumerate(max_states):
-                direc_delta *= 0.0
-                direc_delta[state] = 1.0
+        ##     new_X       = []
+        ##     max_states  = argmax(l_post, axis=1)
+        ##     for i, state in enumerate(max_states):
+        ##         direc_delta *= 0.0
+        ##         direc_delta[state] = 1.0
 
-                selfInfo = entropy(direc_delta+1e-6, l_post[i]+1e-6)
-                new_X.append( [ll_logp[i,j], float(state), selfInfo] )
+        ##         selfInfo = entropy(direc_delta+1e-6, l_post[i]+1e-6)
+        ##         new_X.append( [ll_logp[i,j], float(state), selfInfo] )
 
-            X_scaled = self.scaler.transform(new_X)
+        ##     X_scaled = self.scaler.transform(new_X)
 
-            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
-            import svmutil as svm
-            p_labels, _, p_vals = svm.svm_predict([0]*len(X_scaled), X_scaled, self.dt)
+        ##     sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+        ##     import svmutil as svm
+        ##     p_labels, _, p_vals = svm.svm_predict([0]*len(X_scaled), X_scaled, self.dt)
             
-            return p_labels
+        ##     return p_labels
             
                 
         elif self.method == 'fixed':
@@ -1102,6 +1105,13 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_X    = ll_classifier_diag_test_X
             ll_classifier_test_Y    = ll_classifier_diag_test_Y
             ll_classifier_test_idx  = ll_classifier_diag_test_idx
+        elif method =='progress_osvm':
+            ll_classifier_train_X   = ll_classifier_ep_train_X
+            ll_classifier_train_Y   = ll_classifier_ep_train_Y
+            ll_classifier_train_idx = ll_classifier_ep_train_idx
+            ll_classifier_test_X    = ll_classifier_ep_test_X
+            ll_classifier_test_Y    = ll_classifier_ep_test_Y
+            ll_classifier_test_idx  = ll_classifier_ep_test_idx
 
 
         if method == 'hmmosvm':
@@ -1250,7 +1260,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ## run_classifier(j)
         dtc.set_params( **SVM_dict )
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-          method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd':
+          method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method =='progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
@@ -1292,7 +1302,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
 
-            if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
+            if method.find('osvm')>=0 or method == 'cssvm':
                 est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                 est_y = np.array(est_y)* -1.0
             else:

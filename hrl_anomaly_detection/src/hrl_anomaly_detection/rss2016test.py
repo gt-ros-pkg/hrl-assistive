@@ -334,11 +334,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
           hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
                                                        ll_classifier_train_Y, \
-                                                       ll_classifier_train_idx)
+                                                       ll_classifier_train_idx, nState)
         ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
           hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
                                                        ll_classifier_test_Y, \
-                                                       ll_classifier_test_idx)
+                                                       ll_classifier_test_idx, nState)
 
         #-----------------------------------------------------------------------------------------
         d = {}

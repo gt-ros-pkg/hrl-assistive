@@ -515,6 +515,7 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):
 
 
 def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
+    from scipy.stats import norm, entropy
 
     direc_delta = np.zeros(nPosteriors)
 
@@ -522,18 +523,20 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
     for k in xrange(len(ll_X)):
 
         # length x features
-        ll_logp = [ X[i,0] for i in xrange(len(ll_X[k])) ]
-        ll_post = [ X[i,-nPosteriors:] for i in xrange(len(ll_X[k])) ]
+        ll_logp = np.array(ll_X[k])[:,0]
+        ll_post = np.array(ll_X[k])[:,-nPosteriors:]
+        ## ll_logp = [ ll_X[k][i][0] for i in xrange(len(ll_X[k])) ]
+        ## ll_post = [ ll_X[k][i][-nPosteriors:] for i in xrange(len(ll_X[k])) ]
 
         new_X = []
+        max_states = np.argmax(ll_post, axis=1)
         for i in xrange(len(ll_logp)):
-            max_states = argmax(ll_post[i], axis=1)
-            for j, state in enumerate(max_states):
-                direc_delta *= 0.0
-                direc_delta[state] = 1.0
+            state = max_states[i]
+            direc_delta *= 0.0
+            direc_delta[state] = 1.0
 
-                selfInfo = entropy(direc_delta+1e-6, ll_post[i][j]+1e-6)
-                new_X.append([ll_logp[i,j], float(state), selfInfo])
+            selfInfo = entropy(direc_delta+1e-6, ll_post[i]+1e-6)
+            new_X.append([ll_logp[i], float(state), selfInfo])
 
         lll_X.append(new_X)
         
