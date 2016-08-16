@@ -452,8 +452,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
-        d = ut.load_pickle(crossVal_pkl)
-        kFold_list = d['kFoldList'] 
     else:
     
         # Get a data set with a leave-one-person-out
@@ -545,6 +543,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print "learned hmm exists"
         else:
+            d = ut.load_pickle(crossVal_pkl)
+            ## kFold_list = d['kFoldList']
+            
             # person x dim x sample x length => sample x dim x length
             for i, tidx in enumerate(train_idx):
                 if i == 0:
@@ -652,9 +653,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     # temp
     kFold_list = kFold_list[1:2]
+    d = ut.load_pickle(crossVal_pkl)
 
-
-    
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
     else: n_jobs = -1
@@ -855,10 +855,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
 
-        ## # temp
-        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
-                        ll_logp_test, ll_post_test, testDataY)
-        continue
+        ## ## # temp
+        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+        ##                 ll_logp_test, ll_post_test, testDataY)
+        ## continue
 
         # -------------------------------------------------------------------------------
         # update kmean
