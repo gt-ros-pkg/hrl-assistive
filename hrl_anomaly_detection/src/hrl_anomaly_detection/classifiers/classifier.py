@@ -1077,6 +1077,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
         ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
         ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
+        ll_classifier_test_labels = None
 
         nLength = 200
     else:
