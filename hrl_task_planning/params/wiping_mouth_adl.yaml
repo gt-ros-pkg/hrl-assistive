@@ -1,2 +1,2 @@
 constant_predicates: []
-default_goal: ['AND(AT-GRIPPER FINAL_RIGHT_HAND)(AT-ROBOT FINAL_BASE)']
+default_goal: ['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']

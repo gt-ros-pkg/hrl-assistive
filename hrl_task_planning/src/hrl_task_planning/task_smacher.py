@@ -182,7 +182,7 @@ class PDDLTaskThread(Thread):
                 if not self.problem_msg.init:
                     goal_pred_1 = Predicate.from_string(self.problem_msg.goal[0])
                     goal_pred_1.negate()
-                    self.problem_msg.init.append(goal_pred_1)  # Add negative of 1st goal predicate to have something in init, if necessary
+                    self.problem_msg.init.append(str(goal_pred_1))  # Add negative of 1st goal predicate to have something in init, if necessary
                 attempted_goal = copy.copy(self.problem_msg.goal)  # Save to make sure goal hasn't changed by end of run
                 # Get solution from planner
                 try:

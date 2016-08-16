@@ -67,6 +67,10 @@ class Object(object):
     def __init__(self, name, type_=None):
         assert isinstance(name, str), "Object name must be a string."
         assert isinstance(type_, str) or type_ is None, "Object name must be a string."
+        if not name.isupper():
+            rospy.logwarn("[%s] PDDL Object names should be fully uppercase. Received object %s", rospy.get_name(), name, type_)
+        if type_ is not None and not type_.isupper():
+            rospy.logwarn("[%s] PDDL Object types should be fully uppercase. Received object %s of type %s", rospy.get_name(), name, type_)
         self.name = name
         self.type = type_
 
@@ -97,6 +101,8 @@ class Object(object):
 class Predicate(object):
     """ A class describing a predicate in PDDL. """
     def __init__(self, name, args=None, neg=False):
+        if not name.isupper():
+            rospy.logwarn("[%s] PDDL Predicate names should be fully uppercase. Received predicate %s", rospy.get_name(), name)
         self.name = name
         self.args = [] if args is None else args
         self.neg = neg

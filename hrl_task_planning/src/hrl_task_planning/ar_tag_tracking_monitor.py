@@ -23,7 +23,7 @@ class ARTagTracker(object):
     def ar_distance_check_cb(self, msg):
 	ar_dist_y = msg.data[0]
 	preds = []
-        BED_HARD_THRESH = 0.0
+        BED_HARD_THRESH = 1.3
 	if abs(ar_dist_y) < BED_HARD_THRESH:
 	    preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
         else:

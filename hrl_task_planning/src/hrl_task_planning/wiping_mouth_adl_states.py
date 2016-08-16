@@ -207,7 +207,8 @@ class MoveArmState(PDDLSmachState):
         self.goal_reached = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         rospy.Subscriber("/left_arm/haptic_mpc/in_deadzone", Bool, self.arm_reach_goal_cb)
-
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+    
     def arm_reach_goal_cb(self, msg):
         self.goal_reached = msg.data
 
@@ -248,6 +249,7 @@ class MoveArmState(PDDLSmachState):
         #Now that goal is published, we wait until goal is reached
         while not rospy.is_shutdown() and not self.goal_reached:
             if self.preempt_requested():
+                self.stop_tracking_AR_publisher.publish(False)
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
                 return 
             rospy.sleep(1)
@@ -267,6 +269,7 @@ class MoveBackState(PDDLSmachState):
         super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
         #self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
 
     def domain_state_cb(self, state_msg):
         self.current_state = State(map(Predicate.from_string, state_msg.predicates))
@@ -278,7 +281,7 @@ class MoveBackState(PDDLSmachState):
     def _check_pddl_status(self):
         if self.preempt_requested():
             rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
-            self.service_preempt()
+            self.stop_tracking_AR_publisher.publish(False)
             return 'preempted'
         if self.goal_state.is_satisfied(self.current_state):
             return 'succeeded'
@@ -302,6 +305,7 @@ class MoveRobotState(PDDLSmachState):
         self.servo_goal_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData, queue_size=1)
         self.start_servoing = rospy.Publisher("/pr2_ar_servo/tag_confirm", Bool, queue_size=1, latch=True)
         rospy.loginfo('[%s] Remember: The AR tag must be tracked before moving!' % rospy.get_name())
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
 
     def base_servoing_cb(self, msg):
         if msg.data == 5:
@@ -342,6 +346,7 @@ class MoveRobotState(PDDLSmachState):
         while not rospy.is_shutdown() and not self.goal_reached:
             if self.preempt_requested():
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
+                self.stop_tracking_AR_publisher.publish(False)
                 return 
             rospy.sleep(1)
 
@@ -406,7 +411,8 @@ class CallBaseSelectionState(PDDLSmachState):
             return 'aborted'
         state_update = PDDLState()
         state_update.domain = self.domain
-        state_update.predicates = ['(BASE-SELECTED %s %s)' % (self.task, self.model)]
+        state_update.predicates = ['(BASE-SELECTED %s %s)' % (self.task, self.model.upper())]
+
         print "Publishing (BASE-SELECTED) update"
         self.state_pub.publish(state_update)
 
@@ -418,6 +424,7 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.task = task
         self.model = model
         print "Configuring Model and Robot for task: %s and Model: %s" %(task, model)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
         if self.model.upper() == 'AUTOBED':
             self.model_reached = False
         else:
@@ -532,6 +539,7 @@ class ConfigureModelRobotState(PDDLSmachState):
             while not rospy.is_shutdown() and not self.model_reached:
                 if self.preempt_requested():
                     rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
+                    self.stop_tracking_AR_publisher.publish(False)
                     return 
                 rospy.sleep(1)
 

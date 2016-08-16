@@ -331,6 +331,7 @@ class AR_Tag_Tracking(object):
                         quat = np.sum(quat_int, axis=0)
                         quat /= float(len(quat_int))
                     self.map_B_ar_pos = pos
+                    self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                     if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
                     elif self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag:
@@ -354,9 +355,6 @@ class AR_Tag_Tracking(object):
                             map_B_ar = self.shift_to_ground(map_B_ar)
 
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-                        print "BED IS AT DISTANCE"
-                        print self.map_B_ar_pos
-                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                     #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
