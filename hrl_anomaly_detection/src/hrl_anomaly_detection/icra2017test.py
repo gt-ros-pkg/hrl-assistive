@@ -658,6 +658,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
     else: n_jobs = -1
+    d = ut.load_pickle(crossVal_pkl)
     r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
