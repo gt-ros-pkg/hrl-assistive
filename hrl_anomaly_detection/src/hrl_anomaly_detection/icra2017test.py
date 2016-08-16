@@ -443,14 +443,70 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     '''
     Use augmented data? if nAugment is 0, then aug_successData = successData
     '''
-    # Get a data set with a leave-one-person-out
-    d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
-                       processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                       downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                       handFeatures=data_dict['handFeatures'], \
-                       cut_data=data_dict['cut_data'], \
-                       data_renew=data_renew, max_time=data_dict['max_time'])
-    if data_gen: sys.exit()
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+    else:
+    
+        # Get a data set with a leave-one-person-out
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+
+
+        successIdx = []
+        failureIdx = []
+        for i in xrange(len(d['successDataList'])):
+            
+            if i == 0:
+                successData = d['successDataList'][i]
+                failureData = d['failureDataList'][i]
+                successIdx.append( range(len(d['successDataList'][i][0])) )
+                failureIdx.append( range(len(d['failureDataList'][i][0])) )
+            else:
+                successData = np.vstack([ np.swapaxes(successData,0,1), \
+                                          np.swapaxes(d['successDataList'][i], 0,1)])
+                failureData = np.vstack([ np.swapaxes(failureData,0,1), \
+                                          np.swapaxes(d['failureDataList'][i], 0,1)])
+                successData = np.swapaxes(successData, 0, 1)
+                failureData = np.swapaxes(failureData, 0, 1)
+                successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
+                                         len(d['successDataList'][i][0])) )
+                failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
+                                         len(d['failureDataList'][i][0])) )
+
+        kFold_list = []
+        # leave-one-person-out
+        for idx in xrange(len(subject_names)):
+            idx_list = range(len(subject_names))
+            train_idx = idx_list[:idx]+idx_list[idx+1:]
+            test_idx  = idx_list[idx:idx+1]        
+
+            normalTrainIdx = []
+            abnormalTrainIdx = []
+            for tidx in train_idx:
+                normalTrainIdx += successIdx[tidx]
+                abnormalTrainIdx += failureIdx[tidx]
+                
+            normalTestIdx = []
+            abnormalTestIdx = []
+            for tidx in test_idx:
+                normalTestIdx += successIdx[tidx]
+                abnormalTestIdx += failureIdx[tidx]
+
+            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
+        d['successData'] = successData
+        d['failureData'] = failureData
+        d['kFoldList']   = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+                           
+        if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # parameters
@@ -461,14 +517,22 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nTrainOffset = 5
     nTrainTimes  = 4
 
-    # TODO: need leave-one-person-out
-    # Task-oriented hand-crafted features
+
+    # leave-one-person-out
     kFold_list = []
     for idx in xrange(len(subject_names)):
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
         test_idx  = idx_list[idx:idx+1]        
         kFold_list.append([train_idx, test_idx])
+
+    # TODO: need leave-one-person-out
+    # Task-oriented hand-crafted features
+    for idx, (train_idx, test_idx) in enumerate(kFold_list):
+        ## idx_list = range(len(subject_names))
+        ## train_idx = idx_list[:idx]+idx_list[idx+1:]
+        ## test_idx  = idx_list[idx:idx+1]        
+        ## kFold_list.append([train_idx, test_idx])
            
         # Training HMM, and getting classifier training and testing data
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
@@ -1126,10 +1190,10 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
-                             'add_logp_d': True}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
         ##                      'add_logp_d': True}
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
+                             'add_logp_d': True}
                              
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\

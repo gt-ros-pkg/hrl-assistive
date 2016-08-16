@@ -525,8 +525,6 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
         # length x features
         ll_logp = np.array(ll_X[k])[:,0]
         ll_post = np.array(ll_X[k])[:,-nPosteriors:]
-        ## ll_logp = [ ll_X[k][i][0] for i in xrange(len(ll_X[k])) ]
-        ## ll_post = [ ll_X[k][i][-nPosteriors:] for i in xrange(len(ll_X[k])) ]
 
         new_X = []
         max_states = np.argmax(ll_post, axis=1)

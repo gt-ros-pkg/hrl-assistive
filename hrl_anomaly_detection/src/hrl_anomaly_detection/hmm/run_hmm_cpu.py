@@ -86,17 +86,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
           in enumerate(kFold_list):
 
           # dim x sample x length
-            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] 
-            abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] 
-            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] 
-            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] 
-
-            # scaling
-            if verbose: print "scaling data ", idx, " / ", len(kFold_list)
-            normalTrainData   *= param['scale']
-            abnormalTrainData *= param['scale']
-            normalTestData    *= param['scale']
-            abnormalTestData  *= param['scale']
+            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] * param['scale']
+            abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] * param['scale'] 
+            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
+            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] * param['scale'] 
 
             #
             nEmissionDim = len(normalTrainData)
@@ -240,74 +233,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-
-                                
-            ## max_norm_logp = np.amax(norm_logp)
-            ## min_norm_logp = np.amin(norm_logp)
-
-            ## ll_norm_logp   = (np.array(ll_norm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
-            ## ll_abnorm_logp = (np.array(ll_abnorm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
-
-            ## #
-            ## ## import MDAnalysis.analysis.psa as psa
-            ## l_mean_logp = np.array([np.mean(ll_norm_logp, axis=0)])
-            ## norm_dist = []
-            ## abnorm_dist = []
-            ## for i in xrange(len(ll_norm_logp)):
-            ##     norm_dist.append( np.linalg.norm(l_mean_logp - ll_norm_logp[i:i+1] ) )
-            ##     ## norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
-            ## for i in xrange(len(ll_abnorm_logp)):
-            ##     abnorm_dist.append( np.linalg.norm(l_mean_logp - ll_abnorm_logp[i:i+1] ) )
-            ##     ## abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
-
-            ## print param['scale'], param['cov'], " : ", np.mean(norm_dist)-np.mean(abnorm_dist), \
-            ##   " : ", np.std(norm_dist)-np.std(abnorm_dist) 
-            ## scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))/(1.0 + float(nEmissionDim)/3.0*np.std(norm_dist))  )
-
-            #--------------------------------------------------------------
-            ## logps = norm_logp + abnorm_logp
-            ## if len(logps) == 0:
-            ##     scores.append(-100000)
-            ##     continue
-            ## if np.mean(norm_logp) < 0 or np.amin(norm_logp) < 0:
-            ##     continue
-
-            ## # normalization
-            ## max_logp     = np.amax(logps) 
-            ## norm_logp   /= max_logp
-            ## abnorm_logp /= max_logp
-
-            ## # mu, sig
-            ## l_mu  = np.mean(norm_logp)
-            ## l_sig = np.std(norm_logp)
-            ## new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
-
-            ## from scipy.stats import norm
-            ## score = 0.0; c1=300.0; c2=300.0; c3=50. #1.e+2 c8
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=1000. #1.e+2 c12
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5000. #1.e+2 c11
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5. #1.e+2 ep
-            ## score += c1/l_sig
-            ## score += c2/np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
-            ## ## score += c3/max_logp
-            ## ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            ## scores.append( 1000.0*score )
-
-            #--------------------------------------------------------------
-            ## # score 1 - c12
-            ## diff_vals = -abnorm_logp + np.mean(norm_logp)
-            ## diff_list = []
-            ## for v in diff_vals:
-            ##     if v is np.nan or v is np.inf: continue
-            ##     diff_list.append(v)
-
-            ## if len(diff_list)==0: continue
-            ## score = np.median(diff_list)
-            ## scores.append( score )                                    
-            ## print scores
-
-        ## print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
         if ret == 'Failure':
             mean_list.append(0)
@@ -747,10 +672,10 @@ if __name__ == '__main__':
                                                               nPoints=8)
         parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
                       'cov': np.linspace(1.0,5.0,5) }
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     max_check_fold = None
     ## max_check_fold = 2
