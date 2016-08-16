@@ -61,6 +61,7 @@ import hrl_anomaly_detection.classifiers.classifier as cf
 import hrl_anomaly_detection.data_viz as dv
 
 import itertools
+import svmutil as svm
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
@@ -87,9 +88,10 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
     type_sets = []
-    type_sets.append([0,1,2,12,13,14,15,16,17,21,22,23,30,31,32])
-    type_sets.append([3,4,5,6,7,8,9,10,11,24,25,26])
-    type_sets.append([27,28,29])
+    type_sets.append([42,43,44,45,46,47,48])
+    type_sets.append([21,22,23,24,25,26])
+    type_sets.append([12,13,14,27,28,29])
+    type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11])
 
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
@@ -113,11 +115,33 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                     new_failureData[dimIdx].append(d['failureData'][0,sampleIdx,:])
         print np.asarray(new_failureData).shape
         d['failureData']=np.asarray(new_failureData)
+        
         # Task-oriented hand-crafted features        
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
+        #formated_X = formatX(d['failureData'][:,:,:])
+        #print np.asarray(formated_X).shape
+        mean = [0]
+        #for sampleIdx in xrange(0, len(formated_X)):
+            
         ut.save_pickle(d, crossVal_pkl)
+
+    #print d['failureData']
+    X = []
+    mean = [0]* 40
+    var = [0]*40
+    for sampleIdx in xrange(0, len(d['failureData'][0])):
+        formated_X = formatX(d['failureData'][:,sampleIdx,:])
+        X.extend(formated_X)
+    for sampleIdx in xrange(0, len(X)):
+        for valIdx in xrange(0, len(X[sampleIdx])):
+            mean[valIdx] += X[sampleIdx][valIdx] / len(X)
+    for sampleIdx in xrange(0, len(X)):
+        for valIdx in xrange(0, len(X[sampleIdx])):
+            var[valIdx] += (mean[valIdx] - X[sampleIdx][valIdx])**2 / len(X)
+    #print mean, var
+    #print np.asarray(X).shape
 
     successData = d['successData']
     failureData = d['failureData']
@@ -143,10 +167,11 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         new_type_sets.append(new_type_set)
     type_sets = new_type_sets
 
-    print "new_type_sets "
-    print type_sets
+    #print "new_type_sets "
+    #print type_sets
 
-    # Training HMM, and getting classifier training and testing data
+
+    # Training svm, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
 
@@ -164,22 +189,45 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :])
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :], mean=mean, var=var)
+            #print np.asarray(formated_X).shape
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
-            
+        model = svm.svm_train(y, X)
+        X = []
+        y = []
+        for testIdx in xrange(0, abnormalTestData.shape[1]):
+            curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
+            if curr_type is 0:
+                continue
+            formated_X = formatX(abnormalTestData[:, testIdx, :], mean=mean, var=var)
+            #print np.asarray(formated_X).shape
+            X.extend(formated_X)
+            for windowIdx in xrange(0, len(formated_X)):
+                y.append(curr_type)
+        prediction=  svm.svm_predict(y, X, model)
+        #print np.asarray(X).shape
+        #print idx
             #X.append(formatX(abnormalTrainData[:, trainIdx, :]))
             #y.append(formatY(abnormalTrainIdx[trainIdx]))
         #print np.asarray(X).shape
     
-def formatX(data, time_window=10):
+def formatX(data, time_window=10, mean=None, var=None):
+    if mean is None:
+        mean = [0] * 40
+    if var is None:
+        var = [1] * 40
     X = []
     for idx in xrange(0, data.shape[1]-time_window + 1):
         x = []
         for dimIdx in xrange(0, data.shape[0]):
             #print data[dimIdx][idx:idx+time_window]
-            x.extend(data[dimIdx][idx:idx+time_window])
+            temp_x = data[dimIdx][idx:idx+time_window]
+            for valIdx in xrange(0,len(temp_x)):
+                if not np.allclose(var[valIdx], 0):
+                    temp_x[valIdx] = (temp_x[valIdx] - mean[valIdx]) / var[valIdx]
+            x.extend(temp_x)
         X.append(x)
     return X
 
