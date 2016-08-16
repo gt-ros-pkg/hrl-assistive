@@ -1018,7 +1018,7 @@ def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
         ##     plt.plot(l_logp, 'm-')
 
 
-    plt.ylim([0, np.amax(ll_logp) ])
+    ## plt.ylim([0, np.amax(ll_logp) ])
     plt.show()
 
 
