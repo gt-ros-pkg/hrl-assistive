@@ -129,7 +129,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=4, \
-                                                                    ## startIdx=nLength-3, \
                                                                     bPosterior=True)
                                                                     for i in xrange(len(testDataX[0])))
             _, ll_idx, ll_logp, ll_post = zip(*r)
@@ -205,7 +204,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 X_test = test_X
                 Y_test = test_Y
             weights = ROC_dict[method+'_param_range']
-                
+
+            print "Start to run classifiers"
             n_jobs = 1
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
