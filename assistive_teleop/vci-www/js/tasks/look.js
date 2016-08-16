@@ -7,58 +7,66 @@ RFH.Look = function (options) {
     self.buttonText = "Look";
     self.toolTipText = "Move the head to look around";
     var imageDivId = options.imageDivId || 'mjpeg-image';
-    self.imageDiv = $("#" + imageDivId);
+    var $imageDiv = $("#" + imageDivId);
     self.mapLookDivs = $(".map-look");
     self.camera = options.camera || new RFH.ROSCameraModel();
     self.head = options.head || new Pr2Head(ros);
-    self.$zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', zoomIn)
-    self.$zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', zoomOut);
-    self.zoomServiceClient = new ROSLIB.ServiceClient({
-
+    var zoomLevel = 1.0;
+    var maxZoom = 4;
+    self.zoomServiceClient = new ROSLIB.Service({
+        ros: ros,
+        name: '/set_cropdecimate',
+        serviceType: 'assistive_teleop/SetCropDecimateParams'
     });
-    
+
     var hfov = 1;
     var vfov = 0.75; //FOV of kinect is ~1 radians wide, 0.75 radians tall
     var SCALE = 0.8; //Scale large motions so we don't over shoot
-    var lookAreas = $('.map-look');
-    for (var i = 0; i < lookAreas.length; i += 1) {
+    var edgeLook = function (event) {
         var dx = 0, dy = 0;
-        var classes = lookAreas[i].classList;
-        if (classes.contains("top")) { dy = -SCALE  * vfov; }
-        if (classes.contains("bottom")) { dy = SCALE  * vfov; }
-        if (classes.contains("left")) { dx = SCALE * hfov; }
-        if (classes.contains("right")) { dx = -SCALE * hfov; }
-        $(lookAreas[i]).on('click.rfh-look', {dx: dx, dy: dy}, function (event) {
-            self.head.delPosition(event.data.dx, event.data.dy); 
-            event.stopPropagation();
-        } );
-    }
+        var classes = event.target.classList;
+        if (classes.contains("top")) { dy = -SCALE  * vfov/zoomLevel; }
+        if (classes.contains("bottom")) { dy = SCALE  * vfov/zoomLevel; }
+        if (classes.contains("left")) { dx = SCALE * hfov/zoomLevel; }
+        if (classes.contains("right")) { dx = -SCALE * hfov/zoomLevel; }
+        self.head.delPosition(dx, dy); 
+        event.stopPropagation();
+    };
+    var lookAreas = $('.map-look').on('click.rfh-look', edgeLook);
 
     self.pointHead = function (e) {
         var pt = RFH.positionInElement(e); 
-        var px = (pt[0]/e.target.clientWidth) * self.camera.width;
-        var py = (pt[1]/e.target.clientHeight) * self.camera.height;
+        var pctOffset = (50 - (50/zoomLevel))/100;
+        var px = ((pt[0]/e.target.clientWidth)/zoomLevel + pctOffset) * self.camera.width;
+        var py = ((pt[1]/e.target.clientHeight)/zoomLevel + pctOffset) * self.camera.height;
         var xyz =  self.camera.projectPixel(px, py);
         self.head.pointHead(xyz[0], xyz[1], xyz[2], self.camera.frame_id);
     };
 
     var zoomIn = function (e) {
-        
-
+        zoomLevel += 1;
+        $zoomOutButton.button('enable');
+        if (zoomLevel >= maxZoom) { $zoomInButton.button('disable'); };
+        $imageDiv.css({transform:'scale('+zoomLevel+')'});
     };
+    var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', zoomIn)
 
     var zoomOut = function (e) {
-
+        zoomLevel -= 1;
+        $zoomInButton.button('enable');;
+        if (zoomLevel <= 1) { $zoomOutButton.button('disable'); };
+        $imageDiv.css({transform:'scale('+zoomLevel+')'});
     };
+    var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', zoomOut).button('disable');
 
     self.start = function () {
-        self.imageDiv.addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
+        $imageDiv.addClass("cursor-eyes").on("click.rfh-look", self.pointHead);
         self.mapLookDivs.css("display","block");
         console.log('Looking task started');
     };
 
     self.stop = function () {
-        self.imageDiv.removeClass("cursor-eyes").off("click.rfh-look");
+        $imageDiv.removeClass("cursor-eyes").off("click.rfh-look");
         self.mapLookDivs.css("display","none");
         console.log('Looking task stopped');
     };
