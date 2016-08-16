@@ -138,15 +138,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_logp, ll_post, ll_idx, _ = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx)
 
 
-            ## logp_l = []
-            ## for i in xrange(len(ll_logp)):
-            ##     logp_l.append(ll_logp[i][-1])
+            logp_l = []
+            for i in xrange(len(ll_logp)):
+                logp_l.append(ll_logp[i][-1])
                 
-            ## if np.mean( logp_l ) < 0:
-            ##     print "Negative likelihoods"
-            ##     scores.append(-1.0 * 1e+10)
-            ##     ret = 'Failure'
-            ##     break
+            if np.amax( logp_l ) < 0:
+                print "Negative likelihoods"
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
 
 
             # split
@@ -206,7 +206,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 Y_test = test_Y
             weights = ROC_dict[method+'_param_range']
                 
-
+            n_jobs = 1
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
                                                                              X_test, Y_test, \
@@ -668,15 +668,15 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=8)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,5), \
-                      'cov': np.linspace(1.0,5.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,15.0,10) }
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
         max_check_fold = None
-        max_check_fold = 1
+        ## max_check_fold = 3
 
     #--------------------------------------------------------------------------------------
     # test change of logp
