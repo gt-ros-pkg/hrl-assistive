@@ -204,5 +204,4 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
         pose.orientation.w = quat.w;
         return pose;
     };
-
 };

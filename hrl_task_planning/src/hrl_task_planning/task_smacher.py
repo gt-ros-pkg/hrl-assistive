@@ -180,7 +180,7 @@ class PDDLTaskThread(Thread):
                 # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
                 self.problem_msg.init = self.domain_state
                 if not self.problem_msg.init:
-                    goal_pred_1 = [map(Predicate.from_string, preds) for preds in self.problem_msg.goal][0]
+                    goal_pred_1 = Predicate.from_string(self.problem_msg.goal[0])
                     goal_pred_1.negate()
                     self.problem_msg.init.append(goal_pred_1)  # Add negative of 1st goal predicate to have something in init, if necessary
                 attempted_goal = copy.copy(self.problem_msg.goal)  # Save to make sure goal hasn't changed by end of run
