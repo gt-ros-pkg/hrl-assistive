@@ -49,14 +49,15 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
         print "Selected task name is not available."
         sys.exit()
 
+
+    # common params
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_state', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean']
         ## param_dict['ROC']['methods'] = [ 'progress', 'progress_diag']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean']
-
-
+    param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
     
@@ -76,7 +77,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 0.01,\
-                          'osvm_nu': 0.0003, 'raw_window_size': 5,\
+                          'osvm_nu': 0.0003, \
                           'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 12.5, \
                           'hmmsvm_dL_gamma': 0.01,
                           'hmmsvm_no_dL_w_negative': 1.25, 'hmmsvm_no_dL_cost': 15.0, \
@@ -195,7 +196,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
                           'hmmosvm_nu': 0.001,\
                           'osvm_nu': 0.000359,\
-                          'raw_window_size': 5,\
                           'hmmsvm_diag_w_negative': 0.85, \
                           'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
@@ -357,7 +357,6 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmsvm_diag_cost': 10.0, \
                               'hmmsvm_diag_gamma': 0.01,\
                               'osvm_nu': 0.000359,
-                              'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 1.5, \
                               'hmmsvm_dL_cost': 7.5, \
                               'hmmsvm_dL_gamma': 0.01,\
@@ -517,7 +516,6 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                               'hmmosvm_nu': 0.001,
                               'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                               'hmmsvm_diag_gamma': 1.005,\
-                              'raw_window_size': 5,\
                               'hmmsvm_dL_w_negative': 1.5, 'hmmsvm_dL_cost': 15.0, \
                               'hmmsvm_dL_gamma': 0.01,\
                               'hmmsvm_no_dL_w_negative': 2.0, 'hmmsvm_no_dL_cost': 15.0, \
@@ -681,7 +679,6 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_diag_w_negative': 1.711, 'hmmsvm_diag_cost': 3.0, \
                           'hmmsvm_diag_gamma': 0.01,\
-                          'raw_window_size': 5,\
                           'hmmsvm_dL_w_negative': 2.1499, 'hmmsvm_dL_cost': 5.5, \
                           'hmmsvm_dL_gamma': 0.01,\
                           'hmmsvm_no_dL_w_negative': 1.5, 'hmmsvm_no_dL_cost': 8.0, \

@@ -349,12 +349,13 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_train_X']     = ll_classifier_train_X
+        d['ll_classifier_train_Y']     = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']   = ll_classifier_train_idx
+        d['ll_classifier_test_X']      = ll_classifier_test_X
+        d['ll_classifier_test_Y']      = ll_classifier_test_Y            
+        d['ll_classifier_test_idx']    = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = fileList
         d['nLength']      = nLength
         ut.save_pickle(d, modeling_pkl)
 
@@ -1190,10 +1191,10 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 5.66,\
+                             'add_logp_d': False}
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
         ##                      'add_logp_d': True}
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
-                             'add_logp_d': True}
                              
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
