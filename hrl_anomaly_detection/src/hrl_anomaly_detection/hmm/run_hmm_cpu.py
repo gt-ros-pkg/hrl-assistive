@@ -654,8 +654,8 @@ if __name__ == '__main__':
             parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
                           'cov': np.linspace(0.5,5.,10) }
         elif opt.task == 'pushing_toolcase':
-            parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
-                          'cov': np.linspace(0.5,4.0,10) }
+            parameters = {'nState': [25], 'scale': np.linspace(3.0,8.0,5), \
+                          'cov': np.linspace(2.0,12.0,5) }
         else:
             print "Not available task"
         max_check_fold = 2
@@ -676,7 +676,7 @@ if __name__ == '__main__':
 
 
         max_check_fold = None
-        max_check_fold = 2
+        max_check_fold = 1
 
     #--------------------------------------------------------------------------------------
     # test change of logp
