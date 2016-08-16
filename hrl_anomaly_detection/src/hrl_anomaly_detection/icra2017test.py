@@ -563,19 +563,20 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
         ROC_data = ut.load_pickle(roc_pkl)
 
-    for i, method in enumerate(method_list):
-        for j in xrange(nTrainTimes+1):
-            if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
-              SVM_dict['renew']:            
-                data = {}
-                data['complete'] = False 
-                data['tp_l']     = [ [] for jj in xrange(nPoints) ]
-                data['fp_l']     = [ [] for jj in xrange(nPoints) ]
-                data['tn_l']     = [ [] for jj in xrange(nPoints) ]
-                data['fn_l']     = [ [] for jj in xrange(nPoints) ]
-                data['delay_l']  = [ [] for jj in xrange(nPoints) ]
-                data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
-                ROC_data[method+'_'+str(j)] = data
+    for kFold_idx in xrange(len(kFold_list)):
+        for i, method in enumerate(method_list):
+            for j in xrange(nTrainTimes+1):
+                if method+'_'+str(j) not in ROC_data.keys() or method in ROC_dict['update_list'] or\
+                  SVM_dict['renew']:            
+                    data = {}
+                    data['complete'] = False 
+                    data['tp_l']     = [ [] for jj in xrange(nPoints) ]
+                    data['fp_l']     = [ [] for jj in xrange(nPoints) ]
+                    data['tn_l']     = [ [] for jj in xrange(nPoints) ]
+                    data['fn_l']     = [ [] for jj in xrange(nPoints) ]
+                    data['delay_l']  = [ [] for jj in xrange(nPoints) ]
+                    data['tp_idx_l']  = [ [] for jj in xrange(nPoints) ]
+                    ROC_data[method+'_'+str(j)] = data
 
 
     # temp
@@ -595,7 +596,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                                            for idx in xrange(len(kFold_list)))
 
     l_data = r
-    for data in l_data:
+    for kFold_idx, data in enumerate(l_data):
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
                 if ROC_data[method+'_'+str(j)]['complete']: continue
@@ -721,14 +722,15 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            ## for j in xrange(nTrainOffset):
-            ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.15
-            ##     print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
-            ##     ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha )
+            for j in xrange(nTrainOffset):
+                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.05
+                print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
+                ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
+                                      nrSteps=3)
 
-            alpha = np.exp(-0.5*float(i-1) )*0.1
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=3)
+            ## alpha = np.exp(-0.5*float(i-1) )*0.1
+            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+            ##                       nrSteps=3)
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
