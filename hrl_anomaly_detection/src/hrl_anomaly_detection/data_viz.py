@@ -95,7 +95,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         kFold_list = dm.kFold_data_index2(len(successData[0]),\
                                           len(failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[1]
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
     normalTrainData   = successData[:, normalTrainIdx, :] 
     abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
     normalTestData    = successData[:, normalTestIdx, :] 
@@ -322,7 +322,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     ## plt.ylim([min_logp, max_logp])
-    ## plt.ylim([0, max_logp])
+    if max_logp >0: plt.ylim([0, max_logp])
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
