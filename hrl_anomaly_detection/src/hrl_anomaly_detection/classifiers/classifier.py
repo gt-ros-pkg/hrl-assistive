@@ -313,7 +313,7 @@ class classifier(learning_base):
             
             return True
 
-        elif self.method == 'progress_redu':
+        elif self.method == 'progress_osvm':
             '''
             Reduced-progress-vector based classifier
             '''
@@ -567,27 +567,29 @@ class classifier(learning_base):
 
             return l_err
 
-        elif self.method == 'progress_redu':
+        elif self.method == 'progress_osvm':
             if len(np.shape(X))==1: X = [X]
 
             l_logp = [ X[i,0] for i in xrange(len(X)) ]
             l_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
             direc_delta = np.zeros(self.nPosteriors)
             
+            new_X       = []
             max_states  = argmax(l_post, axis=1)
             for i, state in enumerate(max_states):
                 direc_delta *= 0.0
                 direc_delta[state] = 1.0
 
                 selfInfo = entropy(direc_delta+1e-6, l_post[i]+1e-6)
+                new_X.append( [ll_logp[i,j], float(state), selfInfo] )
 
-                new_X = [ll_logp[i,j], float(state), selfInfo]
+            X_scaled = self.scaler.transform(new_X)
 
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
+            p_labels, _, p_vals = svm.svm_predict([0]*len(X_scaled), X_scaled, self.dt)
             
-            for i in xrange(len(X)):
-                logp = X[i][0]
-                post = X[i][-self.nPosteriors:]
-                
+            return p_labels
             
                 
         elif self.method == 'fixed':
@@ -1252,7 +1254,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
-        elif method == 'hmmosvm' or method == 'osvm':
+        elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( gamma=weights[j] )

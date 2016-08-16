@@ -513,6 +513,32 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):
 
     return ll_logp, ll_post, ll_idx, l_labels
 
+
+def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
+
+    direc_delta = np.zeros(nPosteriors)
+
+    lll_X   = []
+    for k in xrange(len(ll_X)):
+
+        # length x features
+        ll_logp = [ X[i,0] for i in xrange(len(ll_X[k])) ]
+        ll_post = [ X[i,-nPosteriors:] for i in xrange(len(ll_X[k])) ]
+
+        new_X = []
+        for i in xrange(len(ll_logp)):
+            max_states = argmax(ll_post[i], axis=1)
+            for j, state in enumerate(max_states):
+                direc_delta *= 0.0
+                direc_delta[state] = 1.0
+
+                selfInfo = entropy(direc_delta+1e-6, ll_post[i][j]+1e-6)
+                new_X.append([ll_logp[i,j], float(state), selfInfo])
+
+        lll_X.append(new_X)
+        
+    return lll_X, ll_Y, ll_idx
+
 ####################################################################
 # functions for paralell computation
 ####################################################################

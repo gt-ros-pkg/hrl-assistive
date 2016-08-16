@@ -329,6 +329,18 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
         #-----------------------------------------------------------------------------------------
+        # New three element feature vector
+        #-----------------------------------------------------------------------------------------
+        ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
+                                                       ll_classifier_train_Y, \
+                                                       ll_classifier_train_idx)
+        ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
+                                                       ll_classifier_test_Y, \
+                                                       ll_classifier_test_idx)
+
+        #-----------------------------------------------------------------------------------------
         d = {}
         d['nEmissionDim'] = ml.nEmissionDim
         d['A']            = ml.A 
@@ -337,19 +349,25 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['nLength']      = nLength
+        d['ll_classifier_train_X']       = ll_classifier_train_X
+        d['ll_classifier_train_Y']       = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']     = ll_classifier_train_idx
+        d['ll_classifier_test_X']        = ll_classifier_test_X
+        d['ll_classifier_test_Y']        = ll_classifier_test_Y            
+        d['ll_classifier_test_idx']      = ll_classifier_test_idx
         d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
         d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            
         d['ll_classifier_diag_train_idx']= ll_classifier_diag_train_idx
         d['ll_classifier_diag_test_X']   = ll_classifier_diag_test_X
         d['ll_classifier_diag_test_Y']   = ll_classifier_diag_test_Y            
         d['ll_classifier_diag_test_idx'] = ll_classifier_diag_test_idx
-        d['nLength']      = nLength
+        d['ll_classifier_ep_train_X']    = ll_classifier_ep_train_X
+        d['ll_classifier_ep_train_Y']    = ll_classifier_ep_train_Y            
+        d['ll_classifier_ep_train_idx']  = ll_classifier_ep_train_idx
+        d['ll_classifier_ep_test_X']     = ll_classifier_ep_test_X
+        d['ll_classifier_ep_test_Y']     = ll_classifier_ep_test_Y            
+        d['ll_classifier_ep_test_idx']   = ll_classifier_ep_test_idx        
         ut.save_pickle(d, modeling_pkl)
 
 

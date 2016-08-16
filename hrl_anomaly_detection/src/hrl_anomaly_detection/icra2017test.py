@@ -636,17 +636,17 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                              no_plot=no_plot, \
                              save_pdf=save_pdf, \
                              only_tpr=False, legend=True)
-        print auc_rates
+
+        print subject_names[kFold_idx], " : ", auc_rates
         auc = []
-        for i, method in enumerate(method_list):
-            auc.append(auc_rates[method+'_'+str(j)])
+        for i in xrange(nTrainTimes):
+            auc.append(auc_rates[method_list[0]+'_'+str(i)])
                 
         l_auc.append(auc)
 
-
     if len(kFold_list)>1:
-        print "Mean: ", np.mean(l_auc, axis=1)
-        print "Std:  ", np.std(l_auc, axis=1)
+        print "Mean: ", np.mean(l_auc, axis=0)
+        print "Std:  ", np.std(l_auc, axis=0)
 
         
     ## acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
@@ -1120,15 +1120,16 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
+        ## subjects = [ 'sai', 'jina', 'linda', 'park']
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
-        ##                      'add_logp_d': True}
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
                              'add_logp_d': True}
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
+        ##                      'add_logp_d': True}
                              
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\
