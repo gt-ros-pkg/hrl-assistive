@@ -23,12 +23,12 @@ class ServoingServer(object):
         self.servoing_as = actionlib.SimpleActionServer('servoing_action',
                                                         ServoAction,
                                                         self.goal_cb, False)
-        self.vel_out = rospy.Publisher('base_controller/command', Twist)
+        self.vel_out = rospy.Publisher('base_controller/command', Twist, queue_size=1)
         self.tfl = TransformListener()
-        self.goal_out = rospy.Publisher('/servo_dest', PoseStamped, latch=True)
-        self.left_out = rospy.Publisher('/left_points', PointCloud)
-        self.right_out = rospy.Publisher('/right_points', PointCloud)
-        self.front_out = rospy.Publisher('/front_points', PointCloud)
+        self.goal_out = rospy.Publisher('/servo_dest', PoseStamped, latch=True, queue_size=1)
+        self.left_out = rospy.Publisher('/left_points', PointCloud, queue_size=1)
+        self.right_out = rospy.Publisher('/right_points', PointCloud, queue_size=1)
+        self.front_out = rospy.Publisher('/front_points', PointCloud, queue_size=1)
         # Initialize variables, so as not to spew errors before seeing a goal
         self.at_goal = False
         self.rot_safe = True
@@ -113,7 +113,7 @@ class ServoingServer(object):
         # print "Ang Diff: %s" %self.ang_diff
 
         self.dist_to_goal = ((self.odom_goal.pose.position.x - msg.pose.pose.position.x)**2 +
-                              (self.odom_goal.pose.position.y- msg.pose.pose.position.y)**2)**(1./2)
+                             (self.odom_goal.pose.position.y - msg.pose.pose.position.y)**2)**(1./2)
 
         rospy.logwarn('Distance to goal (msg): ')
         rospy.logwarn(msg)
@@ -294,11 +294,10 @@ class ServoingServer(object):
         if len(self.right[0][:]) > 0:
             # Find points directly to the right or left of the robot (not in front or behind)
             # x<0.1 (not in front), x>-0.8 (not behind)
-           right_obs = self.right[:, self.right[1,:]>-0.4] #points too close.
-           if len(right_obs[0][:])>0:
-                right_obs = right_obs[:, np.logical_and(right_obs[0,:]<0.1,
-                                                        right_obs[0,:]>-0.8)]
-                if len(right_obs[:][0])>0:
+            right_obs = self.right[:, self.right[1, :] > -0.4]  # points too close.
+            if len(right_obs[0][:]) > 0:
+                right_obs = right_obs[:, np.logical_and(right_obs[0, :] < 0.1, right_obs[0, :] > -0.8)]
+                if len(right_obs[:][0]) > 0:
                     fdbk = ServoFeedback()
                     fdbk.current_action = String("Obstacle immediately to the right, cannot move.")
                     self.servoing_as.publish_feedback(fdbk)
@@ -310,4 +309,3 @@ def main():
     servoer = ServoingServer()
     while not rospy.is_shutdown():
         rospy.spin()
-    servoer.servoing_as.set_aborted()
