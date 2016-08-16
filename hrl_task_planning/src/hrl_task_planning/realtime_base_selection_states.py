@@ -99,11 +99,15 @@ class CallBaseSelectionState(PDDLSmachState):
             rospy.logerr("[%s] %s - Failed to load base goal to parameter server", rospy.get_name(), self.__class__.__name__)
             return 'aborted'
 
+from assistive_teleop.msg import ServoAction, ServoGoal
+from geometry_msgs.msg import Point, Quaterion
+
 
 class ServoOpenLoopState(PDDLSmachState):
     def __init__(self, base_goal_param, *args, **kwargs):
         super(ServoOpenLoopState, self).__init__(*args, **kwargs)
         self.base_goal_param = base_goal_param
+        self.action_client =  actionlib.SimpleActionClient('servoing_action', ServoAction)
 
     def execute(self, ud):
         self._start_execute()
@@ -112,13 +116,34 @@ class ServoOpenLoopState(PDDLSmachState):
         except (KeyError, rospy.ROSException):
             rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
             return 'aborted'
+        ps = PoseStamped()
+        ps.header.frame_id = '/odom_combined'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position = Point(*base_goal[0:3])
+        ps.pose.orientation = Quaterion(*base_goal[3:])
+        servo_goal = ServoGoal()
+        servo_goal.goal = ps
+        self.action_client.send_goal(servo_goal)
         self.xyt = base_goal[0:3]
         rate = rospy.Rate(5)
+        result_published = False
         while not rospy.is_shutdown():
+            action_state = self.action_client.get_state()
+            if action_state == GoalStatus.SUCCEEDED:
+                if not result_published:
+                    state_msg = PDDLState()
+                    state_msg.domain = self.domain
+                    state_msg.problem = self.problem
+                    state_msg.predicates = ['(TORSO_SET %s)' % self.base_goal_arg]
+                    self.pddl_pub.publish(state_msg)
+                    result_published = True
+            elif action_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
+                rospy.logwarn("[%s] %s - Servo Action Failed", rospy.get_name(), self.__class__.__name__)
+                return 'aborted'
             result = self._check_pddl_status()
             if result is not None:
                 return result
-        rate.sleep()
+            rate.sleep()
 
 
 from pr2_controllers_msgs.msg import SingleJointPositionAction, SingleJointPositionGoal

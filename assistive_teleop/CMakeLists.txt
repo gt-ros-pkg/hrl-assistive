@@ -10,6 +10,7 @@ add_action_files(
   OverheadGrasp.action
   OverheadPlace.action
   HeadSweep.action
+  Servo.action
 )
 
 
