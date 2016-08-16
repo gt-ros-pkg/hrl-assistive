@@ -519,7 +519,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
     nTrainOffset = 5
-    nTrainTimes  = 4
+    nTrainTimes  = 2
 
 
     # leave-one-person-out
@@ -779,8 +779,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     random.shuffle(normalDataIdx)
     ## random.shuffle(abnormalDataIdx)
 
-    normalTrainData = normalData[:,:len(normalDataIdx)/2,:]
-    normalTestData  = normalData[:,len(normalDataIdx)/2:,:]
+    normalTrainData = normalData[:,:nTrainOffset*nTrainTimes,:]
+    normalTestData  = normalData[:,nTrainOffset*nTrainTimes:,:]
     ## abnormalTrainData = abnormalData[:,:len(abnormalDataIdx)/2,:]
     ## abnormalTestData  = abnormalData[:,len(abnormalDataIdx)/2:,:]
     abnormalTestData  = abnormalData
@@ -1190,7 +1190,7 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        ## subjects = [ 'sai', 'jina', 'linda', 'park']
+        subjects = [ 'sai', 'jina', 'linda', 'park']
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
@@ -1219,7 +1219,7 @@ if __name__ == '__main__':
             import hrl_anomaly_detection.data_viz as dv        
             dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=False, \
-                              useTrain=True, useNormalTest=True, useAbnormalTest=False,\
+                              useTrain=True, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                               verbose=opt.bVerbose)

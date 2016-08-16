@@ -200,12 +200,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                     X_test.append(X)
                     Y_test.append(test_Y[j])
-                weights = ROC_dict['svm_param_range']
             else:
                 X_scaled = X_train_org
                 X_test = test_X
                 Y_test = test_Y
-                weights = ROC_dict['progress_param_range']
+            weights = ROC_dict[method+'_param_range']
                 
 
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
@@ -604,8 +603,6 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
                  help='number of processes for multi processing')
-    p.add_option('--add_logp_d', '--ld', action='store_false', dest='bAddLogpD',
-                 default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
     p.add_option('--method', '--m', action='store', dest='method', type='string', default='progress',
@@ -679,7 +676,7 @@ if __name__ == '__main__':
 
 
         max_check_fold = None
-        ## max_check_fold = 2
+        max_check_fold = 2
 
     #--------------------------------------------------------------------------------------
     # test change of logp
