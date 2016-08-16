@@ -92,9 +92,9 @@ class classifier(learning_base):
                  hmmsvm_no_dL_cost       = 4.,\
                  hmmsvm_no_dL_gamma      = 0.3,\
                  # hmmosvm
-                 hmmosvm_nu  = 0.5,\
+                 hmmosvm_nu  = 0.00316,\
                  # osvm
-                 osvm_nu     = 0.5,\
+                 osvm_nu     = 0.00316,\
                  # cssvm
                  cssvm_degree      = 3,\
                  cssvm_gamma       = 0.3,\
@@ -349,8 +349,8 @@ class classifier(learning_base):
             commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
               +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
 
-
-            
+            self.dt = svm.svm_train(y, X_scaled, commands )
+            return True
         
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -565,7 +565,30 @@ class classifier(learning_base):
                 err = np.mean(l_logp) + self.ths_mult*np.std(l_logp) - logp - self.logp_offset
                 l_err.append(err)
 
-            return l_err            
+            return l_err
+
+        elif self.method == 'progress_redu':
+            if len(np.shape(X))==1: X = [X]
+
+            l_logp = [ X[i,0] for i in xrange(len(X)) ]
+            l_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
+            direc_delta = np.zeros(self.nPosteriors)
+            
+            max_states  = argmax(l_post, axis=1)
+            for i, state in enumerate(max_states):
+                direc_delta *= 0.0
+                direc_delta[state] = 1.0
+
+                selfInfo = entropy(direc_delta+1e-6, l_post[i]+1e-6)
+
+                new_X = [ll_logp[i,j], float(state), selfInfo]
+
+            
+            for i in xrange(len(X)):
+                logp = X[i][0]
+                post = X[i][-self.nPosteriors:]
+                
+            
                 
         elif self.method == 'fixed':
             if len(np.shape(X))==1: X = [X]

@@ -581,7 +581,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
     
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
@@ -637,7 +637,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                              save_pdf=save_pdf, \
                              only_tpr=False, legend=True)
         print auc_rates
-        l_auc.append(auc_rates.tolist())
+        auc = []
+        for i, method in enumerate(method_list):
+            auc.append(auc_rates[method+'_'+str(j)])
+                
+        l_auc.append(auc)
+
 
     if len(kFold_list)>1:
         print "Mean: ", np.mean(l_auc, axis=1)
