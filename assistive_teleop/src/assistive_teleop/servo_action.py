@@ -305,7 +305,8 @@ class ServoingServer(object):
                     return False
         return True
 
-if __name__ == '__main__':
+
+def main():
     servoer = ServoingServer()
     while not rospy.is_shutdown():
         rospy.spin()
