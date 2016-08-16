@@ -100,7 +100,7 @@ class CallBaseSelectionState(PDDLSmachState):
             return 'aborted'
 
 from assistive_teleop.msg import ServoAction, ServoGoal
-from geometry_msgs.msg import Point, Quaterion
+from geometry_msgs.msg import Point, Quaternion
 
 
 class ServoOpenLoopState(PDDLSmachState):
@@ -120,11 +120,10 @@ class ServoOpenLoopState(PDDLSmachState):
         ps.header.frame_id = '/odom_combined'
         ps.header.stamp = rospy.Time.now()
         ps.pose.position = Point(*base_goal[0:3])
-        ps.pose.orientation = Quaterion(*base_goal[3:])
+        ps.pose.orientation = Quaternion(*base_goal[3:7])
         servo_goal = ServoGoal()
         servo_goal.goal = ps
         self.action_client.send_goal(servo_goal)
-        self.xyt = base_goal[0:3]
         rate = rospy.Rate(5)
         result_published = False
         while not rospy.is_shutdown():
