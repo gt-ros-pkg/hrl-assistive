@@ -1002,7 +1002,7 @@ def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
 
         ## plt.plot(l_state, l_logp, 'b-')
         if l_y[i] < 0:
-            plt.plot(l_logp, 'b-')
+            plt.plot(l_logp, 'b-', linewidth=3.0, alpha=0.7)
         ## else:
         ##     plt.plot(l_logp, 'r-')
 
@@ -1014,8 +1014,8 @@ def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
         ## plt.plot(l_state, l_logp, 'b-')
         if l_y2[i] < 0:
             plt.plot(l_logp, 'k-')
-        ## else:
-        ##     plt.plot(l_logp, 'm-')
+        else:
+            plt.plot(l_logp, 'm-')
 
 
     ## plt.ylim([0, np.amax(ll_logp) ])
