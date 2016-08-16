@@ -651,7 +651,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    ## kFold_list = kFold_list[:1]
+    kFold_list = kFold_list[1:2]
+
+
     
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
@@ -768,8 +770,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     normalPtrainData = dd['normalPtrainData']
 
     # Incremental evaluation
-    ## normalData    = np.array([d['successDataList'][i] for i in test_idx])[0]
-    ## abnormalData  = np.array([d['failureDataList'][i] for i in test_idx])[0]        
     normalData   = copy.copy(normalDataX) * HMM_dict['scale']
     abnormalData = copy.copy(abnormalDataX) * HMM_dict['scale']
 
@@ -856,9 +856,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         Y_test = ll_classifier_test_Y
 
         ## # temp
-        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
-        ##                 ll_logp_test, ll_post_test, testDataY)
-        ## continue
+        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+                        ll_logp_test, ll_post_test, testDataY)
+        continue
 
         # -------------------------------------------------------------------------------
         # update kmean
