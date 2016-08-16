@@ -272,17 +272,11 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         print "learned hmm exists"
     else:
         d = ut.load_pickle(crossVal_pkl)
-
-        successData = d['successData']
-        failureData = d['failureData']
-        handFeatureParams  = d['param_dict']
-        if 'timeList' in handFeatureParams.keys():
-            timeList    = handFeatureParams['timeList'][startIdx:]
-        else: timeList = None
         
         # dim x sample x length
-        normalTrainData   = successData * HMM_dict['scale']
-        abnormalTrainData = failureData * HMM_dict['scale']
+        normalTrainData   = d['successData'] * HMM_dict['scale']
+        abnormalTrainData = d['failureData'] * HMM_dict['scale']
+        handFeatureParams  = d['param_dict']
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -298,12 +292,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure': sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier training data
@@ -349,12 +338,13 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_train_X']     = ll_classifier_train_X
+        d['ll_classifier_train_Y']     = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']   = ll_classifier_train_idx
+        d['ll_classifier_test_X']      = ll_classifier_test_X
+        d['ll_classifier_test_Y']      = ll_classifier_test_Y            
+        d['ll_classifier_test_idx']    = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = fileList
         d['nLength']      = nLength
         ut.save_pickle(d, modeling_pkl)
 
@@ -374,45 +364,61 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
             ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l']   = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
 
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
-                                                                 method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
-                                                                 SVM_dict, HMM_dict, \
-                                                                 startIdx=startIdx, nState=nState,\
-                                                                 failsafe=False)\
-                                                                 for method in method_list )
-    l_data = r
-    print "finished to run run_classifiers"
+    l_data = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, \
+                                                                              processed_data_path, \
+                                                                              task_name, \
+                                                                              method, ROC_data, \
+                                                                              ROC_dict, AE_dict, \
+                                                                              SVM_dict, HMM_dict, \
+                                                                              startIdx=startIdx, nState=nState,\
+                                                                              failsafe=False)\
+                                                                              for method in method_list )
 
-    for i in xrange(len(l_data)):
+    print "finished to run run_classifiers"
+    for data in l_data:
         for j in xrange(nPoints):
             try:
-                method = l_data[i].keys()[0]
+                method = data.keys()[0]
             except:
-                print l_data[i]
+                print "no method key in data: ", data
                 sys.exit()
             if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
+            ROC_data[method]['tp_l'][j] += data[method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += data[method]['fp_l'][j]
+            ROC_data[method]['tn_l'][j] += data[method]['tn_l'][j]
+            ROC_data[method]['fn_l'][j] += data[method]['fn_l'][j]
+            ROC_data[method]['delay_l'][j] += data[method]['delay_l'][j]
+            ROC_data[method]['fn_labels'][j] += data[method]['fn_labels'][j]
 
     for i, method in enumerate(method_list):
         ROC_data[method]['complete'] = True
 
     ut.save_pickle(ROC_data, roc_pkl)
         
-    #-----------------------------------------------------------------------------------------
-    # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             only_tpr=False, legend=True)
+    # ---------------- ACC Visualization ----------------------
+    acc_rates = acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, \
+                        no_plot=True, save_pdf=save_pdf, \
+                        only_tpr=False, legend=True)
 
+    #----------------- List up anomaly cases ------------------
+    
+    for method in method_list:
+        max_idx = np.argmax(acc_rates[method])
+
+        print "-----------------------------------"
+        print "Method: ", method
+        print acc_rates[method][max_idx]
+        
+        
+        
+
+    
 
 def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
                       param_dict,\
@@ -1190,10 +1196,10 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 5.66,\
+                             'add_logp_d': False}
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
         ##                      'add_logp_d': True}
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
-                             'add_logp_d': True}
                              
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_hmm/'+\

@@ -1097,6 +1097,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ## ll_classifier_test_Y    = d['ll_classifier_test_Y']
         ## ll_classifier_test_idx  = d['ll_classifier_test_idx']
         ## nLength      = d['nLength']
+        ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
 
         if 'diag' in method:
             ll_classifier_train_X   = ll_classifier_diag_train_X
@@ -1296,9 +1297,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         fp_l = []
         tn_l = []
         fn_l = []
-        delay_l = []
+        delay_l   = []
         delay_idx = 0
-        tp_idx_l = []
+        tp_idx_l  = []
+        fn_labels = []
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
 
@@ -1323,13 +1325,16 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         delay_l.append(delay_idx)
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
-                            
+                        
                     anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:
                 if anomaly: tp_l.append(1)
-                else: fn_l.append(1)
+                else:
+                    fn_l.append(1)
+                    if ll_classifier_test_labels is not None:
+                        fn_labels.append(ll_classifier_test_labels[ii])
             elif Y_test[ii][0] <= 0.0:
                 if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
@@ -1340,6 +1345,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         data[method]['tn_l'][j] += tn_l
         data[method]['delay_l'][j] += delay_l
         data[method]['tp_idx_l'][j] += tp_idx_l
+        data[method]['fn_labels'][j] += fn_labels
+        
 
     print "finished ", idx, method
     return data

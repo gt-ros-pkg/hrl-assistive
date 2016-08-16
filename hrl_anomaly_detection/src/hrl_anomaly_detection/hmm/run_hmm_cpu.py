@@ -627,7 +627,7 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
-                                                              nPoints=10)
+                                                              nPoints=8)
 
 
         if opt.task == 'scooping':
@@ -661,6 +661,7 @@ if __name__ == '__main__':
                           'cov': np.linspace(0.5,4.0,10) }
         else:
             print "Not available task"
+        max_check_fold = 2
 
     else:
 
@@ -677,8 +678,8 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
-    max_check_fold = None
-    ## max_check_fold = 2
+        max_check_fold = None
+        ## max_check_fold = 2
 
     #--------------------------------------------------------------------------------------
     # test change of logp
