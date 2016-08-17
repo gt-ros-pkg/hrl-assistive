@@ -640,7 +640,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = []
     else:
         ROC_data = ut.load_pickle(roc_pkl)
@@ -828,10 +828,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.0 #3
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=10)
-            if np.isnan(ret): sys.exit()
+            ## alpha = np.exp(-0.3*float(i-1) )*0.0 #3
+            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+            ##                       nrSteps=10)
+            ## if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -854,7 +854,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
                                            -np.ones(len(normalPtrainData[0])), \
                                            c=1.0, add_delta_logp=add_logp_d,\
-                                           remove_fp=remove_fp, remove_outlier=True)
+                                           remove_fp=remove_fp, remove_outlier=False)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
