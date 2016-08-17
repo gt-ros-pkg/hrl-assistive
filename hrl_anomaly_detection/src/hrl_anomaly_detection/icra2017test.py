@@ -826,7 +826,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
-        if i > 0 and False:
+        if i > 0:
             print "Run partial fitting with online HMM : ", i
             ## for j in xrange(nTrainOffset):
             ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
@@ -843,6 +843,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # 0.1 c11
             # 0.01 c12
             # no partial fit ep
+            # only progress update c8
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -852,8 +853,16 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         # Get classifier training data using last 10 samples
-        ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
-                                                                      startIdx=startIdx)
+        ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
+        ##                                                               startIdx=startIdx)
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                            [ normalPtrainData[jj][ii] for jj in \
+                                                              xrange(ml.nEmissionDim) ], \
+                                                              ml.nEmissionDim, ml.nState,\
+                                                              startIdx=startIdx, \
+                                                              bPosterior=True)
+                                                              for ii in xrange(len(normalPtrainData[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
                                                                       
 
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
@@ -867,8 +876,17 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         # -------------------------------------------------------------------------------
         # Test data
-        ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
-                                                                     startIdx=startIdx)
+        ## ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
+        ##                                                              startIdx=startIdx)
+        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                            [ testDataX[jj][ii] for jj in \
+                                                              xrange(ml.nEmissionDim) ], \
+                                                              ml.nEmissionDim, ml.nState,\
+                                                              startIdx=startIdx, \
+                                                              bPosterior=True)
+                                                              for ii in xrange(len(testDataX[0])))
+        _, ll_classifier_test_idx, ll_logp_test, ll_post_test = zip(*r)
+                                                                     
         ll_classifier_test_X, ll_classifier_test_Y = \
           hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, testDataY, c=1.0, add_delta_logp=add_logp_d)
         X_test = ll_classifier_test_X
