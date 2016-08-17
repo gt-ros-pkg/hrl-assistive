@@ -815,7 +815,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                 alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.01
                 print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
                 ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
-                                      nrSteps=5) #10(c12) 5(c8)
+                                      nrSteps=10) #10(c12) 5(c8)
 
             ## alpha = np.exp(-0.5*float(i-1) )*0.1
             ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
