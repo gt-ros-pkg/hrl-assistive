@@ -316,8 +316,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                        ll_classifier_test_Y, \
                                                        ll_classifier_test_idx, nState)
 
-        print np.amin(ll_classifier_train_X, axis=0), np.amax(ll_classifier_train_X, axis=0)
-        sys.exit()
         
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance
