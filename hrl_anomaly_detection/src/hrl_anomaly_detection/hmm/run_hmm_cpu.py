@@ -164,11 +164,27 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_post_test = np.array(ll_post)[test_idx].tolist()
             l_label_test = testDataY[test_idx].tolist()
 
-            X_train_org, Y_train_org, idx_train_org = \
-              hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
-                                               l_label_train, \
-                                               c=1.0, add_delta_logp=True,\
-                                               remove_fp=False, remove_outlier=True)
+
+            if method == 'change':
+
+                ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp_train, \
+                                                                              ll_post_train, \
+                                                                              ll_idx_train, \
+                                                                              l_label_train)
+                ll_classifier_train_X, ll_classifier_train_Y = \
+                  getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
+
+                ## X_train_org, Y_train_org, idx_train_org = \
+                ##   hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
+                ##                                    l_label_train, \
+                ##                                    c=1.0, add_delta_logp=True,\
+                ##                                    remove_fp=False, remove_outlier=True)
+            else:
+                X_train_org, Y_train_org, idx_train_org = \
+                  hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
+                                                   l_label_train, \
+                                                   c=1.0, add_delta_logp=True,\
+                                                   remove_fp=False, remove_outlier=True)
 
             if X_train_org == []:
                 print "HMM-induced vector is wrong", param['scale'], param['cov']
@@ -209,14 +225,26 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             weights = ROC_dict[method+'_param_range']
 
             print "Start to run classifiers"
-            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
-                                                                             idx_train_org, \
-                                                                             X_test, Y_test, \
-                                                                             nEmissionDim, nLength, \
-                                                                             SVM_dict, weight=weights[iii], \
-                                                                             method=method,\
-                                                                             verbose=False)\
-                                                                             for iii in xrange(len(weights)))
+            if method == 'change':
+                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, \
+                                                                                 ll_classifier_train_X,\
+                                                                                 ll_classifier_train_Y,\
+                                                                                 ll_idx, \
+                                                                                 X_test, Y_test, \
+                                                                                 nEmissionDim, nLength, \
+                                                                                 SVM_dict, weight=weights[iii], \
+                                                                                 method=method,\
+                                                                                 verbose=False)\
+                                                                                 for iii in xrange(len(weights)))
+            else:
+                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                                 idx_train_org, \
+                                                                                 X_test, Y_test, \
+                                                                                 nEmissionDim, nLength, \
+                                                                                 SVM_dict, weight=weights[iii], \
+                                                                                 method=method,\
+                                                                                 verbose=False)\
+                                                                                 for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
             err_flag = False
