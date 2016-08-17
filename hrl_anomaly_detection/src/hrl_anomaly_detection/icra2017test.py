@@ -491,19 +491,24 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             train_idx = idx_list[:idx]+idx_list[idx+1:]
             test_idx  = idx_list[idx:idx+1]        
 
-            ## normalTrainIdx = []
-            ## abnormalTrainIdx = []
+            normalTrainIdx = []
+            abnormalTrainIdx = []
             for tidx in train_idx:
-                normalTrainIdx   = successIdx[tidx]
-                abnormalTrainIdx = failureIdx[tidx]
+                normalTrainIdx   += successIdx[tidx]
+                abnormalTrainIdx += failureIdx[tidx]
                 
-                ## normalTestIdx = []
-                ## abnormalTestIdx = []
-                ## for tidx in test_idx:
-                normalTestIdx   = successIdx[test_idx[0]]
-                abnormalTestIdx = failureIdx[test_idx[0]]
+                ## normalTestIdx   = successIdx[test_idx[0]]
+                ## abnormalTestIdx = failureIdx[test_idx[0]]
+                ## kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+            normalTestIdx = []
+            abnormalTestIdx = []
+            for tidx in test_idx:
+                normalTestIdx   += successIdx[tidx]
+                abnormalTestIdx += failureIdx[tidx]
+
+            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
 
         d['successData'] = successData
         d['failureData'] = failureData
@@ -658,7 +663,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    kFold_list = kFold_list[0:1]
+    ## kFold_list = kFold_list[0:1]
     d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
