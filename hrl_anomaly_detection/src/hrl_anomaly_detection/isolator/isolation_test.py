@@ -62,6 +62,8 @@ import hrl_anomaly_detection.data_viz as dv
 
 import itertools
 import svmutil as svm
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
 
@@ -122,26 +124,11 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         d['kFoldList']   = kFold_list
         #formated_X = formatX(d['failureData'][:,:,:])
         #print np.asarray(formated_X).shape
-        mean = [0]
         #for sampleIdx in xrange(0, len(formated_X)):
             
         ut.save_pickle(d, crossVal_pkl)
 
     #print d['failureData']
-    X = []
-    mean = [0]* 40
-    var = [0]*40
-    for sampleIdx in xrange(0, len(d['failureData'][0])):
-        formated_X = formatX(d['failureData'][:,sampleIdx,:])
-        X.extend(formated_X)
-    for sampleIdx in xrange(0, len(X)):
-        for valIdx in xrange(0, len(X[sampleIdx])):
-            mean[valIdx] += X[sampleIdx][valIdx] / len(X)
-    for sampleIdx in xrange(0, len(X)):
-        for valIdx in xrange(0, len(X[sampleIdx])):
-            var[valIdx] += (mean[valIdx] - X[sampleIdx][valIdx])**2 / len(X)
-    #print mean, var
-    #print np.asarray(X).shape
 
     successData = d['successData']
     failureData = d['failureData']
@@ -185,50 +172,89 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         test_classifier=cf.classifier()
         X = []
         y = []        
+        mean = [0]* 40
+        var = [0]*40
+        #for sampleIdx in xrange(0, len(d['failureData'][0])):
+        X = []
         for trainIdx in xrange(0, abnormalTrainData.shape[1]):
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :], mean=mean, var=var)
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :])
             #print np.asarray(formated_X).shape
+            #print formated_X
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
-        model = svm.svm_train(y, X)
-        X = []
-        y = []
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        #print np.asarray(X).shape
+        #print np.asarray(y).shape
+        #print np.mean(X_scaled, axis=0).shape
+        #print np.std(X_scaled, axis=0).shape
+        mean = np.mean(X, axis=0)
+        var = np.std(X, axis=0)
+        print np.mean(X_scaled, axis=0), np.std(X_scaled, axis=0)
+        #print X_scaled.shape
+        model = svm.svm_train(y, X_scaled.tolist(), '-b 1')
         for testIdx in xrange(0, abnormalTestData.shape[1]):
+            X = []
+            y = []
             curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTestData[:, testIdx, :], mean=mean, var=var)
-            #print np.asarray(formated_X).shape
+            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
-        prediction=  svm.svm_predict(y, X, model)
-        #print np.asarray(X).shape
-        #print idx
-            #X.append(formatX(abnormalTrainData[:, trainIdx, :]))
-            #y.append(formatY(abnormalTrainIdx[trainIdx]))
-        #print np.asarray(X).shape
+            prediction =  svm.svm_predict(y, X, model, '-b 1')
+            #print prediction
+            #print np.asarray(prediction[2])[:,0]
+            probability = np.asarray(prediction[2])
+            t = np.arange(0., len(prediction[2]), 1)
+            plt.figure(1)
+            """
+            plt.subplot2grid((3,2),(0,0))
+            plt.plot(probability[:,0])
+            plt.subplot2grid((3,2),(0,1))
+            plt.plot(probability[:,1])
+            plt.subplot2grid((3,2),(1,0))
+            plt.plot(probability[:,2])
+            plt.subplot2grid((3,2),(1,1))
+            plt.plot(probability[:,3])
+            """
+            color_list = ['', 'b', 'g', 'r', 'k']
+            title_list = ['', 'sound', 'arm', 'spoon miss', 'spoon hit']
+            for i in xrange(0, 4):
+                color = color_list[int(model.get_labels()[i])]
+                title = title_list[int(model.get_labels()[i])]
+                plt.subplot2grid((3,2),(int(i/2), i % 2))
+                plt.subplot2grid((3,2),(int(i/2), i %2)).set_title(title)
+                plt.plot(probability[:,i], color)
+            plt.subplot2grid((3,2),(2,0), colspan=2)
+            for i in xrange(0,4):
+                color = color_list[int(model.get_labels()[i])]
+                if model.get_labels()[i] is curr_type:
+                    plt.plot(probability[:,i], color + '>')
+                else:
+                    plt.plot(probability[:,i], color + '-')
+            print model.label
+            plt.show()
+            #raw_input("press enter to continue")
+            print " "
+            plt.clf
     
-def formatX(data, time_window=10, mean=None, var=None):
-    if mean is None:
-        mean = [0] * 40
-    if var is None:
-        var = [1] * 40
+def formatX(data, time_window=10, scaler=None):
     X = []
     for idx in xrange(0, data.shape[1]-time_window + 1):
         x = []
         for dimIdx in xrange(0, data.shape[0]):
-            #print data[dimIdx][idx:idx+time_window]
-            temp_x = data[dimIdx][idx:idx+time_window]
-            for valIdx in xrange(0,len(temp_x)):
-                if not np.allclose(var[valIdx], 0):
-                    temp_x[valIdx] = (temp_x[valIdx] - mean[valIdx]) / var[valIdx]
+            temp_x = data[dimIdx][idx:idx+time_window][:]
             x.extend(temp_x)
         X.append(x)
+    if scaler is not None:
+        X_scaled = scaler.transform(X, copy=True)
+        X= X_scaled.tolist()
     return X
 
 def formatY(index, type_sets):
