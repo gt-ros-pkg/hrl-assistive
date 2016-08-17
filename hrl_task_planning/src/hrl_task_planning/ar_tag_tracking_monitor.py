@@ -28,7 +28,7 @@ class ARTagTracker(object):
             return
         ar_dist_y = msg.data[0]
         preds = []
-        BED_HARD_THRESH = 0.8
+        BED_HARD_THRESH = 1.4
         if abs(ar_dist_y) < BED_HARD_THRESH:
             preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
         else:

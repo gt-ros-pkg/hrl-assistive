@@ -41,6 +41,7 @@ RFH.Domains.ScratchingKneeADL = function (options) {
                     RFH.taskMenu.startTask('LookingTask');
                 }
                 break;
+            case 'MOVE_BACK':
             case 'MOVE_ROBOT':
                 startFunc = function () {
                     RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -78,6 +79,8 @@ RFH.Domains.ScratchingKneeADL = function (options) {
                 return "Base Select";
             case 'CONFIGURE_MODEL_ROBOT':
                 return "Setup Bed & Robot";
+            case 'MOVE_BACK':
+                return "Move Back";
             case 'MOVE_ROBOT':
                 return "Moving Base";
             case 'STOP_TRACKING':
@@ -105,6 +108,8 @@ RFH.Domains.ScratchingKneeADL = function (options) {
                 return "Please wait while we finish repositioning your bed and the robot's height...";
             case 'MOVE_ROBOT':
                 return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";
+            case 'MOVE_BACK':
+                return "Move back, you must!";
             case 'STOP_TRACKING':
                 return "Stopping AR Tag Tracking";
             case 'MOVE_ARM':
@@ -169,7 +174,19 @@ RFH.Domains.ScratchingKneeADL = function (options) {
         var task = 'scratching';
         self.setModelName(model);
         self.setDefaultGoal(['(TASK-COMPLETED SCRATCHING AUTOBED)']);
-        self.updatePDDLState(['AND (NOT(BASE-REACHED SCRATCHING AUTOBED))(NOT(ARM-REACHED SCRATCHING AUTOBED))(NOT (BASE-SELECTED SCRATCHING AUTOBED)']);
+        self.updatePDDLState(['(NOT (CONFIGURED BED SCRATCHING AUTOBED))', 
+                              '(NOT (BASE-SELECTED SCRATCHING AUTOBED))',
+                              '(NOT (IS-TRACKING-TAG AUTOBED))',
+                              '(NOT (CONFIGURED SPINE SCRATCHING AUTOBED))',
+                              '(NOT (HEAD-REGISTERED AUTOBED))',
+                              '(NOT (OCCUPIED AUTOBED))',
+                              '(NOT (FOUND-TAG AUTOBED))',
+                              '(NOT (BASE-REACHED SCRATCHING AUTOBED))',
+                              '(NOT (ARM-REACHED SCRATCHING AUTOBED))',
+                              '(NOT (ARM-HOME SCRATCHING AUTOBED))',
+                              '(NOT (TOO-CLOSE AUTOBED))',
+                              '(NOT (TASK-COMPLETED SCRATCHING AUTOBED))']);
+
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };

@@ -1,5 +1,4 @@
 <launch>
+    <param name="haptic_mpc/control_params/deadzone_distance" type="double" value="0.01" />
     <include file="$(find assistive_teleop)/launch/vci.launch"/>
-    <include file="$(find hrl_base_selection)/launch/base_selection_pr2.launch"/>
-    <include file="$(find hrl_task_planning)/launch/task_planner.launch"/>
 </launch>
