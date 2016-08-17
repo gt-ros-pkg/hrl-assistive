@@ -855,10 +855,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
 
-        ## # temp
-        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
-                        ll_logp_test, ll_post_test, testDataY)
-        continue
+        ## ## # temp
+        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+        ##                 ll_logp_test, ll_post_test, testDataY)
+        ## continue
 
         # -------------------------------------------------------------------------------
         # update kmean
