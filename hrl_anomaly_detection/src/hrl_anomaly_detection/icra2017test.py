@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7., 'scale': 7.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 12.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
         ##                      'add_logp_d': False}
