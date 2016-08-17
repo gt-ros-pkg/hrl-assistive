@@ -653,7 +653,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    kFold_list = kFold_list[1:2]
+    kFold_list = kFold_list[0:1]
     d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
