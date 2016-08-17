@@ -114,7 +114,16 @@ RFH.initTaskMenu = function (divId) {
                                        left_arm: RFH.pr2.l_arm_cart,
                                        right_arm: RFH.pr2.r_arm_cart,
                                        base: RFH.pr2.base,
-                                       forwardOnly: true}));
+                                       forwardOnly: false}));
+    RFH.taskMenu.addTask(new RFH.ServoOpenLoop({ros: RFH.ros, 
+                                                tfClient: RFH.tfClient,l
+                                                targetDiv: 'mjpeg-image',
+                                                camera: RFH.mjpeg.cameraModel,
+                                                head: RFH.pr2.head,
+                                                left_arm: RFH.pr2.l_arm_cart,
+                                                right_arm: RFH.pr2.r_arm_cart,
+                                                base: RFH.pr2.base,
+                                                forwardOnly: false}));
     RFH.taskMenu.addTask(new RFH.GetClickedPose({ros:RFH.ros,
                                                  camera: RFH.mjpeg.cameraModel}));
 //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));

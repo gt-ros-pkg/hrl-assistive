@@ -78,10 +78,12 @@ class ServoingServer(object):
         if not self.tfl.waitForTransform(msg.header.frame_id, '/base_footprint',
                                          msg.header.stamp, rospy.Duration(30)):
             rospy.logwarn('Cannot find /base_footprint transform')
+            return
         self.bfp_goal = self.tfl.transformPose('/base_footprint', msg)
-        if not self.tfl.waitForTransform(msg.header.frame_id, 'odom_combined',
+        if not self.tfl.waitForTransform(msg.header.frame_id, '/odom_combined',
                                          msg.header.stamp, rospy.Duration(30)):
             rospy.logwarn('Cannot find /odom_combined transform')
+            return
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
         self.goal_out.publish(self.odom_goal)
         ang_to_goal = np.arctan2(self.bfp_goal.pose.position.y,
