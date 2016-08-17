@@ -1094,7 +1094,7 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'sai', 'jina', 'linda']
+        subjects = [ 'sai', 'jina', 'linda', 'park']
         ## subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
         ## subjects = [ 'zack']
         ## subjects = [ ]
@@ -1197,11 +1197,9 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 12., 'scale': 8.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
                              'add_logp_d': False}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
-        ##                      'add_logp_d': False}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5.0, 'scale': 5.66,\
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 12., 'scale': 8.0,\
         ##                      'add_logp_d': False}
                              
         save_data_path = os.path.expanduser('~')+\

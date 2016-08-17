@@ -209,7 +209,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             weights = ROC_dict[method+'_param_range']
 
             print "Start to run classifiers"
-            n_jobs = 1
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
                                                                              X_test, Y_test, \
