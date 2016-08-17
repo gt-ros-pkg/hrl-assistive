@@ -499,9 +499,9 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):
     nOutlier = int(0.05*len(ll_logp))
     if nOutlier < 1: nOutlier = 1
 
-    upper_lst = idx_lst[:nOutlier]
-    lower_lst = idx_lst[-nOutlier:]
-    indices = upper_lst + lower_lst
+    lower_lst = idx_lst[:nOutlier]
+    upper_lst = idx_lst[-nOutlier:]
+    indices = lower_lst + upper_lst
     indices = sorted(list(indices), reverse=True)
     for i in indices:
         del ll_logp[i]
