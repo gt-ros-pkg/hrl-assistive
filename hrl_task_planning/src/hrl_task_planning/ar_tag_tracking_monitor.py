@@ -21,11 +21,16 @@ class ARTagTracker(object):
 
 
     def ar_distance_check_cb(self, msg):
-	ar_dist_y = msg.data[0]
-	preds = []
-        BED_HARD_THRESH = 1.3
-	if abs(ar_dist_y) < BED_HARD_THRESH:
-	    preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
+        try:
+            self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')
+        except KeyError:
+            rospy.logwarn("[%s] Tracking AR Tag, but current model unknown! Cannot update PDDLState", rospy.get_name())
+            return
+        ar_dist_y = msg.data[0]
+        preds = []
+        BED_HARD_THRESH = 0.8
+        if abs(ar_dist_y) < BED_HARD_THRESH:
+            preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
         else:
             preds.append(pddl.Predicate('TOO-CLOSE', [self.model], neg=True))
         state_msg = PDDLState()
@@ -33,8 +38,6 @@ class ARTagTracker(object):
         state_msg.predicates = map(str, preds)
         self.state_pub.publish(state_msg)
 
-    
-		
     def tracking_ar_tag_cb(self, msg):
         try:
             self.model = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')

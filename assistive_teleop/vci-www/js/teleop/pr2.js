@@ -287,7 +287,7 @@ var PR2Head = function (options) {
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
         var goalMsg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         goalMsg.joint_names = joints;
-        goalMsg.points.push(trajPointStartMsg);
+//        goalMsg.points.push(trajPointStartMsg);
         goalMsg.points.push(trajPointMsg);
         jointPub.publish(goalMsg);
     };
