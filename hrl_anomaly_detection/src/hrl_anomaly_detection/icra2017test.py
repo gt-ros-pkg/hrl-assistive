@@ -525,7 +525,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPtrainData = 15
     nTrainOffset = 5
     nTrainTimes  = 3
-
+    nNormalTrain = 30
 
     # leave-one-person-out
     kFold_list = []
@@ -573,7 +573,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             # random data selection to fix the training data size
             idx_list = range(len(normalTrainData))
             random.shuffle(idx_list)
-            normalTrainData = normalTrainData[idx_list[:30]]
+            normalTrainData = normalTrainData[idx_list[:nNormalTrain]]
 
             normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
             abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
@@ -828,10 +828,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.5*float(i-1) )*0.01
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=10)
-            if np.isnan(ret): sys.exit()
+            ## alpha = np.exp(-0.5*float(i-1) )*0.03
+            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+            ##                       nrSteps=10)
+            ## if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
