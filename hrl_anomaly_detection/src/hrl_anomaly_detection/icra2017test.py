@@ -830,7 +830,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
             alpha = np.exp(-0.5*float(i-1) )*0.01
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=3)
+                                  nrSteps=10)
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
