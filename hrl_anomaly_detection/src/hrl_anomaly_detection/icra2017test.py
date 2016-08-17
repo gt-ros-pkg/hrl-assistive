@@ -528,8 +528,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
         test_idx  = idx_list[idx:idx+1]
-        for tidx in train_idx:
-            kFold_list.append([[tidx], test_idx])
+        ## for tidx in train_idx:
+        ##     kFold_list.append([[tidx], test_idx]
+        kFold_list.append([train_idx, test_idx])
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
