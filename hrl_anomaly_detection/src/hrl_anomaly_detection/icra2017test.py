@@ -652,13 +652,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    ## kFold_list = kFold_list[1:2]
-    ## d = ut.load_pickle(crossVal_pkl)
+    kFold_list = kFold_list[1:2]
+    d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
     else: n_jobs = -1
-    d = ut.load_pickle(crossVal_pkl)
     r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
@@ -816,7 +815,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                 alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.05
                 print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
                 ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
-                                      nrSteps=5) #3
+                                      nrSteps=10) #10(br) 5(c8)
 
             ## alpha = np.exp(-0.5*float(i-1) )*0.1
             ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
