@@ -522,7 +522,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 15
+    nPtrainData = 30
     nTrainOffset = 5
     nTrainTimes  = 3
     nNormalTrain = 30
@@ -637,15 +637,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['normalTrainData'] = normalTrainData
             dd['nLength']      = nLength
             ut.save_pickle(dd, modeling_pkl)
-
-
-    #-----------------------------------------------------------------------------------------
-    # Classifier partial train/test data
-    #-----------------------------------------------------------------------------------------
-    l = range(len(normalTrainData[0]))
-    random.shuffle(l)
-    normalPtrainData = normalTrainData[:,l[:nPtrainData],:]
-
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
