@@ -634,8 +634,17 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
             dd['ll_classifier_train_idx']= ll_classifier_train_idx
             dd['normalPtrainData'] = normalPtrainData
+            dd['normalTrainData'] = normalTrainData
             dd['nLength']      = nLength
             ut.save_pickle(dd, modeling_pkl)
+
+
+    #-----------------------------------------------------------------------------------------
+    # Classifier partial train/test data
+    #-----------------------------------------------------------------------------------------
+    l = range(len(normalTrainData[0]))
+    random.shuffle(l)
+    normalPtrainData = normalTrainData[:,l[:nPtrainData],:]
 
 
     #-----------------------------------------------------------------------------------------
@@ -826,7 +835,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
-        if i > 0:
+        if i > 0 and False:
             print "Run partial fitting with online HMM : ", i
             ## for j in xrange(nTrainOffset):
             ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
@@ -836,7 +845,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
             alpha = np.exp(-0.3*float(i-1) )*0.1 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=7) #100 c11
+                                  nrSteps=7)
+            # BAD: nrSteps=100
+            # BAD: nrSteps=1
+            # rem7-c12, 
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
@@ -846,9 +858,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
-            ## normalPtrainDataY = np.hstack([ normalPtrainDataY, -np.ones(nTrainOffset) ])
-            ## normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
-
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
                                                                       startIdx=startIdx)
@@ -886,11 +895,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             dtc.set_params( **SVM_dict )
 
             if verbose: print "Update classifier"
-            if method == 'progress' or method == 'progress' or method == 'kmean':
-                if method == 'progress':
-                    thresholds = ROC_dict['progress_param_range']
-                else:
-                    thresholds = ROC_dict[method+'_param_range']
+            if method == 'progress' or method == 'kmean':
+                thresholds = ROC_dict[method+'_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
             else:
                 print "Not available method = ", method
@@ -907,7 +913,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             for ii in xrange(len(X_test)):
                 if len(Y_test[ii])==0: continue
 
-                if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
+                if method.find('osvm')>=0 or method == 'cssvm':
                     est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                     est_y = np.array(est_y)* -1.0
                 else:
