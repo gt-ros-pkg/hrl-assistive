@@ -1018,7 +1018,8 @@ def vizLikelihoods2(ll_logp, ll_post, l_y, ll_logp2, ll_post2, l_y2):
             plt.plot(l_logp, 'm-')
 
 
-    ## plt.ylim([0, np.amax(ll_logp) ])
+    if np.amax(ll_logp) > 0:
+        plt.ylim([0, np.amax(ll_logp) ])
     plt.show()
 
 
@@ -1196,9 +1197,9 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 15., 'scale': 15.0,\
                              'add_logp_d': False}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 12., 'scale': 8.0,\
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
                              
         save_data_path = os.path.expanduser('~')+\
