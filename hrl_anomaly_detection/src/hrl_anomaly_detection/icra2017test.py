@@ -811,15 +811,15 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # partial fitting with
         if i > 0:
             print "Run partial fitting with online HMM : ", i
-            for j in xrange(nTrainOffset):
-                alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.2
-                print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
-                ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
-                                      nrSteps=3) #100(br) 10(c12) 5(c8)
+            ## for j in xrange(nTrainOffset):
+            ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
+            ##     print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
+            ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
+            ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            ## alpha = np.exp(-0.5*float(i-1) )*0.1
-            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-            ##                       nrSteps=3)
+            alpha = np.exp(-0.5*float(i-1) )*0.1
+            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+                                  nrSteps=3)
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
@@ -855,10 +855,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
 
-        ## ## # temp
-        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
-        ##                 ll_logp_test, ll_post_test, testDataY)
-        ## continue
+        ## # temp
+        vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+                        ll_logp_test, ll_post_test, testDataY)
+        continue
 
         # -------------------------------------------------------------------------------
         # update kmean
