@@ -527,8 +527,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     for idx in xrange(len(subject_names)):
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
-        test_idx  = idx_list[idx:idx+1]        
-        kFold_list.append([train_idx, test_idx])
+        test_idx  = idx_list[idx:idx+1]
+        for tidx in train_idx:
+            kFold_list.append([[tidx], test_idx])
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -817,7 +818,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.5*float(i-1) )*0.01
+            alpha = np.exp(-0.5*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=3)
             if np.isnan(ret): sys.exit()
