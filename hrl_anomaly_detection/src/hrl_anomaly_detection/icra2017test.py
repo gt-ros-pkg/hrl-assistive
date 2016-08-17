@@ -491,19 +491,24 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             train_idx = idx_list[:idx]+idx_list[idx+1:]
             test_idx  = idx_list[idx:idx+1]        
 
-            ## normalTrainIdx = []
-            ## abnormalTrainIdx = []
+            normalTrainIdx = []
+            abnormalTrainIdx = []
             for tidx in train_idx:
-                normalTrainIdx   = successIdx[tidx]
-                abnormalTrainIdx = failureIdx[tidx]
+                normalTrainIdx   += successIdx[tidx]
+                abnormalTrainIdx += failureIdx[tidx]
                 
-                ## normalTestIdx = []
-                ## abnormalTestIdx = []
-                ## for tidx in test_idx:
-                normalTestIdx   = successIdx[test_idx[0]]
-                abnormalTestIdx = failureIdx[test_idx[0]]
+                ## normalTestIdx   = successIdx[test_idx[0]]
+                ## abnormalTestIdx = failureIdx[test_idx[0]]
+                ## kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+            normalTestIdx = []
+            abnormalTestIdx = []
+            for tidx in test_idx:
+                normalTestIdx   += successIdx[tidx]
+                abnormalTestIdx += failureIdx[tidx]
+
+            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
 
         d['successData'] = successData
         d['failureData'] = failureData
@@ -520,7 +525,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPtrainData = 15
     nTrainOffset = 5
     nTrainTimes  = 3
-
+    nNormalTrain = 30
 
     # leave-one-person-out
     kFold_list = []
@@ -568,7 +573,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             # random data selection to fix the training data size
             idx_list = range(len(normalTrainData))
             random.shuffle(idx_list)
-            normalTrainData = normalTrainData[idx_list[:30]]
+            normalTrainData = normalTrainData[idx_list[:nNormalTrain]]
 
             normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
             abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
@@ -635,7 +640,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = []
     else:
         ROC_data = ut.load_pickle(roc_pkl)
@@ -658,7 +663,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     # temp
-    kFold_list = kFold_list[0:1]
+    ## kFold_list = kFold_list[0:1]
     d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
@@ -823,20 +828,20 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.5*float(i-1) )*0.1
+            alpha = np.exp(-0.3*float(i-1) )*0.1 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=3)
+                                  nrSteps=1)
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-                                                       0,1) ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+            ##                                            0,1) ])
+            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
-            normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
-            normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
+            ## normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
+            ## normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
 
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
@@ -849,7 +854,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
                                            -np.ones(len(normalPtrainData[0])), \
                                            c=1.0, add_delta_logp=add_logp_d,\
-                                           remove_fp=remove_fp, remove_outlier=True)
+                                           remove_fp=remove_fp, remove_outlier=False)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
@@ -1204,7 +1209,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 6.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7., 'scale': 7.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
