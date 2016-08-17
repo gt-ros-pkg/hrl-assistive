@@ -1469,7 +1469,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     
 
 def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False):
+             timeList=None, only_tpr=False, legend=False):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
