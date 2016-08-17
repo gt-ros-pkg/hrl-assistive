@@ -538,12 +538,13 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
             selfInfo = entropy(direc_delta+1e-6, ll_post[i]+1e-6)
             new_X.append([ll_logp[i], float(state), selfInfo])
 
-        ##     if ll_Y[k] > 0 and k > 3:
-        ##         print i, [ll_logp[i], float(state), selfInfo]
-
-        ## sys.exit()
+            if ll_Y[k] > 0 and k > 4:
+                print i, [ll_logp[i], float(state), selfInfo]
 
         lll_X.append(new_X)
+        
+    sys.exit()
+
         
     return lll_X, ll_Y, ll_idx
 
