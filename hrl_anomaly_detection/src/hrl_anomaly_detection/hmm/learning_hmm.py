@@ -528,6 +528,8 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
 
         new_X = []
         max_states = np.argmax(ll_post, axis=1)
+
+        
         for i in xrange(len(ll_logp)):
             state = max_states[i]
             direc_delta *= 0.0
@@ -535,6 +537,11 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
 
             selfInfo = entropy(direc_delta+1e-6, ll_post[i]+1e-6)
             new_X.append([ll_logp[i], float(state), selfInfo])
+
+            if ll_Y[k] > 0 and k > 3:
+                print i, [ll_logp[i], float(state), selfInfo]
+
+        sys.exit()
 
         lll_X.append(new_X)
         

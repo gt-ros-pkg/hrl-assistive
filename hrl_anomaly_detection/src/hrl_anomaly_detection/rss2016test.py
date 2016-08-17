@@ -303,6 +303,22 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
+
+        #-----------------------------------------------------------------------------------------
+        # New three element feature vector
+        #-----------------------------------------------------------------------------------------
+        ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
+                                                       ll_classifier_train_Y, \
+                                                       ll_classifier_train_idx, nState)
+        ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
+                                                       ll_classifier_test_Y, \
+                                                       ll_classifier_test_idx, nState)
+
+        print np.amin(ll_classifier_train_X, axis=0), np.amax(ll_classifier_train_X, axis=0)
+        sys.exit()
+        
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance
         #-----------------------------------------------------------------------------------------
@@ -327,18 +343,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         # Classifier test data
         ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
-
-        #-----------------------------------------------------------------------------------------
-        # New three element feature vector
-        #-----------------------------------------------------------------------------------------
-        ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
-          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
-                                                       ll_classifier_train_Y, \
-                                                       ll_classifier_train_idx, nState)
-        ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
-          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
-                                                       ll_classifier_test_Y, \
-                                                       ll_classifier_test_idx, nState)
 
         #-----------------------------------------------------------------------------------------
         d = {}
