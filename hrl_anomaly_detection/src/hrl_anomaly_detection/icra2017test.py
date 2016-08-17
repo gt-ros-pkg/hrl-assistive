@@ -491,19 +491,19 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             train_idx = idx_list[:idx]+idx_list[idx+1:]
             test_idx  = idx_list[idx:idx+1]        
 
-            normalTrainIdx = []
-            abnormalTrainIdx = []
+            ## normalTrainIdx = []
+            ## abnormalTrainIdx = []
             for tidx in train_idx:
-                normalTrainIdx += successIdx[tidx]
-                abnormalTrainIdx += failureIdx[tidx]
+                normalTrainIdx   = successIdx[tidx]
+                abnormalTrainIdx = failureIdx[tidx]
                 
-            normalTestIdx = []
-            abnormalTestIdx = []
-            for tidx in test_idx:
-                normalTestIdx += successIdx[tidx]
-                abnormalTestIdx += failureIdx[tidx]
+                ## normalTestIdx = []
+                ## abnormalTestIdx = []
+                ## for tidx in test_idx:
+                normalTestIdx   = successIdx[test_idx[0]]
+                abnormalTestIdx = failureIdx[test_idx[0]]
 
-            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
         d['successData'] = successData
         d['failureData'] = failureData
@@ -1198,7 +1198,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 8.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 4.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
