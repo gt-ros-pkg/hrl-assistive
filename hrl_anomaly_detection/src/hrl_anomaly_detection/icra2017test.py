@@ -834,14 +834,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-                                                       0,1) ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+            ##                                            0,1) ])
+            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
-            normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
-            normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
+            ## normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
+            ## normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
 
         # Get classifier training data using last 10 samples
         ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
