@@ -722,10 +722,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
         print subject_names[kFold_idx], " : ", auc_rates
         auc = []
-        for i in xrange(nTrainTimes):
+        for i in xrange(nTrainTimes+1):
             auc.append(auc_rates[method_list[0]+'_'+str(i)])
                 
         l_auc.append(auc)
+
+    print "---------------------"
+    for auc in l_auc:
+        print auc
+    print "---------------------"
 
     if len(kFold_list)>1:
         print "Mean: ", np.mean(l_auc, axis=0)
@@ -831,7 +836,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
             alpha = np.exp(-0.3*float(i-1) )*0.1 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=5)
+                                  nrSteps=7)
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
