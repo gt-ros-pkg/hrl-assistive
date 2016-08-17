@@ -1192,7 +1192,7 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects = [ 'sai', 'jina'] #, 'linda', 'park'
+        subjects = [ 'sai', 'jina', 'linda'] #, 'park'
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
