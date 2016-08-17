@@ -1196,7 +1196,7 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['nPoints'] = 16
+        param_dict['ROC']['nPoints'] = 8
 
         param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 9.0,\
                              'add_logp_d': False}
