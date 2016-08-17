@@ -855,13 +855,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # Get classifier training data using last 10 samples
         ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
         ##                                                               startIdx=startIdx)
+        print "p traindata size: ", normalPtrainData[0]
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
-                                                            [ normalPtrainData[jj][ii] for jj in \
-                                                              xrange(ml.nEmissionDim) ], \
-                                                              ml.nEmissionDim, ml.nState,\
-                                                              startIdx=startIdx, \
-                                                              bPosterior=True)
-                                                              for ii in xrange(len(normalPtrainData[0])))
+                                                                [ normalPtrainData[jj][ii] for jj in \
+                                                                  xrange(ml.nEmissionDim) ], \
+                                                                  ml.nEmissionDim, ml.nState,\
+                                                                  startIdx=startIdx, \
+                                                                  bPosterior=True)
+                                                                  for ii in xrange(len(normalPtrainData[0])))
         _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
                                                                       
 
