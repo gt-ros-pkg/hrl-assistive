@@ -836,7 +836,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
             alpha = np.exp(-0.3*float(i-1) )*0.1 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=100) #100 c11
+                                  nrSteps=7) #100 c11
             if np.isnan(ret): sys.exit()
             
             # Update last 10 samples
@@ -860,7 +860,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
                                            -np.ones(len(normalPtrainData[0])), \
                                            c=1.0, add_delta_logp=add_logp_d,\
-                                           remove_fp=remove_fp, remove_outlier=False)
+                                           remove_fp=remove_fp, remove_outlier=True)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
