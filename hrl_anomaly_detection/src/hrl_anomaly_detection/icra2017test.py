@@ -1185,7 +1185,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        ## param_dict['ROC']['update_list'] = ['change']
+        param_dict['ROC']['update_list'] = ['change']
 
         evaluation_unexp(subjects, unexp_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
