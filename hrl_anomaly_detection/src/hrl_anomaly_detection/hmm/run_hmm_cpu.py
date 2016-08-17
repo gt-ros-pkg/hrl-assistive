@@ -85,7 +85,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-          # dim x sample x length
+            # dim x sample x length
             normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] * param['scale']
             abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] * param['scale'] 
             normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
@@ -660,7 +660,7 @@ if __name__ == '__main__':
                           'cov': np.linspace(2.0,12.0,5) }
         else:
             print "Not available task"
-        max_check_fold = 2
+        max_check_fold = None #2
         no_cov = False
 
     else:
