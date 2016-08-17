@@ -827,7 +827,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
-        if i > 0:
+        if i > 0 and False:
             print "Run partial fitting with online HMM : ", i
             ## for j in xrange(nTrainOffset):
             ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
@@ -835,7 +835,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.1 #3
+            alpha = np.exp(-0.3*float(i-1) )*0.01 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=7)
             if np.isnan(ret): sys.exit()
