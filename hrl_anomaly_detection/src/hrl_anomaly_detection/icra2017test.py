@@ -563,7 +563,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 else:
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
-            
+
+            # random data selection to fix the training data size
+            idx_list = range(len(normalTrainData))
+            random.shuffle(idx_list)
+            normalTrainData = normalTrainData[idx_list[:30]]
 
             normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
             abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']

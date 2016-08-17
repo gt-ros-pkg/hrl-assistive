@@ -712,6 +712,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'progress_diag_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-0.0, 1.1, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
+                          'progress_osvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'svm_param_range': np.logspace(-1.0, 0.046, nPoints),\
                           'fixed_param_range': np.linspace(-0.1, -2.5, nPoints),\
                           'change_param_range': np.logspace(0.4, 1.7, nPoints)*-1.0,\
