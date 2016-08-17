@@ -50,7 +50,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                    decision_boundary_viz=False, \
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False):
+                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None):
 
     from hrl_anomaly_detection import data_manager as dm
     from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -67,16 +67,16 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     # SVM
     
     #------------------------------------------
-
-    dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
-                       processed_data_path, data_dict['rf_center'], \
-                       data_dict['local_range'],\
-                       downSampleSize=data_dict['downSampleSize'], \
-                       scale=1.0,\
-                       ae_data=False,\
-                       handFeatures=data_dict['handFeatures'], \
-                       cut_data=data_dict['cut_data'],\
-                       data_renew=data_dict['renew'], max_time=data_dict.get('max_time', None))
+    if dd is None:        
+        dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], \
+                           data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], \
+                           scale=1.0,\
+                           ae_data=False,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'],\
+                           data_renew=data_dict['renew'], max_time=data_dict.get('max_time', None))
 
     successData = dd['successData'] * HMM_dict['scale']
     failureData = dd['failureData'] * HMM_dict['scale']
@@ -95,7 +95,9 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         kFold_list = dm.kFold_data_index2(len(successData[0]),\
                                           len(failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+    
     normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
+    print normalTrainIdx, normalTestIdx
     normalTrainData   = successData[:, normalTrainIdx, :] 
     abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
     normalTestData    = successData[:, normalTestIdx, :] 

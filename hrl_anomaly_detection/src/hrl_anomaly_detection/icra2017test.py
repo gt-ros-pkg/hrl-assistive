@@ -1191,13 +1191,13 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects = [ 'sai', 'jina', 'linda']
+        subjects = [ 'sai', 'jina', 'linda', 'park']
         ## subjects        = ['linda', 'jina', 'sai']        
         ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 12., 'scale': 7.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 12., 'scale': 8.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
         ##                      'add_logp_d': False}
@@ -1209,13 +1209,17 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.bLikelihoodPlot:
+
+            crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
+            d = ut.load_pickle(crossVal_pkl)
+
             import hrl_anomaly_detection.data_viz as dv        
             dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                               decision_boundary_viz=False, \
                               useTrain=True, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                              verbose=opt.bVerbose)
+                              verbose=opt.bVerbose, dd=d)
         else:          
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
