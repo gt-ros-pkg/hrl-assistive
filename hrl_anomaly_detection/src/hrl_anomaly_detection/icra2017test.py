@@ -815,6 +815,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
 
     for i in xrange(nTrainTimes+1): 
 
@@ -874,7 +875,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # -------------------------------------------------------------------------------
         # update kmean
         # classification
-        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
         
         for j in xrange(nPoints):
