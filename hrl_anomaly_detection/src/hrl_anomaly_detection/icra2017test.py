@@ -609,9 +609,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             #-----------------------------------------------------------------------------------------
             # Classifier partial train/test data
             #-----------------------------------------------------------------------------------------
-            l = range(len(normalTrainData[0]))
-            random.shuffle(l)
-            normalPtrainData = normalTrainData[:,l[:nPtrainData],:]
+            rndNormalTraindataIdx = range(len(normalTrainData[0]))
+            random.shuffle(rndNormalTraindataIdx)
+
 
             #-----------------------------------------------------------------------------------------
             [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = ml.get_hmm_object()
@@ -631,8 +631,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['ll_classifier_train_X']  = ll_classifier_train_X
             dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
             dd['ll_classifier_train_idx']= ll_classifier_train_idx
-            dd['normalPtrainData'] = normalPtrainData
+            ## dd['normalPtrainData'] = normalPtrainData
             dd['normalTrainData'] = normalTrainData
+            dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
             ut.save_pickle(dd, modeling_pkl)
 
@@ -798,7 +799,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     u_denom   = dd['u_denom']  
     startIdx  = dd['startIdx']
     nLength   = dd['nLength']
-    normalPtrainData = dd['normalPtrainData']
+
+    #-----------------------------------------------------------------------------------------
+    # Classifier partial train/test data
+    #-----------------------------------------------------------------------------------------
+    normalTrainData       = dd['normalTrainData']
+    rndNormalTraindataIdx = dd['rndNormalTraindataIdx']
+    normalPtrainData      = normalTrainData[:,rndNormalTraindataIdx[:nPtrainData],:]
+
 
     # Incremental evaluation
     normalData   = copy.copy(normalDataX) * HMM_dict['scale']
