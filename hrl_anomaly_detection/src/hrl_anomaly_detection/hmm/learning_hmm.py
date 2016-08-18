@@ -608,7 +608,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
 
 
 def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
-                       bPosterior=False, converted_X=False):
+                       bPosterior=False, converted_X=False, cov_type='full'):
     '''
     Input:
     - X: dimension x length
@@ -618,6 +618,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
+    if cov_type == 'diag': ml.setDiagonalCovariance(1)
 
     X_test = util.convert_sequence(X, emission=False)
     X_test = np.squeeze(X_test)
