@@ -832,7 +832,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
-    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
 
     for i in xrange(nTrainTimes+1): 
 
@@ -916,62 +915,26 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # -------------------------------------------------------------------------------
         # update kmean
         print "Classifier fitting"
+        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
         print "Classifier fitting completed"
-        
-        for j in xrange(nPoints):
-            dtc.set_params( **SVM_dict )
 
-            if verbose: print "Update classifier"
-            if method == 'progress' or method == 'kmean':
-                thresholds = ROC_dict[method+'_param_range']
-                dtc.set_params( ths_mult = thresholds[j] )
-            else:
-                print "Not available method = ", method
-                sys.exit()
+        if method == 'progress':
+            cf_dict = {}
+            cf_dict['nPosteriors'] = dtc.nPosteriors
+            cf_dict['l_statePosterior'] = dtc.l_statePosterior
+            cf_dict['ths_mult']    = dtc.ths_mult
+            cf_dict['ll_mu']       = dtc.ll_mu
+            cf_dict['ll_std']      = dtc.ll_std
+            cf_dict['logp_offset'] = dtc.logp_offset
 
-            # evaluate the classifier wrt new never seen data
-            tp_l = []
-            fp_l = []
-            tn_l = []
-            fn_l = []
-            delay_l = []
-            delay_idx = 0
-            tp_idx_l = []
-            for ii in xrange(len(X_test)):
-                if len(Y_test[ii])==0: continue
 
-                if method.find('osvm')>=0 or method == 'cssvm':
-                    est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
-                    est_y = np.array(est_y)* -1.0
-                else:
-                    est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+        r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
+                                                        X_test, Y_test)
+                                for ii in xrange(nPoints))
 
-                anomaly = False
-                for jj in xrange(len(est_y)):
-                    if est_y[jj] > 0.0:
-
-                        if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
-                            try:
-                                delay_idx = ll_classifier_test_idx[ii][jj]
-                            except:
-                                print "Error!!!!!!!!!!!!!!!!!!"
-                                print np.shape(ll_classifier_test_idx), ii, jj
-                            delay_l.append(delay_idx)
-                        if Y_test[ii][0] > 0:
-                            tp_idx_l.append(ii)
-
-                        anomaly = True
-                        break        
-
-                if Y_test[ii][0] > 0.0:
-                    if anomaly: tp_l.append(1)
-                    else: fn_l.append(1)
-                elif Y_test[ii][0] <= 0.0:
-                    if anomaly: fp_l.append(1)
-                    else: tn_l.append(1)
-
-            print "ROC data update"
+        print "ROC data update"
+        for (j, tp_l, fp_l, fn_l, tn_l, delay_l, tp_idx_l) in r:
             ROC_data_cur[method+'_'+str(i)]['tp_l'][j] += tp_l
             ROC_data_cur[method+'_'+str(i)]['fp_l'][j] += fp_l
             ROC_data_cur[method+'_'+str(i)]['fn_l'][j] += fn_l
@@ -981,6 +944,65 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             
 
     return ROC_data_cur
+
+def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, X_test, Y_test):
+
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc.set_params( **param_dict )
+    dtc.set_params( **SVM_dict )
+    ll_classifier_test_idx = None
+    
+    if verbose: print "Update classifier"
+    if method == 'progress' or method == 'kmean':
+        thresholds = ROC_dict[method+'_param_range']
+        dtc.set_params( ths_mult = thresholds[j] )
+    else:
+        print "Not available method = ", method
+        sys.exit()
+
+    # evaluate the classifier wrt new never seen data
+    tp_l = []
+    fp_l = []
+    tn_l = []
+    fn_l = []
+    delay_l = []
+    delay_idx = 0
+    tp_idx_l = []
+    for ii in xrange(len(X_test)):
+        if len(Y_test[ii])==0: continue
+
+        if method.find('osvm')>=0 or method == 'cssvm':
+            est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
+            est_y = np.array(est_y)* -1.0
+        else:
+            est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+
+        anomaly = False
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:
+
+                if ll_classifier_test_idx is not None and Y_test[ii][0]>0:
+                    try:
+                        delay_idx = ll_classifier_test_idx[ii][jj]
+                    except:
+                        print "Error!!!!!!!!!!!!!!!!!!"
+                        print np.shape(ll_classifier_test_idx), ii, jj
+                    delay_l.append(delay_idx)
+                if Y_test[ii][0] > 0:
+                    tp_idx_l.append(ii)
+
+                anomaly = True
+                break        
+
+        if Y_test[ii][0] > 0.0:
+            if anomaly: tp_l.append(1)
+            else: fn_l.append(1)
+        elif Y_test[ii][0] <= 0.0:
+            if anomaly: fp_l.append(1)
+            else: tn_l.append(1)
+
+    return idx, tp_l, fp_l, fn_l, tn_l, delay_l, tp_idx_l
+
 
 def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
 
