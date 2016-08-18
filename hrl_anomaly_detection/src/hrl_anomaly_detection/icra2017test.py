@@ -845,7 +845,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.1 #3
+            alpha = np.exp(-0.1*float(i-1) )*0.2 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=7)
             if np.isnan(ret): sys.exit()
@@ -917,7 +917,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         print "Classifier fitting"
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
-        print "Classifier fitting completed"
+        print "Classifier fitting completed", np.shape(dtc.l_statePosterior)
+        sys.exit()
 
         if method == 'progress':
             cf_dict = {}
