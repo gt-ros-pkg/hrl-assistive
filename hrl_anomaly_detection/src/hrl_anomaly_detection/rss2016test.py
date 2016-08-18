@@ -331,27 +331,29 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance
         #-----------------------------------------------------------------------------------------
-        ## ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        ## if data_dict['handFeatures_noise']:
-        ##     ret = ml.fit(normalTrainData+\
-        ##                  np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-        ##                  cov_mult=cov_mult, use_pkl=False, cov_type='diag')
-        ## else:
-        ##     ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
-        for i in xrange(nState):
-            for j in xrange(nEmissionDim):
-                for k in xrange(nEmissionDim):
-                    if j != k:
-                        ml.B[i][1][j*nEmissionDim+k] = 0.0
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        if data_dict['handFeatures_noise']:
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+        else:
+            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+        ## for i in xrange(nState):
+        ##     for j in xrange(nEmissionDim):
+        ##         for k in xrange(nEmissionDim):
+        ##             if j != k:
+        ##                 ml.B[i][1][j*nEmissionDim+k] = 0.0
         if ret == 'Failure': sys.exit()
 
         # Classifier training data
         ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d,\
+                                                   cov_type='diag')
 
         # Classifier test data
         ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d,\
+                                                   cov_type='diag')
 
         #-----------------------------------------------------------------------------------------
         d = {}

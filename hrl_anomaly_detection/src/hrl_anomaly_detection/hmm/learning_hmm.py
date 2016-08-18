@@ -173,6 +173,8 @@ class learning_hmm(learning_base):
             # print 'Generating HMM'
             # HMM model object
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
+            if cov_type == 'diag': self.ml.setDiagonalCovariance(1)
+                
             # print 'Creating Training Data'            
             X_train = util.convert_sequence(X) # Training input
             X_train = X_train.tolist()
@@ -453,7 +455,8 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     return X_flat, Y_flat, idx_flat
 
 
-def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False):
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
+                                         cov_type='full'):
 
     testDataX = []
     testDataY = []
@@ -465,17 +468,17 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
                             np.ones(len(abnormalTrainData[0])) ])
 
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
-                                                        add_logp_d=add_logp_d)
+                                                        add_logp_d=add_logp_d, cov_type=cov_type)
 
 
-def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False):
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full'):
     
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
                                                           ml.nEmissionDim, ml.nState,\
                                                           startIdx=startIdx, \
-                                                          bPosterior=True)
+                                                          bPosterior=True, cov_type=cov_type)
                                                           for i in xrange(len(dataX[0])))
     _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
@@ -560,7 +563,7 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
 ####################################################################
 
 def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
-                      bPosterior=False, converted_X=False):
+                      bPosterior=False, converted_X=False, cov_type='full'):
     '''
     This function will be deprecated. Please, use computeLikelihoods.
     '''
@@ -569,7 +572,9 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
-    
+
+    if cov_type == 'diag': ml.setDiagonalCovariance(1)
+
     if converted_X is False:
         X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)
