@@ -523,8 +523,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 30
-    nTrainOffset = 5
-    nTrainTimes  = 2
+    nTrainOffset = 2
+    nTrainTimes  = 5
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -854,8 +854,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 10 0.1  0.3  no progrss c8
-            # step 10 0.1  0.1  progress? c11
+            # step 10 0.1  0.1  iter c8
+            # step 10 0.1  0.1  progress? c11 (5,2)
             # step 15 0.5, 0.1  progress c12
             # step 10 0.5  0.05  progress ep
             # only hmm update br
