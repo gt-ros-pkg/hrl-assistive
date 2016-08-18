@@ -1275,10 +1275,8 @@ if __name__ == '__main__':
         ##                      'add_logp_d': False}
         if opt.bEvaluationAWS:
             n_random_trial = 10
-            random_eval    = True
         else:
             n_random_trial = 1
-            random_eval    = False
                              
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
@@ -1301,7 +1299,7 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=random_eval)
+                              random_eval=opt.bEvaluationAWS)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
