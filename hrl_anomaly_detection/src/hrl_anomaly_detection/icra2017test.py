@@ -954,9 +954,10 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
                    X_test, Y_test, verbose=False):
 
     dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
-    dtc.set_params( **param_dict )
     dtc.set_params( **SVM_dict )
     ll_classifier_test_idx = None
+    for k, v in param_dict.iteritems():
+        exec 'dtc.set_params(%s = v)' % k        
 
     print dtc.l_statePosterior
     sys.exit()
