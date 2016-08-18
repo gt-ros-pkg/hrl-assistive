@@ -68,7 +68,7 @@ RFH.DriveGoalDisplay = function (options) {
     };
     
     var colladaLoadProgress = function (data) {
-        console.log("Loading Base Collada Mesh: ", data.loaded/data.total);
+        console.log("Loading Base Collada Mesh: ", 100*data.loaded/data.total, "%" );
     };
 
     var baseOnLoad = function (collada) {
@@ -81,9 +81,9 @@ RFH.DriveGoalDisplay = function (options) {
 
         var baseMaterial = new THREE.MeshBasicMaterial();
         baseMaterial.transparent = true;
-        baseMaterial.depthTest = false;
+        baseMaterial.depthTest = true;
         baseMaterial.depthWrite = false;
-        baseMaterial.color.setRGB(1.0,0.0,0.0);
+        baseMaterial.color.setRGB(1.2,1.2,1.2);
         baseMaterial.opacity = 0.65;
 
         baseMesh.material = baseMaterial;
