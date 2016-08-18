@@ -921,6 +921,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         if method == 'progress':
             cf_dict = {}
+            cf_dict['method']      = dtc.method
             cf_dict['nPosteriors'] = dtc.nPosteriors
             cf_dict['l_statePosterior'] = dtc.l_statePosterior
             cf_dict['ths_mult']    = dtc.ths_mult
