@@ -854,9 +854,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: scale<=0.1
             # Good: progress update
             # step 1 0.1  0.3  progrss c8
-            # step 1 0.1  0.1  progress? c11
+            # step 1 0.1  0.3  progress? c11
             # step 7 0.1, 0.3  progress c12
-            # step 3 0.1  0.1  progress ep
+            # step 3 0.1  0.3  progress ep
             # only hmm update br
             
             # Update last 10 samples
@@ -869,7 +869,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # Get classifier training data using last 10 samples
         ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
         ##                                                               startIdx=startIdx)
-        print "p traindata size: ", np.shape(normalPtrainData[0])
+        print "Traindata extraction"
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [ normalPtrainData[jj][ii] for jj in \
                                                                   xrange(ml.nEmissionDim) ], \
@@ -890,7 +890,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
-        # Test data
+        print "Test data extraction"
         ## ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
         ##                                                              startIdx=startIdx)
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
