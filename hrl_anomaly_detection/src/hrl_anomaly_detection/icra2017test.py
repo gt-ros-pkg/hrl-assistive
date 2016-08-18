@@ -419,7 +419,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
                       no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
-                      single_person=False, viz=False):
+                      single_person=False, viz=False, n_random_trial=1):
 
     ## Parameters
     # data
@@ -434,7 +434,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     add_logp_d = False #HMM_dict.get('add_logp_d', True)
     # SVM
     SVM_dict   = param_dict['SVM']
-
     # ROC
     ROC_dict   = param_dict['ROC']
     
@@ -666,32 +665,19 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
-    ## if debug: n_jobs = 1
-    ## else: n_jobs = -1
-    ## n_jobs=1
-    ## r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
-    ##                                                        nPtrainData, nTrainOffset, nTrainTimes, \
-    ##                                                        ROC_data, param_dict,\
-    ##                                                        np.array([d['successDataList'][i] for i in \
-    ##                                                                  kFold_list[idx][1]])[0],\
-    ##                                                        np.array([d['failureDataList'][i] for i in \
-    ##                                                                  kFold_list[idx][1]])[0],\
-    ##                                                        verbose=debug)
-    ##                                                        for idx in xrange(len(kFold_list)))
-    ## l_data = r
-    
     l_data = []
     for idx in xrange(len(kFold_list)):
-        r = run_online_classifier(idx, processed_data_path, task_name, \
-                                  nPtrainData, nTrainOffset, nTrainTimes, \
-                                  ROC_data, param_dict,\
-                                  np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                  np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                  verbose=debug, viz=viz)
-        l_data.append(r)
+        for jj in xrange(n_random_trial):
+            r = run_online_classifier(idx, processed_data_path, task_name, \
+                                      nPtrainData, nTrainOffset, nTrainTimes, \
+                                      ROC_data, param_dict,\
+                                      np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                      np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                      verbose=debug, viz=viz)
+            l_data.append( (idx, r) )
 
     
-    for kFold_idx, data in enumerate(l_data):
+    for (kFold_idx, data) in l_data:
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
                 if ROC_data[kFold_idx][method+'_'+str(j)]['complete']: continue
@@ -701,19 +687,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                         ROC_data[kFold_idx][method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
 
         
-    ## for idx, (train_idx, test_idx) in enumerate(kFold_list):
-    ##     if idx > 1: continue
-    ##     data = run_online_classifier(idx, processed_data_path, task_name, \
-    ##                                  nPtrainData, nTrainOffset, nTrainTimes, ROC_data, param_dict,\
-    ##                                  normalData, abnormalData)
-
-    ##     for i, method in enumerate(method_list):
-    ##         for j in xrange(nTrainTimes+1):
-    ##             for key in ROC_data[method+'_'+str(j)].keys():
-    ##                 if key is 'complete': continue
-    ##                 for jj in xrange(nPoints):
-    ##                     ROC_data[method+'_'+str(j)][key][jj] += data[method+'_'+str(j)][key][jj]
-                
     for kFold_idx in xrange(len(kFold_list)):
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
@@ -854,9 +827,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
             ##     print np.shape(normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1]), i,j, alpha
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
-            ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
+            ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.2
+            alpha = np.exp(-0.2*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -865,7 +838,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.5  0.2  c8 (2,5)
+            # step 1 0.2  0.1  c8 (2,5), npt=10
             # step 5 4.0  0.1  c11 (5,2)
             # step 1 0.5, 0.1  c12 (5,4), npt=20
             # step 10 4.0  0.1  ep (5,2)
@@ -1294,6 +1267,7 @@ if __name__ == '__main__':
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
+        n_random_trial = 1
                              
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
@@ -1315,7 +1289,7 @@ if __name__ == '__main__':
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen)
+                              find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
