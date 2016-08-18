@@ -109,7 +109,7 @@ class classifier(learning_base):
                  # progress svm
                  progress_svm_w_negative = 7.0,\
                  progress_svm_cost       = 4.,\
-                 progress_svm_gamma      = 0.3,\                 
+                 progress_svm_gamma      = 0.3,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
