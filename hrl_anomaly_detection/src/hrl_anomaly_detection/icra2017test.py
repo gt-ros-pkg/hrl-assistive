@@ -524,7 +524,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 10
     nTrainOffset = 5
-    nTrainTimes  = 2
+    nTrainTimes  = 4
     nNormalTrain = 30
 
     # leave-one-person-out
