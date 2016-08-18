@@ -846,7 +846,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.3 #3
+            alpha = np.exp(-0.3*float(i-1) )*0.1 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=7)
             if np.isnan(ret): sys.exit()
@@ -854,18 +854,18 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # 0.2 no progress? c11
+            # 0.1 progress? c11
             #  c12
             # 0.3 no progress ep
             # 0.3 progrss c8
             # only hmm update br
             
             # Update last 10 samples
-            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-            ##                                            0,1) ])
-            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         # Get classifier training data using last 10 samples
         ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
@@ -917,6 +917,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # update kmean
         print "Classifier fitting"
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
+        print "Classifier fitting completed"
         
         for j in xrange(nPoints):
             dtc.set_params( **SVM_dict )
