@@ -739,7 +739,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     print "---------------------"
     l_auc = np.array(l_auc)
-    l_auc_d = l_auc[:,1:]-l_auc[:,:-1]
+    l_auc_d = l_auc-l_auc[:,0:1]
     for auc in l_auc:
         print auc
     print "---------------------"
