@@ -845,7 +845,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.1*float(i-1) )*0.3 
+            alpha = np.exp(-0.3*float(i-1) )*0.3 
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=7)
             if np.isnan(ret): sys.exit()
@@ -857,15 +857,15 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # step 7 0.1  0.3  no progrss c8
             # step 10 0.1  0.1  progress? c11
             # step 7 0.1, 0.3  progress c12
-            # step 3 0.1  0.3  progress ep
+            # step 7 0.3  0.3  progress ep
             # only hmm update br
             
             # Update last 10 samples
-            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-            ##                                            0,1) ])
-            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         # Get classifier training data using last 10 samples
         ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
