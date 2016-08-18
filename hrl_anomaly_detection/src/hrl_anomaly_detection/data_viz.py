@@ -97,7 +97,6 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
     
     normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[1]
-    print normalTrainIdx, normalTestIdx
     normalTrainData   = successData[:, normalTrainIdx, :] 
     abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
     normalTestData    = successData[:, normalTestIdx, :] 

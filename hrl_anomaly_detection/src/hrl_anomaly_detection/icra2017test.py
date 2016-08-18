@@ -522,9 +522,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 10
-    nTrainOffset = 5
-    nTrainTimes  = 2
+    nPtrainData = 30
+    nTrainOffset = 10
+    nTrainTimes  = 1
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -1275,13 +1275,13 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        subjects = [ 'sai', 'jina', 'linda'] #, 'park'
+        ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
         ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
