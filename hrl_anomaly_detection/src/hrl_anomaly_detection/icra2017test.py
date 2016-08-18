@@ -929,11 +929,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             cf_dict['ll_std']      = dtc.ll_std
             cf_dict['logp_offset'] = dtc.logp_offset
 
-        for ii in xrange(nPoints):
-            run_classifier(ii, method, nState, nLength, cf_dict, SVM_dict,\
-                           ROC_dict, X_test, Y_test)
-            sys.exit()
-    
+
         r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
                                                         ROC_dict, X_test, Y_test)
                                 for ii in xrange(nPoints))
@@ -957,11 +953,8 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     dtc.set_params( **SVM_dict )
     ll_classifier_test_idx = None
     for k, v in param_dict.iteritems():
-        exec 'dtc.set_params(%s = v)' % k        
+        exec 'dtc.%s = v' % k        
 
-    print dtc.l_statePosterior
-    sys.exit()
-    
     if verbose: print "Update classifier"
     if method == 'progress' or method == 'kmean':
         thresholds = ROC_dict[method+'_param_range']
