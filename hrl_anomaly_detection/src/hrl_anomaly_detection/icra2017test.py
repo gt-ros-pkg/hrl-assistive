@@ -521,7 +521,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 10
+    nPtrainData = 20
     nTrainOffset = 2
     nTrainTimes  = 10
     nNormalTrain = 30
@@ -841,12 +841,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.2  0.1  c8 (2,5), npt=10  best?
+            # step 1 0.2  0.1  c8 (2,10), npt=20  best?
             # step 1 0.1  0.1  c11 (2,10), npt=10
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
-            # only hmm update br
-            # step 1 0.5  0.1  c11 (2,10), npt=10 best?
+            # step 1 0.2  0.1  aws (2,10), npt=10 best?
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
