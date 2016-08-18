@@ -847,14 +847,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
             alpha = np.exp(-0.1*float(i-1) )*0.3 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=3)
+                                  nrSteps=10)
             if np.isnan(ret): sys.exit()
             # BAD: nrSteps=100
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
             # step 1 0.1  0.3  progrss c8
-            # step 1 0.1  0.3  progress? c11
+            # step 10 0.1  0.3  progress? c11
             # step 7 0.1, 0.3  progress c12
             # step 3 0.1  0.3  progress ep
             # only hmm update br

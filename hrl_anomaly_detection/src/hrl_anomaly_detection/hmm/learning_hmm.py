@@ -420,8 +420,8 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
         else:
             l_X = np.hstack([ np.array(ll_logp[i]).reshape(len(ll_logp[i]),1), np.array(ll_post[i]) ]).tolist()
             ## l_X.append( [ll_logp[i][j]] + list(ll_post[i][j]) )
-            print np.shape(l_X)
-            sys.exit()
+            ## print np.shape(l_X)
+            ## sys.exit()
 
         if l_labels is not None:
             if l_labels[i] > 0.0: l_Y = [1 for j in xrange(len(l_X))]
