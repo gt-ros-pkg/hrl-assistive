@@ -423,7 +423,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                      no_plot=False, delay_plot=False, find_param=False, data_gen=False):
+                      no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
+                      single_person=False):
 
     ## Parameters
     # data
@@ -494,20 +495,24 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             normalTrainIdx = []
             abnormalTrainIdx = []
             for tidx in train_idx:
-                normalTrainIdx   += successIdx[tidx]
-                abnormalTrainIdx += failureIdx[tidx]
-                
-                ## normalTestIdx   = successIdx[test_idx[0]]
-                ## abnormalTestIdx = failureIdx[test_idx[0]]
-                ## kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+                if single_person is False:
+                    normalTrainIdx   += successIdx[tidx]
+                    abnormalTrainIdx += failureIdx[tidx]
+                else:                
+                    normalTrainIdx   = successIdx[tidx]
+                    abnormalTrainIdx = failureIdx[tidx]
+                    normalTestIdx    = successIdx[test_idx[0]]
+                    abnormalTestIdx  = failureIdx[test_idx[0]]
+                    kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+                    
+            if single_person is False:
+                normalTestIdx = []
+                abnormalTestIdx = []
+                for tidx in test_idx:
+                    normalTestIdx   += successIdx[tidx]
+                    abnormalTestIdx += failureIdx[tidx]
 
-            normalTestIdx = []
-            abnormalTestIdx = []
-            for tidx in test_idx:
-                normalTestIdx   += successIdx[tidx]
-                abnormalTestIdx += failureIdx[tidx]
-
-            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
 
         d['successData'] = successData
@@ -533,9 +538,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
         test_idx  = idx_list[idx:idx+1]
-        ## for tidx in train_idx:
-        ##     kFold_list.append([[tidx], test_idx]
-        kFold_list.append([train_idx, test_idx])
+        if single_person:
+            for tidx in train_idx:
+                kFold_list.append([[tidx], test_idx]
+        else:
+            kFold_list.append([train_idx, test_idx])
 
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
@@ -1144,6 +1151,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation.')
     p.add_option('--evaluation_online', '--eo', action='store_true', dest='bOnlineEval',
                  default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
+    p.add_option('--evaluation_online_temp', '--eot', action='store_true', dest='bOnlineEvalTemp',
+                 default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
                  
@@ -1288,6 +1297,38 @@ if __name__ == '__main__':
                              
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+        if opt.bLikelihoodPlot:
+
+            crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
+            d = ut.load_pickle(crossVal_pkl)
+
+            import hrl_anomaly_detection.data_viz as dv        
+            dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                              decision_boundary_viz=False, \
+                              useTrain=True, useNormalTest=True, useAbnormalTest=True,\
+                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                              verbose=opt.bVerbose, dd=d)
+        else:          
+            evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
+                              param_dict, save_pdf=opt.bSavePdf, \
+                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                              find_param=False, data_gen=opt.bDataGen)
+
+    elif opt.bOnlineEvalTemp:
+        ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
+        ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
+        subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
+        param_dict['ROC']['methods'] = ['change']
+        param_dict['ROC']['nPoints'] = 8
+
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
+                             'add_logp_d': False}
+                             
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_temp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.bLikelihoodPlot:
