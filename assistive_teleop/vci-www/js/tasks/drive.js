@@ -4,37 +4,50 @@ RFH.Drive = function (options) {
     options = options || {};
     self.name = options.name || 'drivingTask';
     self.forwardOnly = options.forwardOnly || false;
-    var divId = options.targetDiv || 'video-main'; 
     self.showButton = true;
+    self.buttonText = 'Drive';
+    self.buttonClass = 'drive-button';
+    self.toolTipText = "Drive the robot";
+    self.currentStop = 'forward';
+    var ros = options.ros;
+    var tfClient = options.tfClient;
+    var $viewer = $('#viewer-canvas');
     var head = options.head;
     var l_arm = options.left_arm;
     var r_arm = options.right_arm;
     var camera = options.camera;
     var base = options.base;
-    self.$div = $('#'+divId);
     var baseOffset = options.baseOffset || [0.0, 0.35]; //Half-width of PR2 Base [x - front/back, y-left/right]
-    self.buttonText = 'Drive';
-    self.buttonClass = 'drive-button';
-    self.toolTipText = "Drive the robot";
     var timer = null;
     var spinTimer = null;
     var lines = {'left':null, 'center':null, 'right':null};
     var nDots = 25;
+    var driveSVG = new Snap('#drive-lines');
+    self.$div = $(driveSVG.node);
+
+    self.goalDisplay = new RFH.DriveGoalDisplay({
+                                ros: ros,
+                                tfClient: tfClient,
+                                viewer: $viewer
+                            });
     var clamp = function (x,a,b) {
         return ( x < a ) ? a : ( ( x > b ) ? b : x );
     };
 
+    self.showGoal = self.goalDisplay.show;
+    self.hideGoal = self.goalDisplay.hide;
+
     var tuckActionClient = new ROSLIB.ActionClient({
-        ros: RFH.ros, 
+        ros: ros, 
         serverName: 'tuck_arms',
         actionName: 'pr2_common_action_msgs/TuckArmsAction'
     });
 
-    RFH.ros.getMsgDetails('pr2_common_action_msgs/TuckArmsGoal');
+    ros.getMsgDetails('pr2_common_action_msgs/TuckArmsGoal');
     var tuckArms = function (event) {
         l_arm.disableMPC();
         r_arm.disableMPC();
-        var goal_msg = RFH.ros.composeMsg('pr2_common_action_msgs/TuckArmsGoal');
+        var goal_msg = ros.composeMsg('pr2_common_action_msgs/TuckArmsGoal');
         goal_msg.tuck_left = true;
         goal_msg.tuck_right = true;
         var goal = new ROSLIB.Goal({
@@ -51,7 +64,6 @@ RFH.Drive = function (options) {
     }
     $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms);
    
-    var driveSVG = new Snap('#drive-lines');
     var initPathMarkers = function (nDots, d) {
         var opacity = numeric.linspace(1, 0.05, nDots);
         lines.left = driveSVG.g();
@@ -74,7 +86,7 @@ RFH.Drive = function (options) {
         lines.right.attr({'display':'block'});
         lines.center.attr({'display':'block'});
     };
-    $(driveSVG.node).on('mouseenter.rfh', showLinesCB);
+    self.$div.on('mouseenter.rfh', showLinesCB).css('zIndex', 5);
 
     var removeLinesCB = function (event) {
         if ($(event.relatedTarget).hasClass('turn-signal')){ return; }
@@ -82,7 +94,7 @@ RFH.Drive = function (options) {
         lines.right.attr({'display':'none'});
         lines.center.attr({'display':'none'});
     };
-    $(driveSVG.node).on('mouseleave.rfh', removeLinesCB);
+    self.$div.on('mouseleave.rfh', removeLinesCB);
 
     var getWorldPath = function (rtxy) {
         var T = rtxy.slice(2); //Target (clicked) Point on floor in real world
@@ -152,8 +164,8 @@ RFH.Drive = function (options) {
         var maxAng = (path.side === 'right') ? minAng - path.theta : minAng + path.theta;
         var angs = numeric.linspace(minAng, maxAng, nDots);
         var opacity = numeric.linspace(1, 0.05, nDots);
-        var w = $(driveSVG.node).width();
-        var h = $(driveSVG.node).height();
+        var w = self.$div.width();
+        var h = self.$div.height();
         var pts = [];
         var imgpts;
         var i;
@@ -251,8 +263,8 @@ RFH.Drive = function (options) {
         var T = rtxy.slice(2); //Target (clicked) Point on floor in real world
         var pts = [B, [T[0], T[1], 0], L, R];
         var imgpts = camera.projectPoints(pts, 'base_link');
-        var w = $(driveSVG.node).width();
-        var h = $(driveSVG.node).height();
+        var w = self.$div.width();
+        var h = self.$div.height();
         var i;
         for (i=0; i<imgpts.length; i += 1) {
             imgpts[i][0] *= w;
@@ -279,7 +291,7 @@ RFH.Drive = function (options) {
             drawPath(rtxy);
         }
     };
-    $(driveSVG.node).on("mousemove.rfh", self.updateVis);
+    self.$div.on("mousemove.rfh", self.updateVis);
 
     var headStops = ['back-left', 'left', 'forward', 'right', 'back-right'];
     var headStopAngles = {'back-right': [-2.85, 1.35],
@@ -305,9 +317,7 @@ RFH.Drive = function (options) {
 //    $('.drive-look.right').on('click.rfh', toRight).prop('title', 'Turn head right one step.');
 
     var getNearestStop = function () {
-        if (self.forwardOnly) {
-            return headStops[2];
-        }
+        if (self.forwardOnly) { return headStops[2]; }
         var currentPan = head.getState()[0];
         var nearestStop = 'forward'; //Good default assumption;
         var del = 2*Math.PI; //Initialize too high;
@@ -365,8 +375,8 @@ RFH.Drive = function (options) {
         lines.left.attr({'display':'block'});
         lines.right.attr({'display': 'block'});
         lines.center.attr({'display':'block'});
-        var w = $(driveSVG.node).width();
-        var h = $(driveSVG.node).height();
+        var w = self.$div.width();
+        var h = self.$div.height();
         var pts = camera.projectPoints([[0,0,0],[0,0.2,0]],'base_link');
         var cx = pts[0][0]*w;
         var cy = pts[0][1]*h;
@@ -398,8 +408,8 @@ RFH.Drive = function (options) {
         lines.left.attr({'display':'block'});
         lines.right.attr({'display': 'block'});
         lines.center.attr({'display':'block'});
-        var w = $(driveSVG.node).width();
-        var h = $(driveSVG.node).height();
+        var w = self.$div.width();
+        var h = self.$div.height();
         var pts = camera.projectPoints([[0,0,0],[0,0.2,0]],'base_link');
         var cx = pts[0][0]*w;
         var cy = pts[0][1]*h;
@@ -426,27 +436,6 @@ RFH.Drive = function (options) {
     });
     $('.turn-signal.right').prop('title', 'Rotate right\n(in place)');
 
-    self.start = function () {           
-        // everything i can think of to not get stuck driving...
-        $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
-        $('.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
-        $('.turn-signal').on('mouseenter.rfh', function(){$(driveSVG.node).blur();}); // Blurs driving on enter.  Otherwise, blur occurs on 1st click, and blur cb sets unsafe, stopping turning.
-        $('.turn-signal').on('mousedown.rfh', self.driveGo);
-        $(driveSVG.node).on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
-        $(driveSVG.node).on('mousedown.rfh', self.driveGo);
-        $('.drive-ctrl').show();
-        moveToStop(getNearestStop());
-        $(driveSVG.node).on('resize.rfh', self.updateLineOffsets);
-        $('#controls h3').text("Head Controls");
-    };
-
-    self.stop = function () {
-        $(document).off("mouseleave.rfh mouseout.rfh");
-        self.$div.removeClass('drive-safe');
-        $(driveSVG.node, '.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
-        $('.drive-ctrl').hide();
-        $('#controls h3').text("Controls");
-    };
 
     self.driveGo = function (event) {
         console.log("Clearing timer for new cmd");
@@ -455,7 +444,7 @@ RFH.Drive = function (options) {
             self.setSafe();
             self.sendCmd(self.cmd);
         } else {
-            self.setUnsafe();
+            self.setUnsafe(event);
         }
         event.stopPropagation();
     };
@@ -513,5 +502,30 @@ RFH.Drive = function (options) {
         console.log("Sent ", cmd);
         timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
         console.log("Set Timer: ", timer);
+    };
+
+    $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
+    $('.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
+    $('.turn-signal').on('mouseenter.rfh', function(){self.$div.blur();}); // Blurs driving on enter.  Otherwise, blur occurs on 1st click, and blur cb sets unsafe, stopping turning.
+
+    self.start = function () {           
+        // everything i can think of to not get stuck driving...
+        $('.turn-signal').on('mousedown.rfh', self.driveGo);
+        self.$div.on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
+        self.$div.on('mousedown.rfh', self.driveGo);
+        $('.drive-ctrl').show();
+        $viewer.show();
+        moveToStop(getNearestStop());
+        self.$div.on('resize.rfh', self.updateLineOffsets);
+        $('#controls h3').text("Head Controls");
+    };
+
+    self.stop = function () {
+     //   $(document).off("mouseleave.rfh mouseout.rfh");
+        self.$div.removeClass('drive-safe');
+     //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
+        $('.drive-ctrl').hide();
+        $viewer.hide();
+        $('#controls h3').text("Controls");
     };
 };
