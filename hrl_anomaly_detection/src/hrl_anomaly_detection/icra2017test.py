@@ -956,7 +956,7 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     if verbose: print "Update classifier"
     if method == 'progress' or method == 'kmean':
         thresholds = ROC_dict[method+'_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
+        dtc.set_params( ths_mult = thresholds[idx] )
     else:
         print "Not available method = ", method
         sys.exit()
