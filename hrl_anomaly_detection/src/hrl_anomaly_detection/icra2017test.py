@@ -173,12 +173,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure' or np.isnan(ret): return (-1,-1,-1,-1)
 
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
@@ -292,7 +287,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': sys.exit()
+        if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier training data
@@ -602,12 +597,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             else:
                 ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-            if ret == 'Failure': 
-                print "-------------------------"
-                print "HMM returned failure!!   "
-                print "-------------------------"
-                sys.exit()
-                return (-1,-1,-1,-1)
+            if ret == 'Failure' or np.isnan(ret): sys.exit()
 
             #-----------------------------------------------------------------------------------------
             # Classifier training data
@@ -860,13 +850,13 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             alpha = np.exp(-1.0*float(i-1) )*0.0
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=10)
-            if np.isnan(ret): sys.exit()
+            if np.isnan(ret) or ret == 'Failure': sys.exit()
             # BAD: nrSteps=100
             # BAD: nrSteps=10
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 10 4.0  0.2  c8 (5,2)
+            # step 10 4.0  0  c8 (2,5)
             # step 5 4.0  0.1  c11 (5,2)
             # step 10 4.0, 0.1  c12 (5,4)
             # step 10 4.0  0.1  ep (5,2)

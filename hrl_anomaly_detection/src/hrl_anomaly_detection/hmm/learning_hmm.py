@@ -106,7 +106,8 @@ class learning_hmm(learning_base):
         '''
         
         # Daehyung: What is the shape and type of input data?
-        X = [np.array(data) for data in xData]
+        X     = [np.array(data) for data in xData]
+        nData = len(xData[0])
         
         param_dict = {}
 
@@ -184,8 +185,10 @@ class learning_hmm(learning_base):
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
             ret = self.ml.baumWelch(final_seq, 10000)
-            print 'Baum Welch return:', ret
-            if np.isnan(ret): return 'Failure'
+            if np.isnan(ret):
+                print 'Baum Welch return:', ret
+                return 'Failure'
+            print 'Baum Welch return:', ret/float(nData)
 
             [self.A, self.B, self.pi] = self.ml.asMatrices()
             self.A = np.array(self.A)
@@ -205,20 +208,22 @@ class learning_hmm(learning_base):
                 print "Install new ghmm!!"
 
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-            return ret
+            return ret/float(nData)
 
 
     def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
         ''' Online update of HMM using online Baum-Welch algorithm
         '''
         
-        X = [np.array(data) for data in xData]
+        X     = [np.array(data) for data in xData]
+        nData = len(X[0])
 
         # print 'Creating Training Data'            
         X_train = util.convert_sequence(X) # Training input
         X_train = X_train.tolist()
 
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
+        if learningRate < 1e-5: learningRate = 1e-5
 
         final_seq = ghmm.SequenceSet(self.F, X_train)
         ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
@@ -226,8 +231,10 @@ class learning_hmm(learning_base):
         ## for i in xrange(len(X_train)):            
         ##     final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
         ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
-        ##     if np.isnan(ret): break #return 'Failure'
-        print 'Baum Welch return:', ret
+        if np.isnan(ret):
+            print 'Baum Welch return:', ret
+            return 'Failure'
+        print 'Baum Welch return:', ret/float(nData)
 
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
@@ -805,12 +812,7 @@ def computeHMMfeatures(task_name, processed_data_path, param_dict, data_renew=Fa
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier training data
