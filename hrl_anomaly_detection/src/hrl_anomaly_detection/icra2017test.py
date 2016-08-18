@@ -667,20 +667,31 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     d = ut.load_pickle(crossVal_pkl)
 
     print "Start the incremental evaluation"
-    if debug: n_jobs = 1
-    else: n_jobs = -1
-    n_jobs=1
-    r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
-                                                           nPtrainData, nTrainOffset, nTrainTimes, \
-                                                           ROC_data, param_dict,\
-                                                           np.array([d['successDataList'][i] for i in \
-                                                                     kFold_list[idx][1]])[0],\
-                                                           np.array([d['failureDataList'][i] for i in \
-                                                                     kFold_list[idx][1]])[0],\
-                                                           verbose=debug)
-                                                           for idx in xrange(len(kFold_list)))
+    ## if debug: n_jobs = 1
+    ## else: n_jobs = -1
+    ## n_jobs=1
+    ## r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
+    ##                                                        nPtrainData, nTrainOffset, nTrainTimes, \
+    ##                                                        ROC_data, param_dict,\
+    ##                                                        np.array([d['successDataList'][i] for i in \
+    ##                                                                  kFold_list[idx][1]])[0],\
+    ##                                                        np.array([d['failureDataList'][i] for i in \
+    ##                                                                  kFold_list[idx][1]])[0],\
+    ##                                                        verbose=debug)
+    ##                                                        for idx in xrange(len(kFold_list)))
+    ## l_data = r
+    
+    l_data = []
+    for idx in xrange(len(kFold_list)):
+        r = run_online_classifier(idx, processed_data_path, task_name, \
+                                  nPtrainData, nTrainOffset, nTrainTimes, \
+                                  ROC_data, param_dict,\
+                                  np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                  np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
+                                  verbose=debug)
+        l_data.append(r)
 
-    l_data = r
+    
     for kFold_idx, data in enumerate(l_data):
         for i, method in enumerate(method_list):
             for j in xrange(nTrainTimes+1):
@@ -835,7 +846,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.4 #3
+            alpha = np.exp(-0.3*float(i-1) )*0.3 #3
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=7)
             if np.isnan(ret): sys.exit()
@@ -846,7 +857,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # 0.2 no progress? c11
             #  c12
             # 0.4 progress ep
-            # 0.4 no progrss c8
+            # 0.3 no progrss c8
             # only hmm update br
             
             # Update last 10 samples
