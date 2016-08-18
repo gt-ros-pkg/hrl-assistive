@@ -540,7 +540,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         test_idx  = idx_list[idx:idx+1]
         if single_person:
             for tidx in train_idx:
-                kFold_list.append([[tidx], test_idx]
+                kFold_list.append([[tidx], test_idx])
         else:
             kFold_list.append([train_idx, test_idx])
 
