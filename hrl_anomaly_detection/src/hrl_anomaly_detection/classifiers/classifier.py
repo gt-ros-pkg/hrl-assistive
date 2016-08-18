@@ -1114,7 +1114,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_idx  = ll_classifier_diag_test_idx
         elif method =='progress_osvm':
             # temp
-            if ROC_dict['update_list']:
+            if method in ROC_dict['update_list']:
                 from hrl_anomaly_detection.hmm import learning_hmm as hmm
                 ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
                   hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
