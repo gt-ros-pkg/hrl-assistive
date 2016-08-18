@@ -524,7 +524,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 10
     nTrainOffset = 5
-    nTrainTimes  = 4
+    nTrainTimes  = 2
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     elif opt.bOnlineEval:
         subjects = [ 'sai', 'jina', 'linda'] #, 'park'
         ## subjects        = ['linda', 'jina', 'sai']        
-        ## subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
+        subjects        = ['ari', 'zack', 'hkim', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
