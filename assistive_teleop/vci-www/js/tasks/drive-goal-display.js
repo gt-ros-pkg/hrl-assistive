@@ -9,6 +9,7 @@ RFH.DriveGoalDisplay = function (options) {
     var odomCombinedTF = null;
     var baseModel = new THREE.Object3D();
     RFH.viewer.scene.add(baseModel);
+    var goal_frame = 'odom_combined';
 
     self.show = function () {
         baseModel.visible = true;    
@@ -88,7 +89,7 @@ RFH.DriveGoalDisplay = function (options) {
 
         baseMesh.material = baseMaterial;
         baseModel.add(baseMesh);
-        tfClient.subscribe('odom_combined', updateOdomTF);
+        tfClient.subscribe(goal_frame, updateOdomTF);
     };
 
     var colladaLoader = new THREE.ColladaLoader();

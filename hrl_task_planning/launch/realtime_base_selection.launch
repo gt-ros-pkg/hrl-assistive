@@ -5,7 +5,8 @@
         <group ns="$(arg domain)" clear_params="true">
             <param name="domain" textfile="$(find hrl_task_planning)/params/$(arg domain).domain"/>
             <rosparam command="load" file="$(find hrl_task_planning)/params/$(arg domain).yaml"/>
-            <node name='parameter_monitor' pkg="hrl_task_planning" type="parameter_monitor" output="screen" args="$(arg domain) KNOWN -a BASE_GOAL EE_GOAL EE_FRAME"/>
+            <node name='parameter_monitor' pkg="hrl_task_planning" type="parameter_monitor" output="screen" args="$(arg domain) KNOWN -a BASE_GOAL TORSO_GOAL EE_GOAL EE_FRAME"/>
+            <node name="base_location_monitor" pkg="hrl_task_planning" type="base_monitor" output="screen" args="$(arg domain) KNOWN -a BASE_GOAL" />
         </group>
     </group>
 

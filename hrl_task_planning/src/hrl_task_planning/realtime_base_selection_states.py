@@ -9,6 +9,38 @@ from actionlib_msgs.msg import GoalStatus
 SPA = ["succeeded", "preempted", "aborted"]
 
 
+def _dict_to_pose_stamped(ps_dict):
+    ps = PoseStamped()
+    ps.header.seq = ps_dict['header']['seq']
+    ps.header.stamp.secs = ps_dict['header']['stamp']['secs']
+    ps.header.stamp.nsecs = ps_dict['header']['stamp']['nsecs']
+    ps.header.frame_id = ps_dict['header']['frame_id']
+    ps.pose.position.x = ps_dict['pose']['position']['x']
+    ps.pose.position.y = ps_dict['pose']['position']['y']
+    ps.pose.position.z = ps_dict['pose']['position']['z']
+    ps.pose.orientation.x = ps_dict['pose']['orientation']['x']
+    ps.pose.orientation.y = ps_dict['pose']['orientation']['y']
+    ps.pose.orientation.z = ps_dict['pose']['orientation']['z']
+    ps.pose.orientation.w = ps_dict['pose']['orientation']['w']
+    return ps
+
+
+def _pose_stamped_to_dict(ps_msg):
+    return {'header':
+            {'seq': ps_msg.header.seq,
+                'stamp': {'secs': ps_msg.header.stamp.secs,
+                          'nsecs': ps_msg.header.stamp.nsecs},
+                'frame_id': ps_msg.header.frame_id},
+            'pose':
+            {'position': {'x': ps_msg.pose.position.x,
+                          'y': ps_msg.pose.position.y,
+                          'z': ps_msg.pose.position.z},
+                'orientation': {'x': ps_msg.pose.orientation.x,
+                                'y': ps_msg.pose.orientation.y,
+                                'z': ps_msg.pose.orientation.z,
+                                'w': ps_msg.pose.orientation.w}}}
+
+
 def get_action_state(domain, problem, action, args, init_state, goal_state):
     if action in ['GET_EE_GOAL', 'GET_FRAME']:
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
@@ -20,18 +52,20 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         ee_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
         ee_frame_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[1])
         base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[2])
-        return CallBaseSelectionState(ee_goal_param, ee_frame_param, base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        torso_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[3])
+        return CallBaseSelectionState(ee_goal_param, ee_frame_param, base_goal_param, torso_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'SERVO_OPEN_LOOP':
         base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
-        return ServoOpenLoopState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        # return ServoOpenLoopState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return ServoGoalPubState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'ADJUST_TORSO':
-        base_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
-        return AdjustTorsoState(base_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        torso_goal_param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
+        return AdjustTorsoState(torso_goal_param, domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CLEAR_TORSO_SET':
         return ClearTorsoSetState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'CLEAR_AT_GOAL':
         return ClearAtGoalState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
-    elif action in ['CLEAR_EE_GOAL', 'CLEAR_BASE_GOAL', 'CLEAR_FRAME']:
+    elif action == 'CLEAR_PARAM':
         param = "/pddl_tasks/%s/%s/%s" % (domain, 'KNOWN', args[0])
         return DeleteParamState(param, domain=domain, problem=problem,
                                 action=action, action_args=args,
@@ -44,35 +78,20 @@ from geometry_msgs.msg import PoseStamped
 
 
 class CallBaseSelectionState(PDDLSmachState):
-    def __init__(self, ee_goal_param, ee_frame_param, base_goal_param, *args, **kwargs):
+    def __init__(self, ee_goal_param, ee_frame_param, base_goal_param, torso_goal_param, *args, **kwargs):
         super(CallBaseSelectionState, self).__init__(*args, **kwargs)
         self.ee_goal_param = ee_goal_param
         self.ee_frame_param = ee_frame_param
         self.base_goal_param = base_goal_param
+        self.torso_goal_param = torso_goal_param
         self.base_selection_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
         self.ee_pose_pub = rospy.Publisher('/rtbs_ee_goal', PoseStamped, latch=True)
-
-    @staticmethod
-    def _dict_to_pose_stamped(ps_dict):
-        ps = PoseStamped()
-        ps.header.seq = ps_dict['header']['seq']
-        ps.header.stamp.secs = ps_dict['header']['stamp']['secs']
-        ps.header.stamp.nsecs = ps_dict['header']['stamp']['nsecs']
-        ps.header.frame_id = ps_dict['header']['frame_id']
-        ps.pose.position.x = ps_dict['pose']['position']['x']
-        ps.pose.position.y = ps_dict['pose']['position']['y']
-        ps.pose.position.z = ps_dict['pose']['position']['z']
-        ps.pose.orientation.x = ps_dict['pose']['orientation']['x']
-        ps.pose.orientation.y = ps_dict['pose']['orientation']['y']
-        ps.pose.orientation.z = ps_dict['pose']['orientation']['z']
-        ps.pose.orientation.w = ps_dict['pose']['orientation']['w']
-        return ps
 
     def on_execute(self, ud):
         try:
             ee_goal_dict = rospy.get_param(self.ee_goal_param)
-            ee_goal = self._dict_to_pose_stamped(ee_goal_dict)
-            self.ee_pose_pub.publish(ee_goal)
+            ee_goal = _dict_to_pose_stamped(ee_goal_dict)
+            self.ee_pose_pub.publish(ee_goal)  # Publish for debugging
         except (KeyError, rospy.ROSException):
             rospy.logerr("[%s] %s - Error trying to access param: %s", rospy.get_name(), self.__class__.__name__, self.ee_goal_param)
             return 'aborted'
@@ -84,19 +103,29 @@ class CallBaseSelectionState(PDDLSmachState):
         req = RealtimeBaseMoveRequest()
         req.ee_frame = ee_frame
         req.pose_target = ee_goal
-        print "Request:\n", req
         try:
             res = self.base_selection_service.call(req)
         except rospy.ServiceException as se:
             rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
             return 'aborted'
-        print "Response:\n", res
-        goal_data = list(res.base_goal[0:7])  # X, Y, Theta
-        goal_data.append(res.configuration_goal[0])  # Torso height
+        print "RTBS Response:\n", res
+
+        ps_msg = PoseStamped()
+        ps_msg.header.frame_id = '/odom_combined'
+        ps_msg.header.stamp = rospy.Time.now()
+        ps_msg.pose.position = Point(*res.base_goal[0:3])
+        ps_msg.pose.orientation = Quaternion(*res.base_goal[3:7])
+        pose_dict = _pose_stamped_to_dict(ps_msg)
         try:
-            rospy.set_param(self.base_goal_param, goal_data)
+            rospy.set_param(self.base_goal_param, pose_dict)
         except rospy.ROSException:
             rospy.logerr("[%s] %s - Failed to load base goal to parameter server", rospy.get_name(), self.__class__.__name__)
+            return 'aborted'
+
+        try:
+            rospy.set_param(self.torso_goal_param, res.configuration_goal[0])
+        except rospy.ROSException:
+            rospy.logerr("[%s] %s - Failed to load torso goal to parameter server", rospy.get_name(), self.__class__.__name__)
             return 'aborted'
 
 from assistive_teleop.msg import ServoAction, ServoGoal
@@ -107,7 +136,7 @@ class ServoOpenLoopState(PDDLSmachState):
     def __init__(self, base_goal_param, *args, **kwargs):
         super(ServoOpenLoopState, self).__init__(*args, **kwargs)
         self.base_goal_param = base_goal_param
-        self.action_client =  actionlib.SimpleActionClient('servoing_action', ServoAction)
+        self.action_client = actionlib.SimpleActionClient('servoing_action', ServoAction)
 
     def execute(self, ud):
         self._start_execute()
@@ -145,28 +174,49 @@ class ServoOpenLoopState(PDDLSmachState):
             rate.sleep()
 
 
+class ServoGoalPubState(PDDLSmachState):
+    def __init__(self, base_goal_param, *args, **kwargs):
+        super(ServoGoalPubState, self).__init__(*args, **kwargs)
+        self.base_goal_param = base_goal_param
+        self.goal_pub = rospy.Publisher('servo_open_loop_goal', PoseStamped, queue_size=1)
+
+    def on_execute(self, ud):
+        try:
+            base_goal_dict = rospy.get_param(self.base_goal_param)
+            base_goal_ps = _dict_to_pose_stamped(base_goal_dict)
+        except (KeyError, rospy.ROSException):
+            rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
+            return 'aborted'
+        self.goal_pub.publish(base_goal_ps)
+
+
 from pr2_controllers_msgs.msg import SingleJointPositionAction, SingleJointPositionGoal
 
 
 class AdjustTorsoState(PDDLSmachState):
-    def __init__(self, base_goal_param, *args, **kwargs):
+    def __init__(self, torso_goal_param, *args, **kwargs):
         super(AdjustTorsoState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
-        self.base_goal_param = base_goal_param
-        self.base_goal_arg = kwargs['action_args'][0]
+        self.torso_goal_param = torso_goal_param
+        self.torso_goal_arg = kwargs['action_args'][0]
+
+    def service_preempt(self):
+        # Cancel any running actions if state is preempted
+        self.torso_client.cancel_goal()
+        super(AdjustTorsoState, self).service_preempt()
 
     def execute(self, ud):
         self._start_execute()
         try:
-            base_goal = rospy.get_param(self.base_goal_param)
+            torso_goal = rospy.get_param(self.torso_goal_param)
         except (KeyError, rospy.ROSException):
-            rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.base_goal_param)
+            rospy.logerr("[%s] %s - Error trying to access param %s", rospy.get_name(), self.__class__.__name__, self.torso_goal_param)
             return 'aborted'
         sjpg = SingleJointPositionGoal()
-        sjpg.position = base_goal[-1]  # Should always be the final entry...
+        sjpg.position = torso_goal
         self.torso_client.send_goal(sjpg)
         rate = rospy.Rate(5)
         result_published = False
@@ -177,7 +227,7 @@ class AdjustTorsoState(PDDLSmachState):
                     state_msg = PDDLState()
                     state_msg.domain = self.domain
                     state_msg.problem = self.problem
-                    state_msg.predicates = ['(TORSO_SET %s)' % self.base_goal_arg]
+                    state_msg.predicates = ['(TORSO_SET %s)' % self.torso_goal_arg]
                     self.pddl_pub.publish(state_msg)
                     result_published = True
             elif action_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
