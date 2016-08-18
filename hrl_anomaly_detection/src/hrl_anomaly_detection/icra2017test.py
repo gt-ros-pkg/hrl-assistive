@@ -945,7 +945,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     return ROC_data_cur
 
-def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, X_test, Y_test):
+def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, X_test, Y_test, verbose=False):
 
     dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
     dtc.set_params( **param_dict )
