@@ -37,17 +37,17 @@ RFH.ServoOpenLoop = function (options) {
         var odomCombinedMat = new THREE.Matrix4()
         odomCombinedMat.makeRotationFromQuaternion(quat);
         odomCombinedMat.setPosition(new THREE.Vector3(odomCombinedTF.translation.x, odomCombinedTF.translation.y, odomCombinedTF.translation.z));
-        odomCombinedMat.getInverse(odomCombinedMat);
+//        odomCombinedMat.getInverse(odomCombinedMat);
 
         var goalQuat = new THREE.Quaternion(goalPose.pose.orientation.x, goalPose.pose.orientation.y, goalPose.pose.orientation.z, goalPose.pose.orientation.w);
         var goalMat = new THREE.Matrix4();
         goalMat.makeRotationFromQuaternion(goalQuat);
         goalMat.setPosition(new THREE.Vector3(goalPose.pose.position.x, goalPose.pose.position.y, goalPose.pose.position.z));
 
-        goalMat.multiply(odomCombinedMat);
+        odomCombinedMat.multiply(goalMat);
         var trans = new THREE.Matrix4();
         var scale = new THREE.Vector3();
-        goalMat.decompose(trans, quat, scale);
+        odomCombinedMat.decompose(trans, quat, scale);
         baseModel.position.set(trans.x, trans.y, trans.z);
         baseModel.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
