@@ -419,7 +419,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
                       no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
-                      single_person=False, viz=False, n_random_trial=1):
+                      single_person=False, viz=False, n_random_trial=1, random_eval=False):
 
     ## Parameters
     # data
@@ -521,7 +521,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 20
+    nPtrainData = 10
     nTrainOffset = 2
     nTrainTimes  = 10
     nNormalTrain = 30
@@ -673,7 +673,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                       ROC_data, param_dict,\
                                       np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
                                       np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                      verbose=debug, viz=viz)
+                                      verbose=debug, viz=viz, random_eval=random_eval)
             l_data.append( (idx, r) )
 
     
@@ -725,14 +725,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         print "Mean: ", np.mean(l_auc_d, axis=0)
         print "Std:  ", np.std(l_auc_d, axis=0)
 
-        
-    ## acc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-    ##          only_tpr=False)
              
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
-                          normalDataX, abnormalDataX, verbose=False, viz=False):
+                          normalDataX, abnormalDataX, verbose=False, viz=False,\
+                          random_eval=False):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -777,7 +775,12 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     # Classifier partial train/test data
     #-----------------------------------------------------------------------------------------
     normalTrainData       = dd['normalTrainData']
-    rndNormalTraindataIdx = dd['rndNormalTraindataIdx']
+
+    if random_eval:
+        rndNormalTraindataIdx = range(len(normalTrainData[0]))
+        random.shuffle(rndNormalTraindataIdx)
+    else:
+        rndNormalTraindataIdx = dd['rndNormalTraindataIdx']
     normalPtrainData      = normalTrainData[:,rndNormalTraindataIdx[:nPtrainData],:]
 
 
@@ -829,7 +832,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.1
+            alpha = np.exp(-0.1*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -838,8 +841,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.2  0.1  c8 (2,5), npt=10
-            # step 5 4.0  0.1  c11 (5,2)
+            # step 1 0.2  0.1  c8 (2,5), npt=10  best?
+            # step 1 0.1  0.1  c11 (2,10), npt=10
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
             # only hmm update br
@@ -1128,6 +1131,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--eval_aws', action='store_true', dest='bEvaluationAWS',
+                 default=False, help='Data generation before evaluation.')
                  
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -1267,7 +1272,12 @@ if __name__ == '__main__':
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
-        n_random_trial = 1
+        if opt.bEvaluationAWS:
+            n_random_trial = 10
+            random_eval    = True
+        else:
+            n_random_trial = 1
+            random_eval    = False
                              
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
@@ -1289,7 +1299,8 @@ if __name__ == '__main__':
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial)
+                              find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
+                              random_eval=random_eval)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
