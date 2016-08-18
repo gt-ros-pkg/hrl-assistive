@@ -546,6 +546,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         ## train_idx = idx_list[:idx]+idx_list[idx+1:]
         ## test_idx  = idx_list[idx:idx+1]        
         ## kFold_list.append([train_idx, test_idx])
+        print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
