@@ -226,7 +226,11 @@ class learning_hmm(learning_base):
         ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
         ##     if np.isnan(ret): break #return 'Failure'
         print 'Baum Welch return:', ret
-                
+
+        [self.A, self.B, self.pi] = self.ml.asMatrices()
+        self.A = np.array(self.A)
+        self.B = np.array(self.B)
+        
         return ret
 
         

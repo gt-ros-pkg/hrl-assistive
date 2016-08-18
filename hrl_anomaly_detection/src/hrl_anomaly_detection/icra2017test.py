@@ -524,7 +524,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 30
     nTrainOffset = 5
-    nTrainTimes  = 3
+    nTrainTimes  = 2
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -915,7 +915,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
         # -------------------------------------------------------------------------------
         # update kmean
-        # classification
+        print "Classifier fitting"
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
         
         for j in xrange(nPoints):
@@ -970,12 +970,14 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                     if anomaly: fp_l.append(1)
                     else: tn_l.append(1)
 
+            print "ROC data update"
             ROC_data_cur[method+'_'+str(i)]['tp_l'][j] += tp_l
             ROC_data_cur[method+'_'+str(i)]['fp_l'][j] += fp_l
             ROC_data_cur[method+'_'+str(i)]['fn_l'][j] += fn_l
             ROC_data_cur[method+'_'+str(i)]['tn_l'][j] += tn_l
             ROC_data_cur[method+'_'+str(i)]['delay_l'][j] += delay_l
             ROC_data_cur[method+'_'+str(i)]['tp_idx_l'][j] += tp_idx_l
+            
 
     return ROC_data_cur
 
