@@ -521,9 +521,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 10
+    nPtrainData = 20
     nTrainOffset = 2
-    nTrainTimes  = 5
+    nTrainTimes  = 10
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -829,7 +829,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.2*float(i-1) )*0.1
+            alpha = np.exp(-0.5*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -840,7 +840,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # Good: progress update
             # step 1 0.2  0.1  c8 (2,5), npt=10
             # step 5 4.0  0.1  c11 (5,2)
-            # step 1 0.5, 0.1  c12 (5,4), npt=20
+            # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
             # only hmm update br
             

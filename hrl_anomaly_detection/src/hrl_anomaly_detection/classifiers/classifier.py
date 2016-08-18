@@ -106,6 +106,10 @@ class classifier(learning_base):
                  sgd_n_iter     = 10,\
                  # minibatchkmean
                  mbkmean_batch_size = 100,\
+                 # progress svm
+                 progress_svm_w_negative = 7.0,\
+                 progress_svm_cost       = 4.,\
+                 progress_svm_gamma      = 0.3,\                 
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -149,6 +153,9 @@ class classifier(learning_base):
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
+            self.progress_svm_w_negative = progress_svm_w_negative
+            self.progress_svm_cost       = progress_svm_cost
+            self.progress_svm_gamma      = progress_svm_gamma
         elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
@@ -187,7 +194,8 @@ class classifier(learning_base):
             self.ths_mult = ths_mult
             self.nPosteriors = nPosteriors
             self.ll_mu  = np.zeros(nPosteriors)
-            self.ll_std = np.zeros(nPosteriors) 
+            self.ll_std = np.zeros(nPosteriors)
+            
                         
         learning_base.__init__(self)
 
@@ -235,6 +243,9 @@ class classifier(learning_base):
             elif self.method == 'progress_osvm':
                 commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
+            elif self.method == 'progress_svm':
+                commands = commands+' -n '+str(self.nu)+' -g '+str(self.progress_svm_gamma)\
+                  +' -w-1 '+str(self.progress_svm_w_negative)+' -c '+str(self.progress_svm_cost)
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
