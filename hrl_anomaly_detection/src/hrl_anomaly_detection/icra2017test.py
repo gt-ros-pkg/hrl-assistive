@@ -845,7 +845,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-2.0*float(i-1) )*0.1
+            alpha = np.exp(-2.0*float(i-1) )*0.2
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=10)
             if np.isnan(ret): sys.exit()
@@ -854,9 +854,9 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 10 0.1  0.1  iter c8 (2,5)
-            # step 10 0.1  0.1  progress? c11 (5,2)
-            # step 10 2.0, 0.1  progress c12 (5,2)
+            # step 10 2.0  0.1  c8 (5,2)
+            # step 10 0.1  0.1  c11 (5,2)
+            # step 10 2.0, 0.2  c12 (5,2)
             # step 10 1.0  0.1  progress ep (2,5)
             # only hmm update br
             
