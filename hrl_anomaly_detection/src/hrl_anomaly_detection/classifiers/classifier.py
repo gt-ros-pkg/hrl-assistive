@@ -166,7 +166,8 @@ class classifier(learning_base):
             self.ths_mult = ths_mult
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
-            self.ll_std = np.zeros(nPosteriors) 
+            self.ll_std = np.zeros(nPosteriors)
+            self.l_statePosterior = None
         elif self.method == 'fixed':
             self.mu  = 0.0
             self.std = 0.0
