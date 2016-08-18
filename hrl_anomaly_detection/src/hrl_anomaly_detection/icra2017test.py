@@ -856,8 +856,8 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # Good: progress update
             # 0.2 no progress? c11
             #  c12
-            # 0.4 progress ep
-            # 0.3 no progrss c8
+            # 0.3 no progress ep
+            # 0.3 progrss c8
             # only hmm update br
             
             # Update last 10 samples
@@ -870,7 +870,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # Get classifier training data using last 10 samples
         ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
         ##                                                               startIdx=startIdx)
-        print "p traindata size: ", normalPtrainData[0]
+        print "p traindata size: ", np.shape(normalPtrainData[0])
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [ normalPtrainData[jj][ii] for jj in \
                                                                   xrange(ml.nEmissionDim) ], \
