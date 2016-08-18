@@ -832,7 +832,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.2*float(i-1) )*0.1
+            alpha = np.exp(-0.1*float(i-1) )*0.05
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -842,7 +842,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: scale<=0.1
             # Good: progress update
             # step 1 0.2  0.1  c8 (2,10), npt=20  best?
-            # step 1 0.1  0.1  c11 (2,10), npt=10
+            # step 1 0.1  0.05  c11 (2,10), npt=20
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
             # step 1 0.2  0.1  aws (2,10), npt=10 best?
