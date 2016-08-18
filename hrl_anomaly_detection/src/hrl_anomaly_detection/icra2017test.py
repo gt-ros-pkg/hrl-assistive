@@ -424,7 +424,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       param_dict,\
                       data_renew=False, save_pdf=False, verbose=False, debug=False,\
                       no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
-                      single_person=False):
+                      single_person=False, viz=False):
 
     ## Parameters
     # data
@@ -695,7 +695,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                   ROC_data, param_dict,\
                                   np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
                                   np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                  verbose=debug)
+                                  verbose=debug, viz=viz)
         l_data.append(r)
 
     
@@ -767,7 +767,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
-                          normalDataX, abnormalDataX, verbose=False):
+                          normalDataX, abnormalDataX, verbose=False, viz=False):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -921,9 +921,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         Y_test = ll_classifier_test_Y
 
         ## ## # temp
-        ## vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
-        ##                 ll_logp_test, ll_post_test, testDataY)
-        ## continue
+        if viz:
+            vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
+                            ll_logp_test, ll_post_test, testDataY)
+            continue
 
         # -------------------------------------------------------------------------------
         # update kmean
@@ -1347,4 +1348,4 @@ if __name__ == '__main__':
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen)
+                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True)
