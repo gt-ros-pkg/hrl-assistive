@@ -856,7 +856,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # Good: progress update
             # step 10 4.0  0.2  c8 (5,2)
             # step 5 4.0  0.1  c11 (5,2)
-            # step 10 2.0, 0.05  c12 (5,2)
+            # step 5 4.0, 0.1  c12 (5,2)
             # step 10 4.0  0.1  ep (5,2)
             # only hmm update br
             
