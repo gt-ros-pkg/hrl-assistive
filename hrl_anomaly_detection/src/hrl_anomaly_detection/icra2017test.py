@@ -916,7 +916,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # -------------------------------------------------------------------------------
         # update kmean
         print "Classifier fitting"
-        ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
+        ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
         print "Classifier fitting completed"
         
         for j in xrange(nPoints):
