@@ -929,7 +929,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             cf_dict['ll_std']      = dtc.ll_std
             cf_dict['logp_offset'] = dtc.logp_offset
 
-
+        for ii in xrange(nPoints):
+            run_classifier(ii, method, nState, nLength, cf_dict, SVM_dict,\
+                           ROC_dict, X_test, Y_test)
+            sys.exit()
+    
         r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
                                                         ROC_dict, X_test, Y_test)
                                 for ii in xrange(nPoints))
