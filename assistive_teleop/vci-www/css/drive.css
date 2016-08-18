@@ -70,6 +70,7 @@ h4.drive-ctrl {
     border: 2px solid rgba(0,188,212,0.55);
     border-bottom:none;
     background-color: rgba(0,188,212,0.3);
+    z-index: 10;
 }
 
 .turn-signal:hover{
