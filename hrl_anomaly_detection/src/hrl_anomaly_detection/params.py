@@ -54,7 +54,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_state', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm']
-        param_dict['ROC']['methods'] = [ 'progress', 'progress_diag', 'progress_osvm']
+        param_dict['ROC']['update_list'] = [ 'progress', 'progress_diag', 'progress_osvm']
         ## param_dict['ROC']['update_list'] = ['progress_osvm']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean']
