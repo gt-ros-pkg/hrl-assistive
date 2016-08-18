@@ -918,7 +918,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
         print "Classifier fitting completed", np.shape(dtc.l_statePosterior)
-        sys.exit()
 
         if method == 'progress':
             cf_dict = {}
@@ -958,6 +957,9 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     dtc.set_params( **param_dict )
     dtc.set_params( **SVM_dict )
     ll_classifier_test_idx = None
+
+    print dtc.l_statePosterior
+    sys.exit()
     
     if verbose: print "Update classifier"
     if method == 'progress' or method == 'kmean':
