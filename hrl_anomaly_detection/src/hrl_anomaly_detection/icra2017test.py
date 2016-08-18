@@ -893,13 +893,13 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
         # Test data
         ## ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
         ##                                                              startIdx=startIdx)
-        r = Parallel(n_jobs=1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
-                                                            [ testDataX[jj][ii] for jj in \
-                                                              xrange(ml.nEmissionDim) ], \
-                                                              ml.nEmissionDim, ml.nState,\
-                                                              startIdx=startIdx, \
-                                                              bPosterior=True)
-                                                              for ii in xrange(len(testDataX[0])))
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [ testDataX[jj][ii] for jj in \
+                                                                  xrange(ml.nEmissionDim) ], \
+                                                                  ml.nEmissionDim, ml.nState,\
+                                                                  startIdx=startIdx, \
+                                                                  bPosterior=True)
+                                                                  for ii in xrange(len(testDataX[0])))
         _, ll_classifier_test_idx, ll_logp_test, ll_post_test = zip(*r)
                                                                      
         ll_classifier_test_X, ll_classifier_test_Y = \
