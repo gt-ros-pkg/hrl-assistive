@@ -522,7 +522,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 15
+    nPtrainData = 30
     nTrainOffset = 5
     nTrainTimes  = 3
     nNormalTrain = 30
@@ -634,9 +634,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
             dd['ll_classifier_train_idx']= ll_classifier_train_idx
             dd['normalPtrainData'] = normalPtrainData
+            dd['normalTrainData'] = normalTrainData
             dd['nLength']      = nLength
             ut.save_pickle(dd, modeling_pkl)
-
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -669,6 +669,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     print "Start the incremental evaluation"
     if debug: n_jobs = 1
     else: n_jobs = -1
+    n_jobs=1
     r = Parallel(n_jobs=n_jobs)(delayed(run_online_classifier)(idx, processed_data_path, task_name, \
                                                            nPtrainData, nTrainOffset, nTrainTimes, \
                                                            ROC_data, param_dict,\
@@ -722,10 +723,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
         print subject_names[kFold_idx], " : ", auc_rates
         auc = []
-        for i in xrange(nTrainTimes):
+        for i in xrange(nTrainTimes+1):
             auc.append(auc_rates[method_list[0]+'_'+str(i)])
                 
         l_auc.append(auc)
+
+    print "---------------------"
+    for auc in l_auc:
+        print auc
+    print "---------------------"
 
     if len(kFold_list)>1:
         print "Mean: ", np.mean(l_auc, axis=0)
@@ -815,6 +821,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
 
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
 
     for i in xrange(nTrainTimes+1): 
 
@@ -828,24 +835,36 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-0.3*float(i-1) )*0.1 #3
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=1)
-            if np.isnan(ret): sys.exit()
+            ## alpha = np.exp(-0.3*float(i-1) )*0.01 #3
+            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+            ##                       nrSteps=7)
+            ## if np.isnan(ret): sys.exit()
+            # BAD: nrSteps=100
+            # BAD: nrSteps=1
+            # 0.1 c11
+            # 0.01 c12
+            # no update ep
+            # only progress update c8
             
             # Update last 10 samples
-            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-            ##                                            0,1) ])
-            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
-            ## normalPtrainDataY = np.hstack([ normalPtrainDataY, np.ones(nTrainOffset) ])
-            ## normalPtrainDataY = np.delete(normalPtrainDataY, np.s_[:nTrainOffset],0)
-
         # Get classifier training data using last 10 samples
-        ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
-                                                                      startIdx=startIdx)
+        ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
+        ##                                                               startIdx=startIdx)
+        print "p traindata size: ", normalPtrainData[0]
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                                [ normalPtrainData[jj][ii] for jj in \
+                                                                  xrange(ml.nEmissionDim) ], \
+                                                                  ml.nEmissionDim, ml.nState,\
+                                                                  startIdx=startIdx, \
+                                                                  bPosterior=True)
+                                                                  for ii in xrange(len(normalPtrainData[0])))
+        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
                                                                       
 
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
@@ -854,38 +873,43 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
           hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
                                            -np.ones(len(normalPtrainData[0])), \
                                            c=1.0, add_delta_logp=add_logp_d,\
-                                           remove_fp=remove_fp, remove_outlier=False)
+                                           remove_fp=remove_fp, remove_outlier=True)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
         # Test data
-        ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
-                                                                     startIdx=startIdx)
+        ## ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
+        ##                                                              startIdx=startIdx)
+        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                            [ testDataX[jj][ii] for jj in \
+                                                              xrange(ml.nEmissionDim) ], \
+                                                              ml.nEmissionDim, ml.nState,\
+                                                              startIdx=startIdx, \
+                                                              bPosterior=True)
+                                                              for ii in xrange(len(testDataX[0])))
+        _, ll_classifier_test_idx, ll_logp_test, ll_post_test = zip(*r)
+                                                                     
         ll_classifier_test_X, ll_classifier_test_Y = \
           hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, testDataY, c=1.0, add_delta_logp=add_logp_d)
         X_test = ll_classifier_test_X
         Y_test = ll_classifier_test_Y
 
         ## ## # temp
-        ## vizLikelihoods2(ll_logp, ll_post, normalPtrainDataY,\
+        ## vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
         ##                 ll_logp_test, ll_post_test, testDataY)
         ## continue
 
         # -------------------------------------------------------------------------------
         # update kmean
         # classification
-        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=False)
         
         for j in xrange(nPoints):
             dtc.set_params( **SVM_dict )
 
             if verbose: print "Update classifier"
-            if method == 'progress' or method == 'progress' or method == 'kmean':
-                if method == 'progress':
-                    thresholds = ROC_dict['progress_param_range']
-                else:
-                    thresholds = ROC_dict[method+'_param_range']
+            if method == 'progress' or method == 'kmean':
+                thresholds = ROC_dict[method+'_param_range']
                 dtc.set_params( ths_mult = thresholds[j] )
             else:
                 print "Not available method = ", method
@@ -902,7 +926,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             for ii in xrange(len(X_test)):
                 if len(Y_test[ii])==0: continue
 
-                if method == 'osvm' or method == 'cssvm' or method == 'hmmosvm':
+                if method.find('osvm')>=0 or method == 'cssvm':
                     est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                     est_y = np.array(est_y)* -1.0
                 else:
