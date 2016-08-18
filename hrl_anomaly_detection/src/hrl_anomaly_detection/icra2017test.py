@@ -523,8 +523,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 30
-    nTrainOffset = 5
-    nTrainTimes  = 2
+    nTrainOffset = 2
+    nTrainTimes  = 5
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -845,7 +845,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-2.0*float(i-1) )*0.1
+            alpha = np.exp(-1.0*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=10)
             if np.isnan(ret): sys.exit()
@@ -857,7 +857,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # step 10 0.1  0.1  iter c8 (2,5)
             # step 10 0.1  0.1  progress? c11 (5,2)
             # step 10 2.0, 0.1  progress c12 (5,2)
-            # step 10 0.5  0.05  progress ep
+            # step 10 1.0  0.1  progress ep (2,5)
             # only hmm update br
             
             # Update last 10 samples
