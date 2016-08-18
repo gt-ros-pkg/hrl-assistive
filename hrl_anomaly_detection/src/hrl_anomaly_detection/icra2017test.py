@@ -173,12 +173,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+        if ret == 'Failure' or np.isnan(ret): return (-1,-1,-1,-1)
 
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
@@ -292,7 +287,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': sys.exit()
+        if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier training data
@@ -527,8 +522,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 20
-    nTrainOffset = 1
+    nPtrainData = 10
+    nTrainOffset = 2
     nTrainTimes  = 5
     nNormalTrain = 30
 
@@ -551,6 +546,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         ## train_idx = idx_list[:idx]+idx_list[idx+1:]
         ## test_idx  = idx_list[idx:idx+1]        
         ## kFold_list.append([train_idx, test_idx])
+        print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
@@ -602,12 +598,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             else:
                 ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-            if ret == 'Failure': 
-                print "-------------------------"
-                print "HMM returned failure!!   "
-                print "-------------------------"
-                sys.exit()
-                return (-1,-1,-1,-1)
+            if ret == 'Failure' or np.isnan(ret): sys.exit()
 
             #-----------------------------------------------------------------------------------------
             # Classifier training data
@@ -748,7 +739,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     print "---------------------"
     l_auc = np.array(l_auc)
-    l_auc_d = l_auc[:,1:]-l_auc[:,:-1]
+    l_auc_d = l_auc-l_auc[:,0:1]
     for auc in l_auc:
         print auc
     print "---------------------"
@@ -857,18 +848,18 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) #100(br) 10(c12) 5(c8)
 
-            alpha = np.exp(-1.0*float(i-1) )*0.05
+            alpha = np.exp(-0.5*float(i-1) )*0.2
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=10)
-            if np.isnan(ret): sys.exit()
+                                  nrSteps=1)
+            if np.isnan(ret) or ret == 'Failure': sys.exit()
             # BAD: nrSteps=100
             # BAD: nrSteps=10
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 10 4.0  0.2  c8 (5,2)
+            # step 1 0.5  0.2  c8 (2,5)
             # step 5 4.0  0.1  c11 (5,2)
-            # step 10 4.0, 0.1  c12 (5,4)
+            # step 1 0.5, 0.1  c12 (5,4)
             # step 10 4.0  0.1  ep (5,2)
             # only hmm update br
             
@@ -1319,8 +1310,6 @@ if __name__ == '__main__':
                               find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEvalTemp:
-        ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
-        ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['change']
         param_dict['ROC']['nPoints'] = 8
