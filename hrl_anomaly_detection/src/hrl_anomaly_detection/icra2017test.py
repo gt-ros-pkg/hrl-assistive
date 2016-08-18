@@ -1310,8 +1310,6 @@ if __name__ == '__main__':
                               find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEvalTemp:
-        ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
-        ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
         subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
         param_dict['ROC']['methods'] = ['change']
         param_dict['ROC']['nPoints'] = 8
