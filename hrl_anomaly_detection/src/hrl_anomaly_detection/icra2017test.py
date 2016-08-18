@@ -853,10 +853,10 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.1  0.1 progress? c11
-            # 0.1, 0.2, progress c12
-            # 0.3 no progress ep
-            # 0.3 progrss c8
+            # step 1 0.1  0.3  progrss c8
+            # step 1 0.1  0.1  progress? c11
+            # step 7 0.1, 0.3  progress c12
+            # step 7 0.3 no progress ep
             # only hmm update br
             
             # Update last 10 samples
