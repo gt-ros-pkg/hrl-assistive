@@ -76,12 +76,12 @@ class ServoingServer(object):
     def update_goal(self, msg):
         msg.header.stamp = rospy.Time.now()
         if not self.tfl.waitForTransform(msg.header.frame_id, '/base_footprint',
-                                         msg.header.stamp, rospy.Duration(30)):
+                                         msg.header.stamp, rospy.Duration(5)):
             rospy.logwarn('Cannot find /base_footprint transform')
             return
         self.bfp_goal = self.tfl.transformPose('/base_footprint', msg)
         if not self.tfl.waitForTransform(msg.header.frame_id, '/odom_combined',
-                                         msg.header.stamp, rospy.Duration(30)):
+                                         msg.header.stamp, rospy.Duration(5)):
             rospy.logwarn('Cannot find /odom_combined transform')
             return
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
@@ -135,7 +135,7 @@ class ServoingServer(object):
         ys = near_ranges * np.sin(near_angles)
         # print "xs: %s" %xs
         points = np.vstack((xs, ys))
-        print "Points: %s" %points
+        print "Points: %s" % points
         self.bfp_points = np.vstack((np.add(0.275, xs), ys))
         # print "bfp Points: %s" %bfp_points
         self.bfp_dists = np.sqrt(np.add(np.square(self.bfp_points[0][:]),
@@ -148,13 +148,12 @@ class ServoingServer(object):
                 self.rot_safe = False
         else:
             self.rot_safe = True
-        left_idxs = np.nonzero(ys > 0.35)
-        self.left = np.vstack((xs[np.nonzero(ys > 0.35)[0]],
-                               ys[np.nonzero(ys > 0.35)[0]]))
-        self.right = np.vstack((xs[np.nonzero(ys < -0.35)[0]],
-                                ys[np.nonzero(ys < -0.35)[0]]))
-        self.front = np.vstack((np.extract(np.logical_and(ys < 0.35, ys > -0.35), xs),
-                                np.extract(np.logical_and(ys < 0.35, ys > -0.35), ys)))
+        left_idxs = np.nonzero(ys > 0.35)[0]
+        right_idxs = np.nonzero(ys > 0.35)[0]
+        front_idxs = np.logical_and(ys < 0.35, ys > -0.35)
+        self.left = np.vstack((xs[left_idxs], ys[left_idxs]))
+        self.right = np.vstack((xs[right_idxs], ys[right_idxs]))
+        self.front = np.vstack((xs[front_idxs], ys[front_idxs]))
 
         # Testing and Visualization:
         if len(self.left[:][0]) > 0:
