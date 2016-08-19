@@ -1357,6 +1357,10 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
+        if len(fpr_l) < nPoints:
+            print method + ' has NaN? and fitting error?'
+            continue
+
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
