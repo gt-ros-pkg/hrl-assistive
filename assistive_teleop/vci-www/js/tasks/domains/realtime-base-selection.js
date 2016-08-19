@@ -166,7 +166,7 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
                               '(NOT (TORSO_SET BASE_GOAL))',
                               '(NOT (KNOWN BASE_GOAL))',
                               '(NOT (KNOWN EE_GOAL))',
-                              '(KNOWN EE_FRAME)']);
+                              '(NOT (KNOWN EE_FRAME))']);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = self.domain + '-' + new Date().getTime().toString();
         msg.domain = self.domain;
