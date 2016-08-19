@@ -180,9 +180,9 @@ class PDDLTaskThread(Thread):
                 # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
                 self.problem_msg.init = self.domain_state
                 if not self.problem_msg.init:
-                    goal_pred_1 = [map(Predicate.from_string, preds) for preds in self.problem_msg.goal][0]
+                    goal_pred_1 = Predicate.from_string(self.problem_msg.goal[0])
                     goal_pred_1.negate()
-                    self.problem_msg.init.append(goal_pred_1)  # Add negative of 1st goal predicate to have something in init, if necessary
+                    self.problem_msg.init.append(str(goal_pred_1))  # Add negative of 1st goal predicate to have something in init, if necessary
                 attempted_goal = copy.copy(self.problem_msg.goal)  # Save to make sure goal hasn't changed by end of run
                 # Get solution from planner
                 try:
@@ -277,7 +277,7 @@ class PDDLSmachState(smach.State):
 
     def on_execute(self, ud):
         """ Override to create task-specific functionality before waiting for state update in main execute."""
-        pass
+        return None
 
     def _publish_current_step(self):
         plan_step_msg = PDDLPlanStep()
@@ -313,7 +313,9 @@ class PDDLSmachState(smach.State):
     def execute(self, ud):
         # Watch for task state to match goal state, then return successful
         self._start_execute()
-        self.on_execute(ud)
+        on_execute_result = self.on_execute(ud)
+        if on_execute_result in ['preempted', 'aborted']:
+            return on_execute_result
         rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             result = self._check_pddl_status()
