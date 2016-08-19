@@ -61,7 +61,7 @@ body {
 }
 #controls {
     display: inline-block;
-    height: 60%;
+    height: 100%;
     width: 100%;
     min-width: 128px;
     background-color: rgba(160, 200, 240, 0.87);

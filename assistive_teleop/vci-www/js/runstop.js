@@ -5,6 +5,7 @@ RFH.RunStop = function (options) {
     var divId = options.divId || 'runstop-button';
     var $div = $('#'+divId);
     $div.button();
+    var $textSpan = $div.find('span');
 
     var buttonCSSToReset = {
         background: '#00ff00',
@@ -22,10 +23,10 @@ RFH.RunStop = function (options) {
         motorsHalted = bool_msg.data;
         if (motorsHalted) {
             $div.css(buttonCSSToReset);
-            $div.text('RESET MOTORS');
+            $textSpan.text('RESET MOTORS');
         } else {
             $div.css(buttonCSSToHalt);
-            $div.text('HALT MOTORS');
+            $textSpan.text('HALT MOTORS');
         }
     };
 

@@ -37,4 +37,10 @@
     top: 5%;
     height: 90%;
     color: rgba(0,0,0,0.87);
+    max-width: 55%;
+}
+
+#runstop-button > span {
+    font-size: 20px;
+    padding: 3% 0%;
 }
