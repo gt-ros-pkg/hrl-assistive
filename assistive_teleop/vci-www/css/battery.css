@@ -58,7 +58,7 @@
 
 #battery-status span{
     position: absolute;
-    top: 7%;
-    left: 28%;
-    font-size: 24px;
+    top: 25%;
+    left: 30%;
+    font-size: 30px;
 }
