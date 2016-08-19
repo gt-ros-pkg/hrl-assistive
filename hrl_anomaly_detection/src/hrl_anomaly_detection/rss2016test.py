@@ -316,7 +316,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                        ll_classifier_test_Y, \
                                                        ll_classifier_test_idx, nState)
 
-
+        if np.isnan(ll_classifier_ep_train_X):
+            print "nan in entropy train data"
+            sys.exit()
+        if np.isnan(ll_classifier_ep_test_X):
+            print "nan in entropy train data"
+            sys.exit()
+            
         ## ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
         ## fig = plt.figure()
         ## for i in xrange(len(ll_classifier_ep_train_X)):
@@ -342,7 +348,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ##         for k in xrange(nEmissionDim):
         ##             if j != k:
         ##                 ml.B[i][1][j*nEmissionDim+k] = 0.0
-        if ret == 'Failure': sys.exit()
+        if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         # Classifier training data
         ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
