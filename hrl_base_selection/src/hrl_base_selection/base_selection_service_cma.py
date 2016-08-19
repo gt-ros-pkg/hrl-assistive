@@ -327,7 +327,7 @@ class BaseSelector(object):
         if score >=10.:
             print 'Could not find a base configuration from which the PR2 could reach the goal!'
             print 'Sorry!'
-            return None
+            return [], [], []
         else:
             return self.handle_returning_base_goals()
 
