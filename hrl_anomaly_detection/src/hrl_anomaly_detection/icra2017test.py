@@ -795,7 +795,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
-                          data_renew=data_renew,\
+                          data_renew=data_renew, no_plot=True,\
                           save_result=True, verbose=verbose, debug=debug)
         data_renew = False
         sys.exit()
@@ -814,7 +814,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    add_logp_d = False #HMM_dict.get('add_logp_d', True)
+    add_logp_d  = False #HMM_dict.get('add_logp_d', True)
     
     ROC_data_cur = {}
     for i, method in enumerate(method_list):
