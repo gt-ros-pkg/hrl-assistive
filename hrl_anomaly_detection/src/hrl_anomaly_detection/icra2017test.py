@@ -723,32 +723,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         if os.path.isfile(savefile) is False:
             with open(savefile, 'w') as file:
                 file.write( "-----------------------------------------\n")
-                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
-                            ' cov: '+str(HMM_dict['cov'])+'\n' )
-
-                for auc in l_auc:
-                    t = ''
-                    for i in xrange(len(auc)):
-                        t += str(auc[i])
-                        t += ' '
-                    t += ' \n'
-                    file.write(t)
-
-                t = 'Mean(d) '
-                for v in np.mean(l_auc_d, axis=0):
-                    t += str(v)
-                    t += ' '
-                t += ' \n'
-                file.write(t)
-
-                t = 'Std(d) '
-                for v in np.std(l_auc_d, axis=0):
-                    t += str(v)
-                    t += ' '
-                t += ' \n\n'
-                file.write(t)
-        else:
-            with open(savefile, 'a') as file:
                 file.write( "-----------------------------------------\n")
                 file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
                             ' cov: '+str(HMM_dict['cov'])+'\n' )
@@ -757,24 +731,53 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     t = ''
                     for i in xrange(len(auc)):
                         t += str(auc[i])
-                        t += ' '
+                        t += ', '
                     t += ' \n'
                     file.write(t)
+                file.write( "-----------------------------------------\n")
 
                 t = 'Mean(d) '
                 for v in np.mean(l_auc_d, axis=0):
                     t += str(v)
-                    t += ' '
+                    t += ', '
                 t += ' \n'
                 file.write(t)
 
                 t = 'Std(d) '
                 for v in np.std(l_auc_d, axis=0):
                     t += str(v)
-                    t += ' '
+                    t += ', '
                 t += ' \n\n'
                 file.write(t)
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( "-----------------------------------------\n")
+                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
+                            ' cov: '+str(HMM_dict['cov'])+'\n' )
 
+                for auc in l_auc:
+                    t = ''
+                    for i in xrange(len(auc)):
+                        t += str(auc[i])
+                        t += ', '
+                    t += ' \n'
+                    file.write(t)
+                file.write( "-----------------------------------------\n")
+
+                t = 'Mean(d) '
+                for v in np.mean(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n'
+                file.write(t)
+
+                t = 'Std(d) '
+                for v in np.std(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n\n'
+                file.write(t)
 
 
 
@@ -788,17 +791,17 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 
     for param in param_list:
 
-        ## param_dict['HMM']['nState'] = param['nState']
-        ## param_dict['HMM']['scale']  = param['scale']
-        ## param_dict['HMM']['cov']    = param['scale']
-        ## param_dict['HMM']['renew']  = True
+        param_dict['HMM']['nState'] = param['nState']
+        param_dict['HMM']['scale']  = param['scale']
+        param_dict['HMM']['cov']    = param['scale']
+        param_dict['HMM']['renew']  = True
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
                           data_renew=data_renew, no_plot=True,\
                           save_result=True, verbose=verbose, debug=debug)
         data_renew = False
-        sys.exit()
+        ## sys.exit()
         
                       
 
