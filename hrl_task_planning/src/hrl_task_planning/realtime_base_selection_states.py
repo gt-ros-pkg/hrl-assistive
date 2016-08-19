@@ -238,7 +238,7 @@ class AdjustTorsoState(PDDLSmachState):
         super(AdjustTorsoState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
         self.torso_goal_param = torso_goal_param
         self.torso_goal_arg = kwargs['action_args'][0]
@@ -284,7 +284,7 @@ class ClearTorsoSetState(PDDLSmachState):
         super(ClearTorsoSetState, self).__init__(self, *args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.base_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
@@ -300,7 +300,7 @@ class ClearAtGoalState(PDDLSmachState):
         super(ClearAtGoalState, self).__init__(self, *args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.at_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
@@ -320,7 +320,7 @@ class ScanEnvironmentState(PDDLSmachState):
         super(ScanEnvironmentState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.scan_actioin_client = actionlib.SimpleActionClient('/head_sweep_action', HeadSweepAction)
         found = self.scan_actioin_client.wait_for_server(rospy.Duration(5))
         if not found:
@@ -376,7 +376,7 @@ class ClearEnvironmentState(PDDLSmachState):
         super(ClearEnvironmentState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
 
     def on_execute(self, ud):
         state_msg = PDDLState()
