@@ -63,6 +63,7 @@ from mvpa2.datasets.base import Dataset
 ## from sklearn import svm
 from joblib import Parallel, delayed
 from sklearn import metrics
+from sklearn.grid_search import ParameterGrid
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
