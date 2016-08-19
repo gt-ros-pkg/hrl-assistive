@@ -316,13 +316,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                        ll_classifier_test_Y, \
                                                        ll_classifier_test_idx, nState)
 
-        if np.isnan(ll_classifier_ep_train_X):
-            print "nan in entropy train data"
-            sys.exit()
-        if np.isnan(ll_classifier_ep_test_X):
-            print "nan in entropy train data"
-            sys.exit()
-            
         ## ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
         ## fig = plt.figure()
         ## for i in xrange(len(ll_classifier_ep_train_X)):
