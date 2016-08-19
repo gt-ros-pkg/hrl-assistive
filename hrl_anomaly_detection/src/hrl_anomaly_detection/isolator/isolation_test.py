@@ -91,9 +91,10 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     
     type_sets = []
     type_sets.append([42,43,44,45,46,47,48])
-    type_sets.append([21,22,23,24,25,26])
-    type_sets.append([12,13,14,27,28,29])
-    type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11])
+    type_sets.append([21,22,23,24,25,26,30,31,32])
+    #type_sets.append([])
+    type_sets.append([18,19,20,33,34,35])
+    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])#,27,28,29])
 
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
@@ -109,12 +110,23 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
-        
+        order = [[]] * len(d['failureFiles'])
         new_failureData = [[], [],[],[]]
-        for sampleIdx in xrange(0, len(d['failureData'][0])):
-            if formatY(sampleIdx, type_sets) is not 0:
+        for i, file_name in enumerate(d['failureFiles']):
+            file_name_split = file_name.split("iteration_")
+            file_name_split = file_name_split[1].split("_failure")[0]
+            idx = int(file_name_split)
+            if "unexpected2" in file_name:
+                idx = idx + 36
+            order[idx] = i
+            print file_name, idx
+        print order
+        for i, sampleIdx in enumerate(order):#xrange(0, len(d['failureData'][0])):
+            if formatY(i, type_sets) is not 0:
                 for dimIdx in xrange(0, len(d['failureData'])):
-                    new_failureData[dimIdx].append(d['failureData'][0,sampleIdx,:])
+                    new_failureData[dimIdx].append(d['failureData'][dimIdx,sampleIdx,:])
+            else:
+                print "rejected, ", sampleIdx
         print np.asarray(new_failureData).shape
         d['failureData']=np.asarray(new_failureData)
         
@@ -122,19 +134,13 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
-        #formated_X = formatX(d['failureData'][:,:,:])
-        #print np.asarray(formated_X).shape
-        #for sampleIdx in xrange(0, len(formated_X)):
             
         ut.save_pickle(d, crossVal_pkl)
-
-    #print d['failureData']
 
     successData = d['successData']
     failureData = d['failureData']
     successFiles = d['successFiles']
     failureFiles = d['failureFiles']
-    #print failureData.shape
     
     all_type = []
     for type_set in type_sets:
@@ -142,9 +148,11 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
 
     count = 0
     index_d = {}
+    reverse_index_d = {}
     for i in xrange(0, 100):
         if i in all_type:
             index_d[str(i)] = count
+            reverse_index_d[str(count)] = i
             count += 1
     new_type_sets = []
     for type_set in type_sets:
@@ -174,29 +182,36 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         y = []        
         mean = [0]* 40
         var = [0]*40
-        #for sampleIdx in xrange(0, len(d['failureData'][0])):
         X = []
         for trainIdx in xrange(0, abnormalTrainData.shape[1]):
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :])
-            #print np.asarray(formated_X).shape
-            #print formated_X
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X)
-        #print np.asarray(X).shape
-        #print np.asarray(y).shape
-        #print np.mean(X_scaled, axis=0).shape
-        #print np.std(X_scaled, axis=0).shape
         mean = np.mean(X, axis=0)
         var = np.std(X, axis=0)
-        print np.mean(X_scaled, axis=0), np.std(X_scaled, axis=0)
-        #print X_scaled.shape
-        model = svm.svm_train(y, X_scaled.tolist(), '-b 1')
+        commands = ''
+        class_count = [0.0]*10
+        for trainIdx in abnormalTrainIdx:
+            class_count[formatY(trainIdx,type_sets)] += 1
+            class_count[-1] += 1
+        print class_count
+        for i in xrange(1, 5):
+            if not np.allclose(class_count[i], 0):
+                if i is not 3 and i is not 2:
+                    commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
+                else:
+                    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
+        c = np.logspace(-3.0, -1.0, 4)
+        models=[]
+        for i in xrange(0, 4):
+            #model = svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + g[i])
+            models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + str(c[i])))
         for testIdx in xrange(0, abnormalTestData.shape[1]):
             X = []
             y = []
@@ -204,49 +219,49 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             if curr_type is 0:
                 continue
             formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
+            scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
-            prediction =  svm.svm_predict(y, X, model, '-b 1')
             #print prediction
             #print np.asarray(prediction[2])[:,0]
-            probability = np.asarray(prediction[2])
-            t = np.arange(0., len(prediction[2]), 1)
-            plt.figure(1)
-            """
-            plt.subplot2grid((3,2),(0,0))
-            plt.plot(probability[:,0])
-            plt.subplot2grid((3,2),(0,1))
-            plt.plot(probability[:,1])
-            plt.subplot2grid((3,2),(1,0))
-            plt.plot(probability[:,2])
-            plt.subplot2grid((3,2),(1,1))
-            plt.plot(probability[:,3])
-            """
+            plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
             color_list = ['', 'b', 'g', 'r', 'k']
-            title_list = ['', 'sound', 'arm', 'spoon miss', 'spoon hit']
+            title_list = ['', 'sound', 'force', 'distance', 'orientation']
             for i in xrange(0, 4):
-                color = color_list[int(model.get_labels()[i])]
-                title = title_list[int(model.get_labels()[i])]
-                plt.subplot2grid((3,2),(int(i/2), i % 2))
-                plt.subplot2grid((3,2),(int(i/2), i %2)).set_title(title)
-                plt.plot(probability[:,i], color)
-            plt.subplot2grid((3,2),(2,0), colspan=2)
-            for i in xrange(0,4):
-                color = color_list[int(model.get_labels()[i])]
-                if model.get_labels()[i] is curr_type:
-                    plt.plot(probability[:,i], color + '>')
-                else:
-                    plt.plot(probability[:,i], color + '-')
-            print model.label
+                color = color_list[i+1]#int(model.get_labels()[i])]
+                title = title_list[i+1]#int(model.get_labels()[i])]
+                plt.subplot2grid((4,2),(int(i), 0)).set_title(title)
+                #plt.axis((0, 200, 0, 1))
+                plt.axis((0, 200, -2, 2))
+                #plt.plot(probability[:,i], color)
+                #plt.plot(abnormalTestData[i, testIdx, :], color)
+                plt.plot(np.asarray(scaled_data)[i, :], color)
+            for j, model in enumerate(models):
+                print j
+                plt.subplot2grid((4,2),(j,1)).set_title(c[j])
+                plt.axis((0, 200, 0, 1))
+                prediction =  svm.svm_predict(y, X, model, '-b 1')
+                probability = np.asarray(prediction[2])
+                for i in xrange(0,4):
+                    color = color_list[int(model.get_labels()[i])]
+                    if model.get_labels()[i] is curr_type:
+                        plt.plot(probability[:,i], color + '>')
+                    else:
+                        plt.plot(probability[:,i], color + '-')
+            print model.get_labels()
+            fig_manager = plt.get_current_fig_manager()
+            fig_manager.full_screen_toggle()
             plt.show()
-            #raw_input("press enter to continue")
-            print " "
-            plt.clf
+            plt.clf()
     
-def formatX(data, time_window=10, scaler=None):
+def formatX(data, time_window=20, scaler=None, limit=None):
     X = []
-    for idx in xrange(0, data.shape[1]-time_window + 1):
+    if limit is not None:
+        idxrange = xrange(limit[0], limit[1]-time_window +1)
+    else:
+        idxrange = xrange(0, data.shape[1]-time_window + 1)
+    for idx in idxrange:
         x = []
         for dimIdx in xrange(0, data.shape[0]):
             temp_x = data[dimIdx][idx:idx+time_window][:]
@@ -262,6 +277,16 @@ def formatY(index, type_sets):
         if index in type_set:
             return setId + 1
     return 0
+
+def scaled_inputs(data, scaler):
+    #data, of form 4, 200
+    new_data = [[], [], [], []] 
+    formated_X = formatX(data, scaler=scaler) #sample data scaled, 200-time_window + 1 by time_window*4
+    time_window = np.asarray(formated_X).shape[1] / 4
+    for idx in xrange(0, len(formated_X)):
+        for dimIdx in xrange(0, np.asarray(formated_X).shape[1] / time_window):
+            new_data[dimIdx].append(formated_X[idx][dimIdx*time_window])
+    return new_data
 
  
 if __name__ == '__main__':

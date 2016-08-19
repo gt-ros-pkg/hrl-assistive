@@ -88,19 +88,37 @@ class ScoreGenerator(object):
         # This is only used to visualize in rviz, because the visualization is done before initializing openrave
         self.origin_B_references = []
         if self.model == 'chair':
-            headmodel = self.wheelchair.GetLink('head_center')
+            headmodel = self.wheelchair.GetLink('wheelchair/head_link')
+            ual = self.wheelchair.GetLink('wheelchair/arm_left_link')
+            uar = self.wheelchair.GetLink('wheelchair/arm_right_link')
+            fal = self.wheelchair.GetLink('wheelchair/forearm_left_link')
+            far = self.wheelchair.GetLink('wheelchair/forearm_right_link')
+            thl = self.wheelchair.GetLink('wheelchair/quad_left_link')
+            thr = self.wheelchair.GetLink('wheelchair/quad_right_link')
+            calfl = self.wheelchair.GetLink('wheelchair/calf_left_link')
+            calfr = self.wheelchair.GetLink('wheelchair/calf_right_link')
+            ch = self.wheelchair.GetLink('wheelchair/upper_body_link')
             origin_B_head = np.matrix(headmodel.GetTransform())
+            origin_B_ual = np.matrix(ual.GetTransform())
+            origin_B_uar = np.matrix(uar.GetTransform())
+            origin_B_fal = np.matrix(fal.GetTransform())
+            origin_B_far = np.matrix(far.GetTransform())
+            origin_B_thl = np.matrix(thl.GetTransform())
+            origin_B_thr = np.matrix(thr.GetTransform())
+            origin_B_calfl = np.matrix(calfl.GetTransform())
+            origin_B_calfr = np.matrix(calfr.GetTransform())
+            origin_B_ch = np.matrix(ch.GetTransform())
         elif self.model == 'autobed':
-            headmodel = self.autobed.GetLink('head_link')
-            ual = self.autobed.GetLink('arm_left_link')
-            uar = self.autobed.GetLink('arm_right_link')
-            fal = self.autobed.GetLink('forearm_left_link')
-            far = self.autobed.GetLink('forearm_right_link')
-            thl = self.autobed.GetLink('quad_left_link')
-            thr = self.autobed.GetLink('quad_right_link')
-            calfl = self.autobed.GetLink('calf_left_link')
-            calfr = self.autobed.GetLink('calf_right_link')
-            ch = self.autobed.GetLink('upper_body_link')
+            headmodel = self.autobed.GetLink('autobed/head_link')
+            ual = self.autobed.GetLink('autobed/arm_left_link')
+            uar = self.autobed.GetLink('autobed/arm_right_link')
+            fal = self.autobed.GetLink('autobed/forearm_left_link')
+            far = self.autobed.GetLink('autobed/forearm_right_link')
+            thl = self.autobed.GetLink('autobed/quad_left_link')
+            thr = self.autobed.GetLink('autobed/quad_right_link')
+            calfl = self.autobed.GetLink('autobed/calf_left_link')
+            calfr = self.autobed.GetLink('autobed/calf_right_link')
+            ch = self.autobed.GetLink('autobed/upper_body_link')
             origin_B_ual = np.matrix(ual.GetTransform())
             origin_B_uar = np.matrix(uar.GetTransform())
             origin_B_fal = np.matrix(fal.GetTransform())
@@ -186,19 +204,38 @@ class ScoreGenerator(object):
             self.reference_names = reference_options
             self.origin_B_references = []
             if self.model == 'chair':
-                headmodel = self.wheelchair.GetLink('head_center')
+                headmodel = self.wheelchair.GetLink('wheelchair/head_link')
+                ual = self.wheelchair.GetLink('wheelchair/arm_left_link')
+                uar = self.wheelchair.GetLink('wheelchair/arm_right_link')
+                fal = self.wheelchair.GetLink('wheelchair/forearm_left_link')
+                far = self.wheelchair.GetLink('wheelchair/forearm_right_link')
+                thl = self.wheelchair.GetLink('wheelchair/quad_left_link')
+                thr = self.wheelchair.GetLink('wheelchair/quad_right_link')
+                calfl = self.wheelchair.GetLink('wheelchair/calf_left_link')
+                calfr = self.wheelchair.GetLink('wheelchair/calf_right_link')
+                ch = self.wheelchair.GetLink('wheelchair/upper_body_link')
+                origin_B_head = np.matrix(headmodel.GetTransform())
+                origin_B_ual = np.matrix(ual.GetTransform())
+                origin_B_uar = np.matrix(uar.GetTransform())
+                origin_B_fal = np.matrix(fal.GetTransform())
+                origin_B_far = np.matrix(far.GetTransform())
+                origin_B_thl = np.matrix(thl.GetTransform())
+                origin_B_thr = np.matrix(thr.GetTransform())
+                origin_B_calfl = np.matrix(calfl.GetTransform())
+                origin_B_calfr = np.matrix(calfr.GetTransform())
+                origin_B_ch = np.matrix(ch.GetTransform())
                 origin_B_head = np.matrix(headmodel.GetTransform())
             elif self.model == 'autobed':
-                headmodel = self.autobed.GetLink('head_link')
-                ual = self.autobed.GetLink('arm_left_link')
-                uar = self.autobed.GetLink('arm_right_link')
-                fal = self.autobed.GetLink('forearm_left_link')
-                far = self.autobed.GetLink('forearm_right_link')
-                thl = self.autobed.GetLink('quad_left_link')
-                thr = self.autobed.GetLink('quad_right_link')
-                calfl = self.autobed.GetLink('calf_left_link')
-                calfr = self.autobed.GetLink('calf_right_link')
-                ch = self.autobed.GetLink('upper_body_link')
+                headmodel = self.autobed.GetLink('autobed/head_link')
+                ual = self.autobed.GetLink('autobed/arm_left_link')
+                uar = self.autobed.GetLink('autobed/arm_right_link')
+                fal = self.autobed.GetLink('autobed/forearm_left_link')
+                far = self.autobed.GetLink('autobed/forearm_right_link')
+                thl = self.autobed.GetLink('autobed/quad_left_link')
+                thr = self.autobed.GetLink('autobed/quad_right_link')
+                calfl = self.autobed.GetLink('autobed/calf_left_link')
+                calfr = self.autobed.GetLink('autobed/calf_right_link')
+                ch = self.autobed.GetLink('autobed/upper_body_link')
                 origin_B_ual = np.matrix(ual.GetTransform())
                 origin_B_uar = np.matrix(uar.GetTransform())
                 origin_B_fal = np.matrix(fal.GetTransform())
@@ -375,13 +412,13 @@ class ScoreGenerator(object):
         head_x_range = [0.]
 
         head_y_range = (np.arange(11)-5)*.03
-        head_rest_range = np.arange(-10, 80.1, 10)
+        head_rest_range = np.arange(-10, 80.1, 10.)
         head_rest_range = [-10]
         # score_parameters = []
         # score_parameters.append([self.model, ])
         if self.model == 'autobed':
             score_parameters = ([t for t in ((tuple([self.model, num_configs, head_rest_angle, headx, heady, allow_bed_movement]))
-                                             for num_configs in [2]
+                                             for num_configs in [1]
                                              for head_rest_angle in head_rest_range
                                              for headx in head_x_range
                                              for heady in head_y_range
@@ -389,10 +426,10 @@ class ScoreGenerator(object):
                                              )
                                  ])
         elif self.model == 'chair':
-            score_parameters = np.array([t for t in ((tuple([self.model, num_configs, 0, 0, 0, 0]))
-                                                     for num_configs in [1, 2]
-                                                     )
-                                         ])
+            score_parameters = ([t for t in ((tuple([self.model, num_configs, 0, 0, 0, 0]))
+                                             for num_configs in [1, 2]
+                                             )
+                                 ])
         else:
             print 'ERROR'
             print 'I do not know what model to use!'
@@ -444,9 +481,9 @@ class ScoreGenerator(object):
             self.allow_bed_movement = parameters[5]
 
             if self.model == 'chair' and num_config == 1:
-                maxiter = 20
+                maxiter = 30
                 # popsize = 1000
-                popsize = m.pow(4, 1)*20
+                popsize = m.pow(4, 2)*40
                 parameters_min = np.array([-1., -2., -m.pi-.001, 0.])
                 parameters_max = np.array([2., 2., m.pi+.001, 0.3])
                 parameters_scaling = (parameters_max-parameters_min)/4.
@@ -464,14 +501,14 @@ class ScoreGenerator(object):
                 score = optimization_results[parameters][1]
                 print 'Config: ', config
                 print 'Score: ', score
-                score_stuff = dict()
+                #score_stuff = dict()
                 # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                 score_stuff[parameters] = [config, score]
 
             elif self.model == 'autobed' and num_config == 1:
                 maxiter = 20
                 # popsize = 1000
-                popsize = m.pow(6, 2)*20
+                popsize = m.pow(6, 2)*100
                 parameters_min = np.array([0.2, -3., -m.pi-0.001, 0., 0., 0.])
                 parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
                 parameters_scaling = (parameters_max-parameters_min)/4.
@@ -489,7 +526,7 @@ class ScoreGenerator(object):
                 score = optimization_results[parameters][1]
                 print 'Config: ', config
                 print 'Score: ', score
-                score_stuff = dict()
+                #score_stuff = dict()
                 # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                 score_stuff[parameters] = [config, score]
 
@@ -498,7 +535,7 @@ class ScoreGenerator(object):
                 # cma.show()
                 # rospy.sleep(10)
                 maxiter = 20
-                popsize = m.pow(4, 2)*20
+                popsize = m.pow(4, 2)*200
                 if self.allow_bed_movement == 0:
                     parameters_min = np.array([0.2, -3., -m.pi-.001, 0., 0.2, -3., -m.pi-.001, 0.])
                     parameters_max = np.array([3., 3., m.pi+.001, 0.3, 3., 3., m.pi+.001, 0.3])
@@ -538,9 +575,11 @@ class ScoreGenerator(object):
                     # Deactivated head rest angle
                     # Parameters are: [x, y, th, z, bz, bth]
                     maxiter = 20
-                    popsize = m.pow(5, 2)*20
+                    popsize = m.pow(5, 2)*30
                     parameters_min = np.array([0.2, -3., -m.pi-.001, 0., 0., 0.2, -3., -m.pi-.001, 0., 0.])
-                    parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 3., 3., m.pi+.001, 0.3, 0.2])
+                    # parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 3., 3., m.pi+.001, 0.3, 0.2])
+                    # At Henry's the bed can only range a few centimeters because of the overbed table
+                    parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.08, 3., 3., m.pi+.001, 0.3, 0.08])
                     parameters_scaling = (parameters_max-parameters_min)/4.
                     parameters_initialization = (parameters_max+parameters_min)/2.
                     parameters_initialization[1] = 1.0
@@ -569,9 +608,11 @@ class ScoreGenerator(object):
 
                 else:
                     maxiter = 20
-                    popsize = m.pow(6, 2)*20
+                    popsize = m.pow(6, 2)*30
                     parameters_min = np.array([0.2, -3., -m.pi-.001,  0.,  0.,            0., 0.2, -3., -m.pi-.001,  0.,  0.,            0.])
-                    parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
+                     # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
+                    # Henry's bed can only rise a few centimeters because of the overbed table
+                    parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.08, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.08, 80.*m.pi/180.])
                     parameters_scaling = (parameters_max-parameters_min)/4.
                     parameters_initialization = (parameters_max+parameters_min)/2.
                     parameters_initialization[1] = 1.0
@@ -693,8 +734,26 @@ class ScoreGenerator(object):
 
         if self.model == 'chair':
             self.env.UpdatePublishedBodies()
-            headmodel = self.wheelchair.GetLink('head_center')
+            headmodel = self.wheelchair.GetLink('wheelchair/head_link')
+            ual = self.wheelchair.GetLink('wheelchair/arm_left_link')
+            uar = self.wheelchair.GetLink('wheelchair/arm_right_link')
+            fal = self.wheelchair.GetLink('wheelchair/forearm_left_link')
+            far = self.wheelchair.GetLink('wheelchair/forearm_right_link')
+            thl = self.wheelchair.GetLink('wheelchair/quad_left_link')
+            thr = self.wheelchair.GetLink('wheelchair/quad_right_link')
+            calfl = self.wheelchair.GetLink('wheelchair/calf_left_link')
+            calfr = self.wheelchair.GetLink('wheelchair/calf_right_link')
+            ch = self.wheelchair.GetLink('wheelchair/upper_body_link')
             origin_B_head = np.matrix(headmodel.GetTransform())
+            origin_B_ual = np.matrix(ual.GetTransform())
+            origin_B_uar = np.matrix(uar.GetTransform())
+            origin_B_fal = np.matrix(fal.GetTransform())
+            origin_B_far = np.matrix(far.GetTransform())
+            origin_B_thl = np.matrix(thl.GetTransform())
+            origin_B_thr = np.matrix(thr.GetTransform())
+            origin_B_calfl = np.matrix(calfl.GetTransform())
+            origin_B_calfr = np.matrix(calfr.GetTransform())
+            origin_B_ch = np.matrix(ch.GetTransform())
             self.selection_mat = np.zeros(len(self.goals))
             self.goal_list = np.zeros([len(self.goals), 4, 4])
             for thing in xrange(len(self.reference_names)):
@@ -703,7 +762,24 @@ class ScoreGenerator(object):
                 elif self.reference_names[thing] == 'base_link':
                     self.origin_B_references[thing] = origin_B_pr2
                     # self.origin_B_references[thing] = np.matrix(self.robot.GetTransform())
-
+                elif self.reference_names[thing] == 'upper_arm_left':
+                    self.origin_B_references.append(origin_B_ual)
+                elif self.reference_names[thing] == 'upper_arm_right':
+                    self.origin_B_references.append(origin_B_uar)
+                elif self.reference_names[thing] == 'forearm_left':
+                    self.origin_B_references.append(origin_B_fal)
+                elif self.reference_names[thing] == 'forearm_right':
+                    self.origin_B_references.append(origin_B_far)
+                elif self.reference_names[thing] == 'thigh_left':
+                    self.origin_B_references.append(origin_B_thl)
+                elif self.reference_names[thing] == 'thigh_right':
+                    self.origin_B_references.append(origin_B_thr)
+                elif self.reference_names[thing] == 'knee_left':
+                    self.origin_B_references.append(origin_B_calfl)
+                elif self.reference_names[thing] == 'knee_right':
+                    self.origin_B_references.append(origin_B_calfr)
+                elif self.reference_names[thing] == 'chest':
+                    self.origin_B_references.append(origin_B_ch)
             for thing in xrange(len(self.goals)):
                 self.goal_list[thing] = copy.copy(self.origin_B_references[int(self.reference_mat[thing])]*np.matrix(self.goals[thing, 0]))
                 self.selection_mat[thing] = self.goals[thing, 1]
@@ -711,7 +787,7 @@ class ScoreGenerator(object):
 #                self.goal_list.append(pr2_B_head*np.matrix(target[0]))
 #                self.selection_mat.append(target[1])
             self.set_goals()
-            headmodel = self.wheelchair.GetLink('head_center')
+            headmodel = self.wheelchair.GetLink('wheelchair/head_link')
 
         elif self.model == 'autobed':
             self.selection_mat = np.zeros(len(self.goals))
@@ -719,16 +795,16 @@ class ScoreGenerator(object):
             self.set_autobed(bz, bth, self.headx, self.heady)
             self.env.UpdatePublishedBodies()
 
-            headmodel = self.autobed.GetLink('head_link')
-            ual = self.autobed.GetLink('arm_left_link')
-            uar = self.autobed.GetLink('arm_right_link')
-            fal = self.autobed.GetLink('forearm_left_link')
-            far = self.autobed.GetLink('forearm_right_link')
-            thl = self.autobed.GetLink('quad_left_link')
-            thr = self.autobed.GetLink('quad_right_link')
-            calfl = self.autobed.GetLink('calf_left_link')
-            calfr = self.autobed.GetLink('calf_right_link')
-            ch = self.autobed.GetLink('upper_body_link')
+            headmodel = self.autobed.GetLink('autobed/head_link')
+            ual = self.autobed.GetLink('autobed/arm_left_link')
+            uar = self.autobed.GetLink('autobed/arm_right_link')
+            fal = self.autobed.GetLink('autobed/forearm_left_link')
+            far = self.autobed.GetLink('autobed/forearm_right_link')
+            thl = self.autobed.GetLink('autobed/quad_left_link')
+            thr = self.autobed.GetLink('autobed/quad_right_link')
+            calfl = self.autobed.GetLink('autobed/calf_left_link')
+            calfr = self.autobed.GetLink('autobed/calf_right_link')
+            ch = self.autobed.GetLink('autobed/upper_body_link')
             origin_B_head = np.matrix(headmodel.GetTransform())
             origin_B_ual = np.matrix(ual.GetTransform())
             origin_B_uar = np.matrix(uar.GetTransform())
@@ -925,6 +1001,7 @@ class ScoreGenerator(object):
             print 'Somehow a model has not been loaded. This is bad!'
             return None
         # print current_parameters
+        # print len(current_parameters)
         # print 'head rest angle: ', self.head_rest_angle
         if len(current_parameters) == 12:
             x = [current_parameters[0], current_parameters[6]]
@@ -933,7 +1010,7 @@ class ScoreGenerator(object):
             z = [current_parameters[3], current_parameters[9]]
             bz = [current_parameters[4], current_parameters[10]]
             bth = [current_parameters[5], current_parameters[11]]
-        if len(current_parameters) == 10:
+        elif len(current_parameters) == 10:
             x = [current_parameters[0], current_parameters[5]]
             y = [current_parameters[1], current_parameters[6]]
             th = [current_parameters[2], current_parameters[7]]
@@ -947,6 +1024,8 @@ class ScoreGenerator(object):
             z = [current_parameters[3], current_parameters[7]]
             bz = [0., 0.]
             bth = [0., 0.]
+        # print bth
+        # print bz
 
         # planar_difference = np.linalg.norm([x[0]-x[1], y[0]-y[1]])
         # if planar_difference < 0.2:
@@ -986,8 +1065,26 @@ class ScoreGenerator(object):
 
                 if self.model == 'chair':
                     self.env.UpdatePublishedBodies()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
+                    ual = self.wheelchair.GetLink('wheelchair/arm_left_link')
+                    uar = self.wheelchair.GetLink('wheelchair/arm_right_link')
+                    fal = self.wheelchair.GetLink('wheelchair/forearm_left_link')
+                    far = self.wheelchair.GetLink('wheelchair/forearm_right_link')
+                    thl = self.wheelchair.GetLink('wheelchair/quad_left_link')
+                    thr = self.wheelchair.GetLink('wheelchair/quad_right_link')
+                    calfl = self.wheelchair.GetLink('wheelchair/calf_left_link')
+                    calfr = self.wheelchair.GetLink('wheelchair/calf_right_link')
+                    ch = self.wheelchair.GetLink('wheelchair/upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
+                    origin_B_ual = np.matrix(ual.GetTransform())
+                    origin_B_uar = np.matrix(uar.GetTransform())
+                    origin_B_fal = np.matrix(fal.GetTransform())
+                    origin_B_far = np.matrix(far.GetTransform())
+                    origin_B_thl = np.matrix(thl.GetTransform())
+                    origin_B_thr = np.matrix(thr.GetTransform())
+                    origin_B_calfl = np.matrix(calfl.GetTransform())
+                    origin_B_calfr = np.matrix(calfr.GetTransform())
+                    origin_B_ch = np.matrix(ch.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
                     for thing in xrange(len(self.reference_names)):
@@ -996,13 +1093,31 @@ class ScoreGenerator(object):
                         elif self.reference_names[thing] == 'base_link':
                             self.origin_B_references[thing] = origin_B_pr2
                             # self.origin_B_references[thing] = np.matrix(self.robot.GetTransform())
+                        elif self.reference_names[thing] == 'upper_arm_left':
+                            self.origin_B_references.append(origin_B_ual)
+                        elif self.reference_names[thing] == 'upper_arm_right':
+                            self.origin_B_references.append(origin_B_uar)
+                        elif self.reference_names[thing] == 'forearm_left':
+                            self.origin_B_references.append(origin_B_fal)
+                        elif self.reference_names[thing] == 'forearm_right':
+                            self.origin_B_references.append(origin_B_far)
+                        elif self.reference_names[thing] == 'thigh_left':
+                            self.origin_B_references.append(origin_B_thl)
+                        elif self.reference_names[thing] == 'thigh_right':
+                            self.origin_B_references.append(origin_B_thr)
+                        elif self.reference_names[thing] == 'knee_left':
+                            self.origin_B_references.append(origin_B_calfl)
+                        elif self.reference_names[thing] == 'knee_right':
+                            self.origin_B_references.append(origin_B_calfr)
+                        elif self.reference_names[thing] == 'chest':
+                            self.origin_B_references.append(origin_B_ch)
 
                     thing = num
                     self.goal_list[0] = copy.copy(self.origin_B_references[int(self.reference_mat[thing])]*np.matrix(self.goals[thing, 0]))
                     self.selection_mat[0] = copy.copy(self.goals[thing, 1])
 
                     self.set_goals()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
 
                 elif self.model == 'autobed':
                     self.selection_mat = np.zeros(1)
@@ -1010,16 +1125,16 @@ class ScoreGenerator(object):
                     self.set_autobed(bz[config_num], bth[config_num], self.headx, self.heady)
                     self.env.UpdatePublishedBodies()
 
-                    headmodel = self.autobed.GetLink('head_link')
-                    ual = self.autobed.GetLink('arm_left_link')
-                    uar = self.autobed.GetLink('arm_right_link')
-                    fal = self.autobed.GetLink('forearm_left_link')
-                    far = self.autobed.GetLink('forearm_right_link')
-                    thl = self.autobed.GetLink('quad_left_link')
-                    thr = self.autobed.GetLink('quad_right_link')
-                    calfl = self.autobed.GetLink('calf_left_link')
-                    calfr = self.autobed.GetLink('calf_right_link')
-                    ch = self.autobed.GetLink('upper_body_link')
+                    headmodel = self.autobed.GetLink('autobed/head_link')
+                    ual = self.autobed.GetLink('autobed/arm_left_link')
+                    uar = self.autobed.GetLink('autobed/arm_right_link')
+                    fal = self.autobed.GetLink('autobed/forearm_left_link')
+                    far = self.autobed.GetLink('autobed/forearm_right_link')
+                    thl = self.autobed.GetLink('autobed/quad_left_link')
+                    thr = self.autobed.GetLink('autobed/quad_right_link')
+                    calfl = self.autobed.GetLink('autobed/calf_left_link')
+                    calfr = self.autobed.GetLink('autobed/calf_right_link')
+                    ch = self.autobed.GetLink('autobed/upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
                     origin_B_uar = np.matrix(uar.GetTransform())
@@ -1165,7 +1280,7 @@ class ScoreGenerator(object):
                                     # Tee = self.manip.GetEndEffectorTransform()
                                     self.env.UpdatePublishedBodies()
                                     if self.visualize:
-                                        rospy.sleep(.2)
+                                        rospy.sleep(0.2)
 
                                     J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
                                     try:
@@ -1322,7 +1437,7 @@ class ScoreGenerator(object):
 
                 if self.model == 'chair':
                     self.env.UpdatePublishedBodies()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
@@ -1338,22 +1453,22 @@ class ScoreGenerator(object):
                     self.selection_mat[0] = copy.copy(self.goals[thing, 1])
 
                     self.set_goals()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
                 elif self.model == 'autobed':
                     self.selection_mat = np.zeros(1)
                     self.goal_list = np.zeros([1, 4, 4])
                     self.set_autobed(bz[config_num], bth[config_num], self.headx, self.heady)
                     self.env.UpdatePublishedBodies()
-                    headmodel = self.autobed.GetLink('head_link')
-                    ual = self.autobed.GetLink('arm_left_link')
-                    uar = self.autobed.GetLink('arm_right_link')
-                    fal = self.autobed.GetLink('forearm_left_link')
-                    far = self.autobed.GetLink('forearm_right_link')
-                    thl = self.autobed.GetLink('quad_left_link')
-                    thr = self.autobed.GetLink('quad_right_link')
-                    calfl = self.autobed.GetLink('calf_left_link')
-                    calfr = self.autobed.GetLink('calf_right_link')
-                    ch = self.autobed.GetLink('upper_body_link')
+                    headmodel = self.autobed.GetLink('autobed/head_link')
+                    ual = self.autobed.GetLink('autobed/arm_left_link')
+                    uar = self.autobed.GetLink('autobed/arm_right_link')
+                    fal = self.autobed.GetLink('autobed/forearm_left_link')
+                    far = self.autobed.GetLink('autobed/forearm_right_link')
+                    thl = self.autobed.GetLink('autobed/quad_left_link')
+                    thr = self.autobed.GetLink('autobed/quad_right_link')
+                    calfl = self.autobed.GetLink('autobed/calf_left_link')
+                    calfr = self.autobed.GetLink('autobed/calf_right_link')
+                    ch = self.autobed.GetLink('autobed/upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
                     origin_B_uar = np.matrix(uar.GetTransform())
@@ -1594,7 +1709,7 @@ class ScoreGenerator(object):
                 v[self.wheelchair.GetJoint('wheelchair_body_y_joint').GetDOFIndex()] = error[1]
                 v[self.wheelchair.GetJoint('wheelchair_body_rotation_joint').GetDOFIndex()] = error[2]
                 v[self.wheelchair.GetJoint('head_neck_joint').GetDOFIndex()] = error[3]
-                self.wheelchair.SetActiveDOFValues(v)
+                self.wheelchair.SetActiveDOFValues(v, 2)
                 self.env.UpdatePublishedBodies()
 
             for ic in xrange(len(init_config[0][0])):
@@ -1617,7 +1732,7 @@ class ScoreGenerator(object):
 
                 if self.model == 'chair':
                     self.env.UpdatePublishedBodies()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
@@ -1640,16 +1755,16 @@ class ScoreGenerator(object):
                     self.env.UpdatePublishedBodies()
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
-                    headmodel = self.autobed.GetLink('head_link')
-                    ual = self.autobed.GetLink('arm_left_link')
-                    uar = self.autobed.GetLink('arm_right_link')
-                    fal = self.autobed.GetLink('forearm_left_link')
-                    far = self.autobed.GetLink('forearm_right_link')
-                    thl = self.autobed.GetLink('quad_left_link')
-                    thr = self.autobed.GetLink('quad_right_link')
-                    calfl = self.autobed.GetLink('calf_left_link')
-                    calfr = self.autobed.GetLink('calf_right_link')
-                    ch = self.autobed.GetLink('upper_body_link')
+                    headmodel = self.autobed.GetLink('autobed/head_link')
+                    ual = self.autobed.GetLink('autobed/arm_left_link')
+                    uar = self.autobed.GetLink('autobed/arm_right_link')
+                    fal = self.autobed.GetLink('autobed/forearm_left_link')
+                    far = self.autobed.GetLink('autobed/forearm_right_link')
+                    thl = self.autobed.GetLink('autobed/quad_left_link')
+                    thr = self.autobed.GetLink('autobed/quad_right_link')
+                    calfl = self.autobed.GetLink('autobed/calf_left_link')
+                    calfr = self.autobed.GetLink('autobed/calf_right_link')
+                    ch = self.autobed.GetLink('autobed/upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
                     origin_B_uar = np.matrix(uar.GetTransform())
@@ -1756,7 +1871,7 @@ class ScoreGenerator(object):
                 v[self.wheelchair.GetJoint('wheelchair_body_y_joint').GetDOFIndex()] = error[1]
                 v[self.wheelchair.GetJoint('wheelchair_body_rotation_joint').GetDOFIndex()] = error[2]
                 v[self.wheelchair.GetJoint('head_neck_joint').GetDOFIndex()] = error[3]
-                self.wheelchair.SetActiveDOFValues(v)
+                self.wheelchair.SetActiveDOFValues(v, 2)
                 self.env.UpdatePublishedBodies()
 
             for ic in xrange(len(init_config[0])):
@@ -1783,7 +1898,7 @@ class ScoreGenerator(object):
                 # self.env.UpdatePublishedBodies()
                 if self.model == 'chair':
                     self.env.UpdatePublishedBodies()
-                    headmodel = self.wheelchair.GetLink('head_center')
+                    headmodel = self.wheelchair.GetLink('wheelchair/head_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
@@ -1806,16 +1921,16 @@ class ScoreGenerator(object):
                     self.env.UpdatePublishedBodies()
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
-                    headmodel = self.autobed.GetLink('head_link')
-                    ual = self.autobed.GetLink('arm_left_link')
-                    uar = self.autobed.GetLink('arm_right_link')
-                    fal = self.autobed.GetLink('forearm_left_link')
-                    far = self.autobed.GetLink('forearm_right_link')
-                    thl = self.autobed.GetLink('quad_left_link')
-                    thr = self.autobed.GetLink('quad_right_link')
-                    calfl = self.autobed.GetLink('calf_left_link')
-                    calfr = self.autobed.GetLink('calf_right_link')
-                    ch = self.autobed.GetLink('upper_body_link')
+                    headmodel = self.autobed.GetLink('autobed/head_link')
+                    ual = self.autobed.GetLink('autobed/arm_left_link')
+                    uar = self.autobed.GetLink('autobed/arm_right_link')
+                    fal = self.autobed.GetLink('autobed/forearm_left_link')
+                    far = self.autobed.GetLink('autobed/forearm_right_link')
+                    thl = self.autobed.GetLink('autobed/quad_left_link')
+                    thr = self.autobed.GetLink('autobed/quad_right_link')
+                    calfl = self.autobed.GetLink('autobed/calf_left_link')
+                    calfr = self.autobed.GetLink('autobed/calf_right_link')
+                    ch = self.autobed.GetLink('autobed/upper_body_link')
                     origin_B_head = np.matrix(headmodel.GetTransform())
                     origin_B_ual = np.matrix(ual.GetTransform())
                     origin_B_uar = np.matrix(uar.GetTransform())
@@ -1994,9 +2109,32 @@ class ScoreGenerator(object):
                                                    [       0.,         0.,  0.,      1.]])
             '''
             # This is the new wheelchair model
-            self.env.Load(''.join([pkg_path, '/collada/wheelchair_and_body_assembly.dae']))
+            # self.env.Load(''.join([pkg_path, '/collada/wheelchair_and_body_assembly.dae']))
+            self.env.Load(''.join([pkg_path, '/collada/wheelchair_henry_rounded.dae']))
             self.wheelchair = self.env.GetRobots()[1]
-            headmodel = self.wheelchair.GetLink('head_center')
+
+            v = self.wheelchair.GetActiveDOFValues()
+            v[self.wheelchair.GetJoint('wheelchair/head_neck_joint1').GetDOFIndex()] = 0.17
+            v[self.wheelchair.GetJoint('wheelchair/neck_body_joint').GetDOFIndex()] = -0.0
+            v[self.wheelchair.GetJoint('wheelchair/upper_mid_body_joint').GetDOFIndex()] = -0.15
+            v[self.wheelchair.GetJoint('wheelchair/mid_lower_body_joint').GetDOFIndex()] = -0.72
+            v[self.wheelchair.GetJoint('wheelchair/body_quad_left_joint').GetDOFIndex()] = 0.72
+            v[self.wheelchair.GetJoint('wheelchair/body_quad_right_joint').GetDOFIndex()] = 0.72
+            v[self.wheelchair.GetJoint('wheelchair/quad_calf_left_joint').GetDOFIndex()] = 1.1
+            v[self.wheelchair.GetJoint('wheelchair/quad_calf_right_joint').GetDOFIndex()] = 1.1
+            v[self.wheelchair.GetJoint('wheelchair/calf_foot_left_joint').GetDOFIndex()] = 0.5
+            v[self.wheelchair.GetJoint('wheelchair/calf_foot_right_joint').GetDOFIndex()] = 0.5
+            v[self.wheelchair.GetJoint('wheelchair/body_arm_left_joint').GetDOFIndex()] = 0.8
+            v[self.wheelchair.GetJoint('wheelchair/body_arm_right_joint').GetDOFIndex()] = 0.8
+            v[self.wheelchair.GetJoint('wheelchair/arm_forearm_left_joint').GetDOFIndex()] = 0.9
+            v[self.wheelchair.GetJoint('wheelchair/arm_forearm_right_joint').GetDOFIndex()] = 0.9
+            v[self.wheelchair.GetJoint('wheelchair/forearm_hand_left_joint').GetDOFIndex()] = -0.2
+            v[self.wheelchair.GetJoint('wheelchair/forearm_hand_right_joint').GetDOFIndex()] = -0.2
+
+            self.wheelchair.SetActiveDOFValues(v, 2)
+            self.env.UpdatePublishedBodies()
+
+            headmodel = self.wheelchair.GetLink('wheelchair/head_link')
             head_T = np.matrix(headmodel.GetTransform())
             self.originsubject_B_headfloor = np.matrix([[1., 0.,  0., head_T[0, 3]],  # .442603 #.45 #.438
                                                         [0., 1.,  0., head_T[1, 3]],  # 0.34 #.42
@@ -2019,35 +2157,36 @@ class ScoreGenerator(object):
             self.a_model_is_loaded = True
         elif self.model == 'autobed':
             # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_real_expanded_rounded.dae']))
-            self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
+            # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
+            self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_rounded.dae']))
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
 
             #0 degrees, 0 height
-            v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = 0.0
-            v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = -0.
-            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = 0.
-            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = 0.
-            v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = -.1
-            v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = .4
-            v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = -.72
-            v[self.autobed.GetJoint('body_quad_left_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('body_quad_right_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('quad_calf_left_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('quad_calf_right_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('calf_foot_left_joint').GetDOFIndex()] = .02
-            v[self.autobed.GetJoint('calf_foot_right_joint').GetDOFIndex()] = .02
-            v[self.autobed.GetJoint('body_arm_left_joint').GetDOFIndex()] = -.12
-            v[self.autobed.GetJoint('body_arm_right_joint').GetDOFIndex()] = -.12
-            v[self.autobed.GetJoint('arm_forearm_left_joint').GetDOFIndex()] = 0.05
-            v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()] = 0.05
-            v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()] = -0.1
-            v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = 0.0
+            v[self.autobed.GetJoint('autobed/tele_legs_joint').GetDOFIndex()] = -0.
+            v[self.autobed.GetJoint('autobed/head_bed_to_worldframe_joint').GetDOFIndex()] = 0.
+            v[self.autobed.GetJoint('autobed/head_bed_to_bedframe_joint').GetDOFIndex()] = 0.
+            v[self.autobed.GetJoint('autobed/neck_body_joint').GetDOFIndex()] = -.1
+            v[self.autobed.GetJoint('autobed/upper_mid_body_joint').GetDOFIndex()] = .4
+            v[self.autobed.GetJoint('autobed/mid_lower_body_joint').GetDOFIndex()] = -.72
+            v[self.autobed.GetJoint('autobed/body_quad_left_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/body_quad_right_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/quad_calf_left_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/quad_calf_right_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/calf_foot_left_joint').GetDOFIndex()] = .02
+            v[self.autobed.GetJoint('autobed/calf_foot_right_joint').GetDOFIndex()] = .02
+            v[self.autobed.GetJoint('autobed/body_arm_left_joint').GetDOFIndex()] = -.12
+            v[self.autobed.GetJoint('autobed/body_arm_right_joint').GetDOFIndex()] = -.12
+            v[self.autobed.GetJoint('autobed/arm_forearm_left_joint').GetDOFIndex()] = 0.05
+            v[self.autobed.GetJoint('autobed/arm_forearm_right_joint').GetDOFIndex()] = 0.05
+            v[self.autobed.GetJoint('autobed/forearm_hand_left_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/forearm_hand_right_joint').GetDOFIndex()] = -0.1
             #v[self.autobed.GetJoint('leg_rest_upper_joint').GetDOFIndex()]= -0.1
-            self.autobed.SetActiveDOFValues(v)
+            self.autobed.SetActiveDOFValues(v, 2)
             self.env.UpdatePublishedBodies()
             self.set_autobed(0., 0., 0., 0.)
-            headmodel = self.autobed.GetLink('head_link')
+            headmodel = self.autobed.GetLink('autobed/head_link')
             head_T = np.matrix(headmodel.GetTransform())
 
             self.originsubject_B_headfloor = np.matrix([[1.,  0., 0.,  head_T[0, 3]],  #.45 #.438
@@ -2074,63 +2213,70 @@ class ScoreGenerator(object):
 
         # self.subject_location = originsubject_B_headfloor.I
 
-
         print 'OpenRave has succesfully been initialized. \n'
 
     def set_autobed(self, z, headrest_th, head_x, head_y):
         bz = z
+        # print headrest_th
         bth = m.degrees(headrest_th)
+        # print bth
         v = self.autobed.GetActiveDOFValues()
-        v[self.autobed.GetJoint('tele_legs_joint').GetDOFIndex()] = bz
-        v[self.autobed.GetJoint('head_bed_updown_joint').GetDOFIndex()] = head_x
-        v[self.autobed.GetJoint('head_bed_leftright_joint').GetDOFIndex()] = head_y
+        v[self.autobed.GetJoint('autobed/tele_legs_joint').GetDOFIndex()] = bz
+        v[self.autobed.GetJoint('autobed/head_bed_updown_joint').GetDOFIndex()] = head_x
+        v[self.autobed.GetJoint('autobed/head_bed_leftright_joint').GetDOFIndex()] = head_y
         if bth >= 80 and bth < 85:
             bth = 80
         if bth >= -1 and bth <= 0:
             bth = 0
             # 0 degrees, 0 height
         if (bth >= 0) and (bth <= 40):  # between 0 and 40 degrees
-            v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = (bth/40)*(0.6981317 - 0)+0
-            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = -((bth/40)*(0.6981317 - 0)+0)
-            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = ((bth/40)*(0.6981317 - 0)+0)
-            v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = (bth/40)*(-.2-(-.1))+(-.1)
-            v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = (bth/40)*(-.17-.4)+.4
-            v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = (bth/40)*(-.76-(-.72))+(-.72)
-            v[self.autobed.GetJoint('body_quad_left_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('body_quad_right_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('quad_calf_left_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('quad_calf_right_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('calf_foot_left_joint').GetDOFIndex()] = (bth/40)*(-.05-.02)+.02
-            v[self.autobed.GetJoint('calf_foot_right_joint').GetDOFIndex()] = (bth/40)*(-.05-.02)+.02
-            v[self.autobed.GetJoint('body_arm_left_joint').GetDOFIndex()] = (bth/40)*(-.06-(-.12))+(-.12)
-            v[self.autobed.GetJoint('body_arm_right_joint').GetDOFIndex()] = (bth/40)*(-.06-(-.12))+(-.12)
-            v[self.autobed.GetJoint('arm_forearm_left_joint').GetDOFIndex()] = (bth/40)*(.58-0.05)+.05
-            v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()] = (bth/40)*(.58-0.05)+.05
-            v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()] = -0.1
-            v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/head_updown_bedframe_translation_joint').GetDOFIndex()] = (bth/40)*(-0.05 - 0)+0
+            v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = (bth/40)*(0.6981317 - 0)+0
+            v[self.autobed.GetJoint('autobed/head_bed_to_worldframe_joint').GetDOFIndex()] = -((bth/40)*(0.6981317 - 0)+0)
+            v[self.autobed.GetJoint('autobed/head_bed_to_bedframe_joint').GetDOFIndex()] = ((bth/40)*(0.6981317 - 0)+0)
+            v[self.autobed.GetJoint('autobed/head_contact_to_head_center').GetDOFIndex()] = -((bth/40)*(0.4 - 0)+0)
+            v[self.autobed.GetJoint('autobed/head_neck_joint1').GetDOFIndex()] = -((bth/40)*(0.35 - 0)+0)
+            v[self.autobed.GetJoint('autobed/neck_body_joint').GetDOFIndex()] = (bth/40)*(-.3-(-.1))+(-.1)
+            v[self.autobed.GetJoint('autobed/upper_mid_body_joint').GetDOFIndex()] = (bth/40)*(-.07-.4)+.4
+            v[self.autobed.GetJoint('autobed/mid_lower_body_joint').GetDOFIndex()] = (bth/40)*(-.82-(-.72))+(-.72)
+            v[self.autobed.GetJoint('autobed/body_quad_left_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/body_quad_right_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/quad_calf_left_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/quad_calf_right_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/calf_foot_left_joint').GetDOFIndex()] = (bth/40)*(-.05-.02)+.02
+            v[self.autobed.GetJoint('autobed/calf_foot_right_joint').GetDOFIndex()] = (bth/40)*(-.05-.02)+.02
+            v[self.autobed.GetJoint('autobed/body_arm_left_joint').GetDOFIndex()] = (bth/40)*(-.06-(-.12))+(-.12)
+            v[self.autobed.GetJoint('autobed/body_arm_right_joint').GetDOFIndex()] = (bth/40)*(-.06-(-.12))+(-.12)
+            v[self.autobed.GetJoint('autobed/arm_forearm_left_joint').GetDOFIndex()] = (bth/40)*(.52-0.05)+.05
+            v[self.autobed.GetJoint('autobed/arm_forearm_right_joint').GetDOFIndex()] = (bth/40)*(.52-0.05)+.05
+            v[self.autobed.GetJoint('autobed/forearm_hand_left_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/forearm_hand_right_joint').GetDOFIndex()] = -0.1
         elif (bth > 40) and (bth <= 80):  # between 0 and 40 degrees
-            v[self.autobed.GetJoint('head_rest_hinge').GetDOFIndex()] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
-            v[self.autobed.GetJoint('head_bed_to_worldframe_joint').GetDOFIndex()] = -(((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
-            v[self.autobed.GetJoint('head_bed_to_bedframe_joint').GetDOFIndex()] = (((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
-            v[self.autobed.GetJoint('neck_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
-            v[self.autobed.GetJoint('upper_mid_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
-            v[self.autobed.GetJoint('mid_lower_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
-            v[self.autobed.GetJoint('body_quad_left_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('body_quad_right_joint').GetDOFIndex()] = -0.4
-            v[self.autobed.GetJoint('quad_calf_left_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('quad_calf_right_joint').GetDOFIndex()] = 0.1
-            v[self.autobed.GetJoint('calf_foot_left_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            v[self.autobed.GetJoint('calf_foot_right_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
-            v[self.autobed.GetJoint('body_arm_left_joint').GetDOFIndex()] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            v[self.autobed.GetJoint('body_arm_right_joint').GetDOFIndex()] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-            v[self.autobed.GetJoint('arm_forearm_left_joint').GetDOFIndex()] = ((bth-40)/40)*(.88-0.58)+.58
-            v[self.autobed.GetJoint('arm_forearm_right_joint').GetDOFIndex()] = ((bth-40)/40)*(.88-0.58)+.58
-            v[self.autobed.GetJoint('forearm_hand_left_joint').GetDOFIndex()] = -0.1
-            v[self.autobed.GetJoint('forearm_hand_right_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/head_updown_bedframe_translation_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.15 - (-0.05))+(-0.05)
+            v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = ((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317
+            v[self.autobed.GetJoint('autobed/head_bed_to_worldframe_joint').GetDOFIndex()] = -(((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
+            v[self.autobed.GetJoint('autobed/head_bed_to_bedframe_joint').GetDOFIndex()] = (((bth-40)/40)*(1.3962634 - 0.6981317)+0.6981317)
+            v[self.autobed.GetJoint('autobed/head_contact_to_head_center').GetDOFIndex()] = -(((bth-40)/40)*(-.06 - 0.4)+0.4)
+            v[self.autobed.GetJoint('autobed/head_neck_joint1').GetDOFIndex()] = -(((bth-40)/40)*(0.0 - 0.35)+0.35)
+            v[self.autobed.GetJoint('autobed/neck_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.4-(-.3))+(-.3)
+            v[self.autobed.GetJoint('autobed/upper_mid_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.51-(-.07))+(-.07)
+            v[self.autobed.GetJoint('autobed/mid_lower_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-.84-(-.82))+(-.82)
+            v[self.autobed.GetJoint('autobed/body_quad_left_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/body_quad_right_joint').GetDOFIndex()] = -0.4
+            v[self.autobed.GetJoint('autobed/quad_calf_left_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/quad_calf_right_joint').GetDOFIndex()] = 0.1
+            v[self.autobed.GetJoint('autobed/calf_foot_left_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+            v[self.autobed.GetJoint('autobed/calf_foot_right_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
+            v[self.autobed.GetJoint('autobed/body_arm_left_joint').GetDOFIndex()] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+            v[self.autobed.GetJoint('autobed/body_arm_right_joint').GetDOFIndex()] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
+            v[self.autobed.GetJoint('autobed/arm_forearm_left_joint').GetDOFIndex()] = ((bth-40)/40)*(.88-0.52)+.52
+            v[self.autobed.GetJoint('autobed/arm_forearm_right_joint').GetDOFIndex()] = ((bth-40)/40)*(.88-0.52)+.52
+            v[self.autobed.GetJoint('autobed/forearm_hand_left_joint').GetDOFIndex()] = -0.1
+            v[self.autobed.GetJoint('autobed/forearm_hand_right_joint').GetDOFIndex()] = -0.1
         else:
             print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
 
-        self.autobed.SetActiveDOFValues(v)
+        self.autobed.SetActiveDOFValues(v, 2)
         # self.env.UpdatePublishedBodies()
 
     def show_rviz(self):
