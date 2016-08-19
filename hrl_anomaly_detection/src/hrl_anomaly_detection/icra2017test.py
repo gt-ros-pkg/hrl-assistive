@@ -415,11 +415,11 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
     
 
-def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
-                      param_dict,\
-                      data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                      no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
-                      single_person=False, viz=False, n_random_trial=1, random_eval=False):
+def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                      data_renew=False, data_gen=False, single_person=False, \
+                      n_random_trial=1, random_eval=False, find_param=False, \
+                      viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
+                      verbose=False, debug=False):
 
     ## Parameters
     # data
@@ -721,7 +721,28 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         print "Mean: ", np.mean(l_auc_d, axis=0)
         print "Std:  ", np.std(l_auc_d, axis=0)
 
-             
+
+def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_data_path, \
+                            param_dict, n_random_trial=1, random_eval=False, \
+                            data_renew=False, \
+                            verbose=False, debug=False):
+
+    parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10) }
+    param_list = list(ParameterGrid(parameters))
+
+    for param in param_list:
+
+        param_dict['HMM']['nState'] = param['nState']
+        param_dict['HMM']['scale']  = param['scale']
+        param_dict['HMM']['cov']    = param['scale']
+
+        evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
+                          param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
+                          data_renew=data_renew,\
+                          save_result=True, verbose=verbose, debug=debug)
+        data_renew = False
+        
+                      
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
@@ -1127,6 +1148,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--find_param', action='store_true', dest='bFindParam',
+                 default=False, help='Find hmm parameter.')
     p.add_option('--eval_aws', action='store_true', dest='bEvaluationAWS',
                  default=False, help='Data generation before evaluation.')
                  
@@ -1289,12 +1312,17 @@ if __name__ == '__main__':
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                               verbose=opt.bVerbose, dd=d)
+        elif opt.bFindParam:
+            evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
+                                    param_dict, n_random_trial=n_random_trial, random_eval=opt.bEvaluationAWS,\
+                                    data_renew=opt.bDataRenew,\
+                                    verbose=opt.bVerbose, debug=opt.bDebug)
         else:          
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS)
+                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
@@ -1324,4 +1352,5 @@ if __name__ == '__main__':
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True)
+                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True,\
+                              data_renew=opt.bDataRenew)

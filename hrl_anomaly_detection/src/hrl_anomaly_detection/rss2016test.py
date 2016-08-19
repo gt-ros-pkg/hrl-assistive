@@ -1985,7 +1985,7 @@ if __name__ == '__main__':
     p.add_option('--evaluation_freq', '--eaf', action='store_true', dest='bEvaluationWithDiffFreq',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
-    p.add_option('--frp', action='store_true', dest='bFindROCparamRange',
+    p.add_option('--findParams', '--frp', action='store_true', dest='bFindROCparamRange',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
                  
@@ -2135,6 +2135,9 @@ if __name__ == '__main__':
         if opt.bEvaluationDelay:
             param_dict['ROC']['methods']     = [ 'progress', 'fixed', 'osvm'] 
             param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'osvm']
+        if opt.bFindROCparamRange:
+            param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
+            
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
