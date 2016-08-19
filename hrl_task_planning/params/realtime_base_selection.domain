@@ -60,7 +60,7 @@
 
  (:action servo_open_loop
     :parameters(?bg - base_pose ?tg - torso_pose)
-    :precondition (and (torso_set ?tg))
+    :precondition (and (torso_set ?tg) (known ?bg))
     :effect (at ?bg)
  )
 
