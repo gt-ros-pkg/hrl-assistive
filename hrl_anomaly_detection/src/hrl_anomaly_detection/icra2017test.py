@@ -419,7 +419,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       data_renew=False, data_gen=False, single_person=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
-                      verbose=False, debug=False):
+                      save_result=False, verbose=False, debug=False):
 
     ## Parameters
     # data
@@ -569,11 +569,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
-            ## # random data selection to fix the training data size
-            ## idx_list = range(len(normalTrainData))
-            ## random.shuffle(idx_list)
-            ## normalTrainData = normalTrainData[idx_list[:nNormalTrain]]
-
             normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
             abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
             normalTestData = np.swapaxes(normalTestData, 0, 1) * HMM_dict['scale']
@@ -722,6 +717,66 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         print "Std:  ", np.std(l_auc_d, axis=0)
 
 
+    if save_result or True:
+        savefile = os.path.join(processed_data_path,'../','result_online_eval.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
+                            ' cov: '+str(HMM_dict['cov'])+'\n' )
+
+                for auc in l_auc:
+                    t = ''
+                    for i in xrange(len(auc)):
+                        t += str(auc[i])
+                        t += ' '
+                    t += ' \n'
+                    file.write(t)
+
+                t = 'Mean(d) '
+                for v in np.mean(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ' '
+                t += ' \n'
+                file.write(t)
+
+                t = 'Std(d) '
+                for v in np.std(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ' '
+                t += ' \n\n'
+                file.write(t)
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
+                            ' cov: '+str(HMM_dict['cov'])+'\n' )
+
+                for auc in l_auc:
+                    t = ''
+                    for i in xrange(len(auc)):
+                        t += str(auc[i])
+                        t += ' '
+                    t += ' \n'
+                    file.write(t)
+
+                t = 'Mean(d) '
+                for v in np.mean(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ' '
+                t += ' \n'
+                file.write(t)
+
+                t = 'Std(d) '
+                for v in np.std(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ' '
+                t += ' \n\n'
+                file.write(t)
+
+
+
+
 def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_data_path, \
                             param_dict, n_random_trial=1, random_eval=False, \
                             data_renew=False, \
@@ -732,9 +787,10 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 
     for param in param_list:
 
-        param_dict['HMM']['nState'] = param['nState']
-        param_dict['HMM']['scale']  = param['scale']
-        param_dict['HMM']['cov']    = param['scale']
+        ## param_dict['HMM']['nState'] = param['nState']
+        ## param_dict['HMM']['scale']  = param['scale']
+        ## param_dict['HMM']['cov']    = param['scale']
+        ## param_dict['HMM']['renew']  = True
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
@@ -1291,7 +1347,7 @@ if __name__ == '__main__':
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
-        if opt.bEvaluationAWS:
+        if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
         else:
             n_random_trial = 1
@@ -1314,7 +1370,7 @@ if __name__ == '__main__':
                               verbose=opt.bVerbose, dd=d)
         elif opt.bFindParam:
             evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
-                                    param_dict, n_random_trial=n_random_trial, random_eval=opt.bEvaluationAWS,\
+                                    param_dict, n_random_trial=n_random_trial, random_eval=True,\
                                     data_renew=opt.bDataRenew,\
                                     verbose=opt.bVerbose, debug=opt.bDebug)
         else:          
