@@ -550,7 +550,10 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
             ## if selfInfo < 1e-6: selfInfo = 1e+6
             ## elif selfInfo > 1e+6: selfInfo = 0.0
             ## else: selfInfo = 1.0/selfInfo
-            selfInfo = np.log(selfInfo)
+
+            ## if selfInfo < 1e-6: selfInfo = 1e-6
+            ## selfInfo = np.log(selfInfo)
+            selfInfo = 1.0/selfInfo
                 
             new_X.append([ll_logp[i], float(state), selfInfo ])
 
