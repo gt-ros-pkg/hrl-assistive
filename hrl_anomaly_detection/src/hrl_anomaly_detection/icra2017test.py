@@ -538,7 +538,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         else:
             kFold_list.append([train_idx, test_idx])
 
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
