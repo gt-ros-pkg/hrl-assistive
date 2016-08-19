@@ -1110,7 +1110,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    remove_fp=remove_fp)
 
         # Add failure safe data
-        if failsafe:
+        if failsafe and False:
             if ( (method.find('svm')>=0 or method.find('sgd')>=0) ) and False:
                 for i in xrange(nState):
                     if len(X_train_org[0])>nState+1:
@@ -1150,6 +1150,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     if method == 'osvm' or method == 'bpsvm':
         X_scaled = X_train_org
     elif method.find('svm')>=0 or method.find('sgd')>=0:
+        print np.shape(X_train_org)
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X_train_org)
     else:
