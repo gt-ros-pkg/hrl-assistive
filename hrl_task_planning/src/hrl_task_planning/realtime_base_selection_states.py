@@ -117,7 +117,7 @@ class CallBaseSelectionState(PDDLSmachState):
         except rospy.ServiceException as se:
             rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
             return 'preempted'
-        if not req.base_goal:  # Got a bad result, force a start-over
+        if not res.base_goal:  # Got a bad result, force a start-over
             rospy.delete_param(self.ee_goal_param)  # Clear the current hand goal
             state = PDDLState()
             state.domain = self.domain
