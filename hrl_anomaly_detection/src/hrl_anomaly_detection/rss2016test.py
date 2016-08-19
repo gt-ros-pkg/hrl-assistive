@@ -268,7 +268,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
             
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        ## if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # scaling with size dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
