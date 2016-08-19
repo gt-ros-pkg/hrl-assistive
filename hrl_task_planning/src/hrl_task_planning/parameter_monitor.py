@@ -33,13 +33,13 @@ class ParameterMonitor(object):
             param = "/pddl_tasks/%s/%s/%s" % (self.domain, self.predicate, arg)
             if rospy.has_param(param):
                 if pred not in self.state:
-                    print "Found param %s, adding pred %s" % (param, pred)
+                    rospy.loginfo("[%s] Param %s now set -- Adding predicate %s", rospy.init_node(), param, pred)
                     self.state.append(pred)
                     pub = True
             else:
                 try:
                     self.state.remove(pred)
-                    print "Lost param %s, removing pred %s" % (param, pred)
+                    rospy.loginfo("[%s] Param %s gone -- Removing predicate %s", rospy.init_node(), param, pred)
                     pred.negate()
                     self.state.append(pred)
                     pub = True
