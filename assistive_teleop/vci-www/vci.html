@@ -37,6 +37,7 @@
   <script type="text/javascript" src="js/log.js"></script>
   <script type="text/javascript" src="js/datalogging.js"></script>
   <script type="text/javascript" src="js/undo.js"></script>
+  <script type="text/javascript" src="js/runstop.js"></script>
   <script type="text/javascript" src="js/connection_monitor.js"></script>
   <script type="text/javascript" src="js/battery_monitor.js"></script>
   <script type="text/javascript" src="js/teleop/pr2.js"></script>
@@ -80,17 +81,7 @@
 <body onload="RFH.init()">
  <div id="status-bar">
      <div id="notifications"></div>
-<!--     <div id="network-status"></div>
-     <div id='battery-status'>
-         <div class='battery-contact'></div>
-         <div class='battery-main'>
-             <span class="time">?</SPan>
-             <div class="charge-bolt">
-                 <div class="triangle tri-up"></div>
-                 <div class="triangle tri-down"></div>
-             </div>
-         </div>
-     </div>-->
+<!--     <div id="network-status"></div>-->
  </div>
  <div id="left-col">
      <div id="main-menu">
@@ -165,6 +156,19 @@
               </form>
             </div>
         </div>
+     </div>
+     <div id="util-bar">
+        <div id='battery-status'>
+            <div class='battery-contact'></div>
+            <div class='battery-main'>
+                <span class="time">?</SPan>
+                <div class="charge-bolt">
+                    <div class="triangle tri-up"></div>
+                    <div class="triangle tri-down"></div>
+                </div>
+            </div>
+        </div>
+        <div id="runstop-button" >RUN-STOP</div>
      </div>
  </div>
  <div id='video-main'>

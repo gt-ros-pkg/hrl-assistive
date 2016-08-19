@@ -18,13 +18,11 @@ body {
 }
 #left-col {
     float: left;
-    /*height: calc(100% - 36px);*/
     height: 100%;
     width: 256px;
 }
 #main-menu {
     display: block;
-    height: 40%;
     width: 100%;
     background-color: rgba(218, 236, 255, 0.87);
 }

@@ -22,3 +22,19 @@
     min-width: 20px;
     background-color: rgba(0,0,255,0.87);
 }
+
+#util-bar {
+    position: absolute;
+    bottom: 0;
+    height: 60px;
+    width: 256px;
+
+    background-color: rgba(100, 100, 100, 1);
+}
+
+#runstop-button {
+    position: absolute;
+    top: 5%;
+    height: 90%;
+    color: rgba(0,0,0,0.87);
+}

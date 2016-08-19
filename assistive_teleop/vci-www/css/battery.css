@@ -15,11 +15,6 @@
     top: 25%;
     left:0%;
     background-color: yellow; /*Default to warning color. Should be overwritten when state is updated"*/
-/*    background:linear-gradient(to left,
-                                rgba(30,200,45,0.87) 0%,
-                                LightGray 0%)
-
-*/
 }
 
 #battery-status .battery-main{
@@ -28,14 +23,10 @@
     position: absolute;
     left:15%;
     background-color: yellow; /* Default to warning color. Overwitten on state update."*/
-/*    background: linear-gradient(to left,
-    rgba(30,200,45,0.87) 40%,
-    LightGray 40%)
-*/
 }
 
 .charge-bolt{
-    display: none; /*Default to hidden. Update on state update.*/
+    display: none; 
     height: 90%;
     width: 20%;
     position: absolute;
