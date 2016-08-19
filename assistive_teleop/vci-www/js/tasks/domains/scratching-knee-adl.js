@@ -5,7 +5,7 @@ RFH.Domains.ScratchingKneeADL = function (options) {
     var ros = options.ros;
     self.name = options.name || 'scratching_knee_adl';
     self.domain = 'wiping_mouth_adl'
-    var $button = $('#scratching-knee-adl-button');
+    var $button = $('#scratching-knee-button');
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
