@@ -317,16 +317,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                        ll_classifier_test_idx, nState)
 
 
-        ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
-        fig = plt.figure()
-        for i in xrange(len(ll_classifier_ep_train_X)):
-            if ll_classifier_ep_train_Y[i][0] < 0:
-                plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'bo' )
-            if ll_classifier_ep_train_Y[i][0] > 0:
-                plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'r+' )
-
-        plt.show()
-        sys.exit()
+        ## ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
+        ## fig = plt.figure()
+        ## for i in xrange(len(ll_classifier_ep_train_X)):
+        ##     if ll_classifier_ep_train_Y[i][0] < 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'bo' )
+        ##     if ll_classifier_ep_train_Y[i][0] > 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'r+' )
+        ## plt.show()
+        ## sys.exit()
         
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance

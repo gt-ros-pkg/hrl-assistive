@@ -1111,8 +1111,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         # Add failure safe data
         if failsafe:
-            if (method.find('svm')>=0 or method.find('sgd')>=0):
-
+            if ( (method.find('svm')>=0 or method.find('sgd')>=0) ) and False:
                 for i in xrange(nState):
                     if len(X_train_org[0])>nState+1:
                         v                     = np.zeros(nState*2+1)
@@ -1128,9 +1127,20 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     Y_train_org.append(1)
                     idx_train_org.append(i)
             elif method == 'progress_svm':
+                min_likelihood = np.amin(ll_classifier_train_X[:,:,0])
+                min_selfInfo   = np.amin(ll_classifier_train_X[:,:,2])
+                
+                for i in xrange(nState):
+                    v    = np.zeros(3)
+                    v[0] = min_likelihood
+                    v[1] = float(i)
+                    v[2] = min_selfInfo
+                    
+                    X_train_org.append(v.tolist())
+                    Y_train_org.append(1)
+                    idx_train_org.append(i)
+                    
 
-                print "Not implemented!!"
-                               
 
 
     #-----------------------------------------------------------------------------------------
