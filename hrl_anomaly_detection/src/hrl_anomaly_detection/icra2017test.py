@@ -797,6 +797,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
                           data_renew=data_renew,\
                           save_result=True, verbose=verbose, debug=debug)
         data_renew = False
+        sys.exit()
         
                       
 
