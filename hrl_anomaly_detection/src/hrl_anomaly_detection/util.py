@@ -1330,6 +1330,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         fn_ll = ROC_data[method]['fn_l']
         delay_ll = ROC_data[method]['delay_l']
 
+        print ROC_data
+
         tpr_l = []
         fpr_l = []
         fnr_l = []
@@ -1348,9 +1350,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
             if only_tpr is False:
-                print fp_ll
-                print tn_ll
-                
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
