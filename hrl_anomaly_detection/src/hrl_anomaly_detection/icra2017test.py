@@ -538,13 +538,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         else:
             kFold_list.append([train_idx, test_idx])
 
+    ## kFold_list = kFold_list[:1]
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
-        ## idx_list = range(len(subject_names))
-        ## train_idx = idx_list[:idx]+idx_list[idx+1:]
-        ## test_idx  = idx_list[idx:idx+1]        
-        ## kFold_list.append([train_idx, test_idx])
         print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
@@ -630,7 +627,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['ll_classifier_train_X']  = ll_classifier_train_X
             dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
             dd['ll_classifier_train_idx']= ll_classifier_train_idx
-            ## dd['normalPtrainData'] = normalPtrainData
             dd['normalTrainData'] = normalTrainData
             dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
@@ -832,7 +828,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.1*float(i-1) )*0.05
+            alpha = np.exp(-0.5*float(i-1) )*0.15
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -841,11 +837,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.2  0.1  c8 (2,10), npt=20  best?
+            # step 1 0.1  0.1  c8 (2,1), npt=20  best?
             # step 1 0.1  0.05  c11 (2,10), npt=20
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
-            # step 1 0.2  0.1  aws (2,10), npt=10 best?
+            # step 1 0.5  0.15  aws (2,10), npt=10 best?
             
             # Update last 10 samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -1264,7 +1260,7 @@ if __name__ == '__main__':
     elif opt.bOnlineEval:
         ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
         ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
-        subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
+        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
@@ -1301,7 +1297,7 @@ if __name__ == '__main__':
                               random_eval=opt.bEvaluationAWS)
 
     elif opt.bOnlineEvalTemp:
-        subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
+        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['change']
         param_dict['ROC']['nPoints'] = 8
 

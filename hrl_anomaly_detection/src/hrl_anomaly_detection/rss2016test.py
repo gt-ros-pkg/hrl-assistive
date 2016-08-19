@@ -268,7 +268,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
             
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        ## if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # scaling with size dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
@@ -324,7 +324,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ##         plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'bo' )
         ##     if ll_classifier_ep_train_Y[i][0] > 0:
         ##         plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'r+' )
-
         ## plt.show()
         ## sys.exit()
         
@@ -467,7 +466,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
             ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
             ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-            
             ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
             ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
 
