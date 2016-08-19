@@ -841,7 +841,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             # BAD: nrSteps=1
             # BAD: scale<=0.1
             # Good: progress update
-            # step 1 0.2  0.1  c8 (2,10), npt=20  best?
+            # step 1 0.1  0.05  c8 (2,10), npt=20  best?
             # step 1 0.1  0.05  c11 (2,10), npt=20
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
