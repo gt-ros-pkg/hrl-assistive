@@ -521,9 +521,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 10
+    nPtrainData = 20
     nTrainOffset = 2
-    nTrainTimes  = 5
+    nTrainTimes  = 10
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -1260,7 +1260,7 @@ if __name__ == '__main__':
     elif opt.bOnlineEval:
         ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
         ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
-        subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
+        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['nPoints'] = 8
 
@@ -1297,7 +1297,7 @@ if __name__ == '__main__':
                               random_eval=opt.bEvaluationAWS)
 
     elif opt.bOnlineEvalTemp:
-        subjects        = ['ari', 'park', 'jina', 'sai', 'linda']        
+        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['change']
         param_dict['ROC']['nPoints'] = 8
 
