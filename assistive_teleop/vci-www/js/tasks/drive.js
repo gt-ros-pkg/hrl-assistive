@@ -515,6 +515,7 @@ RFH.Drive = function (options) {
         self.$div.on('mousedown.rfh', self.driveGo);
         $('.drive-ctrl').show();
         $viewer.show();
+        self.showGoal();
         moveToStop(getNearestStop());
         self.$div.on('resize.rfh', self.updateLineOffsets);
         $('#controls h3').text("Head Controls");
@@ -524,6 +525,7 @@ RFH.Drive = function (options) {
      //   $(document).off("mouseleave.rfh mouseout.rfh");
         self.$div.removeClass('drive-safe');
      //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
+        self.hideGoal();
         $('.drive-ctrl').hide();
         $viewer.hide();
         $('#controls h3').text("Controls");
