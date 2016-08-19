@@ -124,6 +124,7 @@ class CallBaseSelectionState(PDDLSmachState):
             state.problem = self.problem
             state.predicates = map(str, [Predicate('SCAN_COMPLETE', [], neg=True)])
             self.pddl_update_pub.publish(state)
+            return 'aborted'
 
         pos = res.base_goal[0:3]
         quat = res.base_goal[3:7]
