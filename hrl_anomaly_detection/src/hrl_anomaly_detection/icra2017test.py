@@ -63,6 +63,7 @@ from mvpa2.datasets.base import Dataset
 ## from sklearn import svm
 from joblib import Parallel, delayed
 from sklearn import metrics
+from sklearn.grid_search import ParameterGrid
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
@@ -415,11 +416,11 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
     
 
-def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, \
-                      param_dict,\
-                      data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                      no_plot=False, delay_plot=False, find_param=False, data_gen=False,\
-                      single_person=False, viz=False, n_random_trial=1, random_eval=False):
+def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                      data_renew=False, data_gen=False, single_person=False, \
+                      n_random_trial=1, random_eval=False, find_param=False, \
+                      viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
+                      save_result=False, verbose=False, debug=False):
 
     ## Parameters
     # data
@@ -569,11 +570,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
-            ## # random data selection to fix the training data size
-            ## idx_list = range(len(normalTrainData))
-            ## random.shuffle(idx_list)
-            ## normalTrainData = normalTrainData[idx_list[:nNormalTrain]]
-
             normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
             abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
             normalTestData = np.swapaxes(normalTestData, 0, 1) * HMM_dict['scale']
@@ -721,7 +717,93 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         print "Mean: ", np.mean(l_auc_d, axis=0)
         print "Std:  ", np.std(l_auc_d, axis=0)
 
-             
+
+    if save_result or True:
+        savefile = os.path.join(processed_data_path,'../','result_online_eval.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( "-----------------------------------------\n")
+                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
+                            ' cov: '+str(HMM_dict['cov'])+'\n' )
+
+                for auc in l_auc:
+                    t = ''
+                    for i in xrange(len(auc)):
+                        t += str(auc[i])
+                        t += ', '
+                    t += ' \n'
+                    file.write(t)
+                file.write( "-----------------------------------------\n")
+
+                t = 'Mean(d) '
+                for v in np.mean(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n'
+                file.write(t)
+
+                t = 'Std(d) '
+                for v in np.std(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n\n'
+                file.write(t)
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                file.write( "-----------------------------------------\n")
+                file.write( 'nState: '+str(nState)+' scale: '+str(HMM_dict['scale'])+\
+                            ' cov: '+str(HMM_dict['cov'])+'\n' )
+
+                for auc in l_auc:
+                    t = ''
+                    for i in xrange(len(auc)):
+                        t += str(auc[i])
+                        t += ', '
+                    t += ' \n'
+                    file.write(t)
+                file.write( "-----------------------------------------\n")
+
+                t = 'Mean(d) '
+                for v in np.mean(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n'
+                file.write(t)
+
+                t = 'Std(d) '
+                for v in np.std(l_auc_d, axis=0):
+                    t += str(v)
+                    t += ', '
+                t += ' \n\n'
+                file.write(t)
+
+
+
+def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_data_path, \
+                            param_dict, n_random_trial=1, random_eval=False, \
+                            data_renew=False, \
+                            verbose=False, debug=False):
+
+    parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10) }
+    param_list = list(ParameterGrid(parameters))
+
+    for param in param_list:
+
+        param_dict['HMM']['nState'] = param['nState']
+        param_dict['HMM']['scale']  = param['scale']
+        param_dict['HMM']['cov']    = param['scale']
+        param_dict['HMM']['renew']  = True
+
+        evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
+                          param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
+                          data_renew=data_renew, no_plot=True,\
+                          save_result=True, verbose=verbose, debug=debug)
+        data_renew = False
+        ## sys.exit()
+        
+                      
 
 def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
@@ -735,7 +817,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    add_logp_d = False #HMM_dict.get('add_logp_d', True)
+    add_logp_d  = False #HMM_dict.get('add_logp_d', True)
     
     ROC_data_cur = {}
     for i, method in enumerate(method_list):
@@ -1127,6 +1209,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--find_param', action='store_true', dest='bFindParam',
+                 default=False, help='Find hmm parameter.')
     p.add_option('--eval_aws', action='store_true', dest='bEvaluationAWS',
                  default=False, help='Data generation before evaluation.')
                  
@@ -1268,7 +1352,7 @@ if __name__ == '__main__':
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
         ##                      'add_logp_d': False}
-        if opt.bEvaluationAWS:
+        if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
         else:
             n_random_trial = 1
@@ -1289,12 +1373,17 @@ if __name__ == '__main__':
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                               verbose=opt.bVerbose, dd=d)
+        elif opt.bFindParam:
+            evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
+                                    param_dict, n_random_trial=n_random_trial, random_eval=True,\
+                                    data_renew=opt.bDataRenew,\
+                                    verbose=opt.bVerbose, debug=opt.bDebug)
         else:          
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS)
+                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
@@ -1324,4 +1413,5 @@ if __name__ == '__main__':
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True)
+                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True,\
+                              data_renew=opt.bDataRenew)

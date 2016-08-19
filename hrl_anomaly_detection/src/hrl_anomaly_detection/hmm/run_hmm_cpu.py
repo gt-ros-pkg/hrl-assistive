@@ -108,7 +108,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             else:
                 ret = ml.fit( normalTrainData, cov_mult=cov_mult )
                 
-            if ret == 'Failure':
+            if ret == 'Failure' or np.isnan(ret):
                 print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
                 break
@@ -500,7 +500,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
     print "start fit hmm"
     ml = hmm.learning_hmm( param['nState'], nEmissionDim )
     ret = ml.fit( normalTrainData, cov_mult=cov_mult )
-    if ret == 'Failure':
+    if ret == 'Failure' or np.isnan(ret):
         print 'failure with ', param
         return -1, [],[],[],[]
         ## scores.append(-1.0 * 1e+10)
