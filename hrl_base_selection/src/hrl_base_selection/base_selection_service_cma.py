@@ -324,7 +324,12 @@ class BaseSelector(object):
         config, score = self.real_time_score_generator.real_time_scoring()
         self.score = [[[config[0]], [config[1]], [config[2]], [config[3]], [0], [0]], score]
         print 'Time for TOC service to run start to finish: %fs' % (time.time()-service_initial_time)
-        return self.handle_returning_base_goals()
+        if score >=10.:
+            print 'Could not find a base configuration from which the PR2 could reach the goal!'
+            print 'Sorry!'
+            return None
+        else:
+            return self.handle_returning_base_goals()
 
 
     # The service call function that determines a good base location to be able to reach the goal location.

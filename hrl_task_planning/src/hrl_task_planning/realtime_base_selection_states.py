@@ -5,6 +5,7 @@ import rospy
 from task_smacher import PDDLSmachState
 from hrl_task_planning.msg import PDDLState
 from actionlib_msgs.msg import GoalStatus
+import numpy as np
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -75,6 +76,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
 
 from hrl_base_selection.srv import RealtimeBaseMove, RealtimeBaseMoveRequest
 from geometry_msgs.msg import PoseStamped
+import tf
 
 
 class CallBaseSelectionState(PDDLSmachState):
@@ -86,6 +88,7 @@ class CallBaseSelectionState(PDDLSmachState):
         self.torso_goal_param = torso_goal_param
         self.base_selection_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
         self.ee_pose_pub = rospy.Publisher('/rtbs_ee_goal', PoseStamped, latch=True)
+        self.tfl = tf.TransformListener()
 
     def on_execute(self, ud):
         try:
@@ -97,8 +100,9 @@ class CallBaseSelectionState(PDDLSmachState):
             return 'aborted'
         try:
             ee_frame = rospy.get_param(self.ee_frame_param)
-        except (KeyError, rospy.ROSException):
+        except (KeyError, rospy.ROSException) as e:
             rospy.logerr("[%s] %s - Error trying to access param: %s", rospy.get_name(), self.__class__.__name__, self.ee_frame_param)
+            raise e
             return 'aborted'
         req = RealtimeBaseMoveRequest()
         req.ee_frame = ee_frame
@@ -110,21 +114,46 @@ class CallBaseSelectionState(PDDLSmachState):
             return 'aborted'
         print "RTBS Response:\n", res
 
+        # NOTES:
+        # res.base_goal is [pos_x, pos_y, pos_z, quat_x, quat_y, quat_z, quat_w]
+
+        common_time = self.tfl.getLatestCommonTime('base_footprint', '/odom_combined')
+
+        # Invert transform
+        pos = res.base_goal[0:3]
+        quat = res.base_goal[3:7]
+        goal_mat = tf.transformations.quaternion_matrix(quat)
+        goal_mat[:3, 3] = np.array(pos).T
+        goal_mat_inv = np.mat(goal_mat).I
+        new_quat = tf.transformations.quaternion_from_matrix(goal_mat_inv)
+        new_pose = goal_mat_inv[:3, 3].A1.tolist()
+
+        # Transform to new frame
         ps_msg = PoseStamped()
-        ps_msg.header.frame_id = '/odom_combined'
-        ps_msg.header.stamp = rospy.Time.now()
-        ps_msg.pose.position = Point(*res.base_goal[0:3])
-        ps_msg.pose.orientation = Quaternion(*res.base_goal[3:7])
-        pose_dict = _pose_stamped_to_dict(ps_msg)
+        ps_msg.header.frame_id = '/base_footprint'
+        ps_msg.header.stamp = common_time
+        ps_msg.pose.position = Point(*new_pose)
+        ps_msg.pose.orientation = Quaternion(*new_quat)
+        odom_msg = self.tfl.transformPose('/odom_combined', ps_msg)
+
+        # Transform Pose returns results as numpy.float64, and rosparam can't handle them, so convert to regular floats...
+        odom_msg.pose.position.x = float(odom_msg.pose.position.x)
+        odom_msg.pose.position.y = float(odom_msg.pose.position.y)
+        odom_msg.pose.position.z = float(odom_msg.pose.position.z)
+        odom_msg.pose.orientation.x = float(odom_msg.pose.orientation.x)
+        odom_msg.pose.orientation.y = float(odom_msg.pose.orientation.y)
+        odom_msg.pose.orientation.z = float(odom_msg.pose.orientation.z)
+        odom_msg.pose.orientation.w = float(odom_msg.pose.orientation.w)
+        pose_dict = _pose_stamped_to_dict(odom_msg)
         try:
             rospy.set_param(self.base_goal_param, pose_dict)
-        except rospy.ROSException:
+        except:
             rospy.logerr("[%s] %s - Failed to load base goal to parameter server", rospy.get_name(), self.__class__.__name__)
             return 'aborted'
 
         try:
             rospy.set_param(self.torso_goal_param, res.configuration_goal[0])
-        except rospy.ROSException:
+        except:
             rospy.logerr("[%s] %s - Failed to load torso goal to parameter server", rospy.get_name(), self.__class__.__name__)
             return 'aborted'
 
