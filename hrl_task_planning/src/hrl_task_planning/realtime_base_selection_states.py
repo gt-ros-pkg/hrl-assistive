@@ -115,8 +115,8 @@ class CallBaseSelectionState(PDDLSmachState):
             res = self.base_selection_service.call(req)
             rospy.loginfo("[%s] %s: Real-time base selection Response:\n%s", rospy.get_name(), self.__class__.__name__, res)
         except rospy.ServiceException as se:
-            rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
-            return 'preempted'
+            rospy.logerr("[%s] %s: Service call failed: %s", rospy.get_name(), self.__class__.__name__, se)
+            return 'aborted'
         if not res.base_goal:  # Got a bad result, force a start-over
             rospy.delete_param(self.ee_goal_param)  # Clear the current hand goal
             state = PDDLState()
@@ -343,6 +343,12 @@ class ScanEnvironmentState(PDDLSmachState):
         goal.sweep_trajectory = jt
         # Send goal
         self.scan_actioin_client.send_goal(goal)
+
+    def service_preempt(self):
+        # Cancel any running actions if state is preempted
+        rospy.loginfo("[%s] Preempt Requested - Cancelling scan.", rospy.get_name())
+        self.scan_actioin_client.cancel_goal()
+        super(ScanEnvironmentState, self).service_preempt()
 
     def execute(self, ud):
         """ Call head Sweep Action in separate thread, publish state once done."""
