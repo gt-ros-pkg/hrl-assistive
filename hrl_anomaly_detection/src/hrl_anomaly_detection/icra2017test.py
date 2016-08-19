@@ -523,7 +523,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 20
     nTrainOffset = 2
-    nTrainTimes  = 1
+    nTrainTimes  = 0
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -541,10 +541,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # TODO: need leave-one-person-out
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
-        ## idx_list = range(len(subject_names))
-        ## train_idx = idx_list[:idx]+idx_list[idx+1:]
-        ## test_idx  = idx_list[idx:idx+1]        
-        ## kFold_list.append([train_idx, test_idx])
         print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
@@ -630,7 +626,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['ll_classifier_train_X']  = ll_classifier_train_X
             dd['ll_classifier_train_Y']  = ll_classifier_train_Y            
             dd['ll_classifier_train_idx']= ll_classifier_train_idx
-            ## dd['normalPtrainData'] = normalPtrainData
             dd['normalTrainData'] = normalTrainData
             dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
