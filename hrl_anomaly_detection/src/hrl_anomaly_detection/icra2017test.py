@@ -521,9 +521,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 20
+    nPtrainData = 10
     nTrainOffset = 2
-    nTrainTimes  = 0
+    nTrainTimes  = 5
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -828,7 +828,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.1*float(i-1) )*0.1
+            alpha = np.exp(-0.2*float(i-1) )*0.1
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
