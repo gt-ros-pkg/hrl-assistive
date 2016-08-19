@@ -1143,7 +1143,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_idx  = ll_classifier_ep_test_idx
 
 
-        if method == 'hmmosvm':
+        if method == 'hmmosvm' or method == 'progress_osvm':
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
