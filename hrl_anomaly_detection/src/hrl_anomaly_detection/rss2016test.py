@@ -467,7 +467,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
             ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
             ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-            
             ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
             ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
 
