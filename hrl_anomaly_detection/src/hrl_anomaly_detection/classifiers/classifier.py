@@ -579,7 +579,7 @@ class classifier(learning_base):
 
             y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
             sigma = np.sqrt(MSE)
-            l_err = y_pred + self.ths_mult*sigma - logps - self.logp_offset
+            l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
         elif self.method == 'fixed':
