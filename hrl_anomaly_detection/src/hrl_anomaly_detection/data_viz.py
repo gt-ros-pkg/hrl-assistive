@@ -129,7 +129,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                            add_logp_d=False, \
-                                                           cov_type='full')
+                                                           cov_type='full', nSubSample=20)
     
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
@@ -138,18 +138,20 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
+                             nLength=len(normalTestData[0,0]), ths_mult=-8.0 )
         dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
 
 
     print "----------------------------------------------------------------------------"
-    fig = plt.figure()
+    ## fig = plt.figure()
     min_logp = 0.0
     max_logp = 0.0
     target_idx = 1
 
     # training data
     if useTrain:
+        ## normalTrainData = np.array(normalTrainData)[:,0:3,:]
+        
         testDataY = -np.ones(len(normalTrainData[0]))
         
         ll_X, ll_Y, _ = \
@@ -162,6 +164,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
             l_logp = np.array(ll_X)[i,:,0]
             l_post = np.array(ll_X)[i,:,-nState]
+            
+            fig = plt.figure()
 
             # disp
             if useTrain_color: plt.plot(l_logp, label=str(i))
@@ -170,9 +174,11 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             if min_logp > np.amin(l_logp): min_logp = np.amin(l_logp)
             if max_logp < np.amax(l_logp): max_logp = np.amax(l_logp)
             
-            if decision_boundary_viz and i==target_idx:
+            if decision_boundary_viz: # and i==target_idx:
                 l_exp_logp = dtc.predict(ll_X[i]) + l_logp
-                plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
+                plt.plot(l_exp_logp, 'm-', lw=3.0)
+                ## break
+            plt.show()        
 
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
@@ -227,16 +233,16 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
                 log_ll[i].append(logp)
 
-                if decision_boundary_viz and i==target_idx:
-                    if j>=len(ll_logp[i]): continue
-                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                    exp_log_ll[i].append(exp_logp)
+                ## if decision_boundary_viz and i==target_idx:
+                ##     if j>=len(ll_logp[i]): continue
+                ##     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                ##     exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
+                ##     exp_log_ll[i].append(exp_logp)
 
 
             # disp
             plt.plot(log_ll[i], 'r-')
-            plt.plot(exp_log_ll[i], 'r*-')
+            ## plt.plot(exp_log_ll[i], 'r*-')
         plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
 
 

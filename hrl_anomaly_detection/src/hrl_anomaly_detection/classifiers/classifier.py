@@ -353,7 +353,7 @@ class classifier(learning_base):
                 self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
 
                 self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                           normalize=True)
+                                                           normalize=True, nugget=100.)
 
                 self.dt.fit( ll_post, ll_logp )          
                 ## idx_list = range(len(ll_post))
@@ -1150,7 +1150,22 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         elif method == 'hmmgp':
-            print "???"
+            import random
+            nSubSample = 20
+
+            new_X = []
+            new_Y = []
+            new_idx = []
+            for i in xrange(len(ll_classifier_train_X)):
+                idx_list = range(len(ll_classifier_train_X[i]))
+                random.shuffle(idx_list)
+                new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+                new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+                new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+            ll_classifier_train_X = new_X
+            ll_classifier_train_Y = new_Y
+            ll_classifier_train_idx = new_idx
             
                           
         # flatten the data

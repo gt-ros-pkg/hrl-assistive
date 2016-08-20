@@ -474,7 +474,8 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
                                                         add_logp_d=add_logp_d, cov_type=cov_type)
 
 
-def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full'):
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
+                                                 nSubSample=None):
     
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
@@ -487,6 +488,25 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
 
     ll_classifier_train_X, ll_classifier_train_Y = \
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
+
+    if nSubSample is not None:
+        import random
+        
+        print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = range(len(ll_classifier_train_X[i]))
+            random.shuffle(idx_list)
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
+        print "After: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
