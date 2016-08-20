@@ -355,9 +355,10 @@ class classifier(learning_base):
                 self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
                                                            normalize=True)
 
-                idx_list = range(len(ll_post))
-                random.shuffle(idx_list)
-                self.dt.fit( ll_post[idx_list[:600]], np.array(ll_logp)[idx_list[:600]])          
+                self.dt.fit( ll_post, ll_logp )          
+                ## idx_list = range(len(ll_post))
+                ## random.shuffle(idx_list)
+                ## self.dt.fit( ll_post[idx_list[:600]], np.array(ll_logp)[idx_list[:600]])          
 
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -1147,6 +1148,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             else:
                 ll_classifier_test_X = np.array(ll_classifier_test_X)
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
+
+        elif method == 'hmmgp':
+            print "???"
             
                           
         # flatten the data
