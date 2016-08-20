@@ -34,11 +34,20 @@ class DomainStateAggregator(object):
             return  # Empty list, no updates (shouldn't really receive these...)
         # Apply updates
         new_preds = [pddl.Predicate.from_string(pred) for pred in state_update_msg.predicates]
+        publish = False
         for pred in new_preds:
             if pred.name in self.predicates:
-                self.state.add(pred)
-        # Publish updates full state
-        self.publish_state()
+                if not pred.neg and pred not in self.state:
+                    self.state.add(pred)
+                    publish = True
+                if pred.neg:
+                    test = pddl.Predicate(pred.name, pred.args)
+                    if test in self.state:
+                        self.state.add(pred)
+                        publish = True
+        if publish:
+            # Publish updates full state
+            self.publish_state()
 
     def publish_state(self, event=None):
         state_msg = PDDLState()

@@ -82,6 +82,7 @@ var ManipulationTask = function (ros) {
             manTask.max_step = 3;
             assistive_teleop.log('Please, follow the step 2 to select the action.');
             manTask.feedback_received = false;
+            manTask.available=false
             return true;
         } else {
             return false;
@@ -98,6 +99,7 @@ var ManipulationTask = function (ros) {
             manTask.current_step = 0;
             manTask.max_step = 5;
             manTask.feedback_received = false;
+            manTask.available=false
             return true;
         } else {
             return false;
@@ -111,6 +113,7 @@ var ManipulationTask = function (ros) {
             });
             assistive_teleop.log('Please, follow the step 2 to select the action.');
             manTask.statusPub.publish(msg);
+            manTask.available=false
             return true;
         } else {
             return false;
@@ -367,6 +370,7 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_sense_min');
             disableButton('#ad_feeding_sense_max');
             disableButton('#ad_feeding_slider');
+            manTask.available=true;
             manTask.start()
         } else if (msg.data == 'in motion') {
             disableButton('#man_task_Scooping');

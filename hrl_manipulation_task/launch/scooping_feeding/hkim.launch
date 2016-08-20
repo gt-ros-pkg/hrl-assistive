@@ -1,5 +1,6 @@
 <launch>
 
+        <!-- makes unfiltered results -->
 	<node name="findMouth" pkg="hrl_manipulation_task"
               type="mouth_pose_detector.py" args="-l
                                                   /SR300_rgb_optical_frame
@@ -14,4 +15,6 @@
                                                   -s 0.001 --flip
                                                   --rgb_mode rgb8" output="screen"/>
 
+        <!-- for filtering -->
+        <node name="findMouthFilter" pkg="hrl_manipulation_task" type="mouth_pose_filter.py"/>
 </launch>

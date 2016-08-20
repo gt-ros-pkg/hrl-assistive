@@ -7,12 +7,14 @@ catkin_python_setup()
 
 add_service_files(
     DIRECTORY srv  
-    FILES BaseMove.srv 
-    FILES BaseMove_multi.srv
+    FILES
+    BaseMove.srv 
+    RealtimeBaseMove.srv
+    SetBaseModel.srv
 )
 
 generate_messages(
-    DEPENDENCIES geometry_msgs std_msgs
+    DEPENDENCIES geometry_msgs std_msgs sensor_msgs
 )
 
 catkin_package(

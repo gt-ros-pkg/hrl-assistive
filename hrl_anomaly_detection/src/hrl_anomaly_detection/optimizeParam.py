@@ -83,12 +83,8 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
     n_iter = 10
     nPoints = ROC_dict['nPoints'] = 4
 
-    if method == 'progress_time_cluster':
-        org_start_param = ROC_dict['progress_param_range'][0]
-        org_end_param = ROC_dict['progress_param_range'][-1]
-    else:
-        org_start_param = ROC_dict[method+'_param_range'][0]
-        org_end_param = ROC_dict[method+'_param_range'][-1]
+    org_start_param = ROC_dict[method+'_param_range'][0]
+    org_end_param = ROC_dict[method+'_param_range'][-1]
         
     if org_start_param > org_end_param:
         temp = org_start_param
@@ -147,8 +143,7 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
                                                                              modeling_pkl_prefix=modeling_pkl_prefix\
                                                                              )for idx in xrange(nFiles) \
                                                                              )
-
-
+                                                                             
         tp_ll = [[] for j in xrange(nPoints)]
         fp_ll = [[] for j in xrange(nPoints)]
         tn_ll = [[] for j in xrange(nPoints)]
@@ -169,16 +164,16 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
         if np.amin(fpr_l) > 0.5:
-            if 'fixed' in method or 'progress' in method:
+            if ('fixed' in method or 'progress' in method) and method.find('svm') <0:
                 end_param    = start_param
-                start_param -= delta_p
+                start_param *= (1.+ratio_p)
             else:
                 end_param    = start_param
                 start_param  = end_param *(1.0-ratio_p)
         elif np.amax(fpr_l) <= 0.05:
-            if 'fixed' in method or 'progress' in method:
+            if ('fixed' in method or 'progress' in method) and method.find('svm') <0:
                 start_param = end_param
-                end_param   += delta_p
+                end_param   *= ratio_p
             else:
                 start_param = end_param
                 end_param   = start_param*(1.+ratio_p)                        
@@ -258,16 +253,16 @@ def find_ROC_param_range(method, task_name, processed_data_path, param_dict, deb
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
         if np.amin(fpr_l) > 99.5:
-            if 'fixed' in method or 'progress' in method:
+            if ('fixed' in method or 'progress' in method) and method.find('svm') <0:
                 end_param    = start_param
-                start_param -= delta_p
+                start_param *= 1.0+ratio_p
             else:
                 end_param    = start_param
                 start_param  = end_param*(1.0-ratio_p)
         elif np.amax(fpr_l) <= 99.5:
-            if 'fixed' in method or 'progress' in method:
+            if ('fixed' in method or 'progress' in method) and method.find('svm') <0:
                 start_param = end_param
-                end_param   += delta_p
+                end_param   *= ratio_p
             else:
                 start_param = end_param
                 end_param   = start_param*(1.0+ratio_p)                        

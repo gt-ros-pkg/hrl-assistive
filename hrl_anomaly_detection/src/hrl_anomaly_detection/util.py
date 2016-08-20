@@ -1299,7 +1299,7 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None):
+             timeList=None, only_tpr=False, legend=False):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
@@ -1320,7 +1320,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
-    for method in method_list:
+
+    auc_rates = {}
+    for method in sorted(ROC_data.keys()):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1344,12 +1346,20 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
+            if only_tpr is False:
+                try:
+                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                except:
+                    continue
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        if len(fpr_l) < nPoints:
+            print method + ' has NaN? and fitting error?'
+            continue
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
@@ -1362,11 +1372,13 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print method
         print tpr_l
         print fpr_l
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        if only_tpr is False:
+            auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc_rates[method] = auc
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
-        elif method == 'progress_time_cluster': label='HMM-D'
+        elif method == 'progress': label='HMM-D'
         elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
         elif method == 'fixed': label='HMM-F'
         elif method == 'change': label='HMM-C'
@@ -1385,9 +1397,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ax1 = fig.add_subplot(111)
 
             if delay_plot:
-                if method not in ['fixed', 'progress_time_cluster', 'svm']: continue
+                if method not in ['fixed', 'progress', 'svm']: continue
                 if method == 'fixed': color = 'y'
-                if method == 'progress_time_cluster': color = 'g'
+                if method == 'progress': color = 'g'
                 if method == 'svm': color = 'b'
                 plt.plot(acc_l, delay_mean_l, '-'+color, label=label, linewidth=2.0)
                 ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
@@ -1441,11 +1453,11 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
-    ## if no_plot is False:
-    ##     if delay_plot:
-    ##         plt.legend(loc='upper right', prop={'size':24})
-    ##     else:
-    ##         plt.legend(loc='lower right', prop={'size':24})
+    if no_plot is False and legend:
+        if delay_plot:
+            plt.legend(loc='upper right', prop={'size':24})
+        else:
+            plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
         ## task = 'feeding'
@@ -1456,7 +1468,185 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
+
+    for key in auc_rates.keys():
+        print key, " : ", auc_rates[key]
+
+    return auc_rates
     
+
+def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+             timeList=None, only_tpr=False, legend=False):
+    # ---------------- ROC Visualization ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    if no_plot is False:
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
+
+    acc_rates = {}
+    for method in ROC_data.keys():
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        acc_l = []
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            if only_tpr is False:
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        from sklearn import metrics
+        print "--------------------------------"
+        print " AUC "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print acc_l
+        if only_tpr is False:
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        acc_rates[method] = acc_l
+        print "--------------------------------"
+
+        label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
+
+            ## plt.xlim([49, 101])
+            ## plt.ylim([0, 7.0])
+            ## plt.ylabel('Detection Time [s]', fontsize=24)
+            plt.ylabel('Accuracy (percentage)', fontsize=24)
+            ## plt.xticks([50, 100], fontsize=22)
+                
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+
+    if no_plot is False:
+        plt.legend(loc='lower right', prop={'size':24})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+    
+    return acc_rates
+
+
+def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+             timeList=None, only_tpr=False):
+    # ---------------- ROC Visualization ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    if no_plot is False:
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
+
+    for method in ROC_data.keys():
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        acc_l = []
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            if only_tpr is False:
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        from sklearn import metrics
+        print "--------------------------------"
+        print " AUC "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print acc_l
+        if only_tpr is False:
+            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+        label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
+
+            ## plt.xlim([49, 101])
+            ## plt.ylim([0, 7.0])
+            ## plt.ylabel('Detection Time [s]', fontsize=24)
+            plt.ylabel('Accuracy (percentage)', fontsize=24)
+            ## plt.xticks([50, 100], fontsize=22)
+                
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+
+    if no_plot is False:
+        plt.legend(loc='lower right', prop={'size':24})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+    
+
+
+
 
 
 

@@ -1,0 +1,19 @@
+<launch>
+    <!-- Service to merge and filter a stream of pointclouds -->
+        <node name="merge_pointclouds" pkg="merge_pointclouds" type="merge_pointclouds" output="screen" >
+            <remap from="~input_pc" to="/head_mount_kinect/sd/points"/>
+            <param name="voxel_x" value="0.05" />
+            <param name="voxel_y" value="0.05" />
+            <param name="voxel_z" value="0.05" />
+        </node>
+
+    <!-- Action Server for sweep/scan head motion -->
+    <node name="head_sweep_action" pkg="assistive_teleop" type="head_sweep_action" output="screen" />
+
+    <!-- Action Server for servoing 
+    <node name="open_loop_servoing" pkg="assistive_teleop" type="servo_action" output="screen" />
+-->
+    <!-- Base Selection (realtime version) -->
+    <node name="base_selection_cma" pkg="hrl_base_selection" type="base_selection_service_cma.py" args="--load=henry --user=None" output="screen" />
+
+</launch>

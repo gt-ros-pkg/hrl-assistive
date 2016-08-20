@@ -261,11 +261,10 @@ if __name__ == '__main__':
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=nPoints)
     
-    nFiles =  2 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+    nFiles =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
 
 
     if opt.task == 'scooping':
-        subjects = ['Wonyoung', 'Tom', 'lin', 'Ashwin', 'Song', 'Henry2'] #'Henry', 
 
         if opt.method == 'svm':
             if opt.dim == 4:
@@ -324,8 +323,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
         
-        subjects = ['Tom', 'lin', 'Ashwin', 'Song', 'wonyoung']
-
         if opt.method == 'svm':
             if opt.dim == 2:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -339,10 +336,16 @@ if __name__ == '__main__':
                               'w_negative': np.linspace(0.1,3.0,5) }
                 param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.5, nPoints)
             else:
-                parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
-                              'cost': np.linspace(0.1,6.0,10),\
-                              'gamma': np.linspace(0.1,8.0,10), \
-                              'w_negative': np.linspace(0.1,2.0,5) }
+                if opt.bICRA2017:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.logspace(-0.5,0.5,3),\
+                                  'gamma': np.linspace(4.0,10.0,3), \
+                                  'w_negative': np.linspace(0.1,2.0,3) }
+                else:
+                    parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
+                                  'cost': np.linspace(0.1,6.0,5),\
+                                  'gamma': np.linspace(0.1,8.0,5), \
+                                  'w_negative': np.linspace(0.1,2.0,5) }
         elif opt.method == 'hmmsvm_diag':
             parameters = {'method': ['hmmsvm_diag'], 'svm_type': [0], 'kernel_type': [2], \
                           'hmmsvm_diag_cost': np.linspace(5,15.0,5),\
@@ -387,7 +390,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microwhite':
     
-        subjects = ['gatsbii']
 
         if opt.method == 'svm':
             if opt.dim == 2:
@@ -454,8 +456,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_toolcase':
     
-        subjects = ['gatsbii']
-
         if opt.method == 'svm':        
             if opt.dim == 5:
                 parameters = {'method': ['svm'], 'svm_type': [0], 'kernel_type': [2], \
@@ -531,8 +531,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     elif opt.task == 'pushing_microblack':
     
-        subjects = ['gatsbii']
-
         ## parameters = {'method': ['sgd'], \
         ##               'gamma': np.logspace(-1.5,-0.5,5), \
         ##               'w_negative': np.linspace(1.0,2.5,5) }
@@ -784,7 +782,7 @@ if __name__ == '__main__':
 ##     for ii in xrange(len(ll_classifier_test_X)):
 ##         if 'svm' in method:
 ##             X = scaler.transform(ll_classifier_test_X[ii])                                
-##         elif method == 'progress_time_cluster' or method == 'fixed':
+##         elif method == 'progress' or method == 'fixed':
 ##             X = ll_classifier_test_X[ii]
 ##         X_test.append(X)
 
@@ -847,7 +845,7 @@ if __name__ == '__main__':
 ##     elif method == 'cssvm':
 ##         weights = ROC_dict['cssvm_param_range']
 ##         dtc.set_params( class_weight=weights[j] )
-##     elif method == 'progress_time_cluster':
+##     elif method == 'progress':
 ##         thresholds = ROC_dict['progress_param_range']
 ##         dtc.set_params( ths_mult = thresholds[j] )
 ##     elif method == 'fixed':

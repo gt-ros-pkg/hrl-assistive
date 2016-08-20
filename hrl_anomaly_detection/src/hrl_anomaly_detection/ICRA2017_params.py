@@ -76,7 +76,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -5., nPoints), \
@@ -97,7 +97,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
         SVM_param_dict = {'renew': False, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
                           'hmmosvm_nu': 0.00316}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress_time_cluster', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.linspace(-0.8, -8., nPoints), \
@@ -132,7 +132,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': None}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
@@ -153,10 +153,14 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 4.66,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 12., 'scale': 8.,\
                           'add_logp_d': True}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 4.111}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 3.61, 'cost': 0.1,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 13.66,\
+        ##                   'add_logp_d': True}
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 9.0,\
+        ##                   'add_logp_d': True}
+        ## SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 3.61, 'cost': 0.1,\
+        SVM_param_dict = {'renew': False, 'w_negative': 1.52, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
@@ -171,18 +175,20 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5
                           }
                     #, 'bpsvm'      , 'osvm'
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmosvm' ],\
+                          ## 'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'change'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
-                          'progress_param_range': np.linspace(0.5, -8.0, nPoints),\
-                          'svm_param_range': np.logspace(-1., 0.7, nPoints),\
+                          'progress_param_range': -np.logspace(0, 2.5, nPoints),\
+                          'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
+                          'svm_param_range': np.logspace(-0.8, 0.5, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'change_param_range': np.logspace(0.2, 1.4, nPoints)*-1.0,\
+                          'change_param_range': np.logspace(0.0, 2.6, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.15, -0.0, nPoints),\
+                          'fixed_param_range': np.linspace(0.15, -0.5, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
@@ -201,7 +207,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 0.2
                           }
                           
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'fixed', 'svm', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'fixed', 'svm', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
@@ -228,7 +234,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_w_negative': 1.5
                           }
 
-        ROC_param_dict = {'methods': ['progress_time_cluster', 'svm','fixed', 'hmmosvm'],\
+        ROC_param_dict = {'methods': ['progress', 'svm','fixed', 'hmmosvm'],\
                           'update_list': ['hmmosvm'],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(-0.3, 1.8, nPoints)+0.1,\
@@ -261,7 +267,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\

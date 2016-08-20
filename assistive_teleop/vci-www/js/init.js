@@ -84,9 +84,8 @@ var RFH = {
         console.log("Connected to " + RFH.ROBOT + ".");
         extendROSJS(RFH.ros);
 //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
-//        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
-//                                                     div: 'battery-status'});
-    // Setup a client to listen to TFs.
+        RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
+                                                     div: 'battery-status'});
         RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
                                             angularThres : 0.001,
                                             transThres : 0.001,
@@ -94,6 +93,7 @@ var RFH = {
                                             fixedFrame : '/base_link' });
         RFH.tfClient.actionClient.cancel();
         RFH.pr2 = new PR2(RFH.ros);
+        RFH.runStop = new RFH.RunStop({ros: RFH.ros});
         initMjpegCanvas();
         initViewer('video-main');
         RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
@@ -114,14 +114,13 @@ var RFH = {
                                                            topic: "/pcl_filters/peek_points",
                                                            maxPoints: 16000,
                                                            tfClient: RFH.tfClient });
-        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+//        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
 //        initClickableActions();
 //        initPr2(); 
 //        initGripper('horizontal');
 //        initTorsoSlider('horizontal');
 //        initTTS('tabTTS');
 //        initARServoTab('tabServoing');
-//        initRunStop('runStopDiv');
 //        initTrajPlay();
 //        initBodyRegistration('tabBodyReg');
 //        initEllControl();

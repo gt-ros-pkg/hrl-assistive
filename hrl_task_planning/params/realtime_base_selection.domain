@@ -1,0 +1,72 @@
+(define (domain realtime_base_selection)
+ (:requirements :typing :conditional-effects)
+ (:types
+  base_pose ee_pose torso_pose - pose
+  pose frame - param
+ )
+
+ (:constants base_goal - base_pose
+             ee_goal - ee_pose
+             torso_goal - torso_pose
+             ee_frame - frame
+ )
+
+ (:predicates
+  (known ?p - param)
+  (scan_complete)
+  (at ?g - pose)
+  (torso_set ?tp - torso_pose)
+ )
+
+ (:action get_ee_goal
+    :parameters (?eg - ee_pose)
+    :effect (and (known ?eg ))
+ )
+
+ (:action clear_param
+    :parameters (?p - param)
+    :effect (not (known ?p))
+ )
+
+ (:action scan_environment 
+    :effect (and (scan_complete))
+ )
+
+ (:action clear_environment
+  :effect (not (scan_complete))
+ )
+
+ (:action get_frame
+  :parameters (?f - frame)
+  :effect (known ?f)
+ )
+
+ (:action call_base_selection
+    :parameters (?eg - ee_pose ?f - frame ?bg - base_pose ?tg - torso_pose)
+    :precondition (and (scan_complete) (known ?eg) (known ?f))
+    :effect (and (known ?bg)(known ?tg))
+ )
+
+ (:action adjust_torso
+    :parameters (?tg - torso_pose)
+    :precondition (and (known ?tg))
+    :effect (torso_set ?tg)
+ )
+
+ (:action clear_torso_set
+    :parameters (?tg - torso_pose)
+    :effect (not (torso_set ?tg))
+ )
+
+ (:action servo_open_loop
+    :parameters(?bg - base_pose ?tg - torso_pose)
+    :precondition (and (torso_set ?tg) (known ?bg))
+    :effect (at ?bg)
+ )
+
+ (:action clear_at_goal
+    :parameters (?bg - base_pose)
+    :effect (not (at ?bg))
+ )
+
+)

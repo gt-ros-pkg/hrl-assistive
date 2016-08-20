@@ -174,11 +174,15 @@ class PDDLTaskThread(Thread):
             result = None
             # For the current problem get initial state and goal
             with self.problem_lock:
-                # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
-                self.problem_msg.init = self.domain_state
                 # If no goal is specified, use the default problem goal
                 if not self.problem_msg.goal:
                     self.problem_msg.goal = rospy.get_param('/pddl_tasks/%s/default_goal' % self.domain)
+                # [self.problem_msg.init.append(pred) for pred in self.constant_predicates if pred not in self.problem_msg.init]
+                self.problem_msg.init = self.domain_state
+                if not self.problem_msg.init:
+                    goal_pred_1 = Predicate.from_string(self.problem_msg.goal[0])
+                    goal_pred_1.negate()
+                    self.problem_msg.init.append(str(goal_pred_1))  # Add negative of 1st goal predicate to have something in init, if necessary
                 attempted_goal = copy.copy(self.problem_msg.goal)  # Save to make sure goal hasn't changed by end of run
                 # Get solution from planner
                 try:
@@ -262,7 +266,7 @@ class PDDLSmachState(smach.State):
         self.action = action
         self.action_args = action_args
         self.init_state = init_state
-        self.goal_state = GoalState(goal_state.predicates)
+        self.goal_state = GoalState(self.init_state.difference(goal_state))
         self.state_delta = self.init_state.difference(self.goal_state)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         self.current_state = None
@@ -273,33 +277,50 @@ class PDDLSmachState(smach.State):
 
     def on_execute(self, ud):
         """ Override to create task-specific functionality before waiting for state update in main execute."""
-        pass
+        return None
 
-    def execute(self, ud):
-        # Watch for task state to match goal state, then return successful
+    def _publish_current_step(self):
         plan_step_msg = PDDLPlanStep()
         plan_step_msg.domain = self.domain
         plan_step_msg.problem = self.problem
         plan_step_msg.action = self.action
         plan_step_msg.args = self.action_args
         self.action_pub.publish(plan_step_msg)
-        self.on_execute(ud)
-        rospy.loginfo("State %s waiting for current state", self.action)
+
+    def _wait_for_state(self):
         while self.current_state is None:
+            rospy.loginfo("State %s waiting for current state", self.action)
             rospy.sleep(0.2)
         rospy.loginfo("State %s received current state", self.action)
+
+    def _start_execute(self):
+        self._publish_current_step()
+        self._wait_for_state()
+
+    def _check_pddl_status(self):
+        if self.preempt_requested():
+            rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
+            self.service_preempt()
+            return 'preempted'
+        if self.goal_state.is_satisfied(self.current_state):
+            return 'succeeded'
+        progress = self.init_state.difference(self.current_state)
+        for pred in progress:
+            if pred not in self.state_delta:
+                return 'aborted'
+        return None  # Adding explicitly for clarity
+
+    def execute(self, ud):
+        # Watch for task state to match goal state, then return successful
+        self._start_execute()
+        on_execute_result = self.on_execute(ud)
+        if on_execute_result in ['preempted', 'aborted']:
+            return on_execute_result
         rate = rospy.Rate(20)
         while not rospy.is_shutdown():
-            if self.preempt_requested():
-                rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
-                self.service_preempt()
-                return 'preempted'
-            if self.goal_state.is_satisfied(self.current_state):
-                return 'succeeded'
-            progress = self.init_state.difference(self.current_state)
-            for pred in progress:
-                if pred not in self.state_delta:
-                    return 'aborted'
+            result = self._check_pddl_status()
+            if result is not None:
+                return result
             rate.sleep()
         return 'preempted'
 

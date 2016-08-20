@@ -226,7 +226,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model)#, tf_listener=self.tf_listener)
+                                  goals=myGoals, model=self.model, task=self.task)#, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
         score_sheet = selector.handle_score_generation(plot=plot)
@@ -248,7 +248,7 @@ class DataReader(object):
             # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_subj_', str(self.sub_num),
             #                     '_score_data.pkl'])
             # filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_cma_real_expanded_',
-            filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_cma_real_expanded_no_bed_movement',
+            filename = ''.join([pkg_path, '/data/', self.task, '_', self.model, '_cma',
                                 # '_real_expanded_',
                                 '_score_data.pkl'])
             save_pickle(score_sheet, filename)

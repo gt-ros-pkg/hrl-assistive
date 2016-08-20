@@ -1,0 +1,360 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+
+# system
+import os, sys, copy
+import random
+
+# visualization
+import matplotlib
+#matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
+# util
+import numpy as np
+import scipy
+import hrl_lib.util as ut
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+
+from hrl_anomaly_detection.ICRA2017_params import *
+from hrl_anomaly_detection.optimizeParam import *
+from hrl_anomaly_detection import util as util
+
+# learning
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
+from mvpa2.datasets.base import Dataset
+## from sklearn import svm
+from joblib import Parallel, delayed
+from sklearn import metrics
+
+# private learner
+import hrl_anomaly_detection.classifiers.classifier as cf
+import hrl_anomaly_detection.data_viz as dv
+
+import itertools
+import svmutil as svm
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
+colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+shapes = itertools.cycle(['x','v', 'o', '+'])
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
+
+
+def isolation_test(subject_names, task_name, raw_data_path, processed_data_path, \
+                     param_dict, verbose=False, data_renew=False):
+    '''
+    processed_data_path: please, use this folder as your data location
+    '''
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    
+    #-----------------------------------------------------------------------------------------
+
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    type_sets = []
+    type_sets.append([42,43,44,45,46,47,48])
+    type_sets.append([21,22,23,24,25,26,30,31,32])
+    #type_sets.append([])
+    type_sets.append([18,19,20,33,34,35])
+    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])#,27,28,29])
+
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        order = [[]] * len(d['failureFiles'])
+        new_failureData = [[], [],[],[]]
+        for i, file_name in enumerate(d['failureFiles']):
+            file_name_split = file_name.split("iteration_")
+            file_name_split = file_name_split[1].split("_failure")[0]
+            idx = int(file_name_split)
+            if "unexpected2" in file_name:
+                idx = idx + 36
+            order[idx] = i
+            print file_name, idx
+        print order
+        for i, sampleIdx in enumerate(order):#xrange(0, len(d['failureData'][0])):
+            if formatY(i, type_sets) is not 0:
+                for dimIdx in xrange(0, len(d['failureData'])):
+                    new_failureData[dimIdx].append(d['failureData'][dimIdx,sampleIdx,:])
+            else:
+                print "rejected, ", sampleIdx
+        print np.asarray(new_failureData).shape
+        d['failureData']=np.asarray(new_failureData)
+        
+        # Task-oriented hand-crafted features        
+        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
+        d['kFoldList']   = kFold_list
+            
+        ut.save_pickle(d, crossVal_pkl)
+
+    successData = d['successData']
+    failureData = d['failureData']
+    successFiles = d['successFiles']
+    failureFiles = d['failureFiles']
+    
+    all_type = []
+    for type_set in type_sets:
+        all_type.extend(type_set)
+
+    count = 0
+    index_d = {}
+    reverse_index_d = {}
+    for i in xrange(0, 100):
+        if i in all_type:
+            index_d[str(i)] = count
+            reverse_index_d[str(count)] = i
+            count += 1
+    new_type_sets = []
+    for type_set in type_sets:
+        new_type_set = []
+        for idx in type_set:
+            new_type_set.append(index_d[str(idx)])
+        new_type_sets.append(new_type_set)
+    type_sets = new_type_sets
+
+    #print "new_type_sets "
+    #print type_sets
+
+
+    # Training svm, and getting classifier training and testing data
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        # dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] 
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+        normalTestData    = successData[:, normalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :]
+        
+        # code here
+        test_classifier=cf.classifier()
+        X = []
+        y = []        
+        mean = [0]* 40
+        var = [0]*40
+        X = []
+        for trainIdx in xrange(0, abnormalTrainData.shape[1]):
+            curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
+            if curr_type is 0:
+                continue
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
+            X.extend(formated_X)
+            for windowIdx in xrange(0, len(formated_X)):
+                y.append(curr_type)
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        mean = np.mean(X, axis=0)
+        var = np.std(X, axis=0)
+        commands = ''
+        class_count = [0.0]*10
+        for trainIdx in abnormalTrainIdx:
+            class_count[formatY(trainIdx,type_sets)] += 1
+            class_count[-1] += 1
+        print class_count
+        for i in xrange(1, 5):
+            if not np.allclose(class_count[i], 0):
+                if i is not 3 and i is not 2:
+                    commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
+                else:
+                    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
+        c = np.logspace(-3.0, -1.0, 4)
+        models=[]
+        for i in xrange(0, 4):
+            #model = svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + g[i])
+            models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + str(c[i])))
+        for testIdx in xrange(0, abnormalTestData.shape[1]):
+            X = []
+            y = []
+            curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
+            if curr_type is 0:
+                continue
+            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
+            scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
+            X.extend(formated_X)
+            for windowIdx in xrange(0, len(formated_X)):
+                y.append(curr_type)
+            #print prediction
+            #print np.asarray(prediction[2])[:,0]
+            plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
+            color_list = ['', 'b', 'g', 'r', 'k']
+            title_list = ['', 'sound', 'force', 'distance', 'orientation']
+            for i in xrange(0, 4):
+                color = color_list[i+1]#int(model.get_labels()[i])]
+                title = title_list[i+1]#int(model.get_labels()[i])]
+                plt.subplot2grid((4,2),(int(i), 0)).set_title(title)
+                #plt.axis((0, 200, 0, 1))
+                plt.axis((0, 200, -2, 2))
+                #plt.plot(probability[:,i], color)
+                #plt.plot(abnormalTestData[i, testIdx, :], color)
+                plt.plot(np.asarray(scaled_data)[i, :], color)
+            for j, model in enumerate(models):
+                print j
+                plt.subplot2grid((4,2),(j,1)).set_title(c[j])
+                plt.axis((0, 200, 0, 1))
+                prediction =  svm.svm_predict(y, X, model, '-b 1')
+                probability = np.asarray(prediction[2])
+                for i in xrange(0,4):
+                    color = color_list[int(model.get_labels()[i])]
+                    if model.get_labels()[i] is curr_type:
+                        plt.plot(probability[:,i], color + '>')
+                    else:
+                        plt.plot(probability[:,i], color + '-')
+            print model.get_labels()
+            fig_manager = plt.get_current_fig_manager()
+            fig_manager.full_screen_toggle()
+            plt.show()
+            plt.clf()
+    
+def formatX(data, time_window=20, scaler=None, limit=None):
+    X = []
+    if limit is not None:
+        idxrange = xrange(limit[0], limit[1]-time_window +1)
+    else:
+        idxrange = xrange(0, data.shape[1]-time_window + 1)
+    for idx in idxrange:
+        x = []
+        for dimIdx in xrange(0, data.shape[0]):
+            temp_x = data[dimIdx][idx:idx+time_window][:]
+            x.extend(temp_x)
+        X.append(x)
+    if scaler is not None:
+        X_scaled = scaler.transform(X, copy=True)
+        X= X_scaled.tolist()
+    return X
+
+def formatY(index, type_sets):
+    for setId, type_set in enumerate(type_sets):
+        if index in type_set:
+            return setId + 1
+    return 0
+
+def scaled_inputs(data, scaler):
+    #data, of form 4, 200
+    new_data = [[], [], [], []] 
+    formated_X = formatX(data, scaler=scaler) #sample data scaled, 200-time_window + 1 by time_window*4
+    time_window = np.asarray(formated_X).shape[1] / 4
+    for idx in xrange(0, len(formated_X)):
+        for dimIdx in xrange(0, np.asarray(formated_X).shape[1] / time_window):
+            new_data[dimIdx].append(formated_X[idx][dimIdx*time_window])
+    return new_data
+
+ 
+if __name__ == '__main__':
+
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
+
+    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
+                 help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+                 help='type the desired dimension')
+
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
+                 default=False, help='Plot features.')
+    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+                 
+    
+    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
+                 default=False, help='Set debug mode.')
+    p.add_option('--renew', action='store_true', dest='bRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
+    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
+                 default=False, help='No Plot.')    
+    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
+                 default=False, help='Print out.')
+
+    
+    opt, args = p.parse_args()
+
+    #---------------------------------------------------------------------------           
+    # Run evaluation
+    #---------------------------------------------------------------------------           
+    rf_center     = 'kinEEPos'        
+    scale         = 1.0
+    # Dectection TEST 
+    local_range    = 10.0    
+
+    #---------------------------------------------------------------------------
+    if opt.task == 'scooping':
+        subjects = ['park', 'test'] #'Henry', 
+    #---------------------------------------------------------------------------
+    elif opt.task == 'feeding':
+        subjects = [ 'unexpected', 'unexpected2' ]
+    else:
+        print "Selected task name is not available."
+        sys.exit()
+
+    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
+                                                          False, False, opt.dim,\
+                                                          rf_center, local_range)
+
+
+
+    #---------------------------------------------------------------------------
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_isolation/'+\
+      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    isolation_test(subjects, opt.task, raw_data_path, save_data_path, \
+                   param_dict, verbose=opt.bVerbose, data_renew=opt.bDataRenew)

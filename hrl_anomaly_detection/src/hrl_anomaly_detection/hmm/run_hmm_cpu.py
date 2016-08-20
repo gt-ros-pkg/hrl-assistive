@@ -46,7 +46,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 from joblib import Parallel, delayed
 
 def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
-             bSave=False, method='svm', max_check_fold=None):
+             bSave=False, method='svm', max_check_fold=None, no_cov=False):
 
     ## Parameters
     # data
@@ -85,78 +85,18 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-            if AE_dict['switch']:
-                if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
-
-                AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
-                d = ut.load_pickle(AE_proc_data)
-                
-                if AE_dict['filter']:
-                    # NOTE: pooling dimension should vary on each auto encoder.
-                    # Filtering using variances
-                    normalTrainData   = d['normTrainDataFiltered']
-                    abnormalTrainData = d['abnormTrainDataFiltered']
-                    normalTestData    = d['normTestDataFiltered']
-                    abnormalTestData  = d['abnormTestDataFiltered']
-                    ## import data_viz as dv
-                    ## dv.viz(normalTrainData)
-                    ## continue                   
-                else:
-                    normalTrainData   = d['normTrainData']
-                    abnormalTrainData = d['abnormTrainData']
-                    normalTestData    = d['normTestData']
-                    abnormalTestData  = d['abnormTestData']
-                
-            else:
-                # dim x sample x length
-                normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] 
-                abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] 
-                normalTestData    = cv_dict['successData'][:, normalTestIdx, :] 
-                abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] 
-
-
-            if AE_dict['add_option'] is not None:
-                print "add feature!!"
-                newHandSuccTrData = handSuccTrData = d['handNormTrainData']
-                newHandFailTrData = handFailTrData = d['handAbnormTrainData']
-                handSuccTeData = d['handNormTestData']
-                handFailTeData = d['handAbnormTestData']
-
-                print d['handFeatureNames']
-                ## sys.exit()
-                normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'], \
-                                                 add_noise_features=AE_dict['add_noise_option'])
-                abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-                normalTestData    = combineData( normalTestData, handSuccTeData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-                abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
-                                                 AE_dict['add_option'], d['handFeatureNames'])
-
-                
-                ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE
-                ## normalTrainData, abnormalTrainData,pooling_param_dict \
-                ##   = dm.errorPooling(d['normTrainData'], d['abnormTrainData'], pooling_param_dict)
-                ## normalTestData, abnormalTestData, _ \
-                ##   = dm.errorPooling(d['normTestData'], d['abnormTestData'], pooling_param_dict)
-                
-                ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-                ##                                                          pooling_param_dict)
-                ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-                ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-                ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)                
-
-            # scaling
-            if verbose: print "scaling data ", idx, " / ", len(kFold_list)
-            normalTrainData   *= param['scale']
-            abnormalTrainData *= param['scale']
-            normalTestData    *= param['scale']
-            abnormalTestData  *= param['scale']
+            # dim x sample x length
+            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] * param['scale']
+            abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] * param['scale'] 
+            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
+            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] * param['scale'] 
 
             #
             nEmissionDim = len(normalTrainData)
-            cov_mult     = [param['cov']]*(nEmissionDim**2)
+            if no_cov:
+                cov_mult     = [HMM_dict['scale']]*(nEmissionDim**2)
+            else:
+                cov_mult     = [param['cov']]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0])
 
             # scaling
@@ -168,10 +108,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             else:
                 ret = ml.fit( normalTrainData, cov_mult=cov_mult )
                 
-            if ret == 'Failure':
+            if ret == 'Failure' or np.isnan(ret):
                 print "fitting failure", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
                 break
+            ## if ret/float(len(normalTrainData[0])) < -100:
+            print "Mean likelihoods: ", ret/float(len(normalTrainData[0]))
 
             #-----------------------------------------------------------------------------------------
             # Classifier train data
@@ -190,50 +132,74 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                                                                     [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
                                                                     ml.nEmissionDim, ml.nState,\
                                                                     startIdx=4, \
-                                                                    ## startIdx=nLength-3, \
                                                                     bPosterior=True)
                                                                     for i in xrange(len(testDataX[0])))
             _, ll_idx, ll_logp, ll_post = zip(*r)
 
-            # nSample x nLength
-            ll_classifier_test_X, ll_classifier_test_Y = \
-              hmm.getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=True)
-            if ll_classifier_test_X == []:
-                print "HMM-induced vector is wrong", param['scale'], param['cov']
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
+            # remove outliers
+            ll_logp, ll_post, ll_idx, _ = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx)
+
 
             logp_l = []
-            for i in xrange(len(normalTrainData[0])):
-                logp_l.append(ll_classifier_test_X[i][-1][0])
+            for i in xrange(len(ll_logp)):
+                logp_l.append(ll_logp[i][-1])
                 
-            if np.mean( logp_l ) < 0:
+            if np.amax( logp_l ) < 0:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-            
-            
+
+
             # split
             import random
-            train_idx = random.sample(range(len(ll_classifier_test_X)), int( 0.5*len(ll_classifier_test_X)) )
-            test_idx  = [x for x in range(len(ll_classifier_test_X)) if not x in train_idx]
-            
-            train_X   = np.array(ll_classifier_test_X)[train_idx]
-            train_Y   = np.array(ll_classifier_test_Y)[train_idx]
-            train_idx = np.array(ll_idx)[train_idx]
-            test_X   = np.array(ll_classifier_test_X)[test_idx]
-            test_Y   = np.array(ll_classifier_test_Y)[test_idx]
-            test_idx = np.array(ll_idx)[test_idx]
+            train_idx = random.sample(range(len(ll_logp)), int( 0.5*len(ll_logp)) )
+            test_idx  = [x for x in range(len(ll_logp)) if not x in train_idx]
 
-            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(train_X, \
-                                                                       train_Y, \
-                                                                       train_idx,\
-                                                                       remove_fp=True)
-            ## X_test_org, Y_test_org, _ = dm.flattenSample(test_X, \
-            ##                                             test_Y, \
-            ##                                             remove_fp=False)
+            ll_logp_train = np.array(ll_logp)[train_idx].tolist()
+            ll_post_train = np.array(ll_post)[train_idx].tolist()
+            ll_idx_train  = np.array(ll_idx)[train_idx].tolist()
+            l_label_train = testDataY[train_idx].tolist()
+            ll_logp_test = np.array(ll_logp)[test_idx].tolist()
+            ll_post_test = np.array(ll_post)[test_idx].tolist()
+            l_label_test = testDataY[test_idx].tolist()
+
+
+            if method == 'change':
+
+                ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp_train, \
+                                                                              ll_post_train, \
+                                                                              ll_idx_train, \
+                                                                              l_label_train)
+                ll_classifier_train_X, ll_classifier_train_Y = \
+                  getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
+
+                ## X_train_org, Y_train_org, idx_train_org = \
+                ##   hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
+                ##                                    l_label_train, \
+                ##                                    c=1.0, add_delta_logp=True,\
+                ##                                    remove_fp=False, remove_outlier=True)
+            else:
+                X_train_org, Y_train_org, idx_train_org = \
+                  hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
+                                                   l_label_train, \
+                                                   c=1.0, add_delta_logp=True,\
+                                                   remove_fp=False, remove_outlier=True)
+
+            if X_train_org == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+            
+            # nSample x nLength
+            test_X, test_Y = \
+              hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, l_label_test, c=1.0, add_delta_logp=True)
+            if test_X == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
 
             if method.find('svm')>=0:
                 scaler = preprocessing.StandardScaler()
@@ -252,22 +218,33 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                     X_test.append(X)
                     Y_test.append(test_Y[j])
-                weights = ROC_dict['svm_param_range']
             else:
                 X_scaled = X_train_org
                 X_test = test_X
                 Y_test = test_Y
-                weights = ROC_dict['progress_param_range']
-                
+            weights = ROC_dict[method+'_param_range']
 
-            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
-                                                                             idx_train_org, \
-                                                                             X_test, Y_test, \
-                                                                             nEmissionDim, nLength, \
-                                                                             SVM_dict, weight=weights[iii], \
-                                                                             method=method,\
-                                                                             verbose=False)\
-                                                                             for iii in xrange(len(weights)))
+            print "Start to run classifiers"
+            if method == 'change':
+                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, \
+                                                                                 ll_classifier_train_X,\
+                                                                                 ll_classifier_train_Y,\
+                                                                                 ll_idx, \
+                                                                                 X_test, Y_test, \
+                                                                                 nEmissionDim, nLength, \
+                                                                                 SVM_dict, weight=weights[iii], \
+                                                                                 method=method,\
+                                                                                 verbose=False)\
+                                                                                 for iii in xrange(len(weights)))
+            else:
+                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                                 idx_train_org, \
+                                                                                 X_test, Y_test, \
+                                                                                 nEmissionDim, nLength, \
+                                                                                 SVM_dict, weight=weights[iii], \
+                                                                                 method=method,\
+                                                                                 verbose=False)\
+                                                                                 for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
             err_flag = False
@@ -285,74 +262,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-
-                                
-            ## max_norm_logp = np.amax(norm_logp)
-            ## min_norm_logp = np.amin(norm_logp)
-
-            ## ll_norm_logp   = (np.array(ll_norm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
-            ## ll_abnorm_logp = (np.array(ll_abnorm_logp)-min_norm_logp)/(max_norm_logp-min_norm_logp)
-
-            ## #
-            ## ## import MDAnalysis.analysis.psa as psa
-            ## l_mean_logp = np.array([np.mean(ll_norm_logp, axis=0)])
-            ## norm_dist = []
-            ## abnorm_dist = []
-            ## for i in xrange(len(ll_norm_logp)):
-            ##     norm_dist.append( np.linalg.norm(l_mean_logp - ll_norm_logp[i:i+1] ) )
-            ##     ## norm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_norm_logp[i:i+1] )))
-            ## for i in xrange(len(ll_abnorm_logp)):
-            ##     abnorm_dist.append( np.linalg.norm(l_mean_logp - ll_abnorm_logp[i:i+1] ) )
-            ##     ## abnorm_dist.append(np.log(psa.hausdorff(l_mean_logp, ll_abnorm_logp[i:i+1] )))
-
-            ## print param['scale'], param['cov'], " : ", np.mean(norm_dist)-np.mean(abnorm_dist), \
-            ##   " : ", np.std(norm_dist)-np.std(abnorm_dist) 
-            ## scores.append( abs(np.mean(abnorm_dist)/np.mean(norm_dist))/(1.0 + float(nEmissionDim)/3.0*np.std(norm_dist))  )
-
-            #--------------------------------------------------------------
-            ## logps = norm_logp + abnorm_logp
-            ## if len(logps) == 0:
-            ##     scores.append(-100000)
-            ##     continue
-            ## if np.mean(norm_logp) < 0 or np.amin(norm_logp) < 0:
-            ##     continue
-
-            ## # normalization
-            ## max_logp     = np.amax(logps) 
-            ## norm_logp   /= max_logp
-            ## abnorm_logp /= max_logp
-
-            ## # mu, sig
-            ## l_mu  = np.mean(norm_logp)
-            ## l_sig = np.std(norm_logp)
-            ## new_abnorm_logp = [logp for logp in abnorm_logp if logp > 0.0]
-
-            ## from scipy.stats import norm
-            ## score = 0.0; c1=300.0; c2=300.0; c3=50. #1.e+2 c8
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=500. #1.e+2 pc1
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=1000. #1.e+2 c12
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5000. #1.e+2 c11
-            ## ## score = 0.0; c1=1000.0; c2=1.0; c3=5. #1.e+2 ep
-            ## score += c1/l_sig
-            ## score += c2/np.sum([ norm.pdf(logp,loc=l_mu,scale=l_sig) for logp in new_abnorm_logp ])
-            ## ## score += c3/max_logp
-            ## ## ## abnorm_logp = np.sort(abnorm_logp)[::-1][:len(abnorm_logp)/2]
-            ## scores.append( 1000.0*score )
-
-            #--------------------------------------------------------------
-            ## # score 1 - c12
-            ## diff_vals = -abnorm_logp + np.mean(norm_logp)
-            ## diff_list = []
-            ## for v in diff_vals:
-            ##     if v is np.nan or v is np.inf: continue
-            ##     diff_list.append(v)
-
-            ## if len(diff_list)==0: continue
-            ## score = np.median(diff_list)
-            ## scores.append( score )                                    
-            ## print scores
-
-        ## print np.sum(tp_l)+np.sum(fn_l), np.sum(fp_l)+np.sum(tn_l)
 
         if ret == 'Failure':
             mean_list.append(0)
@@ -591,7 +500,7 @@ def run_single_hmm_classifier(param_idx, data, param, HMM_dict, SVM_dict, startI
     print "start fit hmm"
     ml = hmm.learning_hmm( param['nState'], nEmissionDim )
     ret = ml.fit( normalTrainData, cov_mult=cov_mult )
-    if ret == 'Failure':
+    if ret == 'Failure' or np.isnan(ret):
         print 'failure with ', param
         return -1, [],[],[],[]
         ## scores.append(-1.0 * 1e+10)
@@ -724,11 +633,9 @@ if __name__ == '__main__':
                  help='type the desired dimension')
     p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
                  help='number of processes for multi processing')
-    p.add_option('--add_logp_d', '--ld', action='store_false', dest='bAddLogpD',
-                 default=True, help='Enable AE data.')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
-    p.add_option('--method', '--m', action='store', dest='method', type='string', default='svm',
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='progress',
                  help='type the desired method')
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
@@ -747,7 +654,7 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
-                                                              nPoints=10)
+                                                              nPoints=8)
 
 
         if opt.task == 'scooping':
@@ -777,10 +684,12 @@ if __name__ == '__main__':
             parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
                           'cov': np.linspace(0.5,5.,10) }
         elif opt.task == 'pushing_toolcase':
-            parameters = {'nState': [25], 'scale': np.linspace(1.0,8.0,10), \
-                          'cov': np.linspace(0.5,4.0,10) }
+            parameters = {'nState': [25], 'scale': np.linspace(3.0,8.0,5), \
+                          'cov': np.linspace(2.0,12.0,5) }
         else:
             print "Not available task"
+        max_check_fold = None #2
+        no_cov = False
 
     else:
 
@@ -789,12 +698,17 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
-                                                              nPoints=7)
-        parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
-                      'cov': np.linspace(1.0,5.0,10) }
-        
+                                                              nPoints=8)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,15.0,1) }
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-            
+
+        max_check_fold = None
+        ## max_check_fold = 3
+        no_cov = True
 
     #--------------------------------------------------------------------------------------
     # test change of logp
@@ -808,5 +722,5 @@ if __name__ == '__main__':
         sys.exit()
 
     tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-             bSave=opt.bSave, method=opt.method, max_check_fold=2)
+             bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
     ## tune_hmm_classifier(parameters, kFold_list, param_dict, verbose=True)
