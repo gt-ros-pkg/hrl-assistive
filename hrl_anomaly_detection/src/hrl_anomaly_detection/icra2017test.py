@@ -995,6 +995,11 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             cf_dict['ll_mu']       = dtc.ll_mu
             cf_dict['ll_std']      = dtc.ll_std
             cf_dict['logp_offset'] = dtc.logp_offset
+        elif method == 'hmmgp'
+            cf_dict = {}
+            cf_dict['method']      = dtc.method
+            cf_dict['nPosteriors'] = dtc.nPosteriors
+            cf_dict['ths_mult']    = dtc.ths_mult
 
 
         r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
@@ -1023,7 +1028,7 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
         exec 'dtc.%s = v' % k        
 
     if verbose: print "Update classifier"
-    if method == 'progress' or method == 'kmean':
+    if method == 'progress' or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[idx] )
     else:
