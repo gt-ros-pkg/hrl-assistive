@@ -398,11 +398,11 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_osvm'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
-                          'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0, 1.1, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(0, 1.0, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.6, 3.5, nPoints)*-1.0+0.4, \
-                          'progress_svm_param_range': np.linspace(0.002, 0.476, nPoints),\
+                          'progress_svm_param_range': np.linspace(0.005, 15.322, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'hmmgp_param_range':np.linspace(0, -4.0, nPoints), \
                           'fixed_param_range': np.linspace(-1.495, 0.171, nPoints),\
