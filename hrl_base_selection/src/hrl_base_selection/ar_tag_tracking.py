@@ -59,9 +59,6 @@ class AR_Tag_Tracking(object):
         # The homogeneous transform from the reference point of interest (e.g. the center of the head, the base of the
         # bed model).
         self.reference_B_ar = np.eye(4)
-        BED_OFFSET = -0.02
-        self.ar_B_center = np.eye(4)
-	self.ar_B_center[1, 3] = BED_OFFSET 	
         # while not self.listener.canTransform('base_link', 'base_link', rospy.Time(0)) and not rospy.is_shutdown():
         #     rospy.sleep(2)
         #     print self.mode, ' AR tag waiting for the map transform.'
@@ -256,7 +253,7 @@ class AR_Tag_Tracking(object):
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.00, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.02, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
@@ -356,7 +353,6 @@ class AR_Tag_Tracking(object):
                         if self.mode == 'autobed':
                             map_B_ar = self.shift_to_ground(map_B_ar)
 			    #Change Added to work at Henry's house
-			    map_B_ar = map_B_ar*self.ar_B_center
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
                     #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
