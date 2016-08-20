@@ -343,7 +343,7 @@ class classifier(learning_base):
             self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
             
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                       nugget=1e-5, normalize=True)
+                                                       nugget=1e-1, normalize=True)
             self.dt.fit(ll_post, ll_logp)          
 
         elif self.method == 'fixed':
