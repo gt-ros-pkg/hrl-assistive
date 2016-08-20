@@ -337,13 +337,16 @@ class classifier(learning_base):
             # extract only negatives
             ll_logp = [ X[i,0] for i in xrange(len(X))  ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
+
+            # to prevent multiple same input we add noise into X
+            ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))
             
             from sklearn import gaussian_process
             self.regr = 'linear' # 'constant', 'linear', 'quadratic'
             self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
             
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                       nugget=1e-1, normalize=True)
+                                                       normalize=True)
             self.dt.fit(ll_post, ll_logp)          
 
         elif self.method == 'fixed':
