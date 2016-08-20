@@ -561,12 +561,12 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_diag', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
-                          'progress_diag_param_range':np.logspace(0, 2.0, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0, 7.136, nPoints)*-1.0, \
+                          'progress_diag_param_range':np.logspace(0, 6.502, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(0.1, 0.5, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'progress_svm_param_range': np.linspace(0.002, 0.476, nPoints),\
+                          'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
                           'hmmgp_param_range':np.linspace(0, -4.0, nPoints), \
                           'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
