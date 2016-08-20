@@ -26,7 +26,7 @@ from operator import itemgetter
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 # import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -355,7 +355,7 @@ class ScoreGenerator(object):
         param_max = np.array([1.5, 1.5, m.pi/3., 0.3])
         param_initialization = (param_max+param_min)/2.
         param_scaling = (param_max - param_min)/4.
-        maxiter = 5
+        maxiter = 2
         popsize = m.pow(1, 1)*10
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.5,
                  'scaling_of_variables': list(param_scaling),
@@ -391,7 +391,7 @@ class ScoreGenerator(object):
 
             environment_voxels = np.array([t for t in (([p[0], p[1], p[2], 0.025, 0.025, 0.025])
                                                        for p in pc2.read_points(myCloud, field_names=("x", "y", "z"), skip_nans=True))
-                                           if (t[2] > 0.1)
+                                           if (t[2] > 0.05)
                                            ])
 
             self.environment_model.InitFromBoxes(environment_voxels, True)  # set geometry as many boxes
