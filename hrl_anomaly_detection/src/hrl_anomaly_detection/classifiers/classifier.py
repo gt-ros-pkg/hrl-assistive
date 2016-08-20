@@ -369,8 +369,6 @@ class classifier(learning_base):
         elif self.method == 'change':
             if type(X) == list: X = np.array(X)
 
-            print np.shape(X), np.shape(y)
-                
             l_idx = range(len(X))
             if len(np.shape(y))==1:
                 l_idx = [ i for i in l_idx if y[i][0]<0 ]
