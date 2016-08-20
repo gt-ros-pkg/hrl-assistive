@@ -995,7 +995,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             cf_dict['ll_mu']       = dtc.ll_mu
             cf_dict['ll_std']      = dtc.ll_std
             cf_dict['logp_offset'] = dtc.logp_offset
-        elif method == 'hmmgp'
+        elif method == 'hmmgp':
             cf_dict = {}
             cf_dict['method']      = dtc.method
             cf_dict['nPosteriors'] = dtc.nPosteriors
