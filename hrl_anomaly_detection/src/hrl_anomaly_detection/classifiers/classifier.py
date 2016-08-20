@@ -357,7 +357,7 @@ class classifier(learning_base):
 
                 idx_list = range(len(ll_post))
                 random.shuffle(idx_list)
-                self.dt.fit( ll_post[idx_list[:1000]], np.array(ll_logp)[idx_list[:1000]])          
+                self.dt.fit( ll_post[idx_list[:600]], np.array(ll_logp)[idx_list[:600]])          
 
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
