@@ -49,7 +49,7 @@ class arTagDetector:
             print 'I do not know what AR tag to look for... Abort!'
             return
 
-        self.hist_size = 30
+        self.hist_size = 15
         self.pos_buf  = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
         #now = rospy.Time.now()
