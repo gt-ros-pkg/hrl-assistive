@@ -340,14 +340,24 @@ class classifier(learning_base):
 
             # to prevent multiple same input we add noise into X
             ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))
-            
-            from sklearn import gaussian_process
-            self.regr = 'linear' # 'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
-            
-            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                       normalize=True)
-            self.dt.fit(ll_post, ll_logp)          
+
+            if False:
+                from sklearn.utils import check_array
+                ll_logp = check_array(ll_logp).T
+                import sandbox_dpark_darpa_m3.lib.gaussian_process.spgp.spgp as gp
+                self.dt = gp.Gaussian_Process(ll_post,ll_logp,M=400)
+                self.dt.training('./spgp_obs.pkl', renew=True)
+            else:
+                from sklearn import gaussian_process
+                self.regr = 'linear' # 'constant', 'linear', 'quadratic'
+                self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
+
+                self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
+                                                           normalize=True)
+
+                idx_list = range(len(ll_post))
+                random.shuffle(idx_list)
+                self.dt.fit( ll_post[idx_list[:500]], np.array(ll_logp)[idx_list[:500]])          
 
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -577,8 +587,11 @@ class classifier(learning_base):
             logps = X[:,0]
             posts = X[:,-self.nPosteriors:]
 
-            y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
-            sigma = np.sqrt(MSE)
+            if False:
+                y_pred, sigma = self.dt.predict(posts, True)
+            else:                
+                y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
+                sigma = np.sqrt(MSE)
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
