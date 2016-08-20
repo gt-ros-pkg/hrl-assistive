@@ -172,7 +172,11 @@ class CheckOccupancyState(PDDLSmachState):
     def on_execute(self, ud):
         if self.model.upper() == 'AUTOBED':
             print "[%s] Check Occupancy State Waiting for Service" % rospy.get_name()
-            rospy.wait_for_service('autobed_occ_status')
+	    try:
+            	rospy.wait_for_service('autobed_occ_status', timeout=5)
+	    except:
+                rospy.logwarn('[%s] Pressure Mat Not Running On the Autobed' % rospy.get_name())
+                return 'aborted'
             try:
                 self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
                 self.autobed_occupied_status = self.AutobedOcc().data
@@ -369,7 +373,11 @@ class CallBaseSelectionState(PDDLSmachState):
 
     def call_base_selection(self):
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
-        rospy.wait_for_service("select_base_position")
+        try:
+            rospy.wait_for_service("select_base_position", timeout=5)
+        except:
+            rospy.logwarn("[%s] Is Base Selection Service Running?" % rospy.get_name())
+	    return 'aborted' 
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         if self.task.upper() == 'WIPING_MOUTH':
