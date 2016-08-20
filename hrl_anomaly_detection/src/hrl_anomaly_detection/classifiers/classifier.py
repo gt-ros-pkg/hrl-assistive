@@ -195,7 +195,9 @@ class classifier(learning_base):
             self.nPosteriors = nPosteriors
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
-            
+        elif self.method == 'hmmgp':
+            self.ths_mult    = ths_mult
+            self.nPosteriors = nPosteriors
                         
         learning_base.__init__(self)
 
