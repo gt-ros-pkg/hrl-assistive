@@ -6,6 +6,7 @@ from task_smacher import PDDLSmachState
 from hrl_task_planning.msg import PDDLState
 from actionlib_msgs.msg import GoalStatus
 import numpy as np
+from hrl_task_planning.pddl_utils import Predicate
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -82,12 +83,15 @@ import tf
 class CallBaseSelectionState(PDDLSmachState):
     def __init__(self, ee_goal_param, ee_frame_param, base_goal_param, torso_goal_param, *args, **kwargs):
         super(CallBaseSelectionState, self).__init__(*args, **kwargs)
+        self.domain = kwargs['domain']
+        self.problem = kwargs['problem']
         self.ee_goal_param = ee_goal_param
         self.ee_frame_param = ee_frame_param
         self.base_goal_param = base_goal_param
         self.torso_goal_param = torso_goal_param
         self.base_selection_service = rospy.ServiceProxy('/realtime_select_base_position', RealtimeBaseMove)
-        self.ee_pose_pub = rospy.Publisher('/rtbs_ee_goal', PoseStamped, latch=True)
+        self.ee_pose_pub = rospy.Publisher('/rtbs_ee_goal', PoseStamped, queue_size=1, latch=True)
+        self.pddl_update_pub = rospy.Publisher('pddl_tasks/state_updates', PDDLState, queue_size=1)
         self.tfl = tf.TransformListener()
 
     def on_execute(self, ud):
@@ -109,32 +113,40 @@ class CallBaseSelectionState(PDDLSmachState):
         req.pose_target = ee_goal
         try:
             res = self.base_selection_service.call(req)
+            rospy.loginfo("[%s] %s: Real-time base selection Response:\n%s", rospy.get_name(), self.__class__.__name__, res)
         except rospy.ServiceException as se:
-            rospy.logerr("[%s] CallBaseSelectionState - Service call failed: %s", rospy.get_name(), se)
+            rospy.logerr("[%s] %s: Service call failed: %s", rospy.get_name(), self.__class__.__name__, se)
             return 'aborted'
-        print "RTBS Response:\n", res
+        if not res.base_goal:  # Got a bad result, force a start-over
+            rospy.delete_param(self.ee_goal_param)  # Clear the current hand goal
+            state = PDDLState()
+            state.domain = self.domain
+            state.problem = self.problem
+            state.predicates = map(str, [Predicate('SCAN_COMPLETE', [], neg=True)])
+            self.pddl_update_pub.publish(state)
+            return 'aborted'
 
-        # NOTES:
-        # res.base_goal is [pos_x, pos_y, pos_z, quat_x, quat_y, quat_z, quat_w]
-
-        common_time = self.tfl.getLatestCommonTime('base_footprint', '/odom_combined')
-
-        # Invert transform
         pos = res.base_goal[0:3]
         quat = res.base_goal[3:7]
+
+        # Invert transform
         goal_mat = tf.transformations.quaternion_matrix(quat)
         goal_mat[:3, 3] = np.array(pos).T
         goal_mat_inv = np.mat(goal_mat).I
-        new_quat = tf.transformations.quaternion_from_matrix(goal_mat_inv)
-        new_pose = goal_mat_inv[:3, 3].A1.tolist()
+        pos = goal_mat_inv[:3, 3].A1.tolist()
+        quat = tf.transformations.quaternion_from_matrix(goal_mat_inv)
 
         # Transform to new frame
+        common_time = self.tfl.getLatestCommonTime('base_footprint', '/odom_combined')
         ps_msg = PoseStamped()
         ps_msg.header.frame_id = '/base_footprint'
         ps_msg.header.stamp = common_time
-        ps_msg.pose.position = Point(*new_pose)
-        ps_msg.pose.orientation = Quaternion(*new_quat)
-        odom_msg = self.tfl.transformPose('/odom_combined', ps_msg)
+        ps_msg.pose.position = Point(*pos)
+        ps_msg.pose.orientation = Quaternion(*quat)
+        try:
+            odom_msg = self.tfl.transformPose('/odom_combined', ps_msg)
+        except:
+            rospy.logerr("[%s] Error transforming goal from base_selection into odom_combined", rospy.get_name())
 
         # Transform Pose returns results as numpy.float64, and rosparam can't handle them, so convert to regular floats...
         odom_msg.pose.position.x = float(odom_msg.pose.position.x)
@@ -227,7 +239,7 @@ class AdjustTorsoState(PDDLSmachState):
         super(AdjustTorsoState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action', SingleJointPositionAction)
         self.torso_goal_param = torso_goal_param
         self.torso_goal_arg = kwargs['action_args'][0]
@@ -273,7 +285,7 @@ class ClearTorsoSetState(PDDLSmachState):
         super(ClearTorsoSetState, self).__init__(self, *args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.base_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
@@ -289,7 +301,7 @@ class ClearAtGoalState(PDDLSmachState):
         super(ClearAtGoalState, self).__init__(self, *args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.at_goal_arg = kwargs['action_args'][0]
 
     def on_execute(self, ud):
@@ -309,7 +321,7 @@ class ScanEnvironmentState(PDDLSmachState):
         super(ScanEnvironmentState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.scan_actioin_client = actionlib.SimpleActionClient('/head_sweep_action', HeadSweepAction)
         found = self.scan_actioin_client.wait_for_server(rospy.Duration(5))
         if not found:
@@ -332,6 +344,12 @@ class ScanEnvironmentState(PDDLSmachState):
         goal.sweep_trajectory = jt
         # Send goal
         self.scan_actioin_client.send_goal(goal)
+
+    def service_preempt(self):
+        # Cancel any running actions if state is preempted
+        rospy.loginfo("[%s] Preempt Requested - Cancelling scan.", rospy.get_name())
+        self.scan_actioin_client.cancel_goal()
+        super(ScanEnvironmentState, self).service_preempt()
 
     def execute(self, ud):
         """ Call head Sweep Action in separate thread, publish state once done."""
@@ -365,7 +383,7 @@ class ClearEnvironmentState(PDDLSmachState):
         super(ClearEnvironmentState, self).__init__(*args, **kwargs)
         self.domain = kwargs['domain']
         self.problem = kwargs['problem']
-        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState)
+        self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
 
     def on_execute(self, ud):
         state_msg = PDDLState()

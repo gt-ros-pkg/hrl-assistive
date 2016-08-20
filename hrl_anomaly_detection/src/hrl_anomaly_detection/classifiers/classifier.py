@@ -326,6 +326,23 @@ class classifier(learning_base):
             
             return True
 
+        elif self.method == 'hmmgp':
+            '''
+            gaussian process
+            '''
+            if type(X) == list: X = np.array(X)
+            
+            # extract only negatives
+            ll_logp = [ X[i,0] for i in xrange(len(X))  ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
+            
+            from sklearn import gaussian_process
+            self.regr = 'linear' # 'constant', 'linear', 'quadratic'
+            self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
+            
+            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, normalize=True)
+            self.dt.fit(ll_post, ll_logp)          
+
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
             ll_logp = X[:,0:1]
@@ -542,9 +559,23 @@ class classifier(learning_base):
                 err = np.mean(l_logp) + self.ths_mult*np.std(l_logp) - logp - self.logp_offset
                 l_err.append(err)
 
+            return l_err            
+
+        elif self.method == 'hmmgp':
+            '''
+            gaussian process
+            '''
+            if len(np.shape(X))==1: X = [X]
+            if type(X) is list: X= np.array(X)
+            
+            logps = X[:,0]
+            posts = X[:,-self.nPosteriors:]
+
+            y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
+            sigma = np.sqrt(MSE)
+            l_err = y_pred + self.ths_mult*sigma - logps - self.logp_offset
             return l_err
 
-                
         elif self.method == 'fixed':
             if len(np.shape(X))==1: X = [X]
                 
@@ -870,7 +901,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
     elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
-      or method == 'kmean':
+      or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
@@ -1022,7 +1053,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_idx  = ll_classifier_ep_test_idx
 
 
-        if method == 'hmmosvm' or method == 'progress_osvm':
+        if method == 'hmmosvm' or method == 'progress_osvm' or method == 'hmmgp':
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
@@ -1197,7 +1228,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
-          method == 'fixed' or method == 'kmean' :
+          method == 'fixed' or method == 'kmean' or method == 'hmmgp':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                

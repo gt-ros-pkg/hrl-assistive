@@ -60,7 +60,7 @@ RFH.CartesianEEControl = function (options) {
         }
         self.arm.sendJointAngleGoal(tuckSideAngles);
     };
-    $('#controls > .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
+    $('#controls .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
 
     var armCameraOn = false;
     var showArmCamera = function (event) {
@@ -81,7 +81,7 @@ RFH.CartesianEEControl = function (options) {
             showArmCamera();
         }
     };
-    $('#controls > .arm-cam.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', toggleArmCamera);
+    $('#controls .arm-cam.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', toggleArmCamera);
 
     var cameraSwing = function (event) {
         // Clear the canvas, turn on pointcloud visibility...

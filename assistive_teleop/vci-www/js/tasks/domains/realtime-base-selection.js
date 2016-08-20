@@ -85,7 +85,7 @@ RFH.Domains.RealtimeBaseSelection = function (options) {
             case 'GET_FRAME':
                 return "Choose Hand";
             case 'SCAN_ENVIRONMENT':
-                return 'Scannig Area';
+                return 'Scanning Area';
             case 'SERVO_OPEN_LOOP':
                 return 'Moving Robot';
             case 'ADJUST_TORSO':

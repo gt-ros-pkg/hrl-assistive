@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#pk!/usr/bin/env python
 
 import numpy as np
 import math as m
@@ -142,25 +142,31 @@ class BaseSelector(object):
                 print 'Paper work is only with Autobed. Error!'
                 return
         elif load == 'henry':
-            # model = 'chair'
-            # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
-            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            model = 'chair'
+            #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+            self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
-            # model = 'autobed'
+            model = 'autobed'
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
-            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
             # self.scores_dict[model, 'scratching_chest'] = self.load_task('scratching_chest', model)
-            # self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-            # self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
             # self.scores_dict[model, 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model)
             # self.scores_dict[model, 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model)
-            # self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
-            # self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
-            # self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
-            # self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            #self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
+            #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
             self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
             self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
             self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
@@ -327,7 +333,7 @@ class BaseSelector(object):
         if score >=10.:
             print 'Could not find a base configuration from which the PR2 could reach the goal!'
             print 'Sorry!'
-            return None
+            return [], [], []
         else:
             return self.handle_returning_base_goals()
 
@@ -575,12 +581,12 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        max_num_configs = 2
+        max_num_configs = 1
 
-        head_rest_angle = -5
+        head_rest_angle = -10
         allow_bed_movement = 1
 
-        if not head_rest_angle < -1:
+        if head_rest_angle > -1:
             head_rest_possibilities = np.arange(-10, 80.1, 10)
             head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
             head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
@@ -806,24 +812,29 @@ class BaseSelector(object):
     def load_task(self, task, model):
         home = expanduser("~")
         if 'wiping' in task:
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data.pkl'])
-            return load_pickle(file_name)
+            task = 'face_wiping'
+        file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl' 
+#        print file_name
+        return load_pickle(file_name)
+#        if 'wiping' in task:
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data.pkl'])
+#            return load_pickle(file_name)
 
-        elif 'scratching' not in task:
+#        elif 'scratching' not in task:
             # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data'])
-        else:
-            task_name = 'scratching'
-            task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_score_data.pkl'])
-            return load_pickle(file_name)
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data'])
+#        else:
+#            task_name = 'scratching'
+#            task_location = task.replace('scratching_', '')
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_score_data.pkl'])
+#            return load_pickle(file_name)
         # return self.load_spickle(file_name)
-        print 'loading file with name ', file_name
-        try:
-            return joblib.load(file_name)
-        except IOError:
-            print 'Load failed, sorry.'
-            return None
+#        print 'loading file with name ', file_name
+#        try:
+#            return joblib.load(file_name)
+#        except IOError:
+#            print 'Load failed, sorry.'
+#            return None
 
 if __name__ == "__main__":
     import optparse
