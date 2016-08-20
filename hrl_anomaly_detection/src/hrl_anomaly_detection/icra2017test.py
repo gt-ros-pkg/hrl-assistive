@@ -786,7 +786,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
                             data_renew=False, \
                             verbose=False, debug=False):
 
-    parameters = {'nState': [25], 'scale': np.linspace(3.0,14.0,10) }
+    parameters = {'nState': [25], 'scale': np.linspace(7.0,14.0,7) }
     param_list = list(ParameterGrid(parameters))
 
     for param in param_list:
