@@ -78,7 +78,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng', \
                         'unimodal_audioWristRMS']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 6.444,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.666, 'scale': 7.333,
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.9952, 'gamma': 0.0464, 'cost': 6.0,\
                           'hmmosvm_nu': 0.00316,\
@@ -122,7 +122,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist', \
                         'crossmodal_targetEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.333, 'scale': 4.666, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 7.333, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 2.25, 'gamma': 1.05925, 'cost': 5.4,\
                           'hmmosvm_nu': 0.00316,\
@@ -145,7 +145,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist' ]
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.666, 'scale': 5.555,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.333, 'scale': 9.111,
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
                           'hmmosvm_nu': 0.00316}
