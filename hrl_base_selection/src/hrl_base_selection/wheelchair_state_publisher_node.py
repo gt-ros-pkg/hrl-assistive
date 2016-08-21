@@ -17,7 +17,7 @@ from std_msgs.msg import Bool
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
 from std_msgs.msg import ColorRGBA
-from autobed_occupied_client import autobed_occupied_status_client
+
 from tf.transformations import quaternion_from_euler
 
 
@@ -32,13 +32,15 @@ HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
 
 
-class AutobedStatePublisherNode(object):
+class WheelchairStatePublisherNode(object):
     def __init__(self):
         self.joint_pub = rospy.Publisher('wheelchair/joint_states', JointState, queue_size=100)
 
         # self.marker_pub=rospy.Publisher('visualization_marker', Marker)
         self.frame_lock = threading.RLock()
-        print 'Autobed robot state publisher is ready and running!'
+
+        self.run()
+        print 'Wheelchair robot state publisher is ready and running!'
 
 
     def run(self):
@@ -99,6 +101,6 @@ class AutobedStatePublisherNode(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('autobed_state_publisher_node', anonymous = False)
-    a = AutobedStatePublisherNode()
-    a.run()
+    rospy.init_node('wheelchair_state_publisher_node', anonymous = False)
+    a = WheelchairStatePublisherNode()
+    #a.run()
