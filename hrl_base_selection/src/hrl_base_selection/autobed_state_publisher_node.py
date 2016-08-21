@@ -206,8 +206,8 @@ class AutobedStatePublisherNode(object):
             human_joint_state = JointState()
             human_joint_state.header.stamp = rospy.Time.now()
 
-            human_joint_state.name = [None]*(17)
-            human_joint_state.position = [None]*(17)
+            human_joint_state.name = [None]*(19)
+            human_joint_state.position = [None]*(19)
             human_joint_state.name[0] = "autobed/neck_body_joint"
             human_joint_state.name[1] = "autobed/upper_mid_body_joint"
             human_joint_state.name[2] = "autobed/mid_lower_body_joint"
@@ -225,6 +225,9 @@ class AutobedStatePublisherNode(object):
             human_joint_state.name[14] = "autobed/forearm_hand_right_joint"
             human_joint_state.name[15] = "autobed/head_neck_joint1"
             human_joint_state.name[16] = "autobed/head_neck_joint2"
+            human_joint_state.name[17] = "autobed/head_updown_bedframe_translation_joint"
+            human_joint_state.name[18] = "autobed/head_contact_to_head_center"
+            
 
             bth = m.degrees(headrest_th)
             # bth = headrest_th
@@ -235,25 +238,29 @@ class AutobedStatePublisherNode(object):
             elif bth > 80.:
                 bth = 80.
             if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
-                human_joint_state.position[0] = (bth/40)*(-.2-(-.1))+(-.1)
-                human_joint_state.position[1] = (bth/40)*(-.17-.4)+.4
-                human_joint_state.position[2] = (bth/40)*(-.76-(-.72))+(-.72)
+                human_joint_state.position[0] = (bth/40)*(-.3-(-.1))+(-.1)
+                human_joint_state.position[1] = (bth/40)*(-.07-.4)+.4
+                human_joint_state.position[2] = (bth/40)*(-.82-(-.72))+(-.72)
                 human_joint_state.position[3] = -0.4
                 human_joint_state.position[4] = -0.4
                 human_joint_state.position[5] = 0.1
                 human_joint_state.position[6] = 0.1
                 human_joint_state.position[7] = (bth/40)*(-.05-.02)+.02
-                human_joint_state.position[8] = (bth/40)*(-.05-.02)+.0
+                human_joint_state.position[8] = (bth/40)*(-.05-.02)+.02
                 human_joint_state.position[9] = (bth/40)*(-.06-(-.12))+(-.12)
                 human_joint_state.position[10] = (bth/40)*(-.06-(-.12))+(-.12)
-                human_joint_state.position[11] = (bth/40)*(.58-0.05)+.05
-                human_joint_state.position[12] = (bth/40)*(.58-0.05)+.05
+                human_joint_state.position[11] = (bth/40)*(.52-0.05)+.05
+                human_joint_state.position[12] = (bth/40)*(.52-0.05)+.05
                 human_joint_state.position[13] = -0.1
                 human_joint_state.position[14] = -0.1
+                human_joint_state.position[15] = -((bth/40)*(0.35 - 0)+0)
+                human_joint_state.position[16] = 0.
+                human_joint_state.position[17] = (bth/40)*(-0.05 - 0)+0
+                human_joint_state.position[18] =  -((bth/40)*(0.4 - 0)+0)
             elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
-                human_joint_state.position[0] = ((bth-40)/40)*(-.55-(-.2))+(-.2)
-                human_joint_state.position[1] = ((bth-40)/40)*(-.51-(-.17))+(-.17)
-                human_joint_state.position[2] = ((bth-40)/40)*(-.78-(-.76))+(-.76)
+                human_joint_state.position[0] = ((bth-40)/40)*(-.4-(-.32))+(-.3)
+                human_joint_state.position[1] = ((bth-40)/40)*(-.51-(-.07))+(-.07)
+                human_joint_state.position[2] = ((bth-40)/40)*(-.84-(-.82))+(-.82)
                 human_joint_state.position[3] = -0.4
                 human_joint_state.position[4] = -0.4
                 human_joint_state.position[5] = 0.1
@@ -262,17 +269,21 @@ class AutobedStatePublisherNode(object):
                 human_joint_state.position[8] = ((bth-40)/40)*(-0.1-(-.05))+(-.05)
                 human_joint_state.position[9] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
                 human_joint_state.position[10] = ((bth-40)/40)*(-.01-(-.06))+(-.06)
-                human_joint_state.position[11] = ((bth-40)/40)*(.88-0.58)+.58
-                human_joint_state.position[12] = ((bth-40)/40)*(.88-0.58)+.58
+                human_joint_state.position[11] = ((bth-40)/40)*(.88-0.52)+.52
+                human_joint_state.position[12] = ((bth-40)/40)*(.88-0.52)+.52
                 human_joint_state.position[13] = -0.1
                 human_joint_state.position[14] = -0.1
+                human_joint_state.position[15] = -((bth/40)*(0.0 - .35)+0.35)
+                human_joint_state.position[16] = 0.
+                human_joint_state.position[17] = ((bth-40)/40)*(-0.15 - (-0.05))+(-0.05)
+                human_joint_state.position[18] = -(((bth-40)/40)*(-.06 - 0.4)+0.4)
             else:
                 print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
                 print 'Instead it is: ', bth
                 print 'Raw value (rad): ', headrest_th
 
-            human_joint_state.position[15] = 0.
-            human_joint_state.position[16] = 0.
+            #human_joint_state.position[15] = 0.
+            #human_joint_state.position[16] = 0.
             self.joint_pub.publish(human_joint_state)
             unoccupied_shift = JointState()
             unoccupied_shift.header.stamp = rospy.Time.now()
@@ -306,3 +317,4 @@ if __name__ == "__main__":
     rospy.init_node('autobed_state_publisher_node', anonymous = False)
     a = AutobedStatePublisherNode()
     a.run()
+
