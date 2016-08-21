@@ -944,7 +944,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
         if method == 'hmmgp':
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx = \
               hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, normalPtrainData, \
-                                                               -np.ones(len(normalTrainData[0])), \
+                                                               -np.ones(len(normalPtrainData[0])), \
                                                                startIdx, \
                                                                add_logp_d=False, cov_type='full',\
                                                                nSubSample=20)
