@@ -522,7 +522,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 20
+    nPtrainData = 15
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
@@ -919,18 +919,13 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
-            # BAD: nrSteps=100
-            # BAD: nrSteps=10
-            # BAD: nrSteps=1
-            # BAD: scale<=0.1
-            # Good: progress update
             # step 1 0.1  0.1  c8 (2,1), npt=20  best?
             # step 1 0.1  0.05  c11 (2,10), npt=20
             # step 1 0.5, 0.1  c12 (2,10), npt=20
             # step 10 4.0  0.1  ep (5,2)
             # step 1 0.5  0.15  aws (2,10), npt=10 best?
             
-            # Update last 10 samples
+            # Update last samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
                                            np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
                                                        0,1) ])
@@ -1019,7 +1014,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
         r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
                                                         ROC_dict, X_test, Y_test)
-                                for ii in xrange(nPoints))
+                                                        for ii in xrange(nPoints))
 
         print "ROC data update"
         for (j, tp_l, fp_l, fn_l, tn_l, delay_l, tp_idx_l) in r:
