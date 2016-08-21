@@ -1149,7 +1149,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.array(ll_classifier_test_X)
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
-        elif method == 'hmmgp':
+        if method == 'hmmgp':
             import random
             nSubSample = 20
 
