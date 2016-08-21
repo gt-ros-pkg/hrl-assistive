@@ -660,7 +660,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     l_data = []
     for idx in xrange(len(kFold_list)):
         for jj in xrange(n_random_trial):
-            r = run_online_classifier(idx, processed_data_path, task_name, \
+            r = run_online_classifier(idx, processed_data_path, task_name, method, \
                                       nPtrainData, nTrainOffset, nTrainTimes, \
                                       ROC_data, param_dict,\
                                       np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
@@ -805,7 +805,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
         
                       
 
-def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
+def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
                           normalDataX, abnormalDataX, verbose=False, viz=False,\
                           random_eval=False):
@@ -820,7 +820,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     add_logp_d  = False #HMM_dict.get('add_logp_d', True)
     
     ROC_data_cur = {}
-    for i, method in enumerate(method_list):
+    for i, m in enumerate(method_list):
         for j in xrange(nTrainTimes+1):
             data = {}
             data['complete'] = False 
@@ -830,8 +830,7 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             data['fn_l']     = [ [] for jj in xrange(nPoints) ]
             data['delay_l']  = [ [] for jj in xrange(nPoints) ]
             data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
-            ROC_data_cur[method+'_'+str(j)] = data
-    method = method_list[0]
+            ROC_data_cur[m+'_'+str(j)] = data
     
     #
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
@@ -860,7 +859,6 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
     else:
         rndNormalTraindataIdx = dd['rndNormalTraindataIdx']
     normalPtrainData      = normalTrainData[:,rndNormalTraindataIdx[:nPtrainData],:]
-
 
     # Incremental evaluation
     normalData   = copy.copy(normalDataX) * HMM_dict['scale']
@@ -932,27 +930,36 @@ def run_online_classifier(idx, processed_data_path, task_name, nPtrainData,\
             normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
             normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
-        # Get classifier training data using last 10 samples
-        ## ll_logp, ll_post, ll_classifier_train_idx = ml.loglikelihoods(normalPtrainData, True, True,\
-        ##                                                               startIdx=startIdx)
-        print "Traindata extraction"
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ normalPtrainData[jj][ii] for jj in \
-                                                                  xrange(ml.nEmissionDim) ], \
-                                                                  ml.nEmissionDim, ml.nState,\
-                                                                  startIdx=startIdx, \
-                                                                  bPosterior=True)
-                                                                  for ii in xrange(len(normalPtrainData[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
-                                                                      
-
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
-        X_train_org, Y_train_org, idx_train_org = \
-          hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
-                                           -np.ones(len(normalPtrainData[0])), \
-                                           c=1.0, add_delta_logp=add_logp_d,\
-                                           remove_fp=remove_fp, remove_outlier=True)
+            
+        # Get classifier training data using last 10 samples
+        if method == 'hmmgp':
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx = \
+              hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, normalPtrainData, \
+                                                               -np.ones(len(normalTrainData[0])), \
+                                                               startIdx, \
+                                                               add_logp_d=False, cov_type='full',\
+                                                               nSubSample=20)
+            # flatten the data
+            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+                                                                       ll_classifier_train_Y, \
+                                                                       ll_classifier_train_idx)
+        else:
+            r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
+                                                                    [ normalPtrainData[jj][ii] for jj in \
+                                                                      xrange(ml.nEmissionDim) ], \
+                                                                      ml.nEmissionDim, ml.nState,\
+                                                                      startIdx=startIdx, \
+                                                                      bPosterior=True)
+                                                                      for ii in xrange(len(normalPtrainData[0])))
+            _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+
+            X_train_org, Y_train_org, idx_train_org = \
+              hmm.getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_classifier_train_idx,\
+                                               -np.ones(len(normalPtrainData[0])), \
+                                               c=1.0, add_delta_logp=add_logp_d,\
+                                               remove_fp=remove_fp, remove_outlier=True)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
         # -------------------------------------------------------------------------------
