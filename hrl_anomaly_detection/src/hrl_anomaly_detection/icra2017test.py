@@ -522,7 +522,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 15
+    nPtrainData = 20
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
@@ -984,6 +984,12 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
         ## ## # temp
         if viz:
+            if method == 'hmmgp':
+                ll_logp = [ ll_classifier_train_X[i][0] for i in xrange(len(ll_classifier_train_X))  ]
+                ll_post = [ np.array(ll_classifier_train_X)[i,-nState:].tolist() for i in xrange(len(ll_classifier_train_X)) ]
+                
+            ## vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
+            ##                 ll_logp_test, ll_post_test, testDataY)
             vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
                             ll_logp_test, ll_post_test, testDataY)
             continue
@@ -1401,7 +1407,7 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew)
+                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew, viz=False)
 
     elif opt.bOnlineEvalTemp:
         subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
