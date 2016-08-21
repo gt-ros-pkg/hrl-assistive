@@ -56,6 +56,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     # HMM
     HMM_dict = param_dict['HMM']
     nState   = HMM_dict['nState']
+    add_logp_d = HMM_dict['add_logp_d']
+    
     ## cov      = HMM_dict['cov']
     # SVM
     SVM_dict = param_dict['SVM']
@@ -118,73 +120,58 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             #-----------------------------------------------------------------------------------------
             # Classifier train data
             #-----------------------------------------------------------------------------------------
-            testDataX = []
-            testDataY = []
-            for i in xrange(nEmissionDim):
-                temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-                testDataX.append( temp )
+            startIdx = 4
+            # Classifier training data
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
+                                                       startIdx, add_logp_d)
 
-            testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                    np.ones(len(abnormalTrainData[0])) ])
-
-            # compute last three indices only
-            r = Parallel(n_jobs=n_jobs)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                    [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                    ml.nEmissionDim, ml.nState,\
-                                                                    startIdx=4, \
-                                                                    bPosterior=True)
-                                                                    for i in xrange(len(testDataX[0])))
-            _, ll_idx, ll_logp, ll_post = zip(*r)
-
-            # remove outliers
-            ll_logp, ll_post, ll_idx, _ = hmm.removeLikelihoodOutliers(ll_logp, ll_post, ll_idx)
-
-
-            logp_l = []
-            for i in xrange(len(ll_logp)):
-                logp_l.append(ll_logp[i][-1])
-                
-            if np.amax( logp_l ) < 0:
+            if np.amax( np.array(ll_classifier_train_X)[:,:,0] ) < 0:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
 
-
             # split
             import random
-            train_idx = random.sample(range(len(ll_logp)), int( 0.5*len(ll_logp)) )
-            test_idx  = [x for x in range(len(ll_logp)) if not x in train_idx]
+            train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.5*len(ll_classifier_train_X)) )
+            test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx]
 
-            ll_logp_train = np.array(ll_logp)[train_idx].tolist()
-            ll_post_train = np.array(ll_post)[train_idx].tolist()
-            ll_idx_train  = np.array(ll_idx)[train_idx].tolist()
-            l_label_train = testDataY[train_idx].tolist()
-            ll_logp_test = np.array(ll_logp)[test_idx].tolist()
-            ll_post_test = np.array(ll_post)[test_idx].tolist()
-            l_label_test = testDataY[test_idx].tolist()
+            ll_classifier_test_X   = np.array(ll_classifier_train_X)[test_idx].tolist()
+            ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[test_idx].tolist()
+            ll_classifier_test_idx = np.array(ll_classifier_train_idx)[test_idx].tolist()
+            ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
+            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
 
+            if method == 'hmmgp':
+                nSubSample = 20
+                import random
 
-            if method == 'change':
+                print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+                new_X = []
+                new_Y = []
+                new_idx = []
+                for i in xrange(len(ll_classifier_train_X)):
+                    idx_list = range(len(ll_classifier_train_X[i]))
+                    random.shuffle(idx_list)
+                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
 
-                ll_logp, ll_post, ll_idx, l_labels = removeLikelihoodOutliers(ll_logp_train, \
-                                                                              ll_post_train, \
-                                                                              ll_idx_train, \
-                                                                              l_label_train)
-                ll_classifier_train_X, ll_classifier_train_Y = \
-                  getHMMinducedFeatures(ll_logp, ll_post, l_labels, c=c, add_delta_logp=add_delta_logp)
+                ll_classifier_train_X = new_X
+                ll_classifier_train_Y = new_Y
+                ll_classifier_train_idx = new_idx
+                print "After: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+                
+            # remove outlier?
+            
+            # flatten the data
+            X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+                                                                       ll_classifier_train_Y, \
+                                                                       ll_classifier_train_idx,
+                                                                       remove_fp=False)
 
-                ## X_train_org, Y_train_org, idx_train_org = \
-                ##   hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
-                ##                                    l_label_train, \
-                ##                                    c=1.0, add_delta_logp=True,\
-                ##                                    remove_fp=False, remove_outlier=True)
-            else:
-                X_train_org, Y_train_org, idx_train_org = \
-                  hmm.getHMMinducedFlattenFeatures(ll_logp_train, ll_post_train, ll_idx_train,\
-                                                   l_label_train, \
-                                                   c=1.0, add_delta_logp=True,\
-                                                   remove_fp=False, remove_outlier=True)
 
             if X_train_org == []:
                 print "HMM-induced vector is wrong", param['scale'], param['cov']
@@ -193,9 +180,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 break
             
             # nSample x nLength
-            test_X, test_Y = \
-              hmm.getHMMinducedFeatures(ll_logp_test, ll_post_test, l_label_test, c=1.0, add_delta_logp=True)
-            if test_X == []:
+            if ll_classifier_test_X == []:
                 print "HMM-induced vector is wrong", param['scale'], param['cov']
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
@@ -212,39 +197,27 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 X_test = []
                 Y_test = [] 
-                for j in xrange(len(test_X)):
-                    if len(test_X[j])==0: continue
-                    X = scaler.transform(test_X[j])                                
+                for j in xrange(len(ll_classifier_test_X)):
+                    if len(ll_classifier_test_X[j])==0: continue
+                    X = scaler.transform(ll_classifier_test_X[j])                                
 
                     X_test.append(X)
-                    Y_test.append(test_Y[j])
+                    Y_test.append(ll_classifier_test_Y[j])
             else:
                 X_scaled = X_train_org
-                X_test = test_X
-                Y_test = test_Y
+                X_test = ll_classifier_test_X
+                Y_test = ll_classifier_test_Y
             weights = ROC_dict[method+'_param_range']
 
             print "Start to run classifiers"
-            if method == 'change':
-                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, \
-                                                                                 ll_classifier_train_X,\
-                                                                                 ll_classifier_train_Y,\
-                                                                                 ll_idx, \
-                                                                                 X_test, Y_test, \
-                                                                                 nEmissionDim, nLength, \
-                                                                                 SVM_dict, weight=weights[iii], \
-                                                                                 method=method,\
-                                                                                 verbose=False)\
-                                                                                 for iii in xrange(len(weights)))
-            else:
-                r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
-                                                                                 idx_train_org, \
-                                                                                 X_test, Y_test, \
-                                                                                 nEmissionDim, nLength, \
-                                                                                 SVM_dict, weight=weights[iii], \
-                                                                                 method=method,\
-                                                                                 verbose=False)\
-                                                                                 for iii in xrange(len(weights)))
+            r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
+                                                                             idx_train_org, \
+                                                                             X_test, Y_test, \
+                                                                             nEmissionDim, nLength, \
+                                                                             SVM_dict, weight=weights[iii], \
+                                                                             method=method,\
+                                                                             verbose=False)\
+                                                                             for iii in xrange(len(weights)))
             idx_l, tp_ll, fn_ll, fp_ll, tn_ll = zip(*r)
 
             err_flag = False
@@ -635,7 +608,7 @@ if __name__ == '__main__':
                  help='number of processes for multi processing')
     p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
                  default=False, help='Enable AE data.')
-    p.add_option('--method', '--m', action='store', dest='method', type='string', default='progress',
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='hmmgp',
                  help='type the desired method')
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
