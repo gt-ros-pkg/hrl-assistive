@@ -995,10 +995,11 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
         # -------------------------------------------------------------------------------
         # update kmean
-        print "Classifier fitting"
+        print "Classifier fitting", method
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
         print "Classifier fitting completed"
+        
 
         if method == 'progress':
             cf_dict = {}
@@ -1014,7 +1015,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             cf_dict['method']      = dtc.method
             cf_dict['nPosteriors'] = dtc.nPosteriors
             cf_dict['ths_mult']    = dtc.ths_mult
-
+            dtc.save_model('./temp_hmmgp.pkl')
 
         r = Parallel(n_jobs=-1)(delayed(run_classifier)(ii, method, nState, nLength, cf_dict, SVM_dict,\
                                                         ROC_dict, X_test, Y_test)
@@ -1038,8 +1039,11 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
     dtc.set_params( **SVM_dict )
     ll_classifier_test_idx = None
-    for k, v in param_dict.iteritems():
+    for k, v in param_dict.iteritems():        
         exec 'dtc.%s = v' % k        
+    if method == 'hmmgp':
+        dtc.load_model('./temp_hmmgp.pkl')
+
 
     if verbose: print "Update classifier"
     if method == 'progress' or method == 'kmean' or method == 'hmmgp':

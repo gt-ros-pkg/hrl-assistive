@@ -198,6 +198,14 @@ class classifier(learning_base):
         elif self.method == 'hmmgp':
             self.ths_mult    = ths_mult
             self.nPosteriors = nPosteriors
+            
+            from sklearn import gaussian_process
+            self.regr = 'linear' # 'constant', 'linear', 'quadratic'
+            self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
+
+            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
+                                                           normalize=True, nugget=100.)
+            
                         
         learning_base.__init__(self)
 
@@ -348,13 +356,6 @@ class classifier(learning_base):
                 self.dt = gp.Gaussian_Process(ll_post,ll_logp,M=400)
                 self.dt.training('./spgp_obs.pkl', renew=True)
             else:
-                from sklearn import gaussian_process
-                self.regr = 'linear' # 'constant', 'linear', 'quadratic'
-                self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
-
-                self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                           normalize=True, nugget=100.)
-
                 self.dt.fit( ll_post, ll_logp )          
                 ## idx_list = range(len(ll_post))
                 ## random.shuffle(idx_list)
@@ -659,20 +660,15 @@ class classifier(learning_base):
 
         
     def save_model(self, fileName):
+        if self.dt is None: 
+            print "No trained classifier"
+            return
         
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':
-            if self.dt is None: 
-                print "No trained classifier"
-                return
-        
+        if self.method.find('svm')>=0 and self.method is not 'cssvm':       
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             svm.svm_save_model(use_pkl, self.dt)
-        elif self.method.find('sgd')>=0:
-            if self.dt is None: 
-                print "No trained classifier"
-                return
-            
+        elif self.method.find('sgd')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
@@ -690,6 +686,10 @@ class classifier(learning_base):
             ## with open(fileName, 'wb') as f:
             ##     pickle.dump(self.dt, f)
             print "Not able to save mbkmean or kmean"
+        elif self.method.find('hmmgp')>=0:            
+            import pickle
+            with open(fileName, 'wb') as f:
+                pickle.dump(self.dt, f)
             
         else:
             print "Not available method"
@@ -714,6 +714,10 @@ class classifier(learning_base):
             self.l_statePosterior = d['l_statePosterior']
             self.ll_mu            = d['ll_mu']
             self.ll_std           = d['ll_std']
+        elif self.method.find('hmmgp')>=0:
+            import pickle
+            with open(fileName, 'rb') as f:
+                self.dt = pickle.load(f)
         else:
             print "Not available method"
         
