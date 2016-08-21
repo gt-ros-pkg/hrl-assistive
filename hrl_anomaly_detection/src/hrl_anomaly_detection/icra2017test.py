@@ -998,7 +998,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
         print "Classifier fitting"
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
         ret = dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
-        print "Classifier fitting completed", np.shape(dtc.l_statePosterior)
+        print "Classifier fitting completed"
 
         if method == 'progress':
             cf_dict = {}
