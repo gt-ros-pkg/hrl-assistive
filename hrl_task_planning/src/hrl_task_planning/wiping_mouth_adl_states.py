@@ -168,6 +168,9 @@ class CheckOccupancyState(PDDLSmachState):
 #        print "Check Occupancy of Model: %s" % model
         if model.upper() == 'AUTOBED':
             self.autobed_occupied_status = False
+	else:
+	    self.autobed_occupied_status = True
+            
 
     def on_execute(self, ud):
         if self.model.upper() == 'AUTOBED':
@@ -392,6 +395,13 @@ class CallBaseSelectionState(PDDLSmachState):
             except rospy.ServiceException as se:
                 rospy.logerr(se)
                 return [None, None]
+        else:
+            try:
+                model = 'wheelchair'
+                resp = self.base_selection_client(local_task_name, model)
+            except rospy.ServiceException as se:
+                rospy.logerr(se)
+                return [None, None]
         return resp.base_goal, resp.configuration_goal
 
     def on_execute(self, ud):
@@ -507,13 +517,36 @@ class ConfigureModelRobotState(PDDLSmachState):
             rospy.logwarn("[%s] Cannot find torso_controller/position_joint_action server" % rospy.get_name())
             return 'aborted'
 
+        try:
+	    self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
+        except:
+	    rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
+	    return 'aborted'
+
+        if self.configuration_goal[0] is not None:
+            torso_lift_msg = SingleJointPositionGoal()
+            torso_lift_msg.position = self.configuration_goal[0]
+            self.torso_client.send_goal(torso_lift_msg)
+        else:
+            rospy.logwarn("[%s] Some problem in getting TORSO HEIGHT from base selection" % rospy.get_name())
+            return 'aborted'
+        rospy.loginfo("[%s] Waiting For Torso to be moved" % rospy.get_name())
+        self.torso_client.wait_for_result()
+        torso_status = self.torso_client.get_state()
+        if torso_status == GoalStatus.SUCCEEDED:
+            rospy.loginfo("[%s] TORSO Actionlib Client has SUCCEEDED" % rospy.get_name())
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(CONFIGURED SPINE %s %s)' % (self.task, self.model)]
+            print "Publishing (CONFIGURED SPINE) update"
+            self.state_pub.publish(state_update)
+        else:
+            rospy.logwarn("[%s] Torso Actionlib Client has NOT succeeded" % rospy.get_name())
+            return 'aborted'
+
+
         if self.model.upper() == 'AUTOBED':
             self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-            try:
-                self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
-            except:
-                rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
-                return 'aborted'
             while (self.bed_state_leg_theta is None):
                 rospy.sleep(1)
             autobed_goal = FloatArrayBare()
@@ -522,28 +555,7 @@ class ConfigureModelRobotState(PDDLSmachState):
                                   self.bed_state_leg_theta])
             self.autobed_pub.publish(autobed_goal)
             rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
-
-            if self.configuration_goal[0] is not None:
-                torso_lift_msg = SingleJointPositionGoal()
-                torso_lift_msg.position = self.configuration_goal[0]
-                self.torso_client.send_goal(torso_lift_msg)
-            else:
-                rospy.logwarn("[%s] Some problem in getting TORSO HEIGHT from base selection" % rospy.get_name())
-                return 'aborted'
-            rospy.loginfo("[%s] Waiting For Torso to be moved" % rospy.get_name())
-            self.torso_client.wait_for_result()
-            torso_status = self.torso_client.get_state()
-            if torso_status == GoalStatus.SUCCEEDED:
-                rospy.loginfo("[%s] TORSO Actionlib Client has SUCCEEDED" % rospy.get_name())
-                state_update = PDDLState()
-                state_update.domain = self.domain
-                state_update.predicates = ['(CONFIGURED SPINE %s %s)' % (self.task, self.model)]
-                print "Publishing (CONFIGURED SPINE) update"
-                self.state_pub.publish(state_update)
-            else:
-                rospy.logwarn("[%s] Torso Actionlib Client has NOT succeeded" % rospy.get_name())
-                return 'aborted'
-
+            rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
             while not rospy.is_shutdown() and not self.model_reached:
                 if self.preempt_requested():
                     rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
@@ -551,24 +563,31 @@ class ConfigureModelRobotState(PDDLSmachState):
                     return 
                 rospy.sleep(1)
 
-            rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
-            if self.model_reached:
-                rospy.loginfo("[%s] Bed Goal Reached" % rospy.get_name())
-                state_update = PDDLState()
-                state_update.domain = self.domain
-                state_update.predicates = ['(CONFIGURED BED %s %s)' % (self.task, self.model)]
-                print "Publishing (CONFIGURED BED) update"
-                self.state_pub.publish(state_update)
+        else:
+            self.model_reached = True
 
-
-            rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
-            self.r_arm_pub.publish(self.r_reset_traj)
-            self.l_arm_pub.publish(self.l_reset_traj)
-
-            rospy.sleep(10)
-            rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
+        if self.model_reached:
+            rospy.loginfo("[%s] Bed Goal Reached" % rospy.get_name())
             state_update = PDDLState()
             state_update.domain = self.domain
-            state_update.predicates = ['(ARM-HOME %s %s)' % (self.task, self.model)]
-            print "Publishing (ARM-HOME) update"
+            state_update.predicates = ['(CONFIGURED BED %s %s)' % (self.task, self.model)]
+            print "Publishing (CONFIGURED BED) update"
             self.state_pub.publish(state_update)
+
+        else:
+            rospy.logwarn("[%s] Model Had Not reached desired position" % rospy.get_name())
+            self.stop_tracking_AR_publisher.publish(False)
+            return 
+
+
+        rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
+        self.r_arm_pub.publish(self.r_reset_traj)
+        self.l_arm_pub.publish(self.l_reset_traj)
+
+        rospy.sleep(10)
+        rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.predicates = ['(ARM-HOME %s %s)' % (self.task, self.model)]
+        print "Publishing (ARM-HOME) update"
+        self.state_pub.publish(state_update)

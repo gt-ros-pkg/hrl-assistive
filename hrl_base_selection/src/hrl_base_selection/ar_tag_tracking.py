@@ -69,6 +69,9 @@ class AR_Tag_Tracking(object):
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
             self.config_autobed_AR_detector()
+        elif self.mode == 'wheelchair':
+            self.out_frame = 'wheelchair/base_link'
+            self.config_wheelchair_AR_detector()
         else:
             print 'I do not know what AR tag to look for... Abort!'
             return
@@ -242,8 +245,30 @@ class AR_Tag_Tracking(object):
                 #print 'broadcast transform'
             rate.sleep()
 
+
+    def config_wheelchair_AR_detector(self):
+        self.tag_id = 0#[13, 1, 0]  # 9
+        self.tag_side_length = 0.11  # 0.053  # 0.033
+
+        # This is the translational transform from reference markers to the bed origin.
+        # -.445 if right side of body. .445 if left side.
+        model_trans_B_ar_1 = np.eye(4)
+        model_trans_B_ar_2 = np.eye(4)
+        model_trans_B_ar_3 = np.eye(4)
+
+        # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
+        model_trans_B_ar_1[0:3, 3] = np.array([-0.03, 0.02, 0.])
+        #model_trans_B_ar_2[0:3, 3] = np.array([-0.03, 0.02, 0.])
+        #model_trans_B_ar_3[0:3, 3] = np.array([-0.03, 0.02, 0.])
+
+        #ar_roty_B[0:3, 0:3] = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
+        # If left side of bed should be np.array([[-1,0],[0,-1]])
+        self.reference_B_ar = np.matrix(model_trans_B_ar_1)
+        #self.reference_B_ar_2 = np.matrix(model_trans_B_ar_2)
+        #self.reference_B_ar_3 = np.matrix(model_trans_B_ar_3)
+
     def config_autobed_AR_detector(self):
-        self.tag_id = 4  # 9
+        self.tag_id = [4]  # 9
 
         # self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
         self.tag_side_length = 0.15  # 0.053  # 0.033
@@ -276,7 +301,7 @@ class AR_Tag_Tracking(object):
         with self.frame_lock:
             markers = msg.markers
             for i in xrange(len(markers)):
-                if markers[i].id == self.tag_id:
+                if markers[i].id in self.tag_id:
                     cur_p = np.array([markers[i].pose.pose.position.x,
                                       markers[i].pose.pose.position.y,
                                       markers[i].pose.pose.position.z])
@@ -311,14 +336,7 @@ class AR_Tag_Tracking(object):
 
                     pos = None
                     quat = None
-                    if False:
-                        # Moving average
-                        pos = np.sum(positions, axis=0)
-                        pos /= float(len(positions))
-
-                        quat = np.sum(quaternions, axis=0)
-                        quat /= float(len(quaternions))
-                    else:
+                    if True:
                         # median
                         positions = np.sort(positions, axis=0)
                         pos_int = positions[len(positions)/2-1:len(positions)/2+1]
@@ -329,8 +347,8 @@ class AR_Tag_Tracking(object):
                         quat_int = quaternions[len(quaternions)/2-1:len(quaternions)/2+1]
                         quat = np.sum(quat_int, axis=0)
                         quat /= float(len(quat_int))
-                    self.map_B_ar_pos = pos
-                    self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
+                        self.map_B_ar_pos = pos
+                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                     if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
                     elif self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag:
@@ -352,8 +370,10 @@ class AR_Tag_Tracking(object):
 
                         if self.mode == 'autobed':
                             map_B_ar = self.shift_to_ground(map_B_ar)
-			    #Change Added to work at Henry's house
-                        self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
+                            self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
+                        elif self.mode == 'wheelchair':
+                            map_B_ar = self.shift_to_ground(map_B_ar)
+                            self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
                     #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame

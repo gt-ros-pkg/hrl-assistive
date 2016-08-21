@@ -593,6 +593,8 @@ class BaseSelector(object):
             head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
         self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
+        if np.shape(self.score)==(2,):
+            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]        
 
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score
@@ -696,6 +698,10 @@ class BaseSelector(object):
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
 #        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
+        print 'Base selection output:'
+        print list(flatten(pr2_base_output))
+        print list(flatten(configuration_output))
+        print distance_output
         return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
