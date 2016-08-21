@@ -232,7 +232,7 @@ class MoveArmState(PDDLSmachState):
             goal.pose.orientation.y = -0.50380292
             goal.pose.orientation.z = 0.51703901
             goal.pose.orientation.w = -0.4907122
-            goal.header.frame_id = '/autobed/calf_left_link'
+            goal.header.frame_id = '/'+str(self.model)+'/calf_left_link'
             rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
         elif self.task.upper() == 'WIPING_MOUTH':
@@ -243,7 +243,7 @@ class MoveArmState(PDDLSmachState):
             goal.pose.orientation.y = 0.
             goal.pose.orientation.z = 1.
             goal.pose.orientation.w = 0.
-            goal.header.frame_id = '/autobed/head_link'
+            goal.header.frame_id = '/'+str(self.model)+'/head_link'
             rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
         else:
             rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
@@ -344,7 +344,10 @@ class MoveRobotState(PDDLSmachState):
         pr2_goal_pose.pose.orientation.z = rot_out[2]
         pr2_goal_pose.pose.orientation.w = rot_out[3]
         goal = ARServoGoalData()
-        goal.tag_id = 4
+        if self.model.upper() == 'AUTOBED':
+            goal.tag_id = 4
+        else:
+            goal.tag_id = 13
         goal.marker_topic = '/ar_pose_marker'
         goal.tag_goal_pose = pr2_goal_pose
         self.servo_goal_pub.publish(goal)

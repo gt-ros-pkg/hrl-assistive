@@ -56,7 +56,7 @@ class AR_Tag_Tracking(object):
 
         self.autobed_sub = None
 
-        self.hist_size = 10
+        self.hist_size = 3
         self.ar_count = 0
         self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -105,7 +105,7 @@ class AR_Tag_Tracking(object):
                 false_out = Bool()
                 false_out.data = False
                 self.AR_tag_acquired.publish(false_out)
-                self.hist_size = 10
+                self.hist_size = 3
                 self.ar_count = 0
                 self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
                 self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -262,7 +262,7 @@ class AR_Tag_Tracking(object):
         model_trans_B_ar_3 = np.eye(4)
 
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar_1[0:3, 3] = np.array([-0.03, 0.02, 0.])
+        model_trans_B_ar_1[0:3, 3] = np.array([0.30, 0.00, 0.])
         #model_trans_B_ar_2[0:3, 3] = np.array([-0.03, 0.02, 0.])
         #model_trans_B_ar_3[0:3, 3] = np.array([-0.03, 0.02, 0.])
 
@@ -283,7 +283,7 @@ class AR_Tag_Tracking(object):
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.02, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.01, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
@@ -352,8 +352,9 @@ class AR_Tag_Tracking(object):
                         quat_int = quaternions[len(quaternions)/2-1:len(quaternions)/2+1]
                         quat = np.sum(quat_int, axis=0)
                         quat /= float(len(quat_int))
-                        self.map_B_ar_pos = pos
-                        self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
+                    
+                    self.map_B_ar_pos = pos
+                    self.ar_tag_distance_pub.publish(self.map_B_ar_pos)
                     if self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag and self.ar_count <= self.hist_size:
                         self.ar_count += 1
                     elif self.currently_acquiring_AR_tag and not self.finished_acquiring_AR_tag:
@@ -372,13 +373,8 @@ class AR_Tag_Tracking(object):
                     #     print 'Finished acquiring AR tag'
                     if self.finished_acquiring_AR_tag:
                         map_B_ar = createBMatrix(pos, quat)
-
-                        if self.mode == 'autobed':
-                            map_B_ar = self.shift_to_ground(map_B_ar)
-                            self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-                        elif self.mode == 'wheelchair':
-                            map_B_ar = self.shift_to_ground(map_B_ar)
-                            self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
+                        map_B_ar = self.shift_to_ground(map_B_ar)
+                        self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]

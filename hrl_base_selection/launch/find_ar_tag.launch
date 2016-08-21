@@ -1,12 +1,12 @@
 <launch>
-    <arg name="marker_size" default="15.0" />
+    <arg name="marker_size" default="11.0" />
     <!--<arg name="marker_size" default="13.3" />-->
     <arg name="max_new_marker_error" default="0.05" />
     <arg name="max_track_error" default="0.2" />
 
-    <arg name="cam_image_topic" default="/head_mount_kinect/hd/image_color" />
+    <arg name="cam_image_topic" default="/head_mount_kinect/qhd/image_color" />
     <!--<arg name="cam_image_topic" default="/head_mount_kinect/qhd/points" />-->
-    <arg name="cam_info_topic" default="/head_mount_kinect/hd/camera_info" />
+    <arg name="cam_info_topic" default="/head_mount_kinect/qhd/camera_info" />
     <!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> -->
     <!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
     <arg name="output_frame" default="base_link" />
@@ -24,8 +24,8 @@
 
     <!-- <node name="find_head" pkg="hrl_base_selection" type="head_mat_tf_broadcaster.py" respawn="false" output="screen"/>-->
     <node name="find_head" pkg="hrl_base_selection" type="body_center_tf_broadcaster.py" respawn="false" output="screen"/>
-    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
-          output="screen" >
+    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py">
+          <!--output="screen"-->
     </node>
 
     <!--Initialize the global transforms to localize the bed and head in the world.-->
