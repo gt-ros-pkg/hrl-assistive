@@ -52,6 +52,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos', loc
         ROC_param_dict = {'methods': [ 'svm' ],\
                           'update_list': ['svm'],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(0, -40.0, nPoints), \
                           'progress_param_range':np.linspace(0.0, -7., nPoints), \
                           'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                           'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
@@ -176,12 +177,13 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           }
                     #, 'bpsvm'      , 'osvm'
                           ## 'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
-        ROC_param_dict = {'methods': ['progress', 'fixed', 'change'],\
+        ROC_param_dict = {'methods': ['hmmgp', 'progress', 'fixed', 'change'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints),\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-0.8, 0.5, nPoints),\
+                          'hmmgp_param_range':np.logspace(-0.2, 1.8, nPoints)*-1.0, \
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
