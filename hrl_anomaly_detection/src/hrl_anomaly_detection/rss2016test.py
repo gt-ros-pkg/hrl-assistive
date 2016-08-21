@@ -238,7 +238,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew)
+                           data_renew=data_renew, max_time=data_dict['max_time'])
                            
         # Task-oriented hand-crafted features        
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \

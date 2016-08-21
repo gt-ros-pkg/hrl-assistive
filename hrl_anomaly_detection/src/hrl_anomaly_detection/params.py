@@ -324,7 +324,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
@@ -483,7 +483,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': None}
 
     data_param_dict['downSampleSize'] = 200
     save_data_path = os.path.expanduser('~')+\
@@ -640,7 +640,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': None}
 
     if AE_param_dict['method']=='pca':
         save_data_path = os.path.expanduser('~')+\
@@ -808,7 +808,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True}
+                      'handFeatures_noise': True, 'max_time': None}
 
     if AE_param_dict['method']=='pca':
         # filtered dim 5
