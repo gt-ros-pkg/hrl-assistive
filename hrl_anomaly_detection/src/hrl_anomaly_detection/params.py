@@ -405,7 +405,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_state_param_range':np.logspace(-0.6, 3.5, nPoints)*-1.0+0.4, \
                           'progress_svm_param_range': np.linspace(0.005, 15.322, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 1.8, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-0.2, 1.8, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-1.495, 0.171, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.5, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
@@ -568,7 +568,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
-                          'hmmgp_param_range':np.linspace(0, -16.0, nPoints), \
+                          'hmmgp_param_range':np.linspace(0, -24.0, nPoints), \
                           'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': np.linspace(-0.305, 0.372, nPoints ),\
@@ -739,7 +739,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'progress_state_param_range':np.logspace(-0.1, 3.3, nPoints)*-1.0, \
                           'progress_svm_param_range': np.linspace(0.002, 2.07, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.linspace(0, -20.0, nPoints), \
+                          'hmmgp_param_range':np.linspace(0, -25.0, nPoints), \
                           'svm_param_range': np.logspace(-1.0, 0.046, nPoints),\
                           'fixed_param_range': np.linspace(-0.1, -2.5, nPoints),\
                           'change_param_range': np.linspace(-0.5, 10., nPoints)*-1.0,\

@@ -126,6 +126,11 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         testDataX = normalTrainData
         testDataY = -np.ones(len(normalTrainData[0]))
 
+        if method == 'hmmgp':
+            nSubSample = 20
+        else:
+            nSubSample = None
+
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                            add_logp_d=False, \
@@ -138,7 +143,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-8.0 )
+                             nLength=len(normalTestData[0,0]), ths_mult=-10.0 )
         dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
 
 
