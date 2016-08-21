@@ -696,6 +696,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                              save_pdf=save_pdf, \
                              only_tpr=False, legend=True)
 
+        acc_rates = acc_info(method_list, ROC_data[kFold_idx], nPoints, delay_plot=False, \
+                             no_plot=False, save_pdf=False, \
+                             only_tpr=False, legend=True)
+
+
         print subject_names[kFold_idx], " : ", auc_rates
         auc = []
         for i in xrange(nTrainTimes+1):
@@ -716,6 +721,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     if len(kFold_list)>1:
         print "Mean: ", np.mean(l_auc_d, axis=0)
         print "Std:  ", np.std(l_auc_d, axis=0)
+
+
 
 
     if save_result or True:
