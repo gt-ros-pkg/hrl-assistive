@@ -136,7 +136,10 @@ class RegisterHeadState(PDDLSmachState):
         print "Looking for head of person on: %s" % model
 
     def on_execute(self, ud):
-        head_registered = self.get_head_pose()
+        if self.model.upper() == "AUTOBED":
+            head_registered = self.get_head_pose()
+        elif self.model.upper() == "WHEELCHAIR":
+            head_registered = True
         if head_registered:
             print "Head Found."
             state_update = PDDLState()
@@ -397,7 +400,7 @@ class CallBaseSelectionState(PDDLSmachState):
                 return [None, None]
         else:
             try:
-                model = 'wheelchair'
+                model = 'chair'
                 resp = self.base_selection_client(local_task_name, model)
             except rospy.ServiceException as se:
                 rospy.logerr(se)

@@ -22,7 +22,12 @@ class AR_Tag_Tracking(object):
         print 'Starting detection of', mode, 'AR tag'
         self.frame_lock = threading.RLock()
         self.mode = mode
-
+        self.domain = 'wiping_mouth_adl'
+        try:
+            mode = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')
+            self.mode = mode.lower()
+        except KeyError:
+            rospy.logwarn("[%s] Tracking AR Tag, but current model unknown! Assuming autobed!", rospy.get_name())
         self.find_AR = False
         self.currently_acquiring_AR_tag = False
         self.finished_acquiring_AR_tag = False
@@ -247,7 +252,7 @@ class AR_Tag_Tracking(object):
 
 
     def config_wheelchair_AR_detector(self):
-        self.tag_id = 0#[13, 1, 0]  # 9
+        self.tag_id = [13]#[13, 1, 0]  # 9
         self.tag_side_length = 0.11  # 0.053  # 0.033
 
         # This is the translational transform from reference markers to the bed origin.
@@ -374,7 +379,6 @@ class AR_Tag_Tracking(object):
                         elif self.mode == 'wheelchair':
                             map_B_ar = self.shift_to_ground(map_B_ar)
                             self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-                    #print self.currently_tracking_AR, self.finished_acquiring_AR_tag
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]

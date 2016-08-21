@@ -372,15 +372,16 @@ class BaseSelector(object):
         elif self.mode == 'normal':
             try:
                 now = rospy.Time.now()
-                self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
-                self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker_13', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                 elif model == 'autobed':
+                    self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
+                    self.pr2_B_head = createBMatrix(trans, rot)
+
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
