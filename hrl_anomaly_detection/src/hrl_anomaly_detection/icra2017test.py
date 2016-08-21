@@ -523,7 +523,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData = 30
-    nTrainOffset = 1
+    nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
 
