@@ -789,13 +789,13 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         SVM_param_dict = {'renew': False, 'w_negative': 0.575, 'gamma': 0.1, 'cost': 7.75,\
                           'hmmosvm_nu': 0.01}                          
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean' ],\
-                          'update_list': [ 'progress', 'hmmgp' ],\
+                          'update_list': [ 'progress', 'hmmgp','fixed' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 1.5, nPoints), \
-                          'progress_param_range':np.linspace(-16., 0.5, nPoints), \
+                          'hmmgp_param_range':np.logspace(-1, 1.5, nPoints)*-1.0, \
+                          'progress_param_range':np.linspace(-20., 0.5, nPoints), \
                           'kmean_param_range':np.logspace(-1, 1, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-1.087, -0.4, nPoints),\
-                          'fixed_param_range': np.linspace(0.0, -20., nPoints),\
+                          'fixed_param_range': np.linspace(0.0, -15., nPoints),\
                           'change_param_range': np.linspace(-1.0, -10.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
                           'osvm_param_range': np.logspace(-3, 0, nPoints),\
