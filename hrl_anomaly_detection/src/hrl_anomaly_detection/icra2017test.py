@@ -1366,7 +1366,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7., 'scale': 7.0,\
                              'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
@@ -1380,6 +1380,9 @@ if __name__ == '__main__':
 
         if opt.bLikelihoodPlot:
             if param_dict['ROC']['methods'][0] == 'hmmgp': nSubSample = 20
+            param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5., 'scale': 8.0,\
+                                 'add_logp_d': False}
+                                     
             crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
             d = ut.load_pickle(crossVal_pkl)
 
