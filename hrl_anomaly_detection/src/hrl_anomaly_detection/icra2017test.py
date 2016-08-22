@@ -942,7 +942,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                                                -np.ones(len(normalPtrainData[0])), \
                                                                startIdx, \
                                                                add_logp_d=False, cov_type='full',\
-                                                               nSubSample=20)
+                                                               nSubSample=30)
             # flatten the data
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
