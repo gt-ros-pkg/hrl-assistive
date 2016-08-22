@@ -522,9 +522,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData = 20
-    nTrainOffset = 2
-    nTrainTimes  = 5 #10
+    nPtrainData  = 20
+    nTrainOffset = 5
+    nTrainTimes  = 2 #10
     nNormalTrain = 30
 
     # leave-one-person-out
@@ -551,8 +551,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             print "learned hmm exists"
         else:
             d = ut.load_pickle(crossVal_pkl)
-            ## kFold_list = d['kFoldList']
-            
             # person x dim x sample x length => sample x dim x length
             for i, tidx in enumerate(train_idx):
                 if i == 0:
@@ -603,7 +601,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             #-----------------------------------------------------------------------------------------
             rndNormalTraindataIdx = range(len(normalTrainData[0]))
             random.shuffle(rndNormalTraindataIdx)
-
 
             #-----------------------------------------------------------------------------------------
             [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = ml.get_hmm_object()
@@ -988,8 +985,6 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                 ll_logp = [ ll_classifier_train_X[i][0] for i in xrange(len(ll_classifier_train_X))  ]
                 ll_post = [ np.array(ll_classifier_train_X)[i,-nState:].tolist() for i in xrange(len(ll_classifier_train_X)) ]
                 
-            ## vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
-            ##                 ll_logp_test, ll_post_test, testDataY)
             vizLikelihoods2(ll_logp, ll_post, -np.ones(len(normalPtrainData[0])),\
                             ll_logp_test, ll_post_test, testDataY)
             continue
@@ -1374,8 +1369,6 @@ if __name__ == '__main__':
 
         param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
                              'add_logp_d': False}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 20, 'cov': 10., 'scale': 9.0,\
-        ##                      'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
             opt.bNoPlot    = True

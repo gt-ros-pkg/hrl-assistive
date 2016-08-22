@@ -126,6 +126,11 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
                                                        startIdx, add_logp_d)
 
+            if len(np.shape(ll_classifier_train_X))<3:
+                print "feature extractin failed"
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
             if np.amax( np.array(ll_classifier_train_X)[:,:,0] ) < 0:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
