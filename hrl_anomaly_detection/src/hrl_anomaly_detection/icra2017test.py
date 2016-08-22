@@ -569,42 +569,59 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
-            normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
-            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
-            normalTestData = np.swapaxes(normalTestData, 0, 1) * HMM_dict['scale']
-            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) * HMM_dict['scale']
+            normalTrainData = np.swapaxes(normalTrainData, 0, 1) #* HMM_dict['scale']
+            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) #* HMM_dict['scale']
+            normalTestData = np.swapaxes(normalTestData, 0, 1) #* HMM_dict['scale']
+            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) #* HMM_dict['scale']
             handFeatureParams = d['param_dict']
 
             # training hmm
             if verbose: print "start to fit hmm"
             nEmissionDim = len(normalTrainData)
-            cov_mult     = [cov]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0]) - startIdx
 
+            if False:
+                scale_list = np.arange(7.0, 11.0, 1.0)
+                ret_list   = []
+                for scale in scale_list:
 
-            scale_list = np.arange(3.0, 10.0, 8)
-            ret_list   = []
-            for scale in scale_list:
+                    cov = scale
+                    cov_mult     = [cov]*(nEmissionDim**2)
 
-                ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-                if data_dict['handFeatures_noise']:
-                    ret = ml.fit(normalTrainData*scale+\
-                                 np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
-                                 cov_mult=cov_mult, use_pkl=False)
-                                 ## np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                else:
-                    ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
-                if np.isnan(ret) or ret == 'Failure':
-                    ret_list.append(-10000000000000000000)
-                else:
-                    ret_list.append(ret)
+                    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+                    if data_dict['handFeatures_noise']:
+                        ret = ml.fit(normalTrainData*scale+\
+                                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                                     cov_mult=cov_mult, use_pkl=False)
+                                     ## np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                    else:
+                        ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
+                    if np.isnan(ret) or ret == 'Failure':
+                        ret_list.append(-10000000000000000000)
+                    else:
+                        ret_list.append(ret)
 
-            min_idx = np.argmin(abs(np.array(ret_list)-50.0))
-            scale   = scale_list[min_idx]
-            print ret_list
-            print scale
-            continue
+                min_idx = np.argmin(abs(np.array(ret_list)-50.0))
+                scale   = scale_list[min_idx]
+                print "--------------------------"
+                print scale_list
+                print ret_list
+                print "--------------------------"
+                print min_idx, scale
+                print "--------------------------"
+                continue
+
+            scale = HMM_dict['scale']
+            cov   = HMM_dict['cov']
+            ## cov = scale
+            cov_mult     = [cov]*(nEmissionDim**2)
             
+            normalTrainData   *= scale
+            abnormalTrainData *= scale
+            normalTestData    *= scale
+            abnormalTestData  *= scale
+            
+            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
                          np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
                          cov_mult=cov_mult, use_pkl=False)
