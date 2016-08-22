@@ -522,12 +522,16 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData  = 20
+    nPtrainData  = 10
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 20
+    param_dict['SVM']['gp_subsamples'] = 40
 
+    # aws 8,8,  - 20, 2, 5, 30, 40
+    # br  8,8,  - 20, 2, 5, 30, 20
+    # c11 8,8,  - 10, 2, 5, 30, 40
+    
     # leave-one-person-out
     kFold_list = []
     for idx in xrange(len(subject_names)):
@@ -569,26 +573,62 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
-            normalTrainData = np.swapaxes(normalTrainData, 0, 1) * HMM_dict['scale']
-            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) * HMM_dict['scale']
-            normalTestData = np.swapaxes(normalTestData, 0, 1) * HMM_dict['scale']
-            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) * HMM_dict['scale']
+            normalTrainData = np.swapaxes(normalTrainData, 0, 1) #* HMM_dict['scale']
+            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) #* HMM_dict['scale']
+            normalTestData = np.swapaxes(normalTestData, 0, 1) #* HMM_dict['scale']
+            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) #* HMM_dict['scale']
             handFeatureParams = d['param_dict']
 
             # training hmm
             if verbose: print "start to fit hmm"
             nEmissionDim = len(normalTrainData)
-            cov_mult     = [cov]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0]) - startIdx
 
-            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-            if data_dict['handFeatures_noise']:
-                ret = ml.fit(normalTrainData+\
-                             np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                             cov_mult=cov_mult, use_pkl=False)
-            else:
-                ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
+            if False:
+                scale_list = np.arange(7.0, 11.0, 1.0)
+                ret_list   = []
+                for scale in scale_list:
 
+                    cov = scale
+                    cov_mult     = [cov]*(nEmissionDim**2)
+
+                    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+                    if data_dict['handFeatures_noise']:
+                        ret = ml.fit(normalTrainData*scale+\
+                                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                                     cov_mult=cov_mult, use_pkl=False)
+                                     ## np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                    else:
+                        ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
+                    if np.isnan(ret) or ret == 'Failure':
+                        ret_list.append(-10000000000000000000)
+                    else:
+                        ret_list.append(ret)
+
+                min_idx = np.argmin(abs(np.array(ret_list)-50.0))
+                scale   = scale_list[min_idx]
+                print "--------------------------"
+                print scale_list
+                print ret_list
+                print "--------------------------"
+                print min_idx, scale
+                print "--------------------------"
+                continue
+
+            scale = HMM_dict['scale']
+            cov   = HMM_dict['cov']
+            ## cov = scale
+            cov_mult     = [cov]*(nEmissionDim**2)
+            
+            normalTrainData   *= scale
+            abnormalTrainData *= scale
+            normalTestData    *= scale
+            abnormalTestData  *= scale
+            
+            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                         cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure' or np.isnan(ret): sys.exit()
 
             #-----------------------------------------------------------------------------------------
@@ -624,6 +664,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['normalTrainData'] = normalTrainData
             dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
+            dd['scale']        = scale
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
@@ -1366,7 +1407,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
                              'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
@@ -1380,6 +1421,9 @@ if __name__ == '__main__':
 
         if opt.bLikelihoodPlot:
             if param_dict['ROC']['methods'][0] == 'hmmgp': nSubSample = 20
+            param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 5., 'scale': 8.0,\
+                                 'add_logp_d': False}
+                                     
             crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
             d = ut.load_pickle(crossVal_pkl)
 
