@@ -132,17 +132,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ret = 'Failure'
                 sys.exit()
                 break
-            try:
-                if np.amax( np.array(ll_classifier_train_X)[:,:,0] ) < 0:
-                    print "Negative likelihoods"
-                    scores.append(-1.0 * 1e+10)
-                    ret = 'Failure'
-                    break
-            except:
-                print np.shape(ll_classifier_train_X[0])                
-                print type(ll_classifier_train_X)
-                print type(ll_classifier_train_X[0])
-                sys.exit()
+
+            ll_logp = [ ll_classifier_train_X)[i,-1,0] for i in xrange(len(ll_classifier_train_X)) ]
+            if np.amax( ll_logp ) < 0:
+                print "Negative likelihoods"
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
             if True in np.isnan( np.array(ll_classifier_train_X).flatten().tolist() ):
                 print "NaN in feature"
                 scores.append(-1.0 * 1e+10)
