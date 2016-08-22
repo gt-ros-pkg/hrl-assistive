@@ -224,30 +224,56 @@ class MoveArmState(PDDLSmachState):
 
     def publish_goal(self):
         goal = PoseStamped()
-        if self.task.upper() == 'SCRATCHING':
-            goal.pose.position.x = -0.06310556
-            goal.pose.position.y = 0.07347758+0.05
-            goal.pose.position.z = 0.00485197
-            goal.pose.orientation.x = 0.48790861
-            goal.pose.orientation.y = -0.50380292
-            goal.pose.orientation.z = 0.51703901
-            goal.pose.orientation.w = -0.4907122
-            goal.header.frame_id = '/'+str(self.model)+'/calf_left_link'
-            rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
+        if self.model.upper() == 'AUTOBED':
+            if self.task.upper() == 'SCRATCHING':
+                goal.pose.position.x = -0.06310556
+                goal.pose.position.y = 0.07347758+0.05+0.08
+                goal.pose.position.z = 0.00485197
+                goal.pose.orientation.x = 0.48790861
+                goal.pose.orientation.y = -0.50380292
+                goal.pose.orientation.z = 0.51703901
+                goal.pose.orientation.w = -0.4907122
+                goal.header.frame_id = '/'+str(self.model.lower())+'/calf_left_link'
+                rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
-        elif self.task.upper() == 'WIPING_MOUTH':
-            goal.pose.position.x = 0.17
-            goal.pose.position.y = 0.
-            goal.pose.position.z = -0.16
-            goal.pose.orientation.x = 0.
-            goal.pose.orientation.y = 0.
-            goal.pose.orientation.z = 1.
-            goal.pose.orientation.w = 0.
-            goal.header.frame_id = '/'+str(self.model)+'/head_link'
-            rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
-        else:
-            rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
-            return False
+            elif self.task.upper() == 'WIPING_MOUTH':
+                goal.pose.position.x = 0.45
+                goal.pose.position.y = 0.
+                goal.pose.position.z = -0.07-0.05
+                goal.pose.orientation.x = 0.
+                goal.pose.orientation.y = 0.
+                goal.pose.orientation.z = 1.
+                goal.pose.orientation.w = 0.
+                goal.header.frame_id = '/'+str(self.model.lower())+'/head_link'
+                rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
+            else:
+                rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
+                return False
+        elif self.model.upper() == 'WHEELCHAIR':
+            if self.task.upper() == 'SCRATCHING':
+                goal.pose.position.x = -0.06310556 - 0.02
+                goal.pose.position.y = 0.07347758+0.05+0.03
+                goal.pose.position.z = 0.00485197
+                goal.pose.orientation.x = 0.48790861
+                goal.pose.orientation.y = -0.50380292
+                goal.pose.orientation.z = 0.51703901
+                goal.pose.orientation.w = -0.4907122
+                goal.header.frame_id = '/'+str(self.model.lower())+'/calf_left_link'
+                rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
+
+            elif self.task.upper() == 'WIPING_MOUTH':
+                goal.pose.position.x = 0.2
+                goal.pose.position.y = 0.
+                goal.pose.position.z = -0.0
+                goal.pose.orientation.x = 0.
+                goal.pose.orientation.y = 0.
+                goal.pose.orientation.z = 1.
+                goal.pose.orientation.w = 0.
+                goal.header.frame_id = '/'+str(self.model.lower())+'/head_link'
+                rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
+            else:
+                rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
+                return False 
         self.l_arm_pose_pub.publish(goal)
         return True
 
@@ -496,9 +522,11 @@ class ConfigureModelRobotState(PDDLSmachState):
                                          'r_wrist_roll_joint']
         self.r_reset_traj.points.append(r_reset_traj_point)
         l_reset_traj_point = JointTrajectoryPoint()
+
+        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.9, 0.00, -3.14*2/3, 0., -1.5, 0.0]
         # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
-        l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
-                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
+        #l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
+        #                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
         l_reset_traj_point.velocities = [0.0]*7
         l_reset_traj_point.accelerations = [0.0]*7
         l_reset_traj_point.time_from_start = rospy.Duration(5)

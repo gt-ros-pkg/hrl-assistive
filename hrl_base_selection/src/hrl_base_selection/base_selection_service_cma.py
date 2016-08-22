@@ -380,6 +380,7 @@ class BaseSelector(object):
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/wheelchair/base_link', now)
                     self.pr2_B_model = createBMatrix(trans, rot)
                 elif model == 'autobed':
+                    now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
                     self.pr2_B_head = createBMatrix(trans, rot)

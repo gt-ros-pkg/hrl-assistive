@@ -56,7 +56,7 @@ class AR_Tag_Tracking(object):
 
         self.autobed_sub = None
 
-        self.hist_size = 3
+        self.hist_size = 10
         self.ar_count = 0
         self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -73,10 +73,12 @@ class AR_Tag_Tracking(object):
             self.bed_state_z = 0.
             self.bed_state_head_theta = 0.
             self.bed_state_leg_theta = 0.
+            print "Ive Selected AUTOBED"
             self.config_autobed_AR_detector()
         elif self.mode == 'wheelchair':
             self.out_frame = 'wheelchair/base_link'
             self.config_wheelchair_AR_detector()
+            print "Ive Selected WHEELCHAIR"
         else:
             print 'I do not know what AR tag to look for... Abort!'
             return
@@ -105,7 +107,7 @@ class AR_Tag_Tracking(object):
                 false_out = Bool()
                 false_out.data = False
                 self.AR_tag_acquired.publish(false_out)
-                self.hist_size = 3
+                self.hist_size = 10
                 self.ar_count = 0
                 self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
                 self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
@@ -283,7 +285,7 @@ class AR_Tag_Tracking(object):
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.03, 0.01, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.03, -0.05, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
