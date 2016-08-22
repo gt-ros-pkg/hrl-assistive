@@ -697,7 +697,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                              only_tpr=False, legend=True)
 
         acc_rates = acc_info(method_list, ROC_data[kFold_idx], nPoints, delay_plot=False, \
-                             no_plot=False, save_pdf=False, \
+                             no_plot=no_plot, save_pdf=False, \
                              only_tpr=False, legend=True)
 
 
