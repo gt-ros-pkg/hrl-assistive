@@ -455,17 +455,17 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_diag_gamma': 0.01}
                           
 
-        ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
-                          'update_list': [ ],\
+        ROC_param_dict = {'methods': [ ],\
+                          'update_list': [ 'kmean', 'hmmosvm', 'fixed' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
+                          'hmmgp_param_range':np.linspace(3., -35.0, nPoints), \
                           'progress_param_range':np.linspace(0.0, -9.0, nPoints), \
-                          'kmean_param_range':np.logspace(-0.3, 0.0, nPoints)*-1.0 -0.5, \
+                          'kmean_param_range':np.logspace(-0.3, 0.3, nPoints)*-1.0 0.5, \
                           'svm_param_range': np.logspace(-3.0, -0.3458, nPoints),\
-                          'fixed_param_range': np.linspace(-1.5, -2.2, nPoints),\
+                          'fixed_param_range': np.linspace(1.0, -2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
-                          'osvm_param_range': np.logspace(-3, 0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-6.0, 0.3, nPoints),\
+                          'osvm_param_range': np.logspace(-4, 0, nPoints),\
                           'change_param_range': np.linspace(-1.0, -10.0, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints)}        
         
@@ -616,7 +616,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmosvm_nu': 0.000316}
 
         ROC_param_dict = {'methods': [ ],\
-                          'update_list': [ 'hmmgp' ],\
+                          'update_list': [ 'hmmgp', 'fixed' ],\
                           'nPoints': nPoints,\
                           'hmmgp_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
                           'progress_param_range':np.logspace(0.0, 1.2, nPoints)*-1.0, \
