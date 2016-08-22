@@ -435,14 +435,14 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
                           'update_list': [ 'hmmgp', 'fixed', 'change'],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 1.5, nPoints)*-1.0, \
-                          'progress_param_range':np.logspace(0.3, 1.3, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-0.6, 1.8, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(-1, 1.3, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.0, nPoints)*-1.0 -0.5, \
                           'svm_param_range': np.logspace(-1.22, 0.2, nPoints),\
-                          'fixed_param_range': np.linspace(0.9, -3.0, nPoints),\
+                          'fixed_param_range': np.linspace(0.3, -5.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.0, 0.3, nPoints),\
-                          'change_param_range': np.linspace(-1.5, -14.0, nPoints),\
+                          'change_param_range': np.linspace(-1.5, -20.0, nPoints),\
                           'osvm_param_range': np.logspace(-5, 0., nPoints)}        
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
