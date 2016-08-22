@@ -371,17 +371,17 @@ class classifier(learning_base):
         elif self.method == 'change':
             if type(X) == list: X = np.array(X)
 
-            l_idx = range(len(X))
-            if len(np.shape(y))==1:
-                l_idx = [ i for i in l_idx if y[i][0]<0 ]
+            if len(np.shape(y))>1:
+                l_idx = [ i for i in range(len(X)) if y[i][0]<0 ]
             else:
-                l_idx = [ i for i in l_idx if y[i]<0 ]
+                l_idx = [ i for i in range(len(X)) if y[i]<0 ]
 
             X_logp    = X[l_idx,:,0:1]
             X_logp_d = X_logp[:,1:,0]-X_logp[:,:-1,0]
 
             self.mu  = np.mean(X_logp_d)
             self.std = np.std(X_logp_d)
+
             return True
                 
         elif self.method == 'sgd':
