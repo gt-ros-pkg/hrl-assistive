@@ -522,11 +522,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData  = 20
+    nPtrainData  = 10
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 20
+    param_dict['SVM']['gp_subsamples'] = 40
 
     # leave-one-person-out
     kFold_list = []
@@ -1212,6 +1212,8 @@ if __name__ == '__main__':
                  default=False, help='Plot features.')
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--viz', action='store_true', dest='bViz',
+                 default=False, help='temp.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
     
@@ -1364,7 +1366,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4., 'scale': 9.0,\
                              'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
@@ -1398,35 +1400,35 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew, viz=False)
+                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew, viz=opt.bViz)
 
-    elif opt.bOnlineEvalTemp:
-        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
-        param_dict['ROC']['methods'] = ['change']
-        param_dict['ROC']['nPoints'] = 8
+    ## elif opt.bOnlineEvalTemp:
+    ##     subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
+    ##     param_dict['ROC']['methods'] = ['change']
+    ##     param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
-                             'add_logp_d': False}
+    ##     param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
+    ##                          'add_logp_d': False}
                              
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_temp/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    ##     save_data_path = os.path.expanduser('~')+\
+    ##       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_temp/'+\
+    ##       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        if opt.bLikelihoodPlot:
+    ##     if opt.bLikelihoodPlot:
 
-            crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
-            d = ut.load_pickle(crossVal_pkl)
+    ##         crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
+    ##         d = ut.load_pickle(crossVal_pkl)
 
-            import hrl_anomaly_detection.data_viz as dv        
-            dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                              decision_boundary_viz=False, \
-                              useTrain=True, useNormalTest=True, useAbnormalTest=True,\
-                              useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                              hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                              verbose=opt.bVerbose, dd=d)
-        else:          
-            evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-                              param_dict, save_pdf=opt.bSavePdf, \
-                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True,\
-                              data_renew=opt.bDataRenew)
+    ##         import hrl_anomaly_detection.data_viz as dv        
+    ##         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+    ##                           decision_boundary_viz=False, \
+    ##                           useTrain=True, useNormalTest=True, useAbnormalTest=True,\
+    ##                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+    ##                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+    ##                           verbose=opt.bVerbose, dd=d)
+    ##     else:          
+    ##         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
+    ##                           param_dict, save_pdf=opt.bSavePdf, \
+    ##                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+    ##                           find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True,\
+    ##                           data_renew=opt.bDataRenew)
