@@ -533,6 +533,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # c11 6.6,6.6,  - 20, 2, 5, 30, 20 
 
     #[9(9), , 7.5(7.5), ????]
+    scale_list = [9, 9, 7.5, 7.5]
+    cov_list = [9, 9, 7.5, 7.5]
     
     # leave-one-person-out
     kFold_list = []
@@ -617,8 +619,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 print "--------------------------"
                 continue
 
-            scale = HMM_dict['scale']
-            cov   = HMM_dict['cov']
+            if False:
+                scale = scale_list[idx]
+                cov   = cov[idx]
+            else:
+                scale = HMM_dict['scale']
+                cov   = HMM_dict['cov']
             ## cov = scale
             cov_mult     = [cov]*(nEmissionDim**2)
             
@@ -667,6 +673,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
             dd['scale']        = scale
+            dd['cov']          = cov
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
@@ -896,6 +903,8 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     u_denom   = dd['u_denom']  
     startIdx  = dd['startIdx']
     nLength   = dd['nLength']
+    ## scale     = dd['scale'] = HMM_dict['scale']
+    scale     = HMM_dict['scale']
 
     #-----------------------------------------------------------------------------------------
     # Classifier partial train/test data
@@ -910,8 +919,8 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     normalPtrainData      = normalTrainData[:,rndNormalTraindataIdx[:nPtrainData],:]
 
     # Incremental evaluation
-    normalData   = copy.copy(normalDataX) * HMM_dict['scale']
-    abnormalData = copy.copy(abnormalDataX) * HMM_dict['scale']
+    normalData   = copy.copy(normalDataX) * scale
+    abnormalData = copy.copy(abnormalDataX) * scale
 
     # random split into two groups
     normalDataIdx   = range(len(normalData[0]))
