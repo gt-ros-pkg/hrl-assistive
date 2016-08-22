@@ -221,7 +221,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             if method == 'progress':
                 print "Classifier fitting", method
-                dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+                dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
                 ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
                 cf_dict = {}
                 cf_dict['method']      = dtc.method
