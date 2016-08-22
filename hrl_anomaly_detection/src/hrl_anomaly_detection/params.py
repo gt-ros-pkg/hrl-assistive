@@ -595,15 +595,15 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmosvm_nu': 0.001}
         
         ROC_param_dict = {'methods': [ ],\
-                          'update_list': [ 'change' ],\
+                          'update_list': [ 'hmmgp', 'hmmosvm', 'fixed'],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
-                          'progress_param_range':np.linspace(-0.8, -8.0, nPoints), \
-                          'kmean_param_range':np.linspace(0.5, -4.6, nPoints), \
-                          'fixed_param_range': np.linspace(-1.0, -0.1, nPoints),\
+                          'hmmgp_param_range':np.logspace(-1, 1.8, nPoints)*-1.0, \
+                          'progress_param_range':np.linspace(-0.8, -9.0, nPoints), \
+                          'kmean_param_range':np.linspace(0.5, -6.6, nPoints), \
+                          'fixed_param_range': np.linspace(-1.0, 0.1, nPoints),\
                           'svm_param_range': np.logspace(-2.0, 0.592, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
-                          'hmmosvm_param_range': np.logspace(-3.0, 0.3, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 0.3, nPoints),\
                           'change_param_range': np.linspace(-1.0, -10.0, nPoints),\
                           'osvm_param_range': np.logspace(-3, 0, nPoints),\
                           }        
