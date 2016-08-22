@@ -228,9 +228,6 @@ class learning_hmm(learning_base):
         final_seq = ghmm.SequenceSet(self.F, X_train)
         ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
 
-        ## for i in xrange(len(X_train)):            
-        ##     final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-        ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
         if np.isnan(ret):
             print 'Baum Welch return:', ret
             return 'Failure'
