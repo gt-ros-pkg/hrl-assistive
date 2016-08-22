@@ -581,14 +581,33 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             cov_mult     = [cov]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0]) - startIdx
 
-            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-            if data_dict['handFeatures_noise']:
-                ret = ml.fit(normalTrainData+\
-                             np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                             cov_mult=cov_mult, use_pkl=False)
-            else:
-                ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
+            scale_list = np.arange(3.0, 10.0, 8)
+            ret_list   = []
+            for scale in scale_list:
+
+                ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+                if data_dict['handFeatures_noise']:
+                    ret = ml.fit(normalTrainData*scale+\
+                                 np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                                 cov_mult=cov_mult, use_pkl=False)
+                                 ## np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                else:
+                    ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
+                if np.isnan(ret) or ret == 'Failure':
+                    ret_list.append(-10000000000000000000)
+                else:
+                    ret_list.append(ret)
+
+            min_idx = np.argmin(abs(np.array(ret_list)-50.0))
+            scale   = scale_list[min_idx]
+            print ret_list
+            print scale
+            continue
+            
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                         cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure' or np.isnan(ret): sys.exit()
 
             #-----------------------------------------------------------------------------------------
@@ -624,7 +643,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['normalTrainData'] = normalTrainData
             dd['rndNormalTraindataIdx'] = rndNormalTraindataIdx
             dd['nLength']      = nLength
+            dd['scale']        = scale
             ut.save_pickle(dd, modeling_pkl)
+
+    sys.exit()
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')

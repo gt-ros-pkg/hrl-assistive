@@ -45,7 +45,7 @@ from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 
-from hrl_anomaly_detection.ICRA2017_params import *
+from hrl_anomaly_detection.isolator.isolator_params import *
 from hrl_anomaly_detection.optimizeParam import *
 from hrl_anomaly_detection import util as util
 
