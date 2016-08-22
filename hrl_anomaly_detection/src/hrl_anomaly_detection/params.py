@@ -57,13 +57,13 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
                                          'progress_state', 'hmmgp']
         ## param_dict['ROC']['update_list'] = [ 'change', 'hmmgp', 'progress', 'progress_diag', 'progress_svm' ]
         ## param_dict['ROC']['update_list'] = [ 'progress', 'progress_diag', 'progress_svm', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'change']
+        ## param_dict['ROC']['update_list'] = [ 'change']
         ## 'progress_osvm', 'progress_diag',
         # 'progress_state', 
 
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'change']
+        ## param_dict['ROC']['update_list'] = [ 'change']
     param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
@@ -524,13 +524,13 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 3.16, 'gamma': 0.08799, 'cost': 1.75,\
                           'hmmosvm_nu': 0.001}
 
-        ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
-                          'update_list': [ ],\
+        ROC_param_dict = {'methods': [ ],\
+                          'update_list': [ 'fixed'],\
                           'nPoints': nPoints,\
                           'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.logspace(0., 1.0, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-0.2, 1.0, nPoints)*-1.0, \
-                          'fixed_param_range': np.linspace(-0.607, 0.096, nPoints),\
+                          'fixed_param_range': np.linspace(-1.2, 0.3, nPoints),\
                           'svm_param_range': np.logspace(-1.5, 0.45, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-6.0, 0.3, nPoints),\
@@ -565,7 +565,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## ROC_param_dict = {'methods': ['fixed', 'change','progress', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_no_dL' ],\
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
-                          'update_list': [ ],\
+                          'update_list': [ 'hmmgp', 'fixed'],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-1., 1.0, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(-1., 1.0, nPoints)*-1.0, \
@@ -573,10 +573,10 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-1, 1.6, nPoints)*-1.0, \
                           'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(-0.305, 0.372, nPoints ),\
+                          'fixed_param_range': np.linspace(-0.305, 0.45, nPoints ),\
                           'change_param_range': np.logspace(0.0, 1.3, nPoints)*-1.0,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'hmmosvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
