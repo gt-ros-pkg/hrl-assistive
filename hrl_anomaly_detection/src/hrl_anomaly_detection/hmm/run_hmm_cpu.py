@@ -139,7 +139,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-            if True in np.isnan( np.array(ll_classifier_train_X).flatten().tolist() ):
+            if True in np.isnan( ll_logp ):
                 print "NaN in feature"
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
