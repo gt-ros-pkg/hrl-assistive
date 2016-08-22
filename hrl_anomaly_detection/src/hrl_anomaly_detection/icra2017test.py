@@ -530,7 +530,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     # aws 9,4,  - 20, 2, 5, 30, 20
     # c11 8,8,  - 20, 2, 5, 30, 20 - good
-    # c11 7.5,7.5,  - 20, 2, 5, 30, 20 - good
+    # c11 7.5,7.5,  - 20, 2, 5, 30, 20 
 
     #[9, ????]
     
