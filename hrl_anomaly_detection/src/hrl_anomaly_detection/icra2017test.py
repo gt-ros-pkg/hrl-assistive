@@ -526,7 +526,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 20
+    param_dict['SVM']['gp_subsamples'] = 40
 
     # leave-one-person-out
     kFold_list = []
