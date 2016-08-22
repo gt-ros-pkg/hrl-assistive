@@ -60,6 +60,7 @@ RFH.Drive = function (options) {
         goal.on('result', resultCB);
         var sendGoalOnceDisabled = function (resp) {
             goal.send();
+//            setTimeout(resultCB, 18000);
         };
         l_arm.disableMPC();
         r_arm.disableMPC(sendGoalOnceDisabled);
