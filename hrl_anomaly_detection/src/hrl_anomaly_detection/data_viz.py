@@ -169,7 +169,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             l_logp = np.array(ll_X)[i,:,0]
             l_post = np.array(ll_X)[i,:,-nState]
             
-            fig = plt.figure()
+            if decision_boundary_viz: # and i==target_idx:
+                fig = plt.figure()
 
             # disp
             if useTrain_color: plt.plot(l_logp, label=str(i))
@@ -182,7 +183,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                 l_exp_logp = dtc.predict(ll_X[i]) + l_logp
                 plt.plot(l_exp_logp, 'm-', lw=3.0)
                 ## break
-            plt.show()        
+                plt.show()        
 
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})

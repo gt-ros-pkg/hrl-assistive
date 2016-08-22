@@ -1379,7 +1379,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.bLikelihoodPlot:
-            if param_dict['ROC']['method'][0] == 'hmmgp': nSubSample = 20
+            if param_dict['ROC']['methods'][0] == 'hmmgp': nSubSample = 20
             crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
             d = ut.load_pickle(crossVal_pkl)
 
