@@ -919,12 +919,12 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
             
-            ## # Update last samples
-            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-            ##                                            0,1) ])
-            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            # Update last samples
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -1366,7 +1366,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 8
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4., 'scale': 9.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
                              'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
