@@ -50,7 +50,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                    decision_boundary_viz=False, method='progress',\
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None):
+                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
+                   nSubSample=None):
 
     from hrl_anomaly_detection import data_manager as dm
     from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -126,15 +127,13 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         testDataX = normalTrainData
         testDataY = -np.ones(len(normalTrainData[0]))
 
-        if method == 'hmmgp':
-            nSubSample = 20
-        else:
+        if not (method == 'hmmgp'):
             nSubSample = None
 
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                            add_logp_d=False, \
-                                                           cov_type='full', nSubSample=20)
+                                                           cov_type='full', nSubSample=nSubSample)
     
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \

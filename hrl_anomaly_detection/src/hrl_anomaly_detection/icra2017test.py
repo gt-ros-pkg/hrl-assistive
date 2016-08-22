@@ -1364,7 +1364,7 @@ if __name__ == '__main__':
         ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
         subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['ROC']['nPoints'] = 8
+        param_dict['ROC']['nPoints'] = 16
 
         param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
                              'add_logp_d': False}
@@ -1379,7 +1379,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.bLikelihoodPlot:
-
+            if param_dict['ROC']['method'][0] == 'hmmgp': nSubSample = 20
             crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
             d = ut.load_pickle(crossVal_pkl)
 
@@ -1389,7 +1389,7 @@ if __name__ == '__main__':
                               useTrain=True, useNormalTest=True, useAbnormalTest=True,\
                               useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                               hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                              verbose=opt.bVerbose, dd=d)
+                              verbose=opt.bVerbose, dd=d, nSubSample=nSubSample)
         elif opt.bFindParam:
             evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
                                     param_dict, n_random_trial=n_random_trial, random_eval=True,\

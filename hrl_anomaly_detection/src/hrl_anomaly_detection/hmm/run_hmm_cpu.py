@@ -409,8 +409,8 @@ if __name__ == '__main__':
                 parameters = {'nState': [25], 'scale': np.linspace(1.0,10.0,10), \
                               'cov': np.linspace(1.0,10.0,10) }
             else:
-                parameters = {'nState': [25], 'scale': np.linspace(1.0,15.0,15), \
-                              'cov': np.linspace(0.1,2.0,3) }
+                parameters = {'nState': [25], 'scale': np.linspace(1.0,15.0,7), \
+                              'cov': np.linspace(0.1,10.0,3) }
 
         elif opt.task == 'pushing_microwhite':
             if opt.dim == 4:
