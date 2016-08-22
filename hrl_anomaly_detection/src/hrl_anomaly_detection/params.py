@@ -456,11 +456,11 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           
 
         ROC_param_dict = {'methods': [ ],\
-                          'update_list': [ 'osvm', 'kmean' , 'hmmgp'],\
+                          'update_list': [ 'kmean' , 'hmmgp'],\
                           'nPoints': nPoints,\
                           'hmmgp_param_range':np.linspace(3., -35.0, nPoints), \
                           'progress_param_range':np.linspace(0.0, -9.0, nPoints), \
-                          'kmean_param_range':np.logspace(-0.3, 0.6, nPoints)*-1.0 + 0.5, \
+                          'kmean_param_range':np.logspace(-0.3, 1.0, nPoints)*-1.0 , \
                           'svm_param_range': np.logspace(-3.0, -0.3458, nPoints),\
                           'fixed_param_range': np.linspace(1.0, -2.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
