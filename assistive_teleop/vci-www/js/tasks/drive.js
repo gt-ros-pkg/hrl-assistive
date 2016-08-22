@@ -45,8 +45,6 @@ RFH.Drive = function (options) {
 
     ros.getMsgDetails('pr2_common_action_msgs/TuckArmsGoal');
     var tuckArms = function (event) {
-        l_arm.disableMPC();
-        r_arm.disableMPC();
         var goal_msg = ros.composeMsg('pr2_common_action_msgs/TuckArmsGoal');
         goal_msg.tuck_left = true;
         goal_msg.tuck_right = true;
@@ -54,13 +52,18 @@ RFH.Drive = function (options) {
             actionClient: tuckActionClient,
             goalMessage: goal_msg
         });
-
         var resultCB = function (result) {
+            console.log("Tuck Arms Completed, re-enabling hapticMPC");
             l_arm.enableMPC();
             r_arm.enableMPC();
         };
         goal.on('result', resultCB);
-        goal.send();
+        var sendGoalOnceDisabled = function (resp) {
+            goal.send();
+        };
+        l_arm.disableMPC();
+        r_arm.disableMPC(sendGoalOnceDisabled);
+
     }
     $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms);
    

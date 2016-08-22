@@ -90,12 +90,16 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
     type_sets = []
+    type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
+    type_sets.append([22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,48,71,72,73,75])
+    type_sets.append([41,42,43,44,45,46,77,78,47])
+    type_sets.append([79,80,81,82,83,84,85,89,90,91,93,94,95,86,87,88])
+    """
     type_sets.append([42,43,44,45,46,47,48])
     type_sets.append([21,22,23,24,25,26,30,31,32])
-    #type_sets.append([])
     type_sets.append([18,19,20,33,34,35])
-    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])#,27,28,29])
-
+    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])
+    """
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
@@ -116,11 +120,11 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             file_name_split = file_name.split("iteration_")
             file_name_split = file_name_split[1].split("_failure")[0]
             idx = int(file_name_split)
-            if "unexpected2" in file_name:
-                idx = idx + 36
+            #if "unexpected2" in file_name:
+            #    idx = idx + 36
             order[idx] = i
-            print file_name, idx
-        print order
+            #print file_name, idx
+        #print order
         for i, sampleIdx in enumerate(order):#xrange(0, len(d['failureData'][0])):
             if formatY(i, type_sets) is not 0:
                 for dimIdx in xrange(0, len(d['failureData'])):
@@ -128,6 +132,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             else:
                 print "rejected, ", sampleIdx
         print np.asarray(new_failureData).shape
+        return
         d['failureData']=np.asarray(new_failureData)
         
         # Task-oriented hand-crafted features        
@@ -187,7 +192,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :])#, limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
@@ -203,15 +208,15 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         print class_count
         for i in xrange(1, 5):
             if not np.allclose(class_count[i], 0):
-                if i is not 3 and i is not 2:
-                    commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
-                else:
-                    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
+                #if i is not 3 and i is not 2:
+                commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
+                #else:
+                #    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
         c = np.logspace(-3.0, -1.0, 4)
         models=[]
-        for i in xrange(0, 4):
+        #for i in xrange(0, 4):
             #model = svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + g[i])
-            models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + str(c[i])))
+        models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands))# + '-g ' + str(c[i])))
         for testIdx in xrange(0, abnormalTestData.shape[1]):
             X = []
             y = []
@@ -340,7 +345,8 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'unexpected', 'unexpected2' ]
+        #subjects = [ 'unexpected', 'unexpected2' ]
+        subjects = [ 'unexpected3' ]
     else:
         print "Selected task name is not available."
         sys.exit()
