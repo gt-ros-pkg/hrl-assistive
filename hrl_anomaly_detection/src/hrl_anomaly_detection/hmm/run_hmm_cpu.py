@@ -424,8 +424,8 @@ if __name__ == '__main__':
             parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
                           'cov': np.linspace(0.5,5.,10) }
         elif opt.task == 'pushing_toolcase':
-            parameters = {'nState': [25], 'scale': np.linspace(5.0,12.0,7), \
-                          'cov': np.linspace(2.0,14.0,5) }
+            parameters = {'nState': [25], 'scale': np.linspace(5.0,15.0,7), \
+                          'cov': np.linspace(0.1,5.0,5) }
         else:
             print "Not available task"
         max_check_fold = None #2
