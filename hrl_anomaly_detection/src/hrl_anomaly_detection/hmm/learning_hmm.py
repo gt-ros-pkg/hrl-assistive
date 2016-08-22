@@ -458,12 +458,8 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
 def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
                                          cov_type='full'):
 
-    testDataX = []
-    testDataY = []
-    for i in xrange(ml.nEmissionDim):
-        temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-        testDataX.append( temp )
-
+    testDataX = np.vstack( np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1))
+    testDataX = np.swapaxes(testDataX, 0,1)
     testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                             np.ones(len(abnormalTrainData[0])) ])
 
