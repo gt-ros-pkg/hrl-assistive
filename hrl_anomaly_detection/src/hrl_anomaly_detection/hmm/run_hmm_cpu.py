@@ -126,17 +126,21 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
                                                        startIdx, add_logp_d)
 
-            ## if len(np.shape(ll_classifier_train_X))<3:
-            ##     print "feature extractin failed", np.shape(ll_classifier_train_X)
-            ##     scores.append(-1.0 * 1e+10)
-            ##     ret = 'Failure'
-            ##     sys.exit()
-            ##     break
-            if np.amax( np.array(ll_classifier_train_X)[:,:,0] ) < 0:
-                print "Negative likelihoods"
+            if ll_classifier_train_X == []:
+                print "feature extractin failed", np.shape(ll_classifier_train_X)
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
+                sys.exit()
                 break
+            try:
+                if np.amax( np.array(ll_classifier_train_X)[:,:,0] ) < 0:
+                    print "Negative likelihoods"
+                    scores.append(-1.0 * 1e+10)
+                    ret = 'Failure'
+                    break
+            except:
+                print np.shape(ll_classifier_train_X)
+                sys.exit()
             if True in np.isnan( np.array(ll_classifier_train_X).flatten().tolist() ):
                 print "NaN in feature"
                 scores.append(-1.0 * 1e+10)
