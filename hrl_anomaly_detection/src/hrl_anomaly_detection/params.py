@@ -63,7 +63,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
         # 'progress_state', 
 
     else:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean']
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp']
     param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
@@ -606,16 +606,17 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 0.7498, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.000316}
 
-        ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
-                          'update_list': [ ],\
+        ROC_param_dict = {'methods': [ ],\
+                          'update_list': [ 'change' ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
                           'progress_param_range':np.logspace(0.0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(0.0, 1.1, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-2.643, 0.196, nPoints),\
                           'svm_param_range': np.logspace(-2.523, 0.0484, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.2, 0.7, nPoints),\
-                          'change_param_range': np.logspace(0.4, 1.4, nPoints)*-1.0,\
+                          'change_param_range': np.logspace(0.0, 0.4, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-3, 0, nPoints)
                           }
             
@@ -706,7 +707,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 6.75, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 8., \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
