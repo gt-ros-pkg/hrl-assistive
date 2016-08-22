@@ -523,7 +523,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData  = 20
-    nTrainOffset = 1
+    nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
     param_dict['SVM']['gp_subsamples'] = 20
@@ -919,12 +919,12 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
             
-            # Update last samples
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-                                                       0,1) ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            ## # Update last samples
+            ## normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+            ##                                np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+            ##                                            0,1) ])
+            ## normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            ## normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
