@@ -1378,6 +1378,7 @@ if __name__ == '__main__':
         ##                      'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
+            opt.bNoPlot    = True
         else:
             n_random_trial = 1
                              
