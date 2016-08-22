@@ -522,14 +522,15 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData  = 20
+    nPtrainData  = 10
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
     param_dict['SVM']['gp_subsamples'] = 40
 
     # aws 8,8,  - 20, 2, 5, 30, 40
-    # c11 8,8,  - 20, 2, 5, 30, 20
+    # br  8,8,  - 20, 2, 5, 30, 20
+    # c11 8,8,  - 10, 2, 5, 30, 40
     
     # leave-one-person-out
     kFold_list = []
