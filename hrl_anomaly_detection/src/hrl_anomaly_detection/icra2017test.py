@@ -522,11 +522,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    nPtrainData  = 10
+    nPtrainData  = 20
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 40
+    param_dict['SVM']['gp_subsamples'] = 20
 
     # leave-one-person-out
     kFold_list = []
@@ -1379,7 +1379,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.bLikelihoodPlot:
-            if param_dict['ROC']['method'][0] == 'hmmgp': nSubSample = 20
+            if param_dict['ROC']['methods'][0] == 'hmmgp': nSubSample = 20
             crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
             d = ut.load_pickle(crossVal_pkl)
 
