@@ -703,16 +703,16 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           ## 'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean' ],\
-                          'update_list': [ ],\
+                          'update_list': [ 'hmmgp', 'osvm', 'change' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
+                          'hmmgp_param_range':np.logspace(-1, 1.6, nPoints)*-1.0, \
                           'progress_param_range':np.logspace(0.3, 1.6, nPoints)*-1+1.5, \
                           'kmean_param_range':np.logspace(0.4, 1.3, nPoints)*-1+1.5, \
                           'svm_param_range': np.logspace(-2.16, 0.31, nPoints),\
                           'fixed_param_range': np.linspace(0.1, -2.5, nPoints),\
                           'hmmosvm_param_range': np.logspace(-6.0, 0.6, nPoints),\
-                          'osvm_param_range': np.logspace(-4, -0.2, nPoints),\
-                          'change_param_range': np.linspace(-1.0, -10.0, nPoints),\
+                          'osvm_param_range': np.logspace(-5, -0.2, nPoints),\
+                          'change_param_range': np.linspace(0.0, -1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 4:
         handFeatures = ['unimodal_ftForce',\
