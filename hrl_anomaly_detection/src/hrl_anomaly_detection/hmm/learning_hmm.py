@@ -490,7 +490,7 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
         new_Y = []
         new_idx = []
         for i in xrange(len(ll_classifier_train_X)):
-            idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i]), nSubSample).astype(int)
+            idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
             new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
             new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
             new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
