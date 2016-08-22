@@ -523,9 +523,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     nPtrainData  = 20
-    nTrainOffset = 2
+    nTrainOffset = 1
     nTrainTimes  = 5 #10
     nNormalTrain = 30
+    param_dict['SVM']['gp_subsamples'] = 20
 
     # leave-one-person-out
     kFold_list = []
@@ -822,6 +823,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     add_logp_d  = False #HMM_dict.get('add_logp_d', True)
+    nSubSample  = SVM_dict['gp_subsamples']
     
     ROC_data_cur = {}
     for i, m in enumerate(method_list):
@@ -912,10 +914,10 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            ## alpha = np.exp(-0.5*float(i-1) )*0.15
-            ## ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-            ##                       nrSteps=1)
-            ## if np.isnan(ret) or ret == 'Failure': sys.exit()
+            alpha = np.exp(-0.5*float(i-1) )*0.15
+            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
+                                  nrSteps=1)
+            if np.isnan(ret) or ret == 'Failure': sys.exit()
             
             # Update last samples
             normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
@@ -934,7 +936,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                                                -np.ones(len(normalPtrainData[0])), \
                                                                startIdx, \
                                                                add_logp_d=False, cov_type='full',\
-                                                               nSubSample=30)
+                                                               nSubSample=nSubSample)
             # flatten the data
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
