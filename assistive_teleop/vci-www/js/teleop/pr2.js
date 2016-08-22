@@ -486,10 +486,6 @@ var PR2ArmMPC = function (options) {
         var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
         self.goalPosePublisher.publish(pose);
         var enabled_cb = function(resp) {
-            var traj = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
-            self.trajectoryGoalPublisher.publish(traj);
-            var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
-            self.goalPosePublisher.publish(pose);
             console.log(resp);
             cb(resp);
         };
@@ -500,10 +496,6 @@ var PR2ArmMPC = function (options) {
     self.disableMPC = function (cb) {
         cb = cb === undefined ? function (){} : cb;
         var disabled_cb = function(resp) {
-            var traj = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
-            self.trajectoryGoalPublisher.publish(traj);
-            var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
-            self.goalPosePublisher.publish(pose);
             console.log(resp);
             cb(resp);
         };
