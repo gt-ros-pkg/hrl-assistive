@@ -355,12 +355,12 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
-                          'update_list': ['progress', 'osvm', 'hmmgp', 'change' ],\
+                          'update_list': [ 'hmmgp', 'fixed' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 1.6, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-1, 2.0, nPoints)*-1.0, \
                           'progress_param_range':np.logspace(-1.0, 1.2, nPoints)*-1.0 +1., \
                           'kmean_param_range':np.logspace(-1.1, 1.0, nPoints)*-1.0 -0.5, \
-                          'fixed_param_range': np.linspace(-5.0, -0.5, nPoints),\
+                          'fixed_param_range': np.linspace(-7.0, 0.0, nPoints),\
                           'svm_param_range': np.logspace(-2.5, -0.276, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.8, nPoints),\
