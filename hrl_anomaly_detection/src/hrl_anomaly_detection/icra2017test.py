@@ -1405,7 +1405,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7., 'scale': 7.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
                              'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
