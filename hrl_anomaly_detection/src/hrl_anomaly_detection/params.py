@@ -54,11 +54,10 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm', 'progress_svm',\
-                                         'hmmgp', 'progress_state']
-        ## param_dict['ROC']['methods'] = ['hmmgp']
+                                         'progress_state', 'hmmgp']
         ## param_dict['ROC']['update_list'] = [ 'change', 'hmmgp', 'progress', 'progress_diag', 'progress_svm' ]
         ## param_dict['ROC']['update_list'] = [ 'progress', 'progress_diag', 'progress_svm', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp']
+        param_dict['ROC']['update_list'] = [ ]
         ## 'progress_osvm', 'progress_diag',
         # 'progress_state', 
 
@@ -132,6 +131,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.linspace(-1.2, -4.5, nPoints), \
                           'kmean_param_range':np.linspace(-1.2, -3.5, nPoints), \
                           'svm_param_range': np.logspace(-2.523, 0.34, nPoints),\
@@ -153,6 +153,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.linspace(-1.0, -6.5, nPoints), \
                           'kmean_param_range':np.linspace(-1.0, -6.5, nPoints), \
                           'svm_param_range': np.logspace(-2.0, -0.3307, nPoints),\
@@ -265,6 +266,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range': -np.logspace(-2, 1.8, nPoints),\
                           'kmean_param_range': -np.logspace(-3, 1.8, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 0.67, nPoints),\
@@ -290,6 +292,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range': -np.logspace(-0.1, 1.6, nPoints)+0.3,\
                           'kmean_param_range': -np.logspace(-0.1, 1.2, nPoints)+0.3,\
                           'svm_param_range': np.logspace(-2.7, 5.850, nPoints),\
@@ -353,6 +356,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'kmean_param_range':np.logspace(-1.1, 1.0, nPoints)*-1.0 -0.5, \
                           'fixed_param_range': np.linspace(-5.0, -0.5, nPoints),\
@@ -430,6 +434,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.logspace(0.3, 1.3, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.0, nPoints)*-1.0 -0.5, \
                           'svm_param_range': np.logspace(-1.22, 0.2, nPoints),\
@@ -452,6 +457,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.linspace(0.0, -9.0, nPoints), \
                           'kmean_param_range':np.logspace(-0.3, 0.0, nPoints)*-1.0 -0.5, \
                           'svm_param_range': np.logspace(-3.0, -0.3458, nPoints),\
@@ -520,6 +526,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.logspace(0., 1.0, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-0.2, 1.0, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-0.607, 0.096, nPoints),\
@@ -586,9 +593,10 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         SVM_param_dict = {'renew': False, 'w_negative': 3.1622, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.001}
         
-        ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
+        ROC_param_dict = {'methods': [ ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
                           'progress_param_range':np.linspace(-0.8, -8.0, nPoints), \
                           'kmean_param_range':np.linspace(0.5, -4.6, nPoints), \
                           'fixed_param_range': np.linspace(-1.0, -0.1, nPoints),\
@@ -694,6 +702,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean' ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.logspace(0.3, 1.6, nPoints)*-1+1.5, \
                           'kmean_param_range':np.logspace(0.4, 1.3, nPoints)*-1+1.5, \
                           'svm_param_range': np.logspace(-2.16, 0.31, nPoints),\
@@ -760,6 +769,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.linspace(1., -4., nPoints), \
                           'kmean_param_range':np.linspace(1., -4., nPoints), \
                           'svm_param_range': np.logspace(-1.087, 0.89, nPoints),\
@@ -778,6 +788,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean' ],\
                           'update_list': [  ],\
                           'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
                           'progress_param_range':np.linspace(-11., 1.0, nPoints), \
                           'kmean_param_range':np.logspace(-1, 1, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-1.087, -0.4, nPoints),\
