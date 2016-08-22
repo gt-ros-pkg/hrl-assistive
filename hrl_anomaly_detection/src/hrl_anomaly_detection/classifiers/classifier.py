@@ -343,8 +343,8 @@ class classifier(learning_base):
             if type(X) == list: X = np.array(X)
             
             # extract only negatives
-            ll_logp = [ X[i,0] for i in xrange(len(X))  ]
-            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) ]
+            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0  ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             # to prevent multiple same input we add noise into X
             ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))

@@ -154,6 +154,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
 
+            # nSample x nLength
+            if ll_classifier_test_X == []:
+                print "HMM-induced vector is wrong", param['scale'], param['cov']
+                scores.append(-1.0 * 1e+10)
+                ret = 'Failure'
+                break
+
             if method == 'hmmgp':
                 nSubSample = 20
                 import random
@@ -173,9 +180,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ll_classifier_train_Y = new_Y
                 ll_classifier_train_idx = new_idx
                 print "After: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+
                 
-            # remove outlier?
-            
             # flatten the data
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
@@ -189,13 +195,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ret = 'Failure'
                 break
             
-            # nSample x nLength
-            if ll_classifier_test_X == []:
-                print "HMM-induced vector is wrong", param['scale'], param['cov']
-                scores.append(-1.0 * 1e+10)
-                ret = 'Failure'
-                break
-
             if method.find('svm')>=0:
                 scaler = preprocessing.StandardScaler()
                 try:
