@@ -526,11 +526,14 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nTrainOffset = 2
     nTrainTimes  = 5 #10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 40
+    param_dict['SVM']['gp_subsamples'] = 20
 
     # aws 8,8,  - 20, 2, 5, 30, 40
     # br  8,8,  - 20, 2, 5, 30, 20
-    # c11 8,8,  - 20, 2, 5, 30, 20
+    # c11 8,8,  - 20, 2, 5, 30, 20 - good
+    # c11 7.5,7.5,  - 20, 2, 5, 30, 20 - good
+
+    #[9, ????]
     
     # leave-one-person-out
     kFold_list = []
@@ -1407,8 +1410,10 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 7.5, 'scale': 7.5,\
                              'add_logp_d': False}
+        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
+        ##                      'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
             opt.bNoPlot    = True
