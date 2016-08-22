@@ -139,7 +139,9 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                     ret = 'Failure'
                     break
             except:
-                print np.shape(ll_classifier_train_X)
+                print np.shape(ll_classifier_train_X[0])                
+                print type(ll_classifier_train_X)
+                print type(ll_classifier_train_X[0])
                 sys.exit()
             if True in np.isnan( np.array(ll_classifier_train_X).flatten().tolist() ):
                 print "NaN in feature"
