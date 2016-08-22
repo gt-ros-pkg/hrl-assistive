@@ -200,11 +200,11 @@ class classifier(learning_base):
             self.nPosteriors = nPosteriors
             
             from sklearn import gaussian_process
-            self.regr = 'linear' # 'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
+            self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
+            self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
 
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                           normalize=True, nugget=100.)
+                                                       normalize=True, nugget=100.)
             
                         
         learning_base.__init__(self)

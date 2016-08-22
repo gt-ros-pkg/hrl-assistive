@@ -207,8 +207,10 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 7.0, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 1.5, \
                           'add_logp_d': False}
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 7.0, \
+        ##                   'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
                           'hmmosvm_nu': 0.001,\
                           'osvm_nu': 0.000359,\
@@ -328,7 +330,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                       'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True, 'max_time': 5.0}
+                      'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
