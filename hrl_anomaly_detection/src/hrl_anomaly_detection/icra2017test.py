@@ -985,7 +985,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                   np.random.normal(-0.03, 0.03, np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale,\
                                   learningRate=alpha, nrSteps=1 )
                                   
-            if not(np.nan == ret or ret == 'Failure'):
+            if np.nan == ret or ret == 'Failure':
                 print "Failed to partial fit hmm: ", i, ret
                 sys.exit()
                 
