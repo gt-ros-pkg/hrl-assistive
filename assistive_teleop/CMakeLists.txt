@@ -16,8 +16,10 @@ add_action_files(
 
 add_service_files(
   DIRECTORY srv
-  FILES LookatIk.srv
-  FILES MoveItPlan.srv
+  FILES 
+  LookatIk.srv
+  MoveItPlan.srv
+  SetRegionOfInterest.srv
 )
 
 generate_messages(
