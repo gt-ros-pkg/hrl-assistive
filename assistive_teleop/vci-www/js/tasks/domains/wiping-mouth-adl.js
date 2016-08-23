@@ -3,9 +3,9 @@ RFH.Domains.WipingMouthADL = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
-    self.name = options.name || 'wiping_mouth_adl';
-    self.domain = 'wiping_mouth_adl'
-    var $button = $('#wiping-mouth-button');
+    self.name = options.name || 'adl';
+    self.domain = 'adl'
+    var $button = $('#task-go-button');
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -169,23 +169,25 @@ RFH.Domains.WipingMouthADL = function (options) {
         self.clearParams([]);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
         msg.name = 'wiping_mouth_adl' + '-' + new Date().getTime().toString();
-        msg.domain = 'wiping_mouth_adl';
-        var model = 'autobed';
-        var task = 'wiping_mouth';
+        msg.domain = 'adl';
+        var model = document.getElementById("model").value;
+        var task = document.getElementById("mode").value;
+        var model_upper = model.toUpperCase();
+        var task_upper = task.toUpperCase();
         self.setModelName(model);
-        self.setDefaultGoal(['(TASK-COMPLETED WIPING_MOUTH AUTOBED)']);
-        self.updatePDDLState(['(NOT (CONFIGURED BED WIPING_MOUTH AUTOBED))', 
-                              '(NOT (BASE-SELECTED WIPING_MOUTH AUTOBED))',
-                              '(NOT (IS-TRACKING-TAG AUTOBED))',
-                              '(NOT (CONFIGURED SPINE WIPING_MOUTH AUTOBED))',
-                              '(NOT (HEAD-REGISTERED AUTOBED))',
-                              '(NOT (OCCUPIED AUTOBED))',
-                              '(NOT (FOUND-TAG AUTOBED))',
-                              '(NOT (BASE-REACHED WIPING_MOUTH AUTOBED))',
-                              '(NOT (ARM-REACHED WIPING_MOUTH AUTOBED))',
-                              '(NOT (ARM-HOME WIPING_MOUTH AUTOBED))',
-                              '(NOT (TOO-CLOSE AUTOBED))',
-                              '(NOT (TASK-COMPLETED WIPING_MOUTH AUTOBED))']);
+        self.setDefaultGoal(['(TASK-COMPLETED '.concat(task_upper, ' ',model_upper, ')')]);
+        self.updatePDDLState(['(NOT (CONFIGURED BED '.concat(task_upper, ' ',model_upper, '))'), 
+                              '(NOT (BASE-SELECTED '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (IS-TRACKING-TAG '.concat(model_upper,'))'),
+                              '(NOT (CONFIGURED SPINE '.concat(task_upper, ' ', model_upper,'))'),
+                              '(NOT (HEAD-REGISTERED '.concat(model_upper,'))'),
+                              '(NOT (OCCUPIED '.concat(model_upper, '))'),
+                              '(NOT (FOUND-TAG '.concat(model_upper, '))'),
+                              '(NOT (BASE-REACHED '.concat(task_upper, ' ', model_upper,'))'),
+                              '(NOT (ARM-REACHED '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (ARM-HOME '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (TOO-CLOSE '.concat(model_upper, '))'),
+                              '(NOT (TASK-COMPLETED '.concat(task_upper, ' ', model_upper, '))')]);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };
