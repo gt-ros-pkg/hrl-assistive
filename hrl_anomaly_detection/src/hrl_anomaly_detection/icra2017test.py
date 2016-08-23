@@ -420,7 +420,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       data_renew=False, data_gen=False, single_person=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
-                      save_result=False, verbose=False, debug=False):
+                      save_result=False, verbose=False, debug=False, custom_mode=False):
 
     ## Parameters
     # data
@@ -537,8 +537,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # 7.5,7.5,  - 20, 2, 5, 30, 20 * 0.15
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.015 
     #[9(9), , 7.5(7.5), ????]    
-    scale_list = [9, 9, 7.5, 7.5]
-    cov_list = [9, 9, 7.5, 7.5]
+    scale_list  = [9, 9, 7.5, 9.]
+    cov_list    = [9, 9, 7.5, 9.]
+    alpha_coeff_list = [0.15, 0.1, 0.15, 0.015]
     
     # leave-one-person-out
     kFold_list = []
@@ -623,12 +624,14 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 print "--------------------------"
                 continue
 
-            if False:
+            if custom_mode:
                 scale = scale_list[idx]
-                cov   = cov[idx]
+                cov   = scale_list[idx]
+                alpha_coeff = alpha_coeff_list[idx]
             else:
                 scale = HMM_dict['scale']
                 cov   = HMM_dict['cov']
+                alpha_coeff = 0.15
             ## cov = scale
             cov_mult     = [cov]*(nEmissionDim**2)
             
@@ -683,6 +686,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['nLength']      = nLength
             dd['scale']        = scale
             dd['cov']          = cov
+            dd['alpha_coeff']  = alpha_coeff
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
@@ -912,8 +916,9 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     u_denom   = dd['u_denom']  
     startIdx  = dd['startIdx']
     nLength   = dd['nLength']
-    ## scale     = dd['scale'] = HMM_dict['scale']
-    scale     = HMM_dict['scale']
+    scale     = HMM_dict['scale'] = dd['scale'] 
+    alpha_coeff = dd['alpha_coeff']
+    ## scale     = HMM_dict['scale']
 
     #-----------------------------------------------------------------------------------------
     # Classifier partial train/test data
@@ -975,13 +980,13 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.15 #0.04
+            alpha = np.exp(-0.5*float(i-1) )*alpha_coeff #0.15 #0.04
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]+\
                                   np.random.normal(-0.03, 0.03, np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale,\
                                   learningRate=alpha, nrSteps=1 )
                                   
-            if not(np.nan == ret or ret == 'Failure'):
-                print "Failed to partial fit hmm: ", i
+            if np.nan == ret or ret == 'Failure':
+                print "Failed to partial fit hmm: ", i, ret
                 sys.exit()
                 
             # Update last samples
@@ -1311,8 +1316,10 @@ if __name__ == '__main__':
                  default=False, help='Data generation before evaluation.')
     p.add_option('--find_param', action='store_true', dest='bFindParam',
                  default=False, help='Find hmm parameter.')
-    p.add_option('--eval_aws', action='store_true', dest='bEvaluationAWS',
+    p.add_option('--eval_aws', '--aws', action='store_true', dest='bEvaluationAWS',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--cparam', action='store_true', dest='bCustomParam',
+                 default=False, help='')
                  
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -1480,7 +1487,8 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew, viz=opt.bViz)
+                              random_eval=opt.bEvaluationAWS, custom_mode=opt.bCustomParam, \
+                              data_renew=opt.bDataRenew, viz=opt.bViz)
 
     ## elif opt.bOnlineEvalTemp:
     ##     subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 

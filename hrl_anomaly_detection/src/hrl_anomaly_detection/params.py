@@ -232,24 +232,24 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
         ## ROC_param_dict = {'methods': ['fixed', 'progress', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'],\
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
-                          'update_list': [ 'progress_svm', 'progress_state', 'progress', 'hmmosvm', 'hmmgp', 'fixed', 'change'],\
+                          'update_list': [ 'progress_svm', 'progress_state', 'progress_diag', 'progress', 'hmmosvm', 'hmmgp', 'fixed', 'change'],\
                           'nPoints': nPoints,\
-                          'progress_param_range': -np.logspace(-2, 1.9, nPoints),\
-                          'progress_diag_param_range': -np.logspace(-3., 1.6, nPoints),\
+                          'progress_param_range': -np.logspace(-1.5, 1.9, nPoints),\
+                          'progress_diag_param_range': -np.logspace(-1.5, 1.6, nPoints),\
                           'kmean_param_range': -np.logspace(-1, 1.3, nPoints)+1.0,\
-                          'progress_state_param_range':np.linspace(0, -75., nPoints), \
-                          'progress_svm_param_range': np.linspace(0.005, 7.0, nPoints),\
+                          'progress_state_param_range':np.linspace(0, -115., nPoints), \
+                          'progress_svm_param_range': np.linspace(0.005, 4.5, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 1.8, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-0.5, 1.8, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.15, -0.101, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 0.14, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-2.52, -0.45, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-2,0,nPoints),\
-                          'change_param_range': np.linspace(0.0, -25.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4,0,nPoints),\
+                          'change_param_range': np.linspace(0.0, -30.0, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.247, -0.7, nPoints),\
+                          'fixed_param_range': np.linspace(0.247, -0.4, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
                           #np.logspace(-8.0, 1.0, nPoints)
     elif dim == 3:
@@ -267,15 +267,15 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
 
         ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
-                          'update_list': [ 'hmmgp', 'change' ],\
+                          'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(0, 2.3, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(0.3, 2.3, nPoints)*-1.0, \
                           'progress_param_range': -np.logspace(-2, 1.8, nPoints),\
                           'kmean_param_range': -np.logspace(-3, 1.8, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 0.67, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-6.0, 0.0, nPoints),\
-                          'change_param_range': np.linspace(1.0, -30.0, nPoints),\
+                          'change_param_range': np.linspace(1.0, -60.0, nPoints),\
                           'fixed_param_range': np.linspace(0.240, -0.007, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
@@ -764,15 +764,15 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.325, 'scale': 6.66, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.325, 'scale': 7.66, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.01, 'cost': 5.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           'hmmosvm_nu': 0.001}
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
-                          'update_list': [ 'progress', 'hmmgp', 'kmean'],\
+                          'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 2.0, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-0.2, 2.5, nPoints)*-1.0, \
                           'progress_param_range':np.linspace(1., -20., nPoints), \
                           'kmean_param_range':np.linspace(1., -13., nPoints), \
                           'svm_param_range': np.logspace(-1.087, 0.89, nPoints),\
