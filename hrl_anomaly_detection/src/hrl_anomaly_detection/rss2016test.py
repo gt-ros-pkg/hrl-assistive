@@ -620,7 +620,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
     ## sys.exit()
 
-
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_noise_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
@@ -676,7 +675,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                                                  delay_estimation=True) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
-                                                                  
     l_data = r
     print "finished to run run_classifiers"
 
@@ -2147,7 +2145,7 @@ if __name__ == '__main__':
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['progress']
+        param_dict['ROC']['methods']     = ['progress', 'hmmgp', 'fixed', 'change']
         param_dict['ROC']['update_list'] = []
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \

@@ -1611,8 +1611,14 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             if only_tpr is False:
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-            delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
-            delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            if len(delay_list)>0:
+                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
+                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
+            else:
+                delay_mean_l.append( 0 )
+                delay_std_l.append( 0 )
+                
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         from sklearn import metrics
