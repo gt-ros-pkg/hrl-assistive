@@ -537,8 +537,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # 7.5,7.5,  - 20, 2, 5, 30, 20 * 0.15
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.015 
     #[9(9), , 7.5(7.5), ????]    
-    scale_list = [9, 9, 7.5, 7.5]
-    cov_list = [9, 9, 7.5, 7.5]
+    scale_list  = [9, 9, 7.5, 9.]
+    cov_list    = [9, 9, 7.5, 9.]
     alpha_coeff = [0.15, 0.1, 0.15, 0.015]
     
     # leave-one-person-out
@@ -627,9 +627,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             if batch_mode:
                 scale = scale_list[idx]
                 cov   = cov[idx]
+                alpha_coeff = alpha_coeff[idx]
             else:
                 scale = HMM_dict['scale']
                 cov   = HMM_dict['cov']
+                alpha_coeff = 0.15
             ## cov = scale
             cov_mult     = [cov]*(nEmissionDim**2)
             
@@ -684,6 +686,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['nLength']      = nLength
             dd['scale']        = scale
             dd['cov']          = cov
+            dd['alpha_coeff']  = alpha_coeff
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
@@ -717,12 +720,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     print "Start the incremental evaluation"
     l_data = []
     for idx in xrange(len(kFold_list)):
-
-        if custom_mode:
-            param_dict['SVM']['alpha_coeff'] = alpha_coeff[idx]
-        else:
-            param_dict['SVM']['alpha_coeff'] = 0.15
-        
         for jj in xrange(n_random_trial):
             r = run_online_classifier(idx, processed_data_path, task_name, method, \
                                       nPtrainData, nTrainOffset, nTrainTimes, \
@@ -890,7 +887,6 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     nPoints     = ROC_dict['nPoints']
     add_logp_d  = False #HMM_dict.get('add_logp_d', True)
     nSubSample  = SVM_dict['gp_subsamples']
-    alpha_coeff = SVM_dict['alpha_coeff']
     
     ROC_data_cur = {}
     for i, m in enumerate(method_list):
@@ -920,8 +916,9 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     u_denom   = dd['u_denom']  
     startIdx  = dd['startIdx']
     nLength   = dd['nLength']
-    ## scale     = dd['scale'] = HMM_dict['scale']
-    scale     = HMM_dict['scale']
+    scale     = HMM_dict['scale'] = dd['scale'] 
+    alpha_coeff = dd['alpha_coeff']
+    ## scale     = HMM_dict['scale']
 
     #-----------------------------------------------------------------------------------------
     # Classifier partial train/test data
