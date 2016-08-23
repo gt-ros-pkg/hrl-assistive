@@ -24,6 +24,7 @@ RFH.Drive = function (options) {
     var nDots = 25;
     var driveSVG = new Snap('#drive-lines');
     self.$div = $(driveSVG.node);
+    var headTrackingTimer = null;
 
     self.goalDisplay = new RFH.DriveGoalDisplay({
                                 ros: ros,
@@ -307,14 +308,14 @@ RFH.Drive = function (options) {
     var toLeft = function (e) {
         var newStop = headStops[headStops.indexOf(self.currentStop) - 1];
         if (newStop) {
-            moveToStop(newStop);
+            trackHeadPosition(newStop);
         }
     };
 
     var toRight = function (e) {
         var newStop = headStops[headStops.indexOf(self.currentStop) + 1];
         if (newStop) {
-            moveToStop(newStop);
+            trackHeadPosition(newStop);
         }
     };
 //    $('.drive-look.left').on('click.rfh', toLeft).prop('title', 'Turn head left one step.');
@@ -343,13 +344,23 @@ RFH.Drive = function (options) {
         $('#drive-dir-icon path.'+stopName).css({'fill':'#ffffff'});
         head.setPosition(angs[0], angs[1]);
     };
+
+    var trackHeadPosition = function (stopName) {
+        clearTimeout(headTrackingTimer);
+        moveToStop(stopName);
+        headTrackingTimer = setInterval(function(){moveToStop(stopName)}, 1000);
+    };
+
+    var stopTracking = function () {
+        clearTimeout(headTrackingTimer);
+    };
     
     if (!self.forwardOnly) {
         var driveDirIcon = new Snap("#drive-dir-icon");
         Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
             driveDirIcon.append(icon_svg.select('g'));
             var wedgeClickCB = function (e) {
-                moveToStop(e.target.classList[0]);
+                trackHeadPosition(e.target.classList[0]);
             };
             var wedges = driveDirIcon.selectAll('path');
             for (var i=0; i<wedges.length; i+=1) {
@@ -518,9 +529,9 @@ RFH.Drive = function (options) {
         self.$div.on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
         self.$div.on('mousedown.rfh', self.driveGo);
         $('.drive-ctrl').show();
-        $viewer.show();
         self.showGoal();
-        moveToStop(getNearestStop());
+        $viewer.show();
+        trackHeadPosition(getNearestStop());
         self.$div.on('resize.rfh', self.updateLineOffsets);
         $('#controls h3').text("Head Controls");
     };
@@ -533,5 +544,6 @@ RFH.Drive = function (options) {
         $('.drive-ctrl').hide();
         $viewer.hide();
         $('#controls h3').text("Controls");
+        stopTracking();
     };
 };
