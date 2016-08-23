@@ -136,6 +136,10 @@ RFH.EERotation = function (options) {
         }
     };
 
+    var scaleX = 0.001;
+    var scaleY = 0.001;
+    var scaleZ = 0.001;
+
     self.rotArrowLoader = new THREE.ColladaLoader();
     var arrowOnLoad = function (collada) {
         var arrowGeom = collada.scene.children[0].children[0].geometry.clone();
@@ -144,9 +148,6 @@ RFH.EERotation = function (options) {
         baseMaterial.opacity = 0.50;
         self.rotArrows = {};
         //var scaleX = 0.00075;
-        var scaleX = 0.001;
-        var scaleY = 0.001;
-        var scaleZ = 0.001;
         var edgeColor = new THREE.Color(0.1,0.1,0.1);
         var edgeMinAngle = 45;
         var edgeOpacity = 0.6;
@@ -288,9 +289,10 @@ RFH.EERotation = function (options) {
                                      self.eeTF.rotation.z,
                                      self.eeTF.rotation.w);
         var tfMat = new THREE.Matrix4().makeRotationFromQuaternion(q);
-        tfMat.setPosition(new THREE.Vector3(self.eeTF.translation.x,
-                                            self.eeTF.translation.y,
-                                            self.eeTF.translation.z));
+        var eeVector = new THREE.Vector3(self.eeTF.translation.x,
+                                         self.eeTF.translation.y,
+                                         self.eeTF.translation.z);
+        tfMat.setPosition(eeVector);
 
         var arrowInWorldFrame = new THREE.Matrix4();
         var arrowPos = new THREE.Vector3();
@@ -299,8 +301,9 @@ RFH.EERotation = function (options) {
         for (var dir in self.rotArrows) {
             arrowInWorldFrame.multiplyMatrices(tfMat, self.rotArrows[dir].transform);
             arrowInWorldFrame.decompose(arrowPos, arrowQuat, arrowScale);
-            self.rotArrows[dir].mesh.position.set(arrowPos.x, arrowPos.y, arrowPos.z);
-            self.rotArrows[dir].mesh.quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
+            var mesh = self.rotArrows[dir].mesh;
+            mesh.position.set(arrowPos.x, arrowPos.y, arrowPos.z);
+            mesh.quaternion.set(arrowQuat.x, arrowQuat.y, arrowQuat.z, arrowQuat.w);
         }
         RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
     };
