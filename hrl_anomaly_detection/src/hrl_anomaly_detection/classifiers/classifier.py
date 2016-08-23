@@ -1311,7 +1311,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
                         if delay_estimation:
-                            print "Delay by noise? ", delay_idx-step_idx_l[ii]
                             delay_l.append(delay_idx-step_idx_l[ii])
                         else:
                             delay_l.append(delay_idx)

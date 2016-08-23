@@ -1633,7 +1633,20 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
-        label = method
+
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
 
         if no_plot is False:
             # visualization
@@ -1641,13 +1654,14 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             shape = shapes.next()
             ax1 = fig.add_subplot(111)
 
-            plt.plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
+            plt.plot(acc_l, delay_mean_l, shape+color, label=label, linewidth=2.0)
+            ## plt.plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
             ## plt.xlim([49, 101])
             ## plt.ylim([0, 7.0])
             ## plt.ylabel('Detection Time [s]', fontsize=24)
-            ## plt.ylabel('Accuracy (percentage)', fontsize=24)
+            plt.xlabel('Accuracy (percentage)', fontsize=24)
             plt.ylabel('Delay time [s]', fontsize=24)
             ## plt.xticks([50, 100], fontsize=22)
                 
@@ -1655,6 +1669,8 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
 
 
     if no_plot is False:
+        plt.xlim([0,100])
+        plt.ylim([0,1])
         plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
