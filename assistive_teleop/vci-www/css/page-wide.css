@@ -19,7 +19,9 @@ body {
 #left-col {
     float: left;
     height: 100%;
-    width: 256px;
+    width: 8%;
+    min-width:236px;
+    position: relative
 }
 #main-menu {
     display: block;
