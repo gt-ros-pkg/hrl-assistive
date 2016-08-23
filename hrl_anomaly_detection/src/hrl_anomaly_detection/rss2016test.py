@@ -238,7 +238,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew)
+                           data_renew=data_renew, max_time=data_dict['max_time'])
                            
         # Task-oriented hand-crafted features        
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
@@ -303,30 +303,64 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
 
+
+        #-----------------------------------------------------------------------------------------
+        # New three element feature vector
+        #-----------------------------------------------------------------------------------------
+        ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
+                                                       ll_classifier_train_Y, \
+                                                       ll_classifier_train_idx, nState)
+        ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
+          hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
+                                                       ll_classifier_test_Y, \
+                                                       ll_classifier_test_idx, nState)
+
+        ## ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
+        ## fig = plt.figure()
+        ## ax1 = fig.add_subplot(211)        
+        ## for i in xrange(len(ll_classifier_ep_train_X)):
+        ##     if ll_classifier_ep_train_Y[i][0] < 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,2], 'bo-' )
+        ##         ## plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'bo' )
+        ##     if ll_classifier_ep_train_Y[i][0] > 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,2], 'r+-' )
+        ##         ## plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'r+' )
+        ## ax1 = fig.add_subplot(212)        
+        ## for i in xrange(len(ll_classifier_ep_train_X)):
+        ##     if ll_classifier_ep_train_Y[i][0] < 0:
+        ##         plt.plot(ll_classifier_ep_train_X[i,:,1], 'bo-')
+        ##     if ll_classifier_ep_train_Y[i][0] > 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,1], 'r+-' )
+        ## plt.show()
+        ## sys.exit()
+        
         #-----------------------------------------------------------------------------------------
         # Diagonal co-variance
         #-----------------------------------------------------------------------------------------
-        ## ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        ## if data_dict['handFeatures_noise']:
-        ##     ret = ml.fit(normalTrainData+\
-        ##                  np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-        ##                  cov_mult=cov_mult, use_pkl=False, cov_type='diag')
-        ## else:
-        ##     ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
-        for i in xrange(nState):
-            for j in xrange(nEmissionDim):
-                for k in xrange(nEmissionDim):
-                    if j != k:
-                        ml.B[i][1][j*nEmissionDim+k] = 0.0
-        if ret == 'Failure': sys.exit()
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        if data_dict['handFeatures_noise']:
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+        else:
+            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+        ## for i in xrange(nState):
+        ##     for j in xrange(nEmissionDim):
+        ##         for k in xrange(nEmissionDim):
+        ##             if j != k:
+        ##                 ml.B[i][1][j*nEmissionDim+k] = 0.0
+        if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         # Classifier training data
         ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d,\
+                                                   cov_type='diag')
 
         # Classifier test data
         ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d,\
+                                                   cov_type='diag')
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -337,22 +371,28 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['nLength']      = nLength
+        d['ll_classifier_train_X']       = ll_classifier_train_X
+        d['ll_classifier_train_Y']       = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']     = ll_classifier_train_idx
+        d['ll_classifier_test_X']        = ll_classifier_test_X
+        d['ll_classifier_test_Y']        = ll_classifier_test_Y            
+        d['ll_classifier_test_idx']      = ll_classifier_test_idx
         d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
         d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            
         d['ll_classifier_diag_train_idx']= ll_classifier_diag_train_idx
         d['ll_classifier_diag_test_X']   = ll_classifier_diag_test_X
         d['ll_classifier_diag_test_Y']   = ll_classifier_diag_test_Y            
         d['ll_classifier_diag_test_idx'] = ll_classifier_diag_test_idx
-        d['nLength']      = nLength
+        d['ll_classifier_ep_train_X']    = ll_classifier_ep_train_X
+        d['ll_classifier_ep_train_Y']    = ll_classifier_ep_train_Y            
+        d['ll_classifier_ep_train_idx']  = ll_classifier_ep_train_idx
+        d['ll_classifier_ep_test_X']     = ll_classifier_ep_test_X
+        d['ll_classifier_ep_test_Y']     = ll_classifier_ep_test_Y            
+        d['ll_classifier_ep_test_idx']   = ll_classifier_ep_test_idx        
         ut.save_pickle(d, modeling_pkl)
 
-
+        
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         
@@ -434,7 +474,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
             ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
             ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-            
             ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
             ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
 
@@ -1955,7 +1994,7 @@ if __name__ == '__main__':
     p.add_option('--evaluation_freq', '--eaf', action='store_true', dest='bEvaluationWithDiffFreq',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
-    p.add_option('--frp', action='store_true', dest='bFindROCparamRange',
+    p.add_option('--findParams', '--frp', action='store_true', dest='bFindROCparamRange',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
                  
@@ -2088,8 +2127,8 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=False, \
-                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
+                          decision_boundary_viz=True, method='hmmgp', \
+                          useTrain=True, useNormalTest=False, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
@@ -2105,6 +2144,9 @@ if __name__ == '__main__':
         if opt.bEvaluationDelay:
             param_dict['ROC']['methods']     = [ 'progress', 'fixed', 'osvm'] 
             param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'osvm']
+        if opt.bFindROCparamRange:
+            param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
+            
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \

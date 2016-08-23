@@ -106,7 +106,8 @@ class learning_hmm(learning_base):
         '''
         
         # Daehyung: What is the shape and type of input data?
-        X = [np.array(data) for data in xData]
+        X     = [np.array(data) for data in xData]
+        nData = len(xData[0])
         
         param_dict = {}
 
@@ -173,6 +174,8 @@ class learning_hmm(learning_base):
             # print 'Generating HMM'
             # HMM model object
             self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
+            if cov_type == 'diag': self.ml.setDiagonalCovariance(1)
+                
             # print 'Creating Training Data'            
             X_train = util.convert_sequence(X) # Training input
             X_train = X_train.tolist()
@@ -182,8 +185,10 @@ class learning_hmm(learning_base):
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
             ret = self.ml.baumWelch(final_seq, 10000)
-            print 'Baum Welch return:', ret
-            if np.isnan(ret): return 'Failure'
+            if np.isnan(ret):
+                print 'Baum Welch return:', ret
+                return 'Failure'
+            print 'Baum Welch return:', ret/float(nData)
 
             [self.A, self.B, self.pi] = self.ml.asMatrices()
             self.A = np.array(self.A)
@@ -203,30 +208,35 @@ class learning_hmm(learning_base):
                 print "Install new ghmm!!"
 
             if ml_pkl is not None: ut.save_pickle(param_dict, ml_pkl)
-            return ret
+            return ret/float(nData)
 
 
     def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
         ''' Online update of HMM using online Baum-Welch algorithm
         '''
         
-        X = [np.array(data) for data in xData]
+        X     = [np.array(data) for data in xData]
+        nData = len(X[0])
 
         # print 'Creating Training Data'            
         X_train = util.convert_sequence(X) # Training input
         X_train = X_train.tolist()
 
         if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
+        if learningRate < 1e-5: learningRate = 1e-5
 
         final_seq = ghmm.SequenceSet(self.F, X_train)
         ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
 
-        ## for i in xrange(len(X_train)):            
-        ##     final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-        ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
-        ##     if np.isnan(ret): break #return 'Failure'
-        print 'Baum Welch return:', ret
-                
+        if np.isnan(ret):
+            print 'Baum Welch return:', ret
+            return 'Failure'
+        print 'Baum Welch return:', ret/float(nData)
+
+        [self.A, self.B, self.pi] = self.ml.asMatrices()
+        self.A = np.array(self.A)
+        self.B = np.array(self.B)
+        
         return ret
 
         
@@ -300,7 +310,7 @@ class learning_hmm(learning_base):
             for ii in xrange(len(X[0])):
                 l_idx = []
                 for jj in xrange(startIdx, len(X[0][ii])):
-                    l_idx.append( jj )
+                    l_idx.append( jj+startIdx )
                 ll_idx.append(l_idx)
             
             if bPosterior: return ll_likelihoods, ll_posteriors, ll_idx
@@ -398,14 +408,13 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     X = []
     Y = []
     for i in xrange(len(ll_logp)):
-        l_X = []
-        l_Y = []
-        for j in xrange(len(ll_logp[i])):
-            if add_delta_logp:                    
+
+        if add_delta_logp:                            
+            l_X = []
+            for j in xrange(len(ll_logp[i])):
                 if j == 0:
                     ## l_X.append( [ll_logp[i][j]] + [0] + ll_post[i][j].tolist() )
                     l_X.append( [ll_logp[i][j]] + list(ll_post[i][j]) + list(ll_post[i][j]) )
-                    ## print np.shape([ll_logp[i][j]] + ll_post[i][j]), np.shape(ll_post[i][j])
                 else:
                     ## d_logp = ll_logp[i][j]-ll_logp[i][j-1]
                     ## d_post = util.symmetric_entropy(ll_post[i][j-1], ll_post[i][j])
@@ -413,19 +422,17 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
                     ##             ll_post[i][j].tolist() )
                     l_X.append( [ll_logp[i][j]] + list(ll_post[i][j-1]) + \
                                 list(ll_post[i][j]) )
-            else:
-                l_X.append( [ll_logp[i][j]] + list(ll_post[i][j]) )
+        else:
+            l_X = np.hstack([ np.array(ll_logp[i]).reshape(len(ll_logp[i]),1), np.array(ll_post[i]) ]).tolist()
 
+        if l_labels is not None:
+            if l_labels[i] > 0.0: l_Y = [1 for j in xrange(len(l_X))]
+            else: l_Y = [-1 for j in xrange(len(l_X))]
 
-
-            if l_labels is not None:
-                if l_labels[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-            if np.isnan(ll_logp[i][j]):
-                print "nan values in ", i, j
-                return [],[]
-                ## sys.exit()
+        if np.nan in ll_logp[i]:
+            print "nan values in ", i
+            return [],[]
+            ## sys.exit()
 
         X.append(l_X)
         if l_labels is not None: Y.append(l_Y)
@@ -448,34 +455,55 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     return X_flat, Y_flat, idx_flat
 
 
-def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False):
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
+                                         cov_type='full'):
 
-    testDataX = []
-    testDataY = []
-    for i in xrange(ml.nEmissionDim):
-        temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-        testDataX.append( temp )
-
+    testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
+    testDataX = np.swapaxes(testDataX, 0,1)
     testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                             np.ones(len(abnormalTrainData[0])) ])
 
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
-                                                        add_logp_d=add_logp_d)
+                                                        add_logp_d=add_logp_d, cov_type=cov_type)
 
 
-def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False):
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
+                                                 nSubSample=None):
     
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
                                                           ml.nEmissionDim, ml.nState,\
                                                           startIdx=startIdx, \
-                                                          bPosterior=True)
+                                                          bPosterior=True, cov_type=cov_type)
                                                           for i in xrange(len(dataX[0])))
     _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
     ll_classifier_train_X, ll_classifier_train_Y = \
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
+
+    if nSubSample is not None:
+        import random
+        
+        print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
+            ## idx_list = range(len(ll_classifier_train_X[i]))
+            ## random.shuffle(idx_list)
+            ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
+        print "After: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
@@ -499,9 +527,9 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):
     nOutlier = int(0.05*len(ll_logp))
     if nOutlier < 1: nOutlier = 1
 
-    upper_lst = idx_lst[:nOutlier]
-    lower_lst = idx_lst[-nOutlier:]
-    indices = upper_lst + lower_lst
+    lower_lst = idx_lst[:nOutlier]
+    upper_lst = idx_lst[-nOutlier:]
+    indices = lower_lst + upper_lst
     indices = sorted(list(indices), reverse=True)
     for i in indices:
         del ll_logp[i]
@@ -513,21 +541,69 @@ def removeLikelihoodOutliers(ll_logp, ll_post, ll_idx, l_labels=None):
 
     return ll_logp, ll_post, ll_idx, l_labels
 
+
+def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
+    from scipy.stats import norm, entropy
+
+    direc_delta = np.zeros(nPosteriors)
+    for i in xrange(len(direc_delta)):
+        direc_delta[i] = np.exp(-float(i))
+    direc_delta /= np.sum(direc_delta)
+
+    lll_X   = []
+    for k in xrange(len(ll_X)):
+
+        # length x features
+        ll_logp = np.array(ll_X[k])[:,0]
+        ll_post = np.array(ll_X[k])[:,-nPosteriors:]
+
+        new_X = []
+        max_states = np.argmax(ll_post, axis=1)
+
+        
+        for i in xrange(len(ll_logp)):
+            state = max_states[i]
+            ## direc_delta *= 0.0
+            ## ## direc_delta[state] = 1.0
+            ## direc_delta[0] = 1.0
+
+            ## selfInfo = entropy(direc_delta+1e-10, ll_post[i]+1e-10)
+            selfInfo = util.symmetric_entropy(direc_delta+1e-6, ll_post[i]+1e-6)
+            ## if selfInfo < 1e-6: selfInfo = 1e+6
+            ## elif selfInfo > 1e+6: selfInfo = 0.0
+            ## else: selfInfo = 1.0/selfInfo
+
+            if selfInfo < 1e-10: selfInfo = 1e-10
+            selfInfo = np.log(selfInfo)
+            ## selfInfo = 1.0/selfInfo
+                
+            new_X.append([ll_logp[i], float(state), selfInfo ])
+
+            ## if ll_Y[k] > 0 and k > 4:
+            ##     print np.sum(ll_post[i])
+            ##     print i, [ll_logp[i], float(state), selfInfo ]
+
+        lll_X.append(new_X)
+        
+    return lll_X, ll_Y, ll_idx
+
 ####################################################################
 # functions for paralell computation
 ####################################################################
 
 def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
-                      bPosterior=False, converted_X=False):
+                      bPosterior=False, converted_X=False, cov_type='full'):
     '''
     This function will be deprecated. Please, use computeLikelihoods.
     '''
 
     if nEmissionDim >= 2:
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+        if cov_type == 'diag' or cov_type.find('diag')>=0: ml.setDiagonalCovariance(1)        
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
-    
+
+
     if converted_X is False:
         X_test = util.convert_sequence(X, emission=False)
         X_test = np.squeeze(X_test)
@@ -550,7 +626,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
             ## return False, False # anomaly
             continue
 
-        l_idx.append( i )
+        l_idx.append( i+startIdx )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
@@ -561,7 +637,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
 
 
 def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
-                       bPosterior=False, converted_X=False):
+                       bPosterior=False, converted_X=False, cov_type='full'):
     '''
     Input:
     - X: dimension x length
@@ -569,6 +645,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
 
     if nEmissionDim >= 2:
         ml = ghmm.HMMFromMatrices(F, ghmm.MultivariateGaussianDistribution(F), A, B, pi)
+        if cov_type == 'diag': ml.setDiagonalCovariance(1)
     else:
         ml = ghmm.HMMFromMatrices(F, ghmm.GaussianDistribution(F), A, B, pi)
 
@@ -590,7 +667,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             ## return False, False # anomaly
             continue
 
-        l_idx.append( i )
+        l_idx.append( i+startIdx )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
@@ -600,233 +677,228 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         return idx, l_idx, l_likelihood
 
 
-####################################################################
-# functions for data generation
-####################################################################
+## ####################################################################
+## # functions for data generation
+## ####################################################################
 
-def computeHMMfeatures(task_name, processed_data_path, param_dict, data_renew=False, verbose=False):
-    ## Parameters
-    # data
-    data_dict  = param_dict['data_param']
-    data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
-    # HMM
-    HMM_dict   = param_dict['HMM']
-    nState     = HMM_dict['nState']
-    cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
-    # SVM
-    SVM_dict   = param_dict['SVM']
+## def computeHMMfeatures(task_name, processed_data_path, param_dict, data_renew=False, verbose=False):
+##     ## Parameters
+##     # data
+##     data_dict  = param_dict['data_param']
+##     data_renew = data_dict['renew']
+##     # AE
+##     AE_dict     = param_dict['AE']
+##     # HMM
+##     HMM_dict   = param_dict['HMM']
+##     nState     = HMM_dict['nState']
+##     cov        = HMM_dict['cov']
+##     add_logp_d = HMM_dict.get('add_logp_d', False)
+##     # SVM
+##     SVM_dict   = param_dict['SVM']
 
-    # ROC
-    ROC_dict = param_dict['ROC']
+##     # ROC
+##     ROC_dict = param_dict['ROC']
 
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-    if os.path.isfile(crossVal_pkl):
-        d = ut.load_pickle(crossVal_pkl)
-        kFold_list  = d['kFoldList']
-    else:
-        print "No cv data"
-        sys.exit()
+##     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+##     if os.path.isfile(crossVal_pkl):
+##         d = ut.load_pickle(crossVal_pkl)
+##         kFold_list  = d['kFoldList']
+##     else:
+##         print "No cv data"
+##         sys.exit()
 
-    #-----------------------------------------------------------------------------------------
-    # parameters
-    startIdx    = 4
-    method_list = ROC_dict['methods'] 
-    nPoints     = ROC_dict['nPoints']
+##     #-----------------------------------------------------------------------------------------
+##     # parameters
+##     startIdx    = 4
+##     method_list = ROC_dict['methods'] 
+##     nPoints     = ROC_dict['nPoints']
 
-    successData = d['successData']
-    failureData = d['failureData']
-    param_dict  = d['param_dict']
-    aeSuccessData = d.get('aeSuccessData', None)
-    aeFailureData = d.get('aeFailureData', None)
-    if 'timeList' in param_dict.keys():
-        timeList    = param_dict['timeList'][startIdx:]
-    else: timeList = None
+##     successData = d['successData']
+##     failureData = d['failureData']
+##     param_dict  = d['param_dict']
+##     aeSuccessData = d.get('aeSuccessData', None)
+##     aeFailureData = d.get('aeFailureData', None)
+##     if 'timeList' in param_dict.keys():
+##         timeList    = param_dict['timeList'][startIdx:]
+##     else: timeList = None
 
-    #-----------------------------------------------------------------------------------------
-    # Training HMM, and getting classifier training and testing data
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+##     #-----------------------------------------------------------------------------------------
+##     # Training HMM, and getting classifier training and testing data
+##     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+##       in enumerate(kFold_list):
 
-        if verbose: print idx, " : training hmm and getting classifier training and testing data"
+##         if verbose: print idx, " : training hmm and getting classifier training and testing data"
 
-        if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            tag = ''
-            for ft in AE_dict['add_option']:
-                tag += ft[:2]
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
-        elif AE_dict['switch'] and AE_dict['add_option'] is None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
-        else:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+##         if AE_dict['switch'] and AE_dict['add_option'] is not None:
+##             tag = ''
+##             for ft in AE_dict['add_option']:
+##                 tag += ft[:2]
+##             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+tag+'_'+str(idx)+'.pkl')
+##         elif AE_dict['switch'] and AE_dict['add_option'] is None:
+##             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_raw_'+str(idx)+'.pkl')
+##         else:
+##             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
+##         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
-        if AE_dict['switch']:
-            if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
+##         if AE_dict['switch']:
+##             if verbose: print "Start "+str(idx)+"/"+str(len(kFold_list))+"th iteration"
 
-            AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
+##             AE_proc_data = os.path.join(processed_data_path, 'ae_processed_data_'+str(idx)+'.pkl')
 
-            # From dim x sample x length
-            # To reduced_dim x sample x length
-            d = dm.getAEdataSet(idx, aeSuccessData, aeFailureData, \
-                                successData, failureData, param_dict,\
-                                normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
-                                AE_dict['time_window'], AE_dict['nAugment'], \
-                                AE_proc_data, \
-                                # data param
-                                processed_data_path, \
-                                # AE param
-                                layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
-                                learning_rate_decay=AE_dict['learning_rate_decay'], \
-                                momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
-                                lambda_reg=AE_dict['lambda_reg'], \
-                                max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
-                                cuda=False, \
-                                filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
-                                verbose=False)
+##             # From dim x sample x length
+##             # To reduced_dim x sample x length
+##             d = dm.getAEdataSet(idx, aeSuccessData, aeFailureData, \
+##                                 successData, failureData, param_dict,\
+##                                 normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
+##                                 AE_dict['time_window'], AE_dict['nAugment'], \
+##                                 AE_proc_data, \
+##                                 # data param
+##                                 processed_data_path, \
+##                                 # AE param
+##                                 layer_sizes=AE_dict['layer_sizes'], learning_rate=AE_dict['learning_rate'], \
+##                                 learning_rate_decay=AE_dict['learning_rate_decay'], \
+##                                 momentum=AE_dict['momentum'], dampening=AE_dict['dampening'], \
+##                                 lambda_reg=AE_dict['lambda_reg'], \
+##                                 max_iteration=AE_dict['max_iteration'], min_loss=AE_dict['min_loss'], \
+##                                 cuda=False, \
+##                                 filtering=AE_dict['filter'], filteringDim=AE_dict['filterDim'],\
+##                                 verbose=False)
 
-            if AE_dict['filter']:
-                # NOTE: pooling dimension should vary on each auto encoder.
-                # Filtering using variances
-                normalTrainData   = d['normTrainDataFiltered']
-                abnormalTrainData = d['abnormTrainDataFiltered']
-                normalTestData    = d['normTestDataFiltered']
-                abnormalTestData  = d['abnormTestDataFiltered']
-            else:
-                normalTrainData   = d['normTrainData']
-                abnormalTrainData = d['abnormTrainData']
-                normalTestData    = d['normTestData']
-                abnormalTestData  = d['abnormTestData']
-        else:
-            # dim x sample x length
-            normalTrainData   = successData[:, normalTrainIdx, :] 
-            abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-            normalTestData    = successData[:, normalTestIdx, :] 
-            abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+##             if AE_dict['filter']:
+##                 # NOTE: pooling dimension should vary on each auto encoder.
+##                 # Filtering using variances
+##                 normalTrainData   = d['normTrainDataFiltered']
+##                 abnormalTrainData = d['abnormTrainDataFiltered']
+##                 normalTestData    = d['normTestDataFiltered']
+##                 abnormalTestData  = d['abnormTestDataFiltered']
+##             else:
+##                 normalTrainData   = d['normTrainData']
+##                 abnormalTrainData = d['abnormTrainData']
+##                 normalTestData    = d['normTestData']
+##                 abnormalTestData  = d['abnormTestData']
+##         else:
+##             # dim x sample x length
+##             normalTrainData   = successData[:, normalTrainIdx, :] 
+##             abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+##             normalTestData    = successData[:, normalTestIdx, :] 
+##             abnormalTestData  = failureData[:, abnormalTestIdx, :] 
 
 
-        if AE_dict['switch'] and AE_dict['add_option'] is not None:
-            print "add hand-crafted features.."
-            newHandSuccTrData = handSuccTrData = d['handNormTrainData']
-            newHandFailTrData = handFailTrData = d['handAbnormTrainData']
-            handSuccTeData = d['handNormTestData']
-            handFailTeData = d['handAbnormTestData']
+##         if AE_dict['switch'] and AE_dict['add_option'] is not None:
+##             print "add hand-crafted features.."
+##             newHandSuccTrData = handSuccTrData = d['handNormTrainData']
+##             newHandFailTrData = handFailTrData = d['handAbnormTrainData']
+##             handSuccTeData = d['handNormTestData']
+##             handFailTeData = d['handAbnormTestData']
 
-            normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
-                                             AE_dict['add_option'], d['handFeatureNames'], \
-                                             add_noise_features=AE_dict['add_noise_option'] )
-            abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
-                                             AE_dict['add_option'], d['handFeatureNames'])
-            normalTestData   = combineData( normalTestData, handSuccTeData,\
-                                            AE_dict['add_option'], d['handFeatureNames'])
-            abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
-                                             AE_dict['add_option'], d['handFeatureNames'])
+##             normalTrainData   = combineData( normalTrainData, newHandSuccTrData,\
+##                                              AE_dict['add_option'], d['handFeatureNames'], \
+##                                              add_noise_features=AE_dict['add_noise_option'] )
+##             abnormalTrainData = combineData( abnormalTrainData, newHandFailTrData,\
+##                                              AE_dict['add_option'], d['handFeatureNames'])
+##             normalTestData   = combineData( normalTestData, handSuccTeData,\
+##                                             AE_dict['add_option'], d['handFeatureNames'])
+##             abnormalTestData  = combineData( abnormalTestData, handFailTeData,\
+##                                              AE_dict['add_option'], d['handFeatureNames'])
 
-            ## # reduce dimension by pooling
-            ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
-            ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
-            ##                                                          pooling_param_dict)
-            ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
-            ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
-            ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
+##             ## # reduce dimension by pooling
+##             ## pooling_param_dict  = {'dim': AE_dict['filterDim']} # only for AE        
+##             ## normalTrainData, pooling_param_dict = dm.variancePooling(normalTrainData, \
+##             ##                                                          pooling_param_dict)
+##             ## abnormalTrainData, _ = dm.variancePooling(abnormalTrainData, pooling_param_dict)
+##             ## normalTestData, _    = dm.variancePooling(normalTestData, pooling_param_dict)
+##             ## abnormalTestData, _  = dm.variancePooling(abnormalTestData, pooling_param_dict)
 
-        ## # add noise
-        ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
+##         ## # add noise
+##         ##     normalTrainData += np.random.normal(0.0, 0.03, np.shape(normalTrainData) ) 
 
-        # scaling
-        if verbose: print "scaling data"
-        normalTrainData   *= HMM_dict['scale']
-        abnormalTrainData *= HMM_dict['scale']
-        normalTestData    *= HMM_dict['scale']
-        abnormalTestData  *= HMM_dict['scale']
+##         # scaling
+##         if verbose: print "scaling data"
+##         normalTrainData   *= HMM_dict['scale']
+##         abnormalTrainData *= HMM_dict['scale']
+##         normalTestData    *= HMM_dict['scale']
+##         abnormalTestData  *= HMM_dict['scale']
 
-        # training hmm
-        if verbose: print "start to fit hmm"
-        nEmissionDim = len(normalTrainData)
-        cov_mult     = [cov]*(nEmissionDim**2)
-        nLength      = len(normalTrainData[0][0]) - startIdx
+##         # training hmm
+##         if verbose: print "start to fit hmm"
+##         nEmissionDim = len(normalTrainData)
+##         cov_mult     = [cov]*(nEmissionDim**2)
+##         nLength      = len(normalTrainData[0][0]) - startIdx
 
-        ml  = learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        if data_dict['handFeatures_noise']:
-            ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                         cov_mult=cov_mult, use_pkl=False)
-        else:
-            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
+##         ml  = learning_hmm(nState, nEmissionDim, verbose=verbose) 
+##         if data_dict['handFeatures_noise']:
+##             ret = ml.fit(normalTrainData+\
+##                          np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+##                          cov_mult=cov_mult, use_pkl=False)
+##         else:
+##             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure': 
-            print "-------------------------"
-            print "HMM returned failure!!   "
-            print "-------------------------"
-            sys.exit()
-            return (-1,-1,-1,-1)
+##         if ret == 'Failure' or np.isnan(ret): sys.exit()
 
-        #-----------------------------------------------------------------------------------------
-        # Classifier training data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-            testDataX.append( temp )
+##         #-----------------------------------------------------------------------------------------
+##         # Classifier training data
+##         #-----------------------------------------------------------------------------------------
+##         testDataX = []
+##         testDataY = []
+##         for i in xrange(nEmissionDim):
+##             temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
+##             testDataX.append( temp )
 
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
+##         testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+##                                 np.ones(len(abnormalTrainData[0])) ])
 
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+##         r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+##                                                                 [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+##                                                                 ml.nEmissionDim, ml.nState,\
+##                                                                 startIdx=startIdx, \
+##                                                                 bPosterior=True)
+##                                                                 for i in xrange(len(testDataX[0])))
+##         _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
 
-        ll_classifier_train_X, ll_classifier_train_Y = \
-          getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+##         ll_classifier_train_X, ll_classifier_train_Y = \
+##           getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
-        #-----------------------------------------------------------------------------------------
-        # Classifier test data
-        #-----------------------------------------------------------------------------------------
-        testDataX = []
-        testDataY = []
-        for i in xrange(nEmissionDim):
-            temp = np.vstack([normalTestData[i], abnormalTestData[i]])
-            testDataX.append( temp )
+##         #-----------------------------------------------------------------------------------------
+##         # Classifier test data
+##         #-----------------------------------------------------------------------------------------
+##         testDataX = []
+##         testDataY = []
+##         for i in xrange(nEmissionDim):
+##             temp = np.vstack([normalTestData[i], abnormalTestData[i]])
+##             testDataX.append( temp )
 
-        testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
-                                np.ones(len(abnormalTestData[0])) ])
+##         testDataY = np.hstack([ -np.ones(len(normalTestData[0])), \
+##                                 np.ones(len(abnormalTestData[0])) ])
 
-        r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
+##         r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+##                                                                 [ testDataX[j][i] for j in xrange(nEmissionDim) ], \
+##                                                                 ml.nEmissionDim, ml.nState,\
+##                                                                 startIdx=startIdx, \
+##                                                                 bPosterior=True)
+##                                                                 for i in xrange(len(testDataX[0])))
+##         _, ll_classifier_test_idx, ll_logp, ll_post = zip(*r)
 
-        # nSample x nLength
-        ll_classifier_test_X, ll_classifier_test_Y = \
-          getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
+##         # nSample x nLength
+##         ll_classifier_test_X, ll_classifier_test_Y = \
+##           getHMMinducedFeatures(ll_logp, ll_post, testDataY, c=1.0, add_delta_logp=add_logp_d)
 
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = ml.nEmissionDim
-        d['A']            = ml.A 
-        d['B']            = ml.B 
-        d['pi']           = ml.pi
-        d['F']            = ml.F
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
-        d['nLength']      = nLength
-        ut.save_pickle(d, modeling_pkl)
+##         #-----------------------------------------------------------------------------------------
+##         d = {}
+##         d['nEmissionDim'] = ml.nEmissionDim
+##         d['A']            = ml.A 
+##         d['B']            = ml.B 
+##         d['pi']           = ml.pi
+##         d['F']            = ml.F
+##         d['nState']       = nState
+##         d['startIdx']     = startIdx
+##         d['ll_classifier_train_X']  = ll_classifier_train_X
+##         d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+##         d['ll_classifier_train_idx']= ll_classifier_train_idx
+##         d['ll_classifier_test_X']   = ll_classifier_test_X
+##         d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+##         d['ll_classifier_test_idx'] = ll_classifier_test_idx
+##         d['nLength']      = nLength
+##         ut.save_pickle(d, modeling_pkl)
     
-    return
+##     return

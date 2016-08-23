@@ -106,23 +106,30 @@ RFH.EERotation = function (options) {
     self.canvasMouseMoveCB = function (event) {
         var overMesh = self.getMeshPointedAt(event);
         if (overMesh === undefined) {return;}
-        if (overMesh === null) {
+        if (overMesh === null) {  // If not over any mesh...
             if (self.hoveredMesh !== null){
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = null;
+                self.show();
                 self.stopPreview()
             }
-        } else {
+        } else {  // If hovering over something...
             if (self.hoveredMesh === null) {
+                self.hide();
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh = overMesh;
+                self.hoveredMesh.mesh.visible = true;
+                self.hoveredMesh.edges.visible = true;
                 self.setHandDelta(overMesh.cbArgs);
                 self.startPreview();
                 self.updatePreview();
             } else if (overMesh !== self.hoveredMesh) {
+                self.hide();
                 overMesh.mesh.material.color.set(overMesh.mesh.userData.hoverColor);
                 self.hoveredMesh.mesh.material.color.set(self.hoveredMesh.mesh.userData.defaultColor);
                 self.hoveredMesh = overMesh;
+                self.hoveredMesh.mesh.visible = true;
+                self.hoveredMesh.edges.visible = true;
                 self.setHandDelta(overMesh.cbArgs)
                 self.updatePreview();
             }

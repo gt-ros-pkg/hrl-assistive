@@ -479,24 +479,28 @@ var PR2ArmMPC = function (options) {
         serviceType: 'hrl_haptic_manipulation_in_clutter_srvs/EnableHapticMPC'
     })
 
-    self.enableMPC = function () {
-        var enabled_cb = function(resp) {
-            console.log(resp);
-        };
-        var req = new ROSLIB.ServiceRequest({'new_state': 'enabled'});
-        self.enableMPCService.callService(req, enabled_cb);
-    };
-
-    self.disableMPC = function () {
+    self.enableMPC = function (cb) {
+        cb = cb === undefined ? function (){} : cb;
         var traj = self.ros.composeMsg('trajectory_msgs/JointTrajectory');
         self.trajectoryGoalPublisher.publish(traj);
         var pose = self.ros.composeMsg('geometry_msgs/PoseStamped');
         self.goalPosePublisher.publish(pose);
         var enabled_cb = function(resp) {
             console.log(resp);
+            cb(resp);
+        };
+        var req = new ROSLIB.ServiceRequest({'new_state': 'enabled'});
+        self.enableMPCService.callService(req, enabled_cb);
+    };
+
+    self.disableMPC = function (cb) {
+        cb = cb === undefined ? function (){} : cb;
+        var disabled_cb = function(resp) {
+            console.log(resp);
+            cb(resp);
         };
         var req = new ROSLIB.ServiceRequest({'new_state': 'disabled'});
-        self.enableMPCService.callService(req, enabled_cb);
+        self.enableMPCService.callService(req, disabled_cb);
         
     };
 

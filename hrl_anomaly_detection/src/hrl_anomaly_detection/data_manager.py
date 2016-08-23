@@ -260,6 +260,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         data_dict['successData']  = successData = np.array(successData)
         data_dict['failureData']  = failureData = np.array(failureData)
         data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
+        data_dict['successFiles'] = success_list
+        data_dict['failureFiles'] = failure_list
         data_dict['param_dict'] = param_dict
         
         if rawFeatures is not None: #ae_data and 

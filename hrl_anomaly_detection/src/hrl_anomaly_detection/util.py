@@ -1320,7 +1320,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
-    for method in ROC_data.keys():
+
+    auc_rates = {}
+    for method in sorted(ROC_data.keys()):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1346,11 +1348,18 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
             if only_tpr is False:
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                try:
+                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+                except:
+                    continue
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        if len(fpr_l) < nPoints:
+            print method + ' has NaN? and fitting error?'
+            continue
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
@@ -1364,7 +1373,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print tpr_l
         print fpr_l
         if only_tpr is False:
-            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
+            ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc_rates[method] = auc
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
@@ -1458,10 +1469,15 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
+
+    for key in auc_rates.keys():
+        print key, " : ", auc_rates[key]
+
+    return auc_rates
     
 
 def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False):
+             timeList=None, only_tpr=False, legend=False):
     # ---------------- ROC Visualization ----------------------
     
     print "Start to visualize ROC curves!!!"
@@ -1481,6 +1497,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
+    acc_rates = {}
     for method in ROC_data.keys():
 
         tp_ll = ROC_data[method]['tp_l']
@@ -1511,6 +1528,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print acc_l
         if only_tpr is False:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        acc_rates[method] = acc_l
         print "--------------------------------"
 
         label = method
@@ -1542,6 +1560,7 @@ def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
     
+    return acc_rates
 
 
 def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\

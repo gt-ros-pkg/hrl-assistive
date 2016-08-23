@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import math
 import numpy as np
 
 import rospy
@@ -15,41 +14,33 @@ from assistive_teleop.msg import ServoAction, ServoResult, ServoFeedback
 
 class ServoingServer(object):
     def __init__(self):
-        rospy.init_node('relative_servoing')
         rospy.Subscriber('robot_pose_ekf/odom_combined',
                          PoseWithCovarianceStamped,
                          self.update_position)
-        rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
         self.servoing_as = actionlib.SimpleActionServer('servoing_action',
                                                         ServoAction,
                                                         self.goal_cb, False)
-        self.vel_out = rospy.Publisher('base_controller/command', Twist)
+        self.vel_out = rospy.Publisher('base_controller/command', Twist, queue_size=1)
         self.tfl = TransformListener()
-        self.goal_out = rospy.Publisher('/servo_dest', PoseStamped, latch=True)
-        self.left_out = rospy.Publisher('/left_points', PointCloud)
-        self.right_out = rospy.Publisher('/right_points', PointCloud)
-        self.front_out = rospy.Publisher('/front_points', PointCloud)
+        self.goal_out = rospy.Publisher('/servo_dest', PoseStamped, latch=True, queue_size=1)
+        self.left_out = rospy.Publisher('/left_points', PointCloud, queue_size=1)
+        self.right_out = rospy.Publisher('/right_points', PointCloud, queue_size=1)
+        self.front_out = rospy.Publisher('/front_points', PointCloud, queue_size=1)
         # Initialize variables, so as not to spew errors before seeing a goal
         self.at_goal = False
         self.rot_safe = True
         self.bfp_goal = PoseStamped()
         self.odom_goal = PoseStamped()
-        self.x_max = 0.5
-        self.x_min = 0.05
-        self.y_man = 0.3
-        self.y_min = 0.05
-        self.z_max = 0.5
-        self.z_min = 0.05
         self.ang_goal = 0.0
         self.ang_thresh_small = 0.01
         self.ang_thresh_big = 0.04
         self.ang_thresh = self.ang_thresh_big
         self.retreat_thresh = 0.3
-        self.curr_pos = PoseWithCovarianceStamped()
         self.dist_thresh = 0.15
         self.left = [[], []]
         self.right = [[], []]
         self.front = [[], []]
+        rospy.Subscriber('/base_scan', LaserScan, self.base_laser_cb)
         self.servoing_as.start()
 
     def goal_cb(self, goal):
@@ -85,15 +76,17 @@ class ServoingServer(object):
     def update_goal(self, msg):
         msg.header.stamp = rospy.Time.now()
         if not self.tfl.waitForTransform(msg.header.frame_id, '/base_footprint',
-                                         msg.header.stamp, rospy.Duration(30)):
+                                         msg.header.stamp, rospy.Duration(5)):
             rospy.logwarn('Cannot find /base_footprint transform')
+            return
         self.bfp_goal = self.tfl.transformPose('/base_footprint', msg)
-        if not self.tfl.waitForTransform(msg.header.frame_id, 'odom_combined',
-                                         msg.header.stamp, rospy.Duration(30)):
+        if not self.tfl.waitForTransform(msg.header.frame_id, '/odom_combined',
+                                         msg.header.stamp, rospy.Duration(5)):
             rospy.logwarn('Cannot find /odom_combined transform')
+            return
         self.odom_goal = self.tfl.transformPose('/odom_combined', msg)
         self.goal_out.publish(self.odom_goal)
-        ang_to_goal = math.atan2(self.bfp_goal.pose.position.y,
+        ang_to_goal = np.arctan2(self.bfp_goal.pose.position.y,
                                  self.bfp_goal.pose.position.x)
         # (current angle in odom, plus the robot-relative change to face goal)
         self.ang_goal = self.curr_ang[2] + ang_to_goal
@@ -113,7 +106,7 @@ class ServoingServer(object):
         # print "Ang Diff: %s" %self.ang_diff
 
         self.dist_to_goal = ((self.odom_goal.pose.position.x - msg.pose.pose.position.x)**2 +
-                              (self.odom_goal.pose.position.y- msg.pose.pose.position.y)**2)**(1./2)
+                             (self.odom_goal.pose.position.y - msg.pose.pose.position.y)**2)**(1./2)
 
         rospy.logwarn('Distance to goal (msg): ')
         rospy.logwarn(msg)
@@ -129,18 +122,20 @@ class ServoingServer(object):
         ranges = np.array(msg.ranges)
         angles = np.arange(msg.angle_min, msg.angle_max, msg.angle_increment)
         # Filter out noise(<0.003), points >1m, leaves obstacles
-        near_angles = np.extract(np.logical_and(ranges < 1, ranges > 0.003), angles)
-        near_ranges = np.extract(np.logical_and(ranges < 1, ranges > 0.003), ranges)
-        self.bad_side = np.sign(near_angles[np.argmax(abs(near_angles))])
+        good_idxs = np.logical_and(ranges < 30, ranges > 0.05)
+        near_ranges = np.extract(good_idxs, ranges)
+        near_angles = np.extract(good_idxs, angles)
+#        print "Near:", near_ranges
+        # bad_side = np.sign(near_angles[np.argmax(abs(near_angles))])
         # print "bad side: %s" %bad_side # (1 (pos) = left, -1 = right)
-        # print "Min in Ranges: %s" %min(ranges)
+        print "Range of Ranges: (%f -- %f)" % (min(near_ranges), max(near_ranges))
 
         # if len(near_ranges) > 0:
         xs = near_ranges * np.cos(near_angles)
         ys = near_ranges * np.sin(near_angles)
         # print "xs: %s" %xs
-        self.points = np.vstack((xs, ys))
-        # print "Points: %s" %points
+        points = np.vstack((xs, ys))
+        print "Points: %s" % points
         self.bfp_points = np.vstack((np.add(0.275, xs), ys))
         # print "bfp Points: %s" %bfp_points
         self.bfp_dists = np.sqrt(np.add(np.square(self.bfp_points[0][:]),
@@ -153,13 +148,12 @@ class ServoingServer(object):
                 self.rot_safe = False
         else:
             self.rot_safe = True
-
-        self.left = np.vstack((xs[np.nonzero(ys > 0.35)[0]],
-                               ys[np.nonzero(ys > 0.35)[0]]))
-        self.right = np.vstack((xs[np.nonzero(ys < -0.35)[0]],
-                                ys[np.nonzero(ys < -0.35)[0]]))
-        self.front = np.vstack((np.extract(np.logical_and(ys < 0.35, ys > -0.35), xs),
-                                np.extract(np.logical_and(ys < 0.35, ys > -0.35), ys)))
+        left_idxs = np.nonzero(ys > 0.35)[0]
+        right_idxs = np.nonzero(ys > 0.35)[0]
+        front_idxs = np.logical_and(ys < 0.35, ys > -0.35)
+        self.left = np.vstack((xs[left_idxs], ys[left_idxs]))
+        self.right = np.vstack((xs[right_idxs], ys[right_idxs]))
+        self.front = np.vstack((xs[front_idxs], ys[front_idxs]))
 
         # Testing and Visualization:
         if len(self.left[:][0]) > 0:
@@ -213,7 +207,7 @@ class ServoingServer(object):
                 return 0.0
 
     def get_trans_x(self):
-        if (abs(self.ang_diff) < math.pi/6 and self.dist_to_goal > self.dist_thresh):
+        if (abs(self.ang_diff) < np.pi/6 and self.dist_to_goal > self.dist_thresh):
             return np.clip(self.dist_to_goal*0.125, 0.05, 0.3)
         else:
             return 0.0
@@ -276,7 +270,8 @@ class ServoingServer(object):
                 self.retreat_thresh = 0.3
         return (x, y, z)
 
-    def left_clear(self):  # Base Laser cannot see obstacles beside the back edge of the robot, which could cause problems, especially just after passing through doorways...
+    def left_clear(self):
+        # Base Laser cannot see obstacles beside the back edge of the robot, which could cause problems, especially just after passing through doorways...
         if len(self.left[0][:]) > 0:
             # Find points directly to the right or left of the robot (not in front or behind)
             # x<0.1 (not in front), x>-0.8 (not behind)
@@ -294,19 +289,19 @@ class ServoingServer(object):
         if len(self.right[0][:]) > 0:
             # Find points directly to the right or left of the robot (not in front or behind)
             # x<0.1 (not in front), x>-0.8 (not behind)
-           right_obs = self.right[:, self.right[1,:]>-0.4] #points too close.
-           if len(right_obs[0][:])>0:
-                right_obs = right_obs[:, np.logical_and(right_obs[0,:]<0.1,
-                                                        right_obs[0,:]>-0.8)]
-                if len(right_obs[:][0])>0:
+            right_obs = self.right[:, self.right[1, :] > -0.4]  # points too close.
+            if len(right_obs[0][:]) > 0:
+                right_obs = right_obs[:, np.logical_and(right_obs[0, :] < 0.1, right_obs[0, :] > -0.8)]
+                if len(right_obs[:][0]) > 0:
                     fdbk = ServoFeedback()
                     fdbk.current_action = String("Obstacle immediately to the right, cannot move.")
                     self.servoing_as.publish_feedback(fdbk)
                     return False
         return True
 
-if __name__ == '__main__':
-    servoer = ServoingServer()
+
+def main():
+    rospy.init_node('relative_servoing')
+    servoing_action_server = ServoingServer()
     while not rospy.is_shutdown():
         rospy.spin()
-    servoer.servoing_as.set_aborted()

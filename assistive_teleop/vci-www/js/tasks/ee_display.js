@@ -15,10 +15,13 @@ RFH.EEDisplay = function (options) {
 
     var currentGripper = new THREE.Object3D();
     currentGripper.userData.interactive = false;
+    currentGripper.visible = false;
     var previewGripper = new THREE.Object3D();
     previewGripper.userData.interactive = false;
+    previewGripper.visible = false;
     var goalGripper = new THREE.Object3D();
     goalGripper.userData.interactive = false;
+    goalGripper.visible = false;
     var allGrippers = [currentGripper, previewGripper, goalGripper];
     RFH.viewer.scene.add(currentGripper, previewGripper, goalGripper);
 

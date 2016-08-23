@@ -26,8 +26,12 @@ class HeadSweepActionServer(object):
                                                           HeadSweepAction,
                                                           self.execute_cb,
                                                           auto_start=False)
+        self.action_server.register_preempt_callback(self.preempt_cb)
         self.action_server.start()
         rospy.loginfo("[%s] Started Action Server", rospy.get_name())
+
+    def preempt_cb(self):
+        self.head_joint_action.cancel_goal()
 
     def execute_cb(self, goal_msg):
         # Move to start of sweep path
