@@ -8,6 +8,7 @@ RFH.DriveGoalDisplay = function (options) {
     var goalPose = null;
     var odomCombinedTF = null;
     var baseModel = new THREE.Object3D();
+    baseModel.visible = false;
     RFH.viewer.scene.add(baseModel);
     var goal_frame = 'odom_combined';
 

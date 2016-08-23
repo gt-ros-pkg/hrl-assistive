@@ -278,16 +278,12 @@ var PR2Head = function (options) {
         var state = self.getState();
         var dPan = Math.abs(pan - state[0]);
         var dTilt = Math.abs(tilt - state[1]);
-        var trajPointStartMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
-        trajPointStartMsg.positions = state;
-        trajPointStartMsg.velocities = [0.0, 0.0];
         var trajPointMsg = ros.composeMsg('trajectory_msgs/JointTrajectoryPoint');
         trajPointMsg.positions = self.enforceLimits(pan, tilt);
         trajPointMsg.velocities = [0.0, 0.0];
         trajPointMsg.time_from_start.secs = Math.max(dPan+dTilt, 1);
         var goalMsg = ros.composeMsg('trajectory_msgs/JointTrajectory');
         goalMsg.joint_names = joints;
-        goalMsg.points.push(trajPointStartMsg);
         goalMsg.points.push(trajPointMsg);
         jointPub.publish(goalMsg);
     };
