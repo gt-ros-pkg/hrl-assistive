@@ -267,7 +267,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
 
         ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
-                          'update_list': [ 'change' ],\
+                          'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
                           'hmmgp_param_range':np.logspace(0.3, 2.3, nPoints)*-1.0, \
                           'progress_param_range': -np.logspace(-2, 1.8, nPoints),\
