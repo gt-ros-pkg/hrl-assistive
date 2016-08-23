@@ -770,9 +770,9 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           'hmmosvm_nu': 0.001}
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
-                          'update_list': [ 'progress', 'hmmgp', 'kmean'],\
+                          'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-1, 2.0, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-1, 2.5, nPoints)*-1.0, \
                           'progress_param_range':np.linspace(1., -20., nPoints), \
                           'kmean_param_range':np.linspace(1., -13., nPoints), \
                           'svm_param_range': np.logspace(-1.087, 0.89, nPoints),\
