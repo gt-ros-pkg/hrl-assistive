@@ -165,7 +165,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 break
 
             if method == 'hmmgp':
-                nSubSample = 20
+                nSubSample = 40
                 import random
 
                 print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)

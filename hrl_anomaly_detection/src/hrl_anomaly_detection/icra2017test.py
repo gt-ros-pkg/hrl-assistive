@@ -969,16 +969,22 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.1 #*0.15
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
-                                  nrSteps=1)
-            if not(np.nan == ret or ret == 'Failure'):            
-                # Update last samples
-                normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                               np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-                                                           0,1) ])
-                normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-                normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            alpha = np.exp(-0.5*float(i-1) )*0.2 #*0.15
+            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]+\
+                                  np.random.normal(0.0, 0.03, \
+                                                   np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale, \
+                                  learningRate=alpha,\
+                                  nrSteps=1 )
+            if not(np.nan == ret or ret == 'Failure'):
+                print "Failed to fit hmm"
+                sys.exit()
+                
+            # Update last samples
+            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                       0,1) ])
+            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -994,15 +1000,16 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
             for ii in reversed(range(len(ll_classifier_train_X))):
                 if True in np.isnan( np.array(ll_classifier_train_X[ii]).flatten() ):
+                    print "NaN in training data ", ii, len(ll_classifier_train_X)
                     del ll_classifier_train_X[ii]
                     del ll_classifier_train_Y[ii]
                     del ll_classifier_train_idx[ii]
-                
                                                                
             # flatten the data
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx)
+
         else:
             r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
                                                                     [ normalPtrainData[jj][ii] for jj in \
