@@ -458,7 +458,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
-
         successIdx = []
         failureIdx = []
         for i in xrange(len(d['successDataList'])):
@@ -532,12 +531,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # c11 8,8,  - 20, 2, 5, 30, 20 - good
     # c11 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.1?  org 0.15
 
+    # feeding
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.15 
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.1  
     # 7.5,7.5,  - 20, 2, 5, 30, 20 * 0.15
-
-
-    #[9(9), , 7.5(7.5), ????]
+    #[9(9), , 7.5(7.5), ????]    
     scale_list = [9, 9, 7.5, 7.5]
     cov_list = [9, 9, 7.5, 7.5]
     
@@ -1319,10 +1317,10 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'sai', 'jina', 'linda', 'park']
+        subjects = ['park', 'jina', 'sai', 'linda']        #'ari', 
         ## subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
-        ## subjects = [ 'zack']
-        ## subjects = [ ]
+    elif opt.task == 'pushing':
+        subjects = ['microblack', 'microwhite']
     else:
         print "Selected task name is not available."
         sys.exit()
@@ -1417,16 +1415,9 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bOnlineEval:
-        ## subjects = [ 'sai', 'jina', 'linda'] #, 'park'
-        ## subjects        = ['linda', 'jina', 'sai']        'hkim', 'zack'
-        subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9.0, 'scale': 9.0,\
-                             'add_logp_d': False}
-        ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
-        ##                      'add_logp_d': False}
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
             opt.bNoPlot    = True
