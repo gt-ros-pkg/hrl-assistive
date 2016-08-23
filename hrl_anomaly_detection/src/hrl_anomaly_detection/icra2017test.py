@@ -1021,11 +1021,11 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
 
-        if True in np.isnan(np.array(X_train_org).flatten()):
-            print "NaN in input"
-        if True in np.isinf(np.array(X_train_org).flatten()):
-            print "NaN in input"
-        continue
+        ## if True in np.isnan(np.array(X_train_org).flatten()):
+        ##     print "NaN in input"
+        ## if True in np.isinf(np.array(X_train_org).flatten()):
+        ##     print "NaN in input"
+        ## continue
 
 
         # -------------------------------------------------------------------------------
