@@ -539,6 +539,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     #[9(9), , 7.5(7.5), ????]    
     scale_list = [9, 9, 7.5, 7.5]
     cov_list = [9, 9, 7.5, 7.5]
+    alpha_coeff = [0.15, 0.1, 0.15, 0.015]
     
     # leave-one-person-out
     kFold_list = []
@@ -623,7 +624,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 print "--------------------------"
                 continue
 
-            if False:
+            if batch_mode:
                 scale = scale_list[idx]
                 cov   = cov[idx]
             else:
@@ -716,6 +717,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     print "Start the incremental evaluation"
     l_data = []
     for idx in xrange(len(kFold_list)):
+
+        if custom_mode:
+            param_dict['SVM']['alpha_coeff'] = alpha_coeff[idx]
+        else:
+            param_dict['SVM']['alpha_coeff'] = 0.15
+        
         for jj in xrange(n_random_trial):
             r = run_online_classifier(idx, processed_data_path, task_name, method, \
                                       nPtrainData, nTrainOffset, nTrainTimes, \
@@ -883,6 +890,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     nPoints     = ROC_dict['nPoints']
     add_logp_d  = False #HMM_dict.get('add_logp_d', True)
     nSubSample  = SVM_dict['gp_subsamples']
+    alpha_coeff = SVM_dict['alpha_coeff']
     
     ROC_data_cur = {}
     for i, m in enumerate(method_list):
@@ -975,7 +983,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.15 #0.04
+            alpha = np.exp(-0.5*float(i-1) )*alpha_coeff #0.15 #0.04
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]+\
                                   np.random.normal(-0.03, 0.03, np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale,\
                                   learningRate=alpha, nrSteps=1 )
