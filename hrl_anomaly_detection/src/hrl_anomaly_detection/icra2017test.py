@@ -530,7 +530,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     # aws 5,4,  - 20, 2, 5, 30, 20
     # c11 8,8,  - 20, 2, 5, 30, 20 - good
-    # c11 6.6,6.6,  - 20, 2, 5, 30, 20 
+    # c11 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.1?  org 0.15
 
     #[9(9), , 7.5(7.5), ????]
     scale_list = [9, 9, 7.5, 7.5]
@@ -966,7 +966,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.15
+            alpha = np.exp(-0.5*float(i-1) )*0.1 #*0.15
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
             if np.isnan(ret) or ret == 'Failure': sys.exit()
@@ -1418,7 +1418,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
 
-        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 4.0, 'scale': 5.0,\
+        param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9.0, 'scale': 9.0,\
                              'add_logp_d': False}
         ## param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 8., 'scale': 8.0,\
         ##                      'add_logp_d': False}
