@@ -626,7 +626,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
             if batch_mode:
                 scale = scale_list[idx]
-                cov   = cov[idx]
+                cov   = scale_list[idx]
                 alpha_coeff = alpha_coeff[idx]
             else:
                 scale = HMM_dict['scale']
