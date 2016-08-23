@@ -992,11 +992,11 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                                                add_logp_d=False, cov_type='full',\
                                                                nSubSample=nSubSample)
 
-            ## for ii in reversed(range(len(ll_classifier_train_X))):
-            ##     if True in np.isnan( np.array(ll_classifier_train_X[ii]).flatten() ):
-            ##         del ll_classifier_train_X[ii]
-            ##         del ll_classifier_train_Y[ii]
-            ##         del ll_classifier_train_idx[ii]
+            for ii in reversed(range(len(ll_classifier_train_X))):
+                if True in np.isnan( np.array(ll_classifier_train_X[ii]).flatten() ):
+                    del ll_classifier_train_X[ii]
+                    del ll_classifier_train_Y[ii]
+                    del ll_classifier_train_idx[ii]
                 
                                                                
             # flatten the data
