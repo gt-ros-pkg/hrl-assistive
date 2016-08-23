@@ -420,7 +420,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       data_renew=False, data_gen=False, single_person=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
-                      save_result=False, verbose=False, debug=False):
+                      save_result=False, verbose=False, debug=False, batch_mode=False):
 
     ## Parameters
     # data
@@ -1485,7 +1485,7 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS, data_renew=opt.bDataRenew, viz=opt.bViz)
+                              random_eval=opt.bEvaluationAWS, batch_mode=True, data_renew=opt.bDataRenew, viz=opt.bViz)
 
     ## elif opt.bOnlineEvalTemp:
     ##     subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
