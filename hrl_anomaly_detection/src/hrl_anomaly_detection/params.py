@@ -232,21 +232,21 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           
         ## ROC_param_dict = {'methods': ['fixed', 'progress', 'hmmosvm', 'svm', 'change', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL'],\
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
-                          'update_list': [  ],\
+                          'update_list': [ 'hmmgp', 'change', 'kmean' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range': -np.logspace(-2, 1.5, nPoints),\
+                          'progress_param_range': -np.logspace(-2, 1.7, nPoints),\
                           'progress_diag_param_range': -np.logspace(-3., 1.6, nPoints),\
-                          'kmean_param_range': -np.logspace(0., 1.3, nPoints)+1.0,\
+                          'kmean_param_range': -np.logspace(-1, 1.3, nPoints)+1.0,\
                           'progress_state_param_range':np.linspace(0, -60., nPoints), \
                           'progress_svm_param_range': np.linspace(0.005, 14.0, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.linspace(0, -40.0, nPoints), \
+                          'hmmgp_param_range':np.logspace(-1, 1.8, nPoints), \
                           'svm_param_range': np.logspace(-2.15, -0.101, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 0.14, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-2.52, -0.45, nPoints),\
                           'hmmosvm_param_range': np.logspace(-2,-1,nPoints),\
-                          'change_param_range': np.linspace(-1.0, -10.0, nPoints),\
+                          'change_param_range': np.linspace(0.0, -20.0, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.247, -1.0, nPoints),\

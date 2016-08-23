@@ -635,10 +635,13 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             abnormalTrainData *= scale
             normalTestData    *= scale
             abnormalTestData  *= scale
+
+            #temp for adaptation
+            normalTrainData[:,0] += np.random.normal( -0.63, 0.63, np.shape(normalTrainData[:,0]) ) 
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*scale, \
                          cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure' or np.isnan(ret): sys.exit()
 
@@ -969,14 +972,12 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ##     ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset+j:(i-1)*nTrainOffset+j+1], learningRate=alpha,\
             ##                           nrSteps=3) 
 
-            alpha = np.exp(-0.5*float(i-1) )*0.2 #*0.15
-            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]+\
-                                  np.random.normal(0.0, 0.03, \
-                                                   np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale, \
-                                  learningRate=alpha,\
-                                  nrSteps=1 )
+            alpha = np.exp(-0.5*float(i-1) )*0.15
+            ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                  learningRate=alpha, nrSteps=1 )
+                                  
             if not(np.nan == ret or ret == 'Failure'):
-                print "Failed to fit hmm"
+                print "Failed to fit hmm: ", i
                 sys.exit()
                 
             # Update last samples
