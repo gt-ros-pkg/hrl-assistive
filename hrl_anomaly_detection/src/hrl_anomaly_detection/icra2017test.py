@@ -539,7 +539,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     #[9(9), , 7.5(7.5), ????]    
     scale_list  = [9, 9, 7.5, 9.]
     cov_list    = [9, 9, 7.5, 9.]
-    alpha_coeff = [0.15, 0.1, 0.15, 0.015]
+    alpha_coeff_list = [0.15, 0.1, 0.15, 0.015]
     
     # leave-one-person-out
     kFold_list = []
@@ -627,7 +627,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             if batch_mode:
                 scale = scale_list[idx]
                 cov   = scale_list[idx]
-                alpha_coeff = alpha_coeff[idx]
+                alpha_coeff = alpha_coeff_list[idx]
             else:
                 scale = HMM_dict['scale']
                 cov   = HMM_dict['cov']
