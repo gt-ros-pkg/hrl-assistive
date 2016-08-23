@@ -996,12 +996,11 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None, failsafe=False):
+                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
     add_logp_d = HMM_dict.get('add_logp_d', False)
-
 
     data = {}
     # pass method if there is existing result
@@ -1047,7 +1046,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             exec '%s = v' % k        
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
-
+    
         if 'diag' in method:
             ll_classifier_train_X   = ll_classifier_diag_train_X
             ll_classifier_train_Y   = ll_classifier_diag_train_Y
@@ -1212,8 +1211,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     idx_train_org.append(i)
                     
 
-
-
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
     # pass method if there is existing result
@@ -1242,7 +1239,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 X = ll_classifier_test_X[j]
         except:
             print "failed to scale ", np.shape(ll_classifier_test_X[j])
-            continue
+            sys.exit()
+            ## continue        
 
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
@@ -1312,7 +1310,11 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         except:
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
-                        delay_l.append(delay_idx)
+                        if delay_estimation:
+                            print "Delay by noise? ", delay_idx-step_idx_l[ii]
+                            delay_l.append(delay_idx-step_idx_l[ii])
+                        else:
+                            delay_l.append(delay_idx)
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
                         
