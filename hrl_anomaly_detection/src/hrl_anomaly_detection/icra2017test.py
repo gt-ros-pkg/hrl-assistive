@@ -420,7 +420,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       data_renew=False, data_gen=False, single_person=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
-                      save_result=False, verbose=False, debug=False, batch_mode=False):
+                      save_result=False, verbose=False, debug=False, custom_mode=False):
 
     ## Parameters
     # data
@@ -624,7 +624,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 print "--------------------------"
                 continue
 
-            if batch_mode:
+            if custom_mode:
                 scale = scale_list[idx]
                 cov   = scale_list[idx]
                 alpha_coeff = alpha_coeff_list[idx]
@@ -986,7 +986,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                   learningRate=alpha, nrSteps=1 )
                                   
             if not(np.nan == ret or ret == 'Failure'):
-                print "Failed to partial fit hmm: ", i
+                print "Failed to partial fit hmm: ", i, ret
                 sys.exit()
                 
             # Update last samples
@@ -1316,8 +1316,10 @@ if __name__ == '__main__':
                  default=False, help='Data generation before evaluation.')
     p.add_option('--find_param', action='store_true', dest='bFindParam',
                  default=False, help='Find hmm parameter.')
-    p.add_option('--eval_aws', action='store_true', dest='bEvaluationAWS',
+    p.add_option('--eval_aws', '--aws', action='store_true', dest='bEvaluationAWS',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--cparam', action='store_true', dest='bCustomParam',
+                 default=False, help='')
                  
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -1485,7 +1487,8 @@ if __name__ == '__main__':
                               param_dict, save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
-                              random_eval=opt.bEvaluationAWS, batch_mode=True, data_renew=opt.bDataRenew, viz=opt.bViz)
+                              random_eval=opt.bEvaluationAWS, custom_mode=opt.bCustomParam, \
+                              data_renew=opt.bDataRenew, viz=opt.bViz)
 
     ## elif opt.bOnlineEvalTemp:
     ##     subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
