@@ -972,14 +972,13 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             alpha = np.exp(-0.5*float(i-1) )*0.1 #*0.15
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset], learningRate=alpha,\
                                   nrSteps=1)
-            if np.isnan(ret) or ret == 'Failure': sys.exit()
-            
-            # Update last samples
-            normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
-                                           np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
-                                                       0,1) ])
-            normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
-            normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
+            if not(np.nan == ret or ret == 'Failure'):            
+                # Update last samples
+                normalPtrainData = np.vstack([ np.swapaxes(normalPtrainData,0,1), \
+                                               np.swapaxes(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset],\
+                                                           0,1) ])
+                normalPtrainData = np.swapaxes(normalPtrainData, 0,1)
+                normalPtrainData = np.delete(normalPtrainData, np.s_[:nTrainOffset],1)
             
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -992,6 +991,14 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                                                startIdx, \
                                                                add_logp_d=False, cov_type='full',\
                                                                nSubSample=nSubSample)
+
+            ## for ii in reversed(range(len(ll_classifier_train_X))):
+            ##     if True in np.isnan( np.array(ll_classifier_train_X[ii]).flatten() ):
+            ##         del ll_classifier_train_X[ii]
+            ##         del ll_classifier_train_Y[ii]
+            ##         del ll_classifier_train_idx[ii]
+                
+                                                               
             # flatten the data
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
@@ -1012,6 +1019,14 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
                                                c=1.0, add_delta_logp=add_logp_d,\
                                                remove_fp=remove_fp, remove_outlier=True)
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
+
+
+        if True in np.isnan(np.array(X_train_org).flatten()):
+            print "NaN in input"
+        if True in np.isinf(np.array(X_train_org).flatten()):
+            print "NaN in input"
+        continue
+
 
         # -------------------------------------------------------------------------------
         print "Test data extraction"

@@ -269,13 +269,13 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
         ROC_param_dict = {'methods': ['progress', 'fixed', 'kmean'],\
                           'update_list': [ 'hmmgp', 'change' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(0, 1.9, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(0, 2.3, nPoints)*-1.0, \
                           'progress_param_range': -np.logspace(-2, 1.8, nPoints),\
                           'kmean_param_range': -np.logspace(-3, 1.8, nPoints),\
                           'svm_param_range': np.logspace(-1.8, 0.67, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-6.0, 0.0, nPoints),\
-                          'change_param_range': np.linspace(1.0, -20.0, nPoints),\
+                          'change_param_range': np.linspace(1.0, -30.0, nPoints),\
                           'fixed_param_range': np.linspace(0.240, -0.007, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
