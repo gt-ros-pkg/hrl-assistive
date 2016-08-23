@@ -68,6 +68,10 @@ class Object(object):
     def __init__(self, name, type_=None):
         assert isinstance(name, str), "Object name must be a string."
         assert isinstance(type_, str) or type_ is None, "Object name must be a string."
+        if not name.isupper():
+            print "PDDL Object names should be fully uppercase. Received object %s" % (name, type_)
+        if type_ is not None and not type_.isupper():
+            print "PDDL Object types should be fully uppercase. Received object %s of type %s" % (name, type_)
         self.name = name
         self.type = type_
 
@@ -98,6 +102,8 @@ class Object(object):
 class Predicate(object):
     """ A class describing a predicate in PDDL. """
     def __init__(self, name, args=None, neg=False):
+        if not name.isupper():
+            print "PDDL Predicate names should be fully uppercase. Received predicate %s" % name
         self.name = name
         self.args = [] if args is None else args
         self.neg = neg
@@ -254,11 +260,11 @@ class GoalState(State):
 
     def is_satisfied(self, state):
         for pred in self.predicates:
-            if not pred.neg:
-                if pred not in state:
-                    return False
-            else:
-                if Predicate(pred.name, pred.args) in state:
+            if not pred.neg and pred not in state:
+                return False
+            if pred.neg:
+                test = Predicate(pred.name, pred.args)
+                if test in state:
                     return False
         return True
 
@@ -872,8 +878,10 @@ class FF(object):
         problem.name = "tmpProblemName"  # FF's parser gets confused by special characters, so don't let it seem them...
         with NamedTemporaryFile() as problem_file:
             problem.to_file(problem_file.name)
+            print "Problem File: ", problem_file.name
             with NamedTemporaryFile() as domain_file:
                 domain.to_file(domain_file.name)
+                print "Domain File: ", domain_file.name
                 try:
                     soln_txt = check_output([self.ff_executable, '-o', domain_file.name, '-f', problem_file.name])
                     print "FF Output:\n", soln_txt

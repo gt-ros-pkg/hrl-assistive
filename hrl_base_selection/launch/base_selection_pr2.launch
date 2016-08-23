@@ -1,27 +1,10 @@
 <launch>
-    <!--<include file="$(find hrl_base_selection)/launch/hrl_pr2_nav_without_rviz.launch"/>-->
-
-    <!--<include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">-->
-        <!--<arg name="arm" value="l"/>-->
-        <!--<arg name="verbose" value="true"/>-->
-    <!--</include>-->
-    <include file="$(find hrl_base_selection)/launch/base_selection_assistive_teleop.launch"/>
-   
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
-
-    <!-- For arm reacher -->
-    <!--<arg name="arm" default="l"/>-->
-    <!--<rosparam command="load" file="$(find hrl_base_selection)/params/pr2_config_params_l.yaml" />-->
-    <!--<node name="arm_reacher" pkg="hrl_base_selection" type="arm_reacher_server.py" args="-a $(arg arm)" output="screen">-->
-    <!--</node>-->
-
     <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_body_expanded/robots/bed_and_body_expanded.URDF" />
     <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
     <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
     <node name="autobed_occupied_server" pkg="hrl_base_selection" type="autobed_occupied_server.py" output="screen"/>
 
-    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service_cma.py" output="screen" args="--mode normal --user autobed --load paper"/>
-
-    <node name="task_manager" pkg="hrl_base_selection" type="task_manager.py" output="screen"/>
+    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service_cma.py" output="screen" args="--mode normal --load henry"/>
 
 </launch>

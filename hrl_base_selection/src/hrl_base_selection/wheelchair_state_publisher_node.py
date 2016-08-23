@@ -15,21 +15,10 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse
 from std_msgs.msg import Bool
 
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped 
+from geometry_msgs.msg import TransformStamped, Point, Pose, PoseStamped
 from std_msgs.msg import ColorRGBA
 
 from tf.transformations import quaternion_from_euler
-
-
-MAT_WIDTH = 0.762 #metres
-MAT_HEIGHT = 1.854 #metres
-MAT_HALF_WIDTH = MAT_WIDTH/2 
-NUMOFTAXELS_X = 64#73 #taxels
-NUMOFTAXELS_Y = 27#30 
-LOW_TAXEL_THRESH_X = 0
-LOW_TAXEL_THRESH_Y = 0
-HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
-HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
 
 
 class WheelchairStatePublisherNode(object):

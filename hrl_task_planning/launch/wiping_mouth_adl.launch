@@ -1,0 +1,11 @@
+<launch>
+
+    <group ns="pddl_tasks">
+        <group ns="wiping_mouth_adl" clear_params="true">
+            <param name="domain" textfile="$(find hrl_task_planning)/params/wiping_mouth_adl.domain"/>
+            <rosparam command="load" file="$(find hrl_task_planning)/params/wiping_mouth_adl.yaml"/>
+            <node name='ar_tag_tracking_monitor' pkg="hrl_task_planning" type="ar_tag_tracking_monitor" output="screen" args="-d wiping_mouth_adl"/>
+        </group>
+    </group>
+
+</launch>

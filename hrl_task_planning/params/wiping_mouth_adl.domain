@@ -1,0 +1,106 @@
+(define (domain wiping_mouth_adl)
+ (:requirements :typing :conditional-effects)
+ (:types
+  dof tag - physobj
+  task model - params 
+ )
+
+ (:constants bed - dof
+             bed_tag - tag
+             spine - dof
+             autobed - model
+             wheelchair - model 
+             wiping_mouth - task
+             scratching - task
+ )
+
+ (:predicates
+  (configured ?d - dof ?t - task ?m - model)
+  (head-registered ?m - model)
+  (occupied ?m - model)
+  (found-tag ?m - model)
+  (is-tracking-tag ?m - model)
+  (base-selected ?t - task ?m - model) 
+  (base-reached ?t - task ?m - model)
+  (arm-reached ?t - task ?m - model)
+  (task-completed ?t - task ?m - model)
+  (arm-home ?t - task ?m - model)
+  (too-close ?m - model)
+ )
+
+
+ (:action find_tag
+  :parameters (?m - model)
+  :precondition (and (not(found-tag ?m)))
+  :effect (and (found-tag ?m)
+          )
+ )
+
+ (:action check_occupancy
+  :parameters (?m - model)
+  :effect (and (occupied ?m)
+          )
+ )
+
+ (:action register_head
+  :parameters (?m - model)
+  :precondition (and (found-tag ?m) (not(head-registered ?m)))
+  :effect (and (head-registered ?m)
+          )
+ )
+
+ (:action track_tag
+  :parameters (?m - model)
+  :precondition (and (found-tag ?m))
+  :effect (and (is-tracking-tag ?m)
+          )
+ )   
+ 
+ (:action move_back
+  :parameters (?m - model)
+  :precondition (and (too-close ?m))
+  :effect (not (too-close ?m))
+ )
+
+ (:action call_base_selection
+  :parameters (?t - task ?m - model)
+  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m)(not (too-close ?m)))
+  :effect (and (base-selected ?t ?m)
+          )
+ )
+
+ (:action configure_model_robot
+  :parameters (?t - task ?m - model)
+  :precondition (and (found-tag ?m)(base-selected ?t ?m)(not (too-close ?m)))
+  :effect (and (forall(?d - dof)(configured ?d ?t ?m))(arm-home ?t ?m))
+ )
+
+ (:action move_robot
+  :parameters (?t - task ?m - model)
+  :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))(not(too-close ?m))
+                     (is-tracking-tag ?m))
+  :effect (and (base-reached ?t ?m)
+          )
+ )
+
+ (:action stop_tracking
+  :parameters ()
+  :effect (and (forall(?m - model)(not(is-tracking-tag ?m)))
+          )
+ )
+
+
+ (:action move_arm
+  :parameters (?t - task ?m - model)
+  :precondition (and (not(is-tracking-tag ?m))(base-selected ?t ?m)(arm-home ?t ?m))
+  :effect (and (arm-reached ?t ?m)
+          )
+ )
+
+ (:action do_task
+  :parameters (?t - task ?m - model)
+  :precondition (and(base-selected ?t ?m)(base-reached ?t ?m)(arm-reached ?t ?m))
+  :effect (and (task-completed ?t ?m)
+          )
+ )
+)

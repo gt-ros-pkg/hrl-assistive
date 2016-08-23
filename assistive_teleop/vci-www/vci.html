@@ -35,7 +35,6 @@
 
   <script type="text/javascript" src="js/init.js"></script>
   <script type="text/javascript" src="js/log.js"></script>
-  <script type="text/javascript" src="js/datalogging.js"></script>
   <script type="text/javascript" src="js/undo.js"></script>
   <script type="text/javascript" src="js/runstop.js"></script>
   <script type="text/javascript" src="js/connection_monitor.js"></script>
@@ -53,6 +52,12 @@
   <script type="text/javascript" src="js/tasks/domains/pick.js"></script>
   <script type="text/javascript" src="js/tasks/domains/place.js"></script>
   <script type="text/javascript" src="js/tasks/domains/pick-and-place.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/wiping-mouth-adl.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/scratching-knee-adl.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/wiping-mouth-wheelchair-adl.js"></script>
+  <script type="text/javascript" src="js/tasks/domains/scratching-knee-wheelchair-adl.js"></script>
+  <script type="text/javascript" src="js/tasks/publish-location.js"></script>
+  <script type="text/javascript" src="js/tasks/param-location.js"></script>
   <script type="text/javascript" src="js/tasks/domains/realtime-base-selection.js"></script>
   <script type="text/javascript" src="js/tasks/get-clicked-pose.js"></script>
 <!--  <script type="text/javascript" src="js/tasks/publish-location.js"></script>
@@ -75,6 +80,7 @@
   <link type="text/css" href="css/focus.css" rel="stylesheet" />
   <link type="text/css" href="css/undo.css" rel="stylesheet" />
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
+  <link type="text/css" href="css/task-menu.css" rel="stylesheet" />
   
 </head>
 
@@ -87,6 +93,13 @@
      <div id="main-menu">
         <div id="undo"><p>Undo</p></div>
         <h3>Main Menu</h3>
+     </div>
+     <div id="task-menu">
+        <h3>Task Menu</h3>
+        <div id="wiping-mouth-button" class="task-button">Wipe Mouth</div>
+        <div id="scratching-knee-button" class="task-button">Scratch Left Knee</div> 
+        <div id="wiping-mouth-wheelchair-button" class="task-button">Mouth Wheelchair</div>
+        <div id="scratching-knee-wheelchair-button" class="task-button">Left Knee Wheelchair</div>
      </div>
      <div id="controls">
         <h3>Controls</h3>

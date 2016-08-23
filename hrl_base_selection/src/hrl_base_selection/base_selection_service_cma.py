@@ -371,19 +371,19 @@ class BaseSelector(object):
             self.mode = 'test'
         elif self.mode == 'normal':
             try:
-                now = rospy.Time.now()
-                self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
-                self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/ar_marker_13', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_13', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     self.listener.waitForTransform('/base_footprint', '/wheelchair/base_link', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/wheelchair/base_link', now)
                     self.pr2_B_model = createBMatrix(trans, rot)
                 elif model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
+                    self.pr2_B_head = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
@@ -597,10 +597,11 @@ class BaseSelector(object):
 
             self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
         else:
-            self.score = all_scores[model, max_num_configs, 0,0,0]
-        if shape(self.score)==(2,):
-            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]        
-
+            self.score = all_scores[model, max_num_configs, 0,0,0,0]
+        if np.shape(self.score)==(2,) and self.model=='autobed':
+            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]
+        elif np.shape(self.score)==(2,) and self.model=='chair':
+            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [0], [0]], self.score[1]]
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score
         # print 'Number of scores in score sheet: ', self.score_length
@@ -824,7 +825,7 @@ class BaseSelector(object):
         home = expanduser("~")
         if 'wiping' in task:
             task = 'face_wiping'
-        file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl' 
+        file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl'
 #        print file_name
         return load_pickle(file_name)
 #        if 'wiping' in task:
