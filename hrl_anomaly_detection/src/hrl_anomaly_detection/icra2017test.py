@@ -455,6 +455,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     else:
     
         # Get a data set with a leave-one-person-out
+        print "Extract data using getDataLOPO"
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
@@ -1298,6 +1299,10 @@ if __name__ == '__main__':
     p.add_option('--cparam', action='store_true', dest='bCustomParam',
                  default=False, help='')
                  
+
+    p.add_option('--m2o', action='store_true', dest='bManyToOneAdaptation',
+                 default=False, help='Many-To-One adaptation flag')
+
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -1459,11 +1464,11 @@ if __name__ == '__main__':
         elif opt.bFindParam:
             evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
                                     param_dict, n_random_trial=n_random_trial, random_eval=True,\
-                                    many_to_one=many_to_one, data_renew=opt.bDataRenew,\
+                                    many_to_one=opt.bManyToOneAdaptation, data_renew=opt.bDataRenew,\
                                     verbose=opt.bVerbose, debug=opt.bDebug)
         else:          
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-                              param_dict, save_pdf=opt.bSavePdf, many_to_one=many_to_one, \
+                              param_dict, save_pdf=opt.bSavePdf, many_to_one=opt.bManyToOneAdaptation, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
                               random_eval=opt.bEvaluationAWS, custom_mode=opt.bCustomParam, \
