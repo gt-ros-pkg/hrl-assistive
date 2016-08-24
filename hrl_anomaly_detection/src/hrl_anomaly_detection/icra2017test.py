@@ -440,7 +440,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     ROC_dict   = param_dict['ROC']
 
     if many_to_one: prefix = 'm2o_'
-    else: prefix = 'm2o_'
+    else: prefix = 'o2o_'
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
