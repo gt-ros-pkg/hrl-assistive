@@ -1747,11 +1747,11 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
             fig.savefig('test.png')
             os.system('mv test.* ~/Dropbox/HRL/')
 
-def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
+def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['hmmgp', 'progress', 'fixed']
-    ref_method = 'svm'
+    method_list = ['hmmgp', 'progress', 'kmean', 'fixed', 'change', 'osvm']
+    ref_method = 'hmmgp'
 
     delay_dict = {}
     acc_dict   = {}
@@ -1840,7 +1840,7 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     tasks   = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding'] 
-    methods = ['HMM-GP', 'HMM-D', 'HMM-F', 'OSVM']
+    methods = ['HMM-GP', 'HMM-D', 'HMM-K', 'HMM-F', 'HMM-C', 'OSVM']
 
     if False:
         fig = plt.figure(1)
@@ -1901,18 +1901,14 @@ def plotEvalDelay(dim, rf_center, local_range, save_pdf=False):
         ax1 = plt.gca()
         rects1 = ax1.bar(ind, acc_mean_l, width, color='r', yerr=acc_std_l, \
                          error_kw=dict(elinewidth=6, ecolor='pink'))
-        ax1.set_ylabel("Accuracy [Percentage]", fontsize=22)
+        ax1.set_ylabel("Max Accuracy [Percentage]", fontsize=22)
 
-        ax2 = ax1.twinx()
-        ## rects2 = ax2.bar(ind+width*1.5, delay_mean_l, width, color='y', yerr=delay_std_l, \
-        ##                  error_kw=dict(elinewidth=6, ecolor='yellow'))                         
-        ## rects2 = ax2.boxplot(delay_data, positions=ind+width*1.5+0.05, widths=width)                         
-        rects2 = ax2.errorbar(ind+width*1.5+0.05, delay_mean_l, delay_std_l, linestyle='None', marker='o',\
-                              )
-        ax2.set_ylabel("Detection Time [sec]", fontsize=22)
-        ## plt.legend( (rects1[0], rects1[0]), ('Max Accuracy', 'Detection Delay') )
-        plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
-                    fontsize=18 )
+        ## ax2 = ax1.twinx()
+        ## rects2 = ax2.errorbar(ind+width*1.5+0.05, delay_mean_l, delay_std_l, linestyle='None', marker='o')
+        ## ax2.set_ylabel("Detection Time [sec]", fontsize=22)        
+        ## plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
+        ##             fontsize=18 )
+        
         plt.xlim([-0.2, (ind+width*2.0+0.2)[-1]])
         plt.xticks(ind+width, methods, fontsize=40 )
         for tick in ax1.xaxis.get_major_ticks():
@@ -1975,8 +1971,8 @@ if __name__ == '__main__':
 
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
-    p.add_option('--evaluation_delay', '--eadl', action='store_true', dest='bEvaluationDelay',
-                 default=False, help='Evaluate the delay.')
+    p.add_option('--evaluation_acc', '--eaa', action='store_true', dest='bEvaluationMaxAcc',
+                 default=False, help='Evaluate the max acc.')
     p.add_option('--evaluation_drop', '--ead', action='store_true', dest='bEvaluationWithDrop',
                  default=False, help='Evaluate a classifier with cross-validation plus drop.')
     p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
@@ -2147,7 +2143,12 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['change']
+        nPoints = param_dict['ROC']['nPoints']
+
+        if opt.task == 'pushing_microblack':
+            param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
+
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
         ##                  save_pdf=opt.bSavePdf, \
@@ -2183,8 +2184,8 @@ if __name__ == '__main__':
         for method in param_dict['ROC']['methods']:
             find_ROC_param_range(method, opt.task, save_data_path, param_dict, debug=opt.bDebug)
 
-    elif opt.bEvaluationDelay:
-        plotEvalDelay(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
+    elif opt.bEvaluationMaxAcc:
+        plotEvalMaxAcc(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
             
 
     elif opt.bEvaluationWithDiffFreq:
