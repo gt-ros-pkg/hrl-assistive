@@ -2130,9 +2130,6 @@ if __name__ == '__main__':
             param_dict['ROC']['update_list'] = []
             param_dict['HMM']['renew'] = False
             param_dict['SVM']['renew'] = False
-        if opt.bEvaluationDelay:
-            param_dict['ROC']['methods']     = [ 'progress', 'fixed', 'osvm'] 
-            param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'osvm']
         if opt.bFindROCparamRange:
             param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
             
