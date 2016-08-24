@@ -282,7 +282,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
@@ -484,6 +484,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
                                          len(d['failureDataList'][i][0])) )
 
+
+        # only for hmm tuning
         kFold_list = []
         # leave-one-person-out
         for idx in xrange(len(subject_names)):
