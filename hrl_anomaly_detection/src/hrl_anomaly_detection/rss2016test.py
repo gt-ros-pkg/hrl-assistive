@@ -569,7 +569,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         samples = []
         step_idx_l = []
         ## step_mag = 10000000*HMM_dict['scale'] # need to varying it
-        step_mag = 0.3*HMM_dict['scale'] # need to varying it
+        step_mag = 0.1*HMM_dict['scale'] # need to varying it
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
