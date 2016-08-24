@@ -2146,7 +2146,7 @@ if __name__ == '__main__':
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['fixed', 'change'] #'progress', 'hmmgp', 
+        param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
