@@ -169,7 +169,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
@@ -200,6 +200,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['ll_classifier_test_Y']   = ll_classifier_test_Y            
         d['ll_classifier_test_idx'] = ll_classifier_test_idx
         d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
         ut.save_pickle(d, modeling_pkl)
 
 

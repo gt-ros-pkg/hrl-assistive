@@ -171,7 +171,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
-        print data_dict.keys()
+
         if ae_data:
             # Task-oriented raw features
             successData     = data_dict['aeSuccessData'] 

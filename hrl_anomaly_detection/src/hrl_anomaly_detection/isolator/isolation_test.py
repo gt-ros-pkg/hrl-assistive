@@ -30,39 +30,38 @@
 # system
 import os, sys, copy
 import random
-
-# visualization
-import matplotlib
-#matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import gridspec
-# util
+import itertools
 import numpy as np
 import scipy
-import hrl_lib.util as ut
-from hrl_anomaly_detection.util import *
-from hrl_anomaly_detection.util_viz import *
-from hrl_anomaly_detection import data_manager as dm
 
-from hrl_anomaly_detection.isolator.isolator_params import *
-from hrl_anomaly_detection.optimizeParam import *
-from hrl_anomaly_detection import util as util
-
-# learning
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
+# System learning util
 from mvpa2.datasets.base import Dataset
-## from sklearn import svm
 from joblib import Parallel, delayed
 from sklearn import metrics
+import svmutil as svm
+from sklearn import preprocessing
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
 import hrl_anomaly_detection.data_viz as dv
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 
-import itertools
-import svmutil as svm
-from sklearn import preprocessing
+# util
+import hrl_lib.util as ut
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection.optimizeParam import *
+from hrl_anomaly_detection import util as util
+
+# Task param
+from hrl_anomaly_detection.isolator.isolator_params import *
+
+# visualization
+import matplotlib
+#matplotlib.use('Agg')
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
@@ -74,7 +73,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 def isolation_test(subject_names, task_name, raw_data_path, processed_data_path, \
                      param_dict, verbose=False, data_renew=False):
     '''
-    processed_data_path: please, use this folder as your data location
+    processed_data_path: please, use this path to save your data
     '''
 
     ## Parameters
@@ -100,20 +99,42 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     type_sets.append([18,19,20,33,34,35])
     type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])
     """
+
+    # train Anomaly Detector
+    # HMM training data extraction and handover scaling parameter into isolation data extractor
+    if True:
+        dim = 4
+        hmm_subjects = ['hyun', 'jina', 'sai', 'linda']
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task_name+'_data/'+\
+          str(data_dict['downSampleSize'])+'_'+str(dim)
+        
+        hmm_d = dm.getDataSet(hmm_subjects, task_name, raw_data_path, \
+                              hmm_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                              downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                              handFeatures=data_dict['handFeatures'], \
+                              data_renew=False, max_time=data_dict['max_time']) 
+    else:
+        dim = 4
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
+          str(data_param_dict['downSampleSize'])+'_'+str(dim)
+        hmm_d = {'param_dict': None}
+
+    
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
     else:
         '''
-        Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           handFeatures=data_dict['handFeatures'], \
-                           cut_data=data_dict['cut_data'], \
+                           handFeatures=data_dict['handFeatures'], init_param_dict=hmm_d['param_dict'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
+                           
         order = [[]] * len(d['failureFiles'])
         new_failureData = [[], [],[],[]]
         for i, file_name in enumerate(d['failureFiles']):
@@ -131,8 +152,8 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                     new_failureData[dimIdx].append(d['failureData'][dimIdx,sampleIdx,:])
             else:
                 print "rejected, ", sampleIdx
-        print np.asarray(new_failureData).shape
-        return
+        ## print np.asarray(new_failureData).shape
+        ## return
         d['failureData']=np.asarray(new_failureData)
         
         # Task-oriented hand-crafted features        
@@ -180,9 +201,22 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :]
+
+        # anomaly detector --------------------------------------------
+        print "Start to find anomalous point" 
+        testDataX = abnormalTestData
+        testDataY = np.ones(len(abnormalTestData[0]))
+        detection_idx_list = anomaly_detection(testDataX, testDataY, \
+                                               task_name, hmm_data_path, param_dict,\
+                                               verbose=True)
+        print detection_idx_list
+        ## sys.exit()
+        # -------------------------------------------------------------
+        
+
         
         # code here
-        test_classifier=cf.classifier()
+        ## test_classifier=cf.classifier()
         X = []
         y = []        
         mean = [0]* 40
@@ -293,7 +327,99 @@ def scaled_inputs(data, scaler):
             new_data[dimIdx].append(formated_X[idx][dimIdx*time_window])
     return new_data
 
- 
+
+def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=False):
+    ''' Anomaly detector that return anomalous point on each data.
+    '''
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC']
+    
+    # set parameters
+    method  = 'hmmgp'
+    ## weights = ROC_dict[method+'_param_range']
+    weight  = -5.0 # weights[10] # need to select weight!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    nMaxData   = 20 # The maximun number of executions to train GP
+    nSubSample = 40 # The number of sub-samples from each execution to train GP
+
+    # Load a generative model
+    idx = 0
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+    if verbose: print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
+    for k, v in d.iteritems():
+        # Ignore predefined test data in the hmm object
+        if not(k.find('test')>=0):
+            exec '%s = v' % k
+
+    ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ml.set_hmm_object(A,B,pi)
+            
+    # 1) Convert training data
+    if method == 'hmmgp':
+        import random
+        random.seed(3334)
+
+        idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(idx_list)
+        ll_classifier_train_X = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_Y = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = range(len(ll_classifier_train_X[i]))
+            random.shuffle(idx_list)
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
+
+        if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+            print "Too many input data for GP"
+            sys.exit()
+
+    X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
+                                                               ll_classifier_train_Y, \
+                                                               ll_classifier_train_idx,\
+                                                               remove_fp=False)
+    if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+
+    # 2) Convert test data
+    startIdx   = 4
+    ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
+      hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X*HMM_dict['scale'], Y, startIdx)
+
+    # Create anomaly classifier
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc.set_params( class_weight=weight )
+    ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)
+
+    # anomaly detection
+    detection_idx = []
+    for ii in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_Y[ii])==0: continue
+
+        est_y    = dtc.predict(ll_classifier_test_X[ii], y=ll_classifier_test_Y[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:                
+                if ll_classifier_test_Y[ii][0] > 0:
+                    detection_idx.append(ll_classifier_test_idx[ii][jj])
+                else:
+                    detection_idx.append(None)
+                break
+
+    return detection_idx
+
+
 if __name__ == '__main__':
 
     import optparse
@@ -316,6 +442,8 @@ if __name__ == '__main__':
                  default=False, help='Plot features.')
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--anomaly_detection', '--ad', action='store_true', dest='bAD',
+                 default=False, help='Plot the change of likelihood.')
                  
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -337,7 +465,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     rf_center     = 'kinEEPos'        
     scale         = 1.0
-    # Dectection TEST 
     local_range    = 10.0    
 
     #---------------------------------------------------------------------------

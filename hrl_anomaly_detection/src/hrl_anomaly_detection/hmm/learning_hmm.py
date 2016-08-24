@@ -310,7 +310,7 @@ class learning_hmm(learning_base):
             for ii in xrange(len(X[0])):
                 l_idx = []
                 for jj in xrange(startIdx, len(X[0][ii])):
-                    l_idx.append( jj+startIdx )
+                    l_idx.append( jj )
                 ll_idx.append(l_idx)
             
             if bPosterior: return ll_likelihoods, ll_posteriors, ll_idx
@@ -477,7 +477,7 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
                                                           startIdx=startIdx, \
                                                           bPosterior=True, cov_type=cov_type)
                                                           for i in xrange(len(dataX[0])))
-    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)    
 
     ll_classifier_train_X, ll_classifier_train_Y = \
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
@@ -626,7 +626,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
             ## return False, False # anomaly
             continue
 
-        l_idx.append( i+startIdx )
+        l_idx.append( i )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
@@ -667,7 +667,7 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             ## return False, False # anomaly
             continue
 
-        l_idx.append( i+startIdx )
+        l_idx.append( i )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
