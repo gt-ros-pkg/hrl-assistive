@@ -617,7 +617,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
             # many to one adaptation
             if many_to_one:
-                normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
+				print "No additional noise for many to one adaptation"
+                #normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
             else:
                 normalTrainData[:,0:3] += np.random.normal( -0.2, 0.2, np.shape(normalTrainData[:,0:3]) )*scale
             
