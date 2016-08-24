@@ -438,6 +438,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     SVM_dict   = param_dict['SVM']
     # ROC
     ROC_dict   = param_dict['ROC']
+
+    if many_to_one: prefix = 'm2o_'
+    else: prefix = 'm2o_'
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -446,7 +449,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     '''
     Use augmented data? if nAugment is 0, then aug_successData = successData
     '''
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    crossVal_pkl = os.path.join(processed_data_path, prefix+'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
     else:
@@ -561,7 +564,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, prefix+'hmm_'+task_name+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print "learned hmm exists"
         else:
@@ -668,7 +671,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, prefix+'roc_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = []
     else:
