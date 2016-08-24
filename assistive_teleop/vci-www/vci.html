@@ -64,6 +64,7 @@
   <script type="text/javascript" src="js/tasks/param-location.js"></script>-->
   <script type="text/javascript" src="js/tasks/smach-display.js"></script>
   <script type="text/javascript" src="js/tasks/menu.js"></script>
+  <script type="text/javascript" src="js/tasks/task-menu.js"></script>
   <script type="text/javascript" src="js/tasks/pointCloudView.js"></script>
   <script type="text/javascript" src="js/tasks/regionView.js"></script>
 
@@ -97,16 +98,21 @@
      <div id="task-menu">
         <h3>Task Menu</h3>
             <form>
-                <select id="task">
-                    <option value="wiping_mouth">Wiping-Mouth</option>
-                    <option value="scratching_left_knee">Scratching-Knee</option>
+                <label for="task-select">Select a Task</label>
+                <select id="task-select" name="task-select">
+                    <option value="wiping_mouth">Wipe Mouth</option>
+                    <option value="shaving">Shave Face</option>
+                    <option value="scratching_forehead">Scratch Forehead</option>
+                    <option value="scratching_left_knee">Scratch Left Knee</option>
+                    <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
-                <select id="model">
+                <label for="model-select">Select a Location</label>
+                <select id="model-select" name="model-select">
                     <option value="autobed">Autobed</div>
                     <option value="wheelchair">Wheelchair</div>
                 </select>
             </form>
-        <div id="task-go-button" class="task-button">Go!</div>
+        <div id="start-task-button" class="task-button">Start Task</div>
      </div>
      <div id="controls">
         <h3>Controls</h3>

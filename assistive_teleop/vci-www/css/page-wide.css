@@ -20,12 +20,11 @@ body {
     float: left;
     height: 100%;
     width: 8%;
-    min-width:236px;
+    min-width:200px;
     position: relative
 }
 #task-menu {
     display: block;
-    height: 25%;
     width: 100%;
     background-color: rgba(200, 200, 210, 0.87);
 }
@@ -37,6 +36,7 @@ body {
     margin: 0px;
     padding: 0.4em 0em;
 }
+
 #main-menu {
     display: block;
     width: 100%;
