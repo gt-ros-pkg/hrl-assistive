@@ -5,7 +5,7 @@ RFH.Domains.ADL = function (options) {
     var ros = options.ros;
     self.name = options.name || 'adl';
     self.domain = 'adl'
-    var $button = $('#task-go-button');
+    var $button = $('#start-task-button');
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -168,10 +168,10 @@ RFH.Domains.ADL = function (options) {
         goal = goal || []; // Empty goal will use default for task
         self.clearParams([]);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'wiping_mouth_adl' + '-' + new Date().getTime().toString();
+        msg.name = 'adl' + '-' + new Date().getTime().toString();
         msg.domain = 'adl';
-        var model = document.getElementById("model").value;
-        var task = document.getElementById("mode").value;
+        var model = document.getElementById("model-select").value;
+        var task = document.getElementById("task-select").value;
         var model_upper = model.toUpperCase();
         var task_upper = task.toUpperCase();
         self.setModelName(model);

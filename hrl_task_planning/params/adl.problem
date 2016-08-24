@@ -1,6 +1,6 @@
 (DEFINE
 (PROBLEM test_problem)
-(:DOMAIN wiping_mouth_adl)
+(:DOMAIN adl)
 (:OBJECTS BED_TAG - TAG)
 (:INIT (TOO-CLOSE AUTOBED)
 )
