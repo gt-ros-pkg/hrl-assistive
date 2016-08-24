@@ -623,7 +623,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ## sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, +'roc_'+pkl_prefix+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = {}
     else:
