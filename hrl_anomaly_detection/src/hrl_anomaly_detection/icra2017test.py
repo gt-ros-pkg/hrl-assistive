@@ -1425,7 +1425,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['ROC']['update_list'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
 
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)
