@@ -152,13 +152,13 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': [ 'fixed', 'kmean'],\
-                          'update_list': [ 'progress', 'fixed' ],\
+                          'update_list': [ 'progress', 'kmean', 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
-                          'progress_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
-                          'kmean_param_range':np.linspace(0.0, -10.0, nPoints), \
+                          'hmmgp_param_range':np.logspace(-1, 1.9, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(-0.0, 0.8, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(-0.2, 0.8, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.0, -0.3307, nPoints),\
-                          'fixed_param_range': np.linspace(0.4, -0.9, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -0.6, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.linspace(-1.5, -20.0, nPoints),\
