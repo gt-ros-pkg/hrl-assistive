@@ -412,7 +412,20 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         print "Method: ", method
         print acc_rates[method][max_idx]
         
-        
+
+    for method in method_list:
+        n = len(ROC_data[method]['fn_labels'])
+        a = []
+        for i in range(nPoints):
+            a += ROC_data[method]['fn_labels'][i]
+            
+        d = {x: a.count(x) for x in a}
+        l_idx = np.array(d.values()).argsort()[-10:]
+
+
+        print np.array(d.keys())[l_idx]
+        print np.array(d.values())[l_idx]
+
         
 
     
@@ -1425,7 +1438,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        ## param_dict['ROC']['update_list'] = ['hmmgp']
 
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)

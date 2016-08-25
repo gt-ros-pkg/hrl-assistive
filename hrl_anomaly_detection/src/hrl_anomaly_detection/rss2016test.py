@@ -1733,7 +1733,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['hmmgp', 'progress', 'kmean', 'fixed', 'change', 'osvm']
+    method_list = ['hmmgp', 'progress', 'hmmosvm', 'kmean', 'fixed', 'change', 'osvm']
     ref_method = 'hmmgp'
 
     delay_dict = {}
@@ -1795,10 +1795,10 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
                               float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
             max_point_idx = np.argmax(acc_l)
-            max_acc_dict[method] = [[],[]]
+            max_acc_dict[method]    = [[],[]]
             max_acc_dict[method][0] = tp_idx_ll[max_point_idx]
             max_acc_dict[method][1] = tp_delay_ll[max_point_idx]
-            acc_dict[task][method] = np.amax(acc_l)
+            acc_dict[task][method]  = np.amax(acc_l)
             
         # compare idx and take time only
         for method in method_list:
@@ -1823,7 +1823,7 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     tasks   = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding'] 
-    methods = ['HMM-GP', 'HMM-D', 'HMM-K', 'HMM-F', 'HMM-C', 'OSVM']
+    methods = ['HMM-GP', 'HMM-D', 'hmmosvm', 'HMM-Kmean', 'HMM-F', 'HMM-C', 'OSVM']
 
     if False:
         fig = plt.figure(1)
@@ -1891,7 +1891,8 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         ## ax2.set_ylabel("Detection Time [sec]", fontsize=22)        
         ## plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
         ##             fontsize=18 )
-        
+
+        ## plt.ylim([0,100])
         plt.xlim([-0.2, (ind+width*2.0+0.2)[-1]])
         plt.xticks(ind+width, methods, fontsize=40 )
         for tick in ax1.xaxis.get_major_ticks():
