@@ -512,7 +512,14 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
-    modeling_pkl_prefix = 'hmm_step_'+task_name
+
+    if False:
+        step_mag = 0.1*HMM_dict['scale'] # need to varying it
+        pkl_prefix = 'step_0.1'
+    else:
+        step_mag = 10000000*HMM_dict['scale'] # need to varying it
+        pkl_prefix = 'step_10000000'
+
 
     #------------------------------------------
     # Get features
@@ -551,7 +558,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             print "No reference modeling file exists"
             sys.exit()
         
-        modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
@@ -568,8 +575,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         abnormalTestData = copy.copy(normalTestData)
         samples = []
         step_idx_l = []
-        ## step_mag = 10000000*HMM_dict['scale'] # need to varying it
-        step_mag = 0.1*HMM_dict['scale'] # need to varying it
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
@@ -622,7 +627,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ## sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_noise_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = {}
     else:
@@ -640,28 +645,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
 
     osvm_data = None ; bpsvm_data = None
-    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
-
-        # get ll_cut_idx only for pos data
-        pos_dict  = []
-        drop_dict = []
-        for idx in xrange(len(kFold_list)):
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
-            d            = ut.load_pickle(modeling_pkl)
-            ll_classifier_train_X   = d['ll_classifier_train_X']
-            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-            ll_classifier_train_idx = d['ll_classifier_train_idx']
-            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
-                                         ll_classifier_train_Y, \
-                                         ll_classifier_train_idx)
-            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
-            pos_dict.append(idx_dict)
-            drop_dict.append([d['drop_idx_l'], d['drop_length']])
-                    
-        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                   window=SVM_dict['raw_window_size'], \
-                                   pos_dict=pos_dict, use_test=True, use_pca=False,
-                                   test_drop_elements=drop_dict)
 
     # parallelization
     if debug: n_jobs=1
@@ -672,7 +655,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
-                                                                 modeling_pkl_prefix=modeling_pkl_prefix,\
+                                                                 modeling_pkl_prefix='hmm_'+pkl_prefix,\
                                                                  delay_estimation=True) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -2130,9 +2113,6 @@ if __name__ == '__main__':
             param_dict['ROC']['update_list'] = []
             param_dict['HMM']['renew'] = False
             param_dict['SVM']['renew'] = False
-        if opt.bEvaluationDelay:
-            param_dict['ROC']['methods']     = [ 'progress', 'fixed', 'osvm'] 
-            param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'osvm']
         if opt.bFindROCparamRange:
             param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
             
@@ -2143,11 +2123,12 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['change']
+        param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \

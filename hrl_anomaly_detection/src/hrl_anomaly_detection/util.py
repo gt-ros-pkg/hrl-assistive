@@ -1621,6 +1621,8 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
                 
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
+            print i, " : ", len(tp_ll[i]), len(tn_ll[i]), len(fp_ll[i]), len(fn_ll[i])
+
         from sklearn import metrics
         print "--------------------------------"
         print " AUC "

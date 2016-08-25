@@ -153,9 +153,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_classifier_test_X   = np.array(ll_classifier_train_X)[test_idx].tolist()
             ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[test_idx].tolist()
             ll_classifier_test_idx = np.array(ll_classifier_train_idx)[test_idx].tolist()
-            ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
-            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
+            ll_classifier_train_X   = ll_classifier_train_X
+            ll_classifier_train_Y   = ll_classifier_train_Y
+            ll_classifier_train_idx = ll_classifier_train_idx
+            ## ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
+            ## ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
+            ## ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
 
             # nSample x nLength
             if ll_classifier_test_X == []:
@@ -173,11 +176,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 new_Y = []
                 new_idx = []
                 for i in xrange(len(ll_classifier_train_X)):
-                    idx_list = range(len(ll_classifier_train_X[i]))
-                    random.shuffle(idx_list)
-                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+                    idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
+                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
+                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
+                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
+                    ## idx_list = range(len(ll_classifier_train_X[i]))
+                    ## random.shuffle(idx_list)
+                    ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+                    ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+                    ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
 
                 ll_classifier_train_X = new_X
                 ll_classifier_train_Y = new_Y

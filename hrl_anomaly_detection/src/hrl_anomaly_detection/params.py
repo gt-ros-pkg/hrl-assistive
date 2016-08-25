@@ -146,19 +146,19 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     elif dim == 2:
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_targetEEDist' ]
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.333, 'scale': 9.111,
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 6.44,
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': [ 'fixed', 'kmean'],\
-                          'update_list': [ 'progress', 'fixed' ],\
+                          'update_list': [ 'progress', 'kmean', 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.linspace(3., -40.0, nPoints), \
-                          'progress_param_range':np.logspace(-1, 1.4, nPoints)*-1.0, \
-                          'kmean_param_range':np.linspace(0.0, -10.0, nPoints), \
+                          'hmmgp_param_range':np.logspace(-1, 1.9, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(-0.0, 0.8, nPoints)*-1.0, \
+                          'kmean_param_range':np.logspace(-0.2, 0.8, nPoints)*-1.0, \
                           'svm_param_range': np.logspace(-2.0, -0.3307, nPoints),\
-                          'fixed_param_range': np.linspace(0.4, -0.9, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -0.6, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.linspace(-1.5, -20.0, nPoints),\
@@ -567,7 +567,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## ROC_param_dict = {'methods': ['fixed', 'change','progress', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_no_dL' ],\
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
                                        'progress_diag', 'kmean'],\
-                          'update_list': [ 'fixed'],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-1., 1.0, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(-1., 1.0, nPoints)*-1.0, \
@@ -719,7 +719,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.55, 'scale': 8.33, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.325, 'scale': 6.66, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
@@ -764,7 +764,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         handFeatures = ['unimodal_ftForce',\
                         'crossmodal_artagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.325, 'scale': 7.66, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.55, 'scale': 7.66, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.01, 'cost': 5.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\

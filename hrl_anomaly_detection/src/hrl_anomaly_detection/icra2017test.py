@@ -75,7 +75,8 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
-
+random.seed(3334)
+np.random.seed(3334)
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -117,10 +118,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
-                           cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -169,7 +168,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
@@ -200,6 +199,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['ll_classifier_test_Y']   = ll_classifier_test_Y            
         d['ll_classifier_test_idx'] = ll_classifier_test_idx
         d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
         ut.save_pickle(d, modeling_pkl)
 
 
@@ -241,10 +242,8 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
-                           cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -283,12 +282,14 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
 
-        if ret == 'Failure' or np.isnan(ret): sys.exit()
+        if ret == 'Failure' or np.isnan(ret):
+            print "Failed to fit"
+            sys.exit()
 
         #-----------------------------------------------------------------------------------------
         # Classifier training data
@@ -417,7 +418,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
     
 
 def evaluation_online(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                      data_renew=False, data_gen=False, single_person=False, \
+                      data_renew=False, data_gen=False, many_to_one=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
                       save_result=False, verbose=False, debug=False, custom_mode=False):
@@ -437,6 +438,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     SVM_dict   = param_dict['SVM']
     # ROC
     ROC_dict   = param_dict['ROC']
+
+    if many_to_one: prefix = 'm2o_'
+    else: prefix = 'o2o_'
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -445,12 +449,13 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     '''
     Use augmented data? if nAugment is 0, then aug_successData = successData
     '''
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    crossVal_pkl = os.path.join(processed_data_path, prefix+'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
     else:
     
         # Get a data set with a leave-one-person-out
+        print "Extract data using getDataLOPO"
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
@@ -479,6 +484,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
                                          len(d['failureDataList'][i][0])) )
 
+
+        # only for hmm tuning
         kFold_list = []
         # leave-one-person-out
         for idx in xrange(len(subject_names)):
@@ -489,7 +496,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             normalTrainIdx = []
             abnormalTrainIdx = []
             for tidx in train_idx:
-                if single_person is False:
+                if many_to_one:
                     normalTrainIdx   += successIdx[tidx]
                     abnormalTrainIdx += failureIdx[tidx]
                 else:                
@@ -499,7 +506,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     abnormalTestIdx  = failureIdx[test_idx[0]]
                     kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
                     
-            if single_person is False:
+            if many_to_one:
                 normalTestIdx = []
                 abnormalTestIdx = []
                 for tidx in test_idx:
@@ -523,9 +530,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData  = 20
     nTrainOffset = 2
-    nTrainTimes  = 5 #10
+    nTrainTimes  = 10
     nNormalTrain = 30
-    param_dict['SVM']['gp_subsamples'] = 20
 
     # aws 5,4,  - 20, 2, 5, 30, 20
     # c11 8,8,  - 20, 2, 5, 30, 20 - good
@@ -536,10 +542,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.1  
     # 7.5,7.5,  - 20, 2, 5, 30, 20 * 0.15
     # 9.0,9.0,  - 20, 2, 5, 30, 20 * 0.015 
-    #[9(9), , 7.5(7.5), ????]    
-    scale_list  = [9, 9, 7.5, 9.]
-    cov_list    = [9, 9, 7.5, 9.]
-    alpha_coeff_list = [0.15, 0.1, 0.15, 0.015]
+    #[9(9), , 7.5(7.5), ????]
+    ## if task_name == 'feeding':
+    ##     scale_list  = [9, 9, 7.5, 9.]
+    ##     cov_list    = [9, 9, 7.5, 9.]
+    ##     alpha_coeff_list = [0.15, 0.1, 0.15, 0.015]
+
     
     # leave-one-person-out
     kFold_list = []
@@ -547,20 +555,19 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         idx_list = range(len(subject_names))
         train_idx = idx_list[:idx]+idx_list[idx+1:]
         test_idx  = idx_list[idx:idx+1]
-        if single_person:
+        if many_to_one is False:
             for tidx in train_idx:
                 kFold_list.append([[tidx], test_idx])
         else:
             kFold_list.append([train_idx, test_idx])
 
-    ## kFold_list = kFold_list[:1]
-    # TODO: need leave-one-person-out
+
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         print "Run kFold idx: ", idx, train_idx, test_idx
            
         # Training HMM, and getting classifier training and testing data
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, prefix+'hmm_'+task_name+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print "learned hmm exists"
         else:
@@ -582,57 +589,31 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     normalTestData = np.vstack([normalTestData, np.swapaxes(d['successDataList'][tidx], 0, 1)])
                     abnormalTestData = np.vstack([abnormalTestData, np.swapaxes(d['failureDataList'][tidx], 0, 1)])
 
-            normalTrainData = np.swapaxes(normalTrainData, 0, 1) #* HMM_dict['scale']
-            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) #* HMM_dict['scale']
-            normalTestData = np.swapaxes(normalTestData, 0, 1) #* HMM_dict['scale']
-            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) #* HMM_dict['scale']
+            normalTrainData = np.swapaxes(normalTrainData, 0, 1) 
+            abnormalTrainData = np.swapaxes(abnormalTrainData, 0, 1) 
+            normalTestData = np.swapaxes(normalTestData, 0, 1) 
+            abnormalTestData = np.swapaxes(abnormalTestData, 0, 1) 
             handFeatureParams = d['param_dict']
+
+            # load hmm params
+            if custom_mode:
+                scale       = HMM_dict['scale']
+                cov         = HMM_dict['cov']
+                ## scale = scale_list[idx]
+                ## cov   = scale_list[idx]
+                ## alpha_coeff = alpha_coeff_list[idx]                
+            else:
+                if many_to_one:
+                    scale       = ROC_dict['m2o']['hmm_scale']
+                    cov         = ROC_dict['m2o']['hmm_cov']
+                else:
+                    scale       = ROC_dict['o2o']['hmm_scale']
+                    cov         = ROC_dict['o2o']['hmm_cov']
 
             # training hmm
             if verbose: print "start to fit hmm"
             nEmissionDim = len(normalTrainData)
             nLength      = len(normalTrainData[0][0]) - startIdx
-
-            if False:
-                scale_list = np.arange(7.0, 11.0, 1.0)
-                ret_list   = []
-                for scale in scale_list:
-
-                    cov = scale
-                    cov_mult     = [cov]*(nEmissionDim**2)
-
-                    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-                    if data_dict['handFeatures_noise']:
-                        ret = ml.fit(normalTrainData*scale+\
-                                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
-                                     cov_mult=cov_mult, use_pkl=False)
-                                     ## np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                    else:
-                        ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
-                    if np.isnan(ret) or ret == 'Failure':
-                        ret_list.append(-10000000000000000000)
-                    else:
-                        ret_list.append(ret)
-
-                min_idx = np.argmin(abs(np.array(ret_list)-50.0))
-                scale   = scale_list[min_idx]
-                print "--------------------------"
-                print scale_list
-                print ret_list
-                print "--------------------------"
-                print min_idx, scale
-                print "--------------------------"
-                continue
-
-            if custom_mode:
-                scale = scale_list[idx]
-                cov   = scale_list[idx]
-                alpha_coeff = alpha_coeff_list[idx]
-            else:
-                scale = HMM_dict['scale']
-                cov   = HMM_dict['cov']
-                alpha_coeff = 0.15
-            ## cov = scale
             cov_mult     = [cov]*(nEmissionDim**2)
             
             normalTrainData   *= scale
@@ -640,8 +621,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             normalTestData    *= scale
             abnormalTestData  *= scale
 
-            #temp for adaptation
-            ## normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
+            # many to one adaptation
+            if many_to_one:
+				print "No additional noise for many to one adaptation"
+                #normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
+            else:
+                normalTrainData[:,0:3] += np.random.normal( -0.2, 0.2, np.shape(normalTrainData[:,0:3]) )*scale
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
@@ -686,11 +671,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['nLength']      = nLength
             dd['scale']        = scale
             dd['cov']          = cov
-            dd['alpha_coeff']  = alpha_coeff
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, prefix+'roc_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = []
     else:
@@ -723,10 +707,10 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
         for jj in xrange(n_random_trial):
             r = run_online_classifier(idx, processed_data_path, task_name, method, \
                                       nPtrainData, nTrainOffset, nTrainTimes, \
-                                      ROC_data, param_dict,\
+                                      ROC_data, param_dict, \
                                       np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
                                       np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                      verbose=debug, viz=viz, random_eval=random_eval)
+                                      verbose=debug, viz=viz, random_eval=random_eval, many_to_one=many_to_one)
             l_data.append( (idx, r) )
 
     
@@ -769,6 +753,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 
         l_auc.append(auc)
 
+    if l_auc == []:
+        print "empty l_auc"
+        sys.exit()
     print "---------------------"
     l_auc = np.array(l_auc)
     l_auc_d = l_auc-l_auc[:,0:1]
@@ -850,7 +837,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
 def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_data_path, \
-                            param_dict, n_random_trial=1, random_eval=False, \
+                            param_dict, n_random_trial=1, random_eval=False, many_to_one=False,\
                             data_renew=False, \
                             verbose=False, debug=False):
 
@@ -866,7 +853,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
-                          data_renew=data_renew, no_plot=True,\
+                          many_to_one=False, data_renew=data_renew, no_plot=True,\
                           save_result=True, verbose=verbose, debug=debug)
         data_renew = False
         ## sys.exit()
@@ -876,7 +863,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
                           normalDataX, abnormalDataX, verbose=False, viz=False,\
-                          random_eval=False):
+                          random_eval=False, many_to_one=False):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -886,7 +873,13 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
     add_logp_d  = False #HMM_dict.get('add_logp_d', True)
-    nSubSample  = SVM_dict['gp_subsamples']
+    if many_to_one:
+        nSubSample  = ROC_dict['m2o']['gp_nSubsample']
+        alpha_coeff = ROC_dict['m2o']['alpha_coeff']
+    else:
+        nSubSample  = ROC_dict['o2o']['gp_nSubsample']
+        alpha_coeff = ROC_dict['o2o']['alpha_coeff']
+        
     
     ROC_data_cur = {}
     for i, m in enumerate(method_list):
@@ -900,7 +893,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             data['delay_l']  = [ [] for jj in xrange(nPoints) ]
             data['tp_idx_l'] = [ [] for jj in xrange(nPoints) ]
             ROC_data_cur[m+'_'+str(j)] = data
-    
+ 
     #
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
     dd = ut.load_pickle(modeling_pkl)
@@ -916,9 +909,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     u_denom   = dd['u_denom']  
     startIdx  = dd['startIdx']
     nLength   = dd['nLength']
-    scale     = HMM_dict['scale'] = dd['scale'] 
-    alpha_coeff = dd['alpha_coeff']
-    ## scale     = HMM_dict['scale']
+    scale     = dd['scale'] 
 
     #-----------------------------------------------------------------------------------------
     # Classifier partial train/test data
@@ -967,9 +958,9 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi,out_a_num,vec_num,mat_num,u_denom)
-
+    
     for i in xrange(nTrainTimes+1): 
-
+        print "---------------- Train: ", i, " -----------------------"
         if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
         if i > 0:
@@ -1038,17 +1029,8 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
         if verbose: print "Partial set for classifier: ", np.shape(X_train_org), np.shape(Y_train_org)
 
 
-        ## if True in np.isnan(np.array(X_train_org).flatten()):
-        ##     print "NaN in input"
-        ## if True in np.isinf(np.array(X_train_org).flatten()):
-        ##     print "NaN in input"
-        ## continue
-
-
         # -------------------------------------------------------------------------------
         print "Test data extraction"
-        ## ll_logp_test, ll_post_test, ll_classifier_test_idx = ml.loglikelihoods(testDataX, True, True, \
-        ##                                                              startIdx=startIdx)
         r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(ii, ml.A, ml.B, ml.pi, ml.F, \
                                                                 [ testDataX[jj][ii] for jj in \
                                                                   xrange(ml.nEmissionDim) ], \
@@ -1124,8 +1106,6 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     if method == 'hmmgp':
         dtc.load_model('./temp_hmmgp.pkl')
 
-
-    if verbose: print "Update classifier"
     if method == 'progress' or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[idx] )
@@ -1321,6 +1301,10 @@ if __name__ == '__main__':
     p.add_option('--cparam', action='store_true', dest='bCustomParam',
                  default=False, help='')
                  
+
+    p.add_option('--m2o', action='store_true', dest='bManyToOneAdaptation',
+                 default=False, help='Many-To-One adaptation flag')
+
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -1439,9 +1423,15 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change']
+        param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['ROC']['update_list'] = ['change']
+        param_dict['ROC']['update_list'] = ['hmmgp']
+
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)
+        param_dict['ROC']['fixed_param_range'] = np.linspace(0.3, -0.1, nPoints)
+        param_dict['ROC']['change_param_range'] = np.logspace(0, 1.8, nPoints)*-1.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-2, 1.8, nPoints)*-1.0
 
         evaluation_unexp(subjects, unexp_subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
@@ -1451,6 +1441,8 @@ if __name__ == '__main__':
     elif opt.bOnlineEval:
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['nPoints'] = 16
+
+        many_to_one = False
 
         if opt.bEvaluationAWS or opt.bFindParam:
             n_random_trial = 10
@@ -1480,43 +1472,43 @@ if __name__ == '__main__':
         elif opt.bFindParam:
             evaluation_online_multi(subjects, opt.task, raw_data_path, save_data_path, \
                                     param_dict, n_random_trial=n_random_trial, random_eval=True,\
-                                    data_renew=opt.bDataRenew,\
+                                    many_to_one=opt.bManyToOneAdaptation, data_renew=opt.bDataRenew,\
                                     verbose=opt.bVerbose, debug=opt.bDebug)
         else:          
             evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-                              param_dict, save_pdf=opt.bSavePdf, \
+                              param_dict, save_pdf=opt.bSavePdf, many_to_one=opt.bManyToOneAdaptation, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
                               random_eval=opt.bEvaluationAWS, custom_mode=opt.bCustomParam, \
                               data_renew=opt.bDataRenew, viz=opt.bViz)
 
-    ## elif opt.bOnlineEvalTemp:
-    ##     subjects        = ['park', 'jina', 'sai', 'linda']        #'ari', 
-    ##     param_dict['ROC']['methods'] = ['change']
-    ##     param_dict['ROC']['nPoints'] = 8
+            ## if False:
+            ##     scale_list = np.arange(7.0, 11.0, 1.0)
+            ##     ret_list   = []
+            ##     for scale in scale_list:
 
-    ##     param_dict['HMM'] = {'renew': opt.bHMMRenew, 'nState': 25, 'cov': 9., 'scale': 9.0,\
-    ##                          'add_logp_d': False}
-                             
-    ##     save_data_path = os.path.expanduser('~')+\
-    ##       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online_temp/'+\
-    ##       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+            ##         cov = scale
+            ##         cov_mult     = [cov]*(nEmissionDim**2)
 
-    ##     if opt.bLikelihoodPlot:
+            ##         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+            ##         if data_dict['handFeatures_noise']:
+            ##             ret = ml.fit(normalTrainData*scale+\
+            ##                          np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+            ##                          cov_mult=cov_mult, use_pkl=False)
+            ##         else:
+            ##             ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
+            ##         if np.isnan(ret) or ret == 'Failure':
+            ##             ret_list.append(-10000000000000000000)
+            ##         else:
+            ##             ret_list.append(ret)
 
-    ##         crossVal_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
-    ##         d = ut.load_pickle(crossVal_pkl)
+            ##     min_idx = np.argmin(abs(np.array(ret_list)-50.0))
+            ##     scale   = scale_list[min_idx]
+            ##     print "--------------------------"
+            ##     print scale_list
+            ##     print ret_list
+            ##     print "--------------------------"
+            ##     print min_idx, scale
+            ##     print "--------------------------"
+            ##     continue
 
-    ##         import hrl_anomaly_detection.data_viz as dv        
-    ##         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-    ##                           decision_boundary_viz=False, \
-    ##                           useTrain=True, useNormalTest=True, useAbnormalTest=True,\
-    ##                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-    ##                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-    ##                           verbose=opt.bVerbose, dd=d)
-    ##     else:          
-    ##         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
-    ##                           param_dict, save_pdf=opt.bSavePdf, \
-    ##                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-    ##                           find_param=False, data_gen=opt.bDataGen, single_person=True, viz=True,\
-    ##                           data_renew=opt.bDataRenew)
