@@ -2119,7 +2119,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['change']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
