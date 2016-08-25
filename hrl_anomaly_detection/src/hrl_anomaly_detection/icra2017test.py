@@ -1427,6 +1427,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         param_dict['ROC']['update_list'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
 
+        nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)
         param_dict['ROC']['fixed_param_range'] = np.linspace(0.3, -0.1, nPoints)
         param_dict['ROC']['change_param_range'] = np.logspace(0, 1.8, nPoints)*-1.0
