@@ -70,18 +70,32 @@ var RFH = {
   //  $('.bpd, #cart_controller, .ar_servo_button, .traj_play_cont,'+
   //    '#adj_mirror, #traj_play_reverse, #ell_controller, #reg_head,'+
   //    '#rezero_wrench, #send_shave_select, #shave, #shave_stop, #tool_power').button();
+    var grayVideo = function () {
+        var w = $('body').width();
+        var h = $('body').height();
+        $('#image-cover').css({'height':h, 'width':w}).text("Connection Lost").addClass('connection-lost').show();
+
+    };
+
+    var clearVideo = function () {
+        $('#image-cover').hide();
+    };
 
     this.ros = new ROSLIB.Ros({url: 'ws://'+ this.ROBOT + ':'+ this.PORT});
     this.ros.on('close', function(e) {
+        grayVideo();
         console.log("Disconnected or Can't Connect to " + this.ROBOT + ":"+ this.PORT + ".");
       }
     );
     this.ros.on('error', function(e) {
+        grayVideo();
       log("Rosbridge Connection Error!");
       }
     );
+
     this.ros.on('connection', function(e) {
         console.log("Connected to " + RFH.ROBOT + ".");
+        clearVideo();
         extendROSJS(RFH.ros);
 //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
         RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
