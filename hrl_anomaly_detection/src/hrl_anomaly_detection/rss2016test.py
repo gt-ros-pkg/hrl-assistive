@@ -513,9 +513,13 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
 
-    ## step_mag = 10000000*HMM_dict['scale'] # need to varying it
-    step_mag = 0.1*HMM_dict['scale'] # need to varying it
-    pkl_prefix = 'step_0.1'
+    if False:
+        step_mag = 0.1*HMM_dict['scale'] # need to varying it
+        pkl_prefix = 'step_0.1'
+    else:
+        step_mag = 10000000*HMM_dict['scale'] # need to varying it
+        pkl_prefix = 'step_10000000'
+
 
     #------------------------------------------
     # Get features
@@ -2119,7 +2123,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
