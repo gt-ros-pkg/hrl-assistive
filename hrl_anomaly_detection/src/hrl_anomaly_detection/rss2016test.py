@@ -2124,6 +2124,7 @@ if __name__ == '__main__':
 
         if opt.task == 'pushing_microblack':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
