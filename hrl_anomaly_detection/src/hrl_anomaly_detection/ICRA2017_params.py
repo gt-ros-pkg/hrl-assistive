@@ -188,7 +188,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0 },\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints),\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
-                          'svm_param_range': np.logspace(-0.8, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-0.4, 0.5, nPoints),\
                           'hmmgp_param_range':np.logspace(-1, 3.5, nPoints)*-1.0+0.5, \
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
