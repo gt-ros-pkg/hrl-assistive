@@ -1,4 +1,4 @@
-(function (module) {
+var RFH = (function (module) {
     module.positionInElement = function (e) {
         var posx = 0;
         var posy = 0;
@@ -56,7 +56,6 @@
         window.addEventListener('resize', function () {
             $("body").css({"height": window.innerHeight, "width":window.innerWidth});
         });
-        initUserLog('#notifications');
 
         //  $('#tabs').css({'top':'0px'})
         //  var tabs = $("#tabs").tabs();
@@ -89,14 +88,14 @@
         );
         this.ros.on('error', function(e) {
             grayVideo();
-            log("Rosbridge Connection Error!");
+            console.log("Rosbridge Connection Error!");
         }
         );
 
         this.ros.on('connection', function(e) {
             console.log("Connected to " + RFH.ROBOT + ".");
             clearVideo();
-            extendROSJS(RFH.ros);
+            RFH.extendROSJS(RFH.ros);
             //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
             RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
                 div: 'battery-status'});
@@ -106,7 +105,7 @@
                 rate : 10.0,
                 fixedFrame : '/base_link' });
             RFH.tfClient.actionClient.cancel();
-            RFH.pr2 = new PR2(RFH.ros);
+            RFH.pr2 = new RFH.PR2(RFH.ros);
             RFH.runStop = new RFH.RunStop({ros: RFH.ros});
 
             RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
@@ -121,7 +120,7 @@
             RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
             RFH.mjpeg.cameraModel.updateCameraInfo();
 
-            initViewer('video-main');
+            RFH.initViewer('video-main');
             RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
@@ -144,4 +143,5 @@
         }
         );
     };
+    return module;
 })(RFH || {});

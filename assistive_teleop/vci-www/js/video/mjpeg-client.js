@@ -1,4 +1,4 @@
-(function (module) {
+var RFH = (function (module) {
     module.MjpegClient = function (options) {
         "use strict";
         var self = this;
@@ -235,4 +235,5 @@
             return [pix_x/self.width, pix_y/self.height];
         };
     };
+    return module;
 }) (RFH || {});
