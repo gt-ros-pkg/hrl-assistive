@@ -19,7 +19,7 @@ var RFH = (function (module) {
         self.addTask = function (taskObject) {
             self.tasks[taskObject.name] = taskObject;
             if (taskObject.showButton) {
-           // if (taskObject.buttonText) {
+                // if (taskObject.buttonText) {
                 var checkbox = document.createElement('input');
                 checkbox.type = "checkbox";
                 checkbox.id = taskObject.buttonText;
@@ -29,9 +29,9 @@ var RFH = (function (module) {
                 $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
                 $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.name + ' menu-item').prop('title', taskObject.toolTipText);
                 $('#'+taskObject.buttonText).on('click.rfh', 
-                                                function(event){
-                                                    self.buttonCB(taskObject);
-                                                });
+                    function(event){
+                        self.buttonCB(taskObject);
+                    });
             }
         };
 
@@ -58,7 +58,7 @@ var RFH = (function (module) {
             self.activeTask = taskObject;
             statePublisher.publish({'data':taskObject.name});
         };
-        
+
         self.stopActiveTask = function () {
             if (self.activeTask === null) {
                 return;
@@ -82,59 +82,59 @@ var RFH = (function (module) {
 
     module.initTaskMenu = function (divId) {
         RFH.taskMenu = new RFH.TaskMenu({divId: divId,
-                                         ros: RFH.ros});
+            ros: RFH.ros});
         RFH.taskMenu.addTask(new RFH.Look({ros: RFH.ros, 
-                                           div: 'video-main',
-                                           head: RFH.pr2.head,
-                                           camera: RFH.mjpeg.cameraModel}));
+            div: 'video-main',
+            head: RFH.pr2.head,
+            camera: RFH.mjpeg.cameraModel}));
         RFH.taskMenu.defaultTaskName = 'lookingTask';
 
         RFH.taskMenu.addTask(new RFH.Torso({containerDiv: 'video-main',
-                                            sliderDiv: 'torsoSlider',
-                                            torso: RFH.pr2.torso}));
+            sliderDiv: 'torsoSlider',
+            torso: RFH.pr2.torso}));
 
 
         RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
-                                                         div: 'video-main',
-                                                         gripper: RFH.pr2.l_gripper,
-                                                         tfClient: RFH.tfClient,
-                                                         eeDisplay: RFH.leftEEDisplay,
-                                                         camera: RFH.mjpeg.cameraModel}));
+            div: 'video-main',
+            gripper: RFH.pr2.l_gripper,
+            tfClient: RFH.tfClient,
+            eeDisplay: RFH.leftEEDisplay,
+            camera: RFH.mjpeg.cameraModel}));
 
         RFH.taskMenu.addTask(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
-                                                         div: 'video-main',
-                                                         gripper: RFH.pr2.r_gripper,
-                                                         tfClient: RFH.tfClient,
-                                                         eeDisplay: RFH.rightEEDisplay,
-                                                         camera: RFH.mjpeg.cameraModel}));
+            div: 'video-main',
+            gripper: RFH.pr2.r_gripper,
+            tfClient: RFH.tfClient,
+            eeDisplay: RFH.rightEEDisplay,
+            camera: RFH.mjpeg.cameraModel}));
 
         RFH.taskMenu.addTask(new RFH.Drive({ros: RFH.ros, 
-                                            tfClient: RFH.tfClient,
-                                            camera: RFH.mjpeg.cameraModel,
-                                            head: RFH.pr2.head,
-                                            left_arm: RFH.pr2.l_arm_cart,
-                                            right_arm: RFH.pr2.r_arm_cart,
-                                            base: RFH.pr2.base,
-                                            forwardOnly: false}));
+            tfClient: RFH.tfClient,
+            camera: RFH.mjpeg.cameraModel,
+            head: RFH.pr2.head,
+            left_arm: RFH.pr2.l_arm_cart,
+            right_arm: RFH.pr2.r_arm_cart,
+            base: RFH.pr2.base,
+            forwardOnly: false}));
         RFH.taskMenu.addTask(new RFH.GetClickedPose({ros:RFH.ros,
-                                                     camera: RFH.mjpeg.cameraModel}));
-    //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
-    //    rfh.taskmenu.addtask(new RFH.publishlocation({ros:rfh.ros,
-    //                                                  camera: rfh.mjpeg.cameramodel}));
-    //    RFH.taskMenu.addTask(new RFH.ParamLocation({ros:RFH.ros,
-    //                                                name:'paramLocationTask',
-    //                                               paramName:'location',
-    //                                                camera: RFH.mjpeg.cameraModel}));
+            camera: RFH.mjpeg.cameraModel}));
+        //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
+        //    rfh.taskmenu.addtask(new RFH.publishlocation({ros:rfh.ros,
+        //                                                  camera: rfh.mjpeg.cameramodel}));
+        //    RFH.taskMenu.addTask(new RFH.ParamLocation({ros:RFH.ros,
+        //                                                name:'paramLocationTask',
+        //                                               paramName:'location',
+        //                                                camera: RFH.mjpeg.cameraModel}));
         RFH.taskMenu.addTask(new RFH.Domains.Pick({ros:RFH.ros,
-                                                   r_arm: RFH.pr2.r_arm_cart,
-                                                   r_gripper: RFH.pr2.r_gripper,
-                                                   l_arm: RFH.pr2.l_arm_cart,
-                                                   l_gripper: RFH.pr2.l_gripper}));
+            r_arm: RFH.pr2.r_arm_cart,
+            r_gripper: RFH.pr2.r_gripper,
+            l_arm: RFH.pr2.l_arm_cart,
+            l_gripper: RFH.pr2.l_gripper}));
         RFH.taskMenu.addTask(new RFH.Domains.Place({ros:RFH.ros,
-                                                   r_arm: RFH.pr2.r_arm_cart,
-                                                   r_gripper: RFH.pr2.r_gripper,
-                                                   l_arm: RFH.pr2.l_arm_cart,
-                                                   l_gripper: RFH.pr2.l_gripper}));
+            r_arm: RFH.pr2.r_arm_cart,
+            r_gripper: RFH.pr2.r_gripper,
+            l_arm: RFH.pr2.l_arm_cart,
+            l_gripper: RFH.pr2.l_gripper}));
         RFH.taskMenu.addTask(new RFH.Domains.PickAndPlace({ros:RFH.ros}));
         RFH.taskMenu.addTask(new RFH.Domains.WipingMouthADL({ros:RFH.ros}));
         RFH.taskMenu.addTask(new RFH.Domains.ScratchingKneeADL({ros:RFH.ros}));
