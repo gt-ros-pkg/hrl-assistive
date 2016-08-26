@@ -71,15 +71,16 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def isolation_test(subject_names, task_name, raw_data_path, processed_data_path, \
-                     param_dict, verbose=False, data_renew=False):
+                     param_dict_hmm, param_dict_isolator, verbose=False, data_renew=False):
     '''
     processed_data_path: please, use this path to save your data
     '''
 
     ## Parameters
     # data
+    param_dict = param_dict_hmm
     data_dict  = param_dict['data_param']
-    
+    #return
     #-----------------------------------------------------------------------------------------
 
 
@@ -112,7 +113,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         hmm_d = dm.getDataSet(hmm_subjects, task_name, raw_data_path, \
                               hmm_data_path, data_dict['rf_center'], data_dict['local_range'],\
                               downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                              handFeatures=data_dict['handFeatures'], \
+                              handFeatures=['unimodal_audioWristRMS', 'unimodal_ftForceZ', 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng'],\
                               data_renew=False, max_time=data_dict['max_time']) 
     else:
         dim = 4
@@ -121,7 +122,8 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
           str(data_param_dict['downSampleSize'])+'_'+str(dim)
         hmm_d = {'param_dict': None}
 
-    
+    param_dict = param_dict_isolator
+    data_dict  = param_dict['data_param']
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
@@ -132,11 +134,14 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           handFeatures=data_dict['handFeatures'], init_param_dict=hmm_d['param_dict'],\
+                           handFeatures=data_dict['handFeatures'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
         order = [[]] * len(d['failureFiles'])
-        new_failureData = [[], [],[],[]]
+        new_failureData = []
+        for i in xrange(0, len(d['failureData'])):
+            new_failureData.append([])
+        print d['failureData'].shape
         for i, file_name in enumerate(d['failureFiles']):
             file_name_split = file_name.split("iteration_")
             file_name_split = file_name_split[1].split("_failure")[0]
@@ -168,6 +173,9 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     successFiles = d['successFiles']
     failureFiles = d['failureFiles']
     
+
+    print failureData.shape
+    #return
     all_type = []
     for type_set in type_sets:
         all_type.extend(type_set)
@@ -202,6 +210,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :]
 
+        """
         # anomaly detector --------------------------------------------
         print "Start to find anomalous point" 
         testDataX = abnormalTestData
@@ -210,6 +219,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                                                task_name, hmm_data_path, param_dict,\
                                                verbose=True)
         print detection_idx_list
+        """
         ## sys.exit()
         # -------------------------------------------------------------
         
@@ -219,14 +229,12 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         ## test_classifier=cf.classifier()
         X = []
         y = []        
-        mean = [0]* 40
-        var = [0]*40
-        X = []
         for trainIdx in xrange(0, abnormalTrainData.shape[1]):
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
+                print "hmm"
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :])#, limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :])
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
@@ -240,12 +248,12 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             class_count[formatY(trainIdx,type_sets)] += 1
             class_count[-1] += 1
         print class_count
-        for i in xrange(1, 5):
-            if not np.allclose(class_count[i], 0):
+        for i in xrange(0, len(type_sets)):
+            if not np.allclose(class_count[i+1], 0):
                 #if i is not 3 and i is not 2:
-                commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
+                commands = commands + '-w' + str(i+1) + ' ' + str((1 / (class_count[i+1]))) + ' '
                 #else:
-                #    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
+                #    commands = commands + '-w' + str(i+1) + ' ' + str((2 / (class_count[i+1]))) + ' '
         c = np.logspace(-3.0, -1.0, 4)
         models=[]
         #for i in xrange(0, 4):
@@ -257,7 +265,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
+            #formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
             scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
@@ -265,12 +273,12 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             #print prediction
             #print np.asarray(prediction[2])[:,0]
             plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
-            color_list = ['', 'b', 'g', 'r', 'k']
-            title_list = ['', 'sound', 'force', 'distance', 'orientation']
-            for i in xrange(0, 4):
+            color_list = ['', 'b', 'g', 'r', 'k', 'y']
+            title_list = ['', 'sound', 'force', 'face','distance', 'orientation']
+            for i in xrange(0, failureData.shape[0]):
                 color = color_list[i+1]#int(model.get_labels()[i])]
                 title = title_list[i+1]#int(model.get_labels()[i])]
-                plt.subplot2grid((4,2),(int(i), 0)).set_title(title)
+                plt.subplot2grid((failureData.shape[0],2),(int(i), 0)).set_title(title)
                 #plt.axis((0, 200, 0, 1))
                 plt.axis((0, 200, -2, 2))
                 #plt.plot(probability[:,i], color)
@@ -278,11 +286,11 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                 plt.plot(np.asarray(scaled_data)[i, :], color)
             for j, model in enumerate(models):
                 print j
-                plt.subplot2grid((4,2),(j,1)).set_title(c[j])
+                plt.subplot2grid((failureData.shape[0],2),(j,1), rowspan=failureData.shape[0]).set_title(c[j])
                 plt.axis((0, 200, 0, 1))
                 prediction =  svm.svm_predict(y, X, model, '-b 1')
                 probability = np.asarray(prediction[2])
-                for i in xrange(0,4):
+                for i in xrange(0,len(type_sets)):
                     color = color_list[int(model.get_labels()[i])]
                     if model.get_labels()[i] is curr_type:
                         plt.plot(probability[:,i], color + '>')
@@ -319,9 +327,11 @@ def formatY(index, type_sets):
 
 def scaled_inputs(data, scaler):
     #data, of form 4, 200
-    new_data = [[], [], [], []] 
+    new_data = []
+    for i in xrange(0, data.shape[0]):
+        new_data.append([])
     formated_X = formatX(data, scaler=scaler) #sample data scaled, 200-time_window + 1 by time_window*4
-    time_window = np.asarray(formated_X).shape[1] / 4
+    time_window = np.asarray(formated_X).shape[1] / data.shape[0]
     for idx in xrange(0, len(formated_X)):
         for dimIdx in xrange(0, np.asarray(formated_X).shape[1] / time_window):
             new_data[dimIdx].append(formated_X[idx][dimIdx*time_window])
@@ -478,8 +488,11 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          False, False, opt.dim,\
+    raw_data_path, save_data_path, param_dict_hmm = getParams(opt.task, opt.bDataRenew, \
+                                                          False, False, 4,\
+                                                          rf_center, local_range)
+    _, _, param_dict_isolator = getParams(opt.task, opt.bDataRenew, \
+                                                          False, False, 4,\
                                                           rf_center, local_range)
 
 
@@ -487,7 +500,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_isolation/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+      str(param_dict_hmm['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     isolation_test(subjects, opt.task, raw_data_path, save_data_path, \
-                   param_dict, verbose=opt.bVerbose, data_renew=opt.bDataRenew)
+                   param_dict_hmm, param_dict_isolator, verbose=opt.bVerbose, data_renew=opt.bDataRenew)
