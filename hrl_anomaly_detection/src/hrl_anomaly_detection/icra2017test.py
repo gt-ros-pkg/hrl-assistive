@@ -1447,13 +1447,13 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationUnexpected:
-        unexp_subjects = ['unexpected', 'unexpected2']
+        unexp_subjects = ['unexpected1', 'unexpected2', 'unexpected3']
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        ## param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
 
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)
