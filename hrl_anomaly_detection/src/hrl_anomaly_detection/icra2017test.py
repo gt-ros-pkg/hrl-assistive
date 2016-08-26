@@ -644,8 +644,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             abnormalTestData  *= scale
 
             # many to one adaptation
-            normalTrainData[:,0:3] += np.random.normal( -noise_max, noise_max, \
-                                                        np.shape(normalTrainData[:,0:3]) )*scale
+            if noise_max > 0.0:
+                normalTrainData[:,0:3] += np.random.normal( -noise_max, noise_max, \
+                                                            np.shape(normalTrainData[:,0:3]) )*scale
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
@@ -865,7 +866,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
                             data_renew=False, \
                             verbose=False, debug=False):
 
-    parameters = {'nState': [25], 'scale': np.linspace(1.0,12.0,7) }
+    parameters = {'nState': [25], 'scale': np.linspace(11.0,13.0,3) }
     param_list = list(ParameterGrid(parameters))
 
     for param in param_list:
