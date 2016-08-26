@@ -400,12 +400,12 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
     #----------------- List up anomaly cases ------------------
     
-    for method in method_list:
-        max_idx = np.argmax(acc_rates[method])
+    ## for method in method_list:
+    ##     max_idx = np.argmax(acc_rates[method])
 
-        print "-----------------------------------"
-        print "Method: ", method
-        print acc_rates[method][max_idx]
+    ##     print "-----------------------------------"
+    ##     print "Method: ", method
+    ##     print acc_rates[method][max_idx]
         
 
     for method in method_list:
@@ -1453,7 +1453,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['fixed', 'progress', 'svm', 'change', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['progress']
 
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1, 1.0, nPoints)
