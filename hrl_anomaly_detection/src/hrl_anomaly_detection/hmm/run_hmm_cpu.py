@@ -89,8 +89,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             # dim x sample x length
             normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] * param['scale']
             abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] * param['scale'] 
-            ## normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
-            ## abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] * param['scale'] 
+            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
+            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] * param['scale'] 
 
             #
             nEmissionDim = len(normalTrainData)
