@@ -1265,7 +1265,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # classifier # TODO: need to make it efficient!!
     dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints):
-        ## run_classifier(j)
+
         dtc.set_params( **SVM_dict )
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
           method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm':
