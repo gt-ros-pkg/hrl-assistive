@@ -2120,15 +2120,15 @@ if __name__ == '__main__':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
-        if True:
+        if False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         elif False:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:
-            step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_10000000'
+            step_mag = 10*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_10'
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
         ##                  save_pdf=opt.bSavePdf, \
