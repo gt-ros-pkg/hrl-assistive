@@ -514,6 +514,8 @@ class classifier(learning_base):
         X is single sample
         return predicted values (not necessarily binaries)
         '''
+
+        
         if self.method.find('svm')>=0:
             
             if self.method.find('cssvm')>=0:
@@ -589,9 +591,14 @@ class classifier(learning_base):
 
             if False:
                 y_pred, sigma = self.dt.predict(posts, True)
-            else:                
-                y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
-                sigma = np.sqrt(MSE)
+            else:
+                try:
+                    y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
+                    sigma = np.sqrt(MSE)
+                except:
+                    print posts
+                    sys.exit()
+                
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
