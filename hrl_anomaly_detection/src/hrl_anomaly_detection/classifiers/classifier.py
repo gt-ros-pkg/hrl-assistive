@@ -1160,7 +1160,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             if len(ll_classifier_train_X)>30:
                 sample_id_list = range(len(ll_classifier_train_X))
                 random.shuffle(sample_id_list)
-                sample_id_list = sample_id_list[:20]
+                sample_id_list = sample_id_list[:30]
 
                 ll_classifier_train_X = ll_classifier_train_X[sample_id_list]
                 ll_classifier_train_Y = ll_classifier_train_Y[sample_id_list]
