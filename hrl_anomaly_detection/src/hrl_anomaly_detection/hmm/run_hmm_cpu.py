@@ -144,20 +144,24 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ret = 'Failure'
                 break
 
-            # split
-            import random
-            train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.5*len(ll_classifier_train_X)) )
-            test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx]
+            ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, \
+                                                       startIdx, add_logp_d)
 
-            ll_classifier_test_X   = np.array(ll_classifier_train_X)[test_idx].tolist()
-            ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[test_idx].tolist()
-            ll_classifier_test_idx = np.array(ll_classifier_train_idx)[test_idx].tolist()
-            ## ll_classifier_train_X   = ll_classifier_train_X
-            ## ll_classifier_train_Y   = ll_classifier_train_Y
-            ## ll_classifier_train_idx = ll_classifier_train_idx
-            ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
-            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
+            # split
+            ## import random
+            ## train_idx = random.sample(range(len(ll_classifier_train_X)), int( 0.5*len(ll_classifier_train_X)) )
+            ## test_idx  = [x for x in range(len(ll_classifier_train_X)) if not x in train_idx]
+
+            ## ll_classifier_test_X   = np.array(ll_classifier_train_X)[test_idx].tolist()
+            ## ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[test_idx].tolist()
+            ## ll_classifier_test_idx = np.array(ll_classifier_train_idx)[test_idx].tolist()
+            ## ## ll_classifier_train_X   = ll_classifier_train_X
+            ## ## ll_classifier_train_Y   = ll_classifier_train_Y
+            ## ## ll_classifier_train_idx = ll_classifier_train_idx
+            ## ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
+            ## ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
+            ## ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
 
             # nSample x nLength
             if ll_classifier_test_X == []:
@@ -250,7 +254,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 cf_dict['ths_mult']    = dtc.ths_mult
                 dtc.save_model('./temp_hmmgp.pkl')
             
-
             print "Start to run classifiers"
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
