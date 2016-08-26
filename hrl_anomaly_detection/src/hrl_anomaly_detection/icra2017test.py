@@ -434,7 +434,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                       data_renew=False, data_gen=False, many_to_one=False, \
                       n_random_trial=1, random_eval=False, find_param=False, \
                       viz=False, no_plot=False, delay_plot=False, save_pdf=False, \
-                      save_result=False, verbose=False, debug=False, custom_mode=False):
+                      save_result=False, verbose=False, debug=False, custom_mode=False,\
+                      hmm_update=True):
 
     ## Parameters
     # data
@@ -692,7 +693,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             ut.save_pickle(dd, modeling_pkl)
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, prefix+'roc_'+task_name+'.pkl')
+    if hmm_update:
+        roc_pkl = os.path.join(processed_data_path, prefix+'roc_'+task_name+'.pkl')
+    else:
+        roc_pkl = os.path.join(processed_data_path, prefix+'roc_'+task_name+'_nohmm.pkl')
+        
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = []
     else:
@@ -728,7 +733,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                                       ROC_data, param_dict, \
                                       np.array([d['successDataList'][i] for i in kFold_list[idx][1]])[0],\
                                       np.array([d['failureDataList'][i] for i in kFold_list[idx][1]])[0],\
-                                      verbose=debug, viz=viz, random_eval=random_eval, many_to_one=many_to_one)
+                                      verbose=debug, viz=viz, random_eval=random_eval, many_to_one=many_to_one,\
+                                      hmm_update=hmm_update)
             l_data.append( (idx, r) )
 
     
@@ -887,7 +893,7 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
 def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainData,\
                           nTrainOffset, nTrainTimes, ROC_data, param_dict, \
                           normalDataX, abnormalDataX, verbose=False, viz=False,\
-                          random_eval=False, many_to_one=False):
+                          random_eval=False, many_to_one=False, hmm_update=True):
     '''
     '''
     HMM_dict = param_dict['HMM']
@@ -987,7 +993,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
         print "---------------- Train: ", i, " -----------------------"
         if ROC_data[idx][method+'_'+str(i)]['complete']: continue
         # partial fitting with
-        if i > 0:
+        if i > 0 and hmm_update:
             print "Run partial fitting with online HMM : ", i
             ## for j in xrange(nTrainOffset):
             ##     alpha = np.exp(-0.1*float((i-1)*nTrainOffset+j) )*0.02
@@ -1328,6 +1334,8 @@ if __name__ == '__main__':
 
     p.add_option('--m2o', action='store_true', dest='bManyToOneAdaptation',
                  default=False, help='Many-To-One adaptation flag')
+    p.add_option('--no_partial_fit', '--npf', action='store_true', dest='bNoPartialFit',
+                 default=False, help='HMM partial fit')
 
     
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
@@ -1504,35 +1512,4 @@ if __name__ == '__main__':
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, n_random_trial=n_random_trial,\
                               random_eval=opt.bEvaluationAWS, custom_mode=opt.bCustomParam, \
-                              data_renew=opt.bDataRenew, viz=opt.bViz)
-
-            ## if False:
-            ##     scale_list = np.arange(7.0, 11.0, 1.0)
-            ##     ret_list   = []
-            ##     for scale in scale_list:
-
-            ##         cov = scale
-            ##         cov_mult     = [cov]*(nEmissionDim**2)
-
-            ##         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ##         if data_dict['handFeatures_noise']:
-            ##             ret = ml.fit(normalTrainData*scale+\
-            ##                          np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
-            ##                          cov_mult=cov_mult, use_pkl=False)
-            ##         else:
-            ##             ret = ml.fit(normalTrainData*scale, cov_mult=cov_mult, use_pkl=False)
-            ##         if np.isnan(ret) or ret == 'Failure':
-            ##             ret_list.append(-10000000000000000000)
-            ##         else:
-            ##             ret_list.append(ret)
-
-            ##     min_idx = np.argmin(abs(np.array(ret_list)-50.0))
-            ##     scale   = scale_list[min_idx]
-            ##     print "--------------------------"
-            ##     print scale_list
-            ##     print ret_list
-            ##     print "--------------------------"
-            ##     print min_idx, scale
-            ##     print "--------------------------"
-            ##     continue
-
+                              data_renew=opt.bDataRenew, viz=opt.bViz, hmm_update=not(opt.bNoPartialFit))
