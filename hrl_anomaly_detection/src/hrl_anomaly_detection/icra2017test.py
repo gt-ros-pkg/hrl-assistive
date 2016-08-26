@@ -544,7 +544,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData  = 20
     nTrainOffset = 2
-    nTrainTimes  = 5 #10
+    nTrainTimes  = 10
     nNormalTrain = 30
 
     # aws 5,4,  - 20, 2, 5, 30, 20
@@ -577,7 +577,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
 
     #temp
-    kFold_list = kFold_list[-1:]
+    ## kFold_list = kFold_list[-1:]
 
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
