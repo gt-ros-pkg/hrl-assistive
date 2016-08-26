@@ -1154,7 +1154,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if method == 'hmmgp':
             import random
-            nSubSample = 40 #temp!!!!!!!!!!!!!
+            nSubSample = 20 #temp!!!!!!!!!!!!!
  
             new_X = []
             new_Y = []

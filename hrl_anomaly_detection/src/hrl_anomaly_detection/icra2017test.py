@@ -215,7 +215,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', True)
+    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
 
