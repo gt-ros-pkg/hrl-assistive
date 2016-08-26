@@ -1166,8 +1166,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_train_Y = ll_classifier_train_Y[sample_id_list]
                 ll_classifier_train_idx = ll_classifier_train_idx[sample_id_list]
                 
-                
- 
             new_X = []
             new_Y = []
             new_idx = []
@@ -1339,6 +1337,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             if Y_test[ii][0] > 0.0:
                 if anomaly: tp_l.append(1)
                 else:
+                    ## print est_y
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
                         fn_labels.append(ll_classifier_test_labels[ii])

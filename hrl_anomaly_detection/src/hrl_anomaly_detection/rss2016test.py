@@ -567,7 +567,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         # Classifier test data
         # random step noise
         abnormalTestData = copy.copy(normalTestData)
-        samples = []
         step_idx_l = []
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
@@ -583,7 +582,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
+                                                   add_logp_d=add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -617,7 +617,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ##     x = ll_classifier_test_X[i]
     ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
     ## plt.show()
-
     ## sys.exit()
 
     #-----------------------------------------------------------------------------------------
@@ -637,13 +636,12 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-
     osvm_data = None ; bpsvm_data = None
 
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
@@ -2113,7 +2111,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['methods']     = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
@@ -2127,8 +2126,8 @@ if __name__ == '__main__':
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:
-            step_mag = 10*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_10'
+            step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_10000000'
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
         ##                  save_pdf=opt.bSavePdf, \

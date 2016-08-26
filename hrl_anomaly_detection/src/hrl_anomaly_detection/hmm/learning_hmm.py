@@ -485,7 +485,6 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
 
     if nSubSample is not None:
-        
         print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
         new_X = []
         new_Y = []
@@ -665,8 +664,11 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            ## return False, False # anomaly
-            continue
+            ## return False, False # anomaly            
+            ## continue
+            logp = -1000000000000
+            # we keep the state as the previous one
+            post = np.vstack([ post, post[i-1:i] ])
 
         l_idx.append( i )
         l_likelihood.append( logp )
