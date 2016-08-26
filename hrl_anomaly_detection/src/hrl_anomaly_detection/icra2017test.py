@@ -575,6 +575,9 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             kFold_list.append([train_idx, test_idx])
 
 
+    #temp
+    kFold_list = kFold_list[-1:]
+
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
         print "Run kFold idx: ", idx, train_idx, test_idx
