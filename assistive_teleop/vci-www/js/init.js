@@ -56,7 +56,6 @@ var RFH = (function (module) {
         window.addEventListener('resize', function () {
             $("body").css({"height": window.innerHeight, "width":window.innerWidth});
         });
-        initUserLog('#notifications');
 
         //  $('#tabs').css({'top':'0px'})
         //  var tabs = $("#tabs").tabs();
@@ -89,7 +88,7 @@ var RFH = (function (module) {
         );
         this.ros.on('error', function(e) {
             grayVideo();
-            log("Rosbridge Connection Error!");
+            console.log("Rosbridge Connection Error!");
         }
         );
 
@@ -106,7 +105,7 @@ var RFH = (function (module) {
                 rate : 10.0,
                 fixedFrame : '/base_link' });
             RFH.tfClient.actionClient.cancel();
-            RFH.pr2 = new PR2(RFH.ros);
+            RFH.pr2 = new RFH.PR2(RFH.ros);
             RFH.runStop = new RFH.RunStop({ros: RFH.ros});
 
             RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
@@ -121,7 +120,7 @@ var RFH = (function (module) {
             RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
             RFH.mjpeg.cameraModel.updateCameraInfo();
 
-            initViewer('video-main');
+            RFH.initViewer('video-main');
             RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
