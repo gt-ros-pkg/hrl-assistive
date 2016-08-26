@@ -58,7 +58,6 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     nState   = HMM_dict['nState']
     add_logp_d = HMM_dict['add_logp_d']
     
-    ## cov      = HMM_dict['cov']
     # SVM
     SVM_dict = param_dict['SVM']
 
@@ -96,7 +95,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             #
             nEmissionDim = len(normalTrainData)
             if no_cov:
-                cov_mult     = [HMM_dict['scale']]*(nEmissionDim**2)
+                cov_mult     = [param['scale']]*(nEmissionDim**2)
             else:
                 cov_mult     = [param['cov']]*(nEmissionDim**2)
             nLength      = len(normalTrainData[0][0])
@@ -105,7 +104,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ml = hmm.learning_hmm( param['nState'], nEmissionDim )
             if (data_dict['handFeatures_noise'] and AE_dict['switch'] is False):
                 ret = ml.fit( normalTrainData+\
-                              np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                              np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*param['scale'], \
                               cov_mult=cov_mult )
             else:
                 ret = ml.fit( normalTrainData, cov_mult=cov_mult )
