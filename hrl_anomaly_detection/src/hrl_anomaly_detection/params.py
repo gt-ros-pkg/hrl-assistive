@@ -740,7 +740,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         # 'bpsvm', 'osvm', 
         ROC_param_dict = {'methods': ['change','fixed','progress',\
                                        'progress_diag', 'kmean' ],\
-                          'update_list': [ 'hmmgp', 'change' ],\
+                          'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(0.0, 1.2, nPoints)*-1.0+1.0, \
                           'progress_diag_param_range':np.logspace(0.0, 1.2, nPoints)*-1.0+1.0, \
