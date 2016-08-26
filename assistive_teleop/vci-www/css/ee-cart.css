@@ -38,11 +38,6 @@
     height: 100%;
 }
 
-#select-focus-toggle-label{
-    width: 80%;
-    margin-left: 10%;
-}
-
 #speedOptions {
     display:none; /* Do not display initially */
     margin-left: 2%;
