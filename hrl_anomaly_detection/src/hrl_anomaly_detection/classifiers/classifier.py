@@ -596,8 +596,8 @@ class classifier(learning_base):
                     y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
                     sigma = np.sqrt(MSE)
                 except:
-                    for post in posts:                        
-                        print post
+                    for i, post in enumerate(posts):                        
+                        print i, post
                     sys.exit()
                 
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
