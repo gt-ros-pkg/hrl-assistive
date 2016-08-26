@@ -114,7 +114,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 break
             ## if ret/float(len(normalTrainData[0])) < -100:
-            print "Mean likelihoods: ", ret/float(len(normalTrainData[0]))
+            print "Mean likelihoods: ", ret/float(len(normalTrainData[0])), param['scale'], param['cov']
 
             #-----------------------------------------------------------------------------------------
             # Classifier train data
@@ -152,12 +152,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             ll_classifier_test_X   = np.array(ll_classifier_train_X)[test_idx].tolist()
             ll_classifier_test_Y   = np.array(ll_classifier_train_Y)[test_idx].tolist()
             ll_classifier_test_idx = np.array(ll_classifier_train_idx)[test_idx].tolist()
-            ll_classifier_train_X   = ll_classifier_train_X
-            ll_classifier_train_Y   = ll_classifier_train_Y
-            ll_classifier_train_idx = ll_classifier_train_idx
-            ## ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
-            ## ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
-            ## ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
+            ## ll_classifier_train_X   = ll_classifier_train_X
+            ## ll_classifier_train_Y   = ll_classifier_train_Y
+            ## ll_classifier_train_idx = ll_classifier_train_idx
+            ll_classifier_train_X   = np.array(ll_classifier_train_X)[train_idx].tolist()
+            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[train_idx].tolist()
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[train_idx].tolist()
 
             # nSample x nLength
             if ll_classifier_test_X == []:
