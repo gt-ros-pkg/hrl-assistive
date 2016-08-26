@@ -1154,7 +1154,19 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if method == 'hmmgp':
             import random
-            nSubSample = 20 #temp!!!!!!!!!!!!!
+            nSubSample = 40 #temp!!!!!!!!!!!!!
+
+            sample_id_list = range(len(ll_classifier_train_X))
+            if len(ll_classifier_train_X)>30:
+                sample_id_list = range(len(ll_classifier_train_X))
+                random.shuffle(sample_id_list)
+                sample_id_list = sample_id_list[:20]
+
+                ll_classifier_train_X = ll_classifier_train_X[sample_id_list]
+                ll_classifier_train_Y = ll_classifier_train_Y[sample_id_list]
+                ll_classifier_train_idx = ll_classifier_train_idx[sample_id_list]
+                
+                
  
             new_X = []
             new_Y = []
