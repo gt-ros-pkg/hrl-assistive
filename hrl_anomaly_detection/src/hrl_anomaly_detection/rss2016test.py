@@ -489,6 +489,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          step_mag, pkl_prefix,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=False, find_param=False):
 
@@ -512,13 +513,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
-
-    if False:
-        step_mag = 0.1*HMM_dict['scale'] # need to varying it
-        pkl_prefix = 'step_0.1'
-    else:
-        step_mag = 10000000*HMM_dict['scale'] # need to varying it
-        pkl_prefix = 'step_10000000'
 
 
     #------------------------------------------
@@ -2131,11 +2125,21 @@ if __name__ == '__main__':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
+        if False:
+            step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_0.1'
+        elif True:
+            step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_1.0'
+        else:
+            step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_10000000'
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
         ##                  save_pdf=opt.bSavePdf, \
         ##                  verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
         evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                              step_mag, pkl_prefix,\
                               save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                               no_plot=opt.bNoPlot, delay_plot=True)
 

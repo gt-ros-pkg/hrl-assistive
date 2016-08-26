@@ -615,6 +615,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             if custom_mode:
                 scale       = HMM_dict['scale']
                 cov         = HMM_dict['cov']
+                noise_max   = 0.0
                 ## scale = scale_list[idx]
                 ## cov   = scale_list[idx]
                 ## alpha_coeff = alpha_coeff_list[idx]                
@@ -622,9 +623,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                 if many_to_one:
                     scale       = ROC_dict['m2o']['hmm_scale']
                     cov         = ROC_dict['m2o']['hmm_cov']
+                    noise_max   = ROC_dict['m2o']['noise_max']
                 else:
                     scale       = ROC_dict['o2o']['hmm_scale']
                     cov         = ROC_dict['o2o']['hmm_cov']
+                    noise_max   = ROC_dict['o2o']['noise_max']
 
             print "scale: ", scale, " cov: ", cov
 
@@ -640,12 +643,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             abnormalTestData  *= scale
 
             # many to one adaptation
-            if many_to_one:
-				print "No additional noise for many to one adaptation"
-                #normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
-            else:
-                print "no additional noise for one to one adaptation"
-                #normalTrainData[:,0:3] += np.random.normal( -0.2, 0.2, np.shape(normalTrainData[:,0:3]) )*scale
+            normalTrainData[:,0:3] += np.random.normal( -noise_max, noise_max, \
+                                                        np.shape(normalTrainData[:,0:3]) )*scale
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\

@@ -184,8 +184,10 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
         ROC_param_dict = {'methods': ['hmmgp', 'progress', 'fixed', 'change'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
-                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0 },\
-                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0 },\
+                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0 },\
+                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0 },\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints),\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-0.4, 0.5, nPoints),\
@@ -346,8 +348,10 @@ def getPushing(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre
         ROC_param_dict = {'methods': [ ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
-                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0 },\
-                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0 },\
+                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0},\
+                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.2},\
                           'progress_param_range':np.logspace(0.1, 1.3, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
