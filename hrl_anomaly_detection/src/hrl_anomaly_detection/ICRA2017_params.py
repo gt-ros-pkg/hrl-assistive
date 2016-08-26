@@ -163,7 +163,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 9., 'scale': 9.,\
-                          'add_logp_d': True}
+                          'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.52, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
@@ -184,9 +184,13 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
         ROC_param_dict = {'methods': ['hmmgp', 'progress', 'fixed', 'change'],\
                           'update_list': [],\
                           'nPoints': nPoints,\
+                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0 },\
+                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0 },\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints),\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
-                          'svm_param_range': np.logspace(-0.8, 0.5, nPoints),\
+                          'svm_param_range': np.logspace(-0.4, 0.5, nPoints),\
                           'hmmgp_param_range':np.logspace(-1, 3.5, nPoints)*-1.0+0.5, \
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
@@ -319,7 +323,7 @@ def getPushing(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.6688, 'scale': 5.0, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.6688, 'scale': 5., \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 0.85, 'gamma': 0.001, 'cost': 12.5,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
@@ -341,18 +345,20 @@ def getPushing(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre
                           'progress_svm_gamma': 0.01 }
 
         # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 
-        ROC_param_dict = {'methods': [ 'change','fixed','progress', 'progress_state', \
-                                       'progress_diag', 'kmean', 'osvm', 'hmmosvm',\
-                                       'progress_osvm'],\
-                          'update_list': [ 'progress_diag', 'progress', 'hmmgp' ],\
+        ROC_param_dict = {'methods': [ ],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
+                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.0},\
+                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
+                                  'noise_max': 0.2},\
                           'progress_param_range':np.logspace(0.1, 1.3, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
                           'progress_svm_param_range': np.linspace(0.005, 6.0, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.logspace(-0.1, 2.1, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(0.3, 3.0, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-1.1, 0.171, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.3, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
@@ -439,9 +445,6 @@ def getPushing(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
     AE_param_dict['layer_sizes'] = [64,dim]
-    AE_param_dict['add_option'] = None
-    AE_param_dict['add_noise_option'] = []
-    AE_param_dict['learning_rate'] = 1e-6
     AE_param_dict['preTrainModel'] = os.path.join(save_data_path, 'ae_pretrain_model_'+str(dim)+'.pkl')
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \

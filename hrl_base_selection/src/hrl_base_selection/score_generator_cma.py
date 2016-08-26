@@ -355,7 +355,7 @@ class ScoreGenerator(object):
         param_max = np.array([1.5, 1.5, m.pi/3., 0.3])
         param_initialization = (param_max+param_min)/2.
         param_scaling = (param_max - param_min)/4.
-        maxiter = 2
+        maxiter = 5
         popsize = m.pow(1, 1)*10
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.5,
                  'scaling_of_variables': list(param_scaling),

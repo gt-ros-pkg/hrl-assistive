@@ -31,6 +31,7 @@
 #system
 import numpy as np
 import sys, os, copy
+import random
 
 # Util
 import hrl_lib.util as ut
@@ -43,6 +44,7 @@ from scipy.stats import multivariate_normal
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 os.system("taskset -p 0xff %d" % os.getpid())
+random.seed(3334)
 
 class learning_hmm(learning_base):
     def __init__(self, nState=10, nEmissionDim=4, verbose=False):
@@ -483,8 +485,6 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
 
     if nSubSample is not None:
-        import random
-        
         print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
         new_X = []
         new_Y = []
@@ -664,8 +664,11 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            ## return False, False # anomaly
-            continue
+            ## return False, False # anomaly            
+            ## continue
+            logp = -1000000000000
+            # we keep the state as the previous one
+            post = np.vstack([ post, post[i-1:i] ])
 
         l_idx.append( i )
         l_likelihood.append( logp )

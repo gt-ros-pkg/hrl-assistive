@@ -1584,7 +1584,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         else:
             fig = plt.figure()
 
-    for method in ROC_data.keys():
+    for method in sorted(ROC_data.keys()):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1621,6 +1621,8 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
                 
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
+            print i, " : ", len(tp_ll[i]), len(tn_ll[i]), len(fp_ll[i]), len(fn_ll[i])
+
         from sklearn import metrics
         print "--------------------------------"
         print " AUC "
@@ -1655,7 +1657,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ax1 = fig.add_subplot(111)
 
             ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
-            plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=3.0)
+            plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt.plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
@@ -1663,16 +1665,15 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ## plt.ylim([0, 7.0])
             ## plt.ylabel('Detection Time [s]', fontsize=24)
             plt.xlabel('Accuracy (percentage)', fontsize=24)
-            plt.ylabel('Delay time [s]', fontsize=24)
-            ## plt.xticks([50, 100], fontsize=22)
-                
+            plt.ylabel('Time Delay [s]', fontsize=24)
+            ## plt.xticks([50, 100], fontsize=22)                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 
     if no_plot is False:
         plt.xlim([0,100])
-        plt.ylim([0,2])
-        plt.legend(loc='upper right', prop={'size':24})
+        plt.ylim([0,1])
+        plt.legend(loc='upper left', prop={'size':24})
 
     if save_pdf:
         fig.savefig('test.pdf')

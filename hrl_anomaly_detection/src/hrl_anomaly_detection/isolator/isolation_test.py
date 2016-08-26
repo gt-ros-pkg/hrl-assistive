@@ -482,7 +482,7 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        #subjects = [ 'unexpected', 'unexpected2' ]
+        #subjects = [ 'unexpected1', 'unexpected2' ]
         subjects = [ 'unexpected3' ]
     else:
         print "Selected task name is not available."

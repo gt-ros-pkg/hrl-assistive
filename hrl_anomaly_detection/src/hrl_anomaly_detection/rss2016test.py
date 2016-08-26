@@ -489,6 +489,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          step_mag, pkl_prefix,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=False, find_param=False):
 
@@ -512,7 +513,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
-    modeling_pkl_prefix = 'hmm_step_'+task_name
+
 
     #------------------------------------------
     # Get features
@@ -551,7 +552,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             print "No reference modeling file exists"
             sys.exit()
         
-        modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
@@ -566,10 +567,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         # Classifier test data
         # random step noise
         abnormalTestData = copy.copy(normalTestData)
-        samples = []
         step_idx_l = []
-        ## step_mag = 10000000*HMM_dict['scale'] # need to varying it
-        step_mag = 0.1*HMM_dict['scale'] # need to varying it
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
@@ -584,7 +582,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
+                                                   add_logp_d=add_logp_d)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -618,11 +617,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     ##     x = ll_classifier_test_X[i]
     ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
     ## plt.show()
-
     ## sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_noise_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
         ROC_data = {}
     else:
@@ -638,41 +636,18 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
-
     osvm_data = None ; bpsvm_data = None
-    if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
-
-        # get ll_cut_idx only for pos data
-        pos_dict  = []
-        drop_dict = []
-        for idx in xrange(len(kFold_list)):
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_drop_'+task_name+'_'+str(idx)+'.pkl')
-            d            = ut.load_pickle(modeling_pkl)
-            ll_classifier_train_X   = d['ll_classifier_train_X']
-            ll_classifier_train_Y   = d['ll_classifier_train_Y']         
-            ll_classifier_train_idx = d['ll_classifier_train_idx']
-            l_cut_idx = dm.getHMMCuttingIdx(ll_classifier_train_X, \
-                                         ll_classifier_train_Y, \
-                                         ll_classifier_train_idx)
-            idx_dict={'abnormal_train_cut_idx': l_cut_idx}
-            pos_dict.append(idx_dict)
-            drop_dict.append([d['drop_idx_l'], d['drop_length']])
-                    
-        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                   window=SVM_dict['raw_window_size'], \
-                                   pos_dict=pos_dict, use_test=True, use_pca=False,
-                                   test_drop_elements=drop_dict)
 
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
+    r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, AE_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
-                                                                 modeling_pkl_prefix=modeling_pkl_prefix,\
+                                                                 modeling_pkl_prefix='hmm_'+pkl_prefix,\
                                                                  delay_estimation=True) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
@@ -1750,7 +1725,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['hmmgp', 'progress', 'kmean', 'fixed', 'change', 'osvm']
+    method_list = ['hmmgp', 'progress', 'hmmosvm', 'kmean', 'fixed', 'change', 'osvm']
     ref_method = 'hmmgp'
 
     delay_dict = {}
@@ -1812,10 +1787,10 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
                               float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
             max_point_idx = np.argmax(acc_l)
-            max_acc_dict[method] = [[],[]]
+            max_acc_dict[method]    = [[],[]]
             max_acc_dict[method][0] = tp_idx_ll[max_point_idx]
             max_acc_dict[method][1] = tp_delay_ll[max_point_idx]
-            acc_dict[task][method] = np.amax(acc_l)
+            acc_dict[task][method]  = np.amax(acc_l)
             
         # compare idx and take time only
         for method in method_list:
@@ -1840,7 +1815,7 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     tasks   = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding'] 
-    methods = ['HMM-GP', 'HMM-D', 'HMM-K', 'HMM-F', 'HMM-C', 'OSVM']
+    methods = ['HMM-GP', 'HMM-D', 'hmmosvm', 'HMM-Kmean', 'HMM-F', 'HMM-C', 'OSVM']
 
     if False:
         fig = plt.figure(1)
@@ -1908,7 +1883,8 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         ## ax2.set_ylabel("Detection Time [sec]", fontsize=22)        
         ## plt.legend( (rects1[0], rects2[0]), ('Max Accuracy', 'Detection Delay'), loc='lower left', \
         ##             fontsize=18 )
-        
+
+        ## plt.ylim([0,100])
         plt.xlim([-0.2, (ind+width*2.0+0.2)[-1]])
         plt.xticks(ind+width, methods, fontsize=40 )
         for tick in ax1.xaxis.get_major_ticks():
@@ -2125,32 +2101,39 @@ if __name__ == '__main__':
     elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
         ## if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        if opt.bPlotProgressVSHMMOSVM:
-            param_dict['ROC']['methods'] = ['hmmosvm', 'progress'] 
-            param_dict['ROC']['update_list'] = []
-            param_dict['HMM']['renew'] = False
-            param_dict['SVM']['renew'] = False
         if opt.bFindROCparamRange:
             param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
-            
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
+
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['change']
+        param_dict['ROC']['methods']     = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
+        if False:
+            step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_0.1'
+        elif False:
+            step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_1.0'
+        else:
+            step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_10000000'
         
         ## evaluation_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
         ##                  save_pdf=opt.bSavePdf, \
         ##                  verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
         evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                              step_mag, pkl_prefix,\
                               save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                               no_plot=opt.bNoPlot, delay_plot=True)
 
