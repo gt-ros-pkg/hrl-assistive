@@ -96,7 +96,7 @@ var RFH = (function (module) {
         this.ros.on('connection', function(e) {
             console.log("Connected to " + RFH.ROBOT + ".");
             clearVideo();
-            extendROSJS(RFH.ros);
+            RFH.extendROSJS(RFH.ros);
             //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
             RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
                 div: 'battery-status'});
