@@ -543,7 +543,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     nPoints     = ROC_dict['nPoints']
     nPtrainData  = 20
     nTrainOffset = 2
-    nTrainTimes  = 10
+    nTrainTimes  = 5 #10
     nNormalTrain = 30
 
     # aws 5,4,  - 20, 2, 5, 30, 20
@@ -626,6 +626,8 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                     scale       = ROC_dict['o2o']['hmm_scale']
                     cov         = ROC_dict['o2o']['hmm_cov']
 
+            print "scale: ", scale, " cov: ", cov
+
             # training hmm
             if verbose: print "start to fit hmm"
             nEmissionDim = len(normalTrainData)
@@ -642,11 +644,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 				print "No additional noise for many to one adaptation"
                 #normalTrainData[:,0:3] += np.random.normal( 0.0, 0.3, np.shape(normalTrainData[:,0:3]) )*scale
             else:
-                normalTrainData[:,0:3] += np.random.normal( -0.2, 0.2, np.shape(normalTrainData[:,0:3]) )*scale
+                print "no additional noise for one to one adaptation"
+                #normalTrainData[:,0:3] += np.random.normal( -0.2, 0.2, np.shape(normalTrainData[:,0:3]) )*scale
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*scale, \
+                         np.random.normal(-0.0, 0.03, np.shape(normalTrainData) )*scale, \
                          cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure' or np.isnan(ret):
                 print "hmm training failed"
@@ -857,15 +860,21 @@ def evaluation_online_multi(subject_names, task_name, raw_data_path, processed_d
                             data_renew=False, \
                             verbose=False, debug=False):
 
-    parameters = {'nState': [25], 'scale': np.linspace(7.0,14.0,7) }
+    parameters = {'nState': [25], 'scale': np.linspace(1.0,12.0,7) }
     param_list = list(ParameterGrid(parameters))
 
     for param in param_list:
-
+        
+        param_dict['ROC']['m2o']['hmm_scale'] = param['scale']
+        param_dict['ROC']['m2o']['hmm_cov']   = param['scale']
+        param_dict['ROC']['o2o']['hmm_scale'] = param['scale']
+        param_dict['ROC']['o2o']['hmm_cov'] = param['scale']
         param_dict['HMM']['nState'] = param['nState']
         param_dict['HMM']['scale']  = param['scale']
         param_dict['HMM']['cov']    = param['scale']
         param_dict['HMM']['renew']  = True
+
+        print param_dict['HMM']
 
         evaluation_online(subjects, opt.task, raw_data_path, save_data_path, \
                           param_dict, n_random_trial=n_random_trial, random_eval=random_eval, \
@@ -1461,7 +1470,7 @@ if __name__ == '__main__':
         many_to_one = False
 
         if opt.bEvaluationAWS or opt.bFindParam:
-            n_random_trial = 10
+            n_random_trial = 1 #10
             opt.bNoPlot    = True
         else:
             n_random_trial = 1
