@@ -1,4 +1,4 @@
-(function (module) {
+var RFH = (function (module) {
     'use strict';
     module.Pixel23DClient = function (options) {
         var self = this;
@@ -64,4 +64,5 @@
             self.call(u, v, cb);
         };
     };
+    return module;
 })(RFH || {});

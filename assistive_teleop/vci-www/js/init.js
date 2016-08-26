@@ -1,4 +1,4 @@
-(function (module) {
+var RFH = (function (module) {
     module.positionInElement = function (e) {
         var posx = 0;
         var posy = 0;
@@ -144,4 +144,5 @@
         }
         );
     };
+    return module;
 })(RFH || {});
