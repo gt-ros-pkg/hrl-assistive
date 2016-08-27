@@ -1592,6 +1592,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         tpr_l = []
         fpr_l = []
         fnr_l = []
+        tnr_l = []
         delay_mean_l = []
         delay_std_l  = []
         acc_l = []
@@ -1605,6 +1606,10 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
+            if float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) > 0:            
+                tnr_l.append( float(np.sum(tn_ll[i])) / float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) * 100.0 )
+            else:
+                tnr_l.append(0)
             if only_tpr is False:
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
@@ -1654,14 +1659,15 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ax1 = fig.add_subplot(111)
 
             ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
-            plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt.plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
             ## plt.xlim([49, 101])
             ## plt.ylim([0, 7.0])
             ## plt.ylabel('Detection Time [s]', fontsize=24)
-            plt.xlabel('Accuracy (percentage)', fontsize=24)
+            plt.xlabel('False Positive Rate (percentage)', fontsize=24)
             plt.ylabel('Time Delay [s]', fontsize=24)
             ## plt.xticks([50, 100], fontsize=22)                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
@@ -1670,7 +1676,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
     if no_plot is False:
         plt.xlim([0,100])
         plt.ylim([0,3])
-        plt.legend(loc='upper left', prop={'size':24})
+        plt.legend(loc='upper right', prop={'size':24})
 
     if save_pdf:
         fig.savefig('test.pdf')

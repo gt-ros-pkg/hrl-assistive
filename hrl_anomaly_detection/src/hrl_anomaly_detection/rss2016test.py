@@ -486,7 +486,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           step_mag, pkl_prefix,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=False, find_param=False):
+                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
 
     ## Parameters
     # data
@@ -670,8 +670,12 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
-    ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
-    delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
+    if all_plot:
+        task_list = ["pushing_microblack", "pushing_microwhite", "pushing_toolcase", "scooping", "feeding"]
+    else:
+        ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
+        delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
+        
              
 
 def evaluation_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\

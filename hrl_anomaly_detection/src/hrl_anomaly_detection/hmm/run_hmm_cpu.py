@@ -440,8 +440,8 @@ if __name__ == '__main__':
                 parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
                               'cov': np.linspace(0.1,5.0,5) }
             else:
-                parameters = {'nState': [25], 'scale': np.linspace(5.0,15.0,7), \
-                              'cov': np.linspace(0.1,5.0,5) }
+                parameters = {'nState': [25], 'scale': np.linspace(5.0,9.0,7), \
+                              'cov': np.linspace(0.1,4.0,5) }
         else:
             print "Not available task"
         max_check_fold = None #2
