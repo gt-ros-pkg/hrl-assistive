@@ -54,7 +54,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm', 'progress_svm',\
                                          'progress_state', 'hmmgp']
-        param_dict['ROC']['methods'] = [ 'progress_osvm', 'progress_svm']
+        ## param_dict['ROC']['methods'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'hmmgp' ]
         param_dict['ROC']['update_list'] = [ ]
@@ -719,7 +719,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 6.66, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.55, 'scale': 6.66, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
