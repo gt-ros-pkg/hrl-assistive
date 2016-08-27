@@ -345,11 +345,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                          cov_mult=cov_mult, use_pkl=False, cov_type='diag')
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False, cov_type='diag')
-        ## for i in xrange(nState):
-        ##     for j in xrange(nEmissionDim):
-        ##         for k in xrange(nEmissionDim):
-        ##             if j != k:
-        ##                 ml.B[i][1][j*nEmissionDim+k] = 0.0
         if ret == 'Failure' or np.isnan(ret): sys.exit()
 
         # Classifier training data

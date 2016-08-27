@@ -563,25 +563,12 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
         
         for i in xrange(len(ll_logp)):
             state = max_states[i]
-            ## direc_delta *= 0.0
-            ## ## direc_delta[state] = 1.0
-            ## direc_delta[0] = 1.0
-
-            ## selfInfo = entropy(direc_delta+1e-10, ll_post[i]+1e-10)
-            selfInfo = util.symmetric_entropy(direc_delta+1e-6, ll_post[i]+1e-6)
-            ## if selfInfo < 1e-6: selfInfo = 1e+6
-            ## elif selfInfo > 1e+6: selfInfo = 0.0
-            ## else: selfInfo = 1.0/selfInfo
-
-            if selfInfo < 1e-10: selfInfo = 1e-10
-            selfInfo = np.log(selfInfo)
-            ## selfInfo = 1.0/selfInfo
+            selfInfo = util.shannon_entropy(ll_post[i]+1e-6)
+            ## selfInfo = util.symmetric_entropy(direc_delta+1e-6, ll_post[i]+1e-6)
+            ## if selfInfo < 1e-10: selfInfo = 1e-10
+            ## selfInfo = np.log(selfInfo)
                 
             new_X.append([ll_logp[i], float(state), selfInfo ])
-
-            ## if ll_Y[k] > 0 and k > 4:
-            ##     print np.sum(ll_post[i])
-            ##     print i, [ll_logp[i], float(state), selfInfo ]
 
         lll_X.append(new_X)
         

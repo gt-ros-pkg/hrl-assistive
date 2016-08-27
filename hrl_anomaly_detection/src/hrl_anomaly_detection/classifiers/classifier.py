@@ -1064,15 +1064,15 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_idx  = ll_classifier_diag_test_idx
         elif method =='progress_osvm' or method == 'progress_svm':
             ## # temp
-            ## from hrl_anomaly_detection.hmm import learning_hmm as hmm
-            ## ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
-            ##   hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
-            ##                                                ll_classifier_train_Y, \
-            ##                                                ll_classifier_train_idx, nState)
-            ## ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
-            ##   hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
-            ##                                                ll_classifier_test_Y, \
-            ##                                                ll_classifier_test_idx, nState)
+            from hrl_anomaly_detection.hmm import learning_hmm as hmm
+            ll_classifier_ep_train_X, ll_classifier_ep_train_Y, ll_classifier_ep_train_idx =\
+              hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_train_X, \
+                                                           ll_classifier_train_Y, \
+                                                           ll_classifier_train_idx, nState)
+            ll_classifier_ep_test_X, ll_classifier_ep_test_Y, ll_classifier_ep_test_idx =\
+              hmm.getEntropyFeaturesFromHMMInducedFeatures(ll_classifier_test_X, \
+                                                           ll_classifier_test_Y, \
+                                                           ll_classifier_test_idx, nState)
 
             ll_classifier_train_X   = ll_classifier_ep_train_X
             ll_classifier_train_Y   = ll_classifier_ep_train_Y
