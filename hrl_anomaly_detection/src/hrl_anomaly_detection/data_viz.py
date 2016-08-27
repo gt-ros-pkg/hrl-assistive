@@ -262,6 +262,60 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
     return
 
+def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False):
+
+    m = len(ll_post) # sample
+    n = len(ll_post[0]) # length
+
+    if time_list is None:
+        time_list = range(n)
+    
+    path_mat  = np.zeros((nState, n))
+
+    if single:
+        for i in xrange(m):
+            path_mat = np.array(ll_post[i]).T
+
+            path_mat /= np.sum(path_mat, axis=0)
+            extent = [0,time_list[-1],nState,1]
+
+            fig = plt.figure()
+            plt.rc('text', usetex=True)
+
+            ax1 = plt.subplot(111)            
+            im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+                             extent=extent, aspect=7.0)
+            plt.show()
+
+    else:
+        for i in xrange(m):
+            path_mat += np.array(ll_post[i]).T
+
+        path_mat /= np.sum(path_mat, axis=0)
+        extent = [0,time_list[-1],nState,1]
+
+        fig = plt.figure()
+        plt.rc('text', usetex=True)
+
+        ax1 = plt.subplot(111)            
+        im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+                         extent=extent, aspect=7.0)
+    
+        plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ax1.set_xlabel("Time [sec]", fontsize=18)
+        ax1.set_ylabel("Hidden State Index", fontsize=18)
+        
+
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
+    return
+
+
+
 
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
               downSampleSize=200, \

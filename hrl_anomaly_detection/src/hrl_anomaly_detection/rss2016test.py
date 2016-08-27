@@ -199,7 +199,7 @@ def aeDataExtraction(subject_names, task_name, raw_data_path, \
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                   no_plot=False, delay_plot=False, find_param=False, data_gen=False):
 
     ## Parameters
     # data
@@ -480,7 +480,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-             timeList=timeList)
+             timeList=timeList, legend=True)
 
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -1897,6 +1897,27 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         os.system('mv test.* ~/Dropbox/HRL/')
 
 
+def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
+
+    idx = 0
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+    print "start to load hmm data, ", modeling_pkl
+    d = ut.load_pickle(modeling_pkl)
+    for k, v in d.iteritems():
+        exec '%s = v' % k
+        
+    nPosteriors = nState
+    X = ll_classifier_test_X
+    y = ll_classifier_test_Y
+
+    print np.shape(X), np.shape(y)
+    ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
+
+    import hrl_anomaly_detection.data_viz as dv        
+    dv.vizStatePath(ll_post, nState, time_list=None, single=True, save_pdf=False)
+
+
 
 if __name__ == '__main__':
 
@@ -1926,6 +1947,8 @@ if __name__ == '__main__':
                  default=False, help='Plot features.')
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
                  default=False, help='Plot the change of likelihood.')
+    p.add_option('--statepathplot', '--spp', action='store_true', dest='bStatePathPlot',
+                 default=False, help='Plot state path.')
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
@@ -1948,11 +1971,6 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation plus drop.')
     p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
                  default=False, help='Evaluate a classifier with cross-validation plus noise.')
-    p.add_option('--plot_progress_hmmosvm', '--pph', action='store_true', dest='bPlotProgressVSHMMOSVM',
-                 default=False, help='plot.')
-    p.add_option('--evaluation_freq', '--eaf', action='store_true', dest='bEvaluationWithDiffFreq',
-                 default=False, help='Evaluate a classifier with cross-validation and different sampling\
-                 frequency.')
     p.add_option('--findParams', '--frp', action='store_true', dest='bFindROCparamRange',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
@@ -2093,7 +2111,7 @@ if __name__ == '__main__':
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
                               
-    elif opt.bEvaluationAll or opt.bPlotProgressVSHMMOSVM or opt.bDataGen:
+    elif opt.bEvaluationAll or opt.bDataGen:
         ## if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] #, 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         if opt.bFindROCparamRange:
@@ -2114,10 +2132,10 @@ if __name__ == '__main__':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
-        if True:
+        if False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif False:
+        elif True:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:
@@ -2162,101 +2180,5 @@ if __name__ == '__main__':
     elif opt.bEvaluationMaxAcc:
         plotEvalMaxAcc(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
             
-
-    elif opt.bEvaluationWithDiffFreq:
-        '''
-        Change into different sampling frequency or sample drop
-        '''
-        param_dict['ROC']['methods'] = ['svm', 'hmmsvm_LSLS', 'hmmsvm_dL', 'hmmsvm_no_dL']
-        param_dict['ROC']['update_list'] = []
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        param_dict['HMM']['renew'] = False
-        param_dict['SVM']['renew'] = False
-        nPoints = param_dict['ROC']['nPoints']
-        refSampleSize = param_dict['data_param']['downSampleSize']
-        
-        
-        for sampleSize in [50, 400]:
-            print "============================="
-            print "Sample Size: ", sampleSize
-            print "============================="
-            param_dict['data_param']['downSampleSize'] = sampleSize
-            save_data_path = os.path.expanduser('~')+\
-              '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
-              str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
-            if sampleSize == 50:
-                param_dict['ROC']['update_list'] = ['hmmsvm_no_dL', 'hmmsvm_dL', 'hmmsvm_LSLS', 'svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['bpsvm']
-                if opt.task == "pushing_microwhite":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, -0.1, nPoints)
-                if opt.task == "pushing_toolcase":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-1.5, 0.0, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.5, 0.0, nPoints)
-                if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 0.0, nPoints) 
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4, 0.0, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-4, -1.5, nPoints) 
-                    param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-4.5, -3.0, nPoints)
-                    param_dict['ROC']['bpsvm_param_range'] = np.logspace(-1.6, 2.0, nPoints)
-                if opt.task == "feeding":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 0.8, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(0.9, -3.0, nPoints)
-                    
-            elif sampleSize == 100:
-                param_dict['ROC']['update_list'] = ['hmmsvm_dL', 'hmmsvm_LSLS', 'svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-                if opt.task == "pushing_microwhite":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, -0.1, nPoints)
-                if opt.task == "pushing_toolcase":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-1.5, 0.0, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.5, 0.0, nPoints)
-                if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-2.5, 1.0, nPoints) 
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 0.1
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-3, 0.0, nPoints) 
-                if opt.task == "feeding":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 0.8, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(0.9, -3.0, nPoints)
-                    
-            elif sampleSize > 200:
-                param_dict['ROC']['update_list'] = ['hmmsvm_no_dL', 'hmmsvm_dL', 'hmmsvm_LSLS' , 'svm']
-                if opt.bNoUpdate: param_dict['ROC']['update_list'] = ['bpsvm']
-                if opt.task == "pushing_microblack":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-4, 0.0, nPoints)
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 3.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-3.0, 0.0, nPoints)
-                if opt.task == "pushing_microwhite":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] = np.logspace(-3.0, 1.2, nPoints)
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 15.0
-                    param_dict['ROC']['svm_param_range'] *= 10.0
-                if opt.task == "pushing_toolcase":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 1.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-4.0, 0.0, nPoints) 
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-3.2, 0.2, nPoints)
-                if opt.task == "scooping":
-                    param_dict['ROC']['hmmsvm_dL_param_range']    = np.logspace(-4.0, 3.2, nPoints) 
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] *= 1.0
-                    param_dict['ROC']['svm_param_range'] = np.logspace(-2.0, 1.8, nPoints) 
-                    param_dict['ROC']['hmmsvm_no_dL_param_range'] = np.logspace(-1.0, 0.7, nPoints)
-                    param_dict['ROC']['bpsvm_param_range'] = np.logspace(-2.2, 0.5, nPoints)
-                if opt.task == "feeding":
-                    param_dict['ROC']['hmmsvm_dL_param_range'] *= 15.0
-                    param_dict['ROC']['hmmsvm_LSLS_param_range'] = np.logspace(-3, 1.5, nPoints)
-                    param_dict['ROC']['svm_param_range'] = np.logspace(1.5, -2.5, nPoints)
-
-
-            evaluation_freq(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                            refSampleSize,\
-                            save_pdf=opt.bSavePdf, \
-                            verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot)
-
-                            
+    elif opt.bStatePathPlot:
+        plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)

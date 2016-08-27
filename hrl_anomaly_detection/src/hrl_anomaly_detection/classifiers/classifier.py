@@ -1166,6 +1166,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
             sample_id_list = range(len(ll_classifier_train_X))
             if len(ll_classifier_train_X)>30:
+                print "Too many training data, so we resample!!"
                 sample_id_list = range(len(ll_classifier_train_X))
                 random.shuffle(sample_id_list)
                 sample_id_list = sample_id_list[:30]

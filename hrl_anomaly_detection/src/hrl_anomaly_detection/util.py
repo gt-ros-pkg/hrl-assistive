@@ -1461,9 +1461,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
-        ## task = 'feeding'
-        ## fig.savefig('delay_'+task+'.pdf')
-        ## fig.savefig('delay_'+task+'.png')
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
