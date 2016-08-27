@@ -2107,14 +2107,14 @@ if __name__ == '__main__':
     elif opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
-        param_dict['ROC']['update_list'] = ['fixed', 'change', 'progress', ]
+        param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microblack':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
 
-        if False:
+        if True:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         elif False:
