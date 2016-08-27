@@ -471,7 +471,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
                                                  nSubSample=None):
-
+    n_jobs=1
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
@@ -662,17 +662,19 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         try:
             logp = ml.loglikelihood(final_ts_obj)
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
+            l_likelihood.append( logp )
+            if bPosterior: l_posterior.append( post[i-1] )                
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
             ## return False, False # anomaly            
             ## continue
             logp = -1000000000000
             # we keep the state as the previous one
-            post[i-1] = post[i-2]
+            l_likelihood.append( logp )
+            if bPosterior: l_posterior.append( l_posterior[-1] )
 
         l_idx.append( i )
-        l_likelihood.append( logp )
-        if bPosterior: l_posterior.append( post[i-1] )
+            
 
     if bPosterior:
         return idx, l_idx, l_likelihood, l_posterior
