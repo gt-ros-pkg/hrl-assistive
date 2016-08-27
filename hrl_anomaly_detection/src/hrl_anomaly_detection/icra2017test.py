@@ -573,6 +573,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
     #temp
     ## kFold_list = kFold_list[-1:]
+    print kFold_list
 
     # Task-oriented hand-crafted features
     for idx, (train_idx, test_idx) in enumerate(kFold_list):
@@ -687,6 +688,7 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
             dd['scale']        = scale
             dd['cov']          = cov
             ut.save_pickle(dd, modeling_pkl)
+            print modeling_pkl
 
     #-----------------------------------------------------------------------------------------
     if hmm_update:
@@ -902,9 +904,11 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
     if many_to_one:
         nSubSample  = ROC_dict['m2o']['gp_nSubsample']
         alpha_coeff = ROC_dict['m2o']['alpha_coeff']
+        prefix      = 'm2o_'
     else:
         nSubSample  = ROC_dict['o2o']['gp_nSubsample']
         alpha_coeff = ROC_dict['o2o']['alpha_coeff']
+        prefix      = 'o2o_'
         
     
     ROC_data_cur = {}
@@ -921,8 +925,11 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
             ROC_data_cur[m+'_'+str(j)] = data
  
     #
-    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    modeling_pkl = os.path.join(processed_data_path, prefix+'hmm_'+task_name+'_'+str(idx)+'.pkl')
     dd = ut.load_pickle(modeling_pkl)
+    
+    print modeling_pkl
+    print dd.keys()
 
     nEmissionDim = dd['nEmissionDim']
     nState    = dd['nState']       
