@@ -162,7 +162,7 @@ def symmetric_entropy(p,q):
     return min(entropy(p,q) , entropy(q,p))
 
 def shannon_entropy(p):
-    if type(a) is list: p = np.array(p)
+    if type(p) is list: p = np.array(p)
 
     ## p += 1e-6
     p /= np.linalg.norm(p)
