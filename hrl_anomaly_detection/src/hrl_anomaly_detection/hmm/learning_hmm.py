@@ -485,25 +485,9 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
 
     if nSubSample is not None:
-        print "before: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
-        new_X = []
-        new_Y = []
-        new_idx = []
-        for i in xrange(len(ll_classifier_train_X)):
-            idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
-            new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
-            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
-            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
-            ## idx_list = range(len(ll_classifier_train_X[i]))
-            ## random.shuffle(idx_list)
-            ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-            ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-            ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
-
-        ll_classifier_train_X = new_X
-        ll_classifier_train_Y = new_Y
-        ll_classifier_train_idx = new_idx
-        ## print "After: ", np.shape(ll_classifier_train_X), np.shape(ll_classifier_train_Y)
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
+                           nSubSample=nSubSample)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 

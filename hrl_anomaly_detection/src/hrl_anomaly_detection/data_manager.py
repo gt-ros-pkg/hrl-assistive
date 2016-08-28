@@ -2320,4 +2320,37 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
+def subsampleData(X,Y,idx, nSubSample=40, nMaxData=30):
 
+    import random
+
+    sample_id_list = range(len(X))
+    if len(X)>nMaxData:
+        print "Too many training data, so we resample!!"
+        sample_id_list = range(len(X))
+        random.shuffle(sample_id_list)
+        sample_id_list = sample_id_list[:nMaxData]
+
+        X = X[sample_id_list]
+        Y = Y[sample_id_list]
+        idx = idx[sample_id_list]
+
+    print "before: ", np.shape(X), np.shape(Y)
+    new_X = []
+    new_Y = []
+    new_idx = []
+    for i in xrange(len(X)):
+        idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
+        new_X.append( np.array(X)[i,idx_list].tolist() )
+        new_Y.append( np.array(Y)[i,idx_list].tolist() )
+        new_idx.append( np.array(idx)[i,idx_list].tolist() )
+        ## idx_list = range(len(X[i]))
+        ## random.shuffle(idx_list)
+        ## new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
+        ## new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
+        ## new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+
+    return new_X, new_Y, new_idx
+
+
+    

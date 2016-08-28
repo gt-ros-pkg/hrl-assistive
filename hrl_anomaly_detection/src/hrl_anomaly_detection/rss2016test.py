@@ -1903,8 +1903,19 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
 
 def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
 
+    crossVal_pkl = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
+    d = ut.load_pickle(crossVal_pkl)
+    param_dict2 = d['param_dict']
+    startIdx    = 4    
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+    print np.shape(timeList)
+    
     idx = 0
-    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    pkl_prefix = 'step_0.1'    
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
 
     print "start to load hmm data, ", modeling_pkl
     d = ut.load_pickle(modeling_pkl)
@@ -1919,7 +1930,7 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
 
     import hrl_anomaly_detection.data_viz as dv        
-    dv.vizStatePath(ll_post, nState, time_list=None, single=True, save_pdf=False)
+    dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False)
 
 
 
@@ -2142,7 +2153,7 @@ if __name__ == '__main__':
         elif False:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif False:
+        elif True:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         elif True:

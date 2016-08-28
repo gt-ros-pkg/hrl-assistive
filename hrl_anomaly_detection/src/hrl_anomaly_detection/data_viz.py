@@ -278,13 +278,20 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False):
 
             path_mat /= np.sum(path_mat, axis=0)
             extent = [0,time_list[-1],nState,1]
+            ## xticks = time_list #[time_list[0], time_list[n/2], time_list[-1]]
 
-            fig = plt.figure()
+            fig, ax1 = plt.subplots(figsize=(10, 8))
             plt.rc('text', usetex=True)
 
-            ax1 = plt.subplot(111)            
+            ## ax1 = plt.subplot(111)            
             im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
-                             extent=extent, aspect=7.0)
+                             extent=extent, aspect=0.15)
+
+            ## plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+            ## plt.xticks(xticks, fontsize=12)
+            ax1.set_xlabel("Time [sec]", fontsize=22)
+            ax1.set_ylabel("Hidden State Index", fontsize=22)
+            plt.tick_params(axis='both', which='major', labelsize=22)
             plt.show()
 
     else:

@@ -1161,37 +1161,11 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         if method == 'hmmgp':
-            import random
+
             nSubSample = 40 #temp!!!!!!!!!!!!!
-
-            sample_id_list = range(len(ll_classifier_train_X))
-            if len(ll_classifier_train_X)>30:
-                print "Too many training data, so we resample!!"
-                sample_id_list = range(len(ll_classifier_train_X))
-                random.shuffle(sample_id_list)
-                sample_id_list = sample_id_list[:30]
-
-                ll_classifier_train_X = ll_classifier_train_X[sample_id_list]
-                ll_classifier_train_Y = ll_classifier_train_Y[sample_id_list]
-                ll_classifier_train_idx = ll_classifier_train_idx[sample_id_list]
-                
-            new_X = []
-            new_Y = []
-            new_idx = []
-            for i in xrange(len(ll_classifier_train_X)):
-                idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
-                new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
-                new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
-                new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
-                ## idx_list = range(len(ll_classifier_train_X[i]))
-                ## random.shuffle(idx_list)
-                ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-                ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-                ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
-
-            ll_classifier_train_X = new_X
-            ll_classifier_train_Y = new_Y
-            ll_classifier_train_idx = new_idx
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
+                               nSubSample=nSubSample)
             
                           
         # flatten the data
