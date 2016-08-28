@@ -1914,9 +1914,10 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     
     idx = 0
     ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-    pkl_prefix = 'step_0.1'    
+    pkl_prefix = 'step_1.0'    
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
 
+    step_idx_l = None
     print "start to load hmm data, ", modeling_pkl
     d = ut.load_pickle(modeling_pkl)
     for k, v in d.iteritems():
@@ -1926,11 +1927,16 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     X = ll_classifier_test_X
     y = ll_classifier_test_Y
 
-    print np.shape(X), np.shape(y)
-    ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
-
     import hrl_anomaly_detection.data_viz as dv        
-    dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False)
+    if True:
+        ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
+        step_idx_l = [step_idx_l[i] for i in xrange(len(step_idx_l)) if y[i][0]>0]
+        dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False, step_idx=step_idx_l)
+    else:
+        ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]<0 ]
+        dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False)
+        
+
 
 
 

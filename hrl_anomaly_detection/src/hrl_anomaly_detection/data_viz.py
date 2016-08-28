@@ -262,7 +262,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
     return
 
-def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False):
+def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, step_idx=None):
 
     m = len(ll_post) # sample
     n = len(ll_post[0]) # length
@@ -277,7 +277,7 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False):
             path_mat = np.array(ll_post[i]).T
 
             path_mat /= np.sum(path_mat, axis=0)
-            extent = [0,time_list[-1],nState,1]
+            extent = [time_list[0],time_list[-1],nState,0]
             ## xticks = time_list #[time_list[0], time_list[n/2], time_list[-1]]
 
             fig, ax1 = plt.subplots(figsize=(10, 8))
@@ -286,6 +286,10 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False):
             ## ax1 = plt.subplot(111)            
             im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
                              extent=extent, aspect=0.15)
+
+            if step_idx is not None:
+                t = time_list[step_idx[i]]
+                plt.plot([t,t],[0,nState-1], 'b-', linewidth=3.0)
 
             ## plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
             ## plt.xticks(xticks, fontsize=12)
