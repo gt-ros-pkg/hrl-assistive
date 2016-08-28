@@ -289,7 +289,7 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, 
 
             if step_idx is not None:
                 t = time_list[step_idx[i]]
-                plt.plot([t,t],[0,nState-1], 'b-', linewidth=3.0)
+                plt.plot([t,t],[0,nState], 'b-', linewidth=3.0)
 
             ## plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
             ## plt.xticks(xticks, fontsize=12)
