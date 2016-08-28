@@ -2340,15 +2340,15 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=30, startIdx=4):
     new_Y = []
     new_idx = []
     for i in xrange(len(X)):
-        idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
-        new_X.append( np.array(X)[i,idx_list].tolist() )
-        new_Y.append( np.array(Y)[i,idx_list].tolist() )
-        new_idx.append( np.array(idx)[i,idx_list].tolist() )
-        ## idx_list = range(len(X[i]))
-        ## random.shuffle(idx_list)
-        ## new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
-        ## new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
-        ## new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+        ## idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
+        ## new_X.append( np.array(X)[i,idx_list].tolist() )
+        ## new_Y.append( np.array(Y)[i,idx_list].tolist() )
+        ## new_idx.append( np.array(idx)[i,idx_list].tolist() )
+        idx_list = range(len(X[i]))
+        random.shuffle(idx_list)
+        new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
+        new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
+        new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
 
     return new_X, new_Y, new_idx
 
