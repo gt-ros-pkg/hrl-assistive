@@ -2320,7 +2320,7 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
-def subsampleData(X,Y,idx, nSubSample=40, nMaxData=30):
+def subsampleData(X,Y,idx, nSubSample=40, nMaxData=30, startIdx=4):
 
     import random
 
