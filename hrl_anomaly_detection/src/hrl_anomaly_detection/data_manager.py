@@ -2331,9 +2331,9 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=30):
         random.shuffle(sample_id_list)
         sample_id_list = sample_id_list[:nMaxData]
 
-        X = X[sample_id_list]
-        Y = Y[sample_id_list]
-        idx = idx[sample_id_list]
+        X = np.array(X)[sample_id_list]
+        Y = np.array(Y)[sample_id_list]
+        idx = np.array(idx)[sample_id_list]
 
     print "before: ", np.shape(X), np.shape(Y)
     new_X = []
