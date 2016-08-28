@@ -1914,7 +1914,7 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     
     idx = 0
     ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-    pkl_prefix = 'step_1.0'    
+    pkl_prefix = 'step_0.1'    
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
 
     step_idx_l = None
