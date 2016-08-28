@@ -180,15 +180,15 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 new_Y = []
                 new_idx = []
                 for i in xrange(len(ll_classifier_train_X)):
-                    ## idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
-                    ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
-                    ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
-                    ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
-                    idx_list = range(len(ll_classifier_train_X[i]))
-                    random.shuffle(idx_list)
-                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+                    idx_list = np.linspace(startIdx, len(ll_classifier_train_X[i])-1, nSubSample).astype(int)
+                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list].tolist() )
+                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list].tolist() )
+                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list].tolist() )
+                    ## idx_list = range(len(ll_classifier_train_X[i]))
+                    ## random.shuffle(idx_list)
+                    ## new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+                    ## new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+                    ## new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
 
                 ll_classifier_train_X = new_X
                 ll_classifier_train_Y = new_Y
@@ -440,8 +440,8 @@ if __name__ == '__main__':
                 parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
                               'cov': np.linspace(0.1,5.0,5) }
             else:
-                parameters = {'nState': [25], 'scale': np.linspace(5.0,9.0,7), \
-                              'cov': np.linspace(0.1,4.0,5) }
+                parameters = {'nState': [25], 'scale': np.linspace(5.0,7.0,3), \
+                              'cov': np.linspace(2.0,4.0,3) }
         else:
             print "Not available task"
         max_check_fold = None #2
