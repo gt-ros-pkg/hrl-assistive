@@ -1928,7 +1928,7 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     y = ll_classifier_test_Y
 
     import hrl_anomaly_detection.data_viz as dv        
-    if True:
+    if False:
         ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
         step_idx_l = [step_idx_l[i] for i in xrange(len(step_idx_l)) if y[i][0]>0]
         dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False, step_idx=step_idx_l)

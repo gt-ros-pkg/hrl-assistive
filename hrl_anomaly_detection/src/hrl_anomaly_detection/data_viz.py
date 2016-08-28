@@ -276,6 +276,7 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, 
         for i in xrange(m):
             path_mat = np.array(ll_post[i]).T
 
+            path_mat -= np.amin(path_mat, axis=0)
             path_mat /= np.sum(path_mat, axis=0)
             extent = [time_list[0],time_list[-1],nState,0]
             ## xticks = time_list #[time_list[0], time_list[n/2], time_list[-1]]
