@@ -318,7 +318,22 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         ## ll_classifier_ep_train_X = np.array(ll_classifier_ep_train_X)
         ## fig = plt.figure()
-        ## ax1 = fig.add_subplot(211)        
+        ## ax1 = fig.add_subplot(311)        
+        ## for i in xrange(len(ll_classifier_ep_train_X)):
+        ##     if ll_classifier_ep_train_Y[i][0] < 0:
+        ##         plt.plot(ll_classifier_ep_train_X[i,:,0], 'bo-')
+        ##     if ll_classifier_ep_train_Y[i][0] > 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,0], 'r+-' )
+        ## ax1.set_ylabel("Log-likelihood", fontsize=22)
+        ## ax1 = fig.add_subplot(312)        
+        ## for i in xrange(len(ll_classifier_ep_train_X)):
+        ##     if ll_classifier_ep_train_Y[i][0] < 0:
+        ##         plt.plot(ll_classifier_ep_train_X[i,:,1], 'bo-')
+        ##     if ll_classifier_ep_train_Y[i][0] > 0:
+        ##         plt.plot( ll_classifier_ep_train_X[i,:,1], 'r+-' )
+        ## ax1.set_ylabel("Hidden State Index", fontsize=22)
+                
+        ## ax1 = fig.add_subplot(313)        
         ## for i in xrange(len(ll_classifier_ep_train_X)):
         ##     if ll_classifier_ep_train_Y[i][0] < 0:
         ##         plt.plot( ll_classifier_ep_train_X[i,:,2], 'bo-' )
@@ -326,12 +341,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ##     if ll_classifier_ep_train_Y[i][0] > 0:
         ##         plt.plot( ll_classifier_ep_train_X[i,:,2], 'r+-' )
         ##         ## plt.plot( ll_classifier_ep_train_X[i,:,1], ll_classifier_ep_train_X[i,:,2], 'r+' )
-        ## ax1 = fig.add_subplot(212)        
-        ## for i in xrange(len(ll_classifier_ep_train_X)):
-        ##     if ll_classifier_ep_train_Y[i][0] < 0:
-        ##         plt.plot(ll_classifier_ep_train_X[i,:,1], 'bo-')
-        ##     if ll_classifier_ep_train_Y[i][0] > 0:
-        ##         plt.plot( ll_classifier_ep_train_X[i,:,1], 'r+-' )
+        ## ax1.set_ylabel("Shannon Entropy", fontsize=22)
+        ## ax1.set_xlabel("Time Steps", fontsize=22)                
         ## plt.show()
         ## sys.exit()
         
@@ -2156,7 +2167,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif True:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif True:

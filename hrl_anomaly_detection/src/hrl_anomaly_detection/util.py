@@ -1596,6 +1596,9 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         delay_mean_l = []
         delay_std_l  = []
         acc_l = []
+        sen_l = []
+        spec_l = []
+        ppv_l  = []
 
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
@@ -1612,6 +1615,10 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
                 tnr_l.append(0)
             if only_tpr is False:
                 fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            sen_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            spec_l.append( float(np.sum(tn_ll[i]))/float(np.sum(tn_ll[i])+np.sum(fp_ll[i]))*100.0 )
+            ppv_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fp_ll[i]))*100.0 )
+
 
             delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
             if len(delay_list)>0:
@@ -1625,6 +1632,8 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
 
             print i, " : ", len(tp_ll[i]), len(tn_ll[i]), len(fp_ll[i]), len(fn_ll[i])
 
+        f_score = 2*(np.array(tpr_l)*np.array(ppv_l))/(np.array(tpr_l)+np.array(ppv_l)) / 100.0
+
         from sklearn import metrics
         print "--------------------------------"
         print " AUC "
@@ -1633,6 +1642,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         print tpr_l
         print fpr_l
         print acc_l
+        print sen_l
         if only_tpr is False:
             print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
@@ -1660,21 +1670,24 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
 
             ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
             ## plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            ## plt.plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
+            ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
             ## plt.xlim([49, 101])
             ## plt.ylim([0, 7.0])
             ## plt.ylabel('Detection Time [s]', fontsize=24)
-            plt.xlabel('False Positive Rate (percentage)', fontsize=24)
-            plt.ylabel('Time Delay [s]', fontsize=24)
+            ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+            plt.xlabel('F1 score', fontsize=24)
+            plt.ylabel('Detection Delay [s]', fontsize=24)
             ## plt.xticks([50, 100], fontsize=22)                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 
     if no_plot is False:
-        plt.xlim([0,100])
+        plt.xlim([0,1])
         plt.ylim([0,3])
         plt.legend(loc='upper left', prop={'size':24})
 
