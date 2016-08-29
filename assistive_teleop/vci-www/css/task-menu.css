@@ -1,5 +1,16 @@
-.task-button{
+#task-menu > form > label{
     display:block;
-    margin:0% 10%;
-    padding: 0.25em;
+    font-size:1.2em;
+    font-weight:bold;
+    text-align:center;
+}
+
+#task-menu > form > .ui-selectmenu-button {
+    width:90% !important;
+    left:5%;
+    position:relative;
+}
+
+#start-task-button {
+    margin-top: 10%;
 }
