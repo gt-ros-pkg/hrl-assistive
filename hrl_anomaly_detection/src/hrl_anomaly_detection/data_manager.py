@@ -1432,6 +1432,29 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if 'fabricForce' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('fabricForce')
 
+        # Unimodal feature - landmark motion --------------------------
+        if 'unimodal_landmarkDist' in feature_list:
+            #kinEEPos  = d['kinEEPosList'][idx]
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
+
+            if len(np.shape(visionLandmarkPos)) == 1:
+                visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
+                
+            dist = np.linalg.norm(visionLandmarkPos, axis=0)
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
+            
+            crossmodal_landmarkEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_landmarkEEDist.append(dist[time_idx])
+                
+            if dataSample is None: dataSample = np.array(crossmodal_landmarkEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEDist])
+            
+            if 'landmarkDistDiff' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('landmarkDist')
+
+
             
         # Crossmodal feature - relative dist --------------------------
         if 'crossmodal_targetEEDist' in feature_list:

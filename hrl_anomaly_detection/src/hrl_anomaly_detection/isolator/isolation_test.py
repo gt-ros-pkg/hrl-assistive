@@ -89,17 +89,6 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    type_sets = []
-    type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
-    type_sets.append([22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,48,71,72,73,75])
-    type_sets.append([41,42,43,44,45,46,77,78,47])
-    type_sets.append([79,80,81,82,83,84,85,89,90,91,93,94,95,86,87,88])
-    """
-    type_sets.append([42,43,44,45,46,47,48])
-    type_sets.append([21,22,23,24,25,26,30,31,32])
-    type_sets.append([18,19,20,33,34,35])
-    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])
-    """
 
     # train Anomaly Detector
     # HMM training data extraction and handover scaling parameter into isolation data extractor
@@ -130,33 +119,55 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         kFold_list = d['kFoldList'] 
     else:
         '''
-        '''        
+        '''
+
+        type_sets = []
+        type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
+        type_sets.append([22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,48,71,72,73,75])
+        type_sets.append([41,42,43,44,45,46,77,78,47])
+        type_sets.append([79,80,81,82,83,84,85,89,90,91,93,94,95,86,87,88])
+        """
+        type_sets.append([42,43,44,45,46,47,48])
+        type_sets.append([21,22,23,24,25,26,30,31,32])
+        type_sets.append([18,19,20,33,34,35])
+        type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])
+        """
+
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'],\
+                           #cut_data=data_dict['cut_data'],\
+                           init_param_dict=hmm_d['param_dict'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
-        order = [[]] * len(d['failureFiles'])
+        order = [[]] * (2 * len(d['failureFiles']))
+        new_type_sets = []
+        for i in xrange(0, len(type_sets)):
+            new_type_sets.append([])
+        index_d = {}
+        reverse_index_d = {}
+        
         new_failureData = []
         for i in xrange(0, len(d['failureData'])):
             new_failureData.append([])
-        print d['failureData'].shape
         for i, file_name in enumerate(d['failureFiles']):
             file_name_split = file_name.split("iteration_")
             file_name_split = file_name_split[1].split("_failure")[0]
             idx = int(file_name_split)
-            #if "unexpected2" in file_name:
-            #    idx = idx + 36
             order[idx] = i
-            #print file_name, idx
-        #print order
-        for i, sampleIdx in enumerate(order):#xrange(0, len(d['failureData'][0])):
-            if formatY(i, type_sets) is not 0:
+        count = 0
+        for i, sampleIdx in enumerate(order):
+            curr_type = formatY(i, type_sets)
+            if curr_type is not 0:
+                index_d[str(sampleIdx)]     = count
+                reverse_index_d[str(count)] = sampleIdx
+                new_type_sets[curr_type-1].append(count)
+                count = count + 1
                 for dimIdx in xrange(0, len(d['failureData'])):
                     new_failureData[dimIdx].append(d['failureData'][dimIdx,sampleIdx,:])
             else:
-                print "rejected, ", sampleIdx
+                print "rejected or missing, ", sampleIdx
         ## print np.asarray(new_failureData).shape
         ## return
         d['failureData']=np.asarray(new_failureData)
@@ -165,6 +176,10 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
+
+        d['typeSets']        = new_type_sets
+        d['index_d']         = index_d
+        d['reverse_index_d'] =reverse_index_d
             
         ut.save_pickle(d, crossVal_pkl)
 
@@ -172,33 +187,9 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     failureData = d['failureData']
     successFiles = d['successFiles']
     failureFiles = d['failureFiles']
-    
-
-    print failureData.shape
-    #return
-    all_type = []
-    for type_set in type_sets:
-        all_type.extend(type_set)
-
-    count = 0
-    index_d = {}
-    reverse_index_d = {}
-    for i in xrange(0, 100):
-        if i in all_type:
-            index_d[str(i)] = count
-            reverse_index_d[str(count)] = i
-            count += 1
-    new_type_sets = []
-    for type_set in type_sets:
-        new_type_set = []
-        for idx in type_set:
-            new_type_set.append(index_d[str(idx)])
-        new_type_sets.append(new_type_set)
-    type_sets = new_type_sets
-
-    #print "new_type_sets "
-    #print type_sets
-
+    type_sets    = d['typeSets']
+    index_d      = d['index_d']
+    reverse_index_d = d['reverse_index_d']
 
     # Training svm, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -210,16 +201,19 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :]
 
-        """
         # anomaly detector --------------------------------------------
         print "Start to find anomalous point" 
-        testDataX = abnormalTestData
+        testDataX = abnormalTrainData#[[0,1,3,4], :, :]
         testDataY = np.ones(len(abnormalTestData[0]))
-        detection_idx_list = anomaly_detection(testDataX, testDataY, \
+        detection_train_idx_list = anomaly_detection(testDataX, testDataY, \
                                                task_name, hmm_data_path, param_dict,\
                                                verbose=True)
-        print detection_idx_list
-        """
+        testDataX = abnormalTestData#[[0,1,3,4], :, :]
+        testDataY = np.ones(len(abnormalTestData[0]))
+        detection_test_idx_list = anomaly_detection(testDataX, testDataY, \
+                                               task_name, hmm_data_path, param_dict,\
+                                               verbose=True)
+        print detection_train_idx_list
         ## sys.exit()
         # -------------------------------------------------------------
         
@@ -234,7 +228,9 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             if curr_type is 0:
                 print "hmm"
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :])
+            print trainIdx, len(detection_train_idx_list), abnormalTrainData.shape
+            limit = getRange(detection_train_idx_list[trainIdx])
+            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=limit)
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
@@ -265,13 +261,12 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
             if curr_type is 0:
                 continue
-            #formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
+            limit = getRange(detection_test_idx_list[testIdx])
+            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)#, limit=limit)
             scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
             X.extend(formated_X)
             for windowIdx in xrange(0, len(formated_X)):
                 y.append(curr_type)
-            #print prediction
-            #print np.asarray(prediction[2])[:,0]
             plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
             color_list = ['', 'b', 'g', 'r', 'k', 'y']
             title_list = ['', 'sound', 'force', 'face','distance', 'orientation']
@@ -324,6 +319,16 @@ def formatY(index, type_sets):
         if index in type_set:
             return setId + 1
     return 0
+
+def getRange(index):
+    if index < 0 or index > 200:
+        return "error"
+    if index < 30:
+        return [0, 40]
+    elif index > 190:
+        return [160, 200]
+    else:
+        return [index-30, index+10]
 
 def scaled_inputs(data, scaler):
     #data, of form 4, 200
