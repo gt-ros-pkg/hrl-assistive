@@ -173,8 +173,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             if method == 'hmmgp':
                 nSubSample = 20
-                nMaxData   = 100
-                rnd_sample = False
+                nMaxData   = 30 #100
+                rnd_sample = True #False
                 ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
                   dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                                    nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
