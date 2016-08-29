@@ -118,13 +118,6 @@ var RFH = (function (module) {
             forwardOnly: false}));
         RFH.taskMenu.addTask(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
-        //    RFH.taskMenu.addTask(new RFH.MoveObject({ros:RFH.ros}));
-        //    rfh.taskmenu.addtask(new RFH.publishlocation({ros:rfh.ros,
-        //                                                  camera: rfh.mjpeg.cameramodel}));
-        //    RFH.taskMenu.addTask(new RFH.ParamLocation({ros:RFH.ros,
-        //                                                name:'paramLocationTask',
-        //                                               paramName:'location',
-        //                                                camera: RFH.mjpeg.cameraModel}));
         RFH.taskMenu.addTask(new RFH.Domains.Pick({ros:RFH.ros,
             r_arm: RFH.pr2.r_arm_cart,
             r_gripper: RFH.pr2.r_gripper,
@@ -136,10 +129,7 @@ var RFH = (function (module) {
             l_arm: RFH.pr2.l_arm_cart,
             l_gripper: RFH.pr2.l_gripper}));
         RFH.taskMenu.addTask(new RFH.Domains.PickAndPlace({ros:RFH.ros}));
-        RFH.taskMenu.addTask(new RFH.Domains.WipingMouthADL({ros:RFH.ros}));
-        RFH.taskMenu.addTask(new RFH.Domains.ScratchingKneeADL({ros:RFH.ros}));
-        RFH.taskMenu.addTask(new RFH.Domains.WipingMouthWheelchairADL({ros:RFH.ros}));
-        RFH.taskMenu.addTask(new RFH.Domains.ScratchingKneeWheelchairADL({ros:RFH.ros}));
+        RFH.taskMenu.addTask(new RFH.Domains.ADL({ros:RFH.ros}));
         RFH.taskMenu.addTask(new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros}));
         // Start looking task by default
         $('#'+RFH.taskMenu.tasks.lookingTask.buttonText).click();

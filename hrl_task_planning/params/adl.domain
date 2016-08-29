@@ -1,4 +1,4 @@
-(define (domain wiping_mouth_adl)
+(define (domain adl)
  (:requirements :typing :conditional-effects)
  (:types
   dof tag - physobj
