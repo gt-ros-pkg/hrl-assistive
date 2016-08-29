@@ -189,7 +189,7 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
-        elif self.method == 'mbkmean' or self.method == 'kmean':
+        elif self.method == 'mbkmean' or self.method == 'kmean' or self.method == 'state_kmean':
             self.mbkmean_batch_size = mbkmean_batch_size
             self.ths_mult = ths_mult
             self.nPosteriors = nPosteriors
@@ -460,6 +460,30 @@ class classifier(learning_base):
             for i in xrange(self.nPosteriors):
                 self.ll_mu[i]  = np.mean(ll_logp[i])
                 self.ll_std[i] = np.std(ll_logp[i])
+
+        elif self.method == 'state_kmean':
+            from sklearn.cluster import KMeans
+            init_list = []
+            for i in xrange(self.nPosteriors):
+                init_list.append( float(i) )
+                
+            if type(X) == list: X = np.array(X)
+            posts = X[:,-self.nPosteriors:]
+            logps = X[:,0]
+                
+            self.dt = KMeans(n_clusters=self.nPosteriors, \
+                             init=np.array(init_list))
+            labels = self.dt.fit_predict(posts)
+            # clustering likelihoods
+            ll_logp = [[] for i in xrange(self.nPosteriors)]
+            for i, label in enumerate(labels):
+                ll_logp[label].append(logps[i])
+            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
+            for i in xrange(self.nPosteriors):
+                self.ll_mu[i]  = np.mean(ll_logp[i])
+                self.ll_std[i] = np.std(ll_logp[i])
+
+
 
 
     def partial_fit(self, X, y=None, classes=None, sample_weight=None, n_iter=1, shuffle=True):
