@@ -172,7 +172,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 break
 
             if method == 'hmmgp':
-                nSubSample = 20
+                nSubSample = 25
                 ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
                   dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                                    nSubSample=nSubSample)

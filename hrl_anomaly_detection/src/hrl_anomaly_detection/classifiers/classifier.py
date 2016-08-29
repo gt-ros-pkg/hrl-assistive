@@ -462,22 +462,17 @@ class classifier(learning_base):
                 self.ll_std[i] = np.std(ll_logp[i])
 
         elif self.method == 'state_kmean':
-            from sklearn.cluster import KMeans
             init_list = []
             for i in xrange(self.nPosteriors):
                 init_list.append( float(i) )
                 
             if type(X) == list: X = np.array(X)
-            posts = X[:,-self.nPosteriors:]
+            states = np.argmax(X[:,-self.nPosteriors:], axis=1)
             logps = X[:,0]
                 
-            self.dt = KMeans(n_clusters=self.nPosteriors, \
-                             init=np.array(init_list))
-            labels = self.dt.fit_predict(posts)
-            # clustering likelihoods
             ll_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, label in enumerate(labels):
-                ll_logp[label].append(logps[i])
+            for i, state in enumerate(states):
+                ll_logp[state].append(logps[i])
             self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
             for i in xrange(self.nPosteriors):
                 self.ll_mu[i]  = np.mean(ll_logp[i])
@@ -661,6 +656,18 @@ class classifier(learning_base):
             for i in xrange(len(X)):
                 logp = X[i][0]                
                 err = self.ll_mu[labels[i]]+self.ths_mult*self.ll_std[labels[i]] - logp
+                l_err.append(err)
+
+            return l_err
+
+        elif self.method == 'state_kmean':
+            if type(X) == list: X = np.array(X)
+            states = np.argmax(X[:,-self.nPosteriors:], axis=1)
+
+            l_err = []
+            for i in xrange(len(X)):
+                logp = X[i][0]                
+                err = self.ll_mu[states[i]]+self.ths_mult*self.ll_std[states[i]] - logp
                 l_err.append(err)
 
             return l_err
