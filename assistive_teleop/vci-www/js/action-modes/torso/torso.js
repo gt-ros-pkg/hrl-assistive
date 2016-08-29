@@ -2,7 +2,7 @@ var RFH = (function (module) {
     module.Torso = function (options) {
         'use strict';
         var self = this;
-        self.name = options.name || 'torsoTask';
+        self.name = options.name || 'torsoAction';
         self.showButton = true;
         self.containerDiv = options.containerDiv;
         self.sliderDiv = options.sliderDiv;

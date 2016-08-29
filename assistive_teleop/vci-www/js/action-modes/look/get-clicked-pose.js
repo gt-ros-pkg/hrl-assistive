@@ -3,7 +3,7 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         var ros = options.ros;
-        self.name = options.name || 'getClickedPoseTask';
+        self.name = options.name || 'getClickedPoseAction';
         self.showButton = false;
         //    self.buttonText = 'Choose_Spot';
         //    self.buttonClass = 'id-location-button';

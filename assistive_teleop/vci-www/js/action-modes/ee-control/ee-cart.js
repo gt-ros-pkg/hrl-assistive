@@ -4,7 +4,7 @@ var RFH = (function (module) {
         var self = this;
         self.arm = options.arm;
         self.side = self.arm.side;
-        self.name = options.name || self.side[0]+'EECartTask';
+        self.name = options.name || self.side[0]+'EECartAction';
         self.showButton = true;
         var divId = options.div || 'video-main';
         self.buttonText = self.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
