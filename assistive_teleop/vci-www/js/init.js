@@ -127,7 +127,7 @@ var RFH = (function (module) {
             RFH.leftEEDisplay = new RFH.EEDisplay({side: 'l',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
-            RFH.initTaskMenu('main-menu');
+            RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
             RFH.undo = new RFH.Undo({ros: RFH.ros,

@@ -1,11 +1,11 @@
 RFH.Domains = RFH.Domains || {};
-RFH.Domains.ScratchingKneeADL = function (options) {
+RFH.Domains.ADL = function (options) {
     'use strict';
     var self = this;
     var ros = options.ros;
-    self.name = options.name || 'scratching_knee_adl';
-    self.domain = 'wiping_mouth_adl'
-    var $button = $('#scratching-knee-button');
+    self.name = options.name || 'adl';
+    self.domain = 'adl'
+    var $button = $('#start-task-button');
     ros.getMsgDetails('hrl_task_planning/PDDLProblem');
     self.taskPublisher = new ROSLIB.Topic({
         ros: ros,
@@ -106,10 +106,10 @@ RFH.Domains.ScratchingKneeADL = function (options) {
                 return "Please wait while the PR2 finds a good location to perform task...";
             case 'CONFIGURE_MODEL_ROBOT':
                 return "Please wait while we finish repositioning your bed and the robot's height...";
-            case 'MOVE_ROBOT':
-                return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";
             case 'MOVE_BACK':
                 return "Move back, you must!";
+            case 'MOVE_ROBOT':
+                return "Please wait while the robot moves towards you. Please keep RUN STOP handy...";
             case 'STOP_TRACKING':
                 return "Stopping AR Tag Tracking";
             case 'MOVE_ARM':
@@ -168,25 +168,26 @@ RFH.Domains.ScratchingKneeADL = function (options) {
         goal = goal || []; // Empty goal will use default for task
         self.clearParams([]);
         var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
-        msg.name = 'wiping_mouth_adl' + '-' + new Date().getTime().toString();
-        msg.domain = 'wiping_mouth_adl';
-        var model = 'autobed';
-        var task = 'scratching';
+        msg.name = 'adl' + '-' + new Date().getTime().toString();
+        msg.domain = 'adl';
+        var model = document.getElementById("model-select").value;
+        var task = document.getElementById("task-select").value;
+        var model_upper = model.toUpperCase();
+        var task_upper = task.toUpperCase();
         self.setModelName(model);
-        self.setDefaultGoal(['(TASK-COMPLETED SCRATCHING AUTOBED)']);
-        self.updatePDDLState(['(NOT (CONFIGURED BED SCRATCHING AUTOBED))', 
-                              '(NOT (BASE-SELECTED SCRATCHING AUTOBED))',
-                              '(NOT (IS-TRACKING-TAG AUTOBED))',
-                              '(NOT (CONFIGURED SPINE SCRATCHING AUTOBED))',
-                              '(NOT (HEAD-REGISTERED AUTOBED))',
-                              '(NOT (OCCUPIED AUTOBED))',
-                              '(NOT (FOUND-TAG AUTOBED))',
-                              '(NOT (BASE-REACHED SCRATCHING AUTOBED))',
-                              '(NOT (ARM-REACHED SCRATCHING AUTOBED))',
-                              '(NOT (ARM-HOME SCRATCHING AUTOBED))',
-                              '(NOT (TOO-CLOSE AUTOBED))',
-                              '(NOT (TASK-COMPLETED SCRATCHING AUTOBED))']);
-
+        self.setDefaultGoal(['(TASK-COMPLETED '.concat(task_upper, ' ',model_upper, ')')]);
+        self.updatePDDLState(['(NOT (CONFIGURED BED '.concat(task_upper, ' ',model_upper, '))'), 
+                              '(NOT (BASE-SELECTED '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (IS-TRACKING-TAG '.concat(model_upper,'))'),
+                              '(NOT (CONFIGURED SPINE '.concat(task_upper, ' ', model_upper,'))'),
+                              '(NOT (HEAD-REGISTERED '.concat(model_upper,'))'),
+                              '(NOT (OCCUPIED '.concat(model_upper, '))'),
+                              '(NOT (FOUND-TAG '.concat(model_upper, '))'),
+                              '(NOT (BASE-REACHED '.concat(task_upper, ' ', model_upper,'))'),
+                              '(NOT (ARM-REACHED '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (ARM-HOME '.concat(task_upper, ' ', model_upper, '))'),
+                              '(NOT (TOO-CLOSE '.concat(model_upper, '))'),
+                              '(NOT (TASK-COMPLETED '.concat(task_upper, ' ', model_upper, '))')]);
         msg.goal = []; 
         setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
     };

@@ -2,7 +2,7 @@ var RFH = (function (module) {
     module.Look = function (options) {
         'use strict';
         var self = this;
-        self.name = options.name || 'lookingTask';
+        self.name = options.name || 'lookingAction';
         var ros = options.ros;
         self.showButton = true;
         self.buttonText = "Look";
