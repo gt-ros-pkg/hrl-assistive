@@ -1735,7 +1735,7 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
 def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
 
     task_list = ['pushing_microblack', 'pushing_microwhite', 'pushing_toolcase','scooping', 'feeding']
-    method_list = ['hmmgp', 'progress', 'hmmosvm', 'kmean', 'fixed', 'change', 'osvm']
+    method_list = ['hmmgp', 'progress', 'fixed', 'change', 'hmmosvm', 'kmean', 'osvm']
     ref_method = 'hmmgp'
 
     delay_dict = {}
@@ -1793,8 +1793,11 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
                 time_step = 1.0
 
             for i in xrange(nPoints):
-                acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / \
-                              float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+                ## acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / \
+                ##               float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+                acc_l.append( 2.0*float(np.sum(tp_ll[i])) / \
+                              (2.0*float(np.sum(tp_ll[i]))+float(np.sum(fn_ll[i]))+\
+                               float(np.sum(fp_ll[i]))) )
 
             max_point_idx = np.argmax(acc_l)
             max_acc_dict[method]    = [[],[]]
@@ -1825,7 +1828,7 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
     colors = itertools.cycle(['r', 'g', 'b', 'k', 'y', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
     tasks   = ['Closing a microwave(B)','Closing a microwave(W)','Locking a toolcase','Scooping','Feeding'] 
-    methods = ['HMM-GP', 'HMM-D', 'hmmosvm', 'HMM-Kmean', 'HMM-F', 'HMM-C', 'OSVM']
+    methods = ['HMM-GP', 'HMM-D', 'HMM-F', 'HMM-C', 'HMM-OSVM', 'HMM-Kmean', 'OSVM']
 
     if False:
         fig = plt.figure(1)
@@ -1853,14 +1856,14 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         plt.ylabel("Detection Time [sec]", fontsize=22)
 
     elif True:
-        fig = plt.figure(1)
+        fig = plt.figure(figsize=(14,6))
         acc_mean_l = []
         acc_std_l  = []
         delay_mean_l = []
         delay_std_l  = []
         delay_data = []
 
-        width = .35
+        width = .7
         ind = np.arange(len(methods)) #*0.9 #+width/2.0
 
         count = 0
@@ -1886,8 +1889,10 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         ax1 = plt.gca()
         rects1 = ax1.bar(ind, acc_mean_l, width, color='r', yerr=acc_std_l, \
                          error_kw=dict(elinewidth=6, ecolor='pink'))
-        ax1.set_ylabel("Max Accuracy [Percentage]", fontsize=22)
-
+        ## ax1.set_ylabel("Max Accuracy [Percentage]", fontsize=22)
+        ax1.set_ylabel("F1 Score", fontsize=22)
+        ax1.grid(True)
+        
         ## ax2 = ax1.twinx()
         ## rects2 = ax2.errorbar(ind+width*1.5+0.05, delay_mean_l, delay_std_l, linestyle='None', marker='o')
         ## ax2.set_ylabel("Detection Time [sec]", fontsize=22)        
@@ -1895,8 +1900,9 @@ def plotEvalMaxAcc(dim, rf_center, local_range, save_pdf=False):
         ##             fontsize=18 )
 
         ## plt.ylim([0,100])
-        plt.xlim([-0.2, (ind+width*2.0+0.2)[-1]])
-        plt.xticks(ind+width, methods, fontsize=40 )
+        ## plt.ylim([0,100])
+        plt.xlim([-0.2, (ind+width+0.2)[-1]])
+        plt.xticks(ind+width/2.0, methods, fontsize=40 )
         for tick in ax1.xaxis.get_major_ticks():
             tick.label.set_fontsize(18) 
 
@@ -2167,13 +2173,13 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif True:
+        elif False:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif True:
+        elif False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif True:
+        elif False:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:
