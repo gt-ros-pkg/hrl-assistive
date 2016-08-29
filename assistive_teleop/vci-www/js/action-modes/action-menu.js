@@ -118,19 +118,6 @@ var RFH = (function (module) {
             forwardOnly: false}));
         RFH.taskMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
-        RFH.taskMenu.addAction(new RFH.Domains.Pick({ros:RFH.ros,
-            r_arm: RFH.pr2.r_arm_cart,
-            r_gripper: RFH.pr2.r_gripper,
-            l_arm: RFH.pr2.l_arm_cart,
-            l_gripper: RFH.pr2.l_gripper}));
-        RFH.taskMenu.addAction(new RFH.Domains.Place({ros:RFH.ros,
-            r_arm: RFH.pr2.r_arm_cart,
-            r_gripper: RFH.pr2.r_gripper,
-            l_arm: RFH.pr2.l_arm_cart,
-            l_gripper: RFH.pr2.l_gripper}));
-        RFH.taskMenu.addAction(new RFH.Domains.PickAndPlace({ros:RFH.ros}));
-        RFH.taskMenu.addAction(new RFH.Domains.ADL({ros:RFH.ros}));
-        RFH.taskMenu.addAction(new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros}));
         // Start looking task by default
         $('#'+RFH.taskMenu.tasks.lookingAction.buttonText).click();
     };
