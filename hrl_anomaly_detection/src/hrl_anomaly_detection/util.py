@@ -1688,6 +1688,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
 
     if no_plot is False:
         plt.xlim([0,1])
+        ## plt.xlim([0,100])
         plt.ylim([0,3])
         plt.legend(loc='upper left', prop={'size':24})
 

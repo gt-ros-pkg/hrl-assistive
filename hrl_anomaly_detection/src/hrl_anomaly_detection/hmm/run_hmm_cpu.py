@@ -416,8 +416,8 @@ if __name__ == '__main__':
                               'cov': np.linspace(0.1,2.0,10) }
 
         elif opt.task == 'pushing_microblack':
-            parameters = {'nState': [25], 'scale': np.linspace(2.0,8.0,10), \
-                          'cov': np.linspace(0.5,5.,10) }
+            parameters = {'nState': [25], 'scale': np.linspace(5.0,8.0,5), \
+                          'cov': np.linspace(0.5,5.,5) }
         elif opt.task == 'pushing_toolcase':
             if opt.dim == 3:
                 parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
