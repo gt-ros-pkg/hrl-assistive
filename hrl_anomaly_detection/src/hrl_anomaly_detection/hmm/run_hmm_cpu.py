@@ -429,7 +429,7 @@ if __name__ == '__main__':
                               'cov': np.linspace(2.0,7.0,6) }
         else:
             print "Not available task"
-        max_check_fold = None #2
+        max_check_fold = 4 #None #2
         no_cov = False
 
     else:
