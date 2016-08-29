@@ -62,7 +62,7 @@ var RFH = (function (module) {
             self.arm.sendJointAngleGoal(tuckSideAngles);
         };
         $('#controls .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
-
+/*
         var armCameraOn = false;
         var showArmCamera = function (event) {
             RFH.mjpeg.setParam('topic', self.side[0]+'_forearm_cam/image_color_rotated');
@@ -83,7 +83,7 @@ var RFH = (function (module) {
             }
         };
         $('#controls .arm-cam.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', toggleArmCamera);
-
+*/
         var cameraSwing = function (event) {
             // Clear the canvas, turn on pointcloud visibility...
             if (RFH.kinectHeadPointCloud.locked) {
@@ -176,11 +176,11 @@ var RFH = (function (module) {
 
         var updatePickPlaceButton = function (graspingMsg) {
             if (graspingMsg.data) {
-                self.$pickAndPlaceButton.text("Set Down");
+                self.$pickAndPlaceButton.find('span').text("Set Down");
                 self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
                 //       self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['place'].sendTaskGoal(self.side)});
             } else {
-                self.$pickAndPlaceButton.text("Move Object");
+                self.$pickAndPlaceButton.find('span').text("Move Object");
                 self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
                 //        self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['pick'].sendTaskGoal(self.side)});
             }
@@ -587,9 +587,9 @@ var RFH = (function (module) {
             self.trackHand(false);
             self.active = false;
             self.rotationControl.hide();
-            if (armCameraOn) {
-                hideArmCamera();
-            }
+//            if (armCameraOn) {
+//                hideArmCamera();
+//            }
         };
     };
     return module;

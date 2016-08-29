@@ -50,12 +50,13 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
   <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
+  <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/pick.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/place.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/pick-and-place.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/adl.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/realtime-base-selection.js"></script>
-
+  <!-- CSS -->
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
   <link type="text/css" href="css/look.css" rel="stylesheet" />
@@ -66,6 +67,7 @@
   <link type="text/css" href="css/gripper.css" rel="stylesheet" />
   <link type="text/css" href="css/undo.css" rel="stylesheet" />
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
+  <link type="text/css" href="css/action-menu.css" rel="stylesheet" />
   <link type="text/css" href="css/task-menu.css" rel="stylesheet" />
   
 </head>
@@ -92,12 +94,12 @@
                     <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
                 <label for="arm-select">Select arm</label>
-                <select id="arm-select" name="arm-select">
+                <select id="arm-select" name="arm-select" class='task-option-select'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
                 </select>
                 <label for="model-select">Select a Location</label>
-                <select id="model-select" name="model-select">
+                <select id="model-select" name="model-select" class='task-option-select'>
                     <option value="autobed">Autobed</div>
                     <option value="wheelchair">Wheelchair</div>
                 </select>
@@ -160,7 +162,7 @@
             <div class="pick-and-place r-arm-ctrl"></div>
             <div class="rtbs r-arm-ctrl">Approach</div>
             <div class="camera-swing r-arm-ctrl">3D Peek</div>
-            <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>
+<!--            <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>-->
         </div>
 
         <!-- Left Arm Controls -->
@@ -179,7 +181,7 @@
             <div class="pick-and-place l-arm-ctrl"></div>
             <div class="rtbs l-arm-ctrl">Approach</div>
             <div class="camera-swing l-arm-ctrl">3D Peek</div>
-            <div class="arm-cam l-arm-ctrl">Forearm Camera</div>
+<!--            <div class="arm-cam l-arm-ctrl">Forearm Camera</div>-->
         </div>
         </div>
      <div id="util-bar">
