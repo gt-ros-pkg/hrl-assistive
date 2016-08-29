@@ -139,11 +139,17 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                    ll_classifier_train_Y, \
                                                                    ll_classifier_train_idx)
-        
+
+        if method.find('svm')>=0 or method.find('sgd')>=0 or method.find('svr')>=0:
+            scaler = preprocessing.StandardScaler()
+            X_scaled = scaler.fit_transform(X_train_org)
+        else:
+            X_scaled = X_train_org
+                                                                   
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
                              nLength=len(normalTestData[0,0]), ths_mult=-10.0 )
-        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+        dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
 
 
     print "----------------------------------------------------------------------------"

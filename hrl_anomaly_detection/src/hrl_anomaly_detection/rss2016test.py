@@ -2143,7 +2143,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=True, method='hmmgp', \
+                          decision_boundary_viz=True, method='hmmsvr', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\

@@ -418,7 +418,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=
     ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)
 
     # anomaly detection
-    detection_idx = []
+    detection_idx = [None for i in xrange(len(ll_classifier_test_X))]
     for ii in xrange(len(ll_classifier_test_X)):
         if len(ll_classifier_test_Y[ii])==0: continue
 
@@ -427,9 +427,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=
         for jj in xrange(len(est_y)):
             if est_y[jj] > 0.0:                
                 if ll_classifier_test_Y[ii][0] > 0:
-                    detection_idx.append(ll_classifier_test_idx[ii][jj])
-                else:
-                    detection_idx.append(None)
+                    detection_idx[ii] = ll_classifier_test_idx[ii][jj]
                 break
 
     return detection_idx
