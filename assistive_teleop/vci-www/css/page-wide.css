@@ -13,20 +13,21 @@ body {
     /*for opera*/
     user-select: none;
     /*base css ,but not work in all browsers*/
-    margin: 0px;
+    margin: 0;
     overflow: hidden;
 }
 #left-col {
     float: left;
     height: 100%;
-    width: 8%;
-    min-width:200px;
-    position: relative
+    width: 200px;
+    position: relative;
+    z-index:100;
 }
+
 #task-menu {
+    background-color: rgba(200, 200, 210, 1);
     display: block;
     width: 100%;
-    background-color: rgba(200, 200, 210, 0.87);
 }
 #task-menu h3 {
     display: block;
@@ -40,7 +41,7 @@ body {
 #main-menu {
     display: block;
     width: 100%;
-    background-color: rgba(218, 236, 255, 0.87);
+    background-color: rgba(218, 236, 255, 1.0);
 }
 #main-menu h3 {
     display: block;
@@ -62,7 +63,8 @@ body {
 #video-main {
     overflow: hidden;
     position: relative;
-    float: left;
+    float:left;
+    left: 0;
 }
 #viewer-canvas {
     display:none;
@@ -80,7 +82,7 @@ body {
     height: 100%;
     width: 100%;
     min-width: 128px;
-    background-color: rgba(160, 200, 240, 0.87);
+    background-color: rgba(160, 200, 240, 1.0);
 }
 #controls h3 {
     display: block;
