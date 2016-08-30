@@ -117,6 +117,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_no_dL_param_range': np.logspace(-2.53, 0.176, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.1, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
+                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:
@@ -251,6 +252,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.247, -0.4, nPoints),\
+                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
                           #np.logspace(-8.0, 1.0, nPoints)
     elif dim == 3:
@@ -423,6 +425,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_dL_param_range': np.logspace(-3.0, 0.7, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-1.346, 0.8, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
+                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         
@@ -763,6 +766,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-4.0, 0.7, nPoints),\
+                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
