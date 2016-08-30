@@ -15,13 +15,25 @@ body {
     /*base css ,but not work in all browsers*/
     margin: 0;
     overflow: hidden;
+    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
 }
+
 #left-col {
     float: left;
     height: 100%;
     width: 200px;
     position: relative;
     z-index:100;
+    left: 0;
+}
+
+#left-col-small {
+/*    background-color: rgba(238, 178, 17, 1);  GT GOLD*/
+    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
+    height: 100%;
+    left:0;
+    position:absolute;
+    width: 64px;
 }
 
 #task-menu {
@@ -62,9 +74,8 @@ body {
 }
 #video-main {
     overflow: hidden;
-    position: relative;
-    float:left;
-    left: 0;
+    position: absolute;
+    left: 64px;
 }
 #viewer-canvas {
     display:none;

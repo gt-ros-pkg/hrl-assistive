@@ -21,7 +21,6 @@ var RFH = (function (module) {
                                          ros: RFH.ros});
         $('#task-select').selectmenu({collapsible:true});
         $('.task-option-select').selectmenu();
-        $('#task-menu').hide();
 
         new RFH.Domains.Pick({ros:RFH.ros,
             r_arm: RFH.pr2.r_arm_cart,

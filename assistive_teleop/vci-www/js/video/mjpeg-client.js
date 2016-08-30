@@ -15,6 +15,7 @@ var RFH = (function (module) {
             infoTopic: options.infoTopic,
             rotated: options.rotated || false,
             tfClient: options.tfClient});
+
         self.refreshSize = function (resizeEvent) {
             if (!self.cameraModel.has_data) {
                 self.$div.append("Waiting on camera information.");

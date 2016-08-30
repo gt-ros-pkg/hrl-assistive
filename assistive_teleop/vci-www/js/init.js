@@ -141,7 +141,18 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             //        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.initTaskMenu();
+            var showLeftColumn = function (event) {
+                $('#left-col').animate({'left':0});
+            };
+            var hideLeftColumn = function (event) {
+                $('#left-col').animate({'left':'-200px'});
+            };
+
+            $('#left-col-small').on('mouseenter.rfh', showLeftColumn);
+            $('#left-col').on('mouseleave.rfh', hideLeftColumn);
+            setTimeout(hideLeftColumn, 2500);
         });
     };
     return module;
 })(RFH || {});
+
