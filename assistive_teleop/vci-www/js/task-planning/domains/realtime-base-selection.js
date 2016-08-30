@@ -88,7 +88,7 @@ var RFH = (function (module) {
                 case 'SCAN_ENVIRONMENT':
                     return 'Scanning Area';
                 case 'SERVO_OPEN_LOOP':
-                    return 'Moving Robot';
+                    return 'Move Robot';
                 case 'ADJUST_TORSO':
                     return 'Adjusting Torso';
                 case 'CLEAR_ENVIRONMENT':
