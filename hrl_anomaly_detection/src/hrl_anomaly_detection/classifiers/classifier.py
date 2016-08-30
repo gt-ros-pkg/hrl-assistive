@@ -121,10 +121,13 @@ class classifier(learning_base):
         self.dt     = None
         self.verbose = verbose
 
+        # constants to adjust thresholds
+        self.class_weight = class_weight
+        self.ths_mult = ths_mult
+
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
-            self.class_weight = class_weight
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
             self.degree      = degree 
@@ -160,7 +163,6 @@ class classifier(learning_base):
         elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
-            self.class_weight = class_weight
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
             self.cssvm_degree     = cssvm_degree 
@@ -170,7 +172,6 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
             self.std_coff  = 1.0
-            self.ths_mult = ths_mult
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
@@ -178,25 +179,20 @@ class classifier(learning_base):
         elif self.method == 'fixed':
             self.mu  = 0.0
             self.std = 0.0
-            self.ths_mult = ths_mult
         elif self.method == 'change':
             self.nLength   = nLength
             self.mu  = 0.0
             self.std = 0.0
         elif self.method == 'sgd':
-            self.class_weight = class_weight
             self.sgd_w_negative = sgd_w_negative             
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
         elif self.method == 'mbkmean' or self.method == 'kmean' or self.method == 'state_kmean':
             self.mbkmean_batch_size = mbkmean_batch_size
-            self.ths_mult = ths_mult
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
         elif self.method == 'hmmgp':
-            self.ths_mult    = ths_mult
-            
             from sklearn import gaussian_process
             self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
             self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
@@ -204,7 +200,6 @@ class classifier(learning_base):
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
                                                        normalize=True, nugget=100.)            
         elif self.method == 'hmmsvr':
-            self.class_weight = class_weight
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
             self.degree      = degree 
@@ -212,7 +207,6 @@ class classifier(learning_base):
             self.cost        = cost
             self.coef0       = coef0
             self.nu          = nu
-            self.ths_mult    = ths_mult
                         
         learning_base.__init__(self)
 
@@ -563,7 +557,6 @@ class classifier(learning_base):
         X is single sample
         return predicted values (not necessarily binaries)
         '''
-
         
         if self.method.find('svm')>=0:
             
@@ -717,6 +710,12 @@ class classifier(learning_base):
             sigma = np.sqrt(MSE)
 
             l_err = p_vals + self.ths_mult*sigma - logps #- self.logp_offset
+            return l_err
+
+        elif self.method == 'rnd':
+            if len(np.shape(X))==1: X = [X]
+
+            l_err = np.random.choice([-1, 1], size=len(X), p=[self.class_weight, 1.0-self.class_weight])
             return l_err
 
 

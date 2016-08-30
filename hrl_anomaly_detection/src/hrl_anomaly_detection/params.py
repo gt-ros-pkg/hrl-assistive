@@ -53,7 +53,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm', 'progress_svm',\
-                                         'progress_state', 'hmmgp', 'state_kmean']
+                                         'progress_state', 'hmmgp', 'state_kmean', 'rnd']
         param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         param_dict['ROC']['update_list'] = [ 'hmmgp' ]
@@ -587,7 +587,9 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_diag_param_range': np.logspace(-3.0, -0.726, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-2.301, 0.303, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-1.886, 0.33, nPoints),\
-                          'osvm_param_range': np.logspace(-4., 0.0, nPoints)}        
+                          'osvm_param_range': np.logspace(-4., 0.0, nPoints),\
+                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          }        
         
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
