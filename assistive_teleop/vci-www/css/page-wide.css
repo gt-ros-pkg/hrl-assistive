@@ -29,14 +29,14 @@ body {
     left: 0;
 }
 
-#left-col-accordion > div {
+div.left-col-accordion > .ui-accordion-content {
     padding:0;
+    padding-bottom:0.3em;
     width:99%;
-    height:inherit !important;
 }
 
+
 #left-col-small {
-/*    background-color: rgba(238, 178, 17, 1);  GT GOLD*/
     background-color: rgba(51, 81, 112, 1); /* GT BLUE */
     height: 100%;
     left:0;
@@ -45,9 +45,7 @@ body {
 }
 
 #task-menu {
-    background-color: rgba(200, 200, 210, 1);
     display: block;
-    width: 100%;
 }
 #task-menu h3 {
     display: block;
@@ -58,19 +56,6 @@ body {
     padding: 0.4em 0em;
 }
 
-/*
-#main-menu {
-    display: block;
-}
-
-#main-menu h3 {
-    display: block;
-    font-size: 1.6em;
-    width: 100%;
-    text-align: center;
-    margin: 0px;
-    padding: 0.4em 0em;
-}*/
 .menu-item {
     display: inline-block;
     height: 40px;

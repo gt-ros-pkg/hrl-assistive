@@ -139,10 +139,10 @@ var RFH = (function (module) {
                 topic: "/pcl_filters/peek_points",
                 maxPoints: 16000,
                 tfClient: RFH.tfClient });
-            //        RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
-            RFH.initTaskMenu();
+            //RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+//            RFH.initTaskMenu();
 
-            // Added content for left column
+            /* Added content for left column */
             var showLeftColumn = function (event) {
                 $('#left-col').animate({'left':0});
             };
@@ -154,7 +154,7 @@ var RFH = (function (module) {
             $('#left-col').on('mouseleave.rfh', hideLeftColumn);
             setTimeout(hideLeftColumn, 2500);
 
-            $('#left-col-accordion').accordion({collapsible: true});
+            $('.left-col-accordion').accordion({collapsible: true});
 
         });
     };
