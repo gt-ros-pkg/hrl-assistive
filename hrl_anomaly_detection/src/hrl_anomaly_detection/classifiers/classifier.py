@@ -117,6 +117,7 @@ class classifier(learning_base):
         ths_mult: only for progress-based classifier
         '''              
         self.method = method
+        self.nPosteriors = nPosteriors
         self.dt     = None
         self.verbose = verbose
 
@@ -169,7 +170,6 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
             self.std_coff  = 1.0
-            self.nPosteriors = nPosteriors
             self.ths_mult = ths_mult
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
@@ -192,12 +192,10 @@ class classifier(learning_base):
         elif self.method == 'mbkmean' or self.method == 'kmean' or self.method == 'state_kmean':
             self.mbkmean_batch_size = mbkmean_batch_size
             self.ths_mult = ths_mult
-            self.nPosteriors = nPosteriors
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
         elif self.method == 'hmmgp':
             self.ths_mult    = ths_mult
-            self.nPosteriors = nPosteriors
             
             from sklearn import gaussian_process
             self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
@@ -215,10 +213,9 @@ class classifier(learning_base):
             self.coef0       = coef0
             self.nu          = nu
             self.ths_mult    = ths_mult
-            self.nPosteriors = nPosteriors
-            
                         
         learning_base.__init__(self)
+
 
     def fit(self, X, y, ll_idx=None, parallel=True, warm_start=False):
         '''
