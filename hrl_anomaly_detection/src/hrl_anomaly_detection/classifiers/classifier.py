@@ -215,6 +215,7 @@ class classifier(learning_base):
             self.coef0       = coef0
             self.nu          = nu
             self.ths_mult    = ths_mult
+            self.nPosteriors = nPosteriors
             
                         
         learning_base.__init__(self)
@@ -229,7 +230,7 @@ class classifier(learning_base):
         ##     ## y_train=y
         ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
-        if (self.method.find('svm')>=0 or self.method.find('svr')>=0) and self.method is not 'cssvm':
+        if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
 
@@ -265,9 +266,6 @@ class classifier(learning_base):
             elif self.method == 'progress_svm':
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.progress_svm_gamma)\
                   +' -w-1 '+str(self.progress_svm_w_negative)+' -c '+str(self.progress_svm_cost)
-            elif self.method == 'hmmsvr':
-                commands = '-q -s 4'+' -t 1'+' -n '+str(self.nu)+' -g '+str(self.gamma)\
-                  +' -c '+str(self.cost) 
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
@@ -279,6 +277,29 @@ class classifier(learning_base):
                 print commands                
                 return False
             return True
+
+        elif self.method.find('svr')>=0:
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
+            commands = '-q -s 4 -t 0'+' -n '+str(self.nu)+' -g 0.04' \
+              +' -c '+str(self.cost) + ' -d 3' 
+              #+str(self.gamma)\
+            if type(X) == list: X = np.array(X)
+            
+            # extract only negatives
+            ll_logp = [ [X[i,0]] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
+
+
+            try: self.dt = svm.svm_train(ll_logp, ll_post, commands )
+            except:
+                print self.dt
+                print "svm training failure", np.shape(ll_logp), np.shape(ll_post)
+                print commands                
+                return False
+            return True
+              
+        
         elif self.method == 'cssvm':
             sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
             import cssvmutil as cssvm
@@ -689,11 +710,13 @@ class classifier(learning_base):
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
 
-            if type(X) is not list: X=X.tolist()
-            if y is not None:
-                p_labels, (ACC, MSE, SCC), p_vals = svm.svm_predict(y, X, self.dt)
-            else:
-                p_labels, (ACC, MSE, SCC), p_vals = svm.svm_predict([0]*len(X), X, self.dt)
+            if len(np.shape(X))==1: X = [X]
+            if type(X) is list: X= np.array(X)
+            
+            logps = X[:,0]
+            posts = X[:,-self.nPosteriors:].tolist()
+                
+            p_labels, (ACC, MSE, SCC), p_vals = svm.svm_predict(logps, posts, self.dt, options='-q')
             sigma = np.sqrt(MSE)
 
             l_err = p_vals + self.ths_mult*sigma - logps #- self.logp_offset

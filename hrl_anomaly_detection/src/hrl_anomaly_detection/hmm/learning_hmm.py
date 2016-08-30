@@ -485,6 +485,7 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
 
     if nSubSample is not None:
+        from hrl_anomaly_detection import data_manager as dm
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                            nSubSample=nSubSample)

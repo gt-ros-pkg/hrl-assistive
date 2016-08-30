@@ -127,8 +127,13 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         testDataX = normalTrainData
         testDataY = -np.ones(len(normalTrainData[0]))
 
-        if not (method == 'hmmgp'):
+        if method == 'hmmgp' or method == 'hmmsvr':
+            nSubSample = 20
+        else:
             nSubSample = None
+            ## nMaxData   = 40 #100
+            ## rnd_sample = True #False
+            
 
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
