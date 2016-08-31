@@ -1702,35 +1702,35 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
     
 
 
+def getBestParamIdx(fp_cost, fn_cost, method_list, ROC_data, nPoints, verbose=False):
+    '''
+    Return index of the best weight from weight list of each method
+    '''
 
-def cost_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, param_idx=None):
-    # ---------------- ROC Visualization ----------------------
-    
-    print "Start to visualize ROC curves!!!"
-    ## ROC_data = ut.load_pickle(roc_pkl)
-    import itertools
-    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
-    shapes = itertools.cycle(['x','v', 'o', '+'])
-
-    matplotlib.rcParams['pdf.fonttype'] = 42
-    matplotlib.rcParams['ps.fonttype'] = 42 
-    
-    if no_plot is False:
-        if delay_plot:
-            fig = plt.figure(figsize=(5,8))
-            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
-            
-        else:
-            fig = plt.figure()
-
-
-    fp_cost = 0.7
-    fn_cost = 1.0 - fp_cost
     min_cost_idx = []
+
+    for mi, method in enumerate(method_list):
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        
+        total_cost = []
+        for i in xrange(nPoints):
+            total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
+
+        idx = np.argmin(total_cost)
+        min_cost_idx.append(idx)
+    
+    return min_cost_idx
+
+
+def cost_info(fp_cost, fn_cost, param_idx, method_list, ROC_data, nPoints, \
+              timeList=None, verbose=True):
+
     m_cost_l  = []
-    m_delay_mean_l = []
-    m_delay_std_l = []
+    m_delay_l = []
 
     for mi, method in enumerate(method_list):
 
@@ -1740,102 +1740,92 @@ def cost_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, s
         fn_ll = ROC_data[method]['fn_l']
         delay_ll = ROC_data[method]['delay_l']
 
-        tpr_l = []
-        fpr_l = []
-        fnr_l = []
-        tnr_l = []
-        delay_mean_l = []
-        delay_std_l  = []
-        acc_l = []
-        total_cost = []
-
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
-            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+            ## print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
         else:
             time_step = 1.0
 
         for i in xrange(nPoints):
 
-            total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
-            
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            if param_idx[mi] == i:
+                cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
+                delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                               if delay_ll[i][ii]>=0 ]
 
-            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
-            if len(delay_list)>0:
-                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
-                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
-            else:
-                delay_mean_l.append( 0 )
-                delay_std_l.append( 0 )
+                m_cost_l.append(cost)
+                m_delay_l.append( delay_list)
+                break
 
-        if param_idx is None:
-            idx = np.argmin(total_cost)
-        else:
-            idx = param_idx[mi]
-        min_cost_idx.append(idx)
-        m_cost_l.append( total_cost[idx] )
-        m_delay_mean_l.append( delay_mean_l[idx] )
-        m_delay_std_l.append( delay_std_l[idx] )
-
-        from sklearn import metrics
-        print "--------------------------------"
-        print " AUC "
-        print "--------------------------------"
-        print method
-        print tpr_l
-        print fpr_l
-        print total_cost, idx
-        print total_cost[ idx ] , delay_mean_l[ idx ]
-        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-        print "--------------------------------"
+    return m_cost_l, m_delay_l
 
 
-    if no_plot is False:
 
-        ind = np.arange(len(method_list)) #*0.9 #+width/2.0
-        width = .7
-        
-        # visualization
-        color = colors.next()
-        shape = shapes.next()
-        ax1 = fig.add_subplot(211)
-        rects = ax1.bar(ind, m_delay_mean_l, width, color='r', yerr=m_delay_std_l, \
-                         error_kw=dict(elinewidth=6, ecolor='pink'))
-        ax1.set_ylabel('Detection Delay [s]', fontsize=24)
-        ax1.set_xlim([-0.2, (ind+width+0.2)[-1]])
-            
-        ax2 = fig.add_subplot(212)
-        rects = ax2.bar(ind, m_cost_l, width, color='r', \
-                         error_kw=dict(elinewidth=6, ecolor='pink'))
-        ax2.set_ylabel('Min Total Cost', fontsize=24)
-        ax2.set_xlim([-0.2, (ind+width+0.2)[-1]])
+def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=True):
+    '''
+    '''
+    m_cost_mean_l  = []
+    m_cost_std_l   = []
+    m_delay_mean_l = []
+    m_delay_std_l  = []
+    
+    for i in xrange(len(method_list)):
+        m_cost_mean_l.append( np.mean(cost_list[i]) )
+        m_cost_std_l.append( np.std(cost_list[i]))
+        m_delay_mean_l.append( np.mean(delay_list[i]))
+        m_delay_std_l.append( np.std(delay_list[i]))
 
-            
-        ## plt.xlim([0,1])
-        ## plt.xlim([0,100])
-        ## plt.ylim([0,3])
-        ## plt.legend(loc='upper left', prop={'size':24})
-        ## plt.ylabel('Detection Time [s]', fontsize=24)
-        ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
-        ## plt.xlabel('F1 score', fontsize=24)
-        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    print np.shape(cost_list), np.shape(delay_list)
 
-        plt.xticks(ind+width/2.0, method_list, fontsize=40 )
-        for tick in ax1.xaxis.get_major_ticks():
-            tick.label.set_fontsize(18) 
-        
-        
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    fig = plt.figure()
+
+    ind = np.arange(len(method_list)) #*0.9 #+width/2.0
+    width = .7
+
+    # visualization
+    color = colors.next()
+    shape = shapes.next()
+    ax1 = fig.add_subplot(211)
+    rects = ax1.bar(ind, m_delay_mean_l, width, color='r', yerr=m_delay_std_l, \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    ax1.set_ylabel('Detection Delay [s]', fontsize=24)
+    ax1.set_xlim([-0.2, (ind+width+0.2)[-1]])
+
+    ax2 = fig.add_subplot(212)
+    rects = ax2.bar(ind, m_cost_mean_l, width, color='r', yerr=m_cost_std_l, \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    ax2.set_ylabel('Min Total Cost', fontsize=24)
+    ax2.set_xlim([-0.2, (ind+width+0.2)[-1]])
+
+
+    ## plt.xlim([0,1])
+    ## plt.xlim([0,100])
+    ## plt.ylim([0,3])
+    ## plt.legend(loc='upper left', prop={'size':24})
+    ## plt.ylabel('Detection Time [s]', fontsize=24)
+    ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+    ## plt.xlabel('F1 score', fontsize=24)
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    plt.xticks(ind+width/2.0, method_list, fontsize=40 )
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(18) 
+                
     if save_pdf:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
-    elif no_plot is False:
+    else:
         plt.show()
     
 
-    return min_cost_idx
 
 
 

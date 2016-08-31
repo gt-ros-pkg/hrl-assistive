@@ -740,6 +740,9 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
     nSubFold_list = []
     ## kFold_list = kFold_list[:1]
+    
+    cost_list  = [[] for i in xrange(len(method_list))]
+    delay_list = [[] for i in xrange(len(method_list))]
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -875,20 +878,27 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        best_param_idx = cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, \
-                                   no_plot=True, save_pdf=save_pdf, \
-                                   timeList=timeList)
+        fp_cost = 0.5
+        fn_cost = 1.0 - fp_cost
+        
+        best_param_idx = getBestParamIdx(fp_cost, fn_cost, method_list, ROC_data, nPoints, verbose=False)
 
         print method_list
         print best_param_idx
 
         roc_pkl = os.path.join(ref_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, \
-                  no_plot=no_plot, save_pdf=save_pdf, \
-                  timeList=timeList, param_idx=best_param_idx)
+        costs, delays = cost_info(fp_cost, fn_cost, best_param_idx, method_list, ROC_data, nPoints, \
+                                  timeList=timeList, verbose=False)
 
+        for i in xrange(len(method_list)):
+            cost_list[i].append( costs[i] )
+            delay_list[i] += delays[i]
+            print np.shape(cost_list[i]), np.shape(delay_list[i])
 
+    if no_plot is False:
+        plotCostDelay(method_list, cost_list, delay_list, save_pdf=save_pdf)
+        
 
 
 def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -2186,7 +2196,7 @@ if __name__ == '__main__':
 
 
     elif opt.bEvaluationAccParam:
-        param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
+        param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
         param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
@@ -2221,7 +2231,7 @@ if __name__ == '__main__':
                              no_plot=opt.bNoPlot, delay_plot=True)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['fixed', 'change', 'progress', 'hmmgp']
+        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
         param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
