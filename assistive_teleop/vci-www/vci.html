@@ -48,6 +48,7 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-cart.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/ee-rotation.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
+  <script type="text/javascript" src="js/action-modes/ee-control/arm-postures.js"></script>
   <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
   <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
@@ -78,112 +79,113 @@
 <!--     <div id="network-status"></div>-->
  </div>
  <div id="left-col">
-     <div id="main-menu">
-        <div id="undo"><p>Undo</p></div>
+    <div class="left-col-accordion">
         <h3>Main Menu</h3>
-     </div>
-     <div id="task-menu">
+        <div id="main-menu"></div>
+    </div>
+    <div class="left-col-accordion">
         <h3>Task Menu</h3>
+        <div id="task-menu">
             <form>
-                <label for="task-select">Select a Task</label>
-                <select id="task-select" name="task-select">
-                    <option value="wiping_mouth">Wipe Mouth</option>
+                <label for="domain-select">Select a Planned Task</label>
+                <select id="domain-select" name="domain-select">
+                    <option value="adls">Self-Care Tasks</option>
+                    <option value="realtime_base_selection">Approach</option>
+                    <option value="pick_and_place">Move Object</option>
+                </select>
+                
+                <label for="adl-task-select" class="option-select option-adl">Select a Self-care Task</label>
+                <select id="adl-task-select" name="adl-task-select" class="option-select option-adl">
                     <option value="shaving">Shave Face</option>
+                    <option value="wiping_face">Wipe Face</option>
                     <option value="scratching_forehead">Scratch Forehead</option>
                     <option value="scratching_left_knee">Scratch Left Knee</option>
                     <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
-                <label for="arm-select">Select arm</label>
-                <select id="arm-select" name="arm-select" class='task-option-select'>
+                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
+                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
                 </select>
-                <label for="model-select">Select a Location</label>
-                <select id="model-select" name="model-select" class='task-option-select'>
-                    <option value="autobed">Autobed</div>
-                    <option value="wheelchair">Wheelchair</div>
+                <label for="model-select" class="option-select option-adl">Select a Location</label>
+                <select id="model-select" name="model-select" class='option-select option-adl'>
+                    <option value="autobed">Autobed</option>
+                    <option value="wheelchair">Wheelchair</option>
                 </select>
             </form>
-        <div id="start-task-button" class="task-button">Start Task</div>
-     </div>
-     <div id="controls">
+          <div id="start-task-button" class="task-button">Start Task</div>
+        </div>
+    </div>
+
+    <div class="left-col-accordion">
         <h3>Controls</h3>
-        <!-- Looking Controls -->
-        <div class="look-ctrl zoom in">Zoom In</div>
-        <div class="look-ctrl zoom out">Zoom Out</div>
-        <!-- Driving Controls -->
-        <div class="tuck-driving drive-ctrl">Tuck Arms</div>
-        <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
-        <h4 class="drive-ctrl">Click on video to drive.</h4>
+        <div id="controls">
+           <!-- Looking Controls -->
+           <div class="look-ctrl zoom in">Zoom In</div>
+           <div class="look-ctrl zoom out">Zoom Out</div>
+           <!-- Driving Controls -->
+           <div class="tuck-driving drive-ctrl">Tuck Arms</div>
+           <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
+           <h4 class="drive-ctrl">Click on video to drive.</h4>
 
-        <!-- Shared Arm Controls
-        <div id="ee-mode-set" class="arm-ctrl">
-            <input class="menu-item" id="ee-mode-table" type="radio" name="ee-mode-radio" checked="checked">
-            <label for="ee-mode-table">Table</label>
-            <input class="menu-item" id="ee-mode-wall" type="radio" name="ee-mode-radio">
-            <label for="ee-mode-wall">Wall</label>
-            <input class="menu-item" id="ee-mode-free" type="radio" name="ee-mode-radio">
-            <label for="ee-mode-free">Free</label>
-        </div>-->
-<!--        <input type="checkbox" id="touchspot-toggle" class="arm-ctrl"/>
-        <label id="touchspot-toggle-label" for="touchspot-toggle" class="arm-ctrl">Touch Spot</label>-->
-<!--        <button id="wristCW" >CW</button>-->
-<!--        <button id="wristCCW">CCW</button>-->
+            <!-- Step size controls -->
+            <div id="speedOptions" class="arm-ctrl">
+                <h4>Step Size</h4>
+                <div id="speedOptions-buttons">
+                  <form id="speedOptions-form">
+                    <input type="radio" id="tiny" class="speed-option" name="speedOption"/>
+                    <label for="tiny">XS</label>
+                    <input type="radio" id="small" class="speed-option" name="speedOption"/>
+                    <label for="small">S</label>
+                    <input type="radio" id="medium" class="speed-option" name="speedOption" checked="checked"/>
+                    <label for="medium">M</label>
+                    <input type="radio" id="large" class="speed-option" name="speedOption"/>
+                    <label for="large">L</label>
+                  </form>
+                </div>
+            </div>
 
-        <!-- Step size controls -->
-        <div id="speedOptions" class="arm-ctrl">
-            <h4>Step Size</h4>
-            <div id="speedOptions-buttons">
-              <form id="speedOptions-form">
-                <input type="radio" id="tiny" class="speed-option" name="speedOption"/>
-                <label for="tiny">XS</label>
-                <input type="radio" id="small" class="speed-option" name="speedOption"/>
-                <label for="small">S</label>
-                <input type="radio" id="medium" class="speed-option" name="speedOption" checked="checked"/>
-                <label for="medium">M</label>
-                <input type="radio" id="large" class="speed-option" name="speedOption"/>
-                <label for="large">L</label>
-              </form>
+            <!-- Right Arm Controls -->
+            <div id="r-posrot-set" class="r-arm-ctrl posrot-set">
+                <h4>Position/Rotation</h4>
+                <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+                <label for="r-posrot-pos">Hand Position</label>
+                <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
+                <label for="r-posrot-rot">Wrist Rotation</label>
+            </div>
+            <div class="r-arm-ctrl">
+                <!-- Assorted Actions -->
+                <h4>Actions</h4>
+                <div class="posture aside r-arm-ctrl">Move Aside</div>
+                <div class="posture manip r-arm-ctrl">Move to Setup</div>
+                <div class="pick-and-place r-arm-ctrl"></div>
+                <div class="rtbs r-arm-ctrl">Approach</div>
+                <div class="camera-swing r-arm-ctrl">3D Peek</div>
+    <!--            <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>-->
+            </div>
+
+            <!-- Left Arm Controls -->
+            <div id="l-posrot-set" class="l-arm-ctrl posrot-set">
+                <h4>Position/Rotation</h4>
+                <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
+                <label for="l-posrot-pos">Hand Position</label>
+                <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
+                <label for="l-posrot-rot">Wrist Rotation</label>
+            </div>
+
+            <div class="l-arm-ctrl">
+                <!-- Assorted Actions -->
+                <h4>Actions</h4>
+                <div class="posture aside l-arm-ctrl">Move Aside</div>
+                <div class="posture manip l-arm-ctrl">Move to Setup</div>
+                <div class="pick-and-place l-arm-ctrl"></div>
+                <div class="rtbs l-arm-ctrl">Approach</div>
+                <div class="camera-swing l-arm-ctrl">3D Peek</div>
+    <!--            <div class="arm-cam l-arm-ctrl">Forearm Camera</div>-->
             </div>
         </div>
-
-        <!-- Right Arm Controls -->
-        <div id="r-posrot-set" class="r-arm-ctrl posrot-set">
-            <h4>Position/Rotation</h4>
-            <input class="menu-item" id="r-posrot-pos" type="radio" name="posrot-radio" checked="checked">
-            <label for="r-posrot-pos">Hand Position</label>
-            <input class="menu-item" id="r-posrot-rot" type="radio" name="posrot-radio">
-            <label for="r-posrot-rot">Wrist Rotation</label>
-        </div>
-        <div class="r-arm-ctrl">
-            <!-- Assorted Actions -->
-            <h4>Actions</h4>
-            <div class="tuck-side r-arm-ctrl">Tuck Aside</div>
-            <div class="pick-and-place r-arm-ctrl"></div>
-            <div class="rtbs r-arm-ctrl">Approach</div>
-            <div class="camera-swing r-arm-ctrl">3D Peek</div>
-<!--            <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>-->
-        </div>
-
-        <!-- Left Arm Controls -->
-        <div id="l-posrot-set" class="l-arm-ctrl posrot-set">
-            <h4>Position/Rotation</h4>
-            <input class="menu-item" id="l-posrot-pos" type="radio" name="posrot-radio" checked="checked">
-            <label for="l-posrot-pos">Hand Position</label>
-            <input class="menu-item" id="l-posrot-rot" type="radio" name="posrot-radio">
-            <label for="l-posrot-rot">Wrist Rotation</label>
-        </div>
-
-        <div class="l-arm-ctrl">
-            <!-- Assorted Actions -->
-            <h4>Actions</h4>
-            <div class="tuck-side l-arm-ctrl">Tuck Aside</div>
-            <div class="pick-and-place l-arm-ctrl"></div>
-            <div class="rtbs l-arm-ctrl">Approach</div>
-            <div class="camera-swing l-arm-ctrl">3D Peek</div>
-<!--            <div class="arm-cam l-arm-ctrl">Forearm Camera</div>-->
-        </div>
-        </div>
+    </div>
+    <div id="undo"><p>Undo</p></div>
      <div id="util-bar">
         <div id='battery-status'>
             <div class='battery-contact'></div>
@@ -198,6 +200,8 @@
         <div id="runstop-button" >RUN-STOP</div>
      </div>
  </div>
+ <div id="left-col-small"></div>
+
  <div id='video-main'>
      <img id="mjpeg-image"></img>
      <div id="image-cover"></div>

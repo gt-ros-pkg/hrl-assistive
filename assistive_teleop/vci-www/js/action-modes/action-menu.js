@@ -93,8 +93,8 @@ var RFH = (function (module) {
             sliderDiv: 'torsoSlider',
             torso: RFH.pr2.torso}));
 
-
         RFH.taskMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
+            ros: RFH.ros,
             div: 'video-main',
             gripper: RFH.pr2.l_gripper,
             tfClient: RFH.tfClient,
@@ -102,6 +102,7 @@ var RFH = (function (module) {
             camera: RFH.mjpeg.cameraModel}));
 
         RFH.taskMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
+            ros: RFH.ros,
             div: 'video-main',
             gripper: RFH.pr2.r_gripper,
             tfClient: RFH.tfClient,

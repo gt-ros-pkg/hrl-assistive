@@ -15,19 +15,37 @@ body {
     /*base css ,but not work in all browsers*/
     margin: 0;
     overflow: hidden;
+    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
 }
+
 #left-col {
+    background-color: #555555;
+    background-color: rgba(30,30,30,0.3);
     float: left;
     height: 100%;
     width: 200px;
     position: relative;
     z-index:100;
+    left: 0;
+}
+
+div.left-col-accordion > .ui-accordion-content {
+    padding:0;
+    padding-bottom:0.3em;
+    width:99%;
+}
+
+
+#left-col-small {
+    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
+    height: 100%;
+    left:0;
+    position:absolute;
+    width: 64px;
 }
 
 #task-menu {
-    background-color: rgba(200, 200, 210, 1);
     display: block;
-    width: 100%;
 }
 #task-menu h3 {
     display: block;
@@ -38,19 +56,6 @@ body {
     padding: 0.4em 0em;
 }
 
-#main-menu {
-    display: block;
-    width: 100%;
-    background-color: rgba(218, 236, 255, 1.0);
-}
-#main-menu h3 {
-    display: block;
-    font-size: 1.6em;
-    width: 100%;
-    text-align: center;
-    margin: 0px;
-    padding: 0.4em 0em;
-}
 .menu-item {
     display: inline-block;
     height: 40px;
@@ -62,9 +67,8 @@ body {
 }
 #video-main {
     overflow: hidden;
-    position: relative;
-    float:left;
-    left: 0;
+    position: absolute;
+    left: 64px;
 }
 #viewer-canvas {
     display:none;

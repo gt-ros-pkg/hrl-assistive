@@ -2,6 +2,7 @@ var RFH = (function (module) {
     module.CartesianEEControl = function (options) {
         'use strict';
         var self = this;
+        var ros = options.ros;
         self.arm = options.arm;
         self.side = self.arm.side;
         self.name = options.name || self.side[0]+'EECartAction';
@@ -21,7 +22,6 @@ var RFH = (function (module) {
             'medium': 0.11,
             'large': 0.25};
         self.tfClient = options.tfClient;
-        var ros = self.tfClient.ros;
         self.eeTF = null;
         self.cameraTF = null;
         self.eeInOpMat = null;
@@ -31,12 +31,6 @@ var RFH = (function (module) {
         self.dt = 1000; //hold-repeat time in ms
         self.active = false;
         self.$viewer = $('#viewer-canvas').css('zIndex',1);
-
-        self.pixel23d = new RFH.Pixel23DClient({
-            ros: ros,
-            cameraInfoTopic: self.camera.infoTopic,
-            serviceName: '/pixel_2_3d'
-        });
 
         $('#touchspot-toggle, #toward-button, #away-button').button();
         // Clear out text spans, which create some issues with hover for preview gripper.
@@ -51,17 +45,22 @@ var RFH = (function (module) {
 
         self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.tasks.realtime_base_selection.sendTaskGoal(self.side);});
 
-        var tuckAside = function (event) {
-            console.log("Tuck Arm To Side!");
-            var tuckSideAngles;
-            if (self.side[0] == 'r') {
-                tuckSideAngles = [-1.8, 1.25, -1.9, -2.0, 3.5,  -1.5, 0];
-            } else if (self.side[0] === 'l') {
-                tuckSideAngles = [1.8,  1.25,  1.9, -2.0, 2.8, -1.5, 0];
-            }
-            self.arm.sendJointAngleGoal(tuckSideAngles);
-        };
-        $('#controls .tuck-side.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', tuckAside);
+        self.pixel23d = new RFH.Pixel23DClient({
+            ros: ros,
+            cameraInfoTopic: self.camera.infoTopic,
+            serviceName: '/pixel_2_3d'
+        });
+
+        /* Arm Posture-based tucking/untucking */
+        self.armPostureUtility = new RFH.ArmPostureUtility({ros: ros, arm: self.arm});
+
+        /* GRIPPER SLIDER CONTROLS */
+        var gripperZeroOffset = self.side[0] == 'r' ? -0.00063 : 0.0013;
+        self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
+            zeroOffset: gripperZeroOffset,
+            divId: self.side[0] +'GripperCtrlContainer'});
+
+
 /*
         var armCameraOn = false;
         var showArmCamera = function (event) {
@@ -257,12 +256,6 @@ var RFH = (function (module) {
             var goal = self.getPoseFromDelta(xyzrpy);
             self.arm.sendPoseGoal(goal);
         };
-
-        /// GRIPPER SLIDER CONTROLS ///
-        var gripperZeroOffset = self.side[0] == 'r' ? -0.00063 : 0.0013;
-        self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
-            zeroOffset: gripperZeroOffset,
-            divId: self.side[0] +'GripperCtrlContainer'});
 
         self.updateCtrlRingViz = function () {
             // Check that we have values for both camera and ee frames
