@@ -1,32 +1,5 @@
-.camera-swing{
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-.pick-and-place {
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
-.tuck-side {
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
 .r-arm-ctrl, .l-arm-ctrl{
     display: none;
-}
-
-.arm-cam {
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
-#touchspot-toggle-label {
-    display: block;
-    margin: 0% 10%;
 }
 
 #arm-svg {

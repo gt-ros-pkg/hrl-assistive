@@ -79,45 +79,11 @@
 <!--     <div id="network-status"></div>-->
  </div>
  <div id="left-col">
-    <div class="left-col-accordion">
+    <div class="left-col-accordion main-menu-accordion">
         <h3>Main Menu</h3>
         <div id="main-menu"></div>
     </div>
-    <div class="left-col-accordion">
-        <h3>Task Menu</h3>
-        <div id="task-menu">
-            <form>
-                <label for="domain-select">Select a Planned Task</label>
-                <select id="domain-select" name="domain-select">
-                    <option value="adls">Self-Care Tasks</option>
-                    <option value="realtime_base_selection">Approach</option>
-                    <option value="pick_and_place">Move Object</option>
-                </select>
-                
-                <label for="adl-task-select" class="option-select option-adl">Select a Self-care Task</label>
-                <select id="adl-task-select" name="adl-task-select" class="option-select option-adl">
-                    <option value="shaving">Shave Face</option>
-                    <option value="wiping_face">Wipe Face</option>
-                    <option value="scratching_forehead">Scratch Forehead</option>
-                    <option value="scratching_left_knee">Scratch Left Knee</option>
-                    <option value="scratching_right_knee">Scratch Right Knee</option>
-                </select>
-                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
-                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place'>
-                    <option value="left_arm">Left Arm</option>
-                    <option value="right_arm">Right Arm</option>
-                </select>
-                <label for="model-select" class="option-select option-adl">Select a Location</label>
-                <select id="model-select" name="model-select" class='option-select option-adl'>
-                    <option value="autobed">Autobed</option>
-                    <option value="wheelchair">Wheelchair</option>
-                </select>
-            </form>
-          <div id="start-task-button" class="task-button">Start Task</div>
-        </div>
-    </div>
-
-    <div class="left-col-accordion">
+    <div class="left-col-accordion controls-accordion">
         <h3>Controls</h3>
         <div id="controls">
            <!-- Looking Controls -->
@@ -156,11 +122,11 @@
             <div class="r-arm-ctrl">
                 <!-- Assorted Actions -->
                 <h4>Actions</h4>
-                <div class="posture aside r-arm-ctrl">Move Aside</div>
-                <div class="posture manip r-arm-ctrl">Move to Setup</div>
-                <div class="pick-and-place r-arm-ctrl"></div>
-                <div class="rtbs r-arm-ctrl">Approach</div>
-                <div class="camera-swing r-arm-ctrl">3D Peek</div>
+                <div class="camera-swing r-arm-ctrl controls-button">3D Peek</div>
+                <div class="posture aside r-arm-ctrl controls-button">Move Aside</div>
+                <div class="posture manip r-arm-ctrl controls-button">Move to Setup</div>
+                <div class="pick-and-place r-arm-ctrl controls-button"></div>
+                <div class="rtbs r-arm-ctrl controls-button">Approach</div>
     <!--            <div class="arm-cam r-arm-ctrl" >Forearm Camera</div>-->
             </div>
 
@@ -176,15 +142,49 @@
             <div class="l-arm-ctrl">
                 <!-- Assorted Actions -->
                 <h4>Actions</h4>
-                <div class="posture aside l-arm-ctrl">Move Aside</div>
-                <div class="posture manip l-arm-ctrl">Move to Setup</div>
-                <div class="pick-and-place l-arm-ctrl"></div>
-                <div class="rtbs l-arm-ctrl">Approach</div>
-                <div class="camera-swing l-arm-ctrl">3D Peek</div>
+                <div class="camera-swing l-arm-ctrl controls-button">3D Peek</div>
+                <div class="posture aside l-arm-ctrl controls-button ">Move Aside</div>
+                <div class="posture manip l-arm-ctrl controls-button">Move to Setup</div>
+                <div class="pick-and-place l-arm-ctrl controls-button"></div>
+                <div class="rtbs l-arm-ctrl controls-button">Approach</div>
     <!--            <div class="arm-cam l-arm-ctrl">Forearm Camera</div>-->
             </div>
         </div>
     </div>
+    <div class="left-col-accordion task-menu-accordion">
+        <h3>Task Menu</h3>
+        <div id="task-menu">
+            <form>
+                <label for="domain-select">Select a Planned Task</label>
+                <select id="domain-select" name="domain-select">
+                    <option value="adls">Self-Care Tasks</option>
+                    <option value="realtime_base_selection">Approach</option>
+                    <option value="pick_and_place">Move Object</option>
+                </select>
+                
+                <label for="adl-task-select" class="option-select option-adl">Select a Self-care Task</label>
+                <select id="adl-task-select" name="adl-task-select" class="option-select option-adl">
+                    <option value="shaving">Shave Face</option>
+                    <option value="wiping_face">Wipe Face</option>
+                    <option value="scratching_forehead">Scratch Forehead</option>
+                    <option value="scratching_left_knee">Scratch Left Knee</option>
+                    <option value="scratching_right_knee">Scratch Right Knee</option>
+                </select>
+                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
+                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place'>
+                    <option value="left_arm">Left Arm</option>
+                    <option value="right_arm">Right Arm</option>
+                </select>
+                <label for="model-select" class="option-select option-adl">Select a Location</label>
+                <select id="model-select" name="model-select" class='option-select option-adl'>
+                    <option value="autobed">Autobed</option>
+                    <option value="wheelchair">Wheelchair</option>
+                </select>
+            </form>
+          <div id="start-task-button" class="task-button">Start Task</div>
+        </div>
+    </div>
+
     <div id="undo"><p>Undo</p></div>
      <div id="util-bar">
         <div id='battery-status'>

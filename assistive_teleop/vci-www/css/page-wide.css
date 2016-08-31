@@ -29,31 +29,18 @@ body {
     left: 0;
 }
 
+#left-col-small {
+    height: 100%;
+    left:0;
+    position:absolute;
+    width: 80px;
+    z-index: 99;
+}
+
 div.left-col-accordion > .ui-accordion-content {
     padding:0;
     padding-bottom:0.3em;
     width:99%;
-}
-
-
-#left-col-small {
-    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
-    height: 100%;
-    left:0;
-    position:absolute;
-    width: 64px;
-}
-
-#task-menu {
-    display: block;
-}
-#task-menu h3 {
-    display: block;
-    font-size: 1.6em;
-    width: 100%;
-    text-align: center;
-    margin: 0px;
-    padding: 0.4em 0em;
 }
 
 .menu-item {
@@ -62,14 +49,17 @@ div.left-col-accordion > .ui-accordion-content {
     width: 48%;
     margin: 2px 0.5%;
 }
+
 .menu-item span.ui-button-text {
     padding: 0.5em 0.0em;
 }
+
 #video-main {
     overflow: hidden;
     position: absolute;
-    left: 64px;
+    right: 0;
 }
+
 #viewer-canvas {
     display:none;
     position:absolute;
@@ -78,16 +68,17 @@ div.left-col-accordion > .ui-accordion-content {
     width: 100%;
     height: 100%;
 }
+
 .cursor-wait {
     cursor: wait !important;
 }
-#controls {
-    display: inline-block;
-    height: 100%;
-    width: 100%;
-    min-width: 128px;
-    background-color: rgba(160, 200, 240, 1.0);
+
+.controls-button {
+    display:block;
+    margin:0% 10%;
+    padding: 0.25em;
 }
+
 #controls h3 {
     display: block;
     font-size: 1.4em;
@@ -95,12 +86,14 @@ div.left-col-accordion > .ui-accordion-content {
     text-align: center;
     margin-bottom: 0.3em;
 }
+
 #controls h4 {
     font-size: 1.2em;
     width: 100%;
     margin: 0.8em 0.1em 0.1em 0.1em;
     text-align: center;
 }
+
 .no-cursor {
     cursor: none !important;
 }

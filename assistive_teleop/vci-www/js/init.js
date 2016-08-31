@@ -140,21 +140,22 @@ var RFH = (function (module) {
                 maxPoints: 16000,
                 tfClient: RFH.tfClient });
             //RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
-//            RFH.initTaskMenu();
+            RFH.initTaskMenu();
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
-                $('#left-col').animate({'left':0});
+                $('#left-col').animate({'left':0}, {duration:200, easing:'easeOutCubic'});
             };
             var hideLeftColumn = function (event) {
-                $('#left-col').animate({'left':'-200px'});
+                $('#left-col').animate({'left':'-200px'}, {duration: 350, easing:'easeInCubic'});
             };
 
             $('#left-col-small').on('mouseenter.rfh', showLeftColumn);
-            $('#left-col').on('mouseleave.rfh', hideLeftColumn);
+            $('#left-col').on('mouseleave.rfh blur.rfh', hideLeftColumn);
             setTimeout(hideLeftColumn, 2500);
 
-            $('.left-col-accordion').accordion({collapsible: true});
+            $('.left-col-accordion').accordion({collapsible: true, heightStyle: 'content', animate:75});
+            $('.task-menu-accordion').accordion('option', 'active', false);
 
         });
     };
