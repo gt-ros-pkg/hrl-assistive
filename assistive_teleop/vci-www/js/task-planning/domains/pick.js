@@ -38,18 +38,18 @@ var RFH = (function (module) {
             switch (name){
                 case 'CHOOSE-OBJECT':
                     startFunc = function () {
-                        RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
-                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
-                        RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
-                        RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/CHOSEN-OBJ/'+args[0]);
+                        var getPoseCB = function (pose) {
+                            self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], pose);
+                        };
+                        RFH.actionMenu.tasks.getClickedPoseAction.registerPoseCB(getPoseCB, true);
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('paramLocationTask');
+                        RFH.actionMenu.startAction('getClickedPoseAction');
                     };
                     break;
                 case 'FORGET-OBJECT':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('LookingTask');
+                        RFH.actionMenu.startAction('LookingAction');
                     };
                     break;
                 case 'AUTO-GRASP':
@@ -57,12 +57,12 @@ var RFH = (function (module) {
                     if (args[0] === 'RIGHT_HAND') {
                         startFunc = function () {
                             RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                            RFH.taskMenu.startTask('rEECartTask');
+                            RFH.actionMenu.startAction('rEECartAction');
                         };
                     } else if (args[0] === 'LEFT_HAND') {
                         startFunc = function () {
                             RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                            RFH.taskMenu.startTask('lEECartTask');
+                            RFH.actionMenu.startAction('lEECartAction');
                         };
                     }
                     break;

@@ -38,10 +38,10 @@ var RFH = (function (module) {
             switch (name){
                 case 'ID-LOCATION':
                     startFunc = function () {
-                        RFH.taskMenu.tasks.paramLocationTask.setOffset({}); // No offset
-                        RFH.taskMenu.tasks.paramLocationTask.setOrientationOverride(null); // No override
-                        RFH.taskMenu.tasks.paramLocationTask.setPositionOverride(null); // No override
-                        RFH.taskMenu.tasks.paramLocationTask.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0]);
+                        var getPoseCB = function (pose) {
+                            self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], pose);
+                        };
+                        RFH.actionMenu.tasks.getClickedPoseAction.registerPoseCB(getPoseCB, true);
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.taskMenu.startTask('paramLocationTask');
                     };
