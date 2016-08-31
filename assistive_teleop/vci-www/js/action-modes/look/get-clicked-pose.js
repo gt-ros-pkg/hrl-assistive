@@ -1,6 +1,6 @@
 var RFH = (function (module) {
     module.GetClickedPose = function(options) {
-        'use strict';
+     'use strict';
         var self = this;
         var ros = options.ros;
         self.name = options.name || 'getClickedPoseAction';

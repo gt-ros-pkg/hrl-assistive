@@ -32,12 +32,12 @@ var RFH = (function (module) {
             if (args[0] === 'RIGHT_HAND') {
                 return function () {
                     RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                    RFH.taskMenu.startTask('rEECartTask');
+                    RFH.actionMenu.startAction('rEECartAction');
                 };
             } else if (args[0] === 'LEFT_HAND') {
                 return function () {
                     RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                    RFH.taskMenu.startTask('lEECartTask');
+                    RFH.actionMenu.startAction('lEECartAction');
                 };
             }
         };

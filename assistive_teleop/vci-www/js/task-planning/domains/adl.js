@@ -38,29 +38,29 @@ var RFH = (function(module) {
                 case 'REGISTER_HEAD':
                 case 'CALL_BASE_SELECTION':
                     startFunc = function () {
-                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('LookingTask');
-                    }
+                        RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+                        RFH.actionMenu.startAction('LookingAction');
+                    };
                     break;
                 case 'MOVE_BACK':
                 case 'MOVE_ROBOT':
                     startFunc = function () {
-                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('drivingTask');
-                    }
+                        RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+                        RFH.actionMenu.startAction('drivingAction');
+                    };
                     break;
                 case 'CONFIGURE_MODEL_ROBOT':
                     startFunc = function () {
-                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('torsoTask');
-                    }
+                        RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+                        RFH.actionMenu.startAction('torsoAction');
+                    };
                     break;
                 case 'MOVE_ARM':
                 case 'DO_TASK':
                     startFunc = function () {
-                        RFH.undo.sentUndoCommands['mode'] += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('lEECartTask');
-                    }
+                        RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
+                        RFH.actionMenu.startAction('lEECartAction');
+                    };
                     break;
             }
             return startFunc;
@@ -87,7 +87,7 @@ var RFH = (function(module) {
                 case 'STOP_TRACKING':
                     return "Stop Tracking";
                 case 'MOVE_ARM':
-                    return "Moving Arm"
+                    return "Moving Arm";
                 case 'DO_TASK':
                     return "Manual Task";
             }
@@ -149,10 +149,10 @@ var RFH = (function(module) {
             goalParam.set(goal_pred_list);
         };
 
-        var waitForParamUpdate = function (param, value, delayMS) {
+        var waitForParamUpdate = function (paramName, value, delayMS) {
             var param = new ROSLIB.Param({
                 ros: ros,
-                name: param
+                name: paramName
             });
             var flag = false;
             var checkFN = function () {
@@ -161,7 +161,7 @@ var RFH = (function(module) {
                 } else {
                     setTimeout(checkFN, delayMS);
                 }
-            }
+            };
             setTimeout(checkFN, delayMS);
         };
 

@@ -43,7 +43,7 @@ var RFH = (function (module) {
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
         self.$baseSelectionButton = $('.'+self.side[0]+'-arm-ctrl.rtbs').button();
 
-        self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.tasks.realtime_base_selection.sendTaskGoal(self.side);});
+        self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.domains.realtime_base_selection.sendTaskGoal(self.side);});
 
         self.pixel23d = new RFH.Pixel23DClient({
             ros: ros,
@@ -177,15 +177,13 @@ var RFH = (function (module) {
             if (graspingMsg.data) {
                 self.$pickAndPlaceButton.find('span').text("Set Down");
                 self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
-                //       self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['place'].sendTaskGoal(self.side)});
             } else {
                 self.$pickAndPlaceButton.find('span').text("Move Object");
                 self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
-                //        self.$pickAndPlaceButton.off('click.pickandplace').on('click.pickandplace', function(){RFH.taskMenu.tasks['pick'].sendTaskGoal(self.side)});
             }
         };
         self.gripper.graspingCBList.push(updatePickPlaceButton);
-        self.$pickAndPlaceButton.on('click.pickandplace', function(){RFH.taskMenu.tasks.pick_and_place.sendTaskGoal(self.side);});
+        self.$pickAndPlaceButton.on('click.pickandplace', function(){RFH.taskMenu.domains.pick_and_place.sendTaskGoal(self.side);});
 
         self.getPoseFromDelta = function (xyzrpy) {
             // Get default values for unspecified options

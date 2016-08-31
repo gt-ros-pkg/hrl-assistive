@@ -81,19 +81,19 @@ var RFH = (function (module) {
     };
 
     module.initActionMenu = function (divId) {
-        RFH.taskMenu = new RFH.ActionMenu({divId: divId,
+        RFH.actionMenu = new RFH.ActionMenu({divId: divId,
             ros: RFH.ros});
-        RFH.taskMenu.addAction(new RFH.Look({ros: RFH.ros, 
+        RFH.actionMenu.addAction(new RFH.Look({ros: RFH.ros, 
             div: 'video-main',
             head: RFH.pr2.head,
             camera: RFH.mjpeg.cameraModel}));
-        RFH.taskMenu.defaultActionName = 'lookingAction';
+        RFH.actionMenu.defaultActionName = 'lookingAction';
 
-        RFH.taskMenu.addAction(new RFH.Torso({containerDiv: 'video-main',
+        RFH.actionMenu.addAction(new RFH.Torso({containerDiv: 'video-main',
             sliderDiv: 'torsoSlider',
             torso: RFH.pr2.torso}));
 
-        RFH.taskMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
+        RFH.actionMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,
             ros: RFH.ros,
             div: 'video-main',
             gripper: RFH.pr2.l_gripper,
@@ -101,7 +101,7 @@ var RFH = (function (module) {
             eeDisplay: RFH.leftEEDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
-        RFH.taskMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
+        RFH.actionMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
             ros: RFH.ros,
             div: 'video-main',
             gripper: RFH.pr2.r_gripper,
@@ -109,7 +109,7 @@ var RFH = (function (module) {
             eeDisplay: RFH.rightEEDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
-        RFH.taskMenu.addAction(new RFH.Drive({ros: RFH.ros, 
+        RFH.actionMenu.addAction(new RFH.Drive({ros: RFH.ros, 
             tfClient: RFH.tfClient,
             camera: RFH.mjpeg.cameraModel,
             head: RFH.pr2.head,
@@ -117,10 +117,10 @@ var RFH = (function (module) {
             right_arm: RFH.pr2.r_arm_cart,
             base: RFH.pr2.base,
             forwardOnly: false}));
-        RFH.taskMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
+        RFH.actionMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
         // Start looking task by default
-        $('#'+RFH.taskMenu.tasks.lookingAction.buttonText).click();
+        $('#'+RFH.actionMenu.tasks.lookingAction.buttonText).click();
     };
     return module;
 })(RFH || {});
