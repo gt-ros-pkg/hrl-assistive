@@ -875,8 +875,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-                 timeList=timeList, legend=True)
+        cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
+                  timeList=timeList, legend=True)
 
 
 
