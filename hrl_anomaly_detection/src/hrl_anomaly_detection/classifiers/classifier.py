@@ -1239,10 +1239,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if method == 'hmmgp':
 
-            nSubSample = 40 #temp!!!!!!!!!!!!!
+            ## nSubSample = 40 #temp!!!!!!!!!!!!!
+            nSubSample = 20 # 20 
+            nMaxData   = 40 # 40 100
+            rnd_sample = True #False
+            
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
               dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
-                               nSubSample=nSubSample)
+                               nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
             
                           
         # flatten the data
