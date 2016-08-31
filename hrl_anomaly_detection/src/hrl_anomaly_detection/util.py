@@ -1795,10 +1795,10 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     
     for i in xrange(len(method_list)):
         for j in xrange(3):
-            m_cost_mean_l.append( np.mean(cost_list[j][i]) )
-            m_cost_std_l.append( np.std(cost_list[j][i]))
-            m_delay_mean_l.append( np.mean(delay_list[j][i]))
-            m_delay_std_l.append( np.std(delay_list[j][i]))
+            m_cost_mean_l[j].append( np.mean(cost_list[j][i]) )
+            m_cost_std_l[j].append( np.std(cost_list[j][i]))
+            m_delay_mean_l[j].append( np.mean(delay_list[j][i]))
+            m_delay_std_l[j].append( np.std(delay_list[j][i]))
 
     print np.shape(cost_list), np.shape(delay_list)
 
@@ -1813,41 +1813,63 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
 
     ind = np.arange(len(method_list)) #*0.9 #+width/2.0
     width = .2
+    plt.rc('text', usetex=True)
 
     # visualization
     color = colors.next()
     shape = shapes.next()
     ax1 = fig.add_subplot(211)
-    rects = ax1.bar(ind, m_delay_mean_l[0], width, color='r', yerr=m_delay_std_l[0], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
-    rects = ax1.bar(ind+width,   m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[1], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
-    rects = ax1.bar(ind+2*width, m_delay_mean_l[2], width, color='r', yerr=m_delay_std_l[2], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    rects1 = ax1.bar(ind, m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F0.5 score')
+    rects2 = ax1.bar(ind+width,   m_delay_mean_l[0], width, color='g', yerr=m_delay_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F1 score')
+    rects3 = ax1.bar(ind+2.0*width, m_delay_mean_l[2], width, color='b', yerr=m_delay_std_l[2], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F2 score')
     ax1.set_ylabel('Detection Delay [s]', fontsize=24)
-    ax1.set_xlim([-0.2, (ind+width+0.2)[-1]])
+    ax1.set_xlim([-0.2, ind[-1]+4.0*width])
+    ax1.set_ylim([0,2.0])
+    plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
+               loc='upper right', prop={'size':24})
 
     ax2 = fig.add_subplot(212)
-    rects = ax2.bar(ind, m_cost_mean_l[0], width, color='r', yerr=m_cost_std_l[0], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
-    rects = ax2.bar(ind+width, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[1], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
-    rects = ax2.bar(ind+2.0*width, m_cost_mean_l[2], width, color='r', yerr=m_cost_std_l[2], \
-                     error_kw=dict(elinewidth=6, ecolor='pink'))
-    ax2.set_ylabel('Min Total Cost', fontsize=24)
-    ax2.set_xlim([-0.2, (ind+width+0.2)[-1]])
+    rects = ax2.bar(ind, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    rects = ax2.bar(ind+width, m_cost_mean_l[0], width, color='g', yerr=m_cost_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    rects = ax2.bar(ind+2.0*width, m_cost_mean_l[2], width, color='b', yerr=m_cost_std_l[2], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    ax2.set_ylabel('F-score', fontsize=24)
+    ax2.set_xlim([-0.2, ind[-1]+4.0*width])
 
 
     ## plt.xlim([0,1])
     ## plt.xlim([0,100])
     ## plt.ylim([0,3])
-    ## plt.legend(loc='upper left', prop={'size':24})
     ## plt.ylabel('Detection Time [s]', fontsize=24)
     ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
     ## plt.xlabel('F1 score', fontsize=24)
-    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    ## plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
-    plt.xticks(ind+width/2.0, method_list, fontsize=40 )
+    labels = []
+    for method in method_list:
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='OSVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
+
+        labels.append(label)
+        
+
+    plt.xticks(ind+width, labels, fontsize=40 )
     for tick in ax1.xaxis.get_major_ticks():
         tick.label.set_fontsize(18) 
                 

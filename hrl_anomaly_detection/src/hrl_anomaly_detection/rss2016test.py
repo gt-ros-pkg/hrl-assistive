@@ -893,7 +893,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             for j in xrange(3):
                 score_list[j][i].append( scores[j][i] )
                 delay_list[j][i] += delays[j][i]
-                print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
+                ## print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
 
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
