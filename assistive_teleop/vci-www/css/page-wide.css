@@ -73,6 +73,12 @@ div.left-col-accordion > .ui-accordion-content {
     cursor: wait !important;
 }
 
+.controls-button {
+    display:block;
+    margin:0% 10%;
+    padding: 0.25em;
+}
+
 #controls h3 {
     display: block;
     font-size: 1.4em;
