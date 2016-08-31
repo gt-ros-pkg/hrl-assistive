@@ -29,31 +29,19 @@ body {
     left: 0;
 }
 
-div.left-col-accordion > .ui-accordion-content {
-    padding:0;
-    padding-bottom:0.3em;
-    width:99%;
-}
-
-
 #left-col-small {
-    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
+/*    background-color: rgba(51, 81, 112, 1); /* GT BLUE */
     height: 100%;
     left:0;
     position:absolute;
     width: 64px;
+    z-index: 99;
 }
 
-#task-menu {
-    display: block;
-}
-#task-menu h3 {
-    display: block;
-    font-size: 1.6em;
-    width: 100%;
-    text-align: center;
-    margin: 0px;
-    padding: 0.4em 0em;
+div.left-col-accordion > .ui-accordion-content {
+    padding:0;
+    padding-bottom:0.3em;
+    width:99%;
 }
 
 .menu-item {
@@ -68,7 +56,7 @@ div.left-col-accordion > .ui-accordion-content {
 #video-main {
     overflow: hidden;
     position: absolute;
-    left: 64px;
+    right: 0;
 }
 #viewer-canvas {
     display:none;
@@ -80,13 +68,6 @@ div.left-col-accordion > .ui-accordion-content {
 }
 .cursor-wait {
     cursor: wait !important;
-}
-#controls {
-    display: inline-block;
-    height: 100%;
-    width: 100%;
-    min-width: 128px;
-    background-color: rgba(160, 200, 240, 1.0);
 }
 #controls h3 {
     display: block;

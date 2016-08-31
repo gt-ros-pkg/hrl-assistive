@@ -151,7 +151,7 @@ var RFH = (function (module) {
             };
 
             $('#left-col-small').on('mouseenter.rfh', showLeftColumn);
-            $('#left-col').on('mouseleave.rfh', hideLeftColumn);
+            $('#left-col').on('mouseleave.rfh blur.rfh', hideLeftColumn);
             setTimeout(hideLeftColumn, 2500);
 
             $('.left-col-accordion').accordion({collapsible: true});
