@@ -144,10 +144,10 @@ var RFH = (function (module) {
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
-                $('#left-col').animate({'left':0}, {duration:300, easing:'easeOutCubic'});
+                $('#left-col').animate({'left':0}, {duration:200, easing:'easeOutCubic'});
             };
             var hideLeftColumn = function (event) {
-                $('#left-col').animate({'left':'-200px'}, {duration: 300, easing:'easeInCubic'});
+                $('#left-col').animate({'left':'-200px'}, {duration: 350, easing:'easeInCubic'});
             };
 
             $('#left-col-small').on('mouseenter.rfh', showLeftColumn);
