@@ -37,9 +37,7 @@ var RFH = (function (module) {
                 case 'GET_EE_GOAL':
                     startFunc = function () {
                         var getPoseCB = function (pose) {
-                            console.log("Got pose:", pose);
                             var eeGoalPose = applyOffset(pose);
-                            console.log("Applied Offset:", eeGoalPose);
                             self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], eeGoalPose);
                         };
                         RFH.actionMenu.tasks.getClickedPoseAction.registerPoseCB(getPoseCB, true);
@@ -154,7 +152,9 @@ var RFH = (function (module) {
             }
         };
 
-        self.sendTaskGoal = function (side, goal) {
+        self.sendTaskGoal = function (options) {
+            var side = options.arm;
+            var goal = options.goal;
             self.clearParams(['EE_GOAL','BASE_GOAL','EE_FRAME']);
             var ee_frame = side[0] === 'r' ? 'r_gripper_tool_frame' : 'l_gripper_tool_frame';
             self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/EE_FRAME', ee_frame);

@@ -165,16 +165,16 @@ var RFH = (function(module) {
             setTimeout(checkFN, delayMS);
         };
 
-        self.sendTaskGoal = function (side, goal) {
-            goal = goal || []; // Empty goal will use default for task
+        self.sendTaskGoal = function (options) {
+            var task = options.task;
+            var model = options.model;
+            var goal = options.goal || []; // Empty goal will use default for task
+            var model_upper = model.toUpperCase();
+            var task_upper = task.toUpperCase();
             self.clearParams([]);
             var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
             msg.name = 'adl' + '-' + new Date().getTime().toString();
             msg.domain = 'adl';
-            var model = document.getElementById("model-select").value;
-            var task = document.getElementById("task-select").value;
-            var model_upper = model.toUpperCase();
-            var task_upper = task.toUpperCase();
             self.setModelName(model);
             self.setDefaultGoal(['(TASK-COMPLETED '.concat(task_upper, ' ',model_upper, ')')]);
             self.updatePDDLState(['(NOT (CONFIGURED BED '.concat(task_upper, ' ',model_upper, '))'), 
@@ -192,7 +192,6 @@ var RFH = (function(module) {
             msg.goal = []; 
             setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...
         };
-        $button.button().on('click', self.sendTaskGoal);
     };
     return module;
 
