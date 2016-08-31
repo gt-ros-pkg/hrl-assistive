@@ -2231,7 +2231,7 @@ if __name__ == '__main__':
                              no_plot=opt.bNoPlot, delay_plot=True)
 
     elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
+        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
         param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
