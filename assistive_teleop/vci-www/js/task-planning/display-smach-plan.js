@@ -17,7 +17,7 @@ var RFH = (function(module) {
         self.cancelTask = function (problem) {
             var cancelResultCB = function (resp) {
                 if (resp.result) {
-                    RFH.taskMenu.startTask(RFH.taskMenu.defaultTask);
+                    RFH.actionMenu.startTask(RFH.actionMenu.defaultTask);
                     console.log("Cancelled task successfully");
                 } else {
                     RFH.log("Failed to cancel task");
@@ -119,7 +119,7 @@ var RFH = (function(module) {
             self.domains[domain].problem = msg.problem;
             // Get action meta-data for interface, add to solution information in domain list
             var actions = self.parseActionStrings(msg.actions);
-            var domainDetails = RFH.taskMenu.tasks[domain];
+            var domainDetails = RFH.taskMenu.domains[domain];
             for (var i=0; i<actions.length; i+=1) {
                 actions[i].label = domainDetails.getActionLabel(actions[i].name, actions[i].args);
                 actions[i].helpText = domainDetails.getActionHelpText(actions[i].name, actions[i].args);

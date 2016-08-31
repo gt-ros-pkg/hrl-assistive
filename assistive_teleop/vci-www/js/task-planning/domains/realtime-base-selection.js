@@ -42,28 +42,28 @@ var RFH = (function (module) {
                             console.log("Applied Offset:", eeGoalPose);
                             self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], eeGoalPose);
                         };
-                        RFH.taskMenu.tasks.getClickedPoseTask.registerPoseCB(getPoseCB, true);
+                        RFH.actionMenu.tasks.getClickedPoseTask.registerPoseCB(getPoseCB, true);
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('getClickedPoseTask');
+                        RFH.actionMenu.startAction('getClickedPoseTask');
                     };
                     break;
                 case 'GET_FRAME':
                 case 'SCAN_ENVIRONMENT':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('lookingTask');
+                        RFH.actionMenu.startAction('lookingTask');
                     };
                     break;
                 case 'SERVO_OPEN_LOOP':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('drivingTask');
+                        RFH.actionMenu.startAction('drivingTask');
                     };
                     break;
                 case 'ADJUST_TORSO':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.taskMenu.startTask('torsoTask');
+                        RFH.actionMenu.startAction('torsoTask');
                     };
                     break;
                     // case 'CLEAR_ENVIRONMENT':
