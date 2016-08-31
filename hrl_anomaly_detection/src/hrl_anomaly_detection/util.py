@@ -1702,12 +1702,12 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
     
 
 
-def getBestParamIdx(fp_cost, fn_cost, method_list, ROC_data, nPoints, verbose=False):
+def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
     '''
-    Return index of the best weight from weight list of each method
+    Return three index of the best weight from weight list using f1, f0.5, f2 scores
     '''
 
-    min_cost_idx = []
+    min_cost_idx = [[],[],[]]
 
     for mi, method in enumerate(method_list):
 
@@ -1715,22 +1715,34 @@ def getBestParamIdx(fp_cost, fn_cost, method_list, ROC_data, nPoints, verbose=Fa
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
         fn_ll = ROC_data[method]['fn_l']
-        
-        total_cost = []
-        for i in xrange(nPoints):
-            total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
 
-        idx = np.argmin(total_cost)
-        min_cost_idx.append(idx)
+        total_cost = []
+        fscore_1   = []
+        fscore_0_5 = []
+        fscore_2   = []
+        for i in xrange(nPoints):
+
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
+
+            fscore_1.append( 2.0*tp/(2.0*tp+fn+fp) )
+            fscore_0_5.append( 1.25*tp/(1.25*tp+0.25*fn+fp) )
+            fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
+            ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
+
+        min_cost_idx[0].append( np.argmax(fscore_1) )
+        min_cost_idx[1].append( np.argmax(fscore_0_5) )
+        min_cost_idx[2].append( np.argmax(fscore_2) )
     
     return min_cost_idx
 
 
-def cost_info(fp_cost, fn_cost, param_idx, method_list, ROC_data, nPoints, \
+def cost_info(param_idx, method_list, ROC_data, nPoints, \
               timeList=None, verbose=True):
 
-    m_cost_l  = []
-    m_delay_l = []
+    m_score_l  = [[],[],[]]
+    m_delay_l = [[],[],[]]
 
     for mi, method in enumerate(method_list):
 
@@ -1748,32 +1760,45 @@ def cost_info(fp_cost, fn_cost, param_idx, method_list, ROC_data, nPoints, \
 
         for i in xrange(nPoints):
 
-            if param_idx[mi] == i:
-                cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
-                delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                               if delay_ll[i][ii]>=0 ]
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
 
-                m_cost_l.append(cost)
-                m_delay_l.append( delay_list)
-                break
+            # 0: f1, 1: f0.5, 2: f2
+            for j in xrange(3):
+                
+                if param_idx[j][mi] == i:
+                    if j==0: fscore = 2.0*tp/(2.0*tp+fn+fp)
+                    elif j==1: fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
+                    else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
+                    
+                    ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
+                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                                   if delay_ll[i][ii]>=0 ]
+                                   
 
-    return m_cost_l, m_delay_l
+                    m_score_l[j].append(fscore)
+                    m_delay_l[j].append( delay_list )
+                    
+
+    return m_score_l, m_delay_l
 
 
 
 def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=True):
     '''
     '''
-    m_cost_mean_l  = []
-    m_cost_std_l   = []
-    m_delay_mean_l = []
-    m_delay_std_l  = []
+    m_cost_mean_l  = [[],[],[]]
+    m_cost_std_l   = [[],[],[]]
+    m_delay_mean_l = [[],[],[]]
+    m_delay_std_l  = [[],[],[]]
     
     for i in xrange(len(method_list)):
-        m_cost_mean_l.append( np.mean(cost_list[i]) )
-        m_cost_std_l.append( np.std(cost_list[i]))
-        m_delay_mean_l.append( np.mean(delay_list[i]))
-        m_delay_std_l.append( np.std(delay_list[i]))
+        for j in xrange(3):
+            m_cost_mean_l.append( np.mean(cost_list[j][i]) )
+            m_cost_std_l.append( np.std(cost_list[j][i]))
+            m_delay_mean_l.append( np.mean(delay_list[j][i]))
+            m_delay_std_l.append( np.std(delay_list[j][i]))
 
     print np.shape(cost_list), np.shape(delay_list)
 
@@ -1787,19 +1812,27 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     fig = plt.figure()
 
     ind = np.arange(len(method_list)) #*0.9 #+width/2.0
-    width = .7
+    width = .2
 
     # visualization
     color = colors.next()
     shape = shapes.next()
     ax1 = fig.add_subplot(211)
-    rects = ax1.bar(ind, m_delay_mean_l, width, color='r', yerr=m_delay_std_l, \
+    rects = ax1.bar(ind, m_delay_mean_l[0], width, color='r', yerr=m_delay_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    rects = ax1.bar(ind+width,   m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    rects = ax1.bar(ind+2*width, m_delay_mean_l[2], width, color='r', yerr=m_delay_std_l[2], \
                      error_kw=dict(elinewidth=6, ecolor='pink'))
     ax1.set_ylabel('Detection Delay [s]', fontsize=24)
     ax1.set_xlim([-0.2, (ind+width+0.2)[-1]])
 
     ax2 = fig.add_subplot(212)
-    rects = ax2.bar(ind, m_cost_mean_l, width, color='r', yerr=m_cost_std_l, \
+    rects = ax2.bar(ind, m_cost_mean_l[0], width, color='r', yerr=m_cost_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    rects = ax2.bar(ind+width, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'))
+    rects = ax2.bar(ind+2.0*width, m_cost_mean_l[2], width, color='r', yerr=m_cost_std_l[2], \
                      error_kw=dict(elinewidth=6, ecolor='pink'))
     ax2.set_ylabel('Min Total Cost', fontsize=24)
     ax2.set_xlim([-0.2, (ind+width+0.2)[-1]])

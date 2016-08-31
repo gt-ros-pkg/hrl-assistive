@@ -741,8 +741,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     nSubFold_list = []
     ## kFold_list = kFold_list[:1]
     
-    cost_list  = [[] for i in xrange(len(method_list))]
-    delay_list = [[] for i in xrange(len(method_list))]
+    score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+    delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -878,26 +878,25 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        fp_cost = 0.5
-        fn_cost = 1.0 - fp_cost
-        
-        best_param_idx = getBestParamIdx(fp_cost, fn_cost, method_list, ROC_data, nPoints, verbose=False)
+        fscore_beta    = 1
+        best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
 
         print method_list
         print best_param_idx
 
         roc_pkl = os.path.join(ref_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        costs, delays = cost_info(fp_cost, fn_cost, best_param_idx, method_list, ROC_data, nPoints, \
-                                  timeList=timeList, verbose=False)
+        scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
+                                   timeList=timeList, verbose=False)
 
         for i in xrange(len(method_list)):
-            cost_list[i].append( costs[i] )
-            delay_list[i] += delays[i]
-            print np.shape(cost_list[i]), np.shape(delay_list[i])
+            for j in xrange(3):
+                score_list[j][i].append( scores[j][i] )
+                delay_list[j][i] += delays[j][i]
+                print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
 
     if no_plot is False:
-        plotCostDelay(method_list, cost_list, delay_list, save_pdf=save_pdf)
+        plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
         
 
 
@@ -2196,7 +2195,7 @@ if __name__ == '__main__':
 
 
     elif opt.bEvaluationAccParam:
-        param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
+        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
         param_dict['ROC']['update_list'] = []
         nPoints = param_dict['ROC']['nPoints']
@@ -2243,7 +2242,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif True:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif False:
