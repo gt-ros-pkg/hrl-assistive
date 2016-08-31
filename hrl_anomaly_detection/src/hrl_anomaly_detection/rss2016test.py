@@ -739,7 +739,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     else: timeList = None
 
     nSubFold_list = []
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -875,8 +875,18 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf, \
-                  timeList=timeList, legend=True)
+        best_param_idx = cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, \
+                                   no_plot=True, save_pdf=save_pdf, \
+                                   timeList=timeList)
+
+        print method_list
+        print best_param_idx
+
+        roc_pkl = os.path.join(ref_data_path, 'roc_'+pkl_prefix+'.pkl')
+        ROC_data = ut.load_pickle(roc_pkl)
+        cost_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, \
+                  no_plot=no_plot, save_pdf=save_pdf, \
+                  timeList=timeList, param_idx=best_param_idx)
 
 
 
