@@ -12,22 +12,24 @@ var RFH = (function (module) {
             // Call start method from currently selected domain
         };
 
-        var updateOptions = function (event) {
+        self.updateOptions = function (event) {
             // Update to show/hide appropriate option select boxes when domain is changed
-            var domain = $('#domain-select:selected').val();
+            var domain = $('#domain-select :selected').val();
             $('#task-menu select.option-select').hide();
             $('#task-menu select.option-select.option-'+domain).show();
         };
 
-        $('#domain-select').on('change', updateOptions);
+        $('#domain-select').on('change', self.updateOptions);
     };
 
     module.initTaskMenu = function () {
+        /* Create Menu and apply styling */
         RFH.taskMenu = new RFH.TaskMenu({divId: 'task-menu',
                                          ros: RFH.ros});
-        $('#task-select').selectmenu({collapsible:true});
-        $('.task-option-select').selectmenu();
+        $('#domain-select').selectmenu({collapsible:true});
+        $('#task-menu select.option-select').selectmenu().hide();
 
+        /* Add Domain instances to menu domains */
         RFH.taskMenu.domains.pick = new RFH.Domains.Pick({ros:RFH.ros,
                                                           r_arm: RFH.pr2.r_arm_cart,
                                                           r_gripper: RFH.pr2.r_gripper,
@@ -41,7 +43,10 @@ var RFH = (function (module) {
                                                     l_gripper: RFH.pr2.l_gripper});
         RFH.taskMenu.domains.pick_and_place = new RFH.Domains.PickAndPlace({ros:RFH.ros});
         RFH.taskMenu.domains.realtime_base_selection = new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros});
-        RFH.taskMenu.domains.adl = Domains.ADL({ros:RFH.ros});
+        RFH.taskMenu.domains.adl = RFH.Domains.ADL({ros:RFH.ros});
+        
+        /* Update menu to reflect current state */
+        RFH.taskMenu.updateOptions();
     };
     return module;
 })(RFH || {});

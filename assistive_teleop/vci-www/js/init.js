@@ -140,7 +140,7 @@ var RFH = (function (module) {
                 maxPoints: 16000,
                 tfClient: RFH.tfClient });
             //RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
-//            RFH.initTaskMenu();
+            RFH.initTaskMenu();
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
