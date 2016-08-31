@@ -144,17 +144,17 @@ var RFH = (function (module) {
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
-                $('#left-col').animate({'left':0});
+                $('#left-col').animate({'left':0}, {duration:300, easing:'easeOutCubic'});
             };
             var hideLeftColumn = function (event) {
-                $('#left-col').animate({'left':'-200px'});
+                $('#left-col').animate({'left':'-200px'}, {duration: 300, easing:'easeInCubic'});
             };
 
             $('#left-col-small').on('mouseenter.rfh', showLeftColumn);
             $('#left-col').on('mouseleave.rfh blur.rfh', hideLeftColumn);
             setTimeout(hideLeftColumn, 2500);
 
-            $('.left-col-accordion').accordion({collapsible: true});
+            $('.left-col-accordion').accordion({collapsible: true, heightStyle: 'content', animate:75});
 
         });
     };
