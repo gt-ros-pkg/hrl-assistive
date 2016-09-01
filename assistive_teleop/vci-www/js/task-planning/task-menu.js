@@ -6,12 +6,6 @@ var RFH = (function (module) {
         var ros = options.ros;
         self.domains = {};
 
-        var startButtonCB = function (event) {
-            // Determine currently selected domain from domain-select box
-            // Maybe parse other select boxes for options to pass? Or leave this to the start method in the domain?
-            // Call start method from currently selected domain
-        };
-
         var hideAllOptions = function () {
             var handles = $('#task-menu select.option-select');
             for (var i=0; i<handles.length; i += 1) {
