@@ -138,7 +138,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
                 break
-            if np.amax( ll_logp ) < 0:
+            if np.amax( ll_logp ) < 0 and False:
                 print "Negative likelihoods"
                 scores.append(-1.0 * 1e+10)
                 ret = 'Failure'
@@ -422,8 +422,8 @@ if __name__ == '__main__':
                           'cov': np.linspace(0.5,5.,5) }
         elif opt.task == 'pushing_toolcase':
             if opt.dim == 3:
-                parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
-                              'cov': np.linspace(0.1,8.0,8) }
+                parameters = {'nState': [25], 'scale': np.linspace(5.0,10.0,7), \
+                              'cov': np.linspace(0.1,12.0,4) }
             else:
                 parameters = {'nState': [25], 'scale': np.linspace(8.0,15.0,7), \
                               'cov': np.linspace(1.0,5.0,6) }
