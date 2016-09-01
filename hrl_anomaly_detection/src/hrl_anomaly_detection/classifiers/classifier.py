@@ -1352,6 +1352,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+        elif method == 'rnd':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = True
         else:
             print "Not available method", method
             return "Not available method", -1, params

@@ -1779,6 +1779,11 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
 
                     m_score_l[j].append(fscore)
                     m_delay_l[j].append( delay_list )
+
+                    if method == 'kmean' and j==0:
+                        print delay_ll[i]
+                        print delay_list
+                        sys.exit()
                     
 
     return m_score_l, m_delay_l
@@ -1799,6 +1804,10 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
             m_cost_std_l[j].append( np.std(cost_list[j][i]))
             m_delay_mean_l[j].append( np.mean(delay_list[j][i]))
             m_delay_std_l[j].append( np.std(delay_list[j][i]))
+            ## if method_list[i] == 'kmean':
+            ##     print np.mean(delay_list[j][i])
+            ##     print np.std(delay_list[j][i])
+                
 
     print np.shape(cost_list), np.shape(delay_list)
 
