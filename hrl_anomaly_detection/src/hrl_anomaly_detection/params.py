@@ -56,7 +56,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
                                          'hmmgp', 'rnd'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ 'progress', 'rnd' ]
+        param_dict['ROC']['update_list'] = [ 'progress' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -402,7 +402,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_osvm'],\
                           'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0.05, 1.1, nPoints)*-1.0+0.5, \
+                          'progress_param_range':np.logspace(0.1, 1.1, nPoints)*-1.0+0.5, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
