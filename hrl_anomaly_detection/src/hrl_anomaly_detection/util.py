@@ -1780,10 +1780,10 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     m_score_l[j].append(fscore)
                     m_delay_l[j].append( delay_list )
 
-                    if method == 'kmean' and j==0:
-                        print delay_ll[i]
-                        print delay_list
-                        sys.exit()
+                    ## if method == 'kmean' and j==0:
+                    ##     print delay_ll[i]
+                    ##     print delay_list
+                    ##     sys.exit()
                     
 
     return m_score_l, m_delay_l

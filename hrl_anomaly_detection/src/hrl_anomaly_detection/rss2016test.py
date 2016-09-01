@@ -884,8 +884,11 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         print method_list
         print best_param_idx
 
-        roc_pkl = os.path.join(ref_data_path, 'roc_'+pkl_prefix+'.pkl')
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
+        print roc_pkl
+        print ROC_data.keys()
+        
         scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
                                    timeList=timeList, verbose=False)
 
