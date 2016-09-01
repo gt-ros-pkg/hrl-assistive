@@ -43,7 +43,6 @@ var RFH = (function (module) {
             var xyz =  camera.projectPixel(px, py);
             head.pointHead(xyz[0], xyz[1], xyz[2], camera.frame_id);
         };
-        $imageDiv.on("click.rfh-look", pointHead);
 
         var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', function(e){self.setZoom(zoomLevel*2);});
         var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', function(e){self.setZoom(zoomLevel*0.5);}).button('disable');
@@ -67,15 +66,13 @@ var RFH = (function (module) {
             $imageDiv.addClass("cursor-eyes").on("click.rfh-look", pointHead);
             $mapLookDivs.show();
             $('.zoom').show();
-            console.log('Looking task started');
         };
 
         self.stop = function () {
             self.setZoom(1);
-            $imageDiv.removeClass("cursor-eyes");
+            $imageDiv.removeClass("cursor-eyes").off("click.rfh-look");
             $mapLookDivs.hide();
             $('.zoom').hide();
-            console.log('Looking task stopped');
         };
     };
     return module;

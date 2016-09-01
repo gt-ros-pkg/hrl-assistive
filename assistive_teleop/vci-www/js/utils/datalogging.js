@@ -32,17 +32,26 @@ var RFH = (function (module) {
         };
         */
 
-        var logClick = function (event, ui) {
+        var logEvent = function (event, ui) {
             var msg = ros.composeMsg(msgType);
             msg.type = event.type;
             msg.target = event.currentTarget.id;
             logPub.publish(msg);
         };
 
-        $('.log-click').on('click.datalogging', logClick);
+        $('.log-click').on('click.datalogging', logEvent);
+        $(".log-slide").on("slidestart.datalogging, slidestop.datalogging", logEvent);
+        $(".log-mousehold").on("mousedown.datalogging, mouseup.datalogging, mouseout.datalogging, mouseleave.datalogging, blur.datalogging, ", logEvent);
+
         // Special handling of mjpeg image to only log when active..
-        $('#mjpeg-image').off('click.datalogging');
-        $('#mjpeg-image.cursor-eyes').on('click.datalogging', logClick);
+        var logLookClick = function (event, ui) {
+            if ($(event.currentTarget).hasClass('cursor-eyes')) {
+                logEvent(event, ui);
+            }
+        };
+        $('#mjpeg-image').off('click.datalogging').on('click.datalogging', logLookClick);
+
+
     };
     return module;
 
