@@ -2203,7 +2203,11 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
-        if opt.task == 'pushing_microblack' or opt.task == 'pushing_microwhite':
+        if opt.task == 'pushing_microblack':
+            param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
+            param_dict['ROC']['kmean_param_range']  = np.logspace(-1.1, 2.0, nPoints)*-1.0
+        elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(1.1, 2.0, nPoints)*-1.0
