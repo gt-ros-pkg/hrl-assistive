@@ -56,7 +56,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
                                          'hmmgp', 'rnd'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ 'kmean' ]
+        param_dict['ROC']['update_list'] = [ 'progress', 'rnd' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -402,7 +402,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_osvm'],\
                           'update_list': [ 'hmmgp' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(-1, 1.3, nPoints)*-1.0+0.5, \
+                          'progress_param_range':np.logspace(-0.7, 1.1, nPoints)*-1.0+0.5, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
@@ -418,7 +418,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_dL_param_range': np.logspace(-3.0, 0.7, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-1.346, 0.8, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, 0.0, nPoints)+0.1,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         
