@@ -2194,7 +2194,7 @@ if __name__ == '__main__':
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)
 
 
-    elif opt.bEvaluationAccParam:
+    elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'kmean', 'progress', 'hmmgp']
         ## param_dict['ROC']['methods']     = []
         param_dict['ROC']['update_list'] = []
@@ -2223,42 +2223,17 @@ if __name__ == '__main__':
         else:
             step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_10000000'
-        
-        evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                             step_mag, pkl_prefix,\
-                             save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                             no_plot=opt.bNoPlot, delay_plot=True)
 
-    elif opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'kmean', 'progress', 'hmmgp']
-        ## param_dict['ROC']['methods']     = []
-        param_dict['ROC']['update_list'] = []
-        nPoints = param_dict['ROC']['nPoints']
-
-        if opt.task == 'pushing_microblack':
-            param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
-            param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
-
-        if False:
-            step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_0.01'
-        elif False:
-            step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_0.05'
-        elif False:
-            step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_0.1'
-        elif True:
-            step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_1.0'
-        else:
-            step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
-            pkl_prefix = 'step_10000000'
-        
-        evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                              step_mag, pkl_prefix,\
-                              save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                              no_plot=opt.bNoPlot, delay_plot=True)
+        if opt.bEvaluationAccParam:
+            evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                                 step_mag, pkl_prefix,\
+                                 save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                                 no_plot=opt.bNoPlot, delay_plot=True)
+        else:        
+            evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                                  step_mag, pkl_prefix,\
+                                  save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                                  no_plot=opt.bNoPlot, delay_plot=True)
 
 
     elif opt.bEvaluationWithDrop:
