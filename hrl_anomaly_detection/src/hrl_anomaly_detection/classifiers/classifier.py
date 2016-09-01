@@ -1081,7 +1081,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False):
+                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=True):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
@@ -1352,6 +1352,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+        elif method == 'rnd':
+            weights = ROC_dict[method+'_param_range']
+            dtc.set_params( class_weight=weights[j] )
+            ret = True
         else:
             print "Not available method", method
             return "Not available method", -1, params
