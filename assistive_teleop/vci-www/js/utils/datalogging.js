@@ -40,9 +40,8 @@ var RFH = (function (module) {
         };
 
         $('.log-click').on('click.datalogging', logEvent);
-
-        $(".log-slide").on("slidestart.datalogging", logEvent);
-        $(".log-slide").on("slidestop.datalogging", logEvent);
+        $(".log-slide").on("slidestart.datalogging, slidestop.datalogging", logEvent);
+        $(".log-mousehold").on("mousedown.datalogging, mouseup.datalogging, mouseout.datalogging, mouseleave.datalogging, blur.datalogging, ", logEvent);
 
         // Special handling of mjpeg image to only log when active..
         var logLookClick = function (event, ui) {
