@@ -1241,7 +1241,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
             ## nSubSample = 40 #temp!!!!!!!!!!!!!
             nSubSample = 20 # 20 
-            nMaxData   = 40 # 40 100
+            nMaxData   = 50 # 40 100
             rnd_sample = True #False
             
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
