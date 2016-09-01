@@ -2213,7 +2213,7 @@ if __name__ == '__main__':
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(-0.5, 1.7, nPoints)*-1.0
+            param_dict['ROC']['kmean_param_range']  = np.logspace(0.1, 1.3, nPoints)*-1.0
             
 
         if False:
