@@ -3,7 +3,7 @@ var RFH = (function (module) {
         'use strict';
         var ros = options.ros;
         var logTopic = options.topic || 'interface_log';
-        var msgType = 'std_msgs/String';
+        var msgType = 'assistive_teleop/InterfaceLog';
 
         ros.getMsgDetails(msgType);
         var logPub = new ROSLIB.Topic({
@@ -13,31 +13,36 @@ var RFH = (function (module) {
         });
         logPub.advertise();
 
+        /*
         var idClassString = function (element) {
             var str = element.tagName + '#'+element.id;
             for (var i=0; i < element.classList.length; i += 1) {
                 str += '.'+element.classList[i].toString();
             }
             return str;
-        }
+        };
 
         var getParentage = function (element) {
             var str = idClassString(element);
             while (element.parentElement !== null) {
                 element = element.parentElement;
                 str = idClassString(element) + ' > ' + str;
-            };
+            }
             return str;
         };
+        */
 
         var logClick = function (event, ui) {
             var msg = ros.composeMsg(msgType);
-    //        msg.timestamp = new Date().toISOString();
-            msg.data = getParentage(event.target)
+            msg.type = event.type;
+            msg.target = event.currentTarget.id;
             logPub.publish(msg);
         };
 
-        $('*').on('click.datalogging', logClick);
+        $('.log-click').on('click.datalogging', logClick);
+        // Special handling of mjpeg image to only log when active..
+        $('#mjpeg-image').off('click.datalogging');
+        $('#mjpeg-image.cursor-eyes').on('click.datalogging', logClick);
     };
     return module;
 

@@ -31,13 +31,13 @@ var RFH = (function (module) {
         self.active = false;
         self.$viewer = $('#viewer-canvas').css('zIndex',1);
 
-        $('#touchspot-toggle, #toward-button, #away-button').button();
+        $('#toward-button, #away-button').button();
         // Clear out text spans, which create some issues with hover for preview gripper.
         $('#toward-button > span').remove();
         $('#away-button > span').remove();
         self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
         $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set').buttonset();
-        $('#touchspot-toggle, #touchspot-toggle-label,#toward-button, #away-button, #armCtrlContainer').hide();
+        $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
         self.$baseSelectionButton = $('.'+self.side[0]+'-arm-ctrl.rtbs').button();
@@ -516,7 +516,6 @@ var RFH = (function (module) {
         };
 
         self.setPositionCtrls = function (e) {
-            // self.$viewer.hide();
             self.rotationControl.setActive(false);
             $('#armCtrlContainer').show();
             $('#ctrl-ring, #away-button, #toward-button').on('mouseup.rfh', self.inactivate)
@@ -551,11 +550,8 @@ var RFH = (function (module) {
         self.start = function () {
             self.trackHand(true);
             $('.'+self.side[0]+'-arm-ctrl, .arm-ctrl').show();
-            $('#armCtrlContainer, #away-button, #toward-button').show();
-            $('#speedOptions').show();
-            self.gripperDisplay.show();
-            $('#'+self.side[0]+'-posrot-set').show();
-            $('#'+self.side[0]+'-posrot-pos').click();
+            self.setPositionCtrls();
+            $('#'+self.side[0]+'-posrot-pos').prop('checked', true).button('refresh');
             self.active = true;
             self.$viewer.show();
             self.updateCtrlRingViz();
@@ -563,17 +559,9 @@ var RFH = (function (module) {
 
         self.stop = function () {
             $('.'+self.side[0]+'-arm-ctrl, .arm-ctrl').hide();
-            $('#armCtrlContainer').hide();
-            $('#away-button, #toward-button').off('mousedown.rfh mouseenter.rfh mouseover.rfh mousemove.rfh').hide();
+            $('#away-button, #toward-button').off('mousedown.rfh mouseenter.rfh mouseover.rfh mousemove.rfh');
             $('#ctrl-ring').off('mouseup.rfh mouseout.rfh mouseleave.rfh blur.rfh mousedown.rfh mouseenter.rfh mouseover.rfh mousemove.rfh');
             self.$viewer.hide();
-            $('#speedOptions').hide();
-            self.gripperDisplay.hide();
-            self.eeDisplay.hide();
-            if ($('#touchspot-toggle').prop('checked')) {
-                $('#touchspot-toggle-label').click();
-            }
-            $('#touchspot-toggle-label').off('click.rfh').hide();
             self.trackHand(false);
             self.active = false;
             self.rotationControl.hide();
