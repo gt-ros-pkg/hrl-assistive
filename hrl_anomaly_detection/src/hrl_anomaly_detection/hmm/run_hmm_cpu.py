@@ -423,7 +423,7 @@ if __name__ == '__main__':
         elif opt.task == 'pushing_toolcase':
             if opt.dim == 3:
                 parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
-                              'cov': np.linspace(0.1,5.0,5) }
+                              'cov': np.linspace(0.1,8.0,8) }
             else:
                 parameters = {'nState': [25], 'scale': np.linspace(8.0,15.0,7), \
                               'cov': np.linspace(1.0,5.0,6) }
