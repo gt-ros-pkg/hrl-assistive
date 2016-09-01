@@ -14,6 +14,12 @@ add_action_files(
 )
 
 
+add_message_files(
+  DIRECTORY msg
+  FILES 
+  InterfaceLog.msg
+)
+
 add_service_files(
   DIRECTORY srv
   FILES 
