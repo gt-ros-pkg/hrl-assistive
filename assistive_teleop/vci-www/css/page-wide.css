@@ -47,7 +47,7 @@ div.left-col-accordion > .ui-accordion-content {
     display: inline-block;
     height: 40px;
     width: 48%;
-    margin: 2px 0.5%;
+    margin: 2px -0.5%;
 }
 
 .menu-item span.ui-button-text {

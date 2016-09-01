@@ -3,9 +3,9 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         self.name = options.name || 'lookingAction';
+        self.buttonID = options.buttonID || 'lookModeButton';
         var ros = options.ros;
         self.showButton = true;
-        self.buttonText = "Look";
         self.toolTipText = "Move the head to look around";
         var imageDivId = options.imageDivId || 'mjpeg-image';
         var $imageDiv = $("#" + imageDivId);

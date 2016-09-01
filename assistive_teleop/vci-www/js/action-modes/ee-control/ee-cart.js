@@ -5,12 +5,11 @@ var RFH = (function (module) {
         var ros = options.ros;
         self.arm = options.arm;
         self.side = self.arm.side;
-        self.name = options.name || self.side[0]+'EECartAction';
         self.showButton = true;
-        var divId = options.div || 'video-main';
-        self.buttonText = self.side[0] === 'r' ? 'Right_Hand' : 'Left_Hand';
+        self.buttonID = options.buttonID || self.side[0] + 'EECartModeButton';
         self.toolTipText = "Control the %side arm and hand".replace('%side', self.side);
-        self.buttonClass = 'hand-button';
+        self.name = options.name || self.side[0]+'EECartAction';
+        var divId = options.div || 'video-main';
         self.$div = $('#'+divId);
         self.gripper = options.gripper;
         self.eeDisplay = options.eeDisplay;
