@@ -2196,28 +2196,29 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'kmean', 'progress', 'hmmgp']
-        ## param_dict['ROC']['methods']     = []
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['kmean']
         nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
-        if opt.task == 'pushing_microblack':
+        if opt.task == 'pushing_microblack' or opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
-            param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 1.8, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
+            param_dict['ROC']['kmean_param_range']  = np.logspace(1.1, 2.0, nPoints)*-1.0
+            
 
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif True:
+        elif False:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif False:
+        elif True:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif False:
+        elif True:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:

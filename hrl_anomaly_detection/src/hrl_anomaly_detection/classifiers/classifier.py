@@ -474,7 +474,7 @@ class classifier(learning_base):
             logps = X[:,0]
                 
             self.dt = KMeans(n_clusters=self.nPosteriors, \
-                             init=np.array(init_list))
+                             init=np.array(init_list), n_init=1)
             labels = self.dt.fit_predict(posts)
             # clustering likelihoods
             ll_logp = [[] for i in xrange(self.nPosteriors)]
@@ -593,8 +593,6 @@ class classifier(learning_base):
                     print self.l_statePosterior
                     sys.exit()
                 nState = len(post)
-                ## c_time = float(nState - (min_index+1) )/float(nState) + 1.0
-                ## c_time = np.logspace(0,-0.9,nState)[min_index]
 
                 if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
                     type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
@@ -672,7 +670,7 @@ class classifier(learning_base):
 
         elif self.method == 'mbkmean' or self.method == 'kmean':
             if type(X) == list: X = np.array(X)
-            posts = X[:,-self.nPosteriors:]            
+            posts  = X[:,-self.nPosteriors:]            
             labels = self.dt.predict(posts)
 
             l_err = []
