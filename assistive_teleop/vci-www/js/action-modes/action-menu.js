@@ -2,7 +2,7 @@ var RFH = (function (module) {
     module.ActionMenu = function (options) {
         "use strict";
         var self = this;
-        self.div = $('#'+ options.divId);
+        var $div = $('#'+ options.divId);
         var ros = options.ros;
         self.tasks = {};
         self.activeAction = null;
@@ -16,31 +16,21 @@ var RFH = (function (module) {
         });
         statePublisher.advertise();
 
-        self.addAction = function (taskObject) {
-            self.tasks[taskObject.name] = taskObject;
-            if (taskObject.showButton) {
-                // if (taskObject.buttonText) {
-                var checkbox = document.createElement('input');
-                checkbox.type = "checkbox";
-                checkbox.id = taskObject.buttonText;
-                var label = document.createElement('label');
-                label.htmlFor = taskObject.buttonText;
-                self.div.append(checkbox, label);
-                $('#'+taskObject.buttonText).button({label:taskObject.buttonText.replace('_',' ')});
-                $('label[for="'+taskObject.buttonText+'"]').addClass(taskObject.name + ' menu-item').prop('title', taskObject.toolTipText);
-                $('#'+taskObject.buttonText).on('click.rfh', 
-                    function(event){
-                        self.buttonCB(taskObject);
-                    });
+        self.addAction = function (actionObject) {
+            self.tasks[actionObject.name] = actionObject;
+            if (actionObject.showButton) {
+                actionObject.$button = $('#'+actionObject.buttonID).button();
+                $('label[for="'+actionObject.buttonID+'"]').prop('title', actionObject.toolTipText);
+                actionObject.$button.on('click.rfh', function(event){self.buttonCB(actionObject); });
             }
         };
 
-        self.buttonCB = function (taskObject) {
+        self.buttonCB = function (actionObject) {
             var newAction;
-            if (taskObject === self.activeAction) {
+            if (actionObject === self.activeAction) {
                 newAction = self.defaultActionName;
             } else {
-                newAction = taskObject.name;
+                newAction = actionObject.name;
             }
             self.stopActiveAction();
             self.startAction(newAction);
@@ -50,33 +40,33 @@ var RFH = (function (module) {
             if (self.activeAction !== null) {
                 self.stopActiveAction();
             }
-            var taskObject = self.tasks[taskName] || self.tasks[self.defaultActionName];
-            taskObject.start();
-            if (taskObject.buttonText) {
-                $('#'+taskObject.buttonText).prop('checked', true).button('refresh');
+            var actionObject = self.tasks[taskName] || self.tasks[self.defaultActionName];
+            actionObject.start();
+            if (actionObject.showButton) {
+                actionObject.$button.prop('checked', true).button('refresh');
             }
-            self.activeAction = taskObject;
-            statePublisher.publish({'data':taskObject.name});
+            self.activeAction = actionObject;
+            statePublisher.publish({'data':actionObject.name});
         };
 
         self.stopActiveAction = function () {
             if (self.activeAction === null) {
                 return;
             }
-            var taskObject = self.activeAction;
+            var actionObject = self.activeAction;
             // Stop currently running task
-            taskObject.stop();
-            if (taskObject.buttonText) {
-                $('#'+taskObject.buttonText).prop('checked', false).button('refresh');
+            actionObject.stop();
+            if (actionObject.showButton) {
+                actionObject.$button.prop('checked', false).button('refresh');
             }
             self.activeAction = null;
         };
 
-        self.removeAction = function (taskObject) {
-            self.stopTast(taskObject);
-            $('#'+taskObject.buttonText).off('click.rfh');
-            self.div.removeChild('#'+taskObject.buttonText);
-            self.tasks.pop(self.tasks.indexOf(taskObject));
+        self.removeAction = function (actionObject) {
+            self.stopTast(actionObject);
+            actionObject.$button.off('click.rfh');
+            $div.removeChild(actionObject.$button);
+            self.tasks.pop(self.tasks.indexOf(actionObject));
         };
     };
 
@@ -120,7 +110,7 @@ var RFH = (function (module) {
         RFH.actionMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
         // Start looking task by default
-        $('#'+RFH.actionMenu.tasks.lookingAction.buttonText).click();
+        RFH.actionMenu.tasks.lookingAction.$button.click();
     };
     return module;
 })(RFH || {});

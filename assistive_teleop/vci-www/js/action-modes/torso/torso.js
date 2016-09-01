@@ -4,12 +4,11 @@ var RFH = (function (module) {
         var self = this;
         self.name = options.name || 'torsoAction';
         self.showButton = true;
+        self.buttonID = options.buttonID || 'torsoModeButton';
+        self.toolTipText = "Raise or lower the spine";
         self.containerDiv = options.containerDiv;
         self.sliderDiv = options.sliderDiv;
         self.torso = options.torso; 
-        self.buttonText = 'Spine';
-        self.buttonClass = 'spine-button';
-        self.toolTipText = "Raise or lower the spine";
         $('#tallIcon').prop('title', "Raise the Spine");
         $('#shortIcon').prop('title', "Lower the Spine");
 
