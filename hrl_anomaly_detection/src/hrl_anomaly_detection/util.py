@@ -1865,16 +1865,20 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
         elif method == 'osvm': label='OSVM'
         elif method == 'bpsvm': label='BPSVM'
+        elif method == 'kmean': label='HMM-K'
         else: label = method
 
         labels.append(label)
         
 
     plt.xticks(ind+1.5*width, labels, fontsize=18 )
+    plt.xticks(rotation=20)
     for tick in ax1.yaxis.get_major_ticks():
         tick.label.set_fontsize(20) 
     for tick in ax2.yaxis.get_major_ticks():
         tick.label.set_fontsize(20) 
+
+    plt.tight_layout() 
                 
     if save_pdf:
         fig.savefig('test.pdf')
