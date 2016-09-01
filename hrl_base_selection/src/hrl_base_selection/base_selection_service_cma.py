@@ -167,9 +167,9 @@ class BaseSelector(object):
             #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
             #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
-            #self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
-            #self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
-            #self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
+            self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
+            self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
+            self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
         else:
             self.scores_dict[model, load] = self.load_task(load, model)
 
