@@ -173,7 +173,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
             if method == 'hmmgp':
                 nSubSample = 20 # 20 
-                nMaxData   = 40 # 40 100
+                nMaxData   = 50 # 40 100
                 rnd_sample = True #False
                 ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
                   dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
@@ -425,8 +425,8 @@ if __name__ == '__main__':
                 parameters = {'nState': [25], 'scale': np.linspace(3.0,10.0,7), \
                               'cov': np.linspace(0.1,5.0,5) }
             else:
-                parameters = {'nState': [25], 'scale': np.linspace(5.0,10.0,5), \
-                              'cov': np.linspace(2.0,7.0,6) }
+                parameters = {'nState': [25], 'scale': np.linspace(8.0,15.0,7), \
+                              'cov': np.linspace(1.0,5.0,6) }
         else:
             print "Not available task"
         max_check_fold = None #2
