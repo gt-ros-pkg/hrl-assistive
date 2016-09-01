@@ -1081,7 +1081,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=True):
+                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
