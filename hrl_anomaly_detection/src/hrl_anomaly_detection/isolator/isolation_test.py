@@ -33,6 +33,7 @@ import random
 import itertools
 import numpy as np
 import scipy
+import scipy.stats as statistics
 
 # System learning util
 from mvpa2.datasets.base import Dataset
@@ -93,17 +94,22 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     # train Anomaly Detector
     # HMM training data extraction and handover scaling parameter into isolation data extractor
     if True:
-        dim = 4
+        dim = 5
         hmm_subjects = ['hyun', 'jina', 'sai', 'linda']
         hmm_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task_name+'_data/'+\
           str(data_dict['downSampleSize'])+'_'+str(dim)
-        
+
         hmm_d = dm.getDataSet(hmm_subjects, task_name, raw_data_path, \
                               hmm_data_path, data_dict['rf_center'], data_dict['local_range'],\
                               downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                              handFeatures=['unimodal_audioWristRMS', 'unimodal_ftForceZ', 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng'],\
+                              handFeatures=data_dict['handFeatures'],\
                               data_renew=False, max_time=data_dict['max_time']) 
+        dim = 4
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task_name+'_data/'+\
+          str(data_dict['downSampleSize'])+'_'+str(dim)
+
     else:
         dim = 4
         hmm_data_path = os.path.expanduser('~')+\
@@ -122,15 +128,21 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         '''
 
         type_sets = []
+        """
         type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
         type_sets.append([22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,48,71,72,73,75])
         type_sets.append([41,42,43,44,45,46,77,78,47])
         type_sets.append([79,80,81,82,83,84,85,89,90,91,93,94,95,86,87,88])
         """
-        type_sets.append([42,43,44,45,46,47,48])
-        type_sets.append([21,22,23,24,25,26,30,31,32])
-        type_sets.append([18,19,20,33,34,35])
-        type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])
+        type_sets.append([6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]) # Human movement miss
+        type_sets.append([22,23,24,25,26,27,28,29,30,32,33,35,36,37]) #Human movement collision
+        type_sets.append([41,42,44,45,46,77,78]) # audio
+        type_sets.append([0,1,2,3,4,5,49,50,51,52,53,54]) # arm movement
+        type_sets.append([79,80,81,82,83,84,85]) # out of reach
+        #type_sets.append([86,87,88,89,90,91,93,94,95])# etc failures
+        """
+        type_sets.append([34,71]) # spoon collision 
+        type_sets.append([]) # plain old miss
         """
 
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
@@ -141,7 +153,7 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                            init_param_dict=hmm_d['param_dict'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
-        order = [[]] * (2 * len(d['failureFiles']))
+        order = [[]] * 200#(2 * len(d['failureFiles']))
         new_type_sets = []
         for i in xrange(0, len(type_sets)):
             new_type_sets.append([])
@@ -155,13 +167,18 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
             file_name_split = file_name.split("iteration_")
             file_name_split = file_name_split[1].split("_failure")[0]
             idx = int(file_name_split)
-            order[idx] = i
+            if "unexpected3" in file_name:
+                order[idx] = i
+            elif "unexpected2" in file_name:
+                order[idx + 96] = i
+            else:
+                order[idx + 109] = i
         count = 0
         for i, sampleIdx in enumerate(order):
             curr_type = formatY(i, type_sets)
             if curr_type is not 0:
-                index_d[str(sampleIdx)]     = count
-                reverse_index_d[str(count)] = sampleIdx
+                index_d[str(i)]     = count
+                reverse_index_d[str(count)] = i
                 new_type_sets[curr_type-1].append(count)
                 count = count + 1
                 for dimIdx in xrange(0, len(d['failureData'])):
@@ -203,16 +220,21 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
 
         # anomaly detector --------------------------------------------
         print "Start to find anomalous point" 
-        testDataX = abnormalTrainData#[[0,1,3,4], :, :]
-        testDataY = np.ones(len(abnormalTestData[0]))
-        detection_train_idx_list = anomaly_detection(testDataX, testDataY, \
+        testDataX = failureData[[0,1,3,4], :, :]#abnormalTrainData[[0,1,3,4], :, :]
+        testDataY = np.ones(len(failureData[0]))
+        detection_idx_list = anomaly_detection(testDataX, testDataY, \
                                                task_name, hmm_data_path, param_dict,\
                                                verbose=True)
-        testDataX = abnormalTestData#[[0,1,3,4], :, :]
-        testDataY = np.ones(len(abnormalTestData[0]))
-        detection_test_idx_list = anomaly_detection(testDataX, testDataY, \
-                                               task_name, hmm_data_path, param_dict,\
-                                               verbose=True)
+        #detection_train_idx_list = anomaly_detection(testDataX, testDataY, \
+        #                                       task_name, hmm_data_path, param_dict,\
+        #                                       verbose=True)
+        #testDataX = abnormalTestData[[0,1,3,4], :, :]
+        #testDataY = np.ones(len(abnormalTestData[0]))
+        #detection_test_idx_list = anomaly_detection(testDataX, testDataY, \
+        #                                       task_name, hmm_data_path, param_dict,\
+        #                                       verbose=True)
+        detection_train_idx_list = np.asarray(detection_idx_list)[abnormalTrainIdx]
+        detection_test_idx_list = np.asarray(detection_idx_list)[abnormalTestIdx]
         print detection_train_idx_list
         ## sys.exit()
         # -------------------------------------------------------------
@@ -222,53 +244,75 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         # code here
         ## test_classifier=cf.classifier()
         X = []
-        y = []        
+        y = []
+        scalers = []
+        features_all_data = []
+        for i in xrange(0, abnormalTrainData.shape[0]):
+            scalers.append(preprocessing.StandardScaler())
+            features_all_data.append([])
+        for dimIdx, featureData in enumerate(abnormalTrainData):
+            for sample in featureData:
+                for data_point in sample:
+                    features_all_data[dimIdx].append([data_point])
+            features_all_data[dimIdx] = scalers[dimIdx].fit_transform(features_all_data[dimIdx])
+        #print np.asarray(features_all_data)
+                
         for trainIdx in xrange(0, abnormalTrainData.shape[1]):
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
                 print "hmm"
                 continue
             print trainIdx, len(detection_train_idx_list), abnormalTrainData.shape
-            limit = getRange(detection_train_idx_list[trainIdx])
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=limit)
-            X.extend(formated_X)
-            for windowIdx in xrange(0, len(formated_X)):
-                y.append(curr_type)
-        scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        mean = np.mean(X, axis=0)
-        var = np.std(X, axis=0)
+            if detection_train_idx_list[trainIdx] is not None:
+                limit = getRange(detection_train_idx_list[trainIdx])
+                curr_data = [[]] * abnormalTrainData.shape[0]
+                for dimIdx in xrange(0, abnormalTrainData.shape[0]):
+                    curr_data[dimIdx] = scalers[dimIdx].transform(np.array(abnormalTrainData[dimIdx, trainIdx, :], copy=True).reshape(200,)).reshape(200,)
+                formated_X = formatX(np.asarray(curr_data), limit=limit)
+                X.extend(formated_X)
+                for windowIdx in xrange(0, len(formated_X)):
+                    y.append(curr_type)
+        #scaler = preprocessing.StandardScaler()
+        #X_scaled = scaler.fit_transform(X)
         commands = ''
         class_count = [0.0]*10
-        for trainIdx in abnormalTrainIdx:
-            class_count[formatY(trainIdx,type_sets)] += 1
-            class_count[-1] += 1
-        print class_count
+        for i, trainIdx in enumerate(abnormalTrainIdx):
+            if detection_train_idx_list[i] is not None:
+                class_count[formatY(trainIdx,type_sets)] += 1
+                class_count[-1] += 1
         for i in xrange(0, len(type_sets)):
             if not np.allclose(class_count[i+1], 0):
                 #if i is not 3 and i is not 2:
                 commands = commands + '-w' + str(i+1) + ' ' + str((1 / (class_count[i+1]))) + ' '
                 #else:
                 #    commands = commands + '-w' + str(i+1) + ' ' + str((2 / (class_count[i+1]))) + ' '
+        print commands
         c = np.logspace(-3.0, -1.0, 4)
         models=[]
         #for i in xrange(0, 4):
             #model = svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + g[i])
-        models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands))# + '-g ' + str(c[i])))
+        models.append(svm.svm_train(y, X, ' -b 1 ' + commands))# + '-g ' + str(c[i])))
+        confusion_matrix = np.zeros((len(type_sets), len(type_sets)))
         for testIdx in xrange(0, abnormalTestData.shape[1]):
             X = []
             y = []
             curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
             if curr_type is 0:
                 continue
-            limit = getRange(detection_test_idx_list[testIdx])
-            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)#, limit=limit)
-            scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
-            X.extend(formated_X)
-            for windowIdx in xrange(0, len(formated_X)):
-                y.append(curr_type)
+            if detection_test_idx_list[testIdx] is not None:
+                limit = getRange(int(detection_test_idx_list[testIdx]))
+                curr_data = [[]] * abnormalTestData.shape[0]
+                for dimIdx in xrange(0, abnormalTestData.shape[0]):
+                    curr_data[dimIdx] = scalers[dimIdx].transform(np.array(abnormalTestData[dimIdx, testIdx, :], copy=True).reshape(200, 1)).reshape(200,)
+                formated_X = formatX(np.asarray(curr_data), limit=limit)
+                scaled_data = np.asarray(curr_data)#abnormalTestData[:, testIdx, :]#np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
+                X.extend(formated_X)
+                for windowIdx in xrange(0, len(formated_X)):
+                    y.append(curr_type)
+            else:
+                continue
             plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
-            color_list = ['', 'b', 'g', 'r', 'k', 'y']
+            color_list = ['', 'b', 'g', 'r', 'k', 'y', 'c', 'm']
             title_list = ['', 'sound', 'force', 'face','distance', 'orientation']
             for i in xrange(0, failureData.shape[0]):
                 color = color_list[i+1]#int(model.get_labels()[i])]
@@ -280,24 +324,30 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
                 #plt.plot(abnormalTestData[i, testIdx, :], color)
                 plt.plot(np.asarray(scaled_data)[i, :], color)
             for j, model in enumerate(models):
-                print j
                 plt.subplot2grid((failureData.shape[0],2),(j,1), rowspan=failureData.shape[0]).set_title(c[j])
                 plt.axis((0, 200, 0, 1))
                 prediction =  svm.svm_predict(y, X, model, '-b 1')
                 probability = np.asarray(prediction[2])
+                print "predictions, ", statistics.mode(prediction[0])
+                print "supposed to be, ", curr_type
+                confusion_matrix[curr_type-1][int(statistics.mode(prediction[0])[0])-1] += 1
                 for i in xrange(0,len(type_sets)):
-                    color = color_list[int(model.get_labels()[i])]
+                    try:
+                        color = color_list[int(model.get_labels()[i])]
+                    except:
+                        print "error!"
                     if model.get_labels()[i] is curr_type:
                         plt.plot(probability[:,i], color + '>')
                     else:
                         plt.plot(probability[:,i], color + '-')
-            print model.get_labels()
             fig_manager = plt.get_current_fig_manager()
             fig_manager.full_screen_toggle()
             plt.show()
             plt.clf()
+        print "confusion matrix, "
+        print confusion_matrix
     
-def formatX(data, time_window=20, scaler=None, limit=None):
+def formatX(data, time_window=30, scaler=None, limit=None):
     X = []
     if limit is not None:
         idxrange = xrange(limit[0], limit[1]-time_window +1)
@@ -320,15 +370,16 @@ def formatY(index, type_sets):
             return setId + 1
     return 0
 
-def getRange(index):
+def getRange(index,before=30, after=30):
+    print index
     if index < 0 or index > 200:
         return "error"
-    if index < 30:
-        return [0, 40]
-    elif index > 190:
-        return [160, 200]
+    if index < (after+before):
+        return [10, (after+before+10)] 
+    elif index > (190-after):
+        return [(190-after-before), 190]
     else:
-        return [index-30, index+10]
+        return [index-before, index+after]
 
 def scaled_inputs(data, scaler):
     #data, of form 4, 200
@@ -353,7 +404,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=
     # set parameters
     method  = 'hmmgp'
     ## weights = ROC_dict[method+'_param_range']
-    weight  = -5.0 # weights[10] # need to select weight!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    weight  = -15.0 # weights[10] # need to select weight!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! sensitivity - is less sensitive
     nMaxData   = 20 # The maximun number of executions to train GP
     nSubSample = 40 # The number of sub-samples from each execution to train GP
 
@@ -428,6 +479,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=
             if est_y[jj] > 0.0:                
                 if ll_classifier_test_Y[ii][0] > 0:
                     detection_idx[ii] = ll_classifier_test_idx[ii][jj]
+                    if ll_classifier_test_idx[ii][jj] ==4:
+                        print "Current likelihood: ", ll_classifier_test_X[ii][jj][0] 
                 break
 
     return detection_idx
@@ -444,7 +497,7 @@ if __name__ == '__main__':
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
                  help='type the desired task name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+    p.add_option('--dim', action='store', dest='dim', type=int, default=5,
                  help='type the desired dimension')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
@@ -492,10 +545,10 @@ if __name__ == '__main__':
         sys.exit()
 
     raw_data_path, save_data_path, param_dict_hmm = getParams(opt.task, opt.bDataRenew, \
-                                                          False, False, 4,\
+                                                          False, False, 5,\
                                                           rf_center, local_range)
     _, _, param_dict_isolator = getParams(opt.task, opt.bDataRenew, \
-                                                          False, False, 4,\
+                                                          False, False, 5,\
                                                           rf_center, local_range)
 
 
