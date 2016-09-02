@@ -169,7 +169,7 @@ var RFH = (function (module) {
         $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing);
 
         self.getStepSize = function () {
-            return $('input[name=speedOption]:checked').attr('id');
+            return $('input[name=speed-option]:checked').attr('id');
         };
 
         var updatePickPlaceButton = function (graspingMsg) {
@@ -186,7 +186,6 @@ var RFH = (function (module) {
 
         self.getPoseFromDelta = function (xyzrpy) {
             // Get default values for unspecified options
-            console.log("Del:", xyzrpy);
             var x = xyzrpy.x || 0.0;
             var y = xyzrpy.y || 0.0;
             var z = xyzrpy.z || 0.0;
@@ -366,7 +365,6 @@ var RFH = (function (module) {
         };
 
         self.setHandDelta = function (xyzrpy) {
-            console.log("Set Del: ", xyzrpy);
             self.handDelta = xyzrpy;
         };
 

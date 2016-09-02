@@ -1,4 +1,6 @@
 <launch>
+    
+   <include file="$(find assistive_teleop)/launch/realtime_base_selection.launch"/>
 
     <arg name="domain" value="realtime_base_selection"/>
     <group ns="pddl_tasks">

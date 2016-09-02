@@ -50,6 +50,7 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-rotation.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/arm-postures.js"></script>
+  <script type="text/javascript" src="js/action-modes/ee-control/fabric-skin.js"></script>
   <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
   <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
@@ -218,19 +219,19 @@
      <div id="image-cover"></div>
      <div id="smach-container" class="log-click"></div>
      <!-- Divs for selecting eyeballs for looking task -->
-     <div class="map-look top left cursor-eyes-up-left log-click"></div>
-     <div class="map-look top center cursor-eyes-up log-click"></div>
-     <div class="map-look top right cursor-eyes-up-right log-click"></div>
-     <div class="map-look middle left cursor-eyes-left log-click"></div>
-     <div class="map-look middle right cursor-eyes-right log-click"></div>
-     <div class="map-look bottom left cursor-eyes-down-left log-click"></div>
-     <div class="map-look bottom center cursor-eyes-down log-click"></div>
-     <div class="map-look bottom right cursor-eyes-down-right log-click"></div>
+     <div id="look-up-left" class="map-look top left cursor-eyes-up-left log-click"></div>
+     <div id="look-up" class="map-look top center cursor-eyes-up log-click"></div>
+     <div id="look-up-right" class="map-look top right cursor-eyes-up-right log-click"></div>
+     <div id="look-left" class="map-look middle left cursor-eyes-left log-click"></div>
+     <div id="look-right" class="map-look middle right cursor-eyes-right log-click"></div>
+     <div id="look-down-left" class="map-look bottom left cursor-eyes-down-left log-click"></div>
+     <div id="look-down" class="map-look bottom center cursor-eyes-down log-click"></div>
+     <div id="look-down-right" class="map-look bottom right cursor-eyes-down-right log-click"></div>
      <!-- divs for driving controls -->
      <svg id="drive-lines" class="drive-ctrl log-mousehold" version="1.1" xmlns="http://www.w3.org/2000/svg">
      </svg>
-     <div id="left-turn-button" class="drive-ctrl turn-signal left log-click"><span class="label">Turn Left</span></div>
-     <div id="right-turn-button" class="drive-ctrl turn-signal right log-click"><span class="label">Turn Right</span></div>
+     <div id="left-turn-button" class="drive-ctrl turn-signal left log-mousehold"><span class="label">Turn Left</span></div>
+     <div id="right-turn-button" class="drive-ctrl turn-signal right log-mousehold"><span class="label">Turn Right</span></div>
      <!-- divs for torso controls -->
      <img id="torso-tall-icon" src="./css/icons/tall.png"></img>
      <img id="torso-short-icon" src="./css/icons/short.png"></img>
@@ -254,13 +255,12 @@
      </div>
      <!-- divs for gripper controls -->
      <div id='rGripperCtrlContainer' class='gripper-ctrl-cont r-arm-ctrl'>
-        <div class="gripper-slider log-slide"></div>
-<!--        <div class="grab">Grab</div>-->
+        <div id="right-gripper-slider" class="gripper-slider log-slide"></div>
         <input type="checkbox" class="release log-click" id="release-right"/>
         <label for="release-right">Release on contact</label>
      </div>
      <div id='lGripperCtrlContainer' class='gripper-ctrl-cont l-arm-ctrl'>
-        <div class="gripper-slider log-slide"></div>
+        <div id="left-gripper-slider" class="gripper-slider log-slide"></div>
         <input type="checkbox" class="release log-click" id="release-left"/>
         <label for="release-left">Release on contact</label>
      </div>

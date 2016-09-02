@@ -80,6 +80,9 @@ var RFH = (function (module) {
         self.canvasClickCB = function (event) {
             var clickedMesh = self.getMeshPointedAt(event);
             if (clickedMesh !== null) {
+                // START HACK to log clicks on rotation arrows
+                RFH.dataLogger.logCustomEvent('click', "rotation-arrow-"+clickedMesh.mesh.userData.direction);
+                // END HACK
                 self.eeDeltaCmd(clickedMesh.cbArgs);
             }
         };
