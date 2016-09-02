@@ -1746,9 +1746,11 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         max_score_idx[1].append( np.argmax(fscore_0_5) )
         max_score_idx[2].append( np.argmax(fscore_2) )
 
-        if method == 'kmean':
-            print fscore_2
-            print np.argmax(fscore_2)
+    ##     if method == 'progress' or method == 'hmmgp':
+    ##         print fscore_2
+    ##         print np.argmax(fscore_2)
+
+    ## sys.exit()
     
     return max_score_idx
 
@@ -1758,6 +1760,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
 
     m_score_l  = [[],[],[]]
     m_delay_l = [[],[],[]]
+
 
     for mi, method in enumerate(method_list):
 
@@ -1792,16 +1795,18 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                                    if delay_ll[i][ii]>=0 ]
                     ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
                                    
-
-                    m_score_l[j].append(fscore)
+                    m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
-                    ## if method == 'kmean' and j==0:
+                    ## if method == 'progress':
+                    ##     print method, " : ", i, j, nPoints 
+                    ## if method == 'progress' and j==1 and i==10:
+                    ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                     ##     print delay_ll[i]
                     ##     print delay_list
+                    ##     print time_step
                     ##     sys.exit()
                     
-
     return m_score_l, m_delay_l
 
 
@@ -1820,13 +1825,12 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
             m_cost_std_l[j].append( np.std(cost_list[j][i]))
             m_delay_mean_l[j].append( np.mean(delay_list[j][i]))
             m_delay_std_l[j].append( np.std(delay_list[j][i]))
-            ## if method_list[i] == 'kmean':
+            ## if method_list[i] == 'progress':
             ##     print delay_list[j][i]
             ##     print np.mean(delay_list[j][i])
             ##     print np.std(delay_list[j][i])
                 
-
-    print np.shape(cost_list), np.shape(delay_list)
+    ## print np.shape(cost_list), np.shape(delay_list)
 
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])

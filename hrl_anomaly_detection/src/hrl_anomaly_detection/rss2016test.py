@@ -738,7 +738,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         timeList = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
-    nSubFold_list = []
     ## kFold_list = kFold_list[:1]
     
     score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
@@ -765,7 +764,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         from sklearn import cross_validation
         normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
-        nSubFold_list.append(len(normal_folds))
 
         for iidx, (train_fold, test_fold) in enumerate(normal_folds):
 
@@ -775,9 +773,18 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
             
             t_normalTrainData   = normalTrainData[:,train_fold]
-            t_abnormalTrainData = abnormalTrainData
+            t_abnormalTrainData = copy.copy(abnormalTrainData)
             t_normalTestData    = normalTrainData[:,test_fold]
-            t_abnormalTestData  = abnormalTrainData
+            t_abnormalTestData  = copy.copy(t_normalTestData)
+
+            # Random Step Noise to test data
+            for i in xrange(len(t_abnormalTestData[0])):
+                start_idx = np.random.randint(0, nLength/2, 1)[0]
+
+                if start_idx < startIdx: start_idx=startIdx
+                t_abnormalTestData[:,i,start_idx:] += step_mag
+                step_idx_l.append(start_idx)
+            
 
             #-----------------------------------------------------------------------------------------
             # Full co-variance
@@ -849,7 +856,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                                                                              startIdx=startIdx, nState=nState, \
                                                                              modeling_pkl_prefix=\
                                                                              'hmm_'+pkl_prefix+'_'+str(iidx))\
-                                                                             for iidx in xrange(nSubFold_list[idx])
+                                                                             for iidx in xrange(len(normal_folds))
                                                                              for method in method_list )
 
         l_data = r
@@ -878,7 +885,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        fscore_beta    = 1
         best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
 
         print method_list
@@ -2217,7 +2223,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif True:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif False:
