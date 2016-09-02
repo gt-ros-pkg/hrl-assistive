@@ -147,6 +147,8 @@ var RFH = (function (module) {
                 $('#left-col').animate({'left':0}, {duration:200, easing:'easeOutCubic'});
             };
             var hideLeftColumn = function (event) {
+                var toEl = $(event.toElement);
+                if (toEl.hasClass('ui-menu-item') || toEl.hasClass('ui-menu')) { return ; }
                 $('#left-col').animate({'left':'-200px'}, {duration: 350, easing:'easeInCubic'});
             };
 
