@@ -11,25 +11,25 @@
     height: 100%;
 }
 
-#speedOptions {
+#speed-options {
     display:none; /* Do not display initially */
     margin-left: 2%;
 }
 
-#speedOptions label{
+#speed-options label{
     width: 24%;
 }
 
-#speedOptions-buttons .ui-button-text{
+#speed-options-buttons .ui-button-text{
    padding: 0.14em 0.14em; 
    font-size: 1.0em;
 }
 
-#speedOptions-buttons{
+#speed-options-buttons{
     width: 100%;
 }
 
-#speedOptions-form{
+#speed-options-form{
     width: 100%;
 }
 

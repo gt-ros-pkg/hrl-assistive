@@ -3,7 +3,7 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         self.name = options.name || 'lookingAction';
-        self.buttonID = options.buttonID || 'lookModeButton';
+        self.buttonID = options.buttonID || 'look-mode-button';
         var ros = options.ros;
         self.showButton = true;
         self.toolTipText = "Move the head to look around";

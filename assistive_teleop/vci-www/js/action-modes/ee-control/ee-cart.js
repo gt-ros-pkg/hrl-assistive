@@ -6,7 +6,7 @@ var RFH = (function (module) {
         self.arm = options.arm;
         self.side = self.arm.side;
         self.showButton = true;
-        self.buttonID = options.buttonID || self.side[0] + 'EECartModeButton';
+        self.buttonID = options.buttonID || self.side + '-ee-cart-mode-button';
         self.toolTipText = "Control the %side arm and hand".replace('%side', self.side);
         self.name = options.name || self.side[0]+'EECartAction';
         var divId = options.div || 'video-main';
@@ -36,7 +36,7 @@ var RFH = (function (module) {
         $('#toward-button > span').remove();
         $('#away-button > span').remove();
         self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
-        $('#speedOptions-buttons, #'+self.side[0]+'-posrot-set').buttonset();
+        $('#speed-options-buttons, #'+self.side[0]+'-posrot-set').buttonset();
         $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
