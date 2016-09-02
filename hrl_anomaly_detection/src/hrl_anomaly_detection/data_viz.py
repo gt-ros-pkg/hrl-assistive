@@ -129,6 +129,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
         if method == 'hmmgp' or method == 'hmmsvr':
             nSubSample = 20
+            nMaxData   = 50 # 40 100
+            rnd_sample = True #False
         else:
             nSubSample = None
             ## nMaxData   = 40 #100
@@ -138,7 +140,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                            add_logp_d=False, \
-                                                           cov_type='full', nSubSample=nSubSample)
+                                                           cov_type='full', nSubSample=nSubSample,\
+                                                           nMaxData=nMaxData, rnd_sample=rnd_sample)
     
         # flatten the data
         X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \

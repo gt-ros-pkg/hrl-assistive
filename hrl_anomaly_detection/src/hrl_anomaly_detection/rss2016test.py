@@ -819,7 +819,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
 
     #-----------------------------------------------------------------------------------------
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'_'+str(idx)+'.pkl')
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'_'+str(idx)+'.pkl')
 
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
             ROC_data = {}
@@ -2177,7 +2177,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=False, method='hmmgp', \
+                          decision_boundary_viz=True, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
@@ -2217,13 +2217,13 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif True:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif True:
+        elif False:
             step_mag = 0.5*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.5'
         elif True:

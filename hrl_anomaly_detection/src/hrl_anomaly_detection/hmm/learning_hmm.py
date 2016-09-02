@@ -470,7 +470,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
 
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
-                                                 nSubSample=None):
+                                                 nSubSample=None, nMaxData=100000, rnd_sample=True):
     n_jobs=1
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
@@ -488,7 +488,7 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
         from hrl_anomaly_detection import data_manager as dm
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
-                           nSubSample=nSubSample)
+                           nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 

@@ -195,7 +195,7 @@ class classifier(learning_base):
         elif self.method == 'hmmgp':
             from sklearn import gaussian_process
             self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linea'
+            self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linear'
 
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
                                                        normalize=True, nugget=100.)            
@@ -639,7 +639,7 @@ class classifier(learning_base):
                     for i, post in enumerate(posts):                        
                         print i, post
                     sys.exit()
-                
+
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
