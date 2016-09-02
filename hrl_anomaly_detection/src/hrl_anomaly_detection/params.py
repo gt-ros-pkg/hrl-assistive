@@ -56,7 +56,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
                                          'hmmgp', 'rnd'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ ]
+        param_dict['ROC']['update_list'] = [ 'rnd' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -114,7 +114,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                           'hmmsvm_no_dL_param_range': np.logspace(-2.53, 0.176, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.1, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
         
     elif dim == 3:
@@ -249,7 +249,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.247, -0.4, nPoints),\
-                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
                           #np.logspace(-8.0, 1.0, nPoints)
     elif dim == 3:
@@ -586,7 +586,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_dL_param_range': np.logspace(-2.301, 0.303, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-1.886, 0.33, nPoints),\
                           'osvm_param_range': np.logspace(-4., 0.0, nPoints),\
-                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           }        
         
     elif dim == 3:
@@ -763,7 +763,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'osvm_param_range': np.logspace(-6, 0.2, nPoints),\
                           'bpsvm_param_range': np.logspace(-4.0, 0.7, nPoints),\
-                          'rnd_param_range': np.linspace(0.0, 1.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints) }        
     elif dim == 3:
         handFeatures = ['unimodal_ftForce',\
