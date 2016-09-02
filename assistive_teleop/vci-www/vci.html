@@ -80,49 +80,49 @@
 <!--     <div id="network-status"></div>-->
  </div>
  <div id="left-col">
-    <div class="left-col-accordion main-menu-accordion">
+    <div id="main-menu-accordion" class="left-col-accordion main-menu-accordion log-activate">
         <h3>Main Menu</h3>
         <div id="main-menu">
             <!-- Looking action mode button -->
-            <label for="lookModeButton" class="menu-item">Look</label>
-            <input id="lookModeButton" type="checkbox" class="log-click">
+            <label for="look-mode-button" class="menu-item">Look</label>
+            <input id="look-mode-button" type="checkbox" class="log-click">
             <!-- Spine action mode button -->
-            <label for="torsoModeButton" class="menu-item">Spine</label>
-            <input id="torsoModeButton" type="checkbox" class="log-click">
+            <label for="torso-mode-button" class="menu-item">Spine</label>
+            <input id="torso-mode-button" type="checkbox" class="log-click">
             <!-- Left Arm action mode button -->
-            <label for="lEECartModeButton" class="menu-item">Left Hand</label>
-            <input id="lEECartModeButton" type="checkbox" class="log-click">
+            <label for="left-ee-cart-mode-button" class="menu-item">Left Hand</label>
+            <input id="left-ee-cart-mode-button" type="checkbox" class="log-click">
             <!-- Right arm action mode button -->
-            <label for="rEECartModeButton" class="menu-item">Right Hand</label>
-            <input id="rEECartModeButton" type="checkbox" class="log-click">
+            <label for="right-ee-cart-mode-button" class="menu-item">Right Hand</label>
+            <input id="right-ee-cart-mode-button" type="checkbox" class="log-click">
             <!-- Drive action mode button -->
-            <label for="driveModeButton" class="menu-item">Drive</label>
-            <input id="driveModeButton" type="checkbox" class="log-click">
+            <label for="drive-mode-button" class="menu-item">Drive</label>
+            <input id="drive-mode-button" type="checkbox" class="log-click">
         </div>
     </div>
-    <div class="left-col-accordion controls-accordion">
+    <div id="controls-accordion" class="left-col-accordion controls-accordion log-activate">
         <h3>Controls</h3>
         <div id="controls">
            <!-- Looking Controls -->
-           <div id="zoomInButton" class="look-ctrl zoom in log-click">Zoom In</div>
-           <div id="zoomOutButton" class="look-ctrl zoom out log-click">Zoom Out</div>
+           <div id="zoom-in-button" class="look-ctrl zoom in log-click">Zoom In</div>
+           <div id="zoom-out-button" class="look-ctrl zoom out log-click">Zoom Out</div>
            <!-- Driving Controls -->
-           <div id="driveTuckButton" class="tuck-driving drive-ctrl log-click">Tuck Arms</div>
-           <svg id="drive-dir-icon" class="drive-ctrl" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
+           <div id="drive-tuck-button" class="tuck-driving drive-ctrl log-click">Tuck Arms</div>
+           <svg id="drive-dir-icon" class="drive-ctrl log-click" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
            <h4 class="drive-ctrl">Click on video to drive.</h4>
 
             <!-- Step size controls -->
-            <div id="speedOptions" class="arm-ctrl">
+            <div id="speed-options" class="arm-ctrl">
                 <h4>Step Size</h4>
-                <div id="speedOptions-buttons">
-                  <form id="speedOptions-form">
-                    <input type="radio" id="xsmall" class="speed-option log-click" name="speedOption"/>
+                <div id="speed-options-buttons">
+                  <form id="speed-options-form">
+                    <input type="radio" id="xsmall" class="speed-option log-click" name="speed-option"/>
                     <label for="xsmall">XS</label>
-                    <input type="radio" id="small" class="speed-option log-click" name="speedOption"/>
+                    <input type="radio" id="small" class="speed-option log-click" name="speed-option"/>
                     <label for="small">S</label>
-                    <input type="radio" id="medium" class="speed-option log-click" name="speedOption" checked="checked"/>
+                    <input type="radio" id="medium" class="speed-option log-click" name="speed-option" checked="checked"/>
                     <label for="medium">M</label>
-                    <input type="radio" id="large" class="speed-option log-click" name="speedOption"/>
+                    <input type="radio" id="large" class="speed-option log-click" name="speed-option"/>
                     <label for="large">L</label>
                   </form>
                 </div>
@@ -139,9 +139,9 @@
             <div class="r-arm-ctrl">
                 <!-- Assorted Actions -->
                 <h4>Actions</h4>
-                <div id="r3dPeekButton" class="camera-swing r-arm-ctrl controls-button log-click">3D Peek</div>
-                <div id="rTuckAsideButton" class="posture aside r-arm-ctrl controls-button log-click">Move Aside</div>
-                <div id="rTuckSetupButton" class="posture manip r-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="right-3d-peek-button" class="camera-swing r-arm-ctrl controls-button log-click">3D Peek</div>
+                <div id="right-tuck-aside-button" class="posture aside r-arm-ctrl controls-button log-click">Move Aside</div>
+                <div id="right-tuck-setup-button" class="posture manip r-arm-ctrl controls-button log-click">Move to Setup</div>
             </div>
 
             <!-- Left Arm Controls -->
@@ -156,25 +156,25 @@
             <div class="l-arm-ctrl">
                 <!-- Assorted Actions -->
                 <h4>Actions</h4>
-                <div id="r3dPeekButton" class="camera-swing l-arm-ctrl controls-button log-click">3D Peek</div>
-                <div id="lTuckAside" class="posture aside l-arm-ctrl controls-button  log-click">Move Aside</div>
-                <div id="lTuckSetup" class="posture manip l-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="left-3d-peek-button" class="camera-swing l-arm-ctrl controls-button log-click">3D Peek</div>
+                <div id="left-tuck-aside-button" class="posture aside l-arm-ctrl controls-button  log-click">Move Aside</div>
+                <div id="left-tuck-setup-button" class="posture manip l-arm-ctrl controls-button log-click">Move to Setup</div>
             </div>
         </div>
     </div>
-    <div class="left-col-accordion task-menu-accordion">
+    <div id="task-menu-accordion" class="left-col-accordion task-menu-accordion log-activate">
         <h3>Task Menu</h3>
         <div id="task-menu">
             <form>
                 <label for="domain-select">Select a Planned Task</label>
-                <select id="domain-select" name="domain-select">
+                <select id="domain-select" name="domain-select" class="log-open log-select">
                     <option value="adl">Self-Care Tasks</option>
                     <option value="realtime_base_selection">Approach</option>
                     <option value="pick_and_place">Move Object</option>
                 </select>
                 
                 <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
-                <select id="task-select" name="task-select" class="option-select option-adl">
+                <select id="task-select" name="task-select" class="option-select option-adl log-open log-select">
                     <option value="shaving">Shave Face</option>
                     <option value="wiping_mouth">Wipe Mouth</option>
                     <option value="scratching_forehead">Scratch Forehead</option>
@@ -182,12 +182,12 @@
                     <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
                 <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
-                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place'>
+                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place log-open log-select'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
                 </select>
                 <label for="model-select" class="option-select option-adl">Select a Location</label>
-                <select id="model-select" name="model-select" class='option-select option-adl'>
+                <select id="model-select" name="model-select" class='option-select option-adl log-open log-select'>
                     <option value="autobed">Autobed</option>
                     <option value="wheelchair">Wheelchair</option>
                 </select>
@@ -229,16 +229,12 @@
      <!-- divs for driving controls -->
      <svg id="drive-lines" class="drive-ctrl log-mousehold" version="1.1" xmlns="http://www.w3.org/2000/svg">
      </svg>
-     <!--<svg id="arm-svg" class="arm-ctrl" version="1.1" xmlns="http://www.w3.org/2000/svg">
-     </svg>-->
-<!--     <div class="drive-ctrl drive-look left"></div>
-     <div class="drive-ctrl drive-look right"></div>-->
-     <div id="leftTurnButton" class="drive-ctrl turn-signal left log-click"><span class="label">Turn Left</span></div>
-     <div id="rightTurnButton" class="drive-ctrl turn-signal right log-click"><span class="label">Turn Right</span></div>
+     <div id="left-turn-button" class="drive-ctrl turn-signal left log-click"><span class="label">Turn Left</span></div>
+     <div id="right-turn-button" class="drive-ctrl turn-signal right log-click"><span class="label">Turn Right</span></div>
      <!-- divs for torso controls -->
-     <img id="tallIcon" src="./css/icons/tall.png"></img>
-     <img id="shortIcon" src="./css/icons/short.png"></img>
-     <div id="torsoSlider" class="log-slide"></div>
+     <img id="torso-tall-icon" src="./css/icons/tall.png"></img>
+     <img id="torso-short-icon" src="./css/icons/short.png"></img>
+     <div id="torso-slider" class="log-slide"></div>
      <!-- divs for arm controls -->
      <div id='armCtrlContainer' class="ctrlContainer arm-ctrl">
          <!--<div class="slider"></div>-->

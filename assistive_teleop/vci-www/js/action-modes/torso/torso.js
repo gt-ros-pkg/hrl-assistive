@@ -4,15 +4,15 @@ var RFH = (function (module) {
         var self = this;
         self.name = options.name || 'torsoAction';
         self.showButton = true;
-        self.buttonID = options.buttonID || 'torsoModeButton';
+        self.buttonID = options.buttonID || 'torso-mode-button';
         self.toolTipText = "Raise or lower the spine";
         self.containerDiv = options.containerDiv;
         self.sliderDiv = options.sliderDiv;
         self.torso = options.torso; 
-        $('#tallIcon').prop('title', "Raise the Spine");
-        $('#shortIcon').prop('title', "Lower the Spine");
+        $('#torso-tall-icon').prop('title', "Raise the Spine");
+        $('#torso-short-icon').prop('title', "Lower the Spine");
 
-        self.icons = $('#tallIcon, #shortIcon');
+        self.icons = $('#torso-tall-icon, #torso-short-icon');
         self.slider = $('#'+self.sliderDiv).slider({min: 0.011,
                                                     max: 0.325,
                                                     step: 0.01,

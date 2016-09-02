@@ -80,7 +80,7 @@ var RFH = (function (module) {
         RFH.actionMenu.defaultActionName = 'lookingAction';
 
         RFH.actionMenu.addAction(new RFH.Torso({containerDiv: 'video-main',
-            sliderDiv: 'torsoSlider',
+            sliderDiv: 'torso-slider',
             torso: RFH.pr2.torso}));
 
         RFH.actionMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.l_arm_cart,

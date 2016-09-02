@@ -1,4 +1,4 @@
-#torsoSlider {
+#torso-slider {
     position: absolute;
     top: 16%;
     height: 68%;
@@ -6,7 +6,7 @@
     display: none;/* default on startup*/
 }
 
-#tallIcon {
+#torso-tall-icon {
     height: 12%;
     width: auto;
     position: absolute;
@@ -15,7 +15,7 @@
     display: none;/* default on startup*/
 }
 
-#shortIcon {
+#torso-short-icon {
     height: 11%;
     width: auto;
     position: absolute;
