@@ -783,7 +783,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
                 if start_idx < startIdx: start_idx=startIdx
                 t_abnormalTestData[:,i,start_idx:] += step_mag
-                step_idx_l.append(start_idx)
+                ## step_idx_l.append(start_idx)
             
 
             #-----------------------------------------------------------------------------------------
