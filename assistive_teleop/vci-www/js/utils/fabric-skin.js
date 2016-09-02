@@ -68,8 +68,11 @@ var RFH = (function (module) {
         };
         
         /* Process force data from sensor */
+        var forceCBArray = [];
         var forcesCB = function (taxelArrayMsg) {
-            console.log("Got forces: ", taxelArrayMsg);
+            for (var i=0; i<forceCBArray.length; i += 1) {
+                forceCBArray[i](taxelArrayMsg);
+            }
         };
 
         var forcesSub = new ROSLIB.Topic({
