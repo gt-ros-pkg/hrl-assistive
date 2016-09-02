@@ -1637,6 +1637,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
 
         f_score = 2*(np.array(tpr_l)*np.array(ppv_l))/(np.array(tpr_l)+np.array(ppv_l)) / 100.0
         f05_score = (1+0.25)*(np.array(tpr_l)*np.array(ppv_l))/(0.25*np.array(tpr_l)+np.array(ppv_l)) / 100.0
+        f2_score = (1+4.0)*(np.array(tpr_l)*np.array(ppv_l))/(4.0*np.array(tpr_l)+np.array(ppv_l)) / 100.0
 
         from sklearn import metrics
         print "--------------------------------"
@@ -1645,6 +1646,16 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         print method
         print tpr_l
         print fpr_l
+        
+        ## print f05_score
+        ## print delay_mean_l[np.argmax(f05_score)]
+        
+        ## print f_score
+        ## print delay_mean_l[np.argmax(f_score)]
+        
+        ## print f2_score
+        ## print delay_mean_l[np.argmax(f2_score)]
+        
         print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
@@ -1707,7 +1718,7 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
     Return three index of the best weight from weight list using f1, f0.5, f2 scores
     '''
 
-    min_cost_idx = [[],[],[]]
+    max_score_idx = [[],[],[]]
 
     for mi, method in enumerate(method_list):
 
@@ -1731,11 +1742,15 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
             ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
 
-        min_cost_idx[0].append( np.argmax(fscore_1) )
-        min_cost_idx[1].append( np.argmax(fscore_0_5) )
-        min_cost_idx[2].append( np.argmax(fscore_2) )
+        max_score_idx[0].append( np.argmax(fscore_1) )
+        max_score_idx[1].append( np.argmax(fscore_0_5) )
+        max_score_idx[2].append( np.argmax(fscore_2) )
+
+        if method == 'kmean':
+            print fscore_2
+            print np.argmax(fscore_2)
     
-    return min_cost_idx
+    return max_score_idx
 
 
 def cost_info(param_idx, method_list, ROC_data, nPoints, \
@@ -1775,6 +1790,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
                     delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
                                    if delay_ll[i][ii]>=0 ]
+                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
                                    
 
                     m_score_l[j].append(fscore)
@@ -1805,6 +1821,7 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
             m_delay_mean_l[j].append( np.mean(delay_list[j][i]))
             m_delay_std_l[j].append( np.std(delay_list[j][i]))
             ## if method_list[i] == 'kmean':
+            ##     print delay_list[j][i]
             ##     print np.mean(delay_list[j][i])
             ##     print np.std(delay_list[j][i])
                 
@@ -1828,9 +1845,9 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     color = colors.next()
     shape = shapes.next()
     ax1 = fig.add_subplot(211)
-    rects1 = ax1.bar(ind, m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[0], \
+    rects1 = ax1.bar(ind, m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[1], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F0.5 score')
-    rects2 = ax1.bar(ind+width,   m_delay_mean_l[0], width, color='g', yerr=m_delay_std_l[1], \
+    rects2 = ax1.bar(ind+width,   m_delay_mean_l[0], width, color='g', yerr=m_delay_std_l[0], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F1 score')
     rects3 = ax1.bar(ind+2.0*width, m_delay_mean_l[2], width, color='b', yerr=m_delay_std_l[2], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F2 score')
@@ -1838,13 +1855,13 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     ax1.set_xlim([-0.2, ind[-1]+4.0*width])
     ax1.set_ylim([0,2.0])
     plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
-               loc='upper right', prop={'size':20})
+               loc='upper right', prop={'size':14})
     ax1.xaxis.set_major_locator(plt.NullLocator())
 
     ax2 = fig.add_subplot(212)
-    rects = ax2.bar(ind, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[0], \
+    rects = ax2.bar(ind, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[1], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
-    rects = ax2.bar(ind+width, m_cost_mean_l[0], width, color='g', yerr=m_cost_std_l[1], \
+    rects = ax2.bar(ind+width, m_cost_mean_l[0], width, color='g', yerr=m_cost_std_l[0], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
     rects = ax2.bar(ind+2.0*width, m_cost_mean_l[2], width, color='b', yerr=m_cost_std_l[2], \
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)

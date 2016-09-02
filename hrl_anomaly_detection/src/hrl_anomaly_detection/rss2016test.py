@@ -630,9 +630,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         ROC_data = {}
     else:
         ROC_data = ut.load_pickle(roc_pkl)
-        
+
     for i, method in enumerate(method_list):
-        if method not in ROC_data.keys() or method in ROC_dict['update_list'] or SVM_dict['renew']:            
+        if method not in ROC_data.keys() or method in ROC_dict['update_list'] or SVM_dict['renew']:
             ROC_data[method] = {}
             ROC_data[method]['complete'] = False 
             ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
@@ -886,9 +886,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        print roc_pkl
-        print ROC_data.keys()
-        
         scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
                                    timeList=timeList, verbose=False)
 
@@ -2198,8 +2195,8 @@ if __name__ == '__main__':
 
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'kmean', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['kmean']
+        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
+        param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -2214,13 +2211,13 @@ if __name__ == '__main__':
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.3, 1.1, nPoints)*-1.0
+            param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
             
 
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif True:
+        elif False:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif True:
