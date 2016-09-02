@@ -1,6 +1,7 @@
 var RFH = (function (module) {
     module.DataLogger = function (options) {
         'use strict';
+        var self = this;
         var ros = options.ros;
         var logTopic = options.topic || 'interface_log';
         var msgType = 'assistive_teleop/InterfaceLog';
@@ -31,6 +32,10 @@ var RFH = (function (module) {
             return str;
         };
         */
+
+        self.logCustomEvent = function (type, targetId) {
+            logEvent({type:type, currentTarget:{id: targetId}});
+        };
 
         var logEvent = function (event, ui) {
             var msg = ros.composeMsg(msgType);
