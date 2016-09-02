@@ -141,6 +141,7 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.initTaskMenu();
+            RFH.initSkin();
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
