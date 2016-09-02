@@ -53,7 +53,8 @@ var RFH = (function (module) {
 
         // Special handling of mjpeg image to only log when active..
         var logLookClick = function (event, ui) {
-            if ($(event.currentTarget).hasClass('cursor-eyes')) {
+            var $curTar = $(event.currentTarget);
+            if ($curTar.hasClass('cursor-eyes') || $curTar.hasClass('cursor-select')) {
                 logEvent(event, ui);
             }
         };
