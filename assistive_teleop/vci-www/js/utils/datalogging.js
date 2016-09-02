@@ -14,25 +14,6 @@ var RFH = (function (module) {
         });
         logPub.advertise();
 
-        /*
-        var idClassString = function (element) {
-            var str = element.tagName + '#'+element.id;
-            for (var i=0; i < element.classList.length; i += 1) {
-                str += '.'+element.classList[i].toString();
-            }
-            return str;
-        };
-
-        var getParentage = function (element) {
-            var str = idClassString(element);
-            while (element.parentElement !== null) {
-                element = element.parentElement;
-                str = idClassString(element) + ' > ' + str;
-            }
-            return str;
-        };
-        */
-
         self.logCustomEvent = function (type, targetId) {
             logEvent({type:type, currentTarget:{id: targetId}});
         };
@@ -41,6 +22,7 @@ var RFH = (function (module) {
             var msg = ros.composeMsg(msgType);
             msg.type = event.type;
             msg.target = event.currentTarget.id;
+            // msg.event_time = new Date() // Look up getTime, getSeconds, getMilliseconds, etc to make a decent timestamp
             logPub.publish(msg);
         };
 
@@ -51,7 +33,7 @@ var RFH = (function (module) {
         $('.log-activate').on("accordionactivate.datalogging", logEvent);
         $(".log-mousehold").on("mousedown.datalogging, mouseup.datalogging, mouseout.datalogging, mouseleave.datalogging, blur.datalogging, ", logEvent);
 
-        // Special handling of mjpeg image to only log when active..
+        /* Special handling of mjpeg image to only log when active */
         var logLookClick = function (event, ui) {
             var $curTar = $(event.currentTarget);
             if ($curTar.hasClass('cursor-eyes') || $curTar.hasClass('cursor-select')) {
