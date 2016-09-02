@@ -2200,6 +2200,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'kmean', 'progress', 'hmmgp']
         param_dict['ROC']['update_list'] = ['kmean']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
@@ -2213,7 +2214,7 @@ if __name__ == '__main__':
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.1, 1.3, nPoints)*-1.0
+            param_dict['ROC']['kmean_param_range']  = np.logspace(0.3, 1.1, nPoints)*-1.0
             
 
         if False:
