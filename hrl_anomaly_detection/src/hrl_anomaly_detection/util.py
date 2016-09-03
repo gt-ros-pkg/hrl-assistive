@@ -1684,7 +1684,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ## plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            plt.plot(f05_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 

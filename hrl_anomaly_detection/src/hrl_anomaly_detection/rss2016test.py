@@ -775,9 +775,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         for iidx, (train_fold, test_fold) in enumerate(normal_folds):
 
-            pkl_prefix_2 = pkl_prefix+'_'+str(iidx)
-
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+pkl_prefix_2+'_'+str(idx)+'.pkl')
+            modeling_pkl = os.path.join(processed_data_path, \
+                                        'hmm_'+pkl_prefix+'_'+str(iidx)+'_'+str(idx)+'.pkl')
             if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
             
             t_normalTrainData   = normalTrainData[:,train_fold]
