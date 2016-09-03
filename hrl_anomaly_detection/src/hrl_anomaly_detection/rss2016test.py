@@ -753,6 +753,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
+        ## abnormalTrainData = copy.copy(normalTrainData)
         ## normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
 
         # training hmm
@@ -761,6 +762,12 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         cov_mult     = [cov]*(nEmissionDim**2)
         nLength      = len(normalTrainData[0][0]) - startIdx
 
+        ## # Random Step Noise to crossvalidation data
+        ## for i in xrange(len(abnormalTrainData[0])):
+        ##     start_idx = np.random.randint(0, nLength/2, 1)[0]
+        ##     if start_idx < startIdx: start_idx=startIdx
+        ##     abnormalTrainData[:,i,start_idx:] += step_mag
+            
 
         from sklearn import cross_validation
         normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
@@ -773,18 +780,9 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
             
             t_normalTrainData   = normalTrainData[:,train_fold]
-            t_abnormalTrainData = copy.copy(abnormalTrainData)
+            t_abnormalTrainData = abnormalTrainData #[:,train_fold]
             t_normalTestData    = normalTrainData[:,test_fold]
-            t_abnormalTestData  = copy.copy(t_normalTestData)
-
-            # Random Step Noise to test data
-            for i in xrange(len(t_abnormalTestData[0])):
-                start_idx = np.random.randint(0, nLength/2, 1)[0]
-
-                if start_idx < startIdx: start_idx=startIdx
-                t_abnormalTestData[:,i,start_idx:] += step_mag
-                ## step_idx_l.append(start_idx)
-            
+            t_abnormalTestData  = abnormalTrainData #[:,test_fold]
 
             #-----------------------------------------------------------------------------------------
             # Full co-variance
@@ -2223,13 +2221,13 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif True:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif False:
+        elif True:
             step_mag = 0.5*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.5'
         elif True:
