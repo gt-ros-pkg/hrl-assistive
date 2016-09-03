@@ -97,7 +97,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
                           'update_list': [ 'progress_svm', 'change'],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(-0.5, 1.1, nPoints)*-1.0 + 0.0, \
+                          'progress_param_range':np.logspace(-0.5, 1.3, nPoints)*-1.0 + 0.5, \
                           'progress_diag_param_range':np.logspace(-2.0, 1.3, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2.5, nPoints)*-1+3.0, \
                           'progress_svm_param_range': np.linspace(0.005, 6.0, nPoints),\
@@ -402,7 +402,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_osvm'],\
                           'update_list': [ 'progress' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0.0, 1.1, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0.1, 1.1, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
