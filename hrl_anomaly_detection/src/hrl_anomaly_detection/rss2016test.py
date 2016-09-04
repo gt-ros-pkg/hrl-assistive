@@ -643,6 +643,12 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
 
     osvm_data = None ; bpsvm_data = None
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+        modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_prefix)
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False, \
+                                  step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
 
     # parallelization
     if debug: n_jobs=1
@@ -843,6 +849,21 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                 ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
                 ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
 
+        osvm_data = None ; bpsvm_data = None
+        if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+            normalTrainData   = successData[:, normalTrainIdx, :] 
+            abnormalTrainData = failureData[:, abnormalTrainIdx, :]
+
+            fold_list = []
+            for train_fold, test_fold in normal_folds:
+                fold_list.append([train_fold, test_fold])
+
+            normalFoldData = (fold_list, normalTrainData, abnormalTrainData)
+            
+            osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
+                                      window=SVM_dict['raw_window_size'],
+                                      use_test=True, use_pca=False )
+            
 
         # parallelization
         if debug: n_jobs=1
@@ -851,6 +872,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                                                                              method, ROC_data, \
                                                                              ROC_dict, AE_dict, \
                                                                              SVM_dict, HMM_dict, \
+                                                                             raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState, \
                                                                              modeling_pkl_prefix=\
                                                                              'hmm_'+pkl_prefix+'_'+str(iidx))\
@@ -2199,7 +2221,7 @@ if __name__ == '__main__':
 
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
+        param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
@@ -2221,7 +2243,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif True:
+        elif False:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif True:

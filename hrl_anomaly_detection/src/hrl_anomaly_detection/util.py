@@ -1670,7 +1670,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         elif method == 'sgd': label='SGD'
         elif method == 'hmmosvm': label='HMM-OneClassSVM'
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'osvm': label='OSVM'
         elif method == 'bpsvm': label='BPSVM'
         else: label = method
 
@@ -1863,7 +1863,7 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
                ## loc='upper right', prop={'size':14})
                bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',\
-               ncol=3, prop={'size':14}, fancybox=True, shadow=True)
+               ncol=3, prop={'size':16}, fancybox=True, shadow=True)
                
     ax1.xaxis.set_major_locator(plt.NullLocator())
 

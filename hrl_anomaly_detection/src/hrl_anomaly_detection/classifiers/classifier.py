@@ -1106,14 +1106,18 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     if method == 'osvm' or method == 'bpsvm':
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
+
+        if modeling_pkl_prefix is not None and delay_estimation is False:
+            idx = int(modeling_pkl_prefix.split('_')[-1])
             
-        X_train_org = raw_data[raw_data_idx][idx]['X_scaled']
-        Y_train_org = raw_data[raw_data_idx][idx]['Y_train_org']
+        X_train_org   = raw_data[raw_data_idx][idx]['X_scaled']
+        Y_train_org   = raw_data[raw_data_idx][idx]['Y_train_org']
         idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
         ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
         ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
         ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
         ll_classifier_test_labels = None
+        step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
         nLength = 200
     else:
