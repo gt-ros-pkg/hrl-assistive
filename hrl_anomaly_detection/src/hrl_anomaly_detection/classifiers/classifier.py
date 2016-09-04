@@ -1238,7 +1238,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if method == 'hmmgp':
 
             ## nSubSample = 40 #temp!!!!!!!!!!!!!
-            nSubSample = 30 #20 # 20 
+            nSubSample = 20 #20 # 20 
             nMaxData   = 50 # 40 100
             rnd_sample = True #False
             

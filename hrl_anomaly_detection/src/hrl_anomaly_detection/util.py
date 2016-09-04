@@ -1858,8 +1858,13 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     ax1.set_ylabel('Detection Delay [s]', fontsize=20)
     ax1.set_xlim([-0.2, ind[-1]+4.0*width])
     ax1.set_ylim([0,2.0])
+    ax1.yaxis.grid()
+    ax1.set_axisbelow(True) 
     plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
-               loc='upper right', prop={'size':14})
+               ## loc='upper right', prop={'size':14})
+               bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',\
+               ncol=3, prop={'size':14}, fancybox=True, shadow=True)
+               
     ax1.xaxis.set_major_locator(plt.NullLocator())
 
     ax2 = fig.add_subplot(212)
@@ -1871,6 +1876,9 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
     ax2.set_ylabel('F-score', fontsize=20)
     ax2.set_xlim([-0.2, ind[-1]+4.0*width])
+    ax2.set_ylim([0,1.0])
+    ax2.yaxis.grid()
+    ax2.set_axisbelow(True) 
 
 
     ## plt.xlim([0,1])
