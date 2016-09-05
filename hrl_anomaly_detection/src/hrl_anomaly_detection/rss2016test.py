@@ -2244,6 +2244,9 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1., 3.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(-1.5, 2.9, nPoints)            
+            param_dict['ROC']['osvm_param_range']  = np.logspace(-4,0,nPoints)
+
+
 
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
