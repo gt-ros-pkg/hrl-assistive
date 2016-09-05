@@ -2223,7 +2223,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['fixed', 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -2244,6 +2244,11 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(2., 3.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(-1.5, 2.9, nPoints)            
+            param_dict['ROC']['osvm_param_range']  = np.logspace(-4,0,nPoints)
+            param_dict['ROC']['fix_param_range']   = np.linspace(0., -10.0, nPoints)
+            param_dict['ROC']['change_param_range'] = np.linspace(-20.0, -50.0, nPoints)
+
+
 
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
