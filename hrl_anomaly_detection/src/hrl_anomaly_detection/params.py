@@ -402,7 +402,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                                        'progress_osvm'],\
                           'update_list': [ 'progress' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0.0, 1.07, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0.0, 1.15, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
