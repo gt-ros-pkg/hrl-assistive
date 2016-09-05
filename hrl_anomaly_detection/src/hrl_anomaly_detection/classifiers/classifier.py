@@ -1349,11 +1349,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
           method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)                
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+            else: ret = True
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
+            ret = True
             if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+            else: ret = True
         elif method == 'rnd':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )

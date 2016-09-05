@@ -1581,7 +1581,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         else:
             fig = plt.figure()
 
-    for method in sorted(ROC_data.keys()):
+    for method in sorted(method_list):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1596,9 +1596,9 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         delay_mean_l = []
         delay_std_l  = []
         acc_l = []
-        sen_l = []
-        spec_l = []
-        ppv_l  = []
+        f_score   = []
+        f05_score = []
+        f2_score  = []
 
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
@@ -1607,6 +1607,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             time_step = 1.0
 
         for i in xrange(nPoints):
+            
             ## fnr_l.append( 100.0 - tpr_l[-1] )
             ## if float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) > 0:            
             ##     tnr_l.append( float(np.sum(tn_ll[i])) / float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) * 100.0 )
@@ -1617,27 +1618,22 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ## sen_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             ## spec_l.append( float(np.sum(tn_ll[i]))/float(np.sum(tn_ll[i])+np.sum(fp_ll[i]))*100.0 )
 
+            f_score.append(2.0*float(np.sum(tp_ll[i])) / (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f05_score.append((1.0+0.25)*float(np.sum(tp_ll[i])) / ((1.0+0.25)*float(np.sum(tp_ll[i])) + 0.25*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f2_score.append((1.0+4.0)*float(np.sum(tp_ll[i])) / ((1.0+4.0)*float(np.sum(tp_ll[i])) + 4.0*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
 
-            if float(np.sum(tp_ll[i])+np.sum(fp_ll[i])) > 0:
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-                ppv_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fp_ll[i]))*100.0 )
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-                delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
-                if len(delay_list)>0:
-                    delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
-                    delay_std_l.append( np.std(np.array(delay_list)*time_step) )
-                else:
-                    delay_mean_l.append( 0 )
-                    delay_std_l.append( 0 )
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            if len(delay_list)>0:
+                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
+                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
+            else:
+                delay_mean_l.append( 0 )
+                delay_std_l.append( 0 )
                 
-                acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
-
-            ## print i, " : ", len(tp_ll[i]), len(tn_ll[i]), len(fp_ll[i]), len(fn_ll[i])
-
-        f_score = 2*(np.array(tpr_l)*np.array(ppv_l))/(np.array(tpr_l)+np.array(ppv_l)) / 100.0
-        f05_score = (1+0.25)*(np.array(tpr_l)*np.array(ppv_l))/(0.25*np.array(tpr_l)+np.array(ppv_l)) / 100.0
-        f2_score = (1+4.0)*(np.array(tpr_l)*np.array(ppv_l))/(4.0*np.array(tpr_l)+np.array(ppv_l)) / 100.0
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         from sklearn import metrics
         print "--------------------------------"
@@ -1646,16 +1642,6 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         print method
         print tpr_l
         print fpr_l
-        
-        ## print f05_score
-        ## print delay_mean_l[np.argmax(f05_score)]
-        
-        ## print f_score
-        ## print delay_mean_l[np.argmax(f_score)]
-        
-        ## print f2_score
-        ## print delay_mean_l[np.argmax(f2_score)]
-        
         print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
