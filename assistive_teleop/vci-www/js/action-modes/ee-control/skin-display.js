@@ -8,16 +8,9 @@ var RFH = (function (module) {
         var skins = options.skins;
         var $contactMarkers = $('.contactMarker');
         var $edgeMarkers = $('.edgeContactMarker');
-        var contactDetectors = [];
         var contacts = [];
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};
-
-        for (var i=0; i<skins.length; i+=1) {
-            contactDetectors.push(new module.skinContactDetector({skinUtil: skins[i], 
-                                                                  tfClient: tfClient}));
-            contactDetectors[i].updateCBList.push(updateContacts);
-        }
 
         var displayInViewContact = function (imgPt) {
             // Show indicator of in-view contact at imgPt
@@ -31,6 +24,13 @@ var RFH = (function (module) {
             updateDisplay();
         };
 
+        var contactDetectors = [];
+        for (var i=0; i<skins.length; i+=1) {
+            contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
+                                                                  tfClient: tfClient}));
+            contactDetectors[i].updateCBList.push(updateContacts);
+        }
+
         var inView = function (pt) {
             return (pt[0] >= 0 && pt[0] <=1 && pt[1] >= 0 && pt[1] <= 1);
         };
@@ -39,7 +39,7 @@ var RFH = (function (module) {
             return !inView(pt);
         };
 
-        var getContactEdges = function (pts) {
+        var updateContactEdges = function (pts) {
             var ang;
             contactEdgesActive.n = false;
             contactEdgesActive.ne = false;
@@ -50,7 +50,7 @@ var RFH = (function (module) {
             contactEdgesActive.w = false;
             contactEdgesActive.nw = false;
             for (var i=0; i<pts.length; i+=1) {
-                ang = Math.atan2(x,y);
+                ang = Math.atan2(pts[0], pts[1]);
                 if (ang > -Math.PI/6 && ang <= Math.PI) {
                     contactEdgesActive.n = true;
                 } else if (ang > Math.PI/6 && ang <= Math.PI/3) {
@@ -75,16 +75,18 @@ var RFH = (function (module) {
             for (var dir in contactEdgesActive) {
                 if (contactEdgesActive.hasOwnProperty(dir)) {
                     if (contactEdgesActive[dir]) {
-                        $edgesMarkers[dir].show();
+                        $edgeMarkers[dir].show();
                     } else {
-                        $edgesMarkers[dir].hide();
+                        $edgeMarkers[dir].hide();
                     }
                 }
             }
         };
 
         var updateDisplay = function () {
+            if (!contacts.length) { return; }
             var imgPts = camera.projectPoints(contacts, 'base_link');    
+            if (imgPts === undefined) { return; }
             // Find and display contact points in the camera view
             var ptsInView = imgPts.filter(inView);
             $contactMarkers.hide();
@@ -94,7 +96,7 @@ var RFH = (function (module) {
             // Find and display out-of-view contacts along the edges
             var outOfView = imgPts.filter(notInView);
             updateContactEdges(outOfView); 
-            displayEdgeContacts(contactEdges);
+            displayEdgeContacts();
         };
 
         var lookOutOfView = function (dir) {
@@ -155,7 +157,7 @@ var RFH = (function (module) {
                                               tf.rotation.y,
                                               tf.rotation.z, 
                                               tf.rotation.w);
-            tfToCam.makeRotationFromQuaternion(q);
+            tfToCam.makeRotationFromQuaternion(tfQuat);
             tfToCam.setPosition(tfPos);
             tfToCam.getInverse(tfToCam);
         };

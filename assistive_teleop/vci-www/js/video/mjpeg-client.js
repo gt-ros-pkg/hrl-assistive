@@ -155,7 +155,10 @@ var RFH = (function (module) {
         // back-project a pixel some distance into the real world
         // Returns a geoemtry_msgs/PointStamped msg
         self.projectPixel = function (px, py, dist) { 
-            if (!self.has_data) { console.error("Camera Model has not received data from "+self.infoTopic); }
+            if (!self.has_data || self.transform === null) {
+                console.error("Camera Model has not received camera info or frame transform");
+                return;
+            }
             var d = dist !== undefined ? dist : 2; 
             var pixel_hom = [[px],[py],[1]]; //Pixel value in homogeneous coordinates
             var vec = numeric.dot(self.KR_inv, pixel_hom);
@@ -171,8 +174,9 @@ var RFH = (function (module) {
         };
 
         self.projectPoints = function (pts, frame_id) {
-            if (!self.has_data) { //Make sure camera has own transform data
-                throw "Camera data not available";
+            if (!self.has_data || self.transform === null) {
+                console.error("Camera Model has not received camera info or frame transform");
+                return;
             }
             if (typeof frame_id === 'undefined') { // Assume camera frame if not specified
                 frame_id = self.frame_id; 

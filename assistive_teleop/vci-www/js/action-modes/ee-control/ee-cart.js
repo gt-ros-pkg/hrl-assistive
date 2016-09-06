@@ -59,6 +59,16 @@ var RFH = (function (module) {
             zeroOffset: gripperZeroOffset,
             divId: self.side[0] +'GripperCtrlContainer'});
 
+        /* Skin Contact Displays for Arms */
+        self.skinContactDisplay = new module.SkinDisplay({tfClient: self.tfClient,
+                                                          head: self.head,
+                                                          camera: self.camera,
+                                                          skins: [RFH.skins.left.upperarm,
+                                                                  RFH.skins.left.forearm,
+                                                                  RFH.skins.right.upperarm,
+                                                                  RFH.skins.right.forearm]
+        });
+
 
 /*
         var armCameraOn = false;

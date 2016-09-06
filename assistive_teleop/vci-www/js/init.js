@@ -121,6 +121,7 @@ var RFH = (function (module) {
             RFH.mjpeg.cameraModel.updateCameraInfo();
 
             RFH.initViewer('video-main');
+            RFH.initSkin();
             RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
@@ -141,15 +142,16 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.initTaskMenu();
-            RFH.initSkin();
 
             /* Added content for left column */
             var showLeftColumn = function (event) {
                 $('#left-col').animate({'left':0}, {duration:200, easing:'easeOutCubic'});
             };
             var hideLeftColumn = function (event) {
-                var toEl = $(event.toElement);
-                if (toEl.hasClass('ui-menu-item') || toEl.hasClass('ui-menu')) { return ; }
+                if (event !== undefined) {
+                    var toEl = $(event.toElement);
+                    if (toEl.hasClass('ui-menu-item') || toEl.hasClass('ui-menu')) { return ; }
+                }
                 $('#left-col').animate({'left':'-200px'}, {duration: 350, easing:'easeInCubic'});
             };
 
