@@ -6,14 +6,31 @@ var RFH = (function (module) {
         var head = options.head;
         var camera = options.camera;
         var skins = options.skins;
-        var $contactMarkers = $('.contactMarker');
-        var $edgeMarkers = $('.edgeContactMarker');
+        var visible = true;
+        var $displayDiv = $('#skin-contact-display');
+        var $contactMarkers = $('.contact-marker');
+        var $edgeMarkers = $('.edge-contact');
         var contacts = [];
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};
 
+        self.show = function () {
+            visible = true;
+            $contactMarkers.show();
+            $edgeMarkers.show();
+        };
+
+        self.hide = function () {
+            visible = false;
+            $contactMarkers.hide();
+            $edgeMarkers.hide();
+        };
+
         var displayInViewContact = function (imgPt) {
             // Show indicator of in-view contact at imgPt
+            var w = $displayDiv.width(); 
+            var h = $displayDiv.height(); 
+            $contactMarkers.css({left:imgPt[0]*w, top:imgPt[1]*h}).show();
         };
 
         var updateContacts = function () {
@@ -75,16 +92,16 @@ var RFH = (function (module) {
             for (var dir in contactEdgesActive) {
                 if (contactEdgesActive.hasOwnProperty(dir)) {
                     if (contactEdgesActive[dir]) {
-                        $edgeMarkers[dir].show();
+                        $edgeMarkers.filter('.'+dir).show();
                     } else {
-                        $edgeMarkers[dir].hide();
+                        $edgeMarkers.filter('.'+dir).hide();
                     }
                 }
             }
         };
 
         var updateDisplay = function () {
-            if (!contacts.length) { return; }
+            if (!contacts.length || !visible) { return; }
             var imgPts = camera.projectPoints(contacts, 'base_link');    
             if (imgPts === undefined) { return; }
             // Find and display contact points in the camera view
@@ -99,39 +116,31 @@ var RFH = (function (module) {
             displayEdgeContacts();
         };
 
-        var lookOutOfView = function (dir) {
+        var lookOutOfView = function (event) {
             RFH.actionMenu.startAction('lookingAction');
             var dPan = 0;
             var dTilt = 0;
-            switch (dir) {
-                case 'n':
-                    dTilt = 0.3;
-                    break;
-                case 'ne':
-                    dPan = -0.3;
-                    dTilt = 0.3;
-                    break;
-                case 'e':
-                    dPan = -0.3;
-                    break;
-                case 'se':
+            var curTar = $(event.currentTarget);
+            if (curTar.hasClass('n')) {
+                    dTilt = -0.3;
+            } else if (curTar.hasClass('ne')) {
                     dPan = -0.3;
                     dTilt = -0.3;
-                    break;
-                case 's':
-                    dTilt = -0.3;
-                    break;
-                case 'sw':
-                    dPan = 0.3;
-                    dTilt = -0.3;
-                    break;
-                case 'w':
-                    dPan = 0.3;
-                    break;
-                case 'nw':
+            } else if (curTar.hasClass('e')) {
+                    dPan = -0.3;
+            } else if (curTar.hasClass('se')) {
+                    dPan = -0.3;
+                    dTilt = 0.3;
+            } else if (curTar.hasClass('s')) {
+                    dTilt = 0.3;
+            } else if (curTar.hasClass('sw')) {
                     dPan = 0.3;
                     dTilt = 0.3;
-                    break;
+            } else if (curTar.hasClass('w')) {
+                    dPan = 0.3;
+            } else if (curTar.hasClass('nw')) {
+                    dPan = 0.3;
+                    dTilt = -0.3;
             } 
             head.delPosition(dPan, dTilt);
         };
@@ -145,10 +154,10 @@ var RFH = (function (module) {
         var skin = options.skinUtil;
         var contactForceThreshold = options.contactForceThreshold || 2.0;
         var tfClient = options.tfClient;
-        var tfToCam = new THREE.Matrix4();
-        var cameraFrame = options.cameraFrame || 'head_mount_kinect_rgb_optical_frame';
+        var tfLinkToBase = new THREE.Matrix4();
         var contactPoints = [];
 
+        var cameraFrame = options.cameraFrame || 'head_mount_kinect_rgb_optical_frame';
         var updateTF = function (tf) {
             var tfPos = new THREE.Vector3(tf.translation.x,
                                           tf.translation.y,
@@ -157,11 +166,20 @@ var RFH = (function (module) {
                                               tf.rotation.y,
                                               tf.rotation.z, 
                                               tf.rotation.w);
-            tfToCam.makeRotationFromQuaternion(tfQuat);
-            tfToCam.setPosition(tfPos);
-            tfToCam.getInverse(tfToCam);
+            tfLinkToBase.makeRotationFromQuaternion(tfQuat);
+            tfLinkToBase.setPosition(tfPos);
+            tfLinkToBase.getInverse(tfLinkToBase);
         };
-        tfClient.subscribe(cameraFrame, updateTF);
+        var tfSub = function () {
+            if (skin.baseLink !== null) {
+                tfClient.subscribe(skin.baseLink, updateTF);
+                console.log("Skin Frame identified. Subscribing to tf for ", skin.baseLink);
+            } else {
+                console.log("Waiting for skin base frame");
+                setTimeout(tfSub, 1000);
+            }
+        };
+        tfSub();
 
         var magnitude = function (x, y, z) {
             return Math.sqrt(x*x + y*y + z*z);
@@ -192,7 +210,7 @@ var RFH = (function (module) {
                     contactPts.push(taMsg.centers_z[idx]);
                 }
             }
-            tfToCam.applyToVector3Array(contactPts);
+            tfLinkToBase.applyToVector3Array(contactPts);
             updateContacts(contactPts);
             processCallbacks();
         };

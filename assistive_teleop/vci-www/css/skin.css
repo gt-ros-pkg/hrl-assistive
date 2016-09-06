@@ -1,0 +1,94 @@
+#skin-contact-display {
+    position: absolute;
+    left: 0;
+    top:0;
+    width:100%;
+    height:100%;
+/*    display:none;*/
+    z-index:1
+}
+
+.contact-marker{
+    background-color:rgba(200,0,0, 0.3);
+/*    display:none;*/
+    position: absolute;
+    border-radius:50%;
+    height: 70px;
+    width: 70px; 
+    left: 50%;
+    top: 50%;
+}
+
+.edge-contact {
+    background-color:rgba(200,0,0, 0.3);
+    display:none;
+    position: absolute;
+}
+
+.n{
+    top:0;
+    left:10%;
+    height: 10%;
+    width:80%;
+    border-bottom-left-radius:50%;
+    border-bottom-right-radius:50%;
+}
+
+.ne{
+    top:0;
+    right:0;
+    height: 10%;
+    width:10%;
+    border-bottom-left-radius:50%;
+}
+
+.e{
+    top:10%;
+    right:0;
+    height: 80%;
+    width:10%;
+    border-top-left-radius:50%;
+    border-bottom-left-radius:50%;
+}
+
+.se{
+    bottom:0;
+    right:0;
+    height: 10%;
+    width:10%;
+    border-top-left-radius:50%;
+}
+
+.s{
+    left:10%;
+    bottom:0; 
+    height: 10%;
+    width:80%;
+    border-top-left-radius:100%;
+    border-top-right-radius:100%;
+}
+
+.sw{
+    bottom:0;
+    left:0;
+    height: 10%;
+    width:10%;
+    border-top-right-radius:50%;
+}
+
+.w{
+    top:10%;
+    left:0;
+    height:80%;
+    width:10%;
+    border-bottom-right-radius:50%;
+    border-top-right-radius:50%;
+}
+
+.nw{
+    top:0;
+    left:0;
+    height: 10%;
+    width:10%;
+    border-bottom-right-radius:50%;
+}

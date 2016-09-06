@@ -61,7 +61,7 @@ var RFH = (function (module) {
 
         /* Skin Contact Displays for Arms */
         self.skinContactDisplay = new module.SkinDisplay({tfClient: self.tfClient,
-                                                          head: self.head,
+                                                          head: module.pr2.head,
                                                           camera: self.camera,
                                                           skins: [RFH.skins.left.upperarm,
                                                                   RFH.skins.left.forearm,

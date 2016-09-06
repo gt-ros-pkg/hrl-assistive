@@ -156,7 +156,7 @@ var RFH = (function (module) {
         // Returns a geoemtry_msgs/PointStamped msg
         self.projectPixel = function (px, py, dist) { 
             if (!self.has_data || self.transform === null) {
-                console.error("Camera Model has not received camera info or frame transform");
+                console.warn("Camera Model has not received camera info or frame transform");
                 return;
             }
             var d = dist !== undefined ? dist : 2; 
@@ -175,7 +175,7 @@ var RFH = (function (module) {
 
         self.projectPoints = function (pts, frame_id) {
             if (!self.has_data || self.transform === null) {
-                console.error("Camera Model has not received camera info or frame transform");
+                console.warn("Camera Model has not received camera info or frame transform");
                 return;
             }
             if (typeof frame_id === 'undefined') { // Assume camera frame if not specified

@@ -3,7 +3,6 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         var ros = options.ros;
-        var tfClient = options.tfClient;
         self.side = options.side;
         self.part = options.part;
         var ns = 'pr2_fabric_'+self.side[0]+'_'+self.part+'_sensor';
@@ -73,7 +72,6 @@ var RFH = (function (module) {
         /* Process force data from sensor */
         self.forceCBArray = [];
         var forcesCB = function (taxelArrayMsg) {
-            console.log("Force data", taxelArrayMsg);
             for (var i=0; i<self.forceCBArray.length; i+=1) {
                 self.forceCBArray[i](taxelArrayMsg);
             }
@@ -92,23 +90,19 @@ var RFH = (function (module) {
         var skins = {};    
         skins.left = {};
         skins.left.upperarm = new module.FabricSkin({ros: module.ros,
-                                                     tfClient: module.tfClient, 
                                                      side: "left",
                                                      part: "upperarm"});
 
         skins.left.forearm = new module.FabricSkin({ros: module.ros,
-                                                     tfClient: module.tfClient, 
                                                      side: "left",
                                                      part: "forearm"});
 
         skins.right = {};
         skins.right.upperarm = new module.FabricSkin({ros: module.ros,
-                                                      tfClient: module.tfClient, 
                                                       side: "right",
                                                       part: "upperarm"});
 
         skins.right.forearm = new module.FabricSkin({ros: module.ros,
-                                                      tfClient: module.tfClient, 
                                                       side: "right",
                                                       part: "forearm"});
         module.skins = skins;
