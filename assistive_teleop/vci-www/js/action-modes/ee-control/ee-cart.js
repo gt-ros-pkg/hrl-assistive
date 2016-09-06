@@ -563,6 +563,7 @@ var RFH = (function (module) {
             self.active = true;
             self.$viewer.show();
             self.updateCtrlRingViz();
+            self.skinContactDisplay.show();
         };
 
         self.stop = function () {
@@ -573,6 +574,7 @@ var RFH = (function (module) {
             self.trackHand(false);
             self.active = false;
             self.rotationControl.hide();
+            self.skinContactDisplay.hide();
 //            if (armCameraOn) {
 //                hideArmCamera();
 //            }

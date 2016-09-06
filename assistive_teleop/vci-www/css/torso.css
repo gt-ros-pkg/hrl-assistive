@@ -2,7 +2,7 @@
     position: absolute;
     top: 16%;
     height: 68%;
-    left: 2%;
+    right: 2%;
     display: none;/* default on startup*/
 }
 
@@ -11,7 +11,7 @@
     width: auto;
     position: absolute;
     top: 2%;
-    left: 2%;
+    right: 2%;
     display: none;/* default on startup*/
 }
 
@@ -20,6 +20,6 @@
     width: auto;
     position: absolute;
     bottom: 2%;
-    left: 2%;
+    right: 2%;
     display: none;/* default on startup*/
 }

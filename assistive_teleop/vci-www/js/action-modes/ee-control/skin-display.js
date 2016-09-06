@@ -16,21 +16,19 @@ var RFH = (function (module) {
 
         self.show = function () {
             visible = true;
-            $contactMarkers.show();
-            $edgeMarkers.show();
+            $displayDiv.show();
         };
 
         self.hide = function () {
             visible = false;
-            $contactMarkers.hide();
-            $edgeMarkers.hide();
+            $displayDiv.hide();
         };
 
-        var displayInViewContact = function (imgPt) {
+        var displayInViewContact = function (imgPt, marker) {
             // Show indicator of in-view contact at imgPt
             var w = $displayDiv.width(); 
             var h = $displayDiv.height(); 
-            $contactMarkers.css({left:imgPt[0]*w, top:imgPt[1]*h}).show();
+            marker.css({left:imgPt[0]*w, top:imgPt[1]*h});
         };
 
         var updateContacts = function () {
@@ -38,6 +36,7 @@ var RFH = (function (module) {
             for (var i=0; i < contactDetectors.length; i+=1) {
                 Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
             }
+            console.log("All: ",  contacts.length);
             updateDisplay();
         };
 
@@ -82,7 +81,7 @@ var RFH = (function (module) {
                     contactEdgesActive.e = true;
                 } else if (ang > -5*Math.PI/6 && ang <= -2*Math.PI/3) {
                     contactEdgesActive.se = true;
-                } else {
+                } else if (ang < -5*Math.PI/6 || ang > 5*Math.PI/6) {
                     contactEdgesActive.s = true;
                 }
             }
@@ -101,14 +100,23 @@ var RFH = (function (module) {
         };
 
         var updateDisplay = function () {
-            if (!contacts.length || !visible) { return; }
+            if (!contacts.length || !visible) {
+                $contactMarkers.hide();
+                $edgeMarkers.hide();
+                return;
+             }
             var imgPts = camera.projectPoints(contacts, 'base_link');    
             if (imgPts === undefined) { return; }
             // Find and display contact points in the camera view
             var ptsInView = imgPts.filter(inView);
-            $contactMarkers.hide();
-            for (var i=0; i<ptsInView.length; i+=1) {
-                displayInViewContact(ptsInView[i]);
+            var marker;
+            for (var i=0; i<ptsInView.length && i<$contactMarkers.length; i+=1) {
+                if (i<ptsInView.length) {
+                    marker = $($contactMarkers[i]).show();
+                    displayInViewContact(ptsInView[i], marker);
+                } else {
+                    $contactMarkers[i].hide();
+                }
             }
             // Find and display out-of-view contacts along the edges
             var outOfView = imgPts.filter(notInView);
@@ -152,12 +160,11 @@ var RFH = (function (module) {
         'use strit';
         var self = this;
         var skin = options.skinUtil;
-        var contactForceThreshold = options.contactForceThreshold || 2.0;
+        var contactForceThreshold = options.contactForceThreshold || 0.0;
         var tfClient = options.tfClient;
         var tfLinkToBase = new THREE.Matrix4();
         var contactPoints = [];
 
-        var cameraFrame = options.cameraFrame || 'head_mount_kinect_rgb_optical_frame';
         var updateTF = function (tf) {
             var tfPos = new THREE.Vector3(tf.translation.x,
                                           tf.translation.y,
@@ -168,7 +175,7 @@ var RFH = (function (module) {
                                               tf.rotation.w);
             tfLinkToBase.makeRotationFromQuaternion(tfQuat);
             tfLinkToBase.setPosition(tfPos);
-            tfLinkToBase.getInverse(tfLinkToBase);
+//            tfLinkToBase.getInverse(tfLinkToBase);
         };
         var tfSub = function () {
             if (skin.baseLink !== null) {
@@ -190,6 +197,7 @@ var RFH = (function (module) {
             for (var i=0; i < contactPts.length; i += 3) {
                 contactPoints.push(contactPts.splice(0,3));
             }
+//            console.log(skin.side, skin.part, contactPoints.length);
         };
 
         self.updateCBList = [];
@@ -205,6 +213,7 @@ var RFH = (function (module) {
             for (var idx = 0; idx < taMsg.values_x.length; idx += 1) {
                 mag = magnitude(taMsg.values_x[idx], taMsg.values_y[idx], taMsg.values_z[idx]);
                 if (mag > contactForceThreshold) {
+                    console.log("Contact Detected!");
                     contactPts.push(taMsg.centers_x[idx]);
                     contactPts.push(taMsg.centers_y[idx]);
                     contactPts.push(taMsg.centers_z[idx]);
