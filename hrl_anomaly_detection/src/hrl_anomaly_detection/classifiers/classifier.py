@@ -138,7 +138,7 @@ class classifier(learning_base):
             self.bpsvm_w_negative = bpsvm_w_negative
             self.bpsvm_cost       = bpsvm_cost
             self.bpsvm_gamma      = bpsvm_gamma                        
-            self.hmmsvm_diag_nu = hmmsvm_diag_nu
+            self.hmmsvm_diag_nu         = hmmsvm_diag_nu
             self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
             self.hmmsvm_diag_cost       = hmmsvm_diag_cost
             self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma
@@ -235,7 +235,7 @@ class classifier(learning_base):
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
             elif self.method == 'hmmosvm':
                 commands = commands+' -n '+str(self.hmmosvm_nu)+' -g '+str(self.gamma)\
-                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
+                  +' -c '+str(self.cost)
             elif self.method == 'hmmsvm_diag':
                 commands = commands+' -n '+str(self.hmmsvm_diag_nu)+' -g '+str(self.hmmsvm_diag_gamma)\
                   +' -w-1 '+str(self.hmmsvm_diag_w_negative)+' -c '+str(self.hmmsvm_diag_cost)
@@ -1161,7 +1161,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_idx  = ll_classifier_ep_test_idx
 
 
-        if method == 'hmmosvm' or method == 'progress_osvm' or method == 'hmmgp':
+        if method == 'hmmosvm' or method == 'progress_osvm' or method == 'hmmgp':            
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
@@ -1240,7 +1240,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         if method == 'hmmgp':
-
             ## nSubSample = 40 #temp!!!!!!!!!!!!!
             nSubSample = 20 #20 # 20 
             nMaxData   = 50 # 40 100
@@ -1250,7 +1249,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
               dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                                nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
             
-                          
         # flatten the data
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -1295,10 +1293,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # Generate parameter list for ROC curve
     # pass method if there is existing result
     # data preparation
-    if method == 'osvm' or method == 'bpsvm':
-        X_scaled = X_train_org
-    elif method.find('svm')>=0 or method.find('sgd')>=0:
-        print np.shape(X_train_org)
+    if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X_train_org)
     else:
@@ -1310,17 +1305,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     for j in xrange(len(ll_classifier_test_X)):
         if len(ll_classifier_test_X[j])==0: continue
 
-        try:
-            if method == 'osvm' or method == 'bpsvm':
-                X = ll_classifier_test_X[j]
-            elif method.find('svm')>=0 or method.find('sgd')>=0:
-                X = scaler.transform(ll_classifier_test_X[j])                                
-            else:
-                X = ll_classifier_test_X[j]
-        except:
-            print "failed to scale ", np.shape(ll_classifier_test_X[j])
-            sys.exit()
-            ## continue        
+        if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
+            X = scaler.transform(ll_classifier_test_X[j])                                
+        else:
+            X = ll_classifier_test_X[j]
 
         X_test.append(X)
         Y_test.append(ll_classifier_test_Y[j])
@@ -1339,6 +1327,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
+            dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
             ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
         elif method == 'cssvm':
@@ -1350,13 +1339,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
-            else: ret = True
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            ret = True
             if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
-            else: ret = True
         elif method == 'rnd':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
@@ -1386,7 +1372,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                 est_y = np.array(est_y)* -1.0
             else:
-                est_y    = dtc.predict(X_test[ii], y=Y_test[ii])
+                est_y = dtc.predict(X_test[ii], y=Y_test[ii])
 
             anomaly = False
             for jj in xrange(len(est_y)):
@@ -1403,14 +1389,15 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             delay_l.append(delay_idx)
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
-                        
+
+                    if Y_test[ii][0] < 0:
+                        print jj, Y_test[ii][0]
                     anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:
                 if anomaly: tp_l.append(1)
                 else:
-                    ## print est_y
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
                         fn_labels.append(ll_classifier_test_labels[ii])

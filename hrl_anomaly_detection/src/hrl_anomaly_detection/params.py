@@ -244,7 +244,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 0.14, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-2.52, -0.45, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4,0,nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4., 0., nPoints),\
                           'change_param_range': np.linspace(0.0, -30.0, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
