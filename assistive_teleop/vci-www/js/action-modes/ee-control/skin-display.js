@@ -17,7 +17,7 @@ var RFH = (function (module) {
             contactDetectors.push(new module.skinContactDetector({skinUtil: skins[i], 
                                                                   tfClient: tfClient}));
             contactDetectors[i].updateCBList.push(updateContacts);
-        };
+        }
 
         var displayInViewContact = function (imgPt) {
             // Show indicator of in-view contact at imgPt
@@ -27,7 +27,7 @@ var RFH = (function (module) {
             contacts = []; 
             for (var i=0; i < contactDetectors.length; i+=1) {
                 Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
-            };
+            }
             updateDisplay();
         };
 
@@ -41,46 +41,46 @@ var RFH = (function (module) {
 
         var getContactEdges = function (pts) {
             var ang;
-            contactEdgesActive['n'] = false;
-            contactEdgesActive['ne'] = false;
-            contactEdgesActive['e'] = false;
-            contactEdgesActive['se'] = false;
-            contactEdgesActive['s'] = false;
-            contactEdgesActive['sw'] = false;
-            contactEdgesActive['w'] = false;
-            contactEdgesActive['n2'] = false;
+            contactEdgesActive.n = false;
+            contactEdgesActive.ne = false;
+            contactEdgesActive.e = false;
+            contactEdgesActive.se = false;
+            contactEdgesActive.s = false;
+            contactEdgesActive.sw = false;
+            contactEdgesActive.w = false;
+            contactEdgesActive.nw = false;
             for (var i=0; i<pts.length; i+=1) {
                 ang = Math.atan2(x,y);
                 if (ang > -Math.PI/6 && ang <= Math.PI) {
-                    contactEdgesActive['n'] = true;
+                    contactEdgesActive.n = true;
                 } else if (ang > Math.PI/6 && ang <= Math.PI/3) {
-                    contactEdgesActive['nw'] = true;
+                    contactEdgesActive.nw = true;
                 } else if (ang > Math.PI/3 && ang <= 2*Math.PI/3) {
-                    contactEdgesActive['w'] = true;
+                    contactEdgesActive.w = true;
                 } else if (ang > 2*Math.PI/3 && ang <= 5*Math.PI/6) {
-                    contactEdgesActive['sw'] = true;
+                    contactEdgesActive.sw = true;
                 } else if (ang > -Math.PI/3 && ang <= -Math.PI/6) {
-                    contactEdgesActive['ne'] = true;
+                    contactEdgesActive.ne = true;
                 } else if (ang > -2*Math.PI/3 && ang <= -Math.PI/3) {
-                    contactEdgesActive['e'] = true;
+                    contactEdgesActive.e = true;
                 } else if (ang > -5*Math.PI/6 && ang <= -2*Math.PI/3) {
-                    contactEdgesActive['se'] = true;
+                    contactEdgesActive.se = true;
                 } else {
-                    contactEdgesActive['s'] = true;
+                    contactEdgesActive.s = true;
                 }
             }
         };
 
         var displayEdgeContacts = function () {
             for (var dir in contactEdgesActive) {
-                if (contactEdgesActive.hasOwnProperty(dir) {
+                if (contactEdgesActive.hasOwnProperty(dir)) {
                     if (contactEdgesActive[dir]) {
                         $edgesMarkers[dir].show();
                     } else {
                         $edgesMarkers[dir].hide();
                     }
                 }
-            };
+            }
         };
 
         var updateDisplay = function () {
@@ -90,7 +90,7 @@ var RFH = (function (module) {
             $contactMarkers.hide();
             for (var i=0; i<ptsInView.length; i+=1) {
                 displayInViewContact(ptsInView[i]);
-            };
+            }
             // Find and display out-of-view contacts along the edges
             var outOfView = imgPts.filter(notInView);
             updateContactEdges(outOfView); 
@@ -157,7 +157,7 @@ var RFH = (function (module) {
                                               tf.rotation.w);
             tfToCam.makeRotationFromQuaternion(q);
             tfToCam.setPosition(tfPos);
-            tfToCam.getInverse(tfToCam)
+            tfToCam.getInverse(tfToCam);
         };
         tfClient.subscribe(cameraFrame, updateTF);
 
@@ -169,7 +169,7 @@ var RFH = (function (module) {
             contactPoints = [];
             for (var i=0; i < contactPts.length; i += 3) {
                 contactPoints.push(contactPts.splice(0,3));
-            };
+            }
         };
 
         self.updateCBList = [];
@@ -188,8 +188,8 @@ var RFH = (function (module) {
                     contactPts.push(taMsg.centers_x[idx]);
                     contactPts.push(taMsg.centers_y[idx]);
                     contactPts.push(taMsg.centers_z[idx]);
-                };
-            };
+                }
+            }
             tfToCam.applyToVector3Array(contactPts);
             updateContacts(contactPts);
             processCallbacks();
