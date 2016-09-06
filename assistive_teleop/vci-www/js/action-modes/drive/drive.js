@@ -453,7 +453,7 @@ var RFH = (function (module) {
 
 
         self.driveGo = function (event) {
-            console.log("Clearing timer for new cmd");
+//            console.log("Clearing timer for new cmd");
             clearTimeout(timer);
             if (event.which === 1) { //Only react to left mouse button
                 self.setSafe();
@@ -470,7 +470,7 @@ var RFH = (function (module) {
 
         self.setUnsafe = function (event) {
             //alert("Unsafe: "+event.type);
-            console.log(event.type.toString() + ": Clearing timer to stop driving");
+//            console.log(event.type.toString() + ": Clearing timer to stop driving");
             clearTimeout(timer);
             self.$div.removeClass('drive-safe');
         };
@@ -509,12 +509,12 @@ var RFH = (function (module) {
         };
 
         self.sendCmd = function (cmd) {
-            console.log("Prepared to send ", cmd);
+//            console.log("Prepared to send ", cmd);
             if (!self.$div.hasClass('drive-safe')) {
                 console.log("Not safe to drive"); 
                 return ;}
             base.pubCmd(cmd.x, cmd.y, cmd.theta);
-            console.log("Sent ", cmd);
+//            console.log("Sent ", cmd);
             timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
             console.log("Set Timer: ", timer);
         };
