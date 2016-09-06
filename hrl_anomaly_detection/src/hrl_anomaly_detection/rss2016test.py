@@ -2248,7 +2248,7 @@ if __name__ == '__main__':
             param_dict['ROC']['change_param_range'] = np.linspace(-15.0, -55.0, nPoints)
 
 
-        if False:
+        if True:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
         elif False:
