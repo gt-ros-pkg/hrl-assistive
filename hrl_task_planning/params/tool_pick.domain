@@ -1,0 +1,37 @@
+(define (domain tool_pick)
+ (:requirements :typing :conditional-effects)
+ (:types
+  pose
+  gripper
+  tag_id
+  tool
+ )
+
+ (:constants tool_pose - pose
+             left_gripper - gripper
+             right_gripper - gripper
+ )
+
+ (:predicates
+  (known ?id - tag_id)
+  (grasped ?t - tool ?g - gripper)
+  (grasping ?g - gripper)
+ )
+
+ (:action grasp_tool
+    :parameters (?t -tool ?tp - pose ?g - gripper)
+    :precondition (and (known ?tp)(not (grasping ?g)))
+    :effect (and (grasped ?t ?g)(grasping ?g))
+ )
+
+ (:action get_tag_pose
+  :parameters (?id - tag_id ?tp - tag_pose)
+  :effect (known ?tp)
+ )
+
+ (:action drop_object
+  :parameters (?g - gripper)
+  :precondition (grasping ?g)
+  :effect (not (grasping ?g))
+ )
+)
