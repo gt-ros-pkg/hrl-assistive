@@ -481,9 +481,9 @@ class ScoreGenerator(object):
             self.allow_bed_movement = parameters[5]
 
             if self.model == 'chair' and num_config == 1:
-                maxiter = 30
+                maxiter = 10
                 # popsize = 1000
-                popsize = m.pow(4, 2)*40
+                popsize = m.pow(4, 2)*1000
                 parameters_min = np.array([-1., -2., -m.pi-.001, 0.])
                 parameters_max = np.array([2., 2., m.pi+.001, 0.3])
                 parameters_scaling = (parameters_max-parameters_min)/4.

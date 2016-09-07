@@ -17,7 +17,8 @@ rosrun collada_urdf urdf_to_collada ./urdf/wheelchair_henry/robots/wheelchair_he
 # If joint axes/anchors have pretty big decmials, round off those (using moveit_ikfast's script).
 #rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/wheelchair_and_body_assembly.dae ./collada/wheelchair_and_body_assembly.dae 3
 #rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/bed_and_body_expanded.dae ./collada/bed_and_body_expanded_rounded.dae 3
-rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/wheelchair_henry.dae ./collada/wheelchair_henry_rounded.dae 4
+rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/bed_and_environment_henry.dae ./collada/bed_and_environment_henry_rounded.dae 3
+rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/wheelchair_henry.dae ./collada/wheelchair_henry_rounded.dae 3
 #rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/human.dae ./collada/human_rounded.dae 4
 #rosrun hrl_gazebo_darci round_collada_numbers.py ./collada/bed_and_body_v3_nowall.dae ./collada/bed_and_body_v3_nowall_rounded.dae 3
 
