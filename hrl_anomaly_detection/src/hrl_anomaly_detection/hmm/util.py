@@ -292,10 +292,6 @@ def displayExpLikelihoods(hmm, trainData, normalTestData, abnormalTestData, ths_
         plt.plot(log_ll[i], 'g-')
         plt.plot(exp_log_ll[i], 'r-')
 
-
-    ## plt.ylim([-500, 500])
-        
-
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
@@ -368,7 +364,6 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
 
         log_ll.append([])
         for j in range(2, m):
-
             try:
                 logp = hmm.loglikelihood([x[i][:j] for x in trainData])
             except:
@@ -376,10 +371,8 @@ def displayLikelihoods(hmm, trainData, normalTestData, abnormalTestData, save_pd
                 return [], 0.0 # error
 
             log_ll[i].append(logp)
-
         plt.plot(log_ll[i], 'b-')
     
-
     n = len(normalTestData[0])
     log_ll = []
         

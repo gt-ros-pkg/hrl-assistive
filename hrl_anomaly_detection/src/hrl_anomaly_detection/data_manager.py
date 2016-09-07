@@ -118,7 +118,6 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
 
 
-
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
                 cut_data=None, \
@@ -171,7 +170,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
-        print data_dict.keys()
+
         if ae_data:
             # Task-oriented raw features
             successData     = data_dict['aeSuccessData'] 
@@ -820,13 +819,16 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
-               test_drop_elements=None):
+def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
+               test_drop_elements=None, step_anomaly_info=None, normalFoldData=None):
 
-    d = ut.load_pickle(data_pkl)
-    kFold_list  = d['kFoldList']
-    successData = d['successData']
-    failureData = d['failureData']    
+    if data_pkl is not None:
+        d = ut.load_pickle(data_pkl)
+        kFold_list  = d['kFoldList']
+        successData = d['successData']
+        failureData = d['failureData']
+    else:
+        (normal_folds, successData, failureData) = normalFoldData
 
     if window == 0:
         print "wrong window size"
@@ -836,14 +838,25 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
     print "Start to get data"
     data = {}
     for file_idx in xrange(nFiles):
-    
-        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[file_idx]
 
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-        normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :]
+        if data_pkl is not None:
+            (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[file_idx]
+
+            # dim x sample x length
+            normalTrainData   = successData[:, normalTrainIdx, :] 
+            abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+            normalTestData    = successData[:, normalTestIdx, :] 
+            abnormalTestData  = failureData[:, abnormalTestIdx, :]
+        else:
+            (train_fold, test_fold) = normal_folds[file_idx]
+             
+            # dim x sample x length
+            normalTrainData   = successData[:, train_fold] 
+            abnormalTrainData = failureData
+            normalTestData    = successData[:, test_fold] 
+            abnormalTestData  = failureData
+
+            
 
         # dim x sample x length => sample x dim x length
         normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
@@ -856,6 +869,21 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         abnormalTrainData = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 1, 2)
         abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
+
+
+        #--------------------------------------------------------------------------------
+        if step_anomaly_info is not None:
+            modeling_pkl_prefix = step_anomaly_info[0]
+            step_mag = step_anomaly_info[1]
+            dd = ut.load_pickle(modeling_pkl_prefix+'_'+str(file_idx)+'.pkl')
+            step_idx_l = dd['step_idx_l']
+
+            abnormalTestData = copy.copy(normalTestData)
+            for i in xrange(len(abnormalTestData)):
+                abnormalTestData[i,step_idx_l[len(normalTestData)+i],:] += step_mag
+        else:
+            step_idx_l = None
+
 
         #--------------------------------------------------------------------------------
         # scaler
@@ -1073,7 +1101,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         data[file_idx]['Y_test']        = Y_test
         data[file_idx]['idx_test']      = ll_classifier_test_idx
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
-
+        data[file_idx]['step_idx_l']    = step_idx_l
     return data 
     
 
@@ -1431,6 +1459,29 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
             if 'fabricForce' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('fabricForce')
+
+        # Unimodal feature - landmark motion --------------------------
+        if 'unimodal_landmarkDist' in feature_list:
+            #kinEEPos  = d['kinEEPosList'][idx]
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
+
+            if len(np.shape(visionLandmarkPos)) == 1:
+                visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
+                
+            dist = np.linalg.norm(visionLandmarkPos, axis=0)
+            if offset_flag:
+                dist -= np.mean(dist[:startOffsetSize])
+            
+            crossmodal_landmarkEEDist = []
+            for time_idx in xrange(len(timeList)):
+                crossmodal_landmarkEEDist.append(dist[time_idx])
+                
+            if dataSample is None: dataSample = np.array(crossmodal_landmarkEEDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEDist])
+            
+            if 'landmarkDistDiff' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('landmarkDist')
+
 
             
         # Crossmodal feature - relative dist --------------------------
@@ -2320,4 +2371,39 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
+def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
 
+    import random
+
+    sample_id_list = range(len(X))
+    if len(X)*nSubSample > nMaxData*nSubSample:
+        print "Too many training data, so we resample!!"
+        sample_id_list = range(len(X))
+        random.shuffle(sample_id_list)
+        sample_id_list = sample_id_list[:nMaxData]
+
+        X = np.array(X)[sample_id_list]
+        Y = np.array(Y)[sample_id_list]
+        idx = np.array(idx)[sample_id_list]
+
+    print "before: ", np.shape(X), np.shape(Y)
+    new_X = []
+    new_Y = []
+    new_idx = []
+    for i in xrange(len(X)):
+        if rnd_sample is False:
+            idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
+            new_X.append( np.array(X)[i,idx_list].tolist() )
+            new_Y.append( np.array(Y)[i,idx_list].tolist() )
+            new_idx.append( np.array(idx)[i,idx_list].tolist() )
+        else:
+            idx_list = range(len(X[i]))
+            random.shuffle(idx_list)
+            new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+
+    return new_X, new_Y, new_idx
+
+
+    

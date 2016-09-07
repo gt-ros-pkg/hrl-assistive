@@ -142,25 +142,31 @@ class BaseSelector(object):
                 print 'Paper work is only with Autobed. Error!'
                 return
         elif load == 'henry':
-            # model = 'chair'
-            # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
-            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            model = 'chair'
+            #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+            self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
-            # model = 'autobed'
+            model = 'autobed'
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
-            # self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
             # self.scores_dict[model, 'scratching_chest'] = self.load_task('scratching_chest', model)
-            # self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-            # self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
             # self.scores_dict[model, 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model)
             # self.scores_dict[model, 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model)
-            # self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
-            # self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
-            # self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
-            # self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            #self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
+            #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
             self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
             self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
             self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
@@ -365,16 +371,19 @@ class BaseSelector(object):
             self.mode = 'test'
         elif self.mode == 'normal':
             try:
-                now = rospy.Time.now()
-                self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
-                (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
-                self.pr2_B_head = createBMatrix(trans, rot)
                 if model == 'chair':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/ar_marker', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker', now)
+                    self.listener.waitForTransform('/base_footprint', '/ar_marker_13', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_13', now)
                     self.pr2_B_ar = createBMatrix(trans, rot)
+                    self.listener.waitForTransform('/base_footprint', '/wheelchair/base_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/wheelchair/base_link', now)
+                    self.pr2_B_model = createBMatrix(trans, rot)
                 elif model == 'autobed':
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
+                    self.pr2_B_head = createBMatrix(trans, rot)
                     now = rospy.Time.now()
                     self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
                     (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
@@ -472,22 +481,22 @@ class BaseSelector(object):
             self.model_B_ar = np.eye(4)
 
         #print 'The homogeneous transform from PR2 base link to head: \n',# self.pr2_B_head
-
-        # I now project the head pose onto the ground plane to mitigate potential problems with poorly registered head
-        # pose.
-        z_origin = np.array([0, 0, 1])
-        x_head = np.array([self.pr2_B_head[0, 0], self.pr2_B_head[1, 0], self.pr2_B_head[2, 0]])
-        y_head_project = np.cross(z_origin, x_head)
-        y_head_project = y_head_project/np.linalg.norm(y_head_project)
-        x_head_project = np.cross(y_head_project, z_origin)
-        x_head_project = x_head_project/np.linalg.norm(x_head_project)
-        self.pr2_B_head_project = np.eye(4)
-        for i in xrange(3):
-            self.pr2_B_head_project[i, 0] = x_head_project[i]
-            self.pr2_B_head_project[i, 1] = y_head_project[i]
-            self.pr2_B_head_project[i, 3] = self.pr2_B_head[i, 3]
-        self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
-        self.pr2_B_headfloor[2, 3] = 0.
+        if self.model == 'autobed':
+            # I now project the head pose onto the ground plane to mitigate potential problems with poorly registered head
+            # pose.
+            z_origin = np.array([0, 0, 1])
+            x_head = np.array([self.pr2_B_head[0, 0], self.pr2_B_head[1, 0], self.pr2_B_head[2, 0]])
+            y_head_project = np.cross(z_origin, x_head)
+            y_head_project = y_head_project/np.linalg.norm(y_head_project)
+            x_head_project = np.cross(y_head_project, z_origin)
+            x_head_project = x_head_project/np.linalg.norm(x_head_project)
+            self.pr2_B_head_project = np.eye(4)
+            for i in xrange(3):
+                self.pr2_B_head_project[i, 0] = x_head_project[i]
+                self.pr2_B_head_project[i, 1] = y_head_project[i]
+                self.pr2_B_head_project[i, 3] = self.pr2_B_head[i, 3]
+            self.pr2_B_headfloor = copy.copy(np.matrix(self.pr2_B_head_project))
+            self.pr2_B_headfloor[2, 3] = 0.
         # print 'The homogeneous transform from PR2 base link to the head location projected onto the ground plane: \n', \
         #     self.pr2_B_headfloor
 
@@ -496,7 +505,7 @@ class BaseSelector(object):
 
         # Sets the location of the robot with respect to the person based using a few homogeneous transforms.
         if model == 'chair':
-            self.origin_B_pr2 = copy.copy(self.pr2_B_headfloor.I)
+            self.origin_B_pr2 = copy.copy(self.pr2_B_model.I)
 
         # Regular bed is now deprecated. Do not use this unless you fix it first.
         elif model =='bed':
@@ -575,19 +584,24 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        max_num_configs = 2
+        max_num_configs = 1
 
-        head_rest_angle = -5
+        head_rest_angle = -10
         allow_bed_movement = 1
+        if self.model == 'autobed':
+            if head_rest_angle > -1:
+                head_rest_possibilities = np.arange(-10, 80.1, 10)
+                head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
+                head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
+                head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
-        if not head_rest_angle < -1:
-            head_rest_possibilities = np.arange(-10, 80.1, 10)
-            head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
-            head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
-            head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
-
-        self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
-
+            self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
+        else:
+            self.score = all_scores[model, max_num_configs, 0,0,0,0]
+        if np.shape(self.score)==(2,) and self.model=='autobed':
+            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]
+        elif np.shape(self.score)==(2,) and self.model=='chair':
+            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [0], [0]], self.score[1]]
         # self.score_length = len(self.score_sheet)
         print 'Best score and configuration is: \n', self.score
         # print 'Number of scores in score sheet: ', self.score_length
@@ -672,8 +686,8 @@ class BaseSelector(object):
             pr2_B_goal_pose.orientation.y = rot_out[1]
             pr2_B_goal_pose.orientation.z = rot_out[2]
             pr2_B_goal_pose.orientation.w = rot_out[3]
-            pose_array.poses.append(pr2_B_goal)
-            # self.goal_viz_publisher.publish(pr2_B_goal_pose)
+            pose_array.poses.append(pr2_B_goal_pose)
+            #self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
             print 'pr2_B_goal:'
             print pr2_B_goal
@@ -688,8 +702,12 @@ class BaseSelector(object):
             #     pr2_base_output.append([pr2_B_goal[0,3], pr2_B_goal[1,3], -m.acos(pr2_B_goal[0, 0])])
             pr2_base_output.append([pos_goal, ori_goal])
             configuration_output.append([best_score_cfg[3][i], 100*best_score_cfg[4][i], np.degrees(best_score_cfg[5][i])])
-#        self.goal_viz_publisher.publish(pose_array)
+        self.goal_viz_publisher.publish(pose_array)
         print 'Base selection service is done and has completed preparing its result.'
+        print 'Base selection output:'
+        print list(flatten(pr2_base_output))
+        print list(flatten(configuration_output))
+        print distance_output
         return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
@@ -806,24 +824,29 @@ class BaseSelector(object):
     def load_task(self, task, model):
         home = expanduser("~")
         if 'wiping' in task:
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data.pkl'])
-            return load_pickle(file_name)
+            task = 'face_wiping'
+        file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl'
+#        print file_name
+        return load_pickle(file_name)
+#        if 'wiping' in task:
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data.pkl'])
+#            return load_pickle(file_name)
 
-        elif 'scratching' not in task:
+#        elif 'scratching' not in task:
             # file_name = ''.join([self.pkg_path, '/data/', task, '_', model, '_subj_', str(subj), '_score_data'])
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data'])
-        else:
-            task_name = 'scratching'
-            task_location = task.replace('scratching_', '')
-            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_score_data.pkl'])
-            return load_pickle(file_name)
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task, '/', model, '/', task, '_', model, '_cma_score_data'])
+#        else:
+#            task_name = 'scratching'
+#            task_location = task.replace('scratching_', '')
+#            file_name = ''.join([home, '/svn/robot1_data/usr/ari/data/base_selection/', task_name, '/', model, '/', task_location, '/', task, '_', model, '_cma_score_data.pkl'])
+#            return load_pickle(file_name)
         # return self.load_spickle(file_name)
-        print 'loading file with name ', file_name
-        try:
-            return joblib.load(file_name)
-        except IOError:
-            print 'Load failed, sorry.'
-            return None
+#        print 'loading file with name ', file_name
+#        try:
+#            return joblib.load(file_name)
+#        except IOError:
+#            print 'Load failed, sorry.'
+#            return None
 
 if __name__ == "__main__":
     import optparse

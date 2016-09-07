@@ -4,28 +4,28 @@
     <arg name="max_new_marker_error" default="0.05" />
     <arg name="max_track_error" default="0.2" />
 
-    <arg name="cam_image_topic" default="/head_mount_kinect/hd/image_color" />
+    <arg name="cam_image_topic" default="/head_mount_kinect/qhd/image_color" />
     <!--<arg name="cam_image_topic" default="/head_mount_kinect/qhd/points" />-->
-    <arg name="cam_info_topic" default="/head_mount_kinect/hd/camera_info" />
+    <arg name="cam_info_topic" default="/head_mount_kinect/qhd/camera_info" />
     <!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> -->
     <!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
     <arg name="output_frame" default="base_link" />
 
 
     <!-- Vision sensor -->
-    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" /> 
     <!--<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />-->
 
-    <!-- Find AR Tag on Autobed -->
+    <!-- Find AR Tag on Autobed--> 
     <arg name="mode" value="autobed"/>
     <node name="find_autobed" pkg="hrl_base_selection" type="ar_tag_tracking.py" respawn="false" output="screen" args="--mode autobed"/>
 
-    <!-- Find AR Tag on Head -->
+    <!-- Find AR Tag on Head-->
 
-    <node name="find_head" pkg="hrl_base_selection" type="head_mat_tf_broadcaster.py" respawn="false" output="screen"/>
-
-    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py"
-          output="screen" >
+    <!-- <node name="find_head" pkg="hrl_base_selection" type="head_mat_tf_broadcaster.py" respawn="false" output="screen"/>-->
+    <node name="find_head" pkg="hrl_base_selection" type="body_center_tf_broadcaster.py" respawn="false" output="screen"/>
+    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py">
+          <!--output="screen"-->
     </node>
 
     <!--Initialize the global transforms to localize the bed and head in the world.-->

@@ -31,6 +31,7 @@
 #system
 import numpy as np
 import sys, os, copy
+import random
 
 # Util
 import hrl_lib.util as ut
@@ -43,6 +44,7 @@ from scipy.stats import multivariate_normal
 from hrl_anomaly_detection.hmm.learning_base import learning_base
 
 os.system("taskset -p 0xff %d" % os.getpid())
+random.seed(3334)
 
 class learning_hmm(learning_base):
     def __init__(self, nState=10, nEmissionDim=4, verbose=False):
@@ -228,9 +230,6 @@ class learning_hmm(learning_base):
         final_seq = ghmm.SequenceSet(self.F, X_train)
         ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
 
-        ## for i in xrange(len(X_train)):            
-        ##     final_seq = ghmm.SequenceSet(self.F, X_train[i:i+1])
-        ##     ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
         if np.isnan(ret):
             print 'Baum Welch return:', ret
             return 'Failure'
@@ -313,7 +312,7 @@ class learning_hmm(learning_base):
             for ii in xrange(len(X[0])):
                 l_idx = []
                 for jj in xrange(startIdx, len(X[0][ii])):
-                    l_idx.append( jj+startIdx )
+                    l_idx.append( jj )
                 ll_idx.append(l_idx)
             
             if bPosterior: return ll_likelihoods, ll_posteriors, ll_idx
@@ -461,12 +460,8 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
 def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
                                          cov_type='full'):
 
-    testDataX = []
-    testDataY = []
-    for i in xrange(ml.nEmissionDim):
-        temp = np.vstack([normalTrainData[i], abnormalTrainData[i]])
-        testDataX.append( temp )
-
+    testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
+    testDataX = np.swapaxes(testDataX, 0,1)
     testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
                             np.ones(len(abnormalTrainData[0])) ])
 
@@ -474,8 +469,9 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
                                                         add_logp_d=add_logp_d, cov_type=cov_type)
 
 
-def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full'):
-    
+def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
+                                                 nSubSample=None, nMaxData=100000, rnd_sample=True):
+    n_jobs=1
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
@@ -483,10 +479,16 @@ def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add
                                                           startIdx=startIdx, \
                                                           bPosterior=True, cov_type=cov_type)
                                                           for i in xrange(len(dataX[0])))
-    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+    _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)    
 
     ll_classifier_train_X, ll_classifier_train_Y = \
       getHMMinducedFeatures(ll_logp, ll_post, dataY, c=1.0, add_delta_logp=add_logp_d)
+
+    if nSubSample is not None:
+        from hrl_anomaly_detection import data_manager as dm
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
+                           nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
 
     return ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
@@ -529,6 +531,9 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
     from scipy.stats import norm, entropy
 
     direc_delta = np.zeros(nPosteriors)
+    for i in xrange(len(direc_delta)):
+        direc_delta[i] = np.exp(-float(i))
+    direc_delta /= np.sum(direc_delta)
 
     lll_X   = []
     for k in xrange(len(ll_X)):
@@ -543,23 +548,12 @@ def getEntropyFeaturesFromHMMInducedFeatures(ll_X, ll_Y, ll_idx, nPosteriors):
         
         for i in xrange(len(ll_logp)):
             state = max_states[i]
-            direc_delta *= 0.0
-            direc_delta[state] = 1.0
-
-            selfInfo = util.symmetric_entropy(direc_delta+1e-6, ll_post[i]+1e-6)
-            ## if selfInfo < 1e-6: selfInfo = 1e+6
-            ## elif selfInfo > 1e+6: selfInfo = 0.0
-            ## else: selfInfo = 1.0/selfInfo
-
-            if selfInfo < 1e-10: selfInfo = 1e-10
+            selfInfo = util.shannon_entropy(ll_post[i]+1e-6)
+            ## selfInfo = util.symmetric_entropy(direc_delta+1e-6, ll_post[i]+1e-6)
+            ## if selfInfo < 1e-10: selfInfo = 1e-10
             ## selfInfo = np.log(selfInfo)
-            selfInfo = 1.0/selfInfo
                 
             new_X.append([ll_logp[i], float(state), selfInfo ])
-
-            ## if ll_Y[k] > 0 and k > 4:
-            ##     print np.sum(ll_post[i])
-            ##     print i, [ll_logp[i], float(state), selfInfo ]
 
         lll_X.append(new_X)
         
@@ -604,7 +598,7 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
             ## return False, False # anomaly
             continue
 
-        l_idx.append( i+startIdx )
+        l_idx.append( i )
         l_likelihood.append( logp )
         if bPosterior: l_posterior.append( post[i-1] )
 
@@ -640,14 +634,19 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
         try:
             logp = ml.loglikelihood(final_ts_obj)
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
+            l_likelihood.append( logp )
+            if bPosterior: l_posterior.append( post[i-1] )                
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
-            ## return False, False # anomaly
-            continue
+            ## return False, False # anomaly            
+            ## continue
+            logp = -1000000000000
+            # we keep the state as the previous one
+            l_likelihood.append( logp )
+            if bPosterior: l_posterior.append( l_posterior[-1] )
 
-        l_idx.append( i+startIdx )
-        l_likelihood.append( logp )
-        if bPosterior: l_posterior.append( post[i-1] )
+        l_idx.append( i )
+            
 
     if bPosterior:
         return idx, l_idx, l_likelihood, l_posterior

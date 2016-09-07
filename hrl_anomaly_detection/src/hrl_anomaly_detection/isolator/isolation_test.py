@@ -30,39 +30,39 @@
 # system
 import os, sys, copy
 import random
-
-# visualization
-import matplotlib
-#matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import gridspec
-# util
+import itertools
 import numpy as np
 import scipy
-import hrl_lib.util as ut
-from hrl_anomaly_detection.util import *
-from hrl_anomaly_detection.util_viz import *
-from hrl_anomaly_detection import data_manager as dm
+import scipy.stats as statistics
 
-from hrl_anomaly_detection.ICRA2017_params import *
-from hrl_anomaly_detection.optimizeParam import *
-from hrl_anomaly_detection import util as util
-
-# learning
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
+# System learning util
 from mvpa2.datasets.base import Dataset
-## from sklearn import svm
 from joblib import Parallel, delayed
 from sklearn import metrics
+import svmutil as svm
+from sklearn import preprocessing
 
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
 import hrl_anomaly_detection.data_viz as dv
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 
-import itertools
-import svmutil as svm
-from sklearn import preprocessing
+# util
+import hrl_lib.util as ut
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection.optimizeParam import *
+from hrl_anomaly_detection import util as util
+
+# Task param
+from hrl_anomaly_detection.isolator.isolator_params import *
+
+# visualization
+import matplotlib
+#matplotlib.use('Agg')
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
@@ -72,15 +72,16 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def isolation_test(subject_names, task_name, raw_data_path, processed_data_path, \
-                     param_dict, verbose=False, data_renew=False):
+                     param_dict_hmm, param_dict_isolator, verbose=False, data_renew=False):
     '''
-    processed_data_path: please, use this folder as your data location
+    processed_data_path: please, use this path to save your data
     '''
 
     ## Parameters
     # data
+    param_dict = param_dict_hmm
     data_dict  = param_dict['data_param']
-    
+    #return
     #-----------------------------------------------------------------------------------------
 
 
@@ -89,51 +90,113 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    type_sets = []
-    type_sets.append([42,43,44,45,46,47,48])
-    type_sets.append([21,22,23,24,25,26,30,31,32])
-    #type_sets.append([])
-    type_sets.append([18,19,20,33,34,35])
-    type_sets.append([0,1,2,3,4,5,6,7,8,9,11,12,13,14])#,27,28,29])
 
+    # train Anomaly Detector
+    # HMM training data extraction and handover scaling parameter into isolation data extractor
+    if True:
+        dim = 5
+        hmm_subjects = ['hyun', 'jina', 'sai', 'linda']
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task_name+'_data/'+\
+          str(data_dict['downSampleSize'])+'_'+str(dim)
+
+        hmm_d = dm.getDataSet(hmm_subjects, task_name, raw_data_path, \
+                              hmm_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                              downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                              handFeatures=data_dict['handFeatures'],\
+                              data_renew=False, max_time=data_dict['max_time']) 
+        dim = 4
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task_name+'_data/'+\
+          str(data_dict['downSampleSize'])+'_'+str(dim)
+
+    else:
+        dim = 4
+        hmm_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+task+'_data/'+\
+          str(data_param_dict['downSampleSize'])+'_'+str(dim)
+        hmm_d = {'param_dict': None}
+
+    param_dict = param_dict_isolator
+    data_dict  = param_dict['data_param']
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
     else:
         '''
-        Use augmented data? if nAugment is 0, then aug_successData = successData
-        '''        
+        '''
+
+        type_sets = []
+        """
+        type_sets.append([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
+        type_sets.append([22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,48,71,72,73,75])
+        type_sets.append([41,42,43,44,45,46,77,78,47])
+        type_sets.append([79,80,81,82,83,84,85,89,90,91,93,94,95,86,87,88])
+        """
+        type_sets.append([6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]) # Human movement miss
+        type_sets.append([22,23,24,25,26,27,28,29,30,32,33,35,36,37]) #Human movement collision
+        type_sets.append([41,42,44,45,46,77,78]) # audio
+        type_sets.append([0,1,2,3,4,5,49,50,51,52,53,54]) # arm movement
+        type_sets.append([79,80,81,82,83,84,85]) # out of reach
+        #type_sets.append([86,87,88,89,90,91,93,94,95])# etc failures
+        """
+        type_sets.append([34,71]) # spoon collision 
+        type_sets.append([]) # plain old miss
+        """
+
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           handFeatures=data_dict['handFeatures'], \
-                           cut_data=data_dict['cut_data'], \
+                           handFeatures=data_dict['handFeatures'],\
+                           #cut_data=data_dict['cut_data'],\
+                           init_param_dict=hmm_d['param_dict'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
-        order = [[]] * len(d['failureFiles'])
-        new_failureData = [[], [],[],[]]
+                           
+        order = [[]] * 200#(2 * len(d['failureFiles']))
+        new_type_sets = []
+        for i in xrange(0, len(type_sets)):
+            new_type_sets.append([])
+        index_d = {}
+        reverse_index_d = {}
+        
+        new_failureData = []
+        for i in xrange(0, len(d['failureData'])):
+            new_failureData.append([])
         for i, file_name in enumerate(d['failureFiles']):
             file_name_split = file_name.split("iteration_")
             file_name_split = file_name_split[1].split("_failure")[0]
             idx = int(file_name_split)
-            if "unexpected2" in file_name:
-                idx = idx + 36
-            order[idx] = i
-            print file_name, idx
-        print order
-        for i, sampleIdx in enumerate(order):#xrange(0, len(d['failureData'][0])):
-            if formatY(i, type_sets) is not 0:
+            if "unexpected3" in file_name:
+                order[idx] = i
+            elif "unexpected2" in file_name:
+                order[idx + 96] = i
+            else:
+                order[idx + 109] = i
+        count = 0
+        for i, sampleIdx in enumerate(order):
+            curr_type = formatY(i, type_sets)
+            if curr_type is not 0:
+                index_d[str(i)]     = count
+                reverse_index_d[str(count)] = i
+                new_type_sets[curr_type-1].append(count)
+                count = count + 1
                 for dimIdx in xrange(0, len(d['failureData'])):
                     new_failureData[dimIdx].append(d['failureData'][dimIdx,sampleIdx,:])
             else:
-                print "rejected, ", sampleIdx
-        print np.asarray(new_failureData).shape
+                print "rejected or missing, ", sampleIdx
+        ## print np.asarray(new_failureData).shape
+        ## return
         d['failureData']=np.asarray(new_failureData)
         
         # Task-oriented hand-crafted features        
         kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
+
+        d['typeSets']        = new_type_sets
+        d['index_d']         = index_d
+        d['reverse_index_d'] =reverse_index_d
             
         ut.save_pickle(d, crossVal_pkl)
 
@@ -141,30 +204,9 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     failureData = d['failureData']
     successFiles = d['successFiles']
     failureFiles = d['failureFiles']
-    
-    all_type = []
-    for type_set in type_sets:
-        all_type.extend(type_set)
-
-    count = 0
-    index_d = {}
-    reverse_index_d = {}
-    for i in xrange(0, 100):
-        if i in all_type:
-            index_d[str(i)] = count
-            reverse_index_d[str(count)] = i
-            count += 1
-    new_type_sets = []
-    for type_set in type_sets:
-        new_type_set = []
-        for idx in type_set:
-            new_type_set.append(index_d[str(idx)])
-        new_type_sets.append(new_type_set)
-    type_sets = new_type_sets
-
-    #print "new_type_sets "
-    #print type_sets
-
+    type_sets    = d['typeSets']
+    index_d      = d['index_d']
+    reverse_index_d = d['reverse_index_d']
 
     # Training svm, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -175,87 +217,137 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
         normalTestData    = successData[:, normalTestIdx, :] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :]
+
+        # anomaly detector --------------------------------------------
+        print "Start to find anomalous point" 
+        testDataX = failureData[[0,1,3,4], :, :]#abnormalTrainData[[0,1,3,4], :, :]
+        testDataY = np.ones(len(failureData[0]))
+        detection_idx_list = anomaly_detection(testDataX, testDataY, \
+                                               task_name, hmm_data_path, param_dict,\
+                                               verbose=True)
+        #detection_train_idx_list = anomaly_detection(testDataX, testDataY, \
+        #                                       task_name, hmm_data_path, param_dict,\
+        #                                       verbose=True)
+        #testDataX = abnormalTestData[[0,1,3,4], :, :]
+        #testDataY = np.ones(len(abnormalTestData[0]))
+        #detection_test_idx_list = anomaly_detection(testDataX, testDataY, \
+        #                                       task_name, hmm_data_path, param_dict,\
+        #                                       verbose=True)
+        detection_train_idx_list = np.asarray(detection_idx_list)[abnormalTrainIdx]
+        detection_test_idx_list = np.asarray(detection_idx_list)[abnormalTestIdx]
+        print detection_train_idx_list
+        ## sys.exit()
+        # -------------------------------------------------------------
+        
+
         
         # code here
-        test_classifier=cf.classifier()
+        ## test_classifier=cf.classifier()
         X = []
-        y = []        
-        mean = [0]* 40
-        var = [0]*40
-        X = []
+        y = []
+        scalers = []
+        features_all_data = []
+        for i in xrange(0, abnormalTrainData.shape[0]):
+            scalers.append(preprocessing.StandardScaler())
+            features_all_data.append([])
+        for dimIdx, featureData in enumerate(abnormalTrainData):
+            for sample in featureData:
+                for data_point in sample:
+                    features_all_data[dimIdx].append([data_point])
+            features_all_data[dimIdx] = scalers[dimIdx].fit_transform(features_all_data[dimIdx])
+        #print np.asarray(features_all_data)
+                
         for trainIdx in xrange(0, abnormalTrainData.shape[1]):
             curr_type = formatY(abnormalTrainIdx[trainIdx], type_sets)
             if curr_type is 0:
+                print "hmm"
                 continue
-            formated_X = formatX(abnormalTrainData[:, trainIdx, :], limit=[20+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40, 80+(reverse_index_d[str(abnormalTrainIdx[trainIdx])] % 3)* 40])#might need to switch
-            X.extend(formated_X)
-            for windowIdx in xrange(0, len(formated_X)):
-                y.append(curr_type)
-        scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        mean = np.mean(X, axis=0)
-        var = np.std(X, axis=0)
+            print trainIdx, len(detection_train_idx_list), abnormalTrainData.shape
+            if detection_train_idx_list[trainIdx] is not None:
+                limit = getRange(detection_train_idx_list[trainIdx])
+                curr_data = [[]] * abnormalTrainData.shape[0]
+                for dimIdx in xrange(0, abnormalTrainData.shape[0]):
+                    curr_data[dimIdx] = scalers[dimIdx].transform(np.array(abnormalTrainData[dimIdx, trainIdx, :], copy=True).reshape(200,)).reshape(200,)
+                formated_X = formatX(np.asarray(curr_data), limit=limit)
+                X.extend(formated_X)
+                for windowIdx in xrange(0, len(formated_X)):
+                    y.append(curr_type)
+        #scaler = preprocessing.StandardScaler()
+        #X_scaled = scaler.fit_transform(X)
         commands = ''
         class_count = [0.0]*10
-        for trainIdx in abnormalTrainIdx:
-            class_count[formatY(trainIdx,type_sets)] += 1
-            class_count[-1] += 1
-        print class_count
-        for i in xrange(1, 5):
-            if not np.allclose(class_count[i], 0):
-                if i is not 3 and i is not 2:
-                    commands = commands + '-w' + str(i) + ' ' + str((1 / (class_count[i]))) + ' '
-                else:
-                    commands = commands + '-w' + str(i) + ' ' + str((2 / (class_count[i]))) + ' '
+        for i, trainIdx in enumerate(abnormalTrainIdx):
+            if detection_train_idx_list[i] is not None:
+                class_count[formatY(trainIdx,type_sets)] += 1
+                class_count[-1] += 1
+        for i in xrange(0, len(type_sets)):
+            if not np.allclose(class_count[i+1], 0):
+                #if i is not 3 and i is not 2:
+                commands = commands + '-w' + str(i+1) + ' ' + str((1 / (class_count[i+1]))) + ' '
+                #else:
+                #    commands = commands + '-w' + str(i+1) + ' ' + str((2 / (class_count[i+1]))) + ' '
+        print commands
         c = np.logspace(-3.0, -1.0, 4)
         models=[]
-        for i in xrange(0, 4):
+        #for i in xrange(0, 4):
             #model = svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + g[i])
-            models.append(svm.svm_train(y, X_scaled.tolist(), ' -b 1 ' + commands + '-g ' + str(c[i])))
+        models.append(svm.svm_train(y, X, ' -b 1 ' + commands))# + '-g ' + str(c[i])))
+        confusion_matrix = np.zeros((len(type_sets), len(type_sets)))
         for testIdx in xrange(0, abnormalTestData.shape[1]):
             X = []
             y = []
             curr_type = formatY(abnormalTestIdx[testIdx], type_sets)
             if curr_type is 0:
                 continue
-            formated_X = formatX(abnormalTestData[:, testIdx, :], scaler=scaler)
-            scaled_data = np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
-            X.extend(formated_X)
-            for windowIdx in xrange(0, len(formated_X)):
-                y.append(curr_type)
-            #print prediction
-            #print np.asarray(prediction[2])[:,0]
+            if detection_test_idx_list[testIdx] is not None:
+                limit = getRange(int(detection_test_idx_list[testIdx]))
+                curr_data = [[]] * abnormalTestData.shape[0]
+                for dimIdx in xrange(0, abnormalTestData.shape[0]):
+                    curr_data[dimIdx] = scalers[dimIdx].transform(np.array(abnormalTestData[dimIdx, testIdx, :], copy=True).reshape(200, 1)).reshape(200,)
+                formated_X = formatX(np.asarray(curr_data), limit=limit)
+                scaled_data = np.asarray(curr_data)#abnormalTestData[:, testIdx, :]#np.asarray(scaled_inputs(abnormalTestData[:, testIdx, :], scaler))
+                X.extend(formated_X)
+                for windowIdx in xrange(0, len(formated_X)):
+                    y.append(curr_type)
+            else:
+                continue
             plt.figure(1,figsize=(100,100)).suptitle(reverse_index_d[str(abnormalTestIdx[testIdx])])
-            color_list = ['', 'b', 'g', 'r', 'k']
-            title_list = ['', 'sound', 'force', 'distance', 'orientation']
-            for i in xrange(0, 4):
+            color_list = ['', 'b', 'g', 'r', 'k', 'y', 'c', 'm']
+            title_list = ['', 'sound', 'force', 'face','distance', 'orientation']
+            for i in xrange(0, failureData.shape[0]):
                 color = color_list[i+1]#int(model.get_labels()[i])]
                 title = title_list[i+1]#int(model.get_labels()[i])]
-                plt.subplot2grid((4,2),(int(i), 0)).set_title(title)
+                plt.subplot2grid((failureData.shape[0],2),(int(i), 0)).set_title(title)
                 #plt.axis((0, 200, 0, 1))
                 plt.axis((0, 200, -2, 2))
                 #plt.plot(probability[:,i], color)
                 #plt.plot(abnormalTestData[i, testIdx, :], color)
                 plt.plot(np.asarray(scaled_data)[i, :], color)
             for j, model in enumerate(models):
-                print j
-                plt.subplot2grid((4,2),(j,1)).set_title(c[j])
+                plt.subplot2grid((failureData.shape[0],2),(j,1), rowspan=failureData.shape[0]).set_title(c[j])
                 plt.axis((0, 200, 0, 1))
                 prediction =  svm.svm_predict(y, X, model, '-b 1')
                 probability = np.asarray(prediction[2])
-                for i in xrange(0,4):
-                    color = color_list[int(model.get_labels()[i])]
+                print "predictions, ", statistics.mode(prediction[0])
+                print "supposed to be, ", curr_type
+                confusion_matrix[curr_type-1][int(statistics.mode(prediction[0])[0])-1] += 1
+                for i in xrange(0,len(type_sets)):
+                    try:
+                        color = color_list[int(model.get_labels()[i])]
+                    except:
+                        print "error!"
                     if model.get_labels()[i] is curr_type:
                         plt.plot(probability[:,i], color + '>')
                     else:
                         plt.plot(probability[:,i], color + '-')
-            print model.get_labels()
             fig_manager = plt.get_current_fig_manager()
             fig_manager.full_screen_toggle()
             plt.show()
             plt.clf()
+        print "confusion matrix, "
+        print confusion_matrix
     
-def formatX(data, time_window=20, scaler=None, limit=None):
+def formatX(data, time_window=30, scaler=None, limit=None):
     X = []
     if limit is not None:
         idxrange = xrange(limit[0], limit[1]-time_window +1)
@@ -278,17 +370,122 @@ def formatY(index, type_sets):
             return setId + 1
     return 0
 
+def getRange(index,before=30, after=30):
+    print index
+    if index < 0 or index > 200:
+        return "error"
+    if index < (after+before):
+        return [10, (after+before+10)] 
+    elif index > (190-after):
+        return [(190-after-before), 190]
+    else:
+        return [index-before, index+after]
+
 def scaled_inputs(data, scaler):
     #data, of form 4, 200
-    new_data = [[], [], [], []] 
+    new_data = []
+    for i in xrange(0, data.shape[0]):
+        new_data.append([])
     formated_X = formatX(data, scaler=scaler) #sample data scaled, 200-time_window + 1 by time_window*4
-    time_window = np.asarray(formated_X).shape[1] / 4
+    time_window = np.asarray(formated_X).shape[1] / data.shape[0]
     for idx in xrange(0, len(formated_X)):
         for dimIdx in xrange(0, np.asarray(formated_X).shape[1] / time_window):
             new_data[dimIdx].append(formated_X[idx][dimIdx*time_window])
     return new_data
 
- 
+
+def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, verbose=False):
+    ''' Anomaly detector that return anomalous point on each data.
+    '''
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC']
+    
+    # set parameters
+    method  = 'hmmgp'
+    ## weights = ROC_dict[method+'_param_range']
+    weight  = -15.0 # weights[10] # need to select weight!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! sensitivity - is less sensitive
+    nMaxData   = 20 # The maximun number of executions to train GP
+    nSubSample = 40 # The number of sub-samples from each execution to train GP
+
+    # Load a generative model
+    idx = 0
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+    if verbose: print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
+    for k, v in d.iteritems():
+        # Ignore predefined test data in the hmm object
+        if not(k.find('test')>=0):
+            exec '%s = v' % k
+
+    ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ml.set_hmm_object(A,B,pi)
+            
+    # 1) Convert training data
+    if method == 'hmmgp':
+        import random
+        random.seed(3334)
+
+        idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(idx_list)
+        ll_classifier_train_X = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_Y = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = range(len(ll_classifier_train_X[i]))
+            random.shuffle(idx_list)
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
+
+        if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+            print "Too many input data for GP"
+            sys.exit()
+
+    X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
+                                                               ll_classifier_train_Y, \
+                                                               ll_classifier_train_idx,\
+                                                               remove_fp=False)
+    if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+
+    # 2) Convert test data
+    startIdx   = 4
+    ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
+      hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X*HMM_dict['scale'], Y, startIdx)
+
+    # Create anomaly classifier
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc.set_params( class_weight=weight )
+    ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)
+
+    # anomaly detection
+    detection_idx = [None for i in xrange(len(ll_classifier_test_X))]
+    for ii in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_Y[ii])==0: continue
+
+        est_y    = dtc.predict(ll_classifier_test_X[ii], y=ll_classifier_test_Y[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:                
+                if ll_classifier_test_Y[ii][0] > 0:
+                    detection_idx[ii] = ll_classifier_test_idx[ii][jj]
+                    if ll_classifier_test_idx[ii][jj] ==4:
+                        print "Current likelihood: ", ll_classifier_test_X[ii][jj][0] 
+                break
+
+    return detection_idx
+
+
 if __name__ == '__main__':
 
     import optparse
@@ -300,7 +497,7 @@ if __name__ == '__main__':
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
                  help='type the desired task name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+    p.add_option('--dim', action='store', dest='dim', type=int, default=5,
                  help='type the desired dimension')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
@@ -310,6 +507,8 @@ if __name__ == '__main__':
     p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
                  default=False, help='Plot features.')
     p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+    p.add_option('--anomaly_detection', '--ad', action='store_true', dest='bAD',
                  default=False, help='Plot the change of likelihood.')
                  
     
@@ -332,7 +531,6 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     rf_center     = 'kinEEPos'        
     scale         = 1.0
-    # Dectection TEST 
     local_range    = 10.0    
 
     #---------------------------------------------------------------------------
@@ -340,13 +538,17 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = [ 'unexpected', 'unexpected2' ]
+        #subjects = [ 'unexpected1', 'unexpected2' ]
+        subjects = [ 'unexpected3' ]
     else:
         print "Selected task name is not available."
         sys.exit()
 
-    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          False, False, opt.dim,\
+    raw_data_path, save_data_path, param_dict_hmm = getParams(opt.task, opt.bDataRenew, \
+                                                          False, False, 5,\
+                                                          rf_center, local_range)
+    _, _, param_dict_isolator = getParams(opt.task, opt.bDataRenew, \
+                                                          False, False, 5,\
                                                           rf_center, local_range)
 
 
@@ -354,7 +556,7 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_isolation/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+      str(param_dict_hmm['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     isolation_test(subjects, opt.task, raw_data_path, save_data_path, \
-                   param_dict, verbose=opt.bVerbose, data_renew=opt.bDataRenew)
+                   param_dict_hmm, param_dict_isolator, verbose=opt.bVerbose, data_renew=opt.bDataRenew)

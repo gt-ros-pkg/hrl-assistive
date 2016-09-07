@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
+    <param name="wheelchair/robot_description" textfile="$(find hrl_base_selection)/urdf/wheelchair_henry/robots/wheelchair_henry.URDF" />
+    <node name="wheelchair_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="wheelchair" output="screen"/>
+    <node name="wheelchair_state_publisher_node" pkg="hrl_base_selection" type="wheelchair_state_publisher_node.py" output="screen"/>
+
+    <node name="base_selection" pkg="hrl_base_selection" type="base_selection_service_cma.py" output="screen" args="--mode normal --load henry"/>
+
+</launch>

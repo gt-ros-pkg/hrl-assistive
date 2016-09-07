@@ -1373,7 +1373,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         print tpr_l
         print fpr_l
         if only_tpr is False:
-            auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+            auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
+            ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             auc_rates[method] = auc
         print "--------------------------------"
 
@@ -1460,9 +1461,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             plt.legend(loc='lower right', prop={'size':24})
 
     if save_pdf:
-        ## task = 'feeding'
-        ## fig.savefig('delay_'+task+'.pdf')
-        ## fig.savefig('delay_'+task+'.png')
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         os.system('cp test.p* ~/Dropbox/HRL/')
@@ -1583,24 +1581,58 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         else:
             fig = plt.figure()
 
-    for method in ROC_data.keys():
+    for method in sorted(method_list):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
         fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
 
         tpr_l = []
         fpr_l = []
         fnr_l = []
+        tnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
         acc_l = []
+        f_score   = []
+        f05_score = []
+        f2_score  = []
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
 
         for i in xrange(nPoints):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fnr_l.append( 100.0 - tpr_l[-1] )
-            if only_tpr is False:
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            
+            ## fnr_l.append( 100.0 - tpr_l[-1] )
+            ## if float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) > 0:            
+            ##     tnr_l.append( float(np.sum(tn_ll[i])) / float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) * 100.0 )
+            ## else:
+            ##     tnr_l.append(0)
+            ## if only_tpr is False:
+            ##     fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            ## sen_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            ## spec_l.append( float(np.sum(tn_ll[i]))/float(np.sum(tn_ll[i])+np.sum(fp_ll[i]))*100.0 )
 
+            f_score.append(2.0*float(np.sum(tp_ll[i])) / (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f05_score.append((1.0+0.25)*float(np.sum(tp_ll[i])) / ((1.0+0.25)*float(np.sum(tp_ll[i])) + 0.25*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f2_score.append((1.0+4.0)*float(np.sum(tp_ll[i])) / ((1.0+4.0)*float(np.sum(tp_ll[i])) + 4.0*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            if len(delay_list)>0:
+                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
+                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
+            else:
+                delay_mean_l.append( 0 )
+                delay_std_l.append( 0 )
+                
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         from sklearn import metrics
@@ -1610,12 +1642,23 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         print method
         print tpr_l
         print fpr_l
-        print acc_l
-        if only_tpr is False:
-            print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
         print "--------------------------------"
 
-        label = method
+
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='OSVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
 
         if no_plot is False:
             # visualization
@@ -1623,19 +1666,29 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             shape = shapes.next()
             ax1 = fig.add_subplot(111)
 
-            plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
+            ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
+            ## plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
+            ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
             ## plt.xlim([49, 101])
             ## plt.ylim([0, 7.0])
             ## plt.ylabel('Detection Time [s]', fontsize=24)
-            plt.ylabel('Accuracy (percentage)', fontsize=24)
-            ## plt.xticks([50, 100], fontsize=22)
-                
+            ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+            plt.xlabel('F1 score', fontsize=24)
+            plt.ylabel('Detection Delay [s]', fontsize=24)
+            ## plt.xticks([50, 100], fontsize=22)                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 
     if no_plot is False:
-        plt.legend(loc='lower right', prop={'size':24})
+        plt.xlim([0,1])
+        ## plt.xlim([0,100])
+        plt.ylim([0,3])
+        plt.legend(loc='upper left', prop={'size':24})
 
     if save_pdf:
         fig.savefig('test.pdf')
@@ -1644,6 +1697,221 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
     elif no_plot is False:
         plt.show()
     
+
+
+def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
+    '''
+    Return three index of the best weight from weight list using f1, f0.5, f2 scores
+    '''
+
+    max_score_idx = [[],[],[]]
+
+    for mi, method in enumerate(method_list):
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+
+        total_cost = []
+        fscore_1   = []
+        fscore_0_5 = []
+        fscore_2   = []
+        for i in xrange(nPoints):
+
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
+
+            fscore_1.append( 2.0*tp/(2.0*tp+fn+fp) )
+            fscore_0_5.append( 1.25*tp/(1.25*tp+0.25*fn+fp) )
+            fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
+            ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
+
+        max_score_idx[0].append( np.argmax(fscore_1) )
+        max_score_idx[1].append( np.argmax(fscore_0_5) )
+        max_score_idx[2].append( np.argmax(fscore_2) )
+
+    ##     if method == 'progress' or method == 'hmmgp':
+    ##         print fscore_2
+    ##         print np.argmax(fscore_2)
+
+    ## sys.exit()
+    
+    return max_score_idx
+
+
+def cost_info(param_idx, method_list, ROC_data, nPoints, \
+              timeList=None, verbose=True):
+
+    m_score_l  = [[],[],[]]
+    m_delay_l = [[],[],[]]
+
+
+    for mi, method in enumerate(method_list):
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            ## print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        for i in xrange(nPoints):
+
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
+
+            # 0: f1, 1: f0.5, 2: f2
+            for j in xrange(3):
+                
+                if param_idx[j][mi] == i:
+                    if j==0: fscore = 2.0*tp/(2.0*tp+fn+fp)
+                    elif j==1: fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
+                    else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
+                    
+                    ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
+                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                                   if delay_ll[i][ii]>=0 ]
+                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+                                   
+                    m_score_l[j].append( fscore )
+                    m_delay_l[j].append( delay_list )
+
+                    ## if method == 'progress':
+                    ##     print method, " : ", i, j, nPoints 
+                    ## if method == 'progress' and j==1 and i==10:
+                    ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    ##     print delay_ll[i]
+                    ##     print delay_list
+                    ##     print time_step
+                    ##     sys.exit()
+                    
+    return m_score_l, m_delay_l
+
+
+
+def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=True):
+    '''
+    '''
+    m_cost_mean_l  = [[],[],[]]
+    m_cost_std_l   = [[],[],[]]
+    m_delay_mean_l = [[],[],[]]
+    m_delay_std_l  = [[],[],[]]
+    
+    for i in xrange(len(method_list)):
+        for j in xrange(3):
+            m_cost_mean_l[j].append( np.mean(cost_list[j][i]) )
+            m_cost_std_l[j].append( np.std(cost_list[j][i]))
+            m_delay_mean_l[j].append( np.mean(delay_list[j][i]))
+            m_delay_std_l[j].append( np.std(delay_list[j][i]))
+            ## if method_list[i] == 'progress':
+            ##     print delay_list[j][i]
+            ##     print np.mean(delay_list[j][i])
+            ##     print np.std(delay_list[j][i])
+                
+    ## print np.shape(cost_list), np.shape(delay_list)
+
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    fig = plt.figure()
+
+    ind = np.arange(len(method_list)) #*0.9 #+width/2.0
+    width = .2
+    plt.rc('text', usetex=True)
+
+    # visualization
+    color = colors.next()
+    shape = shapes.next()
+    ax1 = fig.add_subplot(211)
+    rects1 = ax1.bar(ind, m_delay_mean_l[1], width, color='r', yerr=m_delay_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F0.5 score')
+    rects2 = ax1.bar(ind+width,   m_delay_mean_l[0], width, color='g', yerr=m_delay_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F1 score')
+    rects3 = ax1.bar(ind+2.0*width, m_delay_mean_l[2], width, color='b', yerr=m_delay_std_l[2], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F2 score')
+    ax1.set_ylabel('Detection Delay [s]', fontsize=20)
+    ax1.set_xlim([-0.2, ind[-1]+4.0*width])
+    ax1.set_ylim([0,2.0])
+    ax1.yaxis.grid()
+    ax1.set_axisbelow(True) 
+    plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
+               ## loc='upper right', prop={'size':14})
+               bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',\
+               ncol=3, prop={'size':16}, fancybox=True, shadow=True)
+               
+    ax1.xaxis.set_major_locator(plt.NullLocator())
+
+    ax2 = fig.add_subplot(212)
+    rects = ax2.bar(ind, m_cost_mean_l[1], width, color='r', yerr=m_cost_std_l[1], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    rects = ax2.bar(ind+width, m_cost_mean_l[0], width, color='g', yerr=m_cost_std_l[0], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    rects = ax2.bar(ind+2.0*width, m_cost_mean_l[2], width, color='b', yerr=m_cost_std_l[2], \
+                     error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5)
+    ax2.set_ylabel('F-score', fontsize=20)
+    ax2.set_xlim([-0.2, ind[-1]+4.0*width])
+    ax2.set_ylim([0,1.0])
+    ax2.yaxis.grid()
+    ax2.set_axisbelow(True) 
+
+
+    ## plt.xlim([0,1])
+    ## plt.xlim([0,100])
+    ## plt.ylim([0,3])
+    ## plt.ylabel('Detection Time [s]', fontsize=24)
+    ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+    ## plt.xlabel('F1 score', fontsize=24)
+    ## plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    labels = []
+    for method in method_list:
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='OSVM'
+        elif method == 'bpsvm': label='BPSVM'
+        elif method == 'kmean': label='HMM-K'
+        else: label = method
+
+        labels.append(label)
+        
+
+    plt.xticks(ind+1.5*width, labels, fontsize=18 )
+    plt.xticks(rotation=20)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20) 
+    for tick in ax2.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20) 
+
+    plt.tight_layout() 
+                
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()
+    
+
 
 
 

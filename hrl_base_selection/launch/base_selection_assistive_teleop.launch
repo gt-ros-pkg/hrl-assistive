@@ -9,13 +9,13 @@
   <arg name="test" default="true"/>
 
   <arg if="$(arg test)" name="ws_port" default="9091"/>
-  <arg unless="$(arg test)" name="ws_port" value="9091"/>
+  <arg unless="$(arg test)" name="ws_port" value="9092"/>
 
   <arg if="$(arg test)" name="mjpeg_port" default="8080"/>
-  <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>
+  <arg unless="$(arg test)" name="mjpeg_port" value="8081"/>
 
   <arg if="$(arg test)" name="html_port" default="8008"/>
-  <arg unless="$(arg test)" name="html_port" value="8000"/>
+  <arg unless="$(arg test)" name="html_port" value="8001"/>
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="$(anon rosbridge)" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
@@ -28,7 +28,7 @@
   <!--<node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
   </node>-->
-  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
+<!--  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />-->
 
   <!-- Throttling nodes for robot state -->
   <node name="$(anon torso_state_throttle)" pkg="topic_tools" type="throttle"
@@ -63,7 +63,7 @@
   </node>
 
 
-  <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
+  <!--<include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
   <node pkg="assistive_teleop" name="l_twist_to_pose" type="twist_to_pose" output="screen">
     <remap from="twist_in" to="l_cart/web_commands" />
@@ -72,7 +72,7 @@
   </node>
 
 
-  <!-- Arms: Haptic MPC -->
+  <!- Arms: Haptic MPC ->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>
     <arg name="skin" value="fabric"/>
@@ -88,5 +88,6 @@
     <arg name="rviz_teleop" value="true"/>
     <arg name="verbose" value="true"/>
   </include>
+ --> 
 
 </launch>

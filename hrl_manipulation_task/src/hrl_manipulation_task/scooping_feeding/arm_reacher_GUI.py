@@ -460,8 +460,13 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+<<<<<<< HEAD
                      vision_landmark=True, vision_change=False, pps=True, skin=False, \
                      subject="unexpected3", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+=======
+                     vision_landmark=True, vision_change=False, pps=True, skin=True, \
+                     subject="new", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+>>>>>>> a4b70c14bd9ce3b9e31295ed649cc0cf01ec5af8
                      record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None

@@ -24,7 +24,7 @@ import matplotlib.patches as patches
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove#, BaseMove_multi
 from visualization_msgs.msg import Marker
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -44,7 +44,7 @@ from tempfile import mkdtemp
 import hrl_lib.util as ut
 
 class DataReader(object):
-    
+
     def __init__(self, input_data=None,subject='sub6_shaver',reference_options=['head'],data_start=0,data_finish=5,model='autobed',task='shaving',pos_clust=5,ori_clust=1,tf_listener=None):
         self.score_sheet = []
         # if tf_listener is None:
@@ -65,7 +65,7 @@ class DataReader(object):
         self.task = task
         self.num_goal_locations = 1
         self.pos_clust=pos_clust
-        self.ori_clust=ori_clust  
+        self.ori_clust=ori_clust
 
         self.input_data=input_data
 
@@ -90,20 +90,20 @@ class DataReader(object):
         pkg_path = rospack.get_path('hrl_base_selection')
         #tool_init_pos = np.array([0.357766509056, 0.593838989735, 0.936517715454])
         #tool_init_rot = np.array([-0.23529052448, -0.502738550591, 3.00133908425])
-        #head_init_pos = np.array([-0.142103180289, 0.457304298878, 1.13128328323]) 
+        #head_init_pos = np.array([-0.142103180289, 0.457304298878, 1.13128328323])
         #head_init_rot = np.array([0.304673484999, -0.304466132626, 0.579344748594])
         #world_B_headinit = createBMatrix(head_init_pos,tft.quaternion_from_euler(head_init_rot[0],head_init_rot[1],head_init_rot[2],'rxyz'))
         #world_B_toolinit = createBMatrix(tool_init_pos,tft.quaternion_from_euler(tool_init_rot[0],tool_init_rot[1],tool_init_rot[2],'rxyz'))
         self.file_length = 0
-        
+
         world_B_headc_reference_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_head.log']))])
-        world_B_tool_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_tool.log']))]) 
+        world_B_tool_raw_data = np.array([map(float,line.strip().split()) for line in open(''.join([pkg_path,'/data/',self.subject,'_tool.log']))])
 
         #dist = []
         #for num,line in enumerate(world_B_headc_reference_raw_data):
             #dist.append(np.linalg.norm(world_B_headc_reference_raw_data[num,1:4] - world_B_tool_raw_data[num,1:4]))
         #print 'raw distance: \n',np.min(np.array(dist))
-        
+
         # max_length is the length of the shorter of the two files. They sometimes differ in length by a few points.
         max_length = np.min([len(world_B_headc_reference_raw_data),len(world_B_tool_raw_data)])
 
@@ -121,7 +121,7 @@ class DataReader(object):
 
 
         self.length = np.min(np.array([max_length,self.data_finish-self.data_start]))
-        
+
 
         world_B_headc_reference_data = np.zeros([self.length,4,4])
         world_B_tool_data = np.zeros([self.length,4,4])
@@ -138,7 +138,7 @@ class DataReader(object):
 
         # We set the reference options here.
         self.reference_options = []
-        self.reference_options.append('head') 
+        self.reference_options.append('head')
         self.reference = [] # Head references are associated with a value in self.reference of 0.
 
 
@@ -165,7 +165,7 @@ class DataReader(object):
             temp = np.array(np.matrix(world_B_headc_reference_data[num]).I*np.matrix(world_B_tool_data[num]))
             pos2, ori2 =Bmat_to_pos_quat(temp)
             pos1, ori1 =Bmat_to_pos_quat(self.raw_goal_data[len(self.raw_goal_data)-1])
-           
+
             if np.linalg.norm(pos1-pos2)<self.max_distance:
                 self.raw_goal_data.append(temp)
                 self.reference.append(0)
@@ -241,7 +241,7 @@ class DataReader(object):
         return self.clustered_goal_data, self.clustered_number, self.clustered_reference
         #print 'Now finding how many unique goals there are. Please wait; this can take up to a couple of minutes.'
         #seen_items = []
-        #self.goal_unique = [] 
+        #self.goal_unique = []
         #for item in self.clustered_goal_data:
         #    if not (any((np.array_equal(item, x)) for x in seen_items)):
         #        if np.linalg.norm(item[0:3,3])<0.2:
@@ -287,7 +287,7 @@ class DataReader(object):
             #    number.append([1])
             #    reference.append(0)
                #number = np.ones(len(goals))
-        self.goal_unique = [] 
+        self.goal_unique = []
         for num in xrange(len(number)):
             self.goal_unique.append([goals[num], (float(number[num][0]))/(float(np.array(number).sum())), reference[num]])
             #print 'I am appending this to distance: ', np.linalg.norm(self.clustered_goal_data[num][0:3,3])
@@ -302,7 +302,7 @@ class DataReader(object):
         # print 'Total number of goals as summed from the clustering: ', np.array(number).sum()
         # print 'There are were %i total goals, %i goals within sensible distance, and %i unique goals within sensible ' \
         #       'distance of head center (0.2m)' % (len(goals), len(self.raw_goal_data), len(self.goal_unique))
-        
+
         return self.goal_unique
 
 #        fig = plt.figure()
@@ -372,7 +372,7 @@ class DataReader(object):
 #            manipulable.append(manipulable_line)
 #        reachable = np.array(reachable)
 #        manipulable = np.array(manipulable)
-            
+
         #self.score_sheet = []
         #for i in xrange(len(score_sheet)):
         #    self.score_sheet.append([score_sheet[i],reachable[i],manipulable[i]])
@@ -405,9 +405,9 @@ class DataReader(object):
 #                            this_manipulable[g] = np.max([this_manipulable[g],manipulable[item[j]][g]])
 #                    this_score=[this_x,this_y,this_theta,this_personal_space,np.sum(this_reachable),np.sum(this_manipulable),this_distance]
 #                    temp_scores.append([this_score[0:3],-alpha*this_score[3]+beta*this_score[4]+gamma*this_score[5]-zeta*this_score[6]])
-#        score_sheet = sorted(temp_scores, key=lambda t:t[3], reverse=True)                    
+#        score_sheet = sorted(temp_scores, key=lambda t:t[3], reverse=True)
 #        print 'Time to check multiple base configurations: %fs'%(time.time()-start_time)
-        
+
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         #save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
@@ -458,23 +458,23 @@ class DataReader(object):
                     if num_base_locations<3:
                         if np.count_nonzero(reachable[i]+reachable[j]>prev_max_reachable):
                             return
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
+
+
+
+
+
+
+
+
+
+
+
+
                     if num_base_locations>2:
                         for k in xrange(j+1,len(reachable)):
                             return
-                
-                
+
+
     '''
 #        old_max_score = np.max(self.score_sheet[:,4])
 #        print 'The max reach score (% out of 1.00) I got when using only 1 base position was: ', np.max(self.score_sheet[:,4])
@@ -541,8 +541,8 @@ class DataReader(object):
         #    self.score_sheet.append([score_sheet[i],reachable[i]])
         self.score_sheet = copy.copy(score_sheet)
 
-          
-    
+
+
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
         save_pickle(self.score_sheet,''.join([pkg_path, '/data/',self.model,'_',self.task,'_',mytargets,'_numbers_',str(self.data_start),'_',str(self.data_finish),'_',self.subject,'.pkl']))
@@ -562,7 +562,7 @@ class DataReader(object):
             print 'There was no existing score data for this task. I therefore created a new file.'
 
 
-    
+
         #for num,line in enumerate(raw_goal_data):
         #    goal_values[num] = np.array([m.acos(line[0,0]),line[0,3],line[1,3],line[2,3]])
 
@@ -610,7 +610,7 @@ class DataReader(object):
         #print '2d score:',np.array(score2d_temp)[0]
 
         seen_items = []
-        score2d = [] 
+        score2d = []
         for item in score2d_temp:
             #any((a == x).all() for x in my_list)
             #print 'seen_items is: ',seen_items
@@ -649,28 +649,28 @@ class DataReader(object):
                              (1.805, -.475), # right, bottom
                              (0., 0.), # ignored
                             ]
-        
-        
+
+
         verts_pr2 = [(-1.5,  -1.5), # left, bottom
                      ( -1.5, -.835), # left, top
                      (-.835, -.835), # right, top
                      (-.835,  -1.5), # right, bottom
                      (   0.,    0.), # ignored
                     ]
-    
+
         codes = [Path.MOVETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.CLOSEPOLY,
                 ]
-           
+
         path_subject = Path(verts_subject, codes)
         path_pr2 = Path(verts_pr2, codes)
-    
-        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)        
+
+        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)
         patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
-        
+
         X  = score2d[:,0]
         Y  = score2d[:,1]
         #Th = score_sheet[:,2]
@@ -689,7 +689,7 @@ class DataReader(object):
         fig3.set_size_inches(14,11,forward=True)
         if load:
             ax3.set_title(''.join(['Plot of personal space score from ',self.task]))
-            plt.savefig(''.join([pkg_path, '/images/space_score_of_',self.task,'.png']), bbox_inches='tight')     
+            plt.savefig(''.join([pkg_path, '/images/space_score_of_',self.task,'.png']), bbox_inches='tight')
         else:
             ax3.set_title(''.join(['Plot of personal space score from ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
             plt.savefig(''.join([pkg_path, '/images/space_score_of_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
@@ -698,7 +698,7 @@ class DataReader(object):
         print 'Number of base locations is: ',self.num_base_locations
         #print 'score2d ',score2d[0,:]
         for i in xrange(self.num_base_locations):
-            
+
             c = copy.copy(score2d[:,3+2*i])
             c2 = copy.copy(score2d[:,4+2*i])
 
@@ -715,11 +715,11 @@ class DataReader(object):
             fig.set_size_inches(14,11,forward=True)
             if load:
                 ax.set_title(''.join(['Plot of reach score from BP',str(i+1),' ',self.task]))
-                plt.savefig(''.join([pkg_path, '/images/reach_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')       
+                plt.savefig(''.join([pkg_path, '/images/reach_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')
             else:
                 ax.set_title(''.join(['Plot of reach score from BP',str(i+1),' ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
                 plt.savefig(''.join([pkg_path, '/images/reach_score_of_BP',str(i+1),'_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
-            
+
             fig2 = plt.figure(3+2*i)
             ax2 = fig2.add_subplot(111)
             surf2 = ax2.scatter(X, Y,s=60, c=c2,alpha=1)
@@ -733,13 +733,13 @@ class DataReader(object):
             fig2.set_size_inches(14,11,forward=True)
             if load:
                 ax2.set_title(''.join(['Plot of manipulability score from BP',str(i+1),' ',self.task]))
-                plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')     
+                plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.task,'.png']), bbox_inches='tight')
             else:
                 ax2.set_title(''.join(['Plot of manip score from BP',str(i+1),' ',self.subject,' on a ',self.model,' model.',' Data: (',str(self.data_start),' - ',str(self.data_finish),')']))
                 plt.savefig(''.join([pkg_path, '/images/manip_score_of_BP',str(i+1),'_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
 
         #plt.ion()
-        plt.show()                                                                                                
+        plt.show()
         #ut.get_keystroke('Hit a key to proceed next')
 
     def plot_goals(self):
@@ -767,9 +767,9 @@ class DataReader(object):
         ax.set_ylim(-.2,.2)
         ax.set_zlim(-.2,.2)
         #plt.savefig(''.join([pkg_path, '/images/goals_plot_',self.model,'_',self.subject,'_numbers_',str(self.data_start),'_',str(self.data_finish),'.png']), bbox_inches='tight')
-        
-        plt.ion()                                                                                                 
-        plt.show()                                                                                                
+
+        plt.ion()
+        plt.show()
         ut.get_keystroke('Hit a key to proceed next')
 
     def pub_rviz(self):
@@ -804,7 +804,7 @@ if __name__ == "__main__":
     ## To test clustering by using raw data sampled instead of clusters
     # sampled_raw = runData.sample_raw_data(raw_data,1000)
     # runData.generate_output_goals(test_goals=sampled_raw)
-    
+
     # To run using the clustering system
     runData.cluster_data()
     runData.generate_output_goals()

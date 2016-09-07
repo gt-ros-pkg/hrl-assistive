@@ -27,8 +27,7 @@
     position: absolute;
     bottom: 0;
     height: 60px;
-    width: 256px;
-
+    width: 100%;
     background-color: rgba(100, 100, 100, 1);
 }
 
@@ -37,10 +36,26 @@
     top: 5%;
     height: 90%;
     color: rgba(0,0,0,0.87);
-    max-width: 55%;
+    max-width: 49%;
 }
 
 #runstop-button > span {
     font-size: 20px;
     padding: 3% 0%;
+}
+
+#image-cover {
+    z-index:100;
+    display: none;
+}
+
+.connection-lost {
+    position: fixed;
+    top:0;
+    left:0;
+    display: block;
+    font-size:10em;
+    padding-top:20%;
+    text-align:center;
+    background-color:rgba(100,100,100,0.76);
 }

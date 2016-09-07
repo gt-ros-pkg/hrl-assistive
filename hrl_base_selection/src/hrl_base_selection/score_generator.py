@@ -25,7 +25,7 @@ from operator import itemgetter
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 # import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove#, BaseMove_multi
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -155,7 +155,7 @@ class ScoreGenerator(object):
                                          [0.,  1.,   0.,   0.0],
                                          [-1.,  0.,   0.,  0.0],
                                          [0.,  0.,   0.,   1.0]])
-        
+
         self.selection_mat = []
         self.reference_mat = []
         self.Tgrasps = []
@@ -196,7 +196,7 @@ class ScoreGenerator(object):
             self.set_goals()
 
             #print 'The weight of all goals: \n',self.weights
-           
+
             #print 'The list of goals from the score generator: \n',
             #for item in self.goal_list:
             #    print item
@@ -222,7 +222,7 @@ class ScoreGenerator(object):
         self.Tgrasps = []
         self.weights = []
         #total = 0
-        
+
         for num, selection in enumerate(self.selection_mat):
             #print selection
             if selection != 0.:
@@ -312,7 +312,7 @@ class ScoreGenerator(object):
         start_time = time.time()
 
         # Reduces the degrees of the score. This reduces the length of the score. We ultimately only care about the best
-        # scores and we later only update based on x-y position. As a result, we only need one score per x-y location. 
+        # scores and we later only update based on x-y position. As a result, we only need one score per x-y location.
         # Need to save the other values for reference, but we don't need repeated x-y, just the best for each x-y.
         # Might need to keep certain DOF (like bed heights), but certainly don't need to keep thetas.
         # Keep DOF if we want the combination to only combine if those DOF match (or don't match). Remove DOF we don't
@@ -526,11 +526,11 @@ class ScoreGenerator(object):
                                                          if ((t[1]!=None) and (t[0]!=None))
                                                          ])
                     mult_base_scores[hx, hy] = np.array(sorted(mult_base_scores[hx, hy], key=lambda t: (t[1][1], t[1][2]), reverse=True))
-                else: 
+                else:
                     print 'At hx, hy =', hx, ',', hy, 'There were no base configurations that could reach at least 0.4 of the goals.'
                     mult_base_scores[hx, hy] = np.array([[[0], [0], [0], [0], [0], [0]], [0, 0, 0]])
         print 'Time to generate all scores for combinations of base locations: %fs' % (time.time()-start_time)
-        
+
         #print mult_base_scores
 
         if plot:
@@ -573,7 +573,7 @@ class ScoreGenerator(object):
     def get_xyths(self, config_selections, hx, hz):
         this_x = []
         this_y = []
-        this_theta = [] 
+        this_theta = []
         this_z = []
         this_bz = []
         this_btheta = []
@@ -705,7 +705,7 @@ class ScoreGenerator(object):
         # allmanip = []
         manip = 0.
         reached = 0.
-        
+
         #allmanip2=[]
         space_score = (1./(std*(m.pow((2.*m.pi), 0.5))))*m.exp(-(m.pow(np.linalg.norm([x, y])-mean, 2.)) /
                                                                (2.*m.pow(std, 2.)))
@@ -1475,7 +1475,7 @@ class ScoreGenerator(object):
         marker.color.b = 0.0
         vis_pub.publish(marker)
         print 'Published a goal marker to rviz'
-        
+
 
     # Publishes the wheelchair model location used by openrave to rviz so we can see how it overlaps with the real wheelchair
     def publish_sub_marker(self, pos, ori):
@@ -1522,7 +1522,7 @@ class ScoreGenerator(object):
         marker.ns = ''.join(['base_service_',name])
         vis_pub.publish(marker)
         print 'Published a model of the subject to rviz'
-        
+
     # Plot the score as a scatterplot heat map
     def plot_scores(self,scores):
         #print 'score_sheet:',scores
@@ -1554,7 +1554,7 @@ class ScoreGenerator(object):
                     score2d_temp.append(list(flatten([i,j,temp_max])))
         #print '2d score:',np.array(score2d_temp)[0]
         seen_items = []
-        score2d = [] 
+        score2d = []
         for item in score2d_temp:
             if not (any((item == x) for x in seen_items)):
                 score2d.append(item)
@@ -1590,20 +1590,20 @@ class ScoreGenerator(object):
                      (-.835,  -1.5),  # right, bottom
                      (0.,    0.),  # ignored
                      ]
-    
+
         codes = [Path.MOVETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.CLOSEPOLY,
                  ]
-           
+
         path_subject = Path(verts_subject, codes)
         path_pr2 = Path(verts_pr2, codes)
-    
-        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)        
+
+        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)
         patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
-        
+
         X = data[:, 0]
         Y = data[:, 1]
         c3 = data[:, 4]
@@ -1623,7 +1623,7 @@ class ScoreGenerator(object):
         plt.savefig(''.join([pkg_path, '/images/space_score_on_', self.model, '_ts_', str(int(time.time())), '.png']),
                     bbox_inches='tight')
 
-           
+
         c = copy.copy(data[:,5])
         c2 = copy.copy(data[:,6])
 
@@ -1639,7 +1639,7 @@ class ScoreGenerator(object):
         ax.set_ylim(-2,2)
         fig.set_size_inches(14,11,forward=True)
         ax.set_title(''.join(['Plot of reach score on ',self.model,' Time stamp: ',str(int(time.time()))]))
-        plt.savefig(''.join([pkg_path, '/images/reach_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')       
+        plt.savefig(''.join([pkg_path, '/images/reach_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')
 
         fig2 = plt.figure(3)
         ax2 = fig2.add_subplot(111)
@@ -1653,10 +1653,10 @@ class ScoreGenerator(object):
         ax2.set_ylim(-2, 2)
         fig2.set_size_inches(14, 11, forward=True)
         ax2.set_title(''.join(['Plot of manipulability score on ',self.model,' Time stamp: ',str(int(time.time()))]))
-        plt.savefig(''.join([pkg_path, '/images/manip_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')     
+        plt.savefig(''.join([pkg_path, '/images/manip_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')
 
-        plt.ion()                                                                                                 
-        plt.show()                                                                                                
+        plt.ion()
+        plt.show()
         ut.get_keystroke('Hit a key to proceed next')
 
 
@@ -1669,7 +1669,7 @@ if __name__ == "__main__":
     selector = ScoreGenerator(visualize=False,task=mytask,goals = None,model=mymodel)
     #selector.choose_task(mytask)
     score_sheet = selector.handle_score()
-    
+
     print 'Time to load find generate all scores: %fs'%(time.time()-start_time)
 
     rospack = rospkg.RosPack()
@@ -1696,7 +1696,7 @@ if __name__ == "__main__":
     #print '2d score:',np.array(score2d_temp)
 
     seen_items = []
-    score2d = [] 
+    score2d = []
     for item in score2d_temp:
 #any((a == x).all() for x in my_list)
         #print 'seen_items is: ',seen_items
@@ -1711,7 +1711,7 @@ if __name__ == "__main__":
     #print 'score2d with no repetitions',score2d
 
     fig, ax = plt.subplots()
-    
+
     X = score2d[:, 0]
     Y = score2d[:, 1]
     #Th = score_sheet[:,2]
@@ -1746,7 +1746,7 @@ if __name__ == "__main__":
                          (1.805, -.475),  # right, bottom
                          (0., 0.),  # ignored
                          ]
-        
+
     verts_pr2 = [(-1.5,  -1.5),  # left, bottom
                  (-1.5, -.835),  # left, top
                  (-.835, -.835),  # right, top
@@ -1760,11 +1760,11 @@ if __name__ == "__main__":
              Path.LINETO,
              Path.CLOSEPOLY,
             ]
-       
+
     path_subject = Path(verts_subject, codes)
     path_pr2 = Path(verts_pr2, codes)
 
-    patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)        
+    patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)
     patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
 
     ax.add_patch(patch_subject)
@@ -1775,9 +1775,9 @@ if __name__ == "__main__":
 
     plt.show()
 
-            
 
-    
+
+
 
     '''
     fig = plt.figure()
@@ -1796,4 +1796,4 @@ if __name__ == "__main__":
 '''
 
 
-    
+

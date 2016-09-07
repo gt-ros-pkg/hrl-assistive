@@ -254,8 +254,9 @@ class PDDLTaskThread(Thread):
             if (attempted_goal == default_goal_now):
                 print "Evaluated to False - totally done"
                 return False
-        print "Keeping going by default"
-        return True  # Keep going by default
+        else:
+            print "Keep going by default"
+            return True
 
 
 class PDDLSmachState(smach.State):
@@ -267,6 +268,7 @@ class PDDLSmachState(smach.State):
         self.action_args = action_args
         self.init_state = init_state
         self.goal_state = GoalState(self.init_state.difference(goal_state))
+        #self.goal_state = GoalState(goal_state.predicates)
         self.state_delta = self.init_state.difference(self.goal_state)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         self.current_state = None
@@ -303,6 +305,7 @@ class PDDLSmachState(smach.State):
             self.service_preempt()
             return 'preempted'
         if self.goal_state.is_satisfied(self.current_state):
+            #raw_input("Check success of %s" % self.__class__.__name__)
             return 'succeeded'
         progress = self.init_state.difference(self.current_state)
         for pred in progress:

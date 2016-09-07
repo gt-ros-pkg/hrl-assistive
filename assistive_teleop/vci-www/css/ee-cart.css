@@ -1,32 +1,5 @@
-.camera-swing{
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-.pick-and-place {
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
-.tuck-side {
-    display:block;
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
 .r-arm-ctrl, .l-arm-ctrl{
     display: none;
-}
-
-.arm-cam {
-    margin:0% 10%;
-    padding: 0.25em;
-}
-
-#touchspot-toggle-label {
-    display: block;
-    margin: 0% 10%;
 }
 
 #arm-svg {
@@ -38,30 +11,25 @@
     height: 100%;
 }
 
-#select-focus-toggle-label{
-    width: 80%;
-    margin-left: 10%;
-}
-
-#speedOptions {
+#speed-options {
     display:none; /* Do not display initially */
     margin-left: 2%;
 }
 
-#speedOptions label{
+#speed-options label{
     width: 24%;
 }
 
-#speedOptions-buttons .ui-button-text{
+#speed-options-buttons .ui-button-text{
    padding: 0.14em 0.14em; 
    font-size: 1.0em;
 }
 
-#speedOptions-buttons{
+#speed-options-buttons{
     width: 100%;
 }
 
-#speedOptions-form{
+#speed-options-form{
     width: 100%;
 }
 
@@ -71,7 +39,7 @@
 }
 
 .posrot-set .ui-button-text{
-    padding: 0.2em 1em;
+    padding: 0.2em;
 }
 
 .posrot-set{

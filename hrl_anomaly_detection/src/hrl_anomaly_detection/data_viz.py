@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy
 import os, sys, copy
 
 # util
@@ -47,10 +47,11 @@ from matplotlib import gridspec
 
 
 def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   decision_boundary_viz=False, \
+                   decision_boundary_viz=False, method='progress',\
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
-                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None):
+                   data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
+                   nSubSample=None):
 
     from hrl_anomaly_detection import data_manager as dm
     from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -96,7 +97,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                                           len(failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
     
-    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[1]
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[-1]
     normalTrainData   = successData[:, normalTrainIdx, :] 
     abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
     normalTestData    = successData[:, normalTestIdx, :] 
@@ -121,144 +122,80 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     startIdx = 4
 
     if decision_boundary_viz:
-        ## testDataX = np.vstack([np.swapaxes(normalTrainData, 0, 1), np.swapaxes(abnormalTrainData, 0, 1)])
-        ## testDataX = np.swapaxes(testDataX, 0, 1)
-        ## testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-        ##                         np.ones(len(abnormalTrainData[0])) ])
+        import hrl_anomaly_detection.classifiers.classifier as cf
+        
         testDataX = normalTrainData
         testDataY = -np.ones(len(normalTrainData[0]))
-                                
 
-        r = Parallel(n_jobs=-1)(delayed(hmm.computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
-                                                                [testDataX[j][i] for j in \
-                                                                 xrange(nEmissionDim)], \
-                                                                ml.nEmissionDim, ml.nState,\
-                                                                startIdx=startIdx, \
-                                                                bPosterior=True)
-                                                                for i in xrange(len(testDataX[0])))
-        _, ll_classifier_train_idx, ll_logp, ll_post = zip(*r)
+        if method == 'hmmgp' or method == 'hmmsvr':
+            nSubSample = 20
+            nMaxData   = 50 # 40 100
+            rnd_sample = True #False
+        else:
+            nSubSample = None
+            ## nMaxData   = 40 #100
+            ## rnd_sample = True #False
+            
 
-
-        ## if True:
-        ##     from hrl_anomaly_detection.hmm import learning_util as hmm_util                        
-        ##     ll_classifier_test_X, ll_classifier_test_Y = \
-        ##       hmm.getHMMinducedFeatures(ll_logp, ll_post, c=1.0)
-
-        ##     fig = plt.figure()
-        ##     ax1 = fig.add_subplot(211)
-        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,0], 0,1) )
-        ##     ax1 = fig.add_subplot(212)
-        ##     plt.plot(np.swapaxes( np.array(ll_classifier_test_X)[:,:,1], 0,1) )
-        ##     plt.show()
-        ##     sys.exit()
-              
-        ##     ll_delta_logp = []
-        ##     ll_delta_post = []
-        ##     ll_delta_logp_post = []
-        ##     ll_delta_logp_post2 = []
-        ##     for i in xrange(len(ll_post)):
-        ##         l_delta_logp = []
-        ##         l_delta_post = []
-        ##         l_delta_logp_post = []
-        ##         for j in xrange(len(ll_post[i])-1):
-        ##             l_delta_logp.append( ll_logp[i][j+1] - ll_logp[i][j] )
-        ##             l_delta_post.append( hmm_util.symmetric_entropy(ll_post[i][j], ll_post[i][j+1]) )
-        ##         ll_delta_logp.append( l_delta_logp )
-        ##         ll_delta_post.append( l_delta_post )
-        ##         ll_delta_logp_post.append( np.array(l_delta_logp)/(np.array(l_delta_post)+0.1) )
-        ##         ll_delta_logp_post2.append( np.array(l_delta_logp)/(np.array(l_delta_post)+1.0) )
-
-
-        ##     fig = plt.figure()
-        ##     ax1 = fig.add_subplot(411)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp,0,1))
-        ##     ax1 = fig.add_subplot(412)            
-        ##     plt.plot(np.swapaxes(ll_delta_post,0,1))
-        ##     ax1 = fig.add_subplot(413)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp_post,0,1))
-        ##     ax1 = fig.add_subplot(414)            
-        ##     plt.plot(np.swapaxes(ll_delta_logp_post2,0,1))
-        ##     ## plt.plot(np.swapaxes(ll_delta_post,0,1))
-        ##     ## plt.plot( np.swapaxes( np.array(ll_delta_logp)/np.array(ll_delta_post), 0,1) )
-        ##     plt.show()
-        ##     sys.exit()
-
-
-        ll_classifier_train_X = []
-        ll_classifier_train_Y = []
-        for i in xrange(len(ll_logp)):
-            l_X = []
-            l_Y = []
-            for j in xrange(len(ll_logp[i])):        
-                l_X.append( [ll_logp[i][j]] + ll_post[i][j].tolist() )
-
-                if testDataY[i] > 0.0: l_Y.append(1)
-                else: l_Y.append(-1)
-
-            ll_classifier_train_X.append(l_X)
-            ll_classifier_train_Y.append(l_Y)
-
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
+                                                           add_logp_d=False, \
+                                                           cov_type='full', nSubSample=nSubSample,\
+                                                           nMaxData=nMaxData, rnd_sample=rnd_sample)
+    
         # flatten the data
-        X_train_org, Y_train_org, idx_train_org = flattenSample(ll_classifier_train_X, \
-                                                                ll_classifier_train_Y, \
-                                                                ll_classifier_train_idx)
-        
+        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+                                                                   ll_classifier_train_Y, \
+                                                                   ll_classifier_train_idx)
+
         # discriminative classifier
-        dtc = cf.classifier( method='progress_time_cluster', nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-0.0 )
+        dtc = cf.classifier( method=method, nPosteriors=nState, \
+                             nLength=len(normalTestData[0,0]), ths_mult=-10.0 )
         dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
 
 
     print "----------------------------------------------------------------------------"
-    fig = plt.figure()
+    ## fig = plt.figure()
     min_logp = 0.0
     max_logp = 0.0
     target_idx = 1
 
     # training data
     if useTrain:
+        ## normalTrainData = np.array(normalTrainData)[:,0:3,:]
+        
+        testDataY = -np.ones(len(normalTrainData[0]))
+        
+        ll_X, ll_Y, _ = \
+          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, normalTrainData, testDataY, startIdx, \
+                                                           add_logp_d=False, \
+                                                           cov_type='full')
 
-        log_ll = []
         exp_log_ll = []        
-        for i in xrange(len(normalTrainData[0])):
+        for i in xrange(len(ll_X)):
 
-            log_ll.append([])
-            exp_log_ll.append([])
-            for j in range(startIdx, len(normalTrainData[0][i])):
+            l_logp = np.array(ll_X)[i,:,0]
+            l_post = np.array(ll_X)[i,:,-nState]
+            
+            if decision_boundary_viz: # and i==target_idx:
+                fig = plt.figure()
 
-                X = [x[i,:j] for x in normalTrainData]
-                logp = ml.loglikelihood(X)
-                log_ll[i].append(logp)
-
-                if decision_boundary_viz and i==target_idx:
-                    if j>=len(ll_logp[i]): continue
-                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-
-                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                    exp_log_ll[i].append(exp_logp)
-
-
-            if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
-            if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
-                
             # disp
-            if useTrain_color: plt.plot(log_ll[i], label=str(i))
-            else: plt.plot(log_ll[i], 'b-', linewidth=4.0, alpha=0.6 )
+            if useTrain_color: plt.plot(l_logp, label=str(i))
+            else: plt.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
 
-            ## # temp
-            ## if show_plot:
-            ##     plt.plot(log_ll[i], 'b-', lw=3.0)
-            ##     plt.plot(exp_log_ll[i], 'm-')                            
-            ##     plt.show()
-            ##     fig = plt.figure()
+            if min_logp > np.amin(l_logp): min_logp = np.amin(l_logp)
+            if max_logp < np.amax(l_logp): max_logp = np.amax(l_logp)
+            
+            if decision_boundary_viz: # and i==target_idx:
+                l_exp_logp = dtc.predict(ll_X[i]) + l_logp
+                plt.plot(l_exp_logp, 'm-', lw=3.0)
+                ## break
+                plt.show()        
 
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
             
-        ## plt.plot(log_ll[target_idx], 'k-', lw=3.0)
-        if decision_boundary_viz:
-            plt.plot(exp_log_ll[target_idx], 'm-', lw=3.0)            
-
             
     # normal test data
     if useNormalTest:
@@ -309,16 +246,16 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
                 log_ll[i].append(logp)
 
-                if decision_boundary_viz and i==target_idx:
-                    if j>=len(ll_logp[i]): continue
-                    l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                    exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                    exp_log_ll[i].append(exp_logp)
+                ## if decision_boundary_viz and i==target_idx:
+                ##     if j>=len(ll_logp[i]): continue
+                ##     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
+                ##     exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
+                ##     exp_log_ll[i].append(exp_logp)
 
 
             # disp
             plt.plot(log_ll[i], 'r-')
-            plt.plot(exp_log_ll[i], 'r*-')
+            ## plt.plot(exp_log_ll[i], 'r*-')
         plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
 
 
@@ -332,6 +269,72 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         plt.show()        
 
     return
+
+def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, step_idx=None):
+
+    m = len(ll_post) # sample
+    n = len(ll_post[0]) # length
+
+    if time_list is None:
+        time_list = range(n)
+    
+    path_mat  = np.zeros((nState, n))
+
+    if single:
+        for i in xrange(m):
+            path_mat = np.array(ll_post[i]).T
+
+            path_mat -= np.amin(path_mat, axis=0)
+            path_mat /= np.sum(path_mat, axis=0)
+            extent = [time_list[0],time_list[-1],nState,0]
+            ## xticks = time_list #[time_list[0], time_list[n/2], time_list[-1]]
+
+            fig, ax1 = plt.subplots(figsize=(10, 8))
+            plt.rc('text', usetex=True)
+
+            ## ax1 = plt.subplot(111)            
+            im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+                             extent=extent, aspect=0.15)
+
+            if step_idx is not None:
+                t = time_list[step_idx[i]]
+                plt.plot([t,t],[0,nState], 'b-', linewidth=3.0)
+
+            ## plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+            ## plt.xticks(xticks, fontsize=12)
+            ax1.set_xlabel("Time [sec]", fontsize=22)
+            ax1.set_ylabel("Hidden State Index", fontsize=22)
+            plt.tick_params(axis='both', which='major', labelsize=22)
+            plt.show()
+
+    else:
+        for i in xrange(m):
+            path_mat += np.array(ll_post[i]).T
+
+        path_mat /= np.sum(path_mat, axis=0)
+        extent = [0,time_list[-1],nState,1]
+
+        fig = plt.figure()
+        plt.rc('text', usetex=True)
+
+        ax1 = plt.subplot(111)            
+        im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
+                         extent=extent, aspect=7.0)
+    
+        plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
+        ax1.set_xlabel("Time [sec]", fontsize=18)
+        ax1.set_ylabel("Hidden State Index", fontsize=18)
+        
+
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
+    return
+
+
 
 
 def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \

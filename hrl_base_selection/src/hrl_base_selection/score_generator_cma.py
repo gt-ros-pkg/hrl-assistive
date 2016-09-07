@@ -26,7 +26,7 @@ from operator import itemgetter
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 # import hrl_lib.transforms as tr
-from hrl_base_selection.srv import BaseMove, BaseMove_multi
+from hrl_base_selection.srv import BaseMove#, BaseMove_multi
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -173,7 +173,7 @@ class ScoreGenerator(object):
                                          [0.,  1.,   0.,   0.0],
                                          [-1.,  0.,   0.,  0.0],
                                          [0.,  0.,   0.,   1.0]])
-        
+
         self.selection_mat = []
         self.reference_mat = []
         self.origin_B_grasps = []
@@ -391,7 +391,7 @@ class ScoreGenerator(object):
 
             environment_voxels = np.array([t for t in (([p[0], p[1], p[2], 0.025, 0.025, 0.025])
                                                        for p in pc2.read_points(myCloud, field_names=("x", "y", "z"), skip_nans=True))
-                                           if (t[2] > 0.1)
+                                           if (t[2] > 0.05)
                                            ])
 
             self.environment_model.InitFromBoxes(environment_voxels, True)  # set geometry as many boxes
@@ -877,7 +877,7 @@ class ScoreGenerator(object):
         # allmanip = []
         manip = 0.
         reached = 0.
-        
+
         #allmanip2=[]
         # space_score = (1./(std*(m.pow((2.*m.pi), 0.5))))*m.exp(-(m.pow(np.linalg.norm([x, y])-mean, 2.)) /
         #                                                        (2.*m.pow(std, 2.)))
@@ -1202,13 +1202,13 @@ class ScoreGenerator(object):
                         not_close_to_collision = True
                         if self.manip.CheckIndependentCollision(op.CollisionReport()):
                             not_close_to_collision = False
-                         
+
                         origin_B_pr2 = np.matrix([[ m.cos(th[config_num]), -m.sin(th[config_num]),     0., x[config_num]+.04],
                                           [ m.sin(th[config_num]),  m.cos(th[config_num]),     0., y[config_num]+.04],
                                           [        0.,         0.,     1.,        0.],
                                           [        0.,         0.,     0.,        1.]])
                         self.robot.SetTransform(np.array(origin_B_pr2))
-                        self.env.UpdatePublishedBodies()       
+                        self.env.UpdatePublishedBodies()
                         if self.manip.CheckIndependentCollision(op.CollisionReport()):
                             not_close_to_collision = False
 
@@ -1245,8 +1245,8 @@ class ScoreGenerator(object):
                                           [        0.,         0.,     0.,        1.]])
                         self.robot.SetTransform(np.array(origin_B_pr2))
                         self.env.UpdatePublishedBodies()
-                            
-                        if not_close_to_collision: 
+
+                        if not_close_to_collision:
                             Tgrasp = self.origin_B_grasps[0]
 
                             # print 'no collision!'
@@ -2409,7 +2409,7 @@ class ScoreGenerator(object):
         marker.ns = ''.join(['base_service_',name])
         vis_pub.publish(marker)
         print 'Published a model of the subject to rviz'
-        
+
     # Plot the score as a scatterplot heat map
     def plot_scores(self,scores):
         #print 'score_sheet:',scores
@@ -2441,7 +2441,7 @@ class ScoreGenerator(object):
                     score2d_temp.append(list(flatten([i,j,temp_max])))
         #print '2d score:',np.array(score2d_temp)[0]
         seen_items = []
-        score2d = [] 
+        score2d = []
         for item in score2d_temp:
             if not (any((item == x) for x in seen_items)):
                 score2d.append(item)
@@ -2477,20 +2477,20 @@ class ScoreGenerator(object):
                      (-.835,  -1.5),  # right, bottom
                      (0.,    0.),  # ignored
                      ]
-    
+
         codes = [Path.MOVETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.LINETO,
                  Path.CLOSEPOLY,
                  ]
-           
+
         path_subject = Path(verts_subject, codes)
         path_pr2 = Path(verts_pr2, codes)
-    
-        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)        
+
+        patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)
         patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
-        
+
         X = data[:, 0]
         Y = data[:, 1]
         c3 = data[:, 4]
@@ -2510,7 +2510,7 @@ class ScoreGenerator(object):
         plt.savefig(''.join([pkg_path, '/images/space_score_on_', self.model, '_ts_', str(int(time.time())), '.png']),
                     bbox_inches='tight')
 
-           
+
         c = copy.copy(data[:,5])
         c2 = copy.copy(data[:,6])
 
@@ -2526,7 +2526,7 @@ class ScoreGenerator(object):
         ax.set_ylim(-2,2)
         fig.set_size_inches(14,11,forward=True)
         ax.set_title(''.join(['Plot of reach score on ',self.model,' Time stamp: ',str(int(time.time()))]))
-        plt.savefig(''.join([pkg_path, '/images/reach_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')       
+        plt.savefig(''.join([pkg_path, '/images/reach_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')
 
         fig2 = plt.figure(3)
         ax2 = fig2.add_subplot(111)
@@ -2540,10 +2540,10 @@ class ScoreGenerator(object):
         ax2.set_ylim(-2, 2)
         fig2.set_size_inches(14, 11, forward=True)
         ax2.set_title(''.join(['Plot of manipulability score on ',self.model,' Time stamp: ',str(int(time.time()))]))
-        plt.savefig(''.join([pkg_path, '/images/manip_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')     
+        plt.savefig(''.join([pkg_path, '/images/manip_score_on_',self.model,'_ts_',str(int(time.time())),'.png']), bbox_inches='tight')
 
-        plt.ion()                                                                                                 
-        plt.show()                                                                                                
+        plt.ion()
+        plt.show()
         ut.get_keystroke('Hit a key to proceed next')
 
     def gen_joint_limit_weight(self, q):
@@ -2586,7 +2586,7 @@ if __name__ == "__main__":
     selector = ScoreGenerator(visualize=False,task=mytask,goals = None,model=mymodel)
     #selector.choose_task(mytask)
     score_sheet = selector.handle_score_generation()
-    
+
     print 'Time to load find generate all scores: %fs'%(time.time()-start_time)
 
     rospack = rospkg.RosPack()
@@ -2613,7 +2613,7 @@ if __name__ == "__main__":
     #print '2d score:',np.array(score2d_temp)
 
     seen_items = []
-    score2d = [] 
+    score2d = []
     for item in score2d_temp:
 #any((a == x).all() for x in my_list)
         #print 'seen_items is: ',seen_items
@@ -2628,7 +2628,7 @@ if __name__ == "__main__":
     #print 'score2d with no repetitions',score2d
 
     fig, ax = plt.subplots()
-    
+
     X = score2d[:, 0]
     Y = score2d[:, 1]
     #Th = score_sheet[:,2]
@@ -2663,7 +2663,7 @@ if __name__ == "__main__":
                          (1.805, -.475),  # right, bottom
                          (0., 0.),  # ignored
                          ]
-        
+
     verts_pr2 = [(-1.5,  -1.5),  # left, bottom
                  (-1.5, -.835),  # left, top
                  (-.835, -.835),  # right, top
@@ -2677,11 +2677,11 @@ if __name__ == "__main__":
              Path.LINETO,
              Path.CLOSEPOLY,
             ]
-       
+
     path_subject = Path(verts_subject, codes)
     path_pr2 = Path(verts_pr2, codes)
 
-    patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)        
+    patch_subject = patches.PathPatch(path_subject, facecolor='orange', lw=2)
     patch_pr2 = patches.PathPatch(path_pr2, facecolor='orange', lw=2)
 
     ax.add_patch(patch_subject)
@@ -2692,9 +2692,9 @@ if __name__ == "__main__":
 
     plt.show()
 
-            
 
-    
+
+
 
     '''
     fig = plt.figure()
@@ -2713,5 +2713,5 @@ if __name__ == "__main__":
 '''
 
 
-    
+
 
