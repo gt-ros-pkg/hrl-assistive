@@ -36,7 +36,7 @@ haptic_mpc:
 
     # Force parameters
     force_reduction_goal: 0.1
-    allowable_contact_force: 5.0    
+    allowable_contact_force: 1000000000000000000.0 #5.0    
     max_delta_force_mag: 0.1
     stopping_force: 200.0
 

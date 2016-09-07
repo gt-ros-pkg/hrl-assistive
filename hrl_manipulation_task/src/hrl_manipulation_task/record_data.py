@@ -641,7 +641,7 @@ if __name__ == '__main__':
     rospy.init_node('record_data')
     log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
-                 pps=False, skin=False, subject=subject, task=task, verbose=verbose,\
+                 pps=False, skin=True, subject=subject, task=task, verbose=verbose,\
                  data_pub=data_pub, detector=detector, record_root_path=record_root_path)
 
     rospy.sleep(1.0)
