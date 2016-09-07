@@ -244,7 +244,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'hmmsvm_diag_param_range': np.logspace(-4, 0.0, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 0.14, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-2.52, -0.45, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4,0,nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4., 0., nPoints),\
                           'change_param_range': np.linspace(0.0, -30.0, nPoints),\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
@@ -375,7 +375,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.675, 'scale': 6.66, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.33, 'scale': 7.33, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 0.85, 'gamma': 0.001, 'cost': 12.5,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
@@ -400,9 +400,9 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ROC_param_dict = {'methods': [ 'change','fixed','progress', 'progress_state', \
                                        'progress_diag', 'kmean', 'osvm', 'hmmosvm',\
                                        'progress_osvm'],\
-                          'update_list': [ 'hmmgp' ],\
+                          'update_list': [ 'progress' ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0.3, 1.1, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0.0, 1.15, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(0, 1.2, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1.1, 1.2, nPoints)*-1.0 -1., \
                           'progress_state_param_range':np.logspace(-0.4, 3.3, nPoints)*-1.0+0.4, \
@@ -418,7 +418,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'hmmsvm_dL_param_range': np.logspace(-3.0, 0.7, nPoints),\
                           'hmmsvm_no_dL_param_range': np.logspace(-1.346, 0.8, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
+                          'rnd_param_range': 1.0-np.logspace(-3, -0.9, nPoints)+0.001,\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),
                           'sgd_param_range': np.logspace(-4, 1.2, nPoints) }        
         

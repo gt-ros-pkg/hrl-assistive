@@ -118,7 +118,6 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
 
 
-
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
                 cut_data=None, \
@@ -820,13 +819,16 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
-               test_drop_elements=None):
+def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
+               test_drop_elements=None, step_anomaly_info=None, normalFoldData=None):
 
-    d = ut.load_pickle(data_pkl)
-    kFold_list  = d['kFoldList']
-    successData = d['successData']
-    failureData = d['failureData']    
+    if data_pkl is not None:
+        d = ut.load_pickle(data_pkl)
+        kFold_list  = d['kFoldList']
+        successData = d['successData']
+        failureData = d['failureData']
+    else:
+        (normal_folds, successData, failureData) = normalFoldData
 
     if window == 0:
         print "wrong window size"
@@ -836,14 +838,25 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
     print "Start to get data"
     data = {}
     for file_idx in xrange(nFiles):
-    
-        (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[file_idx]
 
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
-        normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :]
+        if data_pkl is not None:
+            (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[file_idx]
+
+            # dim x sample x length
+            normalTrainData   = successData[:, normalTrainIdx, :] 
+            abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
+            normalTestData    = successData[:, normalTestIdx, :] 
+            abnormalTestData  = failureData[:, abnormalTestIdx, :]
+        else:
+            (train_fold, test_fold) = normal_folds[file_idx]
+             
+            # dim x sample x length
+            normalTrainData   = successData[:, train_fold] 
+            abnormalTrainData = failureData
+            normalTestData    = successData[:, test_fold] 
+            abnormalTestData  = failureData
+
+            
 
         # dim x sample x length => sample x dim x length
         normalTrainData   = np.swapaxes(normalTrainData, 0, 1)
@@ -856,6 +869,21 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         abnormalTrainData = np.swapaxes(abnormalTrainData, 1, 2)         
         normalTestData    = np.swapaxes(normalTestData, 1, 2)
         abnormalTestData  = np.swapaxes(abnormalTestData, 1, 2)
+
+
+        #--------------------------------------------------------------------------------
+        if step_anomaly_info is not None:
+            modeling_pkl_prefix = step_anomaly_info[0]
+            step_mag = step_anomaly_info[1]
+            dd = ut.load_pickle(modeling_pkl_prefix+'_'+str(file_idx)+'.pkl')
+            step_idx_l = dd['step_idx_l']
+
+            abnormalTestData = copy.copy(normalTestData)
+            for i in xrange(len(abnormalTestData)):
+                abnormalTestData[i,step_idx_l[len(normalTestData)+i],:] += step_mag
+        else:
+            step_idx_l = None
+
 
         #--------------------------------------------------------------------------------
         # scaler
@@ -1073,7 +1101,7 @@ def getPCAData(nFiles, data_pkl, window=1, gamma=1., pos_dict=None, use_test=Tru
         data[file_idx]['Y_test']        = Y_test
         data[file_idx]['idx_test']      = ll_classifier_test_idx
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
-
+        data[file_idx]['step_idx_l']    = step_idx_l
     return data 
     
 
