@@ -384,7 +384,7 @@ class logger:
 
     def run(self):
 
-        ## self.log_start()
+        #self.log_start()
 
         count = 0
         rate = rospy.Rate(100) # 25Hz, nominally.
@@ -393,7 +393,7 @@ class logger:
             ## if count > 800: break
             rate.sleep()
 
-        ## self.close_log_file()
+        #self.close_log_file()
 
     def runDataPub(self):
         '''
@@ -632,14 +632,14 @@ if __name__ == '__main__':
 
     subject = 'gatsbii_demo'
     ## task    = 'pushing_microwhite'
-    task    = 'scooping'
+    task    = 'feeding'
     verbose = True
     data_pub= True
     detector= False
     record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'
 
     rospy.init_node('record_data')
-    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
                  pps=False, skin=True, subject=subject, task=task, verbose=verbose,\
                  data_pub=data_pub, detector=detector, record_root_path=record_root_path)
