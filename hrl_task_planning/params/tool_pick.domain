@@ -3,35 +3,40 @@
  (:types
   pose
   gripper
-  tag_id
   tool
  )
 
  (:constants tool_pose - pose
-             left_gripper - gripper
-             right_gripper - gripper
+             left_hand - gripper
+             right_hand - gripper
  )
 
  (:predicates
-  (known ?id - tag_id)
-  (grasped ?t - tool ?g - gripper)
-  (grasping ?g - gripper)
+  (known ?tp - pose)
+  (grasping ?t - tool ?g - gripper)
+  (occupied ?g - gripper)
+  (auto-grasp-done)
  )
 
- (:action grasp_tool
+ (:action auto_grasp_tool
     :parameters (?t -tool ?tp - pose ?g - gripper)
-    :precondition (and (known ?tp)(not (grasping ?g)))
-    :effect (and (grasped ?t ?g)(grasping ?g))
+    :precondition (and (known ?tp)(not (occupied ?g))(not (auto-grasp-done)))
+    :effect (and (grasping ?t ?g)(occupied ?g))
+ )
+
+ (:action manual_grasp_tool
+    :parameters (?t -tool ?tp - pose ?g - gripper)
+    :precondition (and (known ?tp)(not (occupied ?g))(auto-grasp-done))
+    :effect (and (grasping ?t ?g)(occupied ?g))
  )
 
  (:action get_tag_pose
-  :parameters (?id - tag_id ?tp - tag_pose)
+  :parameters (?t - tool ?tp - pose)
   :effect (known ?tp)
  )
 
  (:action drop_object
   :parameters (?g - gripper)
-  :precondition (grasping ?g)
-  :effect (not (grasping ?g))
+  :effect (not (occupied ?g))
  )
 )
