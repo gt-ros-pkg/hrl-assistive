@@ -18,25 +18,29 @@
   (auto-grasp-done)
  )
 
- (:action auto_grasp_tool
+ (:action auto-grasp-tool
     :parameters (?t -tool ?tp - pose ?g - gripper)
     :precondition (and (known ?tp)(not (occupied ?g))(not (auto-grasp-done)))
-    :effect (and (grasping ?t ?g)(occupied ?g))
+    :effect (and (grasping ?t ?g)(occupied ?g) (not (known ?tp)))
  )
 
- (:action manual_grasp_tool
+ (:action manual-grasp-tool
     :parameters (?t -tool ?tp - pose ?g - gripper)
     :precondition (and (known ?tp)(not (occupied ?g))(auto-grasp-done))
     :effect (and (grasping ?t ?g)(occupied ?g))
  )
 
- (:action get_tag_pose
+ (:action get-tag-pose
   :parameters (?t - tool ?tp - pose)
   :effect (known ?tp)
  )
 
- (:action drop_object
+ (:action place
   :parameters (?g - gripper)
   :effect (not (occupied ?g))
+ )
+
+ (:action reset-auto-tried
+  :effect (not (auto-grasp-done))
  )
 )
