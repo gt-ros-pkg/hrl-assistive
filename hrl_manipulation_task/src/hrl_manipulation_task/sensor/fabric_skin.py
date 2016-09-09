@@ -78,8 +78,8 @@ class fabric_skin():
         '''
         if self.verbose: print "fabric_skin>> Initialize pusblishers and subscribers"
 
-        self.zero_forearm_pub = rospy.Publisher('/pr2_fabric_forearm_sensor/zero_sensor', Empty)
-        self.zero_upperarm_pub = rospy.Publisher('/pr2_fabric_upperarm_sensor/zero_sensor', Empty)
+        self.zero_forearm_pub = rospy.Publisher('/pr2_fabric_l_forearm_sensor/zero_sensor', Empty)
+        self.zero_upperarm_pub = rospy.Publisher('/pr2_fabric_l_upperarm_sensor/zero_sensor', Empty)
 
         input_topic = '/pressure/'+self.fabric_arm+'_gripper_motor'
         rospy.Subscriber('haptic_mpc/robot_state', haptic_msgs.RobotHapticState, \

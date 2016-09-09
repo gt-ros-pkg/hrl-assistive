@@ -649,6 +649,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                   use_test=True, use_pca=False, \
                                   step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
 
+    ## kFold_list = kFold_list[:1]
+                                  
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -2222,6 +2224,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
+        ## param_dict['ROC']['methods']     = ['hmmosvm']
         param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
@@ -2239,11 +2242,12 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
         elif opt.task == 'feeding':
+            ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(2.3, 2.8, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(1.8, 2.5, nPoints)            
-            param_dict['ROC']['osvm_param_range']  = np.logspace(-4,0,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.linspace(0,1,nPoints)
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-4,0,nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,-2,nPoints)
             param_dict['ROC']['fixed_param_range']  = np.linspace(-0.5, -2.5, nPoints)
             param_dict['ROC']['change_param_range'] = np.linspace(-15.0, -55.0, nPoints)
 

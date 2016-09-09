@@ -352,7 +352,7 @@ class DataReader_Task(object):
 
 if __name__ == "__main__":
     visualize_only = False
-    model = 'chair'  # options are: 'chair', 'bed', 'autobed', 'wall'
+    model = 'autobed'  # options are: 'chair', 'bed', 'autobed', 'wall'
     optimization = 'cma'  # 'cma' or 'brute'
     rospy.init_node(optimization+'_'+model+'_face_wiping')
     task = 'shaving' # scratching_knee_left # options are: face_wiping, bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
@@ -368,7 +368,7 @@ if __name__ == "__main__":
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
         print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)

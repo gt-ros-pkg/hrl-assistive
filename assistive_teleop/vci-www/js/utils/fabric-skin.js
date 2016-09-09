@@ -3,12 +3,11 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         var ros = options.ros;
-        var tfClient = options.tfClient;
         self.side = options.side;
         self.part = options.part;
         var ns = 'pr2_fabric_'+self.side[0]+'_'+self.part+'_sensor';
         self.baseLink = null;
-        self.taxelPoints = [];
+        self.taxelTransforms = [];
 
         var linkServiceClient = new ROSLIB.Service({
             ros: ros,
@@ -16,7 +15,8 @@ var RFH = (function (module) {
             serviceType: 'm3skin_ros/None_String'
         });
         var linkReq = new ROSLIB.ServiceRequest({});
-        linkServiceClient.callService(linkReq, function (resp) {self.baseLink = response.data;});
+        linkServiceClient.callService(linkReq, function (resp) {
+            self.baseLink = resp.data;});
 
 
         var frameServiceClient = new ROSLIB.Service({
@@ -32,12 +32,14 @@ var RFH = (function (module) {
             }
         };
         var framesReq = new ROSLIB.ServiceRequest({});
-        frameServiceClient.callService(framesReq, function (resp) {self.baseLink = response.data;});
+        frameServiceClient.callService(framesReq, function (resp) {
+                                                        self.taxelTransforms = resp.data;
+                                                    });
 
         /* Zero sensor readings in calibration node */
         var zeroPub = new ROSLIB.Topic({
             ros: ros,
-            topic: ns+'/zero_sensor',
+            name: ns+'/zero_sensor',
             messageType: 'std_msgs/Empty'
         });
         zeroPub.advertise();
@@ -48,7 +50,7 @@ var RFH = (function (module) {
         /* Enable Sensor data publishing */
         var enablePub = new ROSLIB.Topic({
             ros: ros,
-            topic: ns+'/enable_sensor',
+            name: ns+'/enable_sensor',
             messageType: 'std_msgs/Empty'
         });
         enablePub.advertise();
@@ -59,7 +61,7 @@ var RFH = (function (module) {
         /* Disable Sensor data publishing */
         var disablePub = new ROSLIB.Topic({
             ros: ros,
-            topic: ns+'/disable_sensor',
+            name: ns+'/disable_sensor',
             messageType: 'std_msgs/Empty'
         });
         disablePub.advertise();
@@ -68,17 +70,18 @@ var RFH = (function (module) {
         };
         
         /* Process force data from sensor */
-        var forceCBArray = [];
+        self.forceCBArray = [];
         var forcesCB = function (taxelArrayMsg) {
-            for (var i=0; i<forceCBArray.length; i += 1) {
-                forceCBArray[i](taxelArrayMsg);
+            for (var i=0; i<self.forceCBArray.length; i+=1) {
+                self.forceCBArray[i](taxelArrayMsg);
             }
         };
 
         var forcesSub = new ROSLIB.Topic({
             ros: ros,
-            topic: ns+'/taxels/forces',
-            messageType: 'hrl_haptic_manipulation_in_clutter_msgs/TaxelArray'
+            name: ns+'/taxels/forces',
+            messageType: 'hrl_haptic_manipulation_in_clutter_msgs/TaxelArray',
+            throttle_rate: 1000
         });       
         forcesSub.subscribe(forcesCB);
     };
@@ -86,26 +89,23 @@ var RFH = (function (module) {
     module.initSkin = function () {
         var skins = {};    
         skins.left = {};
-        skins.left.upperarm = new module.FabricSkin({ros: RFH.ros,
-                                                     tfClient: RFH.tfClient, 
+        skins.left.upperarm = new module.FabricSkin({ros: module.ros,
                                                      side: "left",
                                                      part: "upperarm"});
 
-        skins.left.forearm = new module.FabricSkin({ros: RFH.ros,
-                                                     tfClient: RFH.tfClient, 
+        skins.left.forearm = new module.FabricSkin({ros: module.ros,
                                                      side: "left",
                                                      part: "forearm"});
 
         skins.right = {};
-        skins.right.upperarm = new module.FabricSkin({ros: RFH.ros,
-                                                      tfClient: RFH.tfClient, 
+        skins.right.upperarm = new module.FabricSkin({ros: module.ros,
                                                       side: "right",
                                                       part: "upperarm"});
 
-        skins.right.upperarm = new module.FabricSkin({ros: RFH.ros,
-                                                      tfClient: RFH.tfClient, 
+        skins.right.forearm = new module.FabricSkin({ros: module.ros,
                                                       side: "right",
                                                       part: "forearm"});
+        module.skins = skins;
     };
     return module;
 

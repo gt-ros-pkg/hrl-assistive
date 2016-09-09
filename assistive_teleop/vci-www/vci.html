@@ -35,6 +35,7 @@
   <script type="text/javascript" src="js/utils/runstop.js"></script>
   <script type="text/javascript" src="js/utils/connection-monitor.js"></script>
   <script type="text/javascript" src="js/utils/datalogging.js"></script>
+  <script type="text/javascript" src="js/utils/fabric-skin.js"></script>
   <script type="text/javascript" src="js/utils/battery-monitor.js"></script>
   <script type="text/javascript" src="js/utils/pr2.js"></script>
   <!-- Interface action modes -->
@@ -50,7 +51,7 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-rotation.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/arm-postures.js"></script>
-  <script type="text/javascript" src="js/action-modes/ee-control/fabric-skin.js"></script>
+  <script type="text/javascript" src="js/action-modes/ee-control/skin-display.js"></script>
   <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
   <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
@@ -67,6 +68,7 @@
   <link type="text/css" href="css/drive.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
+  <link type="text/css" href="css/skin.css" rel="stylesheet" />
   <link type="text/css" href="css/gripper.css" rel="stylesheet" />
   <link type="text/css" href="css/undo.css" rel="stylesheet" />
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
@@ -236,6 +238,25 @@
      <img id="torso-tall-icon" src="./css/icons/tall.png"></img>
      <img id="torso-short-icon" src="./css/icons/short.png"></img>
      <div id="torso-slider" class="log-slide"></div>
+     <!-- Skin contact display layer -->
+     <div id="skin-contact-display">
+        <div id="edge-contact-n" class="edge-contact n"></div>
+        <div id="edge-contact-ne" class="edge-contact ne"></div>
+        <div id="edge-contact-e" class="edge-contact e"></div>
+        <div id="edge-contact-se" class="edge-contact se"></div>
+        <div id="edge-contact-s" class="edge-contact s"></div>
+        <div id="edge-contact-sw" class="edge-contact sw"></div>
+        <div id="edge-contact-w" class="edge-contact w"></div>
+        <div id="edge-contact-nw" class="edge-contact nw"></div>
+        <div id="contact-marker-1" class="contact-marker"></div>
+        <div id="contact-marker-2" class="contact-marker"></div>
+        <div id="contact-marker-3" class="contact-marker"></div>
+        <div id="contact-marker-4" class="contact-marker"></div>
+        <div id="contact-marker-5" class="contact-marker"></div>
+        <div id="contact-marker-6" class="contact-marker"></div>
+        <div id="contact-marker-7" class="contact-marker"></div>
+        <div id="contact-marker-8" class="contact-marker"></div>
+     </div>
      <!-- divs for arm controls -->
      <div id='armCtrlContainer' class="ctrlContainer arm-ctrl">
          <!--<div class="slider"></div>-->
