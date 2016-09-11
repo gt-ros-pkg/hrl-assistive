@@ -51,12 +51,13 @@ var RFH = (function (module) {
         var goalSub = new ROSLIB.Topic({
             ros: ros,
             name: 'move_back_safe_zone',
-            messageType: 'geometry_msgs/PoseStamped'
+            messageType: 'geometry_msgs/PoseArray'
         });
 
         var setGoal = function (psMsg) {
             goalPose = psMsg;
             updateGoalVisualization();
+            loadZone();
         };
         goalSub.subscribe(setGoal);
 

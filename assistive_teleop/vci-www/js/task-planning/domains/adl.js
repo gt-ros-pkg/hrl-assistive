@@ -187,7 +187,7 @@ var RFH = (function(module) {
                                   '(NOT (BASE-REACHED '.concat(task_upper, ' ', model_upper,'))'),
                                   '(NOT (ARM-REACHED '.concat(task_upper, ' ', model_upper, '))'),
                                   '(NOT (ARM-HOME '.concat(task_upper, ' ', model_upper, '))'),
-                                  '(NOT (TOO-CLOSE '.concat(model_upper, '))'),
+                                  '(TOO-CLOSE '.concat(model_upper, ')'),
                                   '(NOT (TASK-COMPLETED '.concat(task_upper, ' ', model_upper, '))')]);
             msg.goal = []; 
             setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...

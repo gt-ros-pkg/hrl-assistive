@@ -62,6 +62,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_BACK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        #return MoveBackState(model=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -304,29 +305,58 @@ class MoveBackState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
+        self.domain = domain
         #self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
 
-    def domain_state_cb(self, state_msg):
-        self.current_state = State(map(Predicate.from_string, state_msg.predicates))
-        print "Init State: %s" % self.init_state
-        print "Current State: %s" % self.current_state
-        print "Goal State: %s" % self.goal_state
-        print "\n\n"
 
-    def _check_pddl_status(self):
-        if self.preempt_requested():
-            rospy.loginfo("[%s] Preempted requested for %s(%s).", rospy.get_name(), self.action, ' '.join(self.action_args))
-            self.stop_tracking_AR_publisher.publish(False)
-            return 'preempted'
-        if self.goal_state.is_satisfied(self.current_state):
-            return 'succeeded'
-        progress = self.init_state.difference(self.current_state)
-        for pred in progress:
-            if pred not in self.state_delta:
-                print "aborted - bad transition"
-                return 'aborted'
-        return None  # Adding explicitly for clarity
+    def on_execute(self, ud):
+        rospy.loginfo('[%s] Finding good places to move back' % rospy.get_name())
+        try:
+            base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
+        except:
+            rospy.logwarn("[%s] MoveRobotState - Cannot find base location on parameter server", rospy.get_name())
+            return 'aborted'
+        pr2_goal_pose = PoseStamped()
+        pr2_goal_pose.header.stamp = rospy.Time.now()
+        pr2_goal_pose.header.frame_id = 'base_footprint'
+        trans_out = base_goals[:3]
+        rot_out = base_goals[3:]
+        print "MOVING TO:"
+        print trans_out, rot_out
+        pr2_goal_pose.pose.position.x = trans_out[0]
+        pr2_goal_pose.pose.position.y = trans_out[1]
+        pr2_goal_pose.pose.position.z = trans_out[2]
+        pr2_goal_pose.pose.orientation.x = rot_out[0]
+        pr2_goal_pose.pose.orientation.y = rot_out[1]
+        pr2_goal_pose.pose.orientation.z = rot_out[2]
+        pr2_goal_pose.pose.orientation.w = rot_out[3]
+        goal = ARServoGoalData()
+        if self.model.upper() == 'AUTOBED':
+            goal.tag_id = 4
+        else:
+            goal.tag_id = 13
+        goal.marker_topic = '/ar_pose_marker'
+        goal.tag_goal_pose = pr2_goal_pose
+        self.servo_goal_pub.publish(goal)
+        rospy.loginfo("[%s] Successfully Published Base Location to AR Servo" % rospy.get_name())
+        rospy.sleep(5)
+        self.start_servoing.publish(True)
+        rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
+        rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
+        while not rospy.is_shutdown() and not self.goal_reached:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
+                self.stop_tracking_AR_publisher.publish(False)
+                return 
+            rospy.sleep(1)
+
+        if self.goal_reached:
+            rospy.loginfo("[%s] Base Goal Reached" % rospy.get_name())
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(BASE-REACHED %s %s)' % (self.task, self.model)]
+            self.state_pub.publish(state_update)
 
 
 

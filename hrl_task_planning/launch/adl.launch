@@ -5,6 +5,7 @@
             <param name="domain" textfile="$(find hrl_task_planning)/params/adl.domain"/>
             <rosparam command="load" file="$(find hrl_task_planning)/params/adl.yaml"/>
             <node name='ar_tag_tracking_monitor' pkg="hrl_task_planning" type="ar_tag_tracking_monitor" output="screen" args="-d adl"/>
+            <node name='ar_dist_monitor' pkg="hrl_task_planning" type="ar_dist_monitor" output="screen" args="-d adl"/>
         </group>
     </group>
 

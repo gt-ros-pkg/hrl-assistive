@@ -52,6 +52,9 @@
   <include file="$(find assistive_teleop)/launch/realtime_base_selection.launch"/>
 -->
 
+  <!-- Tasks with Base-Selection components -->
+  <include file="$(find hrl_base_selection)/launch/base_selection_pr2.launch"/>
+
   <!-- Gripper Sensor Action for delicate and intelligent grasping -->
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 

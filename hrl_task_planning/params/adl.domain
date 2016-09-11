@@ -58,13 +58,13 @@
  
  (:action move_back
   :parameters (?m - model)
-  :precondition (and (too-close ?m))
+  :precondition (and (too-close ?m)(forall(?t - task)(base-selected ?t ?m)))
   :effect (not (too-close ?m))
  )
 
  (:action call_base_selection
   :parameters (?t - task ?m - model)
-  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m)(not (too-close ?m)))
+  :precondition (and (head-registered ?m)(occupied ?m)(is-tracking-tag ?m))
   :effect (and (base-selected ?t ?m)
           )
  )
