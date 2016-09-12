@@ -73,7 +73,10 @@ var RFH = (function (module) {
                }
                centerPoint[j] /= 4;
             }
-            goalPose = centerPoint 
+            goalPose.position.x = centerPoint[0];
+            goalPose.position.y = centerPoint[1];
+            goalPose.position.z = 0;
+            goalPose.orientation = paMsg.poses[0].orientation;
             var baseGeom = new THREE.BoxGeometry(700, 700, 10 );
             zoneArea.geometry = baseGeom;
             zoneArea.scale.set(0.1, 0.1, 0.1);
