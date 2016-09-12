@@ -1,0 +1,15 @@
+<launch>
+
+    <arg name="domain" value="tool_pick"/>
+    <group ns="pddl_tasks">
+        <group ns="$(arg domain)" clear_params="true">
+            <param name="domain" textfile="$(find hrl_task_planning)/params/$(arg domain).domain"/>
+            <rosparam command="load" file="$(find hrl_task_planning)/params/$(arg domain).yaml"/>
+            <node name='tool_tag_monitor' pkg="hrl_task_planning" type="ar_tag_monitor" output="screen" args="-t 0 scratcher -t 1 towel -t 2 shaver -t 3 toothbrush"/>
+            <node name='ar_tool_grasp_right' pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" output="screen" args="--arm right"/>
+            <node name='ar_tool_grasp_left' pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" output="screen" args="--arm left"/>
+
+        </group>
+    </group>
+
+</launch>

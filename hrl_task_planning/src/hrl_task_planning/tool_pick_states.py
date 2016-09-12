@@ -17,8 +17,6 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
                               goal_state=goal_state, outcomes=SPA)
     elif action == 'RESET-AUTO-TRIED':
         return ResetAutoTriedState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
-    elif action == 'FIND-TAG':
-        return FindTagState(tool=args[0], hand=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'PLACE':
         rospy.set_param('/pddl_tasks/%s/default_goal' % domain, '(PLACED %s)' % args[1])
         problem_msg = PDDLProblem()
@@ -27,7 +25,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return StartNewTaskState(problem_msg, domain=domain, problem=problem,
                                  action=action, action_args=args, init_state=init_state,
                                  goal_state=goal_state, outcomes=SPA)
-    elif action in ['MANUAL-GRASP-TOOL', 'DROP-OBJECT']:
+    elif action in ['MANUAL-GRASP-TOOL', 'FIND-TAG']:
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
 
@@ -78,11 +76,6 @@ class ToolGraspState(PDDLSmachState):
             if result is not None:
                 return result
             rate.sleep()
-
-
-class FindTagState(PDDLSmachState):
-    def __init__(self, tool, *args, **kwargs):
-        super(FindTagState, self).__init__(*args, **kwargs)
 
 
 class DeleteParamState(PDDLSmachState):
