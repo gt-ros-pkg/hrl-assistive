@@ -17,13 +17,13 @@
  )
 
  (:action auto-grasp-tool
-    :parameters (?t -tool ?g - gripper)
+    :parameters (?t - tool ?g - gripper)
     :precondition (and (found-tag ?t)(not (occupied ?g))(not (auto-grasp-done)))
     :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )
 
  (:action manual-grasp-tool
-    :parameters (?t -tool ?g - gripper)
+    :parameters (?t - tool ?g - gripper)
     :precondition (and (found-tag ?t)(not (occupied ?g))(auto-grasp-done))
     :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )

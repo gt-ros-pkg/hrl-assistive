@@ -12,7 +12,7 @@ SPA = ["succeeded", "preempted", "aborted"]
 
 def get_action_state(domain, problem, action, args, init_state, goal_state):
     if action == 'AUTO-GRASP-TOOL':
-        return ToolGraspState(tool=args[0], hand=args[2], domain=domain, problem=problem,
+        return ToolGraspState(tool=args[0], hand=args[1], domain=domain, problem=problem,
                               action=action, action_args=args, init_state=init_state,
                               goal_state=goal_state, outcomes=SPA)
     elif action == 'RESET-AUTO-TRIED':
@@ -29,7 +29,7 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return PDDLSmachState(domain, problem, action, args, init_state, goal_state, outcomes=SPA)
 
 
-from hrl_pr2_tool_grasp import ARToolGraspAction, ARToolGraspGoal
+from hrl_pr2_tool_grasp.msg import ARToolGraspAction, ARToolGraspGoal
 
 
 class ToolGraspState(PDDLSmachState):
