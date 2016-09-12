@@ -62,7 +62,19 @@ var RFH = (function (module) {
             // Create mesh with default values
             // Clear old Geom?
             // Set box base on PA points + math
-            var baseGeom = new THREE.BoxGeometry(700, 700, 700, 10, 10, 10);
+            var allPoints = new Array(4);
+            var centerPoint = [0.0, 0.0, 0.0];
+            for (i = 0; i < 4; i++){
+               allPoints[i] = paMsg.poses[0].position;
+            }
+            for (j = 0; j < allPoints[0].length; j++){
+               for (k = 0; k < allPoints.length; k++){
+                   centerPoint[j] += allPoints[k][j];
+               }
+               centerPoint[j] /= 4;
+            }
+            goalPose = centerPoint 
+            var baseGeom = new THREE.BoxGeometry(700, 700, 10 );
             zoneArea.geometry = baseGeom;
             zoneArea.scale.set(0.1, 0.1, 0.1);
         };
