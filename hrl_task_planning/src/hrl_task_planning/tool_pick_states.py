@@ -36,7 +36,7 @@ class ToolGraspState(PDDLSmachState):
     def __init__(self, tool, hand, *args, **kwargs):
         super(ToolGraspState, self).__init__(*args, **kwargs)
         self.tool = tool
-        self.arm = "RIGHT_ARM" if hand[0].upper() == 'R' else "LEFT_ARM"
+        self.arm = "right_arm" if hand[0].upper() == 'R' else "left_arm"
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.action_client = actionlib.SimpleActionClient('/%s/ar_tool_grasp_action' % self.arm, ARToolGraspAction)
         rospy.loginfo("[%s] Waiting for ar_tool_grasp_action server" % (rospy.get_name()))
