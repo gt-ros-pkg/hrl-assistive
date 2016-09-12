@@ -5,6 +5,7 @@
     <include file="$(find hrl_task_planning)/launch/pick_and_place.launch" />
     <include file="$(find hrl_task_planning)/launch/realtime_base_selection.launch" />
     <include file="$(find hrl_task_planning)/launch/adl.launch" />
+    <include file="$(find hrl_task_planning)/launch/tool_pick.launch" />
 
     <node name="task_planner" pkg="hrl_task_planning" type="pddl_planner" output="screen" args="$(find hrl_task_planning)/src/ff"/>
     <node name="task_smacher" pkg="hrl_task_planning" type="task_smacher" output="screen" />
