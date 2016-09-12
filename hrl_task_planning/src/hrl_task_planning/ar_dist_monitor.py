@@ -66,39 +66,45 @@ class BedDistanceTracker(object):
     def create_move_back_zone(self, final_pos):
         #Zone to move into
         if self.model.upper() == 'AUTOBED':
-           zone_boundary = [Point(0.0, 0.8, 0.0),
+            #Left bottom point first, left top second, right top third,
+            #right bottom last.
+            zone_boundary = [Point(0.0, 0.8, 0.0),
                             Point(0.0, 1.5, 0.0),
                             Point(2.0, 1.5, 0.0),
                             Point(2.0, 0.8, 0.0)]
+            quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
         elif self.model.upper() == 'WHEELCHAIR':
             if final_pos[0] > 1.0 and (final_pos[1] < 0.4 and final_pos[1] > -0.4):
                 zone_boundary = [Point(final_pos[0], 0.4, 0.0),
                                  Point(final_pos[0] + 2.0, 0.5, 0.0),
                                  Point(final_pos[0] + 2.0, -0.5, 0.0),
                                  Point(final_pos[0], 0.8, 0.0)]
+                quat = Quaternion(0.0, 0.0, 0.0, 1.0)
             elif (final_pos[1] > 0.4):
                 zone_boundary = [Point(0.0, final_pos[1], 0.0),
                                  Point(0.0, final_pos[1]+1.5, 0.0),
                                  Point(2.0, final_pos[1]+1.5, 0.0),
                                  Point(2.0, final_pos[1], 0.0)]
+                quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
             elif (final_pos[1] < -0.4):
                 zone_boundary = [Point(2.0, final_pos[1], 0.0),
                                  Point(2.0, final_pos[1]-1.5, 0.0),
                                  Point(0.0, final_pos[1]-1.5, 0.0),
                                  Point(0.0, final_pos[1], 0.0)]
+                quat = Quaternion(0.0, 0.0, -math.sqrt(0.5), math.sqrt(0.5))
             else:
                 rospy.logwarn("[%s] Are you sure base selection is not recommending a collision?", rospy.get_name())
                 zone_boundary = [Point(2.5, -0.4, 0.0),
                                 Point(2.5, -1.9, 0.0),
                                 Point(1.5, -1.9, 0.0),
                                 Point(1.5, -0.4, 0.0)]
-        return zone_boundary
+                quat = Quaternion(0.0, 0.0, -math.sqrt(0.5), math.sqrt(0.5))
+        return zone_boundary, quat
 
 
     def publish_better_location(self, final_pos):
         # Transform to new frame
-        zone_boundary = self.create_move_back_zone(final_pos)
-        quat = Quaternion(0.0, 0.0, 0.0, 1.0)
+        zone_boundary, quat = self.create_move_back_zone(final_pos)
         try:
             common_time = self.tfl.getLatestCommonTime(self.out_frame, 'odom_combined')
         except tf.Exception:
