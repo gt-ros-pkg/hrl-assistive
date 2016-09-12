@@ -8,10 +8,20 @@ var RFH = (function (module) {
         var $viewer = options.viewer;
         var goalPose = null;
         var odomCombinedTF = null;
-        var zoneArea = new THREE.Object3D();
-        zoneArea.visible = false;
-        RFH.viewer.scene.add(zoneArea);
         var goal_frame = 'odom_combined';
+
+        // Init safe zone
+        var zoneArea = new THREE.Mesh();
+        zoneArea.visible = false;
+        zoneArea.name = 'safeZone';
+        var baseMaterial = new THREE.MeshBasicMaterial();
+        baseMaterial.transparent = true;
+        baseMaterial.depthTest = true;
+        baseMaterial.depthWrite = false;
+        baseMaterial.color.setRGB(0.0,1.2,0.0);
+        baseMaterial.opacity = 0.65;
+        zoneArea.material = baseMaterial;
+        RFH.viewer.scene.add(zoneArea);
 
         self.show = function () {
             zoneArea.visible = true;    
@@ -22,7 +32,7 @@ var RFH = (function (module) {
         };
 
         var updateGoalVisualization = function () {
-            if (odomCombinedTF === null || goalPose === null) {
+            if (odomCombinedTF === null || zoneArea.geometry === null) {
                 self.hide();
                 return;
             } else {
@@ -48,21 +58,29 @@ var RFH = (function (module) {
             RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
         };
 
+        var updateGeom = function (paMsg) {
+            // Create mesh with default values
+            // Clear old Geom?
+            // Set box base on PA points + math
+            var baseGeom = new THREE.BoxGeometry(700, 700, 700, 10, 10, 10);
+            zoneArea.geometry = baseGeom;
+            zoneArea.scale.set(0.1, 0.1, 0.1);
+        };
+
         var goalSub = new ROSLIB.Topic({
             ros: ros,
             name: 'move_back_safe_zone',
             messageType: 'geometry_msgs/PoseArray'
         });
 
-        var setGoal = function (psMsg) {
-            goalPose = psMsg;
+        var setGoal = function (paMsg) {
+            updateGeom(paMsg);
             updateGoalVisualization();
-            loadZone();
         };
         goalSub.subscribe(setGoal);
 
         self.clearGoal = function () {
-            goalPose = null;
+            zoneArea.geometry = null;
             updateGoalVisualization();
         };
 
@@ -70,26 +88,8 @@ var RFH = (function (module) {
             odomCombinedTF = tf;
             updateGoalVisualization();
         };
+        tfClient.subscribe(goal_frame, updateOdomTF);
 
-        var loadZone = function () {
-            // Create mesh with default values
-            var baseGeom = new THREE.BoxGeometry(700, 700, 700, 10, 10, 10);
-            var baseMesh = new THREE.Mesh();
-            baseMesh.name = 'base';
-            baseMesh.geometry = baseGeom;
-            baseMesh.scale.set(0.1, 0.1, 0.1);
-
-            var baseMaterial = new THREE.MeshBasicMaterial();
-            baseMaterial.transparent = true;
-            baseMaterial.depthTest = true;
-            baseMaterial.depthWrite = false;
-            baseMaterial.color.setRGB(0.0,1.2,0.0);
-            baseMaterial.opacity = 0.65;
-
-            baseMesh.material = baseMaterial;
-            zoneArea.add(baseMesh);
-            tfClient.subscribe(goal_frame, updateOdomTF);
-        };
 
     };
     return module;
