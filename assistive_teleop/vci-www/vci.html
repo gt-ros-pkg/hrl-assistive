@@ -59,6 +59,7 @@
   <script type="text/javascript" src="js/task-planning/domains/place.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/pick-and-place.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/adl.js"></script>
+  <script type="text/javascript" src="js/task-planning/domains/tool-pick.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/realtime-base-selection.js"></script>
   <!-- CSS -->
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
@@ -174,18 +175,20 @@
                     <option value="adl">Self-Care Tasks</option>
                     <option value="realtime_base_selection">Approach</option>
                     <option value="pick_and_place">Move Object</option>
+                    <option value="tool_pick">Get Tool</option>
                 </select>
                 
                 <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
                 <select id="task-select" name="task-select" class="option-select option-adl log-open log-select">
                     <option value="shaving">Shave Face</option>
                     <option value="wiping_mouth">Wipe Mouth</option>
+                    <option value="brushing_teeth">Brush Teeth</option>
                     <option value="scratching_forehead">Scratch Forehead</option>
                     <option value="scratching_left_knee">Scratch Left Knee</option>
                     <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
-                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
-                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place log-open log-select'>
+                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place option-tool_pick">Select arm</label>
+                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place option-tool_pick log-open log-select'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
                 </select>
@@ -193,6 +196,14 @@
                 <select id="model-select" name="model-select" class='option-select option-adl log-open log-select'>
                     <option value="autobed">Autobed</option>
                     <option value="wheelchair">Wheelchair</option>
+                </select>
+                <label for="tool-select" class="option-select option-tool_pick">Select a Tool</label>
+                <select id="tool-select" name="tool-select" class='option-select option-tool_pick'>
+                    <option value="scratcher">Scratcher</option>
+                    <option value="towel">Towel</option>
+                    <option value="toothbrush">Toothbrush</option>
+                    <option value="shaver">Shaver</option>
+                    <option value="lotion_applicator">Lotion Applicator</option>
                 </select>
             </form>
           <div id="start-task-button" class="task-button log-click">Start Task</div>

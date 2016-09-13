@@ -1,37 +1,44 @@
 (define (domain tool_pick)
  (:requirements :typing :conditional-effects)
  (:types
-  pose
   gripper
-  tag_id
   tool
  )
 
- (:constants tool_pose - pose
-             left_gripper - gripper
-             right_gripper - gripper
+ (:constants left_hand - gripper
+             right_hand - gripper
  )
 
  (:predicates
-  (known ?id - tag_id)
-  (grasped ?t - tool ?g - gripper)
-  (grasping ?g - gripper)
+  (found-tag ?t - tool)
+  (grasping ?t - tool ?g - gripper)
+  (occupied ?g - gripper)
+  (auto-grasp-done)
  )
 
- (:action grasp_tool
-    :parameters (?t -tool ?tp - pose ?g - gripper)
-    :precondition (and (known ?tp)(not (grasping ?g)))
-    :effect (and (grasped ?t ?g)(grasping ?g))
+ (:action auto-grasp-tool
+    :parameters (?t - tool ?g - gripper)
+    :precondition (and (found-tag ?t)(not (occupied ?g))(not (auto-grasp-done)))
+    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )
 
- (:action get_tag_pose
-  :parameters (?id - tag_id ?tp - tag_pose)
-  :effect (known ?tp)
+ (:action manual-grasp-tool
+    :parameters (?t - tool ?g - gripper)
+    :precondition (and (found-tag ?t)(not (occupied ?g))(auto-grasp-done))
+    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )
 
- (:action drop_object
+ (:action find-tag
+  :parameters (?t - tool)
+  :effect (found-tag ?t)
+ )
+
+ (:action place
   :parameters (?g - gripper)
-  :precondition (grasping ?g)
-  :effect (not (grasping ?g))
+  :effect (not (occupied ?g))
+ )
+
+ (:action reset-auto-tried
+  :effect (not (auto-grasp-done))
  )
 )

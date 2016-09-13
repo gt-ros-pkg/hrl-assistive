@@ -167,6 +167,7 @@ class PDDLTaskThread(Thread):
         rospy.loginfo("[%s] Starting Thread for %s domain in problem: %s", rospy.get_name(), self.domain, self.problem_name)
         while self.domain_state is None:
             rospy.sleep(0.5)
+            rospy.loginfo("[%s] Waiting for state of domain %s", rospy.get_name(), self.domain)
         # Plan + execute (and re-plan and re-execute) until task complete to default goal
         result = None
         attempted_goal = None
@@ -268,7 +269,7 @@ class PDDLSmachState(smach.State):
         self.action_args = action_args
         self.init_state = init_state
         self.goal_state = GoalState(self.init_state.difference(goal_state))
-        #self.goal_state = GoalState(goal_state.predicates)
+        # self.goal_state = GoalState(goal_state.predicates)
         self.state_delta = self.init_state.difference(self.goal_state)
         self.action_pub = rospy.Publisher('/pddl_tasks/%s/current_action' % self.domain, PDDLPlanStep, queue_size=10, latch=True)
         self.current_state = None
@@ -305,7 +306,7 @@ class PDDLSmachState(smach.State):
             self.service_preempt()
             return 'preempted'
         if self.goal_state.is_satisfied(self.current_state):
-            #raw_input("Check success of %s" % self.__class__.__name__)
+            # raw_input("Check success of %s" % self.__class__.__name__)
             return 'succeeded'
         progress = self.init_state.difference(self.current_state)
         for pred in progress:
