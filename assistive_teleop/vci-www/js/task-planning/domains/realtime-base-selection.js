@@ -13,7 +13,7 @@ var RFH = (function (module) {
             messageType: 'hrl_task_planning/PDDLProblem'
         });
         self.taskPublisher.advertise();
-        var offset = {position: {x:0.06, y:0.0, z:0.0},
+        var offset = {position: {x:0.14, y:0.0, z:0.0},
             rotation: {x:0.0, y:Math.PI, z:0.0}};
 
         ros.getMsgDetails('hrl_task_planning/PDDLState');
