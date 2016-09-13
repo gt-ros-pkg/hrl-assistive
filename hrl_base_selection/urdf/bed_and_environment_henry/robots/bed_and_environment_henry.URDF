@@ -297,18 +297,21 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_rotated_to_worldframe_link">
+    name="autobed/neck_rotated_to_worldframe_link">
   </link>
   <joint
-    name="autobed/head_bed_to_worldframe_joint"
+    name="autobed/headrest_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="0.40949 0.05 0"
+      xyz="0.25949 0.1 0"
       rpy="0. 0. 0." />
+    <!--<origin-->
+      <!--xyz="0.40949 0.05 0"-->
+      <!--rpy="0. 0. 0." />-->
     <parent
       link="autobed/head_rest_link" />
     <child
-      link="autobed/head_rotated_to_worldframe_link" />
+      link="autobed/neck_rotated_to_worldframe_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -318,18 +321,18 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_updown_translation_link">
+    name="autobed/neck_updown_worldframe_translation_link">
   </link>
   <joint
-    name="autobed/head_bed_updown_joint"
+    name="autobed/bed_neck_worldframe_updown_joint"
     type="prismatic">
     <origin
       xyz="0.0 0.0 0"
       rpy="0.0 0.0 0.0" />
     <parent
-      link="autobed/head_rotated_to_worldframe_link" />
+      link="autobed/neck_rotated_to_worldframe_link" />
     <child
-      link="autobed/head_updown_translation_link" />
+      link="autobed/neck_updown_worldframe_translation_link" />
     <axis
       xyz="-1 0 0" />
     <limit
@@ -339,18 +342,18 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_rotated_to_bedframe_link">
+    name="autobed/neck_rotated_to_bedframe_link">
   </link>
   <joint
-    name="autobed/head_bed_to_bedframe_joint"
+    name="autobed/bed_neck_to_bedframe_joint"
     type="revolute">
     <origin
       xyz="0.0 0.0 0"
       rpy="0. 0. 0." />
     <parent
-      link="autobed/head_updown_translation_link" />
+      link="autobed/neck_updown_worldframe_translation_link" />
     <child
-      link="autobed/head_rotated_to_bedframe_link" />
+      link="autobed/neck_rotated_to_bedframe_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -360,18 +363,18 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_updown_in_bedframe_link">
+    name="autobed/neck_updown_bedframe_translation_link">
   </link>
   <joint
-    name="autobed/head_updown_bedframe_translation_joint"
+    name="autobed/bed_neck_base_updown_bedframe_joint"
     type="prismatic">
     <origin
       xyz="0.0 0.0 0"
       rpy="0. 0. 0." />
     <parent
-      link="autobed/head_rotated_to_bedframe_link" />
+      link="autobed/neck_rotated_to_bedframe_link" />
     <child
-      link="autobed/head_updown_in_bedframe_link" />
+      link="autobed/neck_updown_bedframe_translation_link" />
     <axis
       xyz="-1 0 0" />
     <limit
@@ -381,20 +384,20 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_leftright_translation_link">
+    name="autobed/neck_base_link">
   </link>
   <joint
-    name="autobed/head_bed_leftright_joint"
+    name="autobed/bed_neck_base_leftright_joint"
     type="prismatic">
     <origin
       xyz="0 0 0"
-      rpy="0.0 0.0 1.570796" />
+      rpy="0 3.14159 0" />
     <parent
-      link="autobed/head_updown_in_bedframe_link" />
+      link="autobed/neck_updown_bedframe_translation_link" />
     <child
-      link="autobed/head_leftright_translation_link" />
+      link="autobed/neck_base_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 0 -1" />
     <limit
       lower="-2"
       upper="2"
@@ -402,43 +405,20 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/head_link">
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
-      </geometry>
-    </collision>
+    name="autobed/neck_twist_link">
   </link>
   <joint
-    name="autobed/head_contact_to_head_center"
+    name="autobed/neck_twist_joint"
     type="revolute">
     <origin
-      xyz="0.091171 0.037577 0"
-      rpy="1.5708 0 0.2618" />
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
     <parent
-      link="autobed/head_leftright_translation_link" />
+      link="autobed/neck_base_link" />
     <child
-      link="autobed/head_link" />
+      link="autobed/neck_twist_link" />
     <axis
-      xyz="0 -1 0" />
+      xyz="1 0 0" />
     <limit
       lower="-2"
       upper="2"
@@ -446,41 +426,18 @@
       velocity="0" />
   </joint>
   <link
-    name="autobed/neck_rotation">
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
-      </geometry>
-    </collision>
+    name="autobed/neck_tilt_link">
   </link>
   <joint
-    name="autobed/head_neck_joint1"
+    name="autobed/neck_tilt_joint"
     type="revolute">
     <origin
-      xyz="-0.0254 0 -0.08509"
-      rpy="-1.5708 1.1345 -3.1416" />
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
     <parent
-      link="autobed/head_link" />
+      link="autobed/neck_twist_link" />
     <child
-      link="autobed/neck_rotation" />
+      link="autobed/neck_tilt_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -516,17 +473,118 @@
     </collision>
   </link>
   <joint
-    name="autobed/head_neck_joint2"
+    name="autobed/neck_to_neck_top_joint"
+    type="fixed">
+    <origin
+      xyz="-0.07239 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="autobed/neck_tilt_link" />
+    <child
+      link="autobed/neck_link" />
+  </joint>
+  <link
+    name="autobed/neck_top_rotated_link">
+  </link>
+  <joint
+    name="autobed/neck_rotation_fixed_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.570796 0 1.570796" />
+    <parent
+      link="autobed/neck_link" />
+    <child
+      link="autobed/neck_top_rotated_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_roty_link">
+  </link>
+  <joint
+    name="autobed/neck_head_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0.0154 0 0.07779"
+      rpy="0 0 0" />
+    <parent
+      link="autobed/neck_top_rotated_link" />
+    <child
+      link="autobed/head_roty_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_rotz_link">
+  </link>
+  <joint
+    name="autobed/neck_head_rotz_joint"
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="0 3.1554E-30 0" />
+      rpy="0 0 0" />
     <parent
-      link="autobed/neck_rotation" />
+      link="autobed/head_roty_link" />
     <child
-      link="autobed/neck_link" />
+      link="autobed/head_rotz_link" />
     <axis
       xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+
+  <link
+    name="autobed/head_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="autobed/neck_head_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="autobed/head_rotz_link" />
+    <child
+      link="autobed/head_link" />
+    <axis
+      xyz="1 0 0" />
     <limit
       lower="-2"
       upper="2"
@@ -563,10 +621,10 @@
     name="autobed/neck_body_joint"
     type="revolute">
     <origin
-      xyz="0.07239 0 0"
-      rpy="-8.8242E-17 -8.2927E-14 0.66506" />
+      xyz="0.00 0 0"
+      rpy="0 0 0" />
     <parent
-      link="autobed/neck_link" />
+      link="autobed/neck_base_link" />
     <child
       link="autobed/upper_body_link" />
     <axis
@@ -608,13 +666,13 @@
     type="revolute">
     <origin
       xyz="0.35052 0 0"
-      rpy="2.8327E-14 7.7949E-14 0.34907" />
+      rpy="0 0 0" />
     <parent
       link="autobed/upper_body_link" />
     <child
       link="autobed/mid_body_link" />
     <axis
-      xyz="0 0 -1" />
+      xyz="0 0 1" />
     <limit
       lower="-2"
       upper="2"
@@ -652,13 +710,13 @@
     type="revolute">
     <origin
       xyz="0.15113 0 0"
-      rpy="-4.3091E-16 1.669E-15 -0.57779" />
+      rpy="0 0 0" />
     <parent
       link="autobed/mid_body_link" />
     <child
       link="autobed/lower_body_link" />
     <axis
-      xyz="0 0 -1" />
+      xyz="0 0 1" />
     <limit
       lower="-2"
       upper="2"
@@ -696,7 +754,7 @@
     type="revolute">
     <origin
       xyz="0.05207 0 -0.08636"
-      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
+      rpy="0 0 -.25" />
     <parent
       link="autobed/lower_body_link" />
     <child
@@ -740,7 +798,7 @@
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.1416 8.5469E-14 -2.8798" />
+      rpy="3.14159 0 3.43" />
     <parent
       link="autobed/quad_left_link" />
     <child
@@ -784,7 +842,7 @@
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="2.4608E-16 9.411E-16 0.077076" />
+      rpy="0 0 0.09" />
     <parent
       link="autobed/calf_left_link" />
     <child
@@ -828,7 +886,7 @@
     type="revolute">
     <origin
       xyz="0.05207 0 0.08636"
-      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
+      rpy="0 0 -.25" />
     <parent
       link="autobed/lower_body_link" />
     <child
@@ -872,7 +930,7 @@
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.1416 8.5225E-14 -2.8798" />
+      rpy="3.14159 0 3.43" />
     <parent
       link="autobed/quad_right_link" />
     <child
@@ -916,7 +974,7 @@
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="3.3137E-27 3.7799E-26 0.077076" />
+      rpy="0 0 0.09" />
     <parent
       link="autobed/calf_right_link" />
     <child
@@ -960,7 +1018,7 @@
     type="revolute">
     <origin
       xyz="0.09652 0 -0.17526"
-      rpy="2.6872E-15 8.287E-14 0.033074" />
+      rpy="0 0 0" />
     <parent
       link="autobed/upper_body_link" />
     <child
@@ -1004,7 +1062,7 @@
     type="revolute">
     <origin
       xyz="0.28174 -0.0106 -0.04953"
-      rpy="1.1849E-16 -8.3419E-14 -1.6268E-27" />
+      rpy="0 0 0" />
     <parent
       link="autobed/arm_left_link" />
     <child
@@ -1048,7 +1106,7 @@
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="1.3447E-16 8.3999E-14 1.6283E-27" />
+      rpy="0 0 0" />
     <parent
       link="autobed/forearm_left_link" />
     <child
@@ -1092,7 +1150,7 @@
     type="revolute">
     <origin
       xyz="0.09652 0 0.17526"
-      rpy="-3.0757E-16 8.2843E-14 -0.0045332" />
+      rpy="0 0 0" />
     <parent
       link="autobed/upper_body_link" />
     <child
@@ -1136,7 +1194,7 @@
     type="revolute">
     <origin
       xyz="0.28194 0 0.04953"
-      rpy="2.6089E-19 -8.3342E-14 0.037607" />
+      rpy="0 0 0" />
     <parent
       link="autobed/arm_right_link" />
     <child
@@ -1180,7 +1238,7 @@
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="1.9364E-14 8.3335E-14 1.6151E-27" />
+      rpy="0 0 0" />
     <parent
       link="autobed/forearm_right_link" />
     <child

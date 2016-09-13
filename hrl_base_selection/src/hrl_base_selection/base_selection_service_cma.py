@@ -109,7 +109,7 @@ class BaseSelector(object):
         self.scores_dict['autobed', 'scratching_thigh_left'] = None
         self.scores_dict['autobed', 'scratching_thigh_right'] = None
         self.scores_dict['autobed', 'scratching_knee_left'] = None
-        self.scores_dict['autobed', 'wiping_face'] = None
+        self.scores_dict['autobed', 'wiping_mouth'] = None
         self.scores_dict['autobed', 'scratching_forearm_left'] = None
         self.scores_dict['autobed', 'scratching_forearm_right'] = None
         self.scores_dict['autobed', 'scratching_upper_arm_left'] = None
@@ -137,14 +137,14 @@ class BaseSelector(object):
         elif load == 'paper':
             if model == 'autobed':
                 self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model)
+                self.scores_dict['autobed', 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
-            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
             #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
             self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
@@ -157,7 +157,7 @@ class BaseSelector(object):
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
-            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             # self.scores_dict[model, 'scratching_chest'] = self.load_task('scratching_chest', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
             #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
@@ -823,8 +823,6 @@ class BaseSelector(object):
     # Set to load from svn now, where I have put the data files.
     def load_task(self, task, model):
         home = expanduser("~")
-        if 'wiping' in task:
-            task = 'face_wiping'
         file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl'
 #        print file_name
         return load_pickle(file_name)
@@ -867,7 +865,7 @@ if __name__ == "__main__":
     # you can just do all, but it will take a while to initialize (30 seconds).
     p.add_option('--load', action='store', dest='load', default='shaving', type='string',
                  help='Select tasks to load (all, paper (for the two tasks used in the paper), shaving, brushing, '
-                      'feeding, feeding, bathing, scratching_chest, scratching_thigh_left, wiping_face'
+                      'feeding, feeding, bathing, scratching_chest, scratching_thigh_left, wiping_mouth'
                       'scratching_thigh_right, scratching_forearm_left, scratching_forearm_right,'
                       'scratching_upper_arm_left, scratching_upper_arm_right)')
 
