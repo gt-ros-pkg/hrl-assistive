@@ -40,9 +40,6 @@ var RFH = (function (module) {
         $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
-        self.$baseSelectionButton = $('.'+self.side[0]+'-arm-ctrl.rtbs').button();
-
-        self.$baseSelectionButton.on('click.rtbs', function(){RFH.taskMenu.domains.realtime_base_selection.sendTaskGoal(self.side);});
 
         self.pixel23d = new RFH.Pixel23DClient({
             ros: ros,
@@ -181,18 +178,6 @@ var RFH = (function (module) {
         self.getStepSize = function () {
             return $('input[name=speed-option]:checked').attr('id');
         };
-
-        var updatePickPlaceButton = function (graspingMsg) {
-            if (graspingMsg.data) {
-                self.$pickAndPlaceButton.find('span').text("Set Down");
-                self.$pickAndPlaceButton.prop('title', 'Guided process for placing the currently held object');
-            } else {
-                self.$pickAndPlaceButton.find('span').text("Move Object");
-                self.$pickAndPlaceButton.prop('title', 'Guided process for picking up and moving an object');
-            }
-        };
-        self.gripper.graspingCBList.push(updatePickPlaceButton);
-        self.$pickAndPlaceButton.on('click.pickandplace', function(){RFH.taskMenu.domains.pick_and_place.sendTaskGoal(self.side);});
 
         self.getPoseFromDelta = function (xyzrpy) {
             // Get default values for unspecified options
@@ -554,7 +539,7 @@ var RFH = (function (module) {
         $("#away-button").prop('title', 'Move hand straight down');
         $("#toward-button").prop('title', 'Move hand straight up');
 
-        /// TASK START/STOP ROUTINES ///
+        /// ACTION START/STOP ROUTINES ///
         self.start = function () {
             self.trackHand(true);
             $('.'+self.side[0]+'-arm-ctrl, .arm-ctrl').show();
