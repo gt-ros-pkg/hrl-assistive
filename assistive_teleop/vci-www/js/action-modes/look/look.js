@@ -67,7 +67,7 @@ var RFH = (function (module) {
             $imageDiv.addClass("cursor-eyes").on("click.rfh-look", pointHead);
             $mapLookDivs.show();
             $('.zoom').show();
-            console.log('Looking task started');
+            console.log('Looking action started');
         };
 
         self.stop = function () {
@@ -75,7 +75,7 @@ var RFH = (function (module) {
             $imageDiv.removeClass("cursor-eyes");
             $mapLookDivs.hide();
             $('.zoom').hide();
-            console.log('Looking task stopped');
+            console.log('Looking action stopped');
         };
     };
     return module;
