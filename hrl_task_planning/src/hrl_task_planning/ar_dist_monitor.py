@@ -7,7 +7,7 @@ import numpy as np
 
 import rospy
 import tf, math
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseArray, PoseStamped, Pose, Point, Quaternion
 
@@ -20,7 +20,9 @@ class BedDistanceTracker(object):
         self.domain = domain
         self.frame_lock = threading.RLock()
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
-        self.move_back_zone_pose = rospy.Publisher('/move_back_safe_zone', PoseArray, queue_size=10, latch=True)
+        self.move_back_zone_pose = rospy.Publisher('/move_back_safe_zone/points', PoseArray, queue_size=10, latch=True)
+        self.move_back_zone_width = rospy.Publisher('/move_back_safe_zone/width', Float, queue_size=10, latch=True)
+        self.move_back_zone_length = rospy.Publisher('/move_back_safe_zone/length', Float, queue_size=10, latch=True)
         self.model = None
         self.too_close = False
         self.tfl = tf.TransformListener()
@@ -72,25 +74,29 @@ class BedDistanceTracker(object):
                             Point(2.0, 1.5, 0.0),
                             Point(2.0, 0.8, 0.0)]
             quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
+            dimensions = [0.7, 2.0] #width, length
         elif self.model.upper() == 'WHEELCHAIR':
             if final_pos[0] > 1.0 and (final_pos[1] < 0.4 and final_pos[1] > -0.4):
                 zone_boundary = [Point(final_pos[0], 0.4, 0.0),
-                                 Point(final_pos[0] + 2.0, 0.5, 0.0),
-                                 Point(final_pos[0] + 2.0, -0.5, 0.0),
-                                 Point(final_pos[0], 0.8, 0.0)]
+                                 Point(final_pos[0] + 2.0, 0.4, 0.0),
+                                 Point(final_pos[0] + 2.0, -0.4, 0.0),
+                                 Point(final_pos[0], -0.4, 0.0)]
                 quat = Quaternion(0.0, 0.0, 0.0, 1.0)
+                dimensions = [0.8, 2.0]
             elif (final_pos[1] > 0.4):
                 zone_boundary = [Point(0.0, final_pos[1], 0.0),
                                  Point(0.0, final_pos[1]+1.5, 0.0),
                                  Point(2.0, final_pos[1]+1.5, 0.0),
-                                 Point(2.0, final_pos[1], 0.0)]
+                                Point(2.0, final_pos[1], 0.0)]
                 quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
+                dimensions = [1.5, 2.0]
             elif (final_pos[1] < -0.4):
                 zone_boundary = [Point(2.0, final_pos[1], 0.0),
                                  Point(2.0, final_pos[1]-1.5, 0.0),
                                  Point(0.0, final_pos[1]-1.5, 0.0),
                                  Point(0.0, final_pos[1], 0.0)]
                 quat = Quaternion(0.0, 0.0, -math.sqrt(0.5), math.sqrt(0.5))
+                dimensions = [1.5, 2.0]
             else:
                 rospy.logwarn("[%s] Are you sure base selection is not recommending a collision?", rospy.get_name())
                 zone_boundary = [Point(2.5, -0.4, 0.0),
@@ -98,12 +104,15 @@ class BedDistanceTracker(object):
                                 Point(1.5, -1.9, 0.0),
                                 Point(1.5, -0.4, 0.0)]
                 quat = Quaternion(0.0, 0.0, -math.sqrt(0.5), math.sqrt(0.5))
-        return zone_boundary, quat
+                dimensions = [1.5, 2.0]
+        return zone_boundary, quat, dimensions
 
 
     def publish_better_location(self, final_pos):
         # Transform to new frame
-        zone_boundary, quat = self.create_move_back_zone(final_pos)
+        zone_boundary, quat, dimensions  = self.create_move_back_zone(final_pos)
+        box_width = dimensions[0]
+        box_length = dimensions[1]
         try:
             common_time = self.tfl.getLatestCommonTime(self.out_frame, 'odom_combined')
         except tf.Exception:
@@ -126,6 +135,8 @@ class BedDistanceTracker(object):
                 return False
             poses.poses.append(Pose(odom_msg.pose.position, odom_msg.pose.orientation))
         self.move_back_zone_pose.publish(poses)
+        self.move_back_zone_width(width)
+        self.move_back_zone_length(length)
         return True
 
 

@@ -7,6 +7,8 @@ var RFH = (function (module) {
         var tfClient = options.tfClient;
         var $viewer = options.viewer;
         var goalPose = null;
+        var goalWidth = null;
+        var goalLength = null;
         var goal_frame = 'odom_combined';
         var odomCombinedTF = null;
 
@@ -83,14 +85,41 @@ var RFH = (function (module) {
             goalPose.pose.position.z = 0;
             goalPose.pose.orientation = paMsg.poses[0].orientation;
 
-            var baseGeom = new THREE.BoxGeometry(10, 10, 10 );
+            var baseGeom = new THREE.BoxGeometry(goalWidth, goalLength, 10 );
             zoneArea.geometry = baseGeom;
-            zoneArea.scale.set(0.1, 0.1, 0.1);
+            zoneArea.scale.set(1, 1, 0.1);
         };
+
+        var widthSub= new ROSLIB.Topic({
+            ros: ros,
+            name: 'move_back_safe_zone/width',
+            messageType: 'Float'
+        });
+
+        var setWidth= function (wid) {
+            // Don't create goalpose here, just let it update the variable in the outer scope (instantiated at top of file)
+            goalWidth = wid;
+            updateGoalVisualization();  // Refreshes visualization to reflect updated zone pose and geometery
+        };
+        widthSub.subscribe(setWidth);
+
+
+        var lengthSub = new ROSLIB.Topic({
+            ros: ros,
+            name: 'move_back_safe_zone/length',
+            messageType: 'Float'
+        });
+
+        var setLength = function (len) {
+            // Don't create goalpose here, just let it update the variable in the outer scope (instantiated at top of file)
+            goalLength = len; // Updates goal pose and geometry
+            updateGoalVisualization();  // Refreshes visualization to reflect updated zone pose and geometery
+        };
+        lengthSub.subscribe(setLength);
 
         var goalSub = new ROSLIB.Topic({
             ros: ros,
-            name: 'move_back_safe_zone',
+            name: 'move_back_safe_zone/points',
             messageType: 'geometry_msgs/PoseArray'
         });
 
