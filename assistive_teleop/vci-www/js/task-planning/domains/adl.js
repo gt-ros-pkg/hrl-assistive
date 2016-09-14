@@ -4,6 +4,8 @@ var RFH = (function(module) {
         'use strict';
         var self = this;
         var ros = options.ros;
+        var tfClient = options.tfClient;
+        var $viewer = options.viewer;
         self.name = options.name || 'adl';
         self.domain = 'adl';
         var $button = $('#start-task-button');

@@ -345,7 +345,7 @@ class MoveBackState(PDDLSmachState):
         #Thus we subscribe to the zone publisher and do some math to figure out if 
         #we are in the zone.
         rospy.loginfo('[%s] Giving Control to the User to Move to Safe Zone' % rospy.get_name())
-        rospy.Subscriber('/move_back_safe_zone', PoseArray, self.zone_boundary_update)
+        rospy.Subscriber('/move_back_safe_zone/points', PoseArray, self.zone_boundary_update)
         while not rospy.is_shutdown() and not self.in_zone:
             if self.preempt_requested():
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())

@@ -7,8 +7,8 @@ var RFH = (function (module) {
         var tfClient = options.tfClient;
         var $viewer = options.viewer;
         var goalPose = null;
-        var goalWidth = null;
-        var goalLength = null;
+        var goalWidth = 0.0;
+        var goalLength = 0.0;
         var goal_frame = 'odom_combined';
         var odomCombinedTF = null;
 
