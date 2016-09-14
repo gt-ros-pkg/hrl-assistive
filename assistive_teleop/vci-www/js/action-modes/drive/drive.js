@@ -552,7 +552,7 @@ var RFH = (function (module) {
             self.$div.removeClass('drive-safe');
             //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
             self.hideGoal();
-            self.hideZone();
+            //self.hideZone();
             $('.drive-ctrl').hide();
             $viewer.hide();
             $('#controls h3').text("Controls");
