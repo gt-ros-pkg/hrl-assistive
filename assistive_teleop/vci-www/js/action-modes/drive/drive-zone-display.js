@@ -7,8 +7,8 @@ var RFH = (function (module) {
         var tfClient = options.tfClient;
         var $viewer = options.viewer;
         var goalPose = null;
-        var odomCombinedTF = null;
         var goal_frame = 'odom_combined';
+        var odomCombinedTF = null;
 
         // Init safe zone
         var zoneArea = new THREE.Mesh();
@@ -32,7 +32,7 @@ var RFH = (function (module) {
         };
 
         var updateGoalVisualization = function () {
-            if (odomCombinedTF === null || zoneArea.geometry === null) {
+            if (odomCombinedTF === null || goalPose === null) {
                 self.hide();
                 return;
             } else {
@@ -54,7 +54,7 @@ var RFH = (function (module) {
             var scale = new THREE.Vector3();
             odomCombinedMat.decompose(trans, quat, scale);
             zoneArea.position.set(trans.x, trans.y, trans.z);
-            baseModel.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+            zoneArea.quaternion.set(quat.x, quat.y, quat.z, quat.w);
             RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
         };
 
@@ -62,22 +62,28 @@ var RFH = (function (module) {
             // Create mesh with default values
             // Clear old Geom?
             // Set box base on PA points + math
-            var allPoints = new Array(4);
+            var allPoints = [];
             var centerPoint = [0.0, 0.0, 0.0];
-            for (i = 0; i < 4; i++){
-               allPoints[i] = paMsg.poses[0].position;
+            for (var i = 0; i < 4; i += 1){
+               allPoints.push([paMsg.poses[i].position.x, 
+                               paMsg.poses[i].position.y, 
+                               paMsg.poses[i].position.z]);
             }
-            for (j = 0; j < allPoints[0].length; j++){
-               for (k = 0; k < allPoints.length; k++){
+            for (var j = 0; j < allPoints[0].length; j += 1){
+               for (var k = 0; k < allPoints.length; k += 1){
                    centerPoint[j] += allPoints[k][j];
                }
                centerPoint[j] /= 4;
             }
-            goalPose.position.x = centerPoint[0];
-            goalPose.position.y = centerPoint[1];
-            goalPose.position.z = 0;
-            goalPose.orientation = paMsg.poses[0].orientation;
-            var baseGeom = new THREE.BoxGeometry(700, 700, 10 );
+
+            goalPose = ros.composeMsg('geometry_msgs/PoseStamped'); // Assign to goalPose from outer scope (init'ed to null above), so all fn's can access the data
+            goalPose.header.frame_id = goal_frame; // Gets goal frame from outer scope (where set at top of file)
+            goalPose.pose.position.x = centerPoint[0];
+            goalPose.pose.position.y = centerPoint[1];
+            goalPose.pose.position.z = 0;
+            goalPose.pose.orientation = paMsg.poses[0].orientation;
+
+            var baseGeom = new THREE.BoxGeometry(10, 10, 10 );
             zoneArea.geometry = baseGeom;
             zoneArea.scale.set(0.1, 0.1, 0.1);
         };
@@ -89,22 +95,22 @@ var RFH = (function (module) {
         });
 
         var setGoal = function (paMsg) {
-            updateGeom(paMsg);
-            updateGoalVisualization();
+            // Don't create goalpose here, just let it update the variable in the outer scope (instantiated at top of file)
+            updateGeom(paMsg); // Updates goal pose and geometry
+            updateGoalVisualization();  // Refreshes visualization to reflect updated zone pose and geometery
         };
         goalSub.subscribe(setGoal);
 
         self.clearGoal = function () {
-            zoneArea.geometry = null;
+            goalPose = null; // If no goal pose, updateGoalVisualiztion will hide the rendered zone object
             updateGoalVisualization();
         };
 
         var updateOdomTF = function (tf) {
-            odomCombinedTF = tf;
-            updateGoalVisualization();
+            odomCombinedTF = tf;  // Update the tf stored in outer scope
+            updateGoalVisualization();  // refresh rendering (to use new tf)
         };
         tfClient.subscribe(goal_frame, updateOdomTF);
-
 
     };
     return module;

@@ -6,11 +6,10 @@ import threading
 import numpy as np
 
 import rospy
-import tf
+import tf, math
 from std_msgs.msg import Bool
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseArray, PoseStamped, Pose, Point, Quaternion
-import tf
 
 from hrl_task_planning import pddl_utils as pddl
 from hrl_msgs.msg import FloatArrayBare
@@ -109,7 +108,7 @@ class BedDistanceTracker(object):
             common_time = self.tfl.getLatestCommonTime(self.out_frame, 'odom_combined')
         except tf.Exception:
             rospy.logwarn("[%s] Could not find common transform time for %s and %s",
-                          rospy.get_name(), 'base_footprint', 'odom_combined')
+                          rospy.get_name(), '(autobed/wheelchair)model_frame', 'odom_combined')
             return False
         poses = PoseArray()
         poses.header.frame_id = 'odom_combined' 

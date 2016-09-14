@@ -22,12 +22,12 @@ class AR_Tag_Tracking(object):
         print 'Starting detection of', mode, 'AR tag'
         self.frame_lock = threading.RLock()
         self.mode = mode
-        self.domain = 'wiping_mouth_adl'
+        self.domain = 'adl'
         try:
             mode = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain, 'AUTOBED')
             self.mode = mode.lower()
         except KeyError:
-            rospy.logwarn("[%s] Tracking AR Tag, but current model unknown! Assuming autobed!", rospy.get_name())
+            mode = 'AUTOBED'
         self.find_AR = False
         self.currently_acquiring_AR_tag = False
         self.finished_acquiring_AR_tag = False
@@ -101,7 +101,7 @@ class AR_Tag_Tracking(object):
 
     def start_finding_AR_cb(self, msg):
         with self.frame_lock:
-            if msg.data and not self.currently_acquiring_AR_tag:
+            if msg.data:
                 self.currently_acquiring_AR_tag = True
                 self.finished_acquiring_AR_tag = False
                 false_out = Bool()
@@ -138,16 +138,15 @@ class AR_Tag_Tracking(object):
     def start_tracking_AR_cb(self, msg):
         # print msg
         # print self.track_AR
-        if msg.data and not self.currently_tracking_AR:
+        if msg.data:
             print 'THINGS AND STUFF Starting to track the AR tag!'
             # self.track_AR = msg.data
             # self.tracking_AR()
         elif not msg.data and self.currently_tracking_AR:
             print 'THINGS AND STUFF Stopping tracking the AR tag!'
-
-        failure = Bool()
-        failure.data = False
-        self.AR_tag_tracking.publish(failure)
+            failure = Bool()
+            failure.data = False
+            self.AR_tag_tracking.publish(failure)
         self.currently_tracking_AR = msg.data
 
     def tracking_AR(self):
@@ -260,8 +259,8 @@ class AR_Tag_Tracking(object):
         # This is the translational transform from reference markers to the bed origin.
         # -.445 if right side of body. .445 if left side.
         model_trans_B_ar_1 = np.eye(4)
-        model_trans_B_ar_2 = np.eye(4)
-        model_trans_B_ar_3 = np.eye(4)
+        #model_trans_B_ar_2 = np.eye(4)
+        #model_trans_B_ar_3 = np.eye(4)
 
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
         model_trans_B_ar_1[0:3, 3] = np.array([0.30, 0.00, 0.])
@@ -306,6 +305,23 @@ class AR_Tag_Tracking(object):
 
     def arTagCallback(self, msg):
         with self.frame_lock:
+            try:
+                mode = rospy.get_param('/pddl_tasks/%s/model_name' % self.domain)
+                self.mode = mode.lower()
+            except KeyError:
+                mode = 'AUTOBED'
+                self.mode = 'autobed'
+            if self.mode == 'autobed':
+                self.out_frame = 'autobed/base_link'
+                self.bed_state_z = 0.
+                self.bed_state_head_theta = 0.
+                self.bed_state_leg_theta = 0.
+                self.config_autobed_AR_detector()
+            elif self.mode == 'wheelchair':
+                self.out_frame = 'wheelchair/base_link'
+                self.config_wheelchair_AR_detector()
+            else:
+                return
             markers = msg.markers
             for i in xrange(len(markers)):
                 if markers[i].id in self.tag_id:
@@ -377,6 +393,7 @@ class AR_Tag_Tracking(object):
                         map_B_ar = createBMatrix(pos, quat)
                         map_B_ar = self.shift_to_ground(map_B_ar)
                         self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
+
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]

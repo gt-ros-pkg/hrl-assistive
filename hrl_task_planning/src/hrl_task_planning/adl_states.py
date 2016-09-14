@@ -6,12 +6,13 @@ import rospy, rosparam, rospkg, roslib
 import actionlib
 from threading import RLock
 import math as m
+import numpy as np
 import rospy, rosparam, rospkg, roslib
 from hrl_msgs.msg import FloatArrayBare
 from std_msgs.msg import String, Int32, Int8, Bool
 from actionlib_msgs.msg import GoalStatus
 # from actionlib_msgs.msg import GoalStatus as GS
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 import tf
 from hrl_task_planning.msg import PDDLState
 from hrl_pr2_ar_servo.msg import ARServoGoalData
@@ -57,12 +58,12 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
     elif action == 'MOVE_ROBOT':
         return MoveRobotState(domain=domain, task=args[0], model=args[1], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'STOP_TRACKING':
-        return StopTrackingState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return StopTrackingState(domain=domain, model=args[0], problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_BACK':
-        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
-        #return MoveBackState(model=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        #return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return MoveBackState(model=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -119,14 +120,19 @@ class TrackTagState(PDDLSmachState):
 
 
 class StopTrackingState(PDDLSmachState):
-    def __init__(self, domain, *args, **kwargs):
+    def __init__(self, model, domain, *args, **kwargs):
         super(StopTrackingState, self).__init__(domain=domain, *args, **kwargs)
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.model = model
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
 
     def on_execute(self, ud):
         rospy.loginfo('[%s] Stopping AR Tag Tracking' % rospy.get_name())
+        state_update = PDDLState()
+        state_update.domain = self.domain
+        state_update.predicates = ['(NOT (FOUND-TAG %s))' % self.model]
+        self.state_pub.publish(state_update)
         self.stop_tracking_AR_publisher.publish(False)
-
 
 class RegisterHeadState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
@@ -306,57 +312,51 @@ class MoveBackState(PDDLSmachState):
         super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
         self.domain = domain
-        #self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.in_zone = False
+        self.tfl = tf.TransformListener()
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
 
+    def zone_boundary_update(self, msg):
+        try:
+            zone_boundary = msg.poses
+        except: 
+            return
+        bottom_left = np.array([zone_boundary[0].position.x, 
+                                zone_boundary[0].position.y])
+        top_left = np.array([zone_boundary[1].position.x,
+                            zone_boundary[1].position.y])
+        bottom_right = np.array([zone_boundary[3].position.x,
+                                 zone_boundary[3].position.y])
+        base_vector = bottom_right - bottom_left
+        height_vector = top_left - bottom_left
+        test_vector = -bottom_left
+        dot_prod_base = np.dot(test_vector, base_vector)
+        dot_prod_height = np.dot(test_vector, height_vector)
+        if ((dot_prod_base > 0 and dot_prod_base < np.dot(base_vector, base_vector)) and
+           (dot_prod_height > 0 and dot_prod_height < np.dot(height_vector, height_vector))):
+            self.in_zone = True
+        else:
+            self.in_zone = False
+        print "In the Zone?"
+        print self.in_zone
 
     def on_execute(self, ud):
-        rospy.loginfo('[%s] Finding good places to move back' % rospy.get_name())
-        try:
-            base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
-        except:
-            rospy.logwarn("[%s] MoveRobotState - Cannot find base location on parameter server", rospy.get_name())
-            return 'aborted'
-        pr2_goal_pose = PoseStamped()
-        pr2_goal_pose.header.stamp = rospy.Time.now()
-        pr2_goal_pose.header.frame_id = 'base_footprint'
-        trans_out = base_goals[:3]
-        rot_out = base_goals[3:]
-        print "MOVING TO:"
-        print trans_out, rot_out
-        pr2_goal_pose.pose.position.x = trans_out[0]
-        pr2_goal_pose.pose.position.y = trans_out[1]
-        pr2_goal_pose.pose.position.z = trans_out[2]
-        pr2_goal_pose.pose.orientation.x = rot_out[0]
-        pr2_goal_pose.pose.orientation.y = rot_out[1]
-        pr2_goal_pose.pose.orientation.z = rot_out[2]
-        pr2_goal_pose.pose.orientation.w = rot_out[3]
-        goal = ARServoGoalData()
-        if self.model.upper() == 'AUTOBED':
-            goal.tag_id = 4
-        else:
-            goal.tag_id = 13
-        goal.marker_topic = '/ar_pose_marker'
-        goal.tag_goal_pose = pr2_goal_pose
-        self.servo_goal_pub.publish(goal)
-        rospy.loginfo("[%s] Successfully Published Base Location to AR Servo" % rospy.get_name())
-        rospy.sleep(5)
-        self.start_servoing.publish(True)
-        rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
-        rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
-        while not rospy.is_shutdown() and not self.goal_reached:
+        #Here we check if our robot is in the zone specified. 
+        #Thus we subscribe to the zone publisher and do some math to figure out if 
+        #we are in the zone.
+        rospy.loginfo('[%s] Giving Control to the User to Move to Safe Zone' % rospy.get_name())
+        rospy.Subscriber('/move_back_safe_zone', PoseArray, self.zone_boundary_update)
+        while not rospy.is_shutdown() and not self.in_zone:
             if self.preempt_requested():
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
-                self.stop_tracking_AR_publisher.publish(False)
                 return 
             rospy.sleep(1)
-
-        if self.goal_reached:
-            rospy.loginfo("[%s] Base Goal Reached" % rospy.get_name())
+        if self.in_zone:
             state_update = PDDLState()
             state_update.domain = self.domain
-            state_update.predicates = ['(BASE-REACHED %s %s)' % (self.task, self.model)]
+            state_update.predicates = ['(NOT (TOO-CLOSE %s))' %  self.model]
             self.state_pub.publish(state_update)
+
 
 
 
@@ -495,7 +495,8 @@ class CallBaseSelectionState(PDDLSmachState):
 
         print "Publishing (BASE-SELECTED) update"
         self.state_pub.publish(state_update)
-
+        rospy.sleep(2)
+        return
 
 class ConfigureModelRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
@@ -648,7 +649,12 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.r_arm_pub.publish(self.r_reset_traj)
         self.l_arm_pub.publish(self.l_reset_traj)
 
-        rospy.sleep(10)
+        target_wait = rospy.get_time() + 11.0
+        while rospy.get_time() < target_wait:
+            if self.preempt_requested():
+                rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
+                self.stop_tracking_AR_publisher.publish(False)
+                return 
         rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
         state_update = PDDLState()
         state_update.domain = self.domain
