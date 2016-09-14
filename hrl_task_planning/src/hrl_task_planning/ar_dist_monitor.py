@@ -7,7 +7,7 @@ import numpy as np
 
 import rospy
 import tf, math
-from std_msgs.msg import Bool, Float
+from std_msgs.msg import Bool, Float32
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseArray, PoseStamped, Pose, Point, Quaternion
 
@@ -21,8 +21,8 @@ class BedDistanceTracker(object):
         self.frame_lock = threading.RLock()
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
         self.move_back_zone_pose = rospy.Publisher('/move_back_safe_zone/points', PoseArray, queue_size=10, latch=True)
-        self.move_back_zone_width = rospy.Publisher('/move_back_safe_zone/width', Float, queue_size=10, latch=True)
-        self.move_back_zone_length = rospy.Publisher('/move_back_safe_zone/length', Float, queue_size=10, latch=True)
+        self.move_back_zone_width = rospy.Publisher('/move_back_safe_zone/width', Float32, queue_size=10, latch=True)
+        self.move_back_zone_length = rospy.Publisher('/move_back_safe_zone/length', Float32, queue_size=10, latch=True)
         self.model = None
         self.too_close = False
         self.tfl = tf.TransformListener()

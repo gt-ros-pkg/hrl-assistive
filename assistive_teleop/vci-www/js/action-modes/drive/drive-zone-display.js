@@ -93,7 +93,7 @@ var RFH = (function (module) {
         var widthSub= new ROSLIB.Topic({
             ros: ros,
             name: 'move_back_safe_zone/width',
-            messageType: 'Float'
+            messageType: 'std_msgs/Float32'
         });
 
         var setWidth= function (wid) {
@@ -107,7 +107,7 @@ var RFH = (function (module) {
         var lengthSub = new ROSLIB.Topic({
             ros: ros,
             name: 'move_back_safe_zone/length',
-            messageType: 'Float'
+            messageType: 'std_msgs/Float32'
         });
 
         var setLength = function (len) {
