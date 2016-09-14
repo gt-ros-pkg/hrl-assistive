@@ -32,21 +32,12 @@ var RFH = (function (module) {
             viewer: $viewer
         });
 
-        self.zoneDisplay = new RFH.DriveZoneDisplay({
-            ros: ros,
-            tfClient: tfClient,
-            viewer: $viewer
-        });
-
         var clamp = function (x,a,b) {
             return ( x < a ) ? a : ( ( x > b ) ? b : x );
         };
 
         self.showGoal = self.goalDisplay.show;
         self.hideGoal = self.goalDisplay.hide;
-        self.showZone = self.zoneDisplay.show;
-        self.hideZone = self.zoneDisplay.hide;
-
 
         var tuckActionClient = new ROSLIB.ActionClient({
             ros: ros, 
@@ -540,7 +531,6 @@ var RFH = (function (module) {
             self.$div.on('mousedown.rfh', self.driveGo);
             $('.drive-ctrl').show();
             self.showGoal();
-            self.showZone();
             $viewer.show();
             trackHeadPosition(getNearestStop());
             self.$div.on('resize.rfh', self.updateLineOffsets);
@@ -552,7 +542,6 @@ var RFH = (function (module) {
             self.$div.removeClass('drive-safe');
             //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
             self.hideGoal();
-            //self.hideZone();
             $('.drive-ctrl').hide();
             $viewer.hide();
             $('#controls h3').text("Controls");

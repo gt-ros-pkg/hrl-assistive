@@ -29,6 +29,15 @@ var RFH = (function(module) {
             self.pddlStateUpdatePub.publish(msg);
         };
 
+        self.zoneDisplay = new RFH.DriveZoneDisplay({
+            ros: ros,
+            tfClient: tfClient,
+            viewer: $viewer
+        });
+        self.showZone = self.zoneDisplay.show;
+        self.hideZone = self.zoneDisplay.hide;
+
+
         self.getActionFunction = function (name, args) {
             var startFunc;
             switch (name){
@@ -43,6 +52,11 @@ var RFH = (function(module) {
                     };
                     break;
                 case 'MOVE_BACK':
+                    startFunc = function () {
+                    self.showZone();
+                    RFH.actionMenu.startAction('LookingAction');
+                    };
+                    break;
                 case 'MOVE_ROBOT':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -51,6 +65,7 @@ var RFH = (function(module) {
                     break;
                 case 'CONFIGURE_MODEL_ROBOT':
                     startFunc = function () {
+                        self.hideZone();
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('torsoAction');
                     };
@@ -58,6 +73,7 @@ var RFH = (function(module) {
                 case 'MOVE_ARM':
                 case 'DO_TASK':
                     startFunc = function () {
+                        self.hideZone();
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('lEECartAction');
                     };
