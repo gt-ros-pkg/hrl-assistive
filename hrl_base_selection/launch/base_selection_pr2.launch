@@ -1,6 +1,6 @@
 <launch>
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
-    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_body_expanded/robots/bed_and_body_expanded.URDF" />
+    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_environment_henry/robots/bed_and_environment_henry.URDF" />
     <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
     <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
     <node name="autobed_occupied_server" pkg="hrl_base_selection" type="autobed_occupied_server.py" output="screen"/>

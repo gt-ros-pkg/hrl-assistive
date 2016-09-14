@@ -9,7 +9,7 @@ import math as m
 import time
 import roslib
 import rospy
-from geometry_msgs.msg import PoseArray, PoseStamped
+from geometry_msgs.msg import PoseArray, PoseStamped, Pose
 from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from data_reader_cma import DataReader as DataReader_cma
@@ -34,7 +34,7 @@ class DataReader_Task(object):
         self.goals = []
         if self.task == 'shaving':
             liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
-            liftlink_B_goal = [[1.107086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
+            liftlink_B_goal = [[1.087086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
                                [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
                                [1.123504, -0.124174, 0.060517, 0.065528, -0.078776, 0.322874, 0.940879],
                                [1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509],
@@ -42,30 +42,73 @@ class DataReader_Task(object):
                                [1.103003, 0.066879, 0.047237, 0.023224, -0.083593, -0.247144, 0.965087],
                                [1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515],
                                [1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            # goal_B_gripper = np.matrix(np.eye(4))
+            goal_B_gripper = np.matrix([[1., 0., 0., -0.04],
+                                        [0., 1., 0., 0.0],
+                                        [0., 0., 1., 0.0],
+                                        [0., 0., 0., 1.]])
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:])*goal_B_gripper)  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['head']
+            self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'wiping_mouth':
+            # liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
+            # liftlink_B_goal = [[1.107086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
+            #                    [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
+            #                    [1.123504, -0.124174, 0.060517, 0.065528, -0.078776, 0.322874, 0.940879],
+            #                    #[1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509]]
+            #                    #[1.194537, -0.180350, 0.024144, 0.055151, -0.113447, 0.567382, 0.813736],
+            #                    [1.103003, 0.066879, 0.047237, 0.023224, -0.083593, -0.247144, 0.965087]]
+            #                    #[1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515]]
+            #                    #[1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.15, 0.0, -0.05, 0., 1., 1., 0.],
+                               [.15, 0.0, -0.08, 0., 1., 1., 0.],
+                               [.15, 0.03, -0.065, -0.1, 1., 1., -0.1],
+                               #[1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509]]
+                               #[1.194537, -0.180350, 0.024144, 0.055151, -0.113447, 0.567382, 0.813736],
+                               [.15, -0.03, -0.065, 0.1, 1., 1., 0.1]]
+                               #[1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515]]
+                               #[1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            # left_side = self.goals[2]
+            # right_side = self.goals[3]
+            # #left_side[0:3,0:3] = -1*right_side[0:3,0:3]
+            # left_side[0,3] = right_side[0,3]
+            # left_side[1,3] = -right_side[1,3]
+            # left_side[2,3] = right_side[2,3]
+            # self.goals[2] = left_side
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['head']
+            self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'scratching_forehead':
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.15, 0.0, 0.04, 0., 1., 1., 0.],
+                               [.15, 0.03, 0.03, 0., 1., 1., 0.],
+                               [.15, -0.03, 0.03, 0., 1., 1., 0.]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
-        elif self.task == 'face_wiping':
-            liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
-            liftlink_B_goal = [[1.107086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
-                               [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
-                               [1.123504, -0.124174, 0.060517, 0.065528, -0.078776, 0.322874, 0.940879],
+        elif self.task == 'brushing_teeth':
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.125, 0.0, -0.065, 0.5,  0.5,  0.5,  0.5],
+                               [.115, 0.025, -0.065,  0.40557979,  0.57922797,  0.57922797,  0.40557979],
                                #[1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509]]
                                #[1.194537, -0.180350, 0.024144, 0.055151, -0.113447, 0.567382, 0.813736],
-                               [1.103003, 0.066879, 0.047237, 0.023224, -0.083593, -0.247144, 0.965087]]
+                               [.115, -0.025, -0.065, -0.40557979,  0.57922797, -0.57922797,  0.40557979]]
                                #[1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515]]
                                #[1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            # goal_B_gripper = np.matrix(np.eye(4))
+            goal_B_gripper = np.matrix([[1., 0., 0., -0.185],
+                                        [0., 1., 0., 0.0],
+                                        [0., 0., 1., 0.02],
+                                        [0., 0., 0., 1.]])
             for i in xrange(len(liftlink_B_goal)):
-                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
-            left_side = self.goals[2]
-            right_side = self.goals[3]
-            #left_side[0:3,0:3] = -1*right_side[0:3,0:3]
-            left_side[0,3] = right_side[0,3]
-            left_side[1,3] = -right_side[1,3]
-            left_side[2,3] = right_side[2,3]
-            self.goals[2] = left_side
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:])*goal_B_gripper)  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
@@ -277,7 +320,8 @@ class DataReader_Task(object):
         marker.color.b = 0.0
         if self.model == 'chair':
             name = 'subject_model'
-            marker.mesh_resource = "package://hrl_base_selection/models/wheelchair_and_body_assembly_rviz.STL"
+            # marker.mesh_resource = "package://hrl_base_selection/models/wheelchair_and_body_assembly_rviz.STL"
+            marker.mesh_resource = "package://hrl_base_selection/urdf/wheelchair_henry/meshes/head_link.STL"
             marker.scale.x = 1.0
             marker.scale.y = 1.0
             marker.scale.z = 1.0
@@ -289,20 +333,21 @@ class DataReader_Task(object):
             marker.scale.z = 1.0
         elif self.model == 'autobed':
             name = 'subject_model'
-            marker.mesh_resource = "package://hrl_base_selection/models/bed_and_body_v3_rviz.dae"
+            # marker.mesh_resource = "package://hrl_base_selection/models/bed_and_body_v3_rviz.dae"
+            marker.mesh_resource = "package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL"
             marker.scale.x = 1.0
             marker.scale.y = 1.0
             marker.scale.z = 1.0
         else:
             print 'I got a bad model. What is going on???'
             return None
-        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, latch=True)
+        vis_pub = rospy.Publisher(''.join(['~',name]), Marker, queue_size=1, latch=True)
         marker.ns = ''.join(['base_service_',name])
         vis_pub.publish(marker)
         print 'Published a model of the subject to rviz'
 
 
-        ref_vis_pub = rospy.Publisher('~reference_pose', PoseStamped, latch=True)
+        ref_vis_pub = rospy.Publisher('~reference_pose', PoseStamped, queue_size=1, latch=True)
         ref_pose = PoseStamped()
         ref_pose.header.frame_id = "/base_link"
         ref_pose.header.stamp = rospy.Time.now()
@@ -314,48 +359,58 @@ class DataReader_Task(object):
         ref_pose.pose.orientation.z = 0.
         ref_pose.pose.orientation.w = 1.
         ref_vis_pub.publish(ref_pose)
-        goal_vis_pub = rospy.Publisher('~goal_poses', MarkerArray, latch=True)
+        # goal_vis_pub = rospy.Publisher('~goal_poses', MarkerArray, queue_size=1, latch=True)
+        goal_vis_pub = rospy.Publisher('~goal_poses', PoseArray, queue_size=1, latch=True)
         goal_markers = MarkerArray()
-        
-        #goal_markers.header.frame_id = "/base_link"
-        #goal_markers.header.stamp = rospy.Time.now()
-        #goal_markers = PoseArray()
+        goal_markers = PoseArray()
+        goal_markers.header.frame_id = "/base_link"
+        goal_markers.header.stamp = rospy.Time.now()
+
         for num, goal_marker in enumerate(self.goals):
             #print goal_marker
             pos, ori = Bmat_to_pos_quat(goal_marker)
-            marker = Marker()
+            # marker = Marker()
+            marker = Pose()
             #marker.header.frame_id = "/base_footprint"
-            marker.header.frame_id = "/base_link"
-            marker.header.stamp = rospy.Time.now()
-            marker.ns = str(num)
-            marker.id = 0
-            marker.type = Marker.ARROW
-            marker.action = Marker.ADD
-            marker.pose.position.x = pos[0]
-            marker.pose.position.y = pos[1]
-            marker.pose.position.z = pos[2]
-            marker.pose.orientation.x = ori[0]
-            marker.pose.orientation.y = ori[1]
-            marker.pose.orientation.z = ori[2]
-            marker.pose.orientation.w = ori[3]
-            marker.scale.x = .05*3
-            marker.scale.y = .05*3
-            marker.scale.z = .01*3
-            marker.color.a = 1.
-            marker.color.r = 1.0
-            marker.color.g = 0.0
-            marker.color.b = 0.0
+            # marker.header.frame_id = "/base_link"
+            # marker.header.stamp = rospy.Time.now()
+            # marker.ns = str(num)
+            # marker.id = 0
+            # marker.type = Marker.ARROW
+            # marker.action = Marker.ADD
+            # marker.pose.position.x = pos[0]
+            # marker.pose.position.y = pos[1]
+            # marker.pose.position.z = pos[2]
+            # marker.pose.orientation.x = ori[0]
+            # marker.pose.orientation.y = ori[1]
+            # marker.pose.orientation.z = ori[2]
+            # marker.pose.orientation.w = ori[3]
+            marker.position.x = pos[0]
+            marker.position.y = pos[1]
+            marker.position.z = pos[2]
+            marker.orientation.x = ori[0]
+            marker.orientation.y = ori[1]
+            marker.orientation.z = ori[2]
+            marker.orientation.w = ori[3]
+            # marker.scale.x = .05*1
+            # marker.scale.y = .01*1
+            # marker.scale.z = .01*1
+            # marker.color.a = 1.
+            # marker.color.r = 1.0
+            # marker.color.g = 0.0
+            # marker.color.b = 0.0
             #print marker
-            goal_markers.markers.append(marker)
+            # goal_markers.markers.append(marker)
+            goal_markers.poses.append(marker)
         goal_vis_pub.publish(goal_markers)
         print 'Published a goal marker to rviz'
 
 if __name__ == "__main__":
     visualize_only = False
-    model = 'autobed'  # options are: 'chair', 'bed', 'autobed', 'wall'
+    model = 'chair'  # options are: 'chair', 'bed', 'autobed', 'wall'
     optimization = 'cma'  # 'cma' or 'brute'
-    rospy.init_node(optimization+'_'+model+'_face_wiping')
-    task = 'shaving' # scratching_knee_left # options are: face_wiping, bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
+    task = 'scratching_knee_left' # scratching_knee_left # options are: wiping_face, bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
+    rospy.init_node(optimization+'_'+model+'_'+task)
     full_start_time = time.time()
     if visualize_only:
         shaving_data_reader = DataReader_Task(task, model, optimization)
@@ -363,12 +418,12 @@ if __name__ == "__main__":
         print 'Visualizing the goals for the task', task, ' only.'
         rospy.spin()
     else:
-        # for task in ['face_wiping', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'face_wiping', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['face_wiping']:
+        # for task in ['wiping_face', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
+        for task in ['scratching_knee_left']:
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
         print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)

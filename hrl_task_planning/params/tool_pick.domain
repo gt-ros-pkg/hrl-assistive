@@ -1,38 +1,36 @@
 (define (domain tool_pick)
  (:requirements :typing :conditional-effects)
  (:types
-  pose
   gripper
   tool
  )
 
- (:constants tool_pose - pose
-             left_hand - gripper
+ (:constants left_hand - gripper
              right_hand - gripper
  )
 
  (:predicates
-  (known ?tp - pose)
+  (found-tag ?t - tool)
   (grasping ?t - tool ?g - gripper)
   (occupied ?g - gripper)
   (auto-grasp-done)
  )
 
  (:action auto-grasp-tool
-    :parameters (?t -tool ?tp - pose ?g - gripper)
-    :precondition (and (known ?tp)(not (occupied ?g))(not (auto-grasp-done)))
-    :effect (and (grasping ?t ?g)(occupied ?g) (not (known ?tp)))
+    :parameters (?t - tool ?g - gripper)
+    :precondition (and (found-tag ?t)(not (occupied ?g))(not (auto-grasp-done)))
+    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )
 
  (:action manual-grasp-tool
-    :parameters (?t -tool ?tp - pose ?g - gripper)
-    :precondition (and (known ?tp)(not (occupied ?g))(auto-grasp-done))
-    :effect (and (grasping ?t ?g)(occupied ?g))
+    :parameters (?t - tool ?g - gripper)
+    :precondition (and (found-tag ?t)(not (occupied ?g))(auto-grasp-done))
+    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
  )
 
- (:action get-tag-pose
-  :parameters (?t - tool ?tp - pose)
-  :effect (known ?tp)
+ (:action find-tag
+  :parameters (?t - tool)
+  :effect (found-tag ?t)
  )
 
  (:action place

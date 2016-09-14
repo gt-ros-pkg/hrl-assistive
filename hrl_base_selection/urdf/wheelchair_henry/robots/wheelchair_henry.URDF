@@ -41,43 +41,34 @@
     </collision>
   </link>
   <link
-    name="wheelchair/head_link">
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/head_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/head_link.STL" />
-      </geometry>
-    </collision>
+    name="wheelchair/neck_base_link">
   </link>
   <joint
-    name="wheelchair/origin_to_base_joint"
+    name="wheelchair/origin_to_neck_base_joint"
     type="fixed">
     <origin
-      xyz="0.452 0.0 1.35"
-      rpy="0. 0.1 0." />
+      xyz="0.332 0 1.25"
+      rpy="1.570795 1.570795 0" />
     <parent
       link="wheelchair/base_link" />
     <child
-      link="wheelchair/head_link" />
+      link="wheelchair/neck_base_link" />
+  </joint>
+  <link
+    name="wheelchair/neck_twist_link">
+  </link>
+  <joint
+    name="wheelchair/neck_twist_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="wheelchair/neck_base_link" />
+    <child
+      link="wheelchair/neck_twist_link" />
     <axis
-      xyz="0 0 0" />
+      xyz="1 0 0" />
     <limit
       lower="-2"
       upper="2"
@@ -85,41 +76,18 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/neck_rotation">
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/neck_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/neck_link.STL" />
-      </geometry>
-    </collision>
+    name="wheelchair/neck_tilt_link">
   </link>
   <joint
-    name="wheelchair/head_neck_joint1"
+    name="wheelchair/neck_tilt_joint"
     type="revolute">
     <origin
-      xyz="-0.0254 0 -0.08509"
-      rpy="-1.5708 1.1345 -3.1416" />
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
     <parent
-      link="wheelchair/head_link" />
+      link="wheelchair/neck_twist_link" />
     <child
-      link="wheelchair/neck_rotation" />
+      link="wheelchair/neck_tilt_link" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -136,7 +104,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -150,22 +118,122 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="wheelchair/head_neck_joint2"
+    name="wheelchair/neck_to_neck_top_joint"
+    type="fixed">
+    <origin
+      xyz="-0.07239 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/neck_tilt_link" />
+    <child
+      link="wheelchair/neck_link" />
+  </joint>
+  <link
+    name="wheelchair/neck_top_rotated_link">
+  </link>
+  <joint
+    name="wheelchair/neck_rotation_fixed_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.570796 0 1.570796" />
+    <parent
+      link="wheelchair/neck_link" />
+    <child
+      link="wheelchair/neck_top_rotated_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_roty_link">
+  </link>
+  <joint
+    name="wheelchair/neck_head_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0.0154 0 0.07779"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/neck_top_rotated_link" />
+    <child
+      link="wheelchair/head_roty_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_rotz_link">
+  </link>
+  <joint
+    name="wheelchair/neck_head_rotz_joint"
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="0 3.1554E-30 0" />
+      rpy="0 0 0" />
     <parent
-      link="wheelchair/neck_rotation" />
+      link="wheelchair/head_roty_link" />
     <child
-      link="wheelchair/neck_link" />
+      link="wheelchair/head_rotz_link" />
     <axis
       xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/neck_head_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/head_rotz_link" />
+    <child
+      link="wheelchair/head_link" />
+    <axis
+      xyz="1 0 0" />
     <limit
       lower="-2"
       upper="2"
@@ -180,7 +248,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -194,7 +262,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -202,10 +270,10 @@
     name="wheelchair/neck_body_joint"
     type="revolute">
     <origin
-      xyz="0.07239 0 0"
-      rpy="-8.8242E-17 -8.2927E-14 0.66506" />
+      xyz="0.00 0 0"
+      rpy="0 0 0" />
     <parent
-      link="wheelchair/neck_link" />
+      link="wheelchair/neck_base_link" />
     <child
       link="wheelchair/upper_body_link" />
     <axis
@@ -224,7 +292,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/mid_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -238,7 +306,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/mid_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -247,13 +315,13 @@
     type="revolute">
     <origin
       xyz="0.35052 0 0"
-      rpy="2.8327E-14 7.7949E-14 0.34907" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/upper_body_link" />
     <child
       link="wheelchair/mid_body_link" />
     <axis
-      xyz="0 0 -1" />
+      xyz="0 0 1" />
     <limit
       lower="-2"
       upper="2"
@@ -268,7 +336,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/lower_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -282,7 +350,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/lower_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -291,13 +359,13 @@
     type="revolute">
     <origin
       xyz="0.15113 0 0"
-      rpy="-4.3091E-16 1.669E-15 -0.57779" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/mid_body_link" />
     <child
       link="wheelchair/lower_body_link" />
     <axis
-      xyz="0 0 -1" />
+      xyz="0 0 1" />
     <limit
       lower="-2"
       upper="2"
@@ -312,7 +380,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/quad_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -326,7 +394,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/quad_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -335,7 +403,7 @@
     type="revolute">
     <origin
       xyz="0.05207 0 -0.08636"
-      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
+      rpy="0 0 -.25" />
     <parent
       link="wheelchair/lower_body_link" />
     <child
@@ -356,7 +424,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/calf_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -370,7 +438,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/calf_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -379,7 +447,7 @@
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.1416 8.5469E-14 -2.8798" />
+      rpy="3.14159 0 3.43" />
     <parent
       link="wheelchair/quad_left_link" />
     <child
@@ -400,7 +468,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/foot_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -414,7 +482,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/foot_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -423,7 +491,7 @@
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="2.4608E-16 9.411E-16 0.077076" />
+      rpy="0 0 0.09" />
     <parent
       link="wheelchair/calf_left_link" />
     <child
@@ -444,7 +512,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/quad_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -458,7 +526,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/quad_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -467,7 +535,7 @@
     type="revolute">
     <origin
       xyz="0.05207 0 0.08636"
-      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
+      rpy="0 0 -.25" />
     <parent
       link="wheelchair/lower_body_link" />
     <child
@@ -488,7 +556,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/calf_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -502,7 +570,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/calf_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -511,7 +579,7 @@
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.1416 8.5225E-14 -2.8798" />
+      rpy="3.14159 0 3.43" />
     <parent
       link="wheelchair/quad_right_link" />
     <child
@@ -532,7 +600,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/foot_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -546,7 +614,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/foot_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -555,7 +623,7 @@
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="3.3137E-27 3.7799E-26 0.077076" />
+      rpy="0 0 0.09" />
     <parent
       link="wheelchair/calf_right_link" />
     <child
@@ -576,7 +644,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/arm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -590,7 +658,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/arm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -599,7 +667,7 @@
     type="revolute">
     <origin
       xyz="0.09652 0 -0.17526"
-      rpy="2.6872E-15 8.287E-14 0.033074" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/upper_body_link" />
     <child
@@ -620,7 +688,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/forearm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -634,7 +702,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/forearm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -643,7 +711,7 @@
     type="revolute">
     <origin
       xyz="0.28174 -0.0106 -0.04953"
-      rpy="1.1849E-16 -8.3419E-14 -1.6268E-27" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/arm_left_link" />
     <child
@@ -664,7 +732,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/hand_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -678,7 +746,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/hand_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -687,7 +755,7 @@
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="1.3447E-16 8.3999E-14 1.6283E-27" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/forearm_left_link" />
     <child
@@ -708,7 +776,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/arm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -722,7 +790,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/arm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -731,7 +799,7 @@
     type="revolute">
     <origin
       xyz="0.09652 0 0.17526"
-      rpy="-3.0757E-16 8.2843E-14 -0.0045332" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/upper_body_link" />
     <child
@@ -752,7 +820,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/forearm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -766,7 +834,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/forearm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -775,7 +843,7 @@
     type="revolute">
     <origin
       xyz="0.28194 0 0.04953"
-      rpy="2.6089E-19 -8.3342E-14 0.037607" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/arm_right_link" />
     <child
@@ -796,7 +864,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/hand_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -810,7 +878,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/hand_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -819,7 +887,7 @@
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="1.9364E-14 8.3335E-14 1.6151E-27" />
+      rpy="0 0 0" />
     <parent
       link="wheelchair/forearm_right_link" />
     <child
@@ -832,5 +900,4 @@
       effort="0"
       velocity="0" />
   </joint>
-
 </robot>

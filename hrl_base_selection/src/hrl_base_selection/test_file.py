@@ -48,7 +48,7 @@ def set_autobed(z, headrest_th, head_x, head_y):
         v[autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
         v[autobed.GetJoint('autobed/bed_neck_to_bedframe_joint').GetDOFIndex()] = m.radians(bth)
         v[autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = -((bth/40)*(.7 - 0)+0)
+        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = ((bth/40)*(.7 - 0)+0)
         v[autobed.GetJoint('autobed/neck_body_joint').GetDOFIndex()] = (bth/40)*(.02-(0))+(0)
         v[autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
         v[autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.2 - 0)+0)
@@ -74,7 +74,7 @@ def set_autobed(z, headrest_th, head_x, head_y):
         v[autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
         v[autobed.GetJoint('autobed/bed_neck_to_bedframe_joint').GetDOFIndex()] = m.radians(bth)
         v[autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
-        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.7 - 0.7)+0.7)
+        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = (((bth-40)/40)*(0.7 - 0.7)+0.7)
         v[autobed.GetJoint('autobed/neck_body_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.1-(.02))+(.02)
         v[autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
         v[autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(.02 - (-0.2))+(-0.2))
@@ -102,23 +102,26 @@ def set_autobed(z, headrest_th, head_x, head_y):
 
 def set_wheelchair():
     v = wheelchair.GetActiveDOFValues()
-    # v[wheelchair.GetJoint('wheelchair/origin_to_base_joint').GetDOFIndex()] = 0.
-    v[wheelchair.GetJoint('wheelchair/head_neck_joint1').GetDOFIndex()] = 0.17
-    v[wheelchair.GetJoint('wheelchair/neck_body_joint').GetDOFIndex()] = -0.0
-    v[wheelchair.GetJoint('wheelchair/upper_mid_body_joint').GetDOFIndex()] = -0.15
-    v[wheelchair.GetJoint('wheelchair/mid_lower_body_joint').GetDOFIndex()] = -0.72
-    v[wheelchair.GetJoint('wheelchair/body_quad_left_joint').GetDOFIndex()] = 0.72
-    v[wheelchair.GetJoint('wheelchair/body_quad_right_joint').GetDOFIndex()] = 0.72
-    v[wheelchair.GetJoint('wheelchair/quad_calf_left_joint').GetDOFIndex()] = 1.1
-    v[wheelchair.GetJoint('wheelchair/quad_calf_right_joint').GetDOFIndex()] = 1.1
-    v[wheelchair.GetJoint('wheelchair/calf_foot_left_joint').GetDOFIndex()] = 0.5
-    v[wheelchair.GetJoint('wheelchair/calf_foot_right_joint').GetDOFIndex()] = 0.5
-    v[wheelchair.GetJoint('wheelchair/body_arm_left_joint').GetDOFIndex()] = 0.8
-    v[wheelchair.GetJoint('wheelchair/body_arm_right_joint').GetDOFIndex()] = 0.8
-    v[wheelchair.GetJoint('wheelchair/arm_forearm_left_joint').GetDOFIndex()] = 0.9
-    v[wheelchair.GetJoint('wheelchair/arm_forearm_right_joint').GetDOFIndex()] = 0.9
-    v[wheelchair.GetJoint('wheelchair/forearm_hand_left_joint').GetDOFIndex()] = -0.2
-    v[wheelchair.GetJoint('wheelchair/forearm_hand_right_joint').GetDOFIndex()] = -0.2
+    v[wheelchair.GetJoint('wheelchair/neck_twist_joint').GetDOFIndex()] = 0#m.radians(60)
+    v[wheelchair.GetJoint('wheelchair/neck_tilt_joint').GetDOFIndex()] = 0.75
+    v[wheelchair.GetJoint('wheelchair/neck_head_rotz_joint').GetDOFIndex()] = 0#-m.radians(30)
+    v[wheelchair.GetJoint('wheelchair/neck_head_roty_joint').GetDOFIndex()] = -0.45
+    v[wheelchair.GetJoint('wheelchair/neck_head_rotx_joint').GetDOFIndex()] = 0
+    v[wheelchair.GetJoint('wheelchair/neck_body_joint').GetDOFIndex()] = -0.15
+    v[wheelchair.GetJoint('wheelchair/upper_mid_body_joint').GetDOFIndex()] = 0.4
+    v[wheelchair.GetJoint('wheelchair/mid_lower_body_joint').GetDOFIndex()] = 0.4
+    v[wheelchair.GetJoint('wheelchair/body_quad_left_joint').GetDOFIndex()] = 0.5
+    v[wheelchair.GetJoint('wheelchair/body_quad_right_joint').GetDOFIndex()] = 0.5
+    v[wheelchair.GetJoint('wheelchair/quad_calf_left_joint').GetDOFIndex()] = 1.3
+    v[wheelchair.GetJoint('wheelchair/quad_calf_right_joint').GetDOFIndex()] = 1.3
+    v[wheelchair.GetJoint('wheelchair/calf_foot_left_joint').GetDOFIndex()] = 0.2
+    v[wheelchair.GetJoint('wheelchair/calf_foot_right_joint').GetDOFIndex()] = 0.2
+    v[wheelchair.GetJoint('wheelchair/body_arm_left_joint').GetDOFIndex()] = 0.6
+    v[wheelchair.GetJoint('wheelchair/body_arm_right_joint').GetDOFIndex()] = 0.6
+    v[wheelchair.GetJoint('wheelchair/arm_forearm_left_joint').GetDOFIndex()] = .8
+    v[wheelchair.GetJoint('wheelchair/arm_forearm_right_joint').GetDOFIndex()] = .8
+    v[wheelchair.GetJoint('wheelchair/forearm_hand_left_joint').GetDOFIndex()] = 0.
+    v[wheelchair.GetJoint('wheelchair/forearm_hand_right_joint').GetDOFIndex()] = 0.
 
     wheelchair.SetActiveDOFValues(v)
     env.UpdatePublishedBodies()
