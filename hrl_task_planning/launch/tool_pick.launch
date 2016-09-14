@@ -9,8 +9,5 @@
     </group>
 
     <node name='tool_tag_monitor' pkg="hrl_task_planning" type="ar_tag_monitor" output="screen" args="-t 0 scratcher -t 1 towel -t 2 shaver -t 3 toothbrush -t 5 lotion_applicator"/>
-    <node name='ar_tool_grasp_right' pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" output="screen" args="--arm right"/>
-    <node name='ar_tool_grasp_left' pkg="hrl_pr2_tool_grasp" type="ar_tool_grasp_server" output="screen" args="--arm left"/>
-    <include file="$(find hrl_pr2_tool_grasp)/launch/pr2_indiv_no_kinect.launch" />
 
 </launch>
