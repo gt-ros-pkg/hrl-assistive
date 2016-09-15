@@ -50,7 +50,7 @@ class AR_Tag_Tracking(object):
 
         self.out_pos = None
         self.out_quat = None
-
+        self.start_broadcast = False
         self.tag_id = None
         self.tag_side_length = None
 
@@ -147,6 +147,7 @@ class AR_Tag_Tracking(object):
             failure = Bool()
             failure.data = False
             self.AR_tag_tracking.publish(failure)
+            self.finished_acquiring_AR_tag = False
         self.currently_tracking_AR = msg.data
 
     def tracking_AR(self):
@@ -243,10 +244,18 @@ class AR_Tag_Tracking(object):
         while not rospy.is_shutdown():
             #print self.out_pos, self.out_quat
             if self.finished_acquiring_AR_tag:
+                self.start_broadcast = True
+            if self.start_broadcast:
+                
+                
+                #odom_msg = self.listener.transformPose('/odom_combined', ps)
+                #baseBmodel = createBMatrix(self.out_pos, self.out_quat)
+                #odom_pos, odom_quat = Bmat_to_pos_quat(odomBbase*baseBmodel)
+                
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time.now(),
                                                self.out_frame,
-                                               'base_footprint')
+                                               'odom_combined')
             # if self.currently_tracking_AR:
                 #print 'broadcast transform'
             rate.sleep()
@@ -390,10 +399,13 @@ class AR_Tag_Tracking(object):
                     #     self.currently_acquiring_AR_tag = False
                     #     print 'Finished acquiring AR tag'
                     if self.finished_acquiring_AR_tag:
-                        map_B_ar = createBMatrix(pos, quat)
-                        map_B_ar = self.shift_to_ground(map_B_ar)
-                        self.out_pos, self.out_quat = Bmat_to_pos_quat(map_B_ar*self.reference_B_ar.I)
-
+                        pr2basefootprint_B_ar = createBMatrix(pos, quat)
+                        pr2basefootprint_B_ar = self.shift_to_ground(pr2basefootprint_B_ar)
+                        trans, rot= self.listener.lookupTransform('/odom_combined', '/base_footprint', rospy.Time(0))
+                        odomBbase = createBMatrix(trans, rot)
+                
+                        self.out_pos, self.out_quat = Bmat_to_pos_quat(odomBbase*pr2basefootprint_B_ar*self.reference_B_ar.I)
+                      
                     if self.currently_tracking_AR and self.finished_acquiring_AR_tag:
                         # The point to be looking at is expressed in the 'odom_combined' frame
                         self.point.point.x = self.map_B_ar_pos[0]

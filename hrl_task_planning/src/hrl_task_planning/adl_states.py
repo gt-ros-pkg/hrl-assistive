@@ -62,8 +62,8 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
     elif action == 'MOVE_ARM':
         return MoveArmState(task=args[0], model=args[1], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'MOVE_BACK':
-        #return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
-        return MoveBackState(model=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
+        #return MoveBackState(model=args[0], domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
     elif action == 'DO_TASK':
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
@@ -312,51 +312,13 @@ class MoveBackState(PDDLSmachState):
         super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
         self.domain = domain
-        self.in_zone = False
-        self.tfl = tf.TransformListener()
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
-
-    def zone_boundary_update(self, msg):
-        try:
-            zone_boundary = msg.poses
-        except: 
-            return
-        bottom_left = np.array([zone_boundary[0].position.x, 
-                                zone_boundary[0].position.y])
-        top_left = np.array([zone_boundary[1].position.x,
-                            zone_boundary[1].position.y])
-        bottom_right = np.array([zone_boundary[3].position.x,
-                                 zone_boundary[3].position.y])
-        base_vector = bottom_right - bottom_left
-        height_vector = top_left - bottom_left
-        test_vector = -bottom_left
-        dot_prod_base = np.dot(test_vector, base_vector)
-        dot_prod_height = np.dot(test_vector, height_vector)
-        if ((dot_prod_base > 0 and dot_prod_base < np.dot(base_vector, base_vector)) and
-           (dot_prod_height > 0 and dot_prod_height < np.dot(height_vector, height_vector))):
-            self.in_zone = True
-        else:
-            self.in_zone = False
-        print "In the Zone?"
-        print self.in_zone
 
     def on_execute(self, ud):
         #Here we check if our robot is in the zone specified. 
         #Thus we subscribe to the zone publisher and do some math to figure out if 
         #we are in the zone.
         rospy.loginfo('[%s] Giving Control to the User to Move to Safe Zone' % rospy.get_name())
-        rospy.Subscriber('/move_back_safe_zone/points', PoseArray, self.zone_boundary_update)
-        while not rospy.is_shutdown() and not self.in_zone:
-            if self.preempt_requested():
-                rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
-                return 
-            rospy.sleep(1)
-        if self.in_zone:
-            state_update = PDDLState()
-            state_update.domain = self.domain
-            state_update.predicates = ['(NOT (TOO-CLOSE %s))' %  self.model]
-            self.state_pub.publish(state_update)
-
+        return
 
 
 

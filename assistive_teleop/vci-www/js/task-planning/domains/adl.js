@@ -5,9 +5,9 @@ var RFH = (function(module) {
         var self = this;
         var ros = options.ros;
         var tfClient = options.tfClient;
-        var $viewer = options.viewer;
         self.name = options.name || 'adl';
         self.domain = 'adl';
+        var $viewer = $('#viewer-canvas');
         var $button = $('#start-task-button');
         ros.getMsgDetails('hrl_task_planning/PDDLProblem');
         self.taskPublisher = new ROSLIB.Topic({
@@ -56,11 +56,12 @@ var RFH = (function(module) {
                 case 'MOVE_BACK':
                     startFunc = function () {
                     self.showZone();
-                    RFH.actionMenu.startAction('LookingAction');
+                    RFH.actionMenu.startAction('drivingAction');
                     };
                     break;
                 case 'MOVE_ROBOT':
                     startFunc = function () {
+                        self.hideZone();
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('drivingAction');
                     };

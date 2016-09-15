@@ -109,7 +109,7 @@ class BaseSelector(object):
         self.scores_dict['autobed', 'scratching_thigh_left'] = None
         self.scores_dict['autobed', 'scratching_thigh_right'] = None
         self.scores_dict['autobed', 'scratching_knee_left'] = None
-        self.scores_dict['autobed', 'wiping_face'] = None
+        self.scores_dict['autobed', 'wiping_mouth'] = None
         self.scores_dict['autobed', 'scratching_forearm_left'] = None
         self.scores_dict['autobed', 'scratching_forearm_right'] = None
         self.scores_dict['autobed', 'scratching_upper_arm_left'] = None
@@ -137,29 +137,36 @@ class BaseSelector(object):
         elif load == 'paper':
             if model == 'autobed':
                 self.scores_dict['autobed', 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-                self.scores_dict['autobed', 'wiping_face'] = self.load_task('wiping_face', model)
+                self.scores_dict['autobed', 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
-            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'shaving'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
             #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
-            self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
-            self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
-            self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
-            self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
+            #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
+            #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
+            #self.scores_dict[model, 'scratching_forearm_left'] = self.load_task('scratching_forearm_left', model)
+            #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
             model = 'autobed'
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
-            self.scores_dict[model, 'wiping_face'] = self.load_task('wiping_face', model)
+            #self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             # self.scores_dict[model, 'scratching_chest'] = self.load_task('scratching_chest', model)
-            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            #self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
             #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
             # self.scores_dict[model, 'scratching_thigh_left'] = self.load_task('scratching_thigh_left', model)
             # self.scores_dict[model, 'scratching_thigh_right'] = self.load_task('scratching_thigh_right', model)
@@ -167,9 +174,10 @@ class BaseSelector(object):
             #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
             #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
-            #self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
-            #self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
-            #self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
+            self.real_time_score_generator = ScoreGenerator(reference_names=[None], model=None, visualize=False)
+            self.model_read_service = rospy.Service('set_environment_model', SetBaseModel, self.handle_read_in_environment_model)
+            self.real_time_base_selection_service = rospy.Service('realtime_select_base_position', RealtimeBaseMove, self.realtime_base_selection)
+            self.real_time_goal_pose_pub = rospy.Publisher('~rtbs_ee_goal_pose', PoseStamped, queue_size=1, latch=True)
         else:
             self.scores_dict[model, load] = self.load_task(load, model)
 
@@ -321,6 +329,21 @@ class BaseSelector(object):
         reference_B_goal_pose = createBMatrix([pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w])
         base_footprint_B_reference = createBMatrix(trans, ori)
         base_footprint_B_goal_pose = base_footprint_B_reference*reference_B_goal_pose
+        print 'The goal end effector pose in the base footprint frame is:'
+        print base_footprint_B_goal_pose
+        pos, ori = Bmat_to_pos_quat(base_footprint_B_goal_pose)
+        ref_pose = PoseStamped()
+        ref_pose.header.frame_id = "/base_footprint"
+        ref_pose.header.stamp = rospy.Time.now()
+        ref_pose.pose.position.x = pos[0]
+        ref_pose.pose.position.y = pos[1]
+        ref_pose.pose.position.z = pos[2]
+        ref_pose.pose.orientation.x = ori[0]
+        ref_pose.pose.orientation.y = ori[1]
+        ref_pose.pose.orientation.z = ori[2]
+        ref_pose.pose.orientation.w = ori[3]
+        self.real_time_goal_pose_pub.publish(ref_pose)
+
         base_selection_goal = []
         base_selection_goal.append([base_footprint_B_goal_pose, 1, 0])
         base_selection_goal = np.array(base_selection_goal)
@@ -823,8 +846,6 @@ class BaseSelector(object):
     # Set to load from svn now, where I have put the data files.
     def load_task(self, task, model):
         home = expanduser("~")
-        if 'wiping' in task:
-            task = 'face_wiping'
         file_name = self.pkg_path + '/data/' + task + '_' + model + '_cma_score_data.pkl'
 #        print file_name
         return load_pickle(file_name)
@@ -867,7 +888,7 @@ if __name__ == "__main__":
     # you can just do all, but it will take a while to initialize (30 seconds).
     p.add_option('--load', action='store', dest='load', default='shaving', type='string',
                  help='Select tasks to load (all, paper (for the two tasks used in the paper), shaving, brushing, '
-                      'feeding, feeding, bathing, scratching_chest, scratching_thigh_left, wiping_face'
+                      'feeding, feeding, bathing, scratching_chest, scratching_thigh_left, wiping_mouth'
                       'scratching_thigh_right, scratching_forearm_left, scratching_forearm_right,'
                       'scratching_upper_arm_left, scratching_upper_arm_right)')
 

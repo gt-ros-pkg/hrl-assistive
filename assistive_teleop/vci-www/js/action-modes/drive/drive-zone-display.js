@@ -85,7 +85,8 @@ var RFH = (function (module) {
             goalPose.pose.position.z = 0;
             goalPose.pose.orientation = paMsg.poses[0].orientation;
 
-            var baseGeom = new THREE.BoxGeometry(goalWidth, goalLength, 10 );
+            var baseGeom = new THREE.BoxGeometry(goalWidth.data, goalLength.data, 0.1 );
+            //var baseGeom = new THREE.BoxGeometry(10, 10, 10 );
             zoneArea.geometry = baseGeom;
             zoneArea.scale.set(1, 1, 0.1);
         };
@@ -140,7 +141,6 @@ var RFH = (function (module) {
             updateGoalVisualization();  // refresh rendering (to use new tf)
         };
         tfClient.subscribe(goal_frame, updateOdomTF);
-
     };
     return module;
 

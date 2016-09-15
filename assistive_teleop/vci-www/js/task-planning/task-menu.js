@@ -69,7 +69,8 @@ var RFH = (function (module) {
                                                     l_gripper: RFH.pr2.l_gripper});
         RFH.taskMenu.domains.pick_and_place = new RFH.Domains.PickAndPlace({ros:RFH.ros});
         RFH.taskMenu.domains.realtime_base_selection = new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros});
-        RFH.taskMenu.domains.adl = new RFH.Domains.ADL({ros:RFH.ros});
+        RFH.taskMenu.domains.adl = new RFH.Domains.ADL({ros:RFH.ros,
+                                                        tfClient:RFH.tfClient});
         
         /* Update menu to reflect current state */
         RFH.taskMenu.updateOptions();

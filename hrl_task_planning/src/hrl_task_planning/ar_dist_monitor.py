@@ -10,6 +10,7 @@ import tf, math
 from std_msgs.msg import Bool, Float32
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import PoseArray, PoseStamped, Pose, Point, Quaternion
+from helper_functions import createBMatrix, Bmat_to_pos_quat
 
 from hrl_task_planning import pddl_utils as pddl
 from hrl_msgs.msg import FloatArrayBare
@@ -121,22 +122,38 @@ class BedDistanceTracker(object):
             return False
         poses = PoseArray()
         poses.header.frame_id = 'odom_combined' 
-        poses.header.stamp = common_time
+        poses.header.stamp = rospy.Time(0)#common_time
         ps_msg = PoseStamped()
         ps_msg.header.frame_id = self.out_frame 
-        ps_msg.header.stamp = common_time
+        ps_msg.header.stamp = rospy.Time(0) #common_time
         for pos in zone_boundary:
             ps_msg.pose.position = pos
             ps_msg.pose.orientation = quat
-            try:
-                odom_msg = self.tfl.transformPose('/odom_combined', ps_msg)
-            except:
-                rospy.logerr("[%s] Error transforming goal from base_selection into odom_combined", rospy.get_name())
-                return False
-            poses.poses.append(Pose(odom_msg.pose.position, odom_msg.pose.orientation))
+            #try:
+            trans, rot= self.tfl.lookupTransform('/odom_combined', self.out_frame, rospy.Time(0))
+            odomBout = createBMatrix(trans, rot)
+            outBzonepoint = createBMatrix([pos.x, pos.y, pos.z], [quat.x, quat.y, quat.z, quat.w])
+            out_pos, out_quat =Bmat_to_pos_quat(odomBout*outBzonepoint)
+            #odom_msg = self.tfl.transformPose('/odom_combined', ps_msg)
+
+            ps = PoseStamped()
+            ps.header.frame_id = 'odom_combined'  # markers[i].pose.header.frame_id
+            ps.header.stamp = rospy.Time.now()  # markers[i].pose.header.stamp
+            ps.pose.position.x = out_pos[0]
+            ps.pose.position.y = out_pos[1]
+            ps.pose.position.z = out_pos[2]
+            #
+            ps.pose.orientation.x = out_quat[0]
+            ps.pose.orientation.y = out_quat[1]
+            ps.pose.orientation.z = out_quat[2]
+            ps.pose.orientation.w = out_quat[3]
+            #except:
+            #rospy.logerr("[%s] Error transforming goal from base_selection into odom_combined", rospy.get_name())
+            #return False
+            poses.poses.append(Pose(ps.pose.position, ps.pose.orientation))
         self.move_back_zone_pose.publish(poses)
-        self.move_back_zone_width(width)
-        self.move_back_zone_length(length)
+        self.move_back_zone_width.publish(box_width)
+        self.move_back_zone_length.publish(box_length)
         return True
 
 
@@ -148,10 +165,10 @@ class BedDistanceTracker(object):
             bottom_left = np.array([0.0, 0.35])
             bottom_right = np.array([0.0, -0.35])
         elif self.model.upper() == 'WHEELCHAIR':
-            top_right = np.array([1.0, -0.4])
-            top_left = np.array([1.0, 0.4])
-            bottom_left = np.array([0.0, 0.4])
-            bottom_right = np.array([0.0, -0.4])
+            top_right = np.array([2.1, -1.0])
+            top_left = np.array([2.1, 1.0])
+            bottom_left = np.array([0.0, 1.0])
+            bottom_right = np.array([0.0, -1.0])
         model_boundary = [[top_right, top_left], 
                           [top_left, bottom_left], 
                           [bottom_left, bottom_right],
@@ -184,6 +201,10 @@ class BedDistanceTracker(object):
                 base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
             except:
                 continue
+            print "Robot is at:"
+            print robot_trans[:2]
+            print "Robot needs to go to:"
+            print base_goals[:2]
             self.ar_distance_check(robot_trans[:2], base_goals[:2])
             rate.sleep() 
 	
