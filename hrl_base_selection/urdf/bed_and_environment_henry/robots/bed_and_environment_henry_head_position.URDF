@@ -1,20 +1,21 @@
+<?xml version="1.0"?>
 <robot
-  name="wheelchair_henry">
+  name="bed_and_environment_henry">
   <link
-    name="wheelchair/base_link">
+   name="autobed/base_link">
     <inertial>
       <origin
-        xyz="0.53211 -9.4007E-05 0.52163"
+        xyz="1.07 3.94840580504828E-16 0.0837923121940762"
         rpy="0 0 0" />
       <mass
-        value="272.65" />
+        value="6.1860172808288" />
       <inertia
-        ixx="34.793"
-        ixy="-0.011261"
-        ixz="-5.7617"
-        iyy="44.037"
-        iyz="-0.013729"
-        izz="36.587" />
+        ixx="1.21978721906848"
+        ixy="2.22044604925031E-15"
+        ixz="-1.78284289885571E-15"
+        iyy="7.15036992783298"
+        iyz="-7.76907347784197E-16"
+        izz="8.24641740321532" />
     </inertial>
     <visual>
       <origin
@@ -22,13 +23,8 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_henry/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/base_link.STL" />
       </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.79216 0.81961 0.93333 1" />
-      </material>
     </visual>
     <collision>
       <origin
@@ -36,39 +32,158 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://wheelchair_henry/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
-  <link
-    name="wheelchair/neck_base_link">
+    <link
+   name="autobed/wall_link">
+    <inertial>
+      <origin
+        xyz="1.85973617610096 0.322876413955559 0.506156564666783"
+        rpy="0 0 0" />
+      <mass
+        value="3480.34879229199" />
+      <inertia
+        ixx="6193.4907032472"
+        ixy="3253.06972401852"
+        ixz="-11.5632809249146"
+        iyy="7114.12294656335"
+        iyz="386.100445501856"
+        izz="12101.3286461396" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/wall_link.STL" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/wall_link.STL" />
+      </geometry>
+    </collision>
   </link>
   <joint
-    name="wheelchair/origin_to_neck_base_joint"
+   name="autobed/origin_wall_joint"
     type="fixed">
     <origin
-      xyz="0.332 0 1.25"
-      rpy="1.570795 1.570795 0" />
+      xyz="-0.12155 -0.0043316 0"
+      rpy="0 0 -0.053897" />
     <parent
-      link="wheelchair/base_link" />
+      link="autobed/base_link" />
     <child
-      link="wheelchair/neck_base_link" />
+      link="autobed/wall_link" />
+    <axis
+      xyz="0 0 0" />
   </joint>
   <link
-    name="wheelchair/neck_twist_link">
+   name="autobed/bed_frame_link">
+    <inertial>
+      <origin
+        xyz="1.20574977089702 -0.00197319632794563 0.010463658046454"
+        rpy="0 0 0" />
+      <mass
+        value="298.525793737685" />
+      <inertia
+        ixx="25.3079805393988"
+        ixy="0.124705215046845"
+        ixz="-6.18752707469867"
+        iyy="161.196265779885"
+        iyz="0.0978345240222597"
+        izz="178.196491872743" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/bed_frame_link.STL" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/bed_frame_link.STL" />
+      </geometry>
+    </collision>
   </link>
   <joint
-    name="wheelchair/neck_twist_joint"
+   name="autobed/tele_legs_joint"
+    type="prismatic">
+    <origin
+      xyz="-0.0400000000000005 0 0.320000000000001"
+      rpy="0 0 0" />
+    <parent
+      link="autobed/base_link" />
+    <child
+      link="autobed/bed_frame_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+   name="autobed/leg_rest_upper">
+    <inertial>
+      <origin
+        xyz="0.184999999999998 0.10500000000001 6.79804630482359E-16"
+        rpy="0 0 0" />
+      <mass
+        value="71.0955000000001" />
+      <inertia
+        ixx="5.22152012812501"
+        ixy="-3.21389401302034E-17"
+        ixz="-3.22023131917487E-17"
+        iyy="5.77132532812501"
+        iyz="-2.87322532068486E-15"
+        izz="1.072357125" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/leg_rest_upper.STL" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/leg_rest_upper.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+   name="autobed/leg_rest_upper_hinge"
     type="revolute">
     <origin
-      xyz="0.0 0.0 0"
-      rpy="0. 0. 0." />
+      xyz="1.075 0 0"
+      rpy="1.5708 -1.8438E-16 7.6543E-16" />
     <parent
-      link="wheelchair/neck_base_link" />
+      link="autobed/bed_frame_link" />
     <child
-      link="wheelchair/neck_twist_link" />
+      link="autobed/leg_rest_upper" />
     <axis
-      xyz="1 0 0" />
+      xyz="0 0 1" />
     <limit
       lower="-2"
       upper="2"
@@ -76,18 +191,50 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/neck_tilt_link">
+   name="autobed/leg_rest_lower">
+    <inertial>
+      <origin
+        xyz="0.325000000000004 0.104999999999987 -1.38760699713425E-16"
+        rpy="0 0 0" />
+      <mass
+        value="124.8975" />
+      <inertia
+        ixx="9.172940765625"
+        ixy="-4.25925024767052E-17"
+        ixz="-8.25969319809873E-16"
+        iyy="13.111375265625"
+        iyz="2.10674154540826E-16"
+        izz="4.856431125" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/leg_rest_lower.STL" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/leg_rest_lower.STL" />
+      </geometry>
+    </collision>
   </link>
   <joint
-    name="wheelchair/neck_tilt_joint"
+   name="autobed/leg_rest_lower_hinge"
     type="revolute">
     <origin
-      xyz="0.0 0.0 0"
-      rpy="0. 0. 0." />
+      xyz="0.37 0 0"
+      rpy="8.4655E-16 -2.4744E-16 -1.8316E-16" />
     <parent
-      link="wheelchair/neck_twist_link" />
+      link="autobed/leg_rest_upper" />
     <child
-      link="wheelchair/neck_tilt_link" />
+      link="autobed/leg_rest_lower" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -97,20 +244,29 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/neck_link">
+   name="autobed/head_rest_link">
+    <inertial>
+      <origin
+        xyz="0.338540021639504 -0.102807900235519 0.0331726512276706"
+        rpy="0 0 0" />
+      <mass
+        value="158.265573279578" />
+      <inertia
+        ixx="13.8116841883572"
+        ixy="0.366851813056848"
+        ixz="-0.640983438566653"
+        iyy="18.5647228773414"
+        iyz="-0.857921499431992"
+        izz="7.19318513198363" />
+    </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_rest_link.STL" />
       </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
     </visual>
     <collision>
       <origin
@@ -118,34 +274,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/head_rest_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="wheelchair/neck_to_neck_top_joint"
-    type="fixed">
+   name="autobed/head_rest_hinge"
+    type="revolute">
     <origin
-      xyz="-0.07239 0 0"
-      rpy="0 0 0" />
+      xyz="0.795 0 0.21"
+      rpy="1.5708 0 -3.1416" />
     <parent
-      link="wheelchair/neck_tilt_link" />
+      link="autobed/bed_frame_link" />
     <child
-      link="wheelchair/neck_link" />
-  </joint>
-  <link
-    name="wheelchair/neck_top_rotated_link">
-  </link>
-  <joint
-    name="wheelchair/neck_rotation_fixed_joint"
-    type="fixed">
-    <origin
-      xyz="0 0 0"
-      rpy="-1.570796 0 1.570796" />
-    <parent
-      link="wheelchair/neck_link" />
-    <child
-      link="wheelchair/neck_top_rotated_link" />
+      link="autobed/head_rest_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -155,39 +297,18 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/head_roty_link">
+    name="autobed/head_rotated_to_worldframe_link">
   </link>
   <joint
-    name="wheelchair/neck_head_roty_joint"
+    name="autobed/head_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="0.0154 0 0.07779"
-      rpy="0 0 0" />
+      xyz="0.40949 0.05 0"
+      rpy="0. 0. 0." />
     <parent
-      link="wheelchair/neck_top_rotated_link" />
+      link="autobed/head_rest_link" />
     <child
-      link="wheelchair/head_roty_link" />
-    <axis
-      xyz="0 1 0" />
-    <limit
-      lower="-2"
-      upper="2"
-      effort="0"
-      velocity="0" />
-  </joint>
-  <link
-    name="wheelchair/head_rotz_link">
-  </link>
-  <joint
-    name="wheelchair/neck_head_rotz_joint"
-    type="revolute">
-    <origin
-      xyz="0 0 0"
-      rpy="0 0 0" />
-    <parent
-      link="wheelchair/head_roty_link" />
-    <child
-      link="wheelchair/head_rotz_link" />
+      link="autobed/head_rotated_to_worldframe_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -197,7 +318,91 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/head_link">
+    name="autobed/head_updown_translation_link">
+  </link>
+  <joint
+    name="autobed/head_bed_updown_joint"
+    type="prismatic">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0.0 0.0 0.0" />
+    <parent
+      link="autobed/head_rotated_to_worldframe_link" />
+    <child
+      link="autobed/head_updown_translation_link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_rotated_to_bedframe_link">
+  </link>
+  <joint
+    name="autobed/head_bed_to_bedframe_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="autobed/head_updown_translation_link" />
+    <child
+      link="autobed/head_rotated_to_bedframe_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_updown_in_bedframe_link">
+  </link>
+  <joint
+    name="autobed/head_updown_bedframe_translation_joint"
+    type="prismatic">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="autobed/head_rotated_to_bedframe_link" />
+    <child
+      link="autobed/head_updown_in_bedframe_link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_leftright_translation_link">
+  </link>
+  <joint
+    name="autobed/head_bed_leftright_joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 0"
+      rpy="0.0 0.0 1.570796" />
+    <parent
+      link="autobed/head_updown_in_bedframe_link" />
+    <child
+      link="autobed/head_leftright_translation_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/head_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -223,17 +428,17 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/neck_head_rotx_joint"
+    name="autobed/head_contact_to_head_center"
     type="revolute">
     <origin
-      xyz="0 0 0"
-      rpy="0 0 0" />
+      xyz="0.091171 0.037577 0"
+      rpy="1.5708 0 0.2618" />
     <parent
-      link="wheelchair/head_rotz_link" />
+      link="autobed/head_leftright_translation_link" />
     <child
-      link="wheelchair/head_link" />
+      link="autobed/head_link" />
     <axis
-      xyz="1 0 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-2"
       upper="2"
@@ -241,14 +446,14 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/upper_body_link">
+    name="autobed/neck_rotation">
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -262,20 +467,20 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="wheelchair/neck_body_joint"
+    name="autobed/head_neck_joint1"
     type="revolute">
     <origin
-      xyz="0.00 0 0"
-      rpy="0 0 0" />
+      xyz="-0.0254 0 -0.08509"
+      rpy="-1.5708 1.1345 -3.1416" />
     <parent
-      link="wheelchair/neck_base_link" />
+      link="autobed/head_link" />
     <child
-      link="wheelchair/upper_body_link" />
+      link="autobed/neck_rotation" />
     <axis
       xyz="0 0 -1" />
     <limit
@@ -285,7 +490,95 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/mid_body_link">
+    name="autobed/neck_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/neck_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="autobed/head_neck_joint2"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 3.1554E-30 0" />
+    <parent
+      link="autobed/neck_rotation" />
+    <child
+      link="autobed/neck_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/upper_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry/meshes/upper_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="autobed/neck_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.07239 0 0"
+      rpy="-8.8242E-17 -8.2927E-14 0.66506" />
+    <parent
+      link="autobed/neck_link" />
+    <child
+      link="autobed/upper_body_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="autobed/mid_body_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -311,17 +604,17 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/upper_mid_body_joint"
+    name="autobed/upper_mid_body_joint"
     type="revolute">
     <origin
       xyz="0.35052 0 0"
-      rpy="0 0 0" />
+      rpy="2.8327E-14 7.7949E-14 0.34907" />
     <parent
-      link="wheelchair/upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="wheelchair/mid_body_link" />
+      link="autobed/mid_body_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 0 -1" />
     <limit
       lower="-2"
       upper="2"
@@ -329,7 +622,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/lower_body_link">
+    name="autobed/lower_body_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -355,17 +648,17 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/mid_lower_body_joint"
+    name="autobed/mid_lower_body_joint"
     type="revolute">
     <origin
       xyz="0.15113 0 0"
-      rpy="0 0 0" />
+      rpy="-4.3091E-16 1.669E-15 -0.57779" />
     <parent
-      link="wheelchair/mid_body_link" />
+      link="autobed/mid_body_link" />
     <child
-      link="wheelchair/lower_body_link" />
+      link="autobed/lower_body_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 0 -1" />
     <limit
       lower="-2"
       upper="2"
@@ -373,7 +666,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/quad_left_link">
+    name="autobed/quad_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -399,15 +692,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/body_quad_left_joint"
+    name="autobed/body_quad_left_joint"
     type="revolute">
     <origin
       xyz="0.05207 0 -0.08636"
-      rpy="0 0 -.25" />
+      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="wheelchair/lower_body_link" />
+      link="autobed/lower_body_link" />
     <child
-      link="wheelchair/quad_left_link" />
+      link="autobed/quad_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -417,7 +710,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/calf_left_link">
+    name="autobed/calf_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -443,15 +736,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/quad_calf_left_joint"
+    name="autobed/quad_calf_left_joint"
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.14159 0 3.43" />
+      rpy="3.1416 8.5469E-14 -2.8798" />
     <parent
-      link="wheelchair/quad_left_link" />
+      link="autobed/quad_left_link" />
     <child
-      link="wheelchair/calf_left_link" />
+      link="autobed/calf_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -461,7 +754,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/foot_left_link">
+    name="autobed/foot_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -487,15 +780,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/calf_foot_left_joint"
+    name="autobed/calf_foot_left_joint"
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="0 0 0.09" />
+      rpy="2.4608E-16 9.411E-16 0.077076" />
     <parent
-      link="wheelchair/calf_left_link" />
+      link="autobed/calf_left_link" />
     <child
-      link="wheelchair/foot_left_link" />
+      link="autobed/foot_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -505,7 +798,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/quad_right_link">
+    name="autobed/quad_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -531,15 +824,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/body_quad_right_joint"
+    name="autobed/body_quad_right_joint"
     type="revolute">
     <origin
       xyz="0.05207 0 0.08636"
-      rpy="0 0 -.25" />
+      rpy="-3.1554E-30 -3.1554E-30 -2.7756E-17" />
     <parent
-      link="wheelchair/lower_body_link" />
+      link="autobed/lower_body_link" />
     <child
-      link="wheelchair/quad_right_link" />
+      link="autobed/quad_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -549,7 +842,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/calf_right_link">
+    name="autobed/calf_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -575,15 +868,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/quad_calf_right_joint"
+    name="autobed/quad_calf_right_joint"
     type="revolute">
     <origin
       xyz="0.41218 0.11044 0"
-      rpy="3.14159 0 3.43" />
+      rpy="3.1416 8.5225E-14 -2.8798" />
     <parent
-      link="wheelchair/quad_right_link" />
+      link="autobed/quad_right_link" />
     <child
-      link="wheelchair/calf_right_link" />
+      link="autobed/calf_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -593,7 +886,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/foot_right_link">
+    name="autobed/foot_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -619,15 +912,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/calf_foot_right_joint"
+    name="autobed/calf_foot_right_joint"
     type="revolute">
     <origin
       xyz="-0.41279 -0.03188 0"
-      rpy="0 0 0.09" />
+      rpy="3.3137E-27 3.7799E-26 0.077076" />
     <parent
-      link="wheelchair/calf_right_link" />
+      link="autobed/calf_right_link" />
     <child
-      link="wheelchair/foot_right_link" />
+      link="autobed/foot_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -637,7 +930,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/arm_left_link">
+    name="autobed/arm_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -663,15 +956,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/body_arm_left_joint"
+    name="autobed/body_arm_left_joint"
     type="revolute">
     <origin
       xyz="0.09652 0 -0.17526"
-      rpy="0 0 0" />
+      rpy="2.6872E-15 8.287E-14 0.033074" />
     <parent
-      link="wheelchair/upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="wheelchair/arm_left_link" />
+      link="autobed/arm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -681,7 +974,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/forearm_left_link">
+    name="autobed/forearm_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -707,15 +1000,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/arm_forearm_left_joint"
+    name="autobed/arm_forearm_left_joint"
     type="revolute">
     <origin
       xyz="0.28174 -0.0106 -0.04953"
-      rpy="0 0 0" />
+      rpy="1.1849E-16 -8.3419E-14 -1.6268E-27" />
     <parent
-      link="wheelchair/arm_left_link" />
+      link="autobed/arm_left_link" />
     <child
-      link="wheelchair/forearm_left_link" />
+      link="autobed/forearm_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -725,7 +1018,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/hand_left_link">
+    name="autobed/hand_left_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -751,15 +1044,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/forearm_hand_left_joint"
+    name="autobed/forearm_hand_left_joint"
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="0 0 0" />
+      rpy="1.3447E-16 8.3999E-14 1.6283E-27" />
     <parent
-      link="wheelchair/forearm_left_link" />
+      link="autobed/forearm_left_link" />
     <child
-      link="wheelchair/hand_left_link" />
+      link="autobed/hand_left_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -769,7 +1062,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/arm_right_link">
+    name="autobed/arm_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -795,15 +1088,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/body_arm_right_joint"
+    name="autobed/body_arm_right_joint"
     type="revolute">
     <origin
       xyz="0.09652 0 0.17526"
-      rpy="0 0 0" />
+      rpy="-3.0757E-16 8.2843E-14 -0.0045332" />
     <parent
-      link="wheelchair/upper_body_link" />
+      link="autobed/upper_body_link" />
     <child
-      link="wheelchair/arm_right_link" />
+      link="autobed/arm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -813,7 +1106,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/forearm_right_link">
+    name="autobed/forearm_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -839,15 +1132,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/arm_forearm_right_joint"
+    name="autobed/arm_forearm_right_joint"
     type="revolute">
     <origin
       xyz="0.28194 0 0.04953"
-      rpy="0 0 0" />
+      rpy="2.6089E-19 -8.3342E-14 0.037607" />
     <parent
-      link="wheelchair/arm_right_link" />
+      link="autobed/arm_right_link" />
     <child
-      link="wheelchair/forearm_right_link" />
+      link="autobed/forearm_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -857,7 +1150,7 @@
       velocity="0" />
   </joint>
   <link
-    name="wheelchair/hand_right_link">
+    name="autobed/hand_right_link">
     <visual>
       <origin
         xyz="0 0 0"
@@ -883,15 +1176,15 @@
     </collision>
   </link>
   <joint
-    name="wheelchair/forearm_hand_right_joint"
+    name="autobed/forearm_hand_right_joint"
     type="revolute">
     <origin
       xyz="0.25146 0 0"
-      rpy="0 0 0" />
+      rpy="1.9364E-14 8.3335E-14 1.6151E-27" />
     <parent
-      link="wheelchair/forearm_right_link" />
+      link="autobed/forearm_right_link" />
     <child
-      link="wheelchair/hand_right_link" />
+      link="autobed/hand_right_link" />
     <axis
       xyz="0 0 1" />
     <limit
@@ -900,4 +1193,5 @@
       effort="0"
       velocity="0" />
   </joint>
+
 </robot>

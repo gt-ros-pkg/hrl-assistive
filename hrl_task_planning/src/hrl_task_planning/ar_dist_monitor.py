@@ -230,11 +230,9 @@ class BedDistanceTracker(object):
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 continue
             try:
-                base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
+                final_pos = rospy.get_param('/model_B_goal')
             except:
                 continue
-            goal_B_model = createBMatrix(base_goals[:3], base_goals[3:])
-            final_pos, final_quat = Bmat_to_pos_quat(goal_B_model.I)
             print "Robot is at:"
             print robot_trans[:2]
             print "Robot needs to go to:"
