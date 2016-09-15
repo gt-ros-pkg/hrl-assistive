@@ -40,7 +40,7 @@ var RFH = (function (module) {
                             var eeGoalPose = applyOffset(pose);
                             self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], eeGoalPose);
                         };
-                        RFH.actionMenu.tasks.getClickedPoseAction.registerPoseCB(getPoseCB, true);
+                        RFH.actionMenu.actions.getClickedPoseAction.registerPoseCB(getPoseCB, true);
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('getClickedPoseAction');
                     };

@@ -48,10 +48,6 @@
   <!-- Filtered PointCloud for 3D Peek Feature -->
   <include file="$(find assistive_teleop)/launch/pcl_filter.launch"/>
 
-  <!-- Realtime Base-selection components 
-  <include file="$(find assistive_teleop)/launch/realtime_base_selection.launch"/>
--->
-
   <!-- Gripper Sensor Action for delicate and intelligent grasping -->
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
 
@@ -71,6 +67,10 @@
 
   <node name="l_gripper_state_throttle" pkg="topic_tools" type="throttle" 
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
+
+  <!-- Skin drivers -->
+  <include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_both_arms.launch"/>
+  <include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_base.launch"/>
 
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">

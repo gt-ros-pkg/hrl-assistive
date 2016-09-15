@@ -17,7 +17,7 @@ var RFH = (function(module) {
         self.cancelTask = function (problem) {
             var cancelResultCB = function (resp) {
                 if (resp.result) {
-                    RFH.actionMenu.startTask(RFH.actionMenu.defaultTask);
+                    RFH.actionMenu.startAction(RFH.actionMenu.defaultAction);
                     console.log("Cancelled task successfully");
                 } else {
                     RFH.log("Failed to cancel task");

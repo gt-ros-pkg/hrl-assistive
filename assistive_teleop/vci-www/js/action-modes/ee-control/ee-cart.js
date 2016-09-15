@@ -12,8 +12,8 @@ var RFH = (function (module) {
         var divId = options.div || 'video-main';
         self.$div = $('#'+divId);
         self.gripper = options.gripper;
-        self.eeDisplay = options.eeDisplay;
-        self.eeDisplay.hide();
+//        self.eeDisplay = options.eeDisplay;
+//        self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
         self.stepSizes = {'tiny': 0.015,
@@ -99,7 +99,7 @@ var RFH = (function (module) {
             var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false;
             $('#armCtrlContainer').hide();
             self.gripperDisplay.hide();
-            self.eeDisplay.show();
+//            self.eeDisplay.show();
             RFH.kinectHeadPointCloud.setVisible(true);
             RFH.viewer.renderer.setClearColor(0x666666,0.5);
             //$('#mjpeg-image').css('visibility','hidden');
@@ -141,7 +141,7 @@ var RFH = (function (module) {
                 if (restoreArmContainer) { $('#armCtrlContainer').show(); }
                 RFH.kinectHeadPointCloud.locked = false;
                 self.gripperDisplay.show();
-                self.eeDisplay.hide();
+//                self.eeDisplay.hide();
             };
 
             // All the points defined, move the camera and render views
@@ -340,7 +340,7 @@ var RFH = (function (module) {
             // preview gripper pose = handPose + offset
             if (!self.preview || self.handDelta === null) {return;}
             var pose = self.getPoseFromDelta(self.handDelta);
-            self.eeDisplay.setCurrentPose(pose);
+//            self.eeDisplay.setCurrentPose(pose);
         };
 
         var updateHandDelta = function (e) {
@@ -365,12 +365,12 @@ var RFH = (function (module) {
 
         self.startPreview = function () {
             self.preview = true;
-            self.eeDisplay.showCurrent();
+//            self.eeDisplay.showCurrent();
         };
 
         self.stopPreview = function () {
             self.preview = false;
-            self.eeDisplay.hideCurrent();
+//            self.eeDisplay.hideCurrent();
             self.handDelta = null;
         };
 
