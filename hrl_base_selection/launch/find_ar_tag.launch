@@ -24,9 +24,7 @@
 
     <!-- <node name="find_head" pkg="hrl_base_selection" type="head_mat_tf_broadcaster.py" respawn="false" output="screen"/>-->
     <node name="find_head" pkg="hrl_base_selection" type="body_center_tf_broadcaster.py" respawn="false" output="screen"/>
-    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py">
-          <!--output="screen"-->
-    </node>
+    <node pkg="hrl_pr2_ar_servo" name="sm_pr2_servoing" type="sm_pr2_servoing.py" output="screen"/>
 
     <!--Initialize the global transforms to localize the bed and head in the world.-->
     <!-- <node name="autobed_global_tf_broadcaster" pkg="hrl_base_selection" type="autobed_global_tf_broadcaster.py" output="screen"/>
