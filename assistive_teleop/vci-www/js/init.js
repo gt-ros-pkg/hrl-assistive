@@ -142,6 +142,7 @@ var RFH = (function (module) {
                 maxPoints: 16000,
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+            RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
             RFH.initTaskMenu();
 
             /* Added content for left column */
