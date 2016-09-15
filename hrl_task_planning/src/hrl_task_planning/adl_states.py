@@ -408,7 +408,7 @@ class CallBaseSelectionState(PDDLSmachState):
         self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         if self.task.upper() == 'WIPING_MOUTH':
-            local_task_name = 'wiping_face'
+            local_task_name = 'wiping_mouth'
         elif self.task.upper() == 'SCRATCHING':
             local_task_name = 'scratching_knee_left'
 

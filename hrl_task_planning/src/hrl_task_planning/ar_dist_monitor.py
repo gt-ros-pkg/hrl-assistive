@@ -44,6 +44,29 @@ class BedDistanceTracker(object):
         else: 
             return True
 
+    def shift_to_nearest_edge(self, final_pos):
+        #shift point to nearest edge of the model
+        dist_top = (self.top_right[0] - final_pos[0])
+        dist_bottom = abs(final_pos[0] - self.bottom_right[0])
+        dist_left = (self.top_left[1] - final_pos[1])
+        dist_right = abs(self.top_right[1] - final_pos[1])
+        dist_array = [dist_top, dist_bottom, dist_left, dist_right]
+        edge_array = [self.top_right[0], self.bottom_right[0], self.top_left[1], self.top_right[1]]
+        #index of the closest edge
+        min_ind = dist_array.index(min(dist_array))
+        if min_ind < (len(dist_array)/2.0):
+            if dist_array[min_ind] >= 0:
+                return np.array([edge_array[min_ind], final_pos[1]])
+            else:
+                return None
+        elif min_ind >= (len(dist_array)/2.0):
+            if dist_array[min_ind] >= 0:
+                return np.array([final_pos[0], edge_array[min_ind]])
+            else:
+                return None
+        else:
+            return None
+
     def ar_distance_check(self, robot_pos, final_pos):
         robot_pos_2d = np.array([robot_pos[0], robot_pos[1]])
         final_pos_2d = np.array([final_pos[0], final_pos[1]])
@@ -51,9 +74,18 @@ class BedDistanceTracker(object):
         traj_line_2d = [final_pos_2d, robot_pos_2d]
         preds = []
         does_intersect = False
-        for model_boundary in model_boundaries_2d:
-            new_intersection_check = self.line_intersection_check(traj_line_2d, model_boundary)
-            does_intersect = does_intersect or new_intersection_check
+        #Check if Base Selected by BS is inside the CSPACE of the model.
+        #If so, move that point to the nearest edge and continue
+        if ((final_pos[0] < self.top_left[0] and final_pos[0] > self.bottom_left[0]) or
+                (final_pos[1] < self.top_left[1] and final_pos[1] > self.top_right[1])):
+            final_pos_2d = self.shift_to_nearest_edge(final_pos)
+            if final_pos_2d == None:
+                rospy.logwarn(" [%s] BS wants final base inside model but dont know where", rospy.get_name())
+                does_intersect = True
+        else:
+            for model_boundary in model_boundaries_2d:
+                new_intersection_check = self.line_intersection_check(traj_line_2d, model_boundary)
+                does_intersect = does_intersect or new_intersection_check
         if does_intersect:
             preds.append(pddl.Predicate('TOO-CLOSE', [self.model]))
         else:
@@ -77,21 +109,21 @@ class BedDistanceTracker(object):
             quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
             dimensions = [0.7, 2.0] #width, length
         elif self.model.upper() == 'WHEELCHAIR':
-            if final_pos[0] > 1.0 and (final_pos[1] < 0.4 and final_pos[1] > -0.4):
-                zone_boundary = [Point(final_pos[0], 0.4, 0.0),
-                                 Point(final_pos[0] + 2.0, 0.4, 0.0),
-                                 Point(final_pos[0] + 2.0, -0.4, 0.0),
-                                 Point(final_pos[0], -0.4, 0.0)]
+            if final_pos[0] > 0.0 and (final_pos[1] < 0.35 and final_pos[1] > -0.35):
+                zone_boundary = [Point(final_pos[0], 0.35, 0.0),
+                                 Point(final_pos[0] + 2.0, 0.35, 0.0),
+                                 Point(final_pos[0] + 2.0, -0.35, 0.0),
+                                 Point(final_pos[0], -0.35, 0.0)]
                 quat = Quaternion(0.0, 0.0, 0.0, 1.0)
-                dimensions = [0.8, 2.0]
-            elif (final_pos[1] > 0.4):
+                dimensions = [0.7, 2.0]
+            elif (final_pos[1] > 0.35):
                 zone_boundary = [Point(0.0, final_pos[1], 0.0),
                                  Point(0.0, final_pos[1]+1.5, 0.0),
                                  Point(2.0, final_pos[1]+1.5, 0.0),
                                 Point(2.0, final_pos[1], 0.0)]
                 quat = Quaternion(0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5))
                 dimensions = [1.5, 2.0]
-            elif (final_pos[1] < -0.4):
+            elif (final_pos[1] < -0.35):
                 zone_boundary = [Point(2.0, final_pos[1], 0.0),
                                  Point(2.0, final_pos[1]-1.5, 0.0),
                                  Point(0.0, final_pos[1]-1.5, 0.0),
@@ -160,19 +192,19 @@ class BedDistanceTracker(object):
     def generate_model_boundaries(self):
         #Generate boundaries of the model we are using
         if self.model.upper() == 'AUTOBED':
-            top_right = np.array([2.0, -0.35])
-            top_left = np.array([2.0, 0.35])
-            bottom_left = np.array([0.0, 0.35])
-            bottom_right = np.array([0.0, -0.35])
+            self.top_right = np.array([2.0, -0.35])
+            self.top_left = np.array([2.0, 0.35])
+            self.bottom_left = np.array([0.0, 0.35])
+            self.bottom_right = np.array([0.0, -0.35])
         elif self.model.upper() == 'WHEELCHAIR':
-            top_right = np.array([2.1, -1.0])
-            top_left = np.array([2.1, 1.0])
-            bottom_left = np.array([0.0, 1.0])
-            bottom_right = np.array([0.0, -1.0])
-        model_boundary = [[top_right, top_left], 
-                          [top_left, bottom_left], 
-                          [bottom_left, bottom_right],
-                          [bottom_right, top_right]]
+            self.top_right = np.array([2.1, -1.0])
+            self.top_left = np.array([2.1, 1.0])
+            self.bottom_left = np.array([0.0, 1.0])
+            self.bottom_right = np.array([0.0, -1.0])
+        model_boundary = [[self.top_right, self.top_left], 
+                          [self.top_left, self.bottom_left], 
+                          [self.bottom_left, self.bottom_right],
+                          [self.bottom_right, self.top_right]]
         return model_boundary
 
 
