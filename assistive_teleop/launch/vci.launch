@@ -50,6 +50,12 @@
 
   <!-- Gripper Sensor Action for delicate and intelligent grasping -->
   <include file="$(find pr2_gripper_sensor_action)/launch/pr2_gripper_sensor_actions.launch"/>
+   
+  <!-- Heartbeat relay for connection monitoring -->
+  <node name="heartbeat_relay" pkg="topic_tools" type="relay" args="web_heartbeat web_heartbeat_reply" >
+        <param name="unreliable" value="true"/>
+        <param name="lazy" value="true"/>
+  </node>
 
   <!-- Gripper Grasping State Monitors -->
   <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="right" output="screen"/>
