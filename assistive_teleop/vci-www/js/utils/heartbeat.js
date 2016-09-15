@@ -3,8 +3,8 @@ RFH = (function(module) {
     'use strict';
     var self = this;
     var ros = options.ros;
-    var lastSent = null;
-    var latestReceived = null;
+    var now = new Date();
+    var latestReceived = now.setSeconds(now.getSeconds() + 10);
     var lostConnection = false;
     
     var heartbeatPub = new ROSLIB.Topic({
@@ -14,6 +14,13 @@ RFH = (function(module) {
     });
     heartbeatPub.advertise();
 
+    var processReply = function (hbMsg) {
+        var newlyReceived = new Date(hbMsg.data);
+        if (newlyReceived - latestReceived > 0) {
+            latestReceived = newlyReceived;
+        }
+    };
+
     var heartbeatReplySub = new ROSLIB.Topic({
         ros: ros,
         name: "web_heartbeat_reply",
@@ -22,18 +29,10 @@ RFH = (function(module) {
     heartbeatReplySub.subscribe(processReply);
 
     var sendHeatbeat = function () {
-        lastSent = new Date();
-        heartbeatPub.publish({data: lastSent.toJSON()});
+        heartbeatPub.publish({data: new Date().toJSON()});
     };
-    var sendTimer = setInterval(sendHeatbeat, 5000);
+    var sendTimer = setInterval(sendHeatbeat, 2500);
     
-    var processReply = function (hbMsg) {
-        var newlyReceived = new Date(hbMsg.data);
-        if (newlyReceived - latestReceived > 0) {
-            latestReceived = newlyReceived;
-        }
-    };
-
     var grayVideo = function () {
         var w = $('body').width();
         var h = $('body').height();
@@ -43,12 +42,12 @@ RFH = (function(module) {
 
     var clearVideo = function () {
         $('#image-cover').hide();
-        lostConnection = true;
+        lostConnection = false;
     };
 
     var checkHeartbeat = function () {
-        now = new Date();
-        delay = (now - latestReceived) / 1000; // Convert ms to seconds
+        var now = new Date();
+        var delay = (now - latestReceived) / 1000; // Convert ms to seconds
         if (delay > 5) {
             if (!lostConnection){
                 grayVideo();
@@ -59,7 +58,7 @@ RFH = (function(module) {
             }
         }
     };
-    var checkTimer = setInterval(checkHeartbeat, 5000);
+    var checkTimer = setInterval(checkHeartbeat, 5500);
     
     };
     return module;
