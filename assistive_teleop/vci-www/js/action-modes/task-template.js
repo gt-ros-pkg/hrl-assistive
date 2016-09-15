@@ -6,7 +6,7 @@ var RFH = (function (module) {
         options = options || {}; // Initialize the options object as an empty object if none is given
         self.name = options.name || 'actionnameAction'; // Required: action.name  (use name passed in, or default name here if not given)
         self.showButton = true; // Required: used to decide to create clickable button in menu or only allow intirect access
-        self.buttonText = 'Spine'; // Required: human-readable, descriptive task name
+        self.buttonText = 'Spine'; // Required: human-readable, descriptive action name
         self.buttonClass = 'spine-button'; // Required: class used for setting css rules 
 
         // Required: start function with no params.  
@@ -17,7 +17,7 @@ var RFH = (function (module) {
         };
 
         //Required: Stop function with no params.
-        // Called when switching away to a different task.
+        // Called when switching away to a different action.
         // Should hide all specific interface elements, and release any shared resources.
         self.stop = function() {
             $('#' + self.sliderDiv + ', #tallIcon, #shortIcon').hide();

@@ -3,7 +3,7 @@ var RFH = (function (module) {
         "use strict";
         var self = this;
         options = options || {};
-        self.name = options.name || 'drivingTask';
+        self.name = options.name || 'drivingAction';
         self.buttonID = options.buttonID || 'drive-mode-button';
         self.forwardOnly = options.forwardOnly || false;
         self.showButton = true;

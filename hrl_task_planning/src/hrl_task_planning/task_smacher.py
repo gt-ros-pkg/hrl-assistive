@@ -277,6 +277,7 @@ class PDDLSmachState(smach.State):
 
     def domain_state_cb(self, state_msg):
         self.current_state = State(map(Predicate.from_string, state_msg.predicates))
+        self._check_pddl_status()  # Check immediately after each update
 
     def on_execute(self, ud):
         """ Override to create task-specific functionality before waiting for state update in main execute."""

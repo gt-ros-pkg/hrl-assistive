@@ -36,10 +36,24 @@ class ToolGraspState(PDDLSmachState):
     def __init__(self, tool, hand, *args, **kwargs):
         super(ToolGraspState, self).__init__(*args, **kwargs)
         self.tool = tool
+        print "TGS receved tool [%s], hand [%s]" % (tool, hand)
         self.arm = "right_arm" if hand[0].upper() == 'R' else "left_arm"
+        self.published_pddl = False
         self.pddl_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=2)
         self.action_client = actionlib.SimpleActionClient('/%s/ar_tool_grasp_action' % self.arm, ARToolGraspAction)
         rospy.loginfo("[%s] Waiting for ar_tool_grasp_action server" % (rospy.get_name()))
+        if not self.action_client.wait_for_server(rospy.Duration(7)):
+            rospy.logerr("[%s] Could not find ar_tool_grasp_action server", rospy.get_name())
+        else:
+            rospy.loginfo("[%s] ar_tool_grasp_action server found", rospy.get_name())
+
+    def publish_done_state(self):
+        state_msg = PDDLState()
+        state_msg.domain = self.domain
+        state_msg.problem = self.problem
+        state_msg.predicates = ['(AUTO-GRASP-DONE)']
+        self.pddl_pub.publish(state_msg)
+        self.published_pddl = True
 
     def execute(self, ud):
         """ Call head Sweep Action in separate thread, publish state once done."""
@@ -54,22 +68,20 @@ class ToolGraspState(PDDLSmachState):
             return 'aborted'
 
         # Monitor goal progress
-        self.actioin_client.send_goal(self.goal)
+        self.action_client.send_goal(goal)
         # Monitor for response and/or PDDL state updates
-        published_pddl = False
+        self.published_pddl = False
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
-            grasp_state = self.actioin_client.get_state()
+            grasp_state = self.action_client.get_state()
+            print "Status: ", grasp_state
             if grasp_state == GoalStatus.SUCCEEDED:
-                if not published_pddl:
-                    state_msg = PDDLState()
-                    state_msg.domain = self.domain
-                    state_msg.problem = self.problem
-                    state_msg.predicates = ['(AUTO_GRASP_DONE)']
-                    self.pddl_pub.publish(state_msg)
-                    published_pddl = True  # Avoids repeated publishing
+                print "SUCCEEDED!"
+                if not self.published_pddl:
+                    self.publish_done_state()
             elif grasp_state not in [GoalStatus.ACTIVE, GoalStatus.PENDING]:
                 rospy.logwarn("[%s] %s - Grasp Action Failed", rospy.get_name(), self.__class__.__name__)
+                self.publish_done_state()
                 return 'aborted'
             # Wait for updated state
             result = self._check_pddl_status()
