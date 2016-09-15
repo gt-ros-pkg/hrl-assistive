@@ -36,7 +36,7 @@ var RFH = (function (module) {
             for (var i=0; i < contactDetectors.length; i+=1) {
                 Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
             }
-            console.log("All: ",  contacts.length);
+//            console.log("All: ",  contacts.length);
             updateDisplay();
         };
 
@@ -213,7 +213,7 @@ var RFH = (function (module) {
             for (var idx = 0; idx < taMsg.values_x.length; idx += 1) {
                 mag = magnitude(taMsg.values_x[idx], taMsg.values_y[idx], taMsg.values_z[idx]);
                 if (mag > contactForceThreshold) {
-                    console.log("Contact Detected!");
+//                    console.log("Contact Detected!");
                     contactPts.push(taMsg.centers_x[idx]);
                     contactPts.push(taMsg.centers_y[idx]);
                     contactPts.push(taMsg.centers_z[idx]);
