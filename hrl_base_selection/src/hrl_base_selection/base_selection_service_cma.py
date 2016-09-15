@@ -715,6 +715,11 @@ class BaseSelector(object):
             pose_array.poses.append(pr2_B_goal_pose)
             #self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
+            print 'pr2_B_ar:'
+            print  self.pr2_B_ar
+            print 'goal_B_ar:'
+            print goal_B_ar
+         
             print 'pr2_B_goal:'
             print pr2_B_goal
             distance_to_goal = np.linalg.norm([pr2_B_goal[0, 3],pr2_B_goal[1, 3]])
