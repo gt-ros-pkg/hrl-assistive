@@ -12,8 +12,8 @@ var RFH = (function (module) {
         var divId = options.div || 'video-main';
         self.$div = $('#'+divId);
         self.gripper = options.gripper;
-//        self.eeDisplay = options.eeDisplay;
-//        self.eeDisplay.hide();
+        self.eeDisplay = options.eeDisplay;
+        self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
         self.stepSizes = {'tiny': 0.015,

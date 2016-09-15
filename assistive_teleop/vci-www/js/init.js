@@ -122,13 +122,13 @@ var RFH = (function (module) {
 
             RFH.initViewer('video-main');
             RFH.initSkin();
-/*            RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
+            RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
             RFH.leftEEDisplay = new RFH.EEDisplay({side: 'l',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
-*/
+
             RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
