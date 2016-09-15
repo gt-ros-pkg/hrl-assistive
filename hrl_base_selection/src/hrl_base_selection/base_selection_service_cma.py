@@ -693,8 +693,10 @@ class BaseSelector(object):
             print 'model origin to goal:'
             print origin_B_goal
             model_B_goal_trans, model_B_goal_rot = Bmat_to_pos_quat(origin_B_goal)
-            model_B_goal_out = list(flatten([model_B_goal_trans, model_B_goal_rot]))
-            rospy.set_param('model_B_goal', model_B_goal_out)
+            #model_B_goal_out = list(flatten([model_B_goal_trans, model_B_goal_rot]))
+            #model_B_goal_out_list = [float(i) for i in model_B_goal_out]
+            model_B_goal_out_list = [float(model_B_goal_trans[0]), float(model_B_goal_trans[1])]
+            rospy.set_param('model_B_goal', model_B_goal_out_list)
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
             now = rospy.Time.now()
             self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
@@ -715,13 +717,14 @@ class BaseSelector(object):
             pose_array.poses.append(pr2_B_goal_pose)
             #self.goal_viz_publisher.publish(pr2_B_goal_pose)
             goal_B_ar = pr2_B_goal.I*self.pr2_B_ar
-            print 'pr2_B_ar:'
-            print  self.pr2_B_ar
-            print 'goal_B_ar:'
-            print goal_B_ar
-         
             print 'pr2_B_goal:'
             print pr2_B_goal
+            print 'pr2_B_ar:'
+            print self.pr2_B_ar
+            print 'goal_B_ar:'
+            print goal_B_ar
+            print 'ar_B_goal:'
+            print goal_B_ar.I
             distance_to_goal = np.linalg.norm([pr2_B_goal[0, 3],pr2_B_goal[1, 3]])
             distance_output.append(distance_to_goal)
             # goal_B_ar = pr2_B_goal.I * self.pr2_B_ar
