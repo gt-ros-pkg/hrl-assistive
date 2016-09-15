@@ -233,11 +233,13 @@ class BedDistanceTracker(object):
                 base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
             except:
                 continue
+            goal_B_model = createBMatrix(base_goals[:3], base_goals[3:])
+            final_pos, final_quat = Bmat_to_pos_quat(goal_B_model.I)
             print "Robot is at:"
             print robot_trans[:2]
             print "Robot needs to go to:"
-            print base_goals[:2]
-            self.ar_distance_check(robot_trans[:2], base_goals[:2])
+            print final_pos[:2]
+            self.ar_distance_check(robot_trans[:2], final_pos[:2])
             rate.sleep() 
 	
 def main():
