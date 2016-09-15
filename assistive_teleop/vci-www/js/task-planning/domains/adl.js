@@ -47,6 +47,7 @@ var RFH = (function(module) {
                 case 'TRACK_TAG':
                 case 'CHECK_OCCUPANCY':
                 case 'REGISTER_HEAD':
+                case 'STOP_TRACKING':
                 case 'CALL_BASE_SELECTION':
                     startFunc = function () {
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)

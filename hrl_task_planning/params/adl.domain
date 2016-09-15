@@ -77,7 +77,7 @@
 
  (:action move_robot
   :parameters (?t - task ?m - model)
-  :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))(not(too-close ?m))
+  :precondition (and (base-selected ?t ?m)(forall(?d - dof)(configured ?d ?t ?m))
                      (is-tracking-tag ?m))
   :effect (and (base-reached ?t ?m)
           )
