@@ -692,6 +692,9 @@ class BaseSelector(object):
                                        [0.,                      0.,                           0.,           1.]])
             print 'model origin to goal:'
             print origin_B_goal
+            model_B_goal_trans, model_B_goal_rot = Bmat_to_pos_quat(origin_B_goal)
+            model_B_goal_out = list(flatten([model_B_goal_trans, model_B_goal_rot]))
+            rospy.set_param('model_B_goal', model_B_goal_out)
             pr2_B_goal = self.origin_B_pr2.I * origin_B_goal
             now = rospy.Time.now()
             self.listener.waitForTransform('/odom_combined', '/base_footprint', now, rospy.Duration(15))
