@@ -346,14 +346,10 @@ var RFH = (function (module) {
         };
 
         var trackHeadPosition = function (stopName) {
-            clearTimeout(headTrackingTimer);
-            moveToStop(stopName);
-            headTrackingTimer = setInterval(function(){moveToStop(stopName);}, 1000);
+            var angs = headStopAngles[stopName];
+            head.trackAngles(angs[0], angs[1]);
         };
-
-        var stopTracking = function () {
-            clearTimeout(headTrackingTimer);
-        };
+        var stopTracking = head.stopTracking;
 
         if (!self.forwardOnly) {
             var driveDirIcon = new Snap("#drive-dir-icon");
