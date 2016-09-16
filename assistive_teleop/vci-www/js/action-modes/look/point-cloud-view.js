@@ -76,7 +76,7 @@ var RFH = (function (module) {
             for(var i=0;i<maxPoints;i++){
                 if (i<n){
                     var pt = read_point(message, i, dv);
-                    positions.setXYZ(i, pt.x, pt.y, pt.y);
+                    positions.setXYZ(i, pt.x, pt.y, pt.z);
                     color.setHex( pt.rgb );
                     colors.setXYZ(i, color.r, color.g, color.b);
                 } else {
