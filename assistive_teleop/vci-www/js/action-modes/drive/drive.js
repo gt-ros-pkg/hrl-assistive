@@ -26,11 +26,18 @@ var RFH = (function (module) {
         self.$div = $(driveSVG.node);
         var headTrackingTimer = null;
 
+        self.baseContactDisplay = new module.BumperDisplay({tfClient: self.tfClient,
+                                                          head: module.pr2.head,
+                                                          camera: self.camera,
+                                                          skins: [RFH.skins.base]
+        });
+
         self.goalDisplay = new RFH.DriveGoalDisplay({
             ros: ros,
             tfClient: tfClient,
             viewer: $viewer
         });
+
         var clamp = function (x,a,b) {
             return ( x < a ) ? a : ( ( x > b ) ? b : x );
         };

@@ -13,10 +13,8 @@
     display:none;
     position: absolute;
     border-radius:50%;
-    height: 70px;
-    width: 70px; 
-    left: 50%;
-    top: 50%;
+    height: 4.5%;
+    width: 8%; 
     background: radial-gradient(circle at center, rgba(200,0,0,0.67) 0%, rgba(200,0,0,0) 100%);
 }
 
