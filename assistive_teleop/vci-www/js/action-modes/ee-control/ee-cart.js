@@ -13,6 +13,7 @@ var RFH = (function (module) {
         self.$div = $('#'+divId);
         self.gripper = options.gripper;
         self.eeDisplay = options.eeDisplay;
+        self.skinContactDisplay = options.skinDisplay;
         self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
@@ -55,17 +56,6 @@ var RFH = (function (module) {
         self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
             zeroOffset: gripperZeroOffset,
             divId: self.side[0] +'GripperCtrlContainer'});
-
-        /* Skin Contact Displays for Arms */
-        self.skinContactDisplay = new module.SkinDisplay({tfClient: self.tfClient,
-                                                          head: module.pr2.head,
-                                                          camera: self.camera,
-                                                          skins: [RFH.skins.left.upperarm,
-                                                                  RFH.skins.left.forearm,
-                                                                  RFH.skins.right.upperarm,
-                                                                  RFH.skins.right.forearm]
-        });
-
 
 /*
         var armCameraOn = false;

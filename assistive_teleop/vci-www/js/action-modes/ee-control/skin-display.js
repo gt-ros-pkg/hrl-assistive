@@ -36,7 +36,6 @@ var RFH = (function (module) {
             for (var i=0; i < contactDetectors.length; i+=1) {
                 Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
             }
-//            console.log("All: ",  contacts.length);
             updateDisplay();
         };
 
@@ -197,12 +196,13 @@ var RFH = (function (module) {
             for (var i=0; i < contactPts.length; i += 3) {
                 contactPoints.push(contactPts.splice(0,3));
             }
-//            console.log(skin.side, skin.part, contactPoints.length);
+            console.log(skin.side, skin.part, contactPoints.length);
         };
 
         self.updateCBList = [];
         processCallbacks = function () {
             for (var i = 0; i<self.updateCBList.length; i+=1) {
+                console.log(skin.ns, contactPoints.length);
                 self.updateCBList[i](contactPoints);
             }
         };
@@ -216,7 +216,7 @@ var RFH = (function (module) {
 //                    console.log("Contact Detected!");
                     contactPts.push(taMsg.centers_x[idx]);
                     contactPts.push(taMsg.centers_y[idx]);
-                    contactPts.push(taMsg.centers_z[idx]);
+                    contactPts.push(Math.abs(taMsg.centers_z[idx])); // abs forces points in front of camera for offscreen edges
                 }
             }
             tfLinkToBase.applyToVector3Array(contactPts);

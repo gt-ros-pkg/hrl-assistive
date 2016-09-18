@@ -129,6 +129,14 @@ var RFH = (function (module) {
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
 
+            RFH.skinContactDisplay = new RFH.SkinDisplay({tfClient: self.tfClient,
+                                                          head: module.pr2.head,
+                                                          camera: self.camera,
+                                                          skins: [RFH.skins.left.upperarm,
+                                                                  RFH.skins.left.forearm,
+                                                                  RFH.skins.right.upperarm,
+                                                                  RFH.skins.right.forearm]
+            });
             RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});

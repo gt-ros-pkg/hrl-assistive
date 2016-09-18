@@ -3,7 +3,6 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         var ros = options.ros;
-        if 
         var ns = options.ns;
         self.baseLink = null;
         self.taxelTransforms = [];

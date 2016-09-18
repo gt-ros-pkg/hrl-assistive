@@ -5,7 +5,7 @@
     width:100%;
     height:100%;
     display:none;
-    z-index:1
+    z-index:1;
 }
 
 .bumper{
@@ -13,7 +13,7 @@
     display:none;
     position: absolute;
     border-radius: 3%;
-    height: 4.5%;
-    width: 8%; 
+    height: 8%;
+    width: 4.5%; 
     background: rgba(200,0,0,0.67);
 }
