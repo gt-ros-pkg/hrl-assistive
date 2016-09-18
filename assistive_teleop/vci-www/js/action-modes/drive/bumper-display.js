@@ -40,7 +40,9 @@ var RFH = (function (module) {
             // Show indicator of in-view contact at imgPt
             var w = $displayDiv.width(); 
             var h = $displayDiv.height(); 
-            marker.css({left:imgPt[0]*w, top:imgPt[1]*h});
+            var left = imgPt[0]*w - 0.5*marker.width();
+            var top = imgPt[1]*h - 0.5*marker.height();
+            marker.css({left:left, top:top});
         };
 
         var inView = function (pt) {

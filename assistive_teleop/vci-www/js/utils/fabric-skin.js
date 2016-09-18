@@ -4,6 +4,7 @@ var RFH = (function (module) {
         var self = this;
         var ros = options.ros;
         var ns = options.ns;
+        self.ns = ns;
         self.baseLink = null;
         self.taxelTransforms = [];
 
@@ -88,20 +89,20 @@ var RFH = (function (module) {
         var skins = {};    
         skins.left = {};
         skins.left.upperarm = new module.FabricSkin({ros: module.ros,
-                                                     ns: '/pr2_fabric_left_upperarm_sensor'
+                                                     ns: '/pr2_fabric_l_upperarm_sensor'
                                                      });
 
         skins.left.forearm = new module.FabricSkin({ros: module.ros,
-                                                     ns: '/pr2_fabric_left_forearm_sensor'
+                                                     ns: '/pr2_fabric_l_forearm_sensor'
                                                      });
 
         skins.right = {};
         skins.right.upperarm = new module.FabricSkin({ros: module.ros,
-                                                     ns: '/pr2_fabric_right_upperarm_sensor'
+                                                     ns: '/pr2_fabric_r_upperarm_sensor'
                                                      });
 
         skins.right.forearm = new module.FabricSkin({ros: module.ros,
-                                                     ns: '/pr2_fabric_right_forearm_sensor'
+                                                     ns: '/pr2_fabric_r_forearm_sensor'
                                                      });
         skins.base = new module.FabricSkin({ros: module.ros,
                                              ns: '/pr2_fabric_base_sensor'

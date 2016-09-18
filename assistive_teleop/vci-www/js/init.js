@@ -129,12 +129,16 @@ var RFH = (function (module) {
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
 
-            RFH.skinContactDisplay = new RFH.SkinDisplay({tfClient: self.tfClient,
-                                                          head: module.pr2.head,
-                                                          camera: self.camera,
+            RFH.leftSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
+                                                          head: RFH.pr2.head,
+                                                          camera: RFH.mjpeg.cameraModel,
                                                           skins: [RFH.skins.left.upperarm,
-                                                                  RFH.skins.left.forearm,
-                                                                  RFH.skins.right.upperarm,
+                                                                  RFH.skins.left.forearm]
+            });
+            RFH.rightSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
+                                                          head: RFH.pr2.head,
+                                                          camera: RFH.mjpeg.cameraModel,
+                                                          skins: [RFH.skins.right.upperarm,
                                                                   RFH.skins.right.forearm]
             });
             RFH.initActionMenu('main-menu');

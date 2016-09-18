@@ -89,7 +89,7 @@ var RFH = (function (module) {
             gripper: RFH.pr2.l_gripper,
             tfClient: RFH.tfClient,
             eeDisplay: RFH.leftEEDisplay,
-            skinDisplay: RFH.skinContactDisplay,
+            skinDisplay: RFH.leftSkinDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
         RFH.actionMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
@@ -98,7 +98,7 @@ var RFH = (function (module) {
             gripper: RFH.pr2.r_gripper,
             tfClient: RFH.tfClient,
             eeDisplay: RFH.rightEEDisplay,
-            skinDisplay: RFH.skinContactDisplay,
+            skinDisplay: RFH.rightSkinDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
         RFH.actionMenu.addAction(new RFH.Drive({ros: RFH.ros, 
