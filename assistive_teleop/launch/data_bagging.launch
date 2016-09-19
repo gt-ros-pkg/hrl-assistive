@@ -12,12 +12,7 @@
                                                             /l_arm_controller/command
                                                             /torso_controller/command
                                                             /base_goal_pose_viz
-                                                            /battery/server2
                                                             /interface_log
-                                                            /calibrated
-                                                            /diagnostics
-                                                            /diagnostics_agg
-                                                            /joy
                                                             /left_arm/haptic_mpc/current_weights
                                                             /left_arm/haptic_mpc/goal_pose
                                                             /left_arm/haptic_mpc/goal_pose_array
@@ -48,10 +43,6 @@
                                                             /pddl_tasks/tool_pick/state
                                                             /perform_task
                                                             /pixel3d
-                                                            /power_board/state
-                                                            /power_state
-                                                            /pr2_etherCAT/motors_halted
-                                                            /pr2_ethercat/motors_halted
                                                             /pr2_fabric_base_sensor/zero_sensor
                                                             /pr2_fabric_base_sensor/disable_sensor
                                                             /pr2_fabric_base_sensor/enable_sensor
@@ -77,15 +68,9 @@
                                                             /pr2_fabric_r_forearm_sensor/enable_sensor
                                                             /pr2_fabric_r_forearm_sensor/taxels/data_valid
                                                             /pr2_fabric_r_forearm_sensor/taxels/forces
-                                                            /robotsound
-                                                            /rosout
-                                                            /rosout_agg
-                                                            /runstop_status
-                                                            /vci_running
                                                             /web_heartbeat
                                                             /web_heartbeat_reply
                                                             /web_teleop/current_mode
-                                                            /joint_states_throttled
                                                             /head_sweep_action/cancel
                                                             /head_sweep_action/feedback
                                                             /head_sweep_action/goal
@@ -126,7 +111,6 @@
                                                             /tuck_arms/goal
                                                             /tuck_arms/result
                                                             /tuck_arms/status
-
                                                            "/>
 
 </launch>
