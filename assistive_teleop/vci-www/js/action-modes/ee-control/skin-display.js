@@ -7,9 +7,9 @@ var RFH = (function (module) {
         var camera = options.camera;
         var skins = options.skins;
         var visible = true;
-        var $displayDiv = $('#skin-contact-display');
-        var $contactMarkers = $('.contact-marker');
-        var $edgeMarkers = $('.edge-contact');
+        var $displayDiv = options.displayDiv || $('#skin-contact-display');
+        var $contactMarkers = options.markerSet || $('.contact-marker');
+        var $edgeMarkers = options.edgeMarkers || $('.edge-contact');
         var contacts = [];
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};

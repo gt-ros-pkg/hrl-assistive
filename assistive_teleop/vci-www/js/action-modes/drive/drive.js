@@ -26,10 +26,13 @@ var RFH = (function (module) {
         self.$div = $(driveSVG.node);
         var headTrackingTimer = null;
 
-        self.baseContactDisplay = new module.BumperDisplay({tfClient: tfClient,
-                                                            head: head,
-                                                            camera: camera,
-                                                            skins: [RFH.skins.base]
+        self.baseContactDisplay = new module.SkinDisplay({tfClient: tfClient,
+                                                          head: head,
+                                                          camera: camera,
+                                                          skins: [RFH.skins.base],
+                                                          displayDiv: $('#bumper-contact-display'),
+                                                          markerSet: $('.bumper'),
+                                                          edgeMarkers: $('#bumper-contact-display > .edge-contact')
         });
 
         self.goalDisplay = new RFH.DriveGoalDisplay({
