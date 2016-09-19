@@ -69,7 +69,7 @@ var RFH = (function (module) {
             var pt;
             for (var i=0; i<pts.length; i+=1) {
                 pt = pts[i];
-                ang = Math.atan2(-pt[0], -pt[1]);
+                ang = Math.atan2(-(pt[0]-0.5), -(pt[1]-0.5));
                 console.log(pt[0], pt[1]," --> Ang: ", ang);
                 if (ang > -Math.PI/6 && ang <= Math.PI/6) {
                     contactEdgesActive.n = true;
