@@ -41,6 +41,10 @@ var RFH = (function (module) {
         $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
+        $('#zero-skin-'+self.side).button().on('click.skin', function (event) {
+                                                                RFH.skins[self.side].upperarm.zeroSensor();
+                                                                RFH.skins[self.side].forearm.zeroSensor();
+                                                                });
 
         self.pixel23d = new RFH.Pixel23DClient({
             ros: ros,

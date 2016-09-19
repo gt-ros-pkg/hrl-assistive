@@ -35,6 +35,8 @@ var RFH = (function (module) {
                                                           edgeMarkers: $('#bumper-contact-display > .edge-contact')
         });
 
+        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
+
         self.goalDisplay = new RFH.DriveGoalDisplay({
             ros: ros,
             tfClient: tfClient,

@@ -113,6 +113,7 @@
            <div id="zoom-out-button" class="look-ctrl zoom out log-click">Zoom Out</div>
            <!-- Driving Controls -->
            <div id="drive-tuck-button" class="tuck-driving drive-ctrl log-click">Tuck Arms</div>
+           <div id="zero-skin-base" class="drive-ctrl controls-button log-click">Re-zero Bumper</div>
            <svg id="drive-dir-icon" class="drive-ctrl log-click" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
            <h4 class="drive-ctrl">Click on video to drive.</h4>
 
@@ -143,10 +144,10 @@
             </div>
             <div class="r-arm-ctrl">
                 <!-- Assorted Actions -->
-                <h4>Actions</h4>
                 <div id="right-3d-peek-button" class="camera-swing r-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="right-tuck-aside-button" class="posture aside r-arm-ctrl controls-button log-click">Move Aside</div>
                 <div id="right-tuck-setup-button" class="posture manip r-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="zero-skin-right" class="r-arm-ctrl controls-button log-click">Re-zero Skin</div>
             </div>
 
             <!-- Left Arm Controls -->
@@ -160,10 +161,10 @@
 
             <div class="l-arm-ctrl">
                 <!-- Assorted Actions -->
-                <h4>Actions</h4>
                 <div id="left-3d-peek-button" class="camera-swing l-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="left-tuck-aside-button" class="posture aside l-arm-ctrl controls-button  log-click">Move Aside</div>
                 <div id="left-tuck-setup-button" class="posture manip l-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="zero-skin-left" class="l-arm-ctrl controls-button log-click">Re-zero Skin</div>
             </div>
         </div>
     </div>
@@ -173,30 +174,15 @@
             <form>
                 <label for="domain-select">Select a Planned Task</label>
                 <select id="domain-select" name="domain-select" class="log-open log-select">
-                    <option value="adl">Self-Care Tasks</option>
                     <option value="realtime_base_selection">Approach</option>
                     <option value="pick_and_place">Move Object</option>
                     <option value="tool_pick">Get Tool</option>
                 </select>
                 
-                <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
-                <select id="task-select" name="task-select" class="option-select option-adl log-open log-select">
-                    <option value="shaving">Shave Face</option>
-                    <option value="wiping_mouth">Wipe Mouth</option>
-                    <option value="brushing_teeth">Brush Teeth</option>
-                    <option value="scratching_forehead">Scratch Forehead</option>
-                    <option value="scratching_left_knee">Scratch Left Knee</option>
-                    <option value="scratching_right_knee">Scratch Right Knee</option>
-                </select>
                 <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place option-tool_pick">Select arm</label>
                 <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place option-tool_pick log-open log-select'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
-                </select>
-                <label for="model-select" class="option-select option-adl">Select a Location</label>
-                <select id="model-select" name="model-select" class='option-select option-adl log-open log-select'>
-                    <option value="autobed">Autobed</option>
-                    <option value="wheelchair">Wheelchair</option>
                 </select>
                 <label for="tool-select" class="option-select option-tool_pick">Select a Tool</label>
                 <select id="tool-select" name="tool-select" class='option-select option-tool_pick'>
