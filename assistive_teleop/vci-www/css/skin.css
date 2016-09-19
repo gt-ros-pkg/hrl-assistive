@@ -24,7 +24,7 @@
     position: absolute;
 }
 
-.n{
+.edge-contact.n{
     top:0;
     left:10%;
     height: 10%;
@@ -33,7 +33,7 @@
     border-bottom-right-radius:50%;
 }
 
-.ne{
+.edge-contact.ne{
     top:0;
     right:0;
     height: 10%;
@@ -41,7 +41,7 @@
     border-bottom-left-radius:50%;
 }
 
-.e{
+.edge-contact.e{
     top:10%;
     right:0;
     height: 80%;
@@ -50,7 +50,7 @@
     border-bottom-left-radius:50%;
 }
 
-.se{
+.edge-contact.se{
     bottom:0;
     right:0;
     height: 10%;
@@ -58,7 +58,7 @@
     border-top-left-radius:50%;
 }
 
-.s{
+.edge-contact.s{
     left:10%;
     bottom:0; 
     height: 10%;
@@ -67,7 +67,7 @@
     border-top-right-radius:100%;
 }
 
-.sw{
+.edge-contact.sw{
     bottom:0;
     left:0;
     height: 10%;
@@ -75,7 +75,7 @@
     border-top-right-radius:50%;
 }
 
-.w{
+.edge-contact.w{
     top:10%;
     left:0;
     height:80%;
@@ -84,7 +84,7 @@
     border-top-right-radius:50%;
 }
 
-.nw{
+.edge-contact.nw{
     top:0;
     left:0;
     height: 10%;
