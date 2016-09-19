@@ -17,7 +17,7 @@
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
   <!-- Data Logging -->
-  <include file="$(find assistive_teleop)/launch/data_logging.launch" />
+  <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
 
   <!-- Task Planning -->
   <include file="$(find hrl_task_planning)/launch/task_planner.launch" />
