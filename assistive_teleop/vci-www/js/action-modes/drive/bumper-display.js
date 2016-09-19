@@ -9,7 +9,10 @@ var RFH = (function (module) {
         var visible = true;
         var $displayDiv = $('#bumper-contact-display');
         var $contactMarkers = $('.bumper');
+        var $edgeMarkers = $('.edge-contact');
         var contacts = [];
+        var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
+                                  's': false, 'sw': false, 'w': false, 'nw': false};
 
         var updateContacts = function () {
             contacts = []; 
@@ -53,9 +56,57 @@ var RFH = (function (module) {
             return !inView(pt);
         };
 
+        var updateContactEdges = function (pts) {
+            contactEdgesActive.n = false;
+            contactEdgesActive.ne = false;
+            contactEdgesActive.e = false;
+            contactEdgesActive.se = false;
+            contactEdgesActive.s = false;
+            contactEdgesActive.sw = false;
+            contactEdgesActive.w = false;
+            contactEdgesActive.nw = false;
+            var ang;
+            var pt;
+            for (var i=0; i<pts.length; i+=1) {
+                pt = pts[i];
+                ang = Math.atan2(-(pt[0]-0.5), -(pt[1]-0.5));
+                console.log(pt[0], pt[1]," --> Ang: ", ang);
+                if (ang > -Math.PI/6 && ang <= Math.PI/6) {
+                    contactEdgesActive.n = true;
+                } else if (ang > Math.PI/6 && ang <= Math.PI/3) {
+                    contactEdgesActive.nw = true;
+                } else if (ang > Math.PI/3 && ang <= 2*Math.PI/3) {
+                    contactEdgesActive.w = true;
+                } else if (ang > 2*Math.PI/3 && ang <= 5*Math.PI/6) {
+                    contactEdgesActive.sw = true;
+                } else if (ang > -Math.PI/3 && ang <= -Math.PI/6) {
+                    contactEdgesActive.ne = true;
+                } else if (ang > -2*Math.PI/3 && ang <= -Math.PI/3) {
+                    contactEdgesActive.e = true;
+                } else if (ang > -5*Math.PI/6 && ang <= -2*Math.PI/3) {
+                    contactEdgesActive.se = true;
+                } else if (ang < -5*Math.PI/6 || ang > 5*Math.PI/6) {
+                    contactEdgesActive.s = true;
+                }
+            }
+        };
+
+        var displayEdgeContacts = function () {
+            for (var dir in contactEdgesActive) {
+                if (contactEdgesActive.hasOwnProperty(dir)) {
+                    if (contactEdgesActive[dir]) {
+                        $edgeMarkers.filter('.'+dir).show();
+                    } else {
+                        $edgeMarkers.filter('.'+dir).hide();
+                    }
+                }
+            }
+        };
+
         var updateDisplay = function () {
             if (!contacts.length || !visible) {
                 $contactMarkers.hide();
+                $edgeMarkers.hide();
                 return;
              }
             var imgPts = camera.projectPoints(contacts, 'base_link');    
@@ -71,7 +122,43 @@ var RFH = (function (module) {
                     $contactMarkers[i].hide();
                 }
             }
+            // Find and display out-of-view contacts along the edges
+            var outOfView = imgPts.filter(notInView);
+            updateContactEdges(outOfView); 
+            displayEdgeContacts();
         };
+
+        var lookOutOfView = function (event) {
+            RFH.actionMenu.startAction('lookingAction');
+            var dPan = 0;
+            var dTilt = 0;
+            var curTar = $(event.currentTarget);
+            if (curTar.hasClass('n')) {
+                    dTilt = -0.3;
+            } else if (curTar.hasClass('ne')) {
+                    dPan = -0.3;
+                    dTilt = -0.3;
+            } else if (curTar.hasClass('e')) {
+                    dPan = -0.3;
+            } else if (curTar.hasClass('se')) {
+                    dPan = -0.3;
+                    dTilt = 0.3;
+            } else if (curTar.hasClass('s')) {
+                    dTilt = 0.3;
+            } else if (curTar.hasClass('sw')) {
+                    dPan = 0.3;
+                    dTilt = 0.3;
+            } else if (curTar.hasClass('w')) {
+                    dPan = 0.3;
+            } else if (curTar.hasClass('nw')) {
+                    dPan = 0.3;
+                    dTilt = -0.3;
+            } 
+            head.delPosition(dPan, dTilt);
+        };
+
+        $edgeMarkers.on('click.rfh', lookOutOfView);
     };
+        };
     return module;
 })(RFH || {});

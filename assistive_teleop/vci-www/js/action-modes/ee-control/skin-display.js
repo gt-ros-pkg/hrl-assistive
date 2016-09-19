@@ -14,6 +14,21 @@ var RFH = (function (module) {
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};
 
+        var updateContacts = function () {
+            contacts = []; 
+            for (var i=0; i < contactDetectors.length; i+=1) {
+                Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
+            }
+            updateDisplay();
+        };
+
+        var contactDetectors = [];
+        for (var i=0; i<skins.length; i+=1) {
+            contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
+                                                                  tfClient: tfClient}));
+            contactDetectors[i].updateCBList.push(updateContacts);
+        }
+
         self.show = function () {
             visible = true;
             $displayDiv.show();
@@ -32,21 +47,6 @@ var RFH = (function (module) {
             var top = imgPt[1]*h - 0.5*marker.height();
             marker.css({left:left, top:top});
         };
-
-        var updateContacts = function () {
-            contacts = []; 
-            for (var i=0; i < contactDetectors.length; i+=1) {
-                Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
-            }
-            updateDisplay();
-        };
-
-        var contactDetectors = [];
-        for (var i=0; i<skins.length; i+=1) {
-            contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
-                                                                  tfClient: tfClient}));
-            contactDetectors[i].updateCBList.push(updateContacts);
-        }
 
         var inView = function (pt) {
             return (pt[0] >= 0 && pt[0] <=1 && pt[1] >= 0 && pt[1] <= 1);
@@ -232,5 +232,4 @@ var RFH = (function (module) {
         };
     };
     return module;
-
 })(RFH || {});
