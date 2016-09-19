@@ -159,6 +159,5 @@ var RFH = (function (module) {
 
         $edgeMarkers.on('click.rfh', lookOutOfView);
     };
-        };
     return module;
 })(RFH || {});

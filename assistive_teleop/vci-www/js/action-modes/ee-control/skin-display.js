@@ -14,7 +14,7 @@ var RFH = (function (module) {
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};
 
-        var updateContacts = function () {
+        var collectContacts = function () {
             contacts = []; 
             for (var i=0; i < contactDetectors.length; i+=1) {
                 Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
@@ -26,7 +26,7 @@ var RFH = (function (module) {
         for (var i=0; i<skins.length; i+=1) {
             contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
                                                                   tfClient: tfClient}));
-            contactDetectors[i].updateCBList.push(updateContacts);
+            contactDetectors[i].updateCBList.push(collectContacts);
         }
 
         self.show = function () {
@@ -68,9 +68,8 @@ var RFH = (function (module) {
             var ang;
             var pt;
             for (var i=0; i<pts.length; i+=1) {
-                pt = pts[i];
-                ang = Math.atan2(-(pt[0]-0.5), -(pt[1]-0.5));
-                console.log(pt[0], pt[1]," --> Ang: ", ang);
+                pt = [pts[i][0]-0.5, pts[i][1] - 0.5];
+                ang = Math.atan2(-pt[0], -pt[1]);
                 if (ang > -Math.PI/6 && ang <= Math.PI/6) {
                     contactEdgesActive.n = true;
                 } else if (ang > Math.PI/6 && ang <= Math.PI/3) {
