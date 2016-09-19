@@ -1,0 +1,7 @@
+<launch>
+
+    <node name="kinect_throttle" pkg="topic_tools" type="throttle" args="messages /head_mount_kinect/qhd/image_color 0.5 kinect_throttled" />
+    <node name="video_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/video --topic /kinect_throttled --size 250 --split" />
+    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/data --topic /interface_log /tf /pddl_tasks/state_updates --size 250 --split" />
+
+</launch>

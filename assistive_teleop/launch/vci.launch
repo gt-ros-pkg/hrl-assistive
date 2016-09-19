@@ -16,6 +16,9 @@
   <arg if="$(arg test)" name="html_port" default="8008"/>
   <arg unless="$(arg test)" name="html_port" value="8000"/>
 
+  <!-- Data Logging -->
+  <include file="$(find assistive_teleop)/launch/data_logging.launch" />
+
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="$(arg ws_port)" />
