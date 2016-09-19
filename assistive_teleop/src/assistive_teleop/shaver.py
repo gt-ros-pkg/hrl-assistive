@@ -16,13 +16,10 @@ class ShaverToggle(object):
 
     def toggle_shaver(self, boolMsg):
         if boolMsg.data:
-            self.serial_dev.write('A')
+            self.serial_dev.write('toggle')
 
 
 def main():
     rospy.init_node('shaver_node')
-    toggler = ShaverToggle('/dev/ttyACM0')
+    toggler = ShaverToggle('/dev/robot/shaver')
     rospy.spin()
-
-if __name__ == '__main__':
-    main()
