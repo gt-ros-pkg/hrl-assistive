@@ -2,7 +2,7 @@
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
   <arg name="launch_kinect" default="false" />
   <arg name="kinect_ns" default="head_mount_kinect" />
-  <arg name="kinect_points" default="/$(arg kinect_ns)/qhd/points" />
+  <arg name="kinect_points" default="/$(arg kinect_ns)/hd/points" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
   <arg name="test" default="true"/>
@@ -39,7 +39,7 @@
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
-      <remap from="info_topic" to="$(arg kinect_ns)/qhd/camera_info" />
+      <remap from="info_topic" to="$(arg kinect_ns)/hd/camera_info" />
       <!--<remap from="info_topic" to="$(arg kinect_ns)/rgb/camera_info" />-->
       <remap from="point_cloud" to="$(arg kinect_points)" />
       <param name="output_frame" type="string" value="/base_link" />

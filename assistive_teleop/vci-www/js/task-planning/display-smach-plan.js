@@ -20,7 +20,7 @@ var RFH = (function(module) {
                     RFH.actionMenu.startAction(RFH.actionMenu.defaultAction);
                     console.log("Cancelled task successfully");
                 } else {
-                    RFH.log("Failed to cancel task");
+                    console.log("Failed to cancel task");
                 }
             };
 

@@ -501,7 +501,7 @@ var RFH = (function (module) {
                 z: xyz[2]}});
             pose.applyTransform(camera.transform);
             if (pose.position.z >= camera.transform.translation.z) {
-                RFH.log('Please click on the ground near the robot to drive.');
+                console.log('Please click on the ground near the robot to drive.');
                 throw new Error("Clicked point not on the ground");
             }
             var z0 = camera.transform.translation.z;
