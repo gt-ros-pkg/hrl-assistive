@@ -155,6 +155,7 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
+            RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
             RFH.initTaskMenu();
 
             /* Added content for left column */
