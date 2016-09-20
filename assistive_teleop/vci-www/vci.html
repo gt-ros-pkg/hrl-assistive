@@ -33,10 +33,11 @@
   <script type="text/javascript" src="js/init.js"></script>
   <script type="text/javascript" src="js/utils/undo.js"></script>
   <script type="text/javascript" src="js/utils/runstop.js"></script>
-  <script type="text/javascript" src="js/utils/connection-monitor.js"></script>
+  <script type="text/javascript" src="js/utils/heartbeat.js"></script>
   <script type="text/javascript" src="js/utils/datalogging.js"></script>
   <script type="text/javascript" src="js/utils/fabric-skin.js"></script>
   <script type="text/javascript" src="js/utils/battery-monitor.js"></script>
+  <script type="text/javascript" src="js/utils/shaver.js"></script>
   <script type="text/javascript" src="js/utils/pr2.js"></script>
   <!-- Interface action modes -->
   <script type="text/javascript" src="js/action-modes/action-menu.js"></script>
@@ -70,6 +71,7 @@
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   <link type="text/css" href="css/skin.css" rel="stylesheet" />
+  <link type="text/css" href="css/bumper.css" rel="stylesheet" />
   <link type="text/css" href="css/gripper.css" rel="stylesheet" />
   <link type="text/css" href="css/undo.css" rel="stylesheet" />
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
@@ -112,6 +114,7 @@
            <div id="zoom-out-button" class="look-ctrl zoom out log-click">Zoom Out</div>
            <!-- Driving Controls -->
            <div id="drive-tuck-button" class="tuck-driving drive-ctrl log-click">Tuck Arms</div>
+           <div id="zero-skin-base" class="drive-ctrl controls-button log-click">Re-zero Bumper</div>
            <svg id="drive-dir-icon" class="drive-ctrl log-click" viewBox="-2 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
            <h4 class="drive-ctrl">Click on video to drive.</h4>
 
@@ -142,10 +145,10 @@
             </div>
             <div class="r-arm-ctrl">
                 <!-- Assorted Actions -->
-                <h4>Actions</h4>
                 <div id="right-3d-peek-button" class="camera-swing r-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="right-tuck-aside-button" class="posture aside r-arm-ctrl controls-button log-click">Move Aside</div>
                 <div id="right-tuck-setup-button" class="posture manip r-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="zero-skin-right" class="r-arm-ctrl controls-button log-click">Re-zero Skin</div>
             </div>
 
             <!-- Left Arm Controls -->
@@ -159,11 +162,13 @@
 
             <div class="l-arm-ctrl">
                 <!-- Assorted Actions -->
-                <h4>Actions</h4>
                 <div id="left-3d-peek-button" class="camera-swing l-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="left-tuck-aside-button" class="posture aside l-arm-ctrl controls-button  log-click">Move Aside</div>
                 <div id="left-tuck-setup-button" class="posture manip l-arm-ctrl controls-button log-click">Move to Setup</div>
+                <div id="zero-skin-left" class="l-arm-ctrl controls-button log-click">Re-zero Skin</div>
             </div>
+
+            <div id="toggle-shaver-button" class="arm-ctrl controls-button log-click">Toggle Shaver</div>
         </div>
     </div>
     <div id="task-menu-accordion" class="left-col-accordion task-menu-accordion log-activate">
@@ -172,30 +177,15 @@
             <form>
                 <label for="domain-select">Select a Planned Task</label>
                 <select id="domain-select" name="domain-select" class="log-open log-select">
-                    <option value="adl">Self-Care Tasks</option>
                     <option value="realtime_base_selection">Approach</option>
                     <option value="pick_and_place">Move Object</option>
                     <option value="tool_pick">Get Tool</option>
                 </select>
                 
-                <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
-                <select id="task-select" name="task-select" class="option-select option-adl log-open log-select">
-                    <option value="shaving">Shave Face</option>
-                    <option value="wiping_mouth">Wipe Mouth</option>
-                    <option value="brushing_teeth">Brush Teeth</option>
-                    <option value="scratching_forehead">Scratch Forehead</option>
-                    <option value="scratching_left_knee">Scratch Left Knee</option>
-                    <option value="scratching_right_knee">Scratch Right Knee</option>
-                </select>
                 <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place option-tool_pick">Select arm</label>
                 <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place option-tool_pick log-open log-select'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
-                </select>
-                <label for="model-select" class="option-select option-adl">Select a Location</label>
-                <select id="model-select" name="model-select" class='option-select option-adl log-open log-select'>
-                    <option value="autobed">Autobed</option>
-                    <option value="wheelchair">Wheelchair</option>
                 </select>
                 <label for="tool-select" class="option-select option-tool_pick">Select a Tool</label>
                 <select id="tool-select" name="tool-select" class='option-select option-tool_pick'>
@@ -245,6 +235,28 @@
      </svg>
      <div id="left-turn-button" class="drive-ctrl turn-signal left log-mousehold"><span class="label">Turn Left</span></div>
      <div id="right-turn-button" class="drive-ctrl turn-signal right log-mousehold"><span class="label">Turn Right</span></div>
+     <div id="bumper-contact-display">
+        <div id="bumper-1" class="bumper corner corner-fr"></div>
+        <div id="bumper-2" class="bumper corner corner-br"></div>
+        <div id="bumper-3" class="bumper corner corner-bl"></div>
+        <div id="bumper-4" class="bumper corner corner-fl"></div>
+        <div id="bumper-5" class="bumper edge edge-fl"></div>
+        <div id="bumper-6" class="bumper edge edge-fr"></div>
+        <div id="bumper-7" class="bumper edge edge-bl"></div>
+        <div id="bumper-8" class="bumper edge edge-br"></div>
+        <div id="bumper-9" class="bumper edge edge-rf"></div>
+        <div id="bumper-10" class="bumper edge edge-rb"></div>
+        <div id="bumper-11" class="bumper edge edge-lf"></div>
+        <div id="bumper-12" class="bumper edge edge-lb"></div>
+        <div id="edge-contact-n" class="edge-contact n"></div>
+        <div id="edge-contact-ne" class="edge-contact ne"></div>
+        <div id="edge-contact-e" class="edge-contact e"></div>
+        <div id="edge-contact-se" class="edge-contact se"></div>
+        <div id="edge-contact-s" class="edge-contact s"></div>
+        <div id="edge-contact-sw" class="edge-contact sw"></div>
+        <div id="edge-contact-w" class="edge-contact w"></div>
+        <div id="edge-contact-nw" class="edge-contact nw"></div>
+     </div>
      <!-- divs for torso controls -->
      <img id="torso-tall-icon" src="./css/icons/tall.png"></img>
      <img id="torso-short-icon" src="./css/icons/short.png"></img>

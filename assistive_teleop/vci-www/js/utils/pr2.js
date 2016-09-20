@@ -321,8 +321,15 @@ var RFH = (function (module) {
         };
 
         self.trackPoint = function (x, y, z, frame) {
+            self.stopTracking();
             self.pointHead(x, y, z, frame); // Start looking now
             trackingInterval = setInterval(function() {self.pointHead(x, y, z, frame);}, 1500); // Re-send goal regularly
+        };
+
+        self.trackAngles = function (pan, tilt) {
+            self.stopTracking();
+            self.setPosition(pan, tilt);
+            trackingInterval = setInterval(function() {self.setPosition(pan, tilt);}, 1500); // Re-send goal regularly
         };
 
         self.stopTracking = function () {

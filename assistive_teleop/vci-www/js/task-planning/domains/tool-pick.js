@@ -44,14 +44,14 @@ var RFH = (function (module) {
                         RFH.actionMenu.startAction('LookingAction');
                     };
                     break;
-                case 'AUTO-TOOL-GRASP':
-                case 'MANUAL-TOOL-GRASP':
-                    if (args[0] === 'RIGHT_HAND') {
+                case 'AUTO-GRASP-TOOL':
+                case 'MANUAL-GRASP-TOOL':
+                    if (args[1] === 'RIGHT_HAND') {
                         startFunc = function () {
                             RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                             RFH.actionMenu.startAction('rEECartAction');
                         };
-                    } else if (args[0] === 'LEFT_HAND') {
+                    } else if (args[1] === 'LEFT_HAND') {
                         startFunc = function () {
                             RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                             RFH.actionMenu.startAction('lEECartAction');
@@ -82,7 +82,8 @@ var RFH = (function (module) {
                 case 'AUTO-GRASP-TOOL':
                     return "Please wait while the robot tries to grasp the tool.";
                 case 'MANUAL-GRASP-TOOL':
-                    return "Grasp the desired tool manually using the arm controls.";
+                    var hand = args[1] === 'RIGHT_HAND' ? "right" : "left";
+                    return "Grasp the desired tool manually using the "+ hand +"hand controls.";
                 case 'FIND-TAG':
                     return "Move the robot so that it has a clear view of the AR Tag on the desired tool.";
                 case "PLACE":
@@ -102,14 +103,14 @@ var RFH = (function (module) {
         };
 
         self.sendTaskGoal = function (options) {
-            var hand = options.arm.toUpperCase() === 'L' ? 'LEFT_HAND' : 'RIGHT_HAND';
+            var hand = options.arm.toUpperCase()[0] === 'L' ? 'LEFT_HAND' : 'RIGHT_HAND';
             var tool = options.tool.toUpperCase();
             var goal = [];
-            self.setDefaultGoal(['(GRASPING '+tool+' '+hand+')']);
+            self.setDefaultGoal(['(GRASPING '+hand+' '+tool+')']);
             self.updatePDDLState(['(NOT (AUTO-GRASP-DONE))']);
             var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
             msg.name = self.domain + '-' + new Date().getTime().toString();
-            msg.objects = [tool + ' - TOOL'];
+            msg.objects = [];
             msg.domain = self.domain;
             msg.goal = goal;
             setTimeout(function(){self.taskPublisher.publish(msg);}, 1000); // Wait for everything else to settle first...

@@ -5,7 +5,8 @@
     left: 1%;
     width: auto;
     height: auto;
-    z-index:20
+    z-index:20;
+    pointer-events:none;
 }
 .smach-state {
     font-size: x-large;
@@ -21,6 +22,7 @@
     text-align: center;
     height: 40px;
     transition: background-color 1.0s ease, font-weight 1.0s ease, color 1.0s ease;
+    pointer-events:auto;
 }
 .smach-state.active {
     background-color: hsla(130, 100%, 50%, 0.75);

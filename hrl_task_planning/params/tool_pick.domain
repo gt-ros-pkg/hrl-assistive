@@ -7,30 +7,37 @@
 
  (:constants left_hand - gripper
              right_hand - gripper
+             scratcher - tool
+             lotion_applicator - tool
+             shaver - tool
+             toothbrush - tool
+             towel - tool
+             right_hand_object - tool
+             left_hand_object - tool
  )
 
  (:predicates
-  (found-tag ?t - tool)
-  (grasping ?t - tool ?g - gripper)
+  (found-tool ?t - tool)
+  (grasping ?g - gripper ?t - tool)
   (occupied ?g - gripper)
   (auto-grasp-done)
  )
 
  (:action auto-grasp-tool
     :parameters (?t - tool ?g - gripper)
-    :precondition (and (found-tag ?t)(not (occupied ?g))(not (auto-grasp-done)))
-    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
+    :precondition (and (found-tool ?t)(not (occupied ?g))(not (auto-grasp-done)))
+    :effect (and (grasping ?g ?t)(occupied ?g)(not (found-tool ?t)))
  )
 
  (:action manual-grasp-tool
     :parameters (?t - tool ?g - gripper)
-    :precondition (and (found-tag ?t)(not (occupied ?g))(auto-grasp-done))
-    :effect (and (grasping ?t ?g)(occupied ?g)(not (found-tag ?t)))
+    :precondition (and (found-tool ?t)(not (occupied ?g))(auto-grasp-done))
+    :effect (and (grasping ?g ?t)(occupied ?g)(not (found-tool ?t)))
  )
 
  (:action find-tag
   :parameters (?t - tool)
-  :effect (found-tag ?t)
+  :effect (found-tool ?t)
  )
 
  (:action place

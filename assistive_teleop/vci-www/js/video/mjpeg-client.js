@@ -173,7 +173,8 @@ var RFH = (function (module) {
             return (frame_id !== fixedFrame && frame_id !== self.frame_id) ? false : true;
         };
 
-        self.projectPoints = function (pts, frame_id) {
+        self.projectPoints = function (inPts, frame_id) {
+            var pts = JSON.parse(JSON.stringify(inPts));
             if (!self.has_data || self.transform === null) {
                 console.warn("Camera Model has not received camera info or frame transform");
                 return;

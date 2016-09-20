@@ -5,8 +5,8 @@ var RFH = (function (module) {
         var ros = options.ros;
         var logTopic = options.topic || 'interface_log';
         var msgType = 'assistive_teleop/InterfaceLog';
-
         ros.getMsgDetails(msgType);
+
         var logPub = new ROSLIB.Topic({
             ros: ros,
             name: logTopic,

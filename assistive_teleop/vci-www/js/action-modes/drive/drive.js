@@ -26,11 +26,23 @@ var RFH = (function (module) {
         self.$div = $(driveSVG.node);
         var headTrackingTimer = null;
 
+        self.baseContactDisplay = new module.SkinDisplay({tfClient: tfClient,
+                                                          head: head,
+                                                          camera: camera,
+                                                          skins: [RFH.skins.base],
+                                                          displayDiv: $('#bumper-contact-display'),
+                                                          markerSet: $('.bumper'),
+                                                          edgeMarkers: $('#bumper-contact-display > .edge-contact')
+        });
+
+        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
+
         self.goalDisplay = new RFH.DriveGoalDisplay({
             ros: ros,
             tfClient: tfClient,
             viewer: $viewer
         });
+
         var clamp = function (x,a,b) {
             return ( x < a ) ? a : ( ( x > b ) ? b : x );
         };
@@ -346,14 +358,10 @@ var RFH = (function (module) {
         };
 
         var trackHeadPosition = function (stopName) {
-            clearTimeout(headTrackingTimer);
-            moveToStop(stopName);
-            headTrackingTimer = setInterval(function(){moveToStop(stopName);}, 1000);
+            var angs = headStopAngles[stopName];
+            head.trackAngles(angs[0], angs[1]);
         };
-
-        var stopTracking = function () {
-            clearTimeout(headTrackingTimer);
-        };
+        var stopTracking = head.stopTracking;
 
         if (!self.forwardOnly) {
             var driveDirIcon = new Snap("#drive-dir-icon");
@@ -493,7 +501,7 @@ var RFH = (function (module) {
                 z: xyz[2]}});
             pose.applyTransform(camera.transform);
             if (pose.position.z >= camera.transform.translation.z) {
-                RFH.log('Please click on the ground near the robot to drive.');
+                console.log('Please click on the ground near the robot to drive.');
                 throw new Error("Clicked point not on the ground");
             }
             var z0 = camera.transform.translation.z;
@@ -531,6 +539,7 @@ var RFH = (function (module) {
             $('.drive-ctrl').show();
             self.showGoal();
             $viewer.show();
+            self.baseContactDisplay.show();
             trackHeadPosition(getNearestStop());
             self.$div.on('resize.rfh', self.updateLineOffsets);
             $('#controls h3').text("Head Controls");
@@ -543,6 +552,7 @@ var RFH = (function (module) {
             self.hideGoal();
             $('.drive-ctrl').hide();
             $viewer.hide();
+            self.baseContactDisplay.hide();
             $('#controls h3').text("Controls");
             stopTracking();
         };

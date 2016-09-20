@@ -3,9 +3,8 @@ var RFH = (function (module) {
         'use strict';
         var self = this;
         var ros = options.ros;
-        self.side = options.side;
-        self.part = options.part;
-        var ns = 'pr2_fabric_'+self.side[0]+'_'+self.part+'_sensor';
+        var ns = options.ns;
+        self.ns = ns;
         self.baseLink = null;
         self.taxelTransforms = [];
 
@@ -90,21 +89,24 @@ var RFH = (function (module) {
         var skins = {};    
         skins.left = {};
         skins.left.upperarm = new module.FabricSkin({ros: module.ros,
-                                                     side: "left",
-                                                     part: "upperarm"});
+                                                     ns: '/pr2_fabric_l_upperarm_sensor'
+                                                     });
 
         skins.left.forearm = new module.FabricSkin({ros: module.ros,
-                                                     side: "left",
-                                                     part: "forearm"});
+                                                     ns: '/pr2_fabric_l_forearm_sensor'
+                                                     });
 
         skins.right = {};
         skins.right.upperarm = new module.FabricSkin({ros: module.ros,
-                                                      side: "right",
-                                                      part: "upperarm"});
+                                                     ns: '/pr2_fabric_r_upperarm_sensor'
+                                                     });
 
         skins.right.forearm = new module.FabricSkin({ros: module.ros,
-                                                      side: "right",
-                                                      part: "forearm"});
+                                                     ns: '/pr2_fabric_r_forearm_sensor'
+                                                     });
+        skins.base = new module.FabricSkin({ros: module.ros,
+                                             ns: '/pr2_fabric_base_sensor'
+                                             });
         module.skins = skins;
     };
     return module;

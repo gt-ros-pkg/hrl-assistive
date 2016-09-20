@@ -7,12 +7,27 @@ var RFH = (function (module) {
         var camera = options.camera;
         var skins = options.skins;
         var visible = true;
-        var $displayDiv = $('#skin-contact-display');
-        var $contactMarkers = $('.contact-marker');
-        var $edgeMarkers = $('.edge-contact');
+        var $displayDiv = options.displayDiv || $('#skin-contact-display');
+        var $contactMarkers = options.markerSet || $('.contact-marker');
+        var $edgeMarkers = options.edgeMarkers || $('.edge-contact');
         var contacts = [];
         var contactEdgesActive = {'n': false, 'ne': false, 'e': false, 'se': false,
                                   's': false, 'sw': false, 'w': false, 'nw': false};
+
+        var collectContacts = function () {
+            contacts = []; 
+            for (var i=0; i < contactDetectors.length; i+=1) {
+                Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
+            }
+            updateDisplay();
+        };
+
+        var contactDetectors = [];
+        for (var i=0; i<skins.length; i+=1) {
+            contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
+                                                                  tfClient: tfClient}));
+            contactDetectors[i].updateCBList.push(collectContacts);
+        }
 
         self.show = function () {
             visible = true;
@@ -28,24 +43,10 @@ var RFH = (function (module) {
             // Show indicator of in-view contact at imgPt
             var w = $displayDiv.width(); 
             var h = $displayDiv.height(); 
-            marker.css({left:imgPt[0]*w, top:imgPt[1]*h});
+            var left = imgPt[0]*w - 0.5*marker.width();
+            var top = imgPt[1]*h - 0.5*marker.height();
+            marker.css({left:left, top:top});
         };
-
-        var updateContacts = function () {
-            contacts = []; 
-            for (var i=0; i < contactDetectors.length; i+=1) {
-                Array.prototype.push.apply(contacts, contactDetectors[i].getContacts());
-            }
-            console.log("All: ",  contacts.length);
-            updateDisplay();
-        };
-
-        var contactDetectors = [];
-        for (var i=0; i<skins.length; i+=1) {
-            contactDetectors.push(new module.SkinContactDetector({skinUtil: skins[i], 
-                                                                  tfClient: tfClient}));
-            contactDetectors[i].updateCBList.push(updateContacts);
-        }
 
         var inView = function (pt) {
             return (pt[0] >= 0 && pt[0] <=1 && pt[1] >= 0 && pt[1] <= 1);
@@ -56,7 +57,6 @@ var RFH = (function (module) {
         };
 
         var updateContactEdges = function (pts) {
-            var ang;
             contactEdgesActive.n = false;
             contactEdgesActive.ne = false;
             contactEdgesActive.e = false;
@@ -65,9 +65,12 @@ var RFH = (function (module) {
             contactEdgesActive.sw = false;
             contactEdgesActive.w = false;
             contactEdgesActive.nw = false;
+            var ang;
+            var pt;
             for (var i=0; i<pts.length; i+=1) {
-                ang = Math.atan2(pts[0], pts[1]);
-                if (ang > -Math.PI/6 && ang <= Math.PI) {
+                pt = [pts[i][0]-0.5, pts[i][1] - 0.5];
+                ang = Math.atan2(-pt[0], -pt[1]);
+                if (ang > -Math.PI/6 && ang <= Math.PI/6) {
                     contactEdgesActive.n = true;
                 } else if (ang > Math.PI/6 && ang <= Math.PI/3) {
                     contactEdgesActive.nw = true;
@@ -197,11 +200,10 @@ var RFH = (function (module) {
             for (var i=0; i < contactPts.length; i += 3) {
                 contactPoints.push(contactPts.splice(0,3));
             }
-//            console.log(skin.side, skin.part, contactPoints.length);
         };
 
         self.updateCBList = [];
-        processCallbacks = function () {
+        var processCallbacks = function () {
             for (var i = 0; i<self.updateCBList.length; i+=1) {
                 self.updateCBList[i](contactPoints);
             }
@@ -213,10 +215,9 @@ var RFH = (function (module) {
             for (var idx = 0; idx < taMsg.values_x.length; idx += 1) {
                 mag = magnitude(taMsg.values_x[idx], taMsg.values_y[idx], taMsg.values_z[idx]);
                 if (mag > contactForceThreshold) {
-                    console.log("Contact Detected!");
                     contactPts.push(taMsg.centers_x[idx]);
                     contactPts.push(taMsg.centers_y[idx]);
-                    contactPts.push(taMsg.centers_z[idx]);
+                    contactPts.push(Math.abs(taMsg.centers_z[idx])); // abs forces points in front of camera for offscreen edges
                 }
             }
             tfLinkToBase.applyToVector3Array(contactPts);
@@ -230,5 +231,4 @@ var RFH = (function (module) {
         };
     };
     return module;
-
 })(RFH || {});

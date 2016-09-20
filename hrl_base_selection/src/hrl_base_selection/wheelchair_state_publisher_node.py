@@ -76,7 +76,7 @@ class WheelchairStatePublisherNode(object):
             human_joint_state.position[1] = 0.4
             human_joint_state.position[2] = 0.4
             human_joint_state.position[3] = 0.5
-            human_joint_state.position[4] = 0,5
+            human_joint_state.position[4] = 0.5
             human_joint_state.position[5] = 1.3
             human_joint_state.position[6] = 1.3
             human_joint_state.position[7] = 0.2
@@ -92,12 +92,11 @@ class WheelchairStatePublisherNode(object):
             human_joint_state.position[17] = 0.
             if self.listener.canTransform('/wheelchair/base_link', '/base_link', rospy.Time(0)):
                 (trans, rot) = self.listener.lookupTransform('/wheelchair/base_link', '/base_link', rospy.Time(0))
-                human_joint_state.position[18] = m.copysign(m.radians(60.), trans[1])
+                human_joint_state.position[18] = -1.*m.copysign(m.radians(60.), trans[1])
                 human_joint_state.position[19] = 0.
             else:
                 human_joint_state.position[18] = 0.
                 human_joint_state.position[19] = 0.
-
             self.joint_pub.publish(human_joint_state)
 
 

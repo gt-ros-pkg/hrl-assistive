@@ -13,6 +13,7 @@ var RFH = (function (module) {
         self.$div = $('#'+divId);
         self.gripper = options.gripper;
         self.eeDisplay = options.eeDisplay;
+        self.skinContactDisplay = options.skinDisplay;
         self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
@@ -40,6 +41,10 @@ var RFH = (function (module) {
         $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
+        $('#zero-skin-'+self.side).button().on('click.skin', function (event) {
+                                                                RFH.skins[self.side].upperarm.zeroSensor();
+                                                                RFH.skins[self.side].forearm.zeroSensor();
+                                                                });
 
         self.pixel23d = new RFH.Pixel23DClient({
             ros: ros,
@@ -55,17 +60,6 @@ var RFH = (function (module) {
         self.gripperDisplay = new RFH.GripperDisplay({gripper: self.gripper,
             zeroOffset: gripperZeroOffset,
             divId: self.side[0] +'GripperCtrlContainer'});
-
-        /* Skin Contact Displays for Arms */
-        self.skinContactDisplay = new module.SkinDisplay({tfClient: self.tfClient,
-                                                          head: module.pr2.head,
-                                                          camera: self.camera,
-                                                          skins: [RFH.skins.left.upperarm,
-                                                                  RFH.skins.left.forearm,
-                                                                  RFH.skins.right.upperarm,
-                                                                  RFH.skins.right.forearm]
-        });
-
 
 /*
         var armCameraOn = false;
@@ -99,7 +93,7 @@ var RFH = (function (module) {
             var restoreArmContainer = $('#armCtrlContainer').is(':visible') ? true : false;
             $('#armCtrlContainer').hide();
             self.gripperDisplay.hide();
-            self.eeDisplay.show();
+//            self.eeDisplay.show();
             RFH.kinectHeadPointCloud.setVisible(true);
             RFH.viewer.renderer.setClearColor(0x666666,0.5);
             //$('#mjpeg-image').css('visibility','hidden');
@@ -141,7 +135,7 @@ var RFH = (function (module) {
                 if (restoreArmContainer) { $('#armCtrlContainer').show(); }
                 RFH.kinectHeadPointCloud.locked = false;
                 self.gripperDisplay.show();
-                self.eeDisplay.hide();
+//                self.eeDisplay.hide();
             };
 
             // All the points defined, move the camera and render views
@@ -340,7 +334,7 @@ var RFH = (function (module) {
             // preview gripper pose = handPose + offset
             if (!self.preview || self.handDelta === null) {return;}
             var pose = self.getPoseFromDelta(self.handDelta);
-            self.eeDisplay.setCurrentPose(pose);
+//            self.eeDisplay.setCurrentPose(pose);
         };
 
         var updateHandDelta = function (e) {
@@ -365,12 +359,12 @@ var RFH = (function (module) {
 
         self.startPreview = function () {
             self.preview = true;
-            self.eeDisplay.showCurrent();
+//            self.eeDisplay.showCurrent();
         };
 
         self.stopPreview = function () {
             self.preview = false;
-            self.eeDisplay.hideCurrent();
+//            self.eeDisplay.hideCurrent();
             self.handDelta = null;
         };
 
