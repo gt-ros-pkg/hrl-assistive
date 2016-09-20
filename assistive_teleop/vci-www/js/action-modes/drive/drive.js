@@ -50,6 +50,13 @@ var RFH = (function (module) {
         self.showGoal = self.goalDisplay.show;
         self.hideGoal = self.goalDisplay.hide;
 
+        var zeroArmSkins = function () {
+            RFH.skins.left.upperarm.zeroSensor();
+            RFH.skins.left.forearm.zeroSensor();
+            RFH.skins.right.upperarm.zeroSensor();
+            RFH.skins.right.forearm.zeroSensor();
+        };
+
         var tuckActionClient = new ROSLIB.ActionClient({
             ros: ros, 
             serverName: 'tuck_arms',
@@ -69,6 +76,7 @@ var RFH = (function (module) {
                 console.log("Tuck Arms Completed, re-enabling hapticMPC");
                 l_arm.enableMPC();
                 r_arm.enableMPC();
+                setTimeout(zeroArmSkins, 1000); 
             };
             goal.on('result', resultCB);
             var sendGoalOnceDisabled = function (resp) {
