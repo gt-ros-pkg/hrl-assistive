@@ -312,15 +312,21 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, 
             path_mat += np.array(ll_post[i]).T
 
         path_mat /= np.sum(path_mat, axis=0)
-        extent = [0,time_list[-1],nState,1]
+        extent = [0,n-1,nState,1]
+        ## extent = [0,time_list[-1],nState,1]
 
         fig = plt.figure()
         plt.rc('text', usetex=True)
 
         ax1 = plt.subplot(111)            
         im  = ax1.imshow(path_mat, cmap=plt.cm.Reds, interpolation='none', origin='upper', 
-                         extent=extent, aspect=7.0)
-    
+                         extent=extent, aspect=5.5)
+
+        x      = [0, n/2, n-1]
+        labels = [int(time_list[0]), int(time_list[n/2]), int(time_list[-1])]
+        plt.xticks(x, labels, fontsize=18)
+        plt.tick_params(axis='both', which='major', labelsize=18)
+        
         plt.colorbar(im, fraction=0.031, ticks=[0.0, 1.0], pad=0.01)
         ax1.set_xlabel("Time [sec]", fontsize=18)
         ax1.set_ylabel("Hidden State Index", fontsize=18)
@@ -334,6 +340,78 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, 
         plt.show()        
     return
 
+
+def vizLikelihood(ll_logp_neg, ll_logp_pos, time_list=None, single=False, save_pdf=False):
+
+    fig = plt.figure()
+    plt.rc('text', usetex=True)
+    ax = plt.subplot(111)
+
+    # negative data
+    if True:
+        ll_logp = ll_logp_neg
+        m = len(ll_logp) # sample
+        n = len(ll_logp[0]) # length
+
+        if time_list is None:
+            time_list = range(n)
+
+        x    = range(n)
+        mean = np.mean(ll_logp, axis=0)
+        std  =  np.std(ll_logp, axis=0)
+
+        rects1 = ax.plot(x, mean, 'k-', label='Non-anomalous data')
+        ax.fill_between(x, mean-std, mean+std, facecolor='blue', alpha=0.5)
+        y_min = np.amin(ll_logp)
+        y_max = np.amax(ll_logp)
+
+        ## if y_max>0: y_max*=1.1
+        ## else: y_max*=0.9
+
+    if True:
+        ll_logp = ll_logp_pos
+        m = len(ll_logp) # sample
+        n = len(ll_logp[0]) # length
+
+        if time_list is None:
+            time_list = range(n)
+
+        x    = range(n)
+        mean = np.mean(ll_logp, axis=0)
+        std  =  np.std(ll_logp, axis=0)
+
+        ## ax.plot(x, mean, 'k-')
+        ## ax.fill_between(x, mean-std, mean+std, facecolor='red', alpha=0.5)
+
+        for i in xrange(m):
+            ax.plot(x, ll_logp[i], 'r-', label='Anomalous data')
+
+
+    x      = [0, n/2, n-1]
+    labels = [int(time_list[0]), int(time_list[n/2]), int(time_list[-1])]
+    plt.xticks(x, labels, fontsize=18)
+    plt.tick_params(axis='both', which='major', labelsize=18)
+
+    import matplotlib.patches as mpatches
+    red_patch = mpatches.Patch(color='red', label='Anomalous data')
+    blue_patch = mpatches.Patch(color='blue', label='Non-anomalous data')
+    
+    
+    plt.legend([blue_patch, red_patch], ['Non-anomalous data', 'Anomalous data'], \
+               bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',\
+               ncol=2, prop={'size':16}, fancybox=True, shadow=True)
+
+    ax.set_ylim([y_min,y_max ])
+    ax.set_xlabel("Time [sec]", fontsize=18)
+    ax.set_ylabel("Log likelihood", fontsize=18)
+
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
+    return
 
 
 

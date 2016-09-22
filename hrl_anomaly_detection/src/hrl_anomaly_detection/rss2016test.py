@@ -1990,9 +1990,9 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
     print np.shape(timeList)
     
     idx = 0
-    ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-    pkl_prefix = 'step_0.1'    
-    modeling_pkl = os.path.join(save_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    ## pkl_prefix = 'step_0.1'    
+    ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
 
     step_idx_l = None
     print "start to load hmm data, ", modeling_pkl
@@ -2001,17 +2001,21 @@ def plotStatePath(task_name, dim, save_data_path, param_dict, save_pdf=False):
         exec '%s = v' % k
         
     nPosteriors = nState
-    X = ll_classifier_test_X
-    y = ll_classifier_test_Y
+    X = ll_classifier_train_X
+    y = ll_classifier_train_Y
 
     import hrl_anomaly_detection.data_viz as dv        
     if False:
+        ll_logp = [ np.array(X[i])[:, 0].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
         ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
         step_idx_l = [step_idx_l[i] for i in xrange(len(step_idx_l)) if y[i][0]>0]
         dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False, step_idx=step_idx_l)
     else:
+        ll_logp_neg = [ np.array(X[i])[:, 0].tolist() for i in xrange(len(X)) if y[i][0]<0 ]
+        ll_logp_pos = [ np.array(X[i])[:, 0].tolist() for i in xrange(len(X)) if y[i][0]>0 ]
         ll_post = [ np.array(X[i])[:, -nPosteriors:].tolist() for i in xrange(len(X)) if y[i][0]<0 ]
-        dv.vizStatePath(ll_post, nState, time_list=timeList, single=True, save_pdf=False)
+        dv.vizStatePath(ll_post, nState, time_list=timeList, single=False, save_pdf=save_pdf)
+        ## dv.vizLikelihood(ll_logp_neg, ll_logp_pos, time_list=timeList, single=False, save_pdf=save_pdf)
         
 
 
@@ -2205,7 +2209,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=True, method='hmmgp', \
+                          decision_boundary_viz=False, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\

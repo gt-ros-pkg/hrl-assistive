@@ -430,7 +430,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             successDataList.append(successData)
             failureDataList.append(failureData)
 
-
         data_dict = {}
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
@@ -460,9 +459,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
         for successData in successDataList:
             n,m,k = np.shape(successData)
-            ## if nPlot is None:
-            ##     if n%2==0: nPlot = n
-            ##     else: nPlot = n+1
             nPlot = n
             color = colors.next()
 
@@ -480,18 +476,17 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
     if failure_viz:
         if fig is None: fig = plt.figure()
-        n,m,k = np.shape(failureData)
-        ## if nPlot is None:
-        ##     if n%2==0: nPlot = n
-        ##     else: nPlot = n+1
-        nPlot = n
 
-        for i in xrange(n):
-            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-            ax = fig.add_subplot(n*100+10+i)
-            if solid_color: ax.plot(failureData[i].T, c='r')
-            else: ax.plot(failureData[i].T)
-            ax.set_title( AddFeature_names[i] )
+        for failureData in failureDataList:
+            n,m,k = np.shape(failureData)            
+            nPlot = n
+
+            for i in xrange(n):
+                ## ax = fig.add_subplot((nPlot/2)*100+20+i)
+                ax = fig.add_subplot(n*100+10+i)
+                if solid_color: ax.plot(failureData[i].T, c='r')
+                else: ax.plot(failureData[i].T)
+                ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
@@ -1331,6 +1326,18 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
             if 'audioWristRMS' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristRMS')
+
+        # Unimoda feature - AudioWristFront------------------------------------
+        if 'unimodal_audioWristFrontRMS' in feature_list:
+            audioWristFrontRMS = d['audioWristFrontRMSList'][idx]            
+            unimodal_audioWristFrontRMS = audioWristFrontRMS
+            if offset_flag:
+                unimodal_audioWristFrontRMS -= np.mean(audioWristFrontRMS[:startOffsetSize])
+
+            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristFrontRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristFrontRMS)])
+            if 'audioWristFrontRMS' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioWristFrontRMS')
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:

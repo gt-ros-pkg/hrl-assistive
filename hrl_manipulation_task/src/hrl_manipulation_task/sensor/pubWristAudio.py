@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy
 import os, copy, sys
 
 ## from hrl_msgs.msg import FloatArray
@@ -46,6 +46,7 @@ try:
     from features import mfcc
 except:
     from python_speech_features import mfcc
+from scipy import signal, fftpack, conj, stats
 
 QUEUE_SIZE = 10
 
@@ -56,18 +57,14 @@ class wrist_audio_collector:
     FORMAT     = pyaudio.paInt16
     MAX_INT    = 32768.0
     WINLEN     = float(RATE)/float(FRAME_SIZE)
+    MIC_DIST   = 0.05
 
     def __init__(self, verbose=False):
-        self.verbose = verbose
-        
-        ## self.initParams()
+        self.verbose = verbose        
         self.initComms()
 
         if self.verbose: print "Wrist Audio>> initialization complete"
 
-    ## def initParams(self):
-    ##     self.audio_data = array.array('h') 
-        
     def initComms(self):
         '''
         Initialize pusblishers and subscribers
@@ -112,8 +109,9 @@ class wrist_audio_collector:
             audio_data = np.fromstring(data, np.int16)
             audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
         except:
-            print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
-            print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
+            if self.verbose:
+                print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
+                print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
             data       = self.stream.read(self.FRAME_SIZE)
             audio_rms  = self.get_rms(data)
             audio_data = np.fromstring(data, np.int16)
@@ -160,6 +158,69 @@ class wrist_audio_collector:
         return math.sqrt( sum_squares / count )        
 
 
+    def calculate_timeshift(self, signals):
+        '''
+        Calculates timeshift (in units, not seconds) by
+        calculating the phase shift between the two audio signals.
+        '''
+        signal_a = signals[0]
+        signal_b = signals[1]
+
+        A = fftpack.fft(signal_a)
+        B = fftpack.fft(signal_b)
+        Ar = -A.conjugate()
+        Br = -B.conjugate()
+        maxA = ( np.argmax(np.abs(fftpack.ifft(Ar*B))) )
+        maxB = ( np.argmax(np.abs(fftpack.ifft(A*Br))) )
+        shifts = [maxA, maxB]
+        minshift = np.argmin(shifts)
+        timeshift = shifts[minshift]
+
+        if minshift == 0 :
+            direction = 1.0
+        else:
+            direction = -1.0
+
+        return timeshift*direction
+
+    def calculate_angle(self, timeshifts):
+        '''
+        Calculate the time difference of arrival by multiplying the shift
+        (number of samples) by the sample widths.
+        Uses this TDOA to calculate the angle of the source.
+        '''
+        c = 340.29
+        max_shift = self.MIC_DIST/c*self.RATE
+        samp_intvl = 1.0 / self.RATE
+
+        # take mode
+        angle = 0;
+        timeshifts = [x for x in timeshifts if abs(x) > 0 and abs(x)<max_shift]
+        if len(timeshifts)==0: return None
+        timeshift = np.mean(timeshifts)
+
+        if timeshift>0: direction=-1.0
+        else: direction=1.0
+        timeshift = abs(timeshift)
+
+        tdoa     = samp_intvl * timeshift # Time difference of arrival
+        sig_dist = tdoa * c
+        ## print "tdoa:", tdoa
+        ## print "signal distance:", sig_dist
+
+        if (sig_dist != 0):
+            acos_val = sig_dist/self.MIC_DIST
+            ## print "acos: ", acos_val, sig_dist, self.MIC_DIST
+            if acos_val>1.0: acos_val=1.0
+            if acos_val<-1.0: acos_val=-1.0
+            angle = (90.0-math.acos( acos_val )*180.0/np.pi)*direction
+            ## angle = math.atan(
+            ##     math.sqrt( self.MIC_DIST**2 - sig_dist**2 ) / sig_dist )
+        else:
+            angle = None
+        return angle
+
+
     def run(self):
         
         ## import hrl_lib.circular_buffer as cb
@@ -170,19 +231,38 @@ class wrist_audio_collector:
         ## ax = fig.add_subplot(111)
         ## plt.ion()
         ## plt.show()
-        
-        msg = audio()
-        
+
+        # Measure white noise
+        count = 0
+        rms_list = []
+        while not rospy.is_shutdown():
+            audio_time, audio_data, audio_rms, audio_mfcc = self.get_data()
+            rms_list.append(audio_rms)
+            if len(rms_list)>20:
+                break            
+        noise_rms = np.mean(rms_list)*1.2
+        print "Completed to measure noise RMS*1.2 = ", noise_rms
+
+        # Measure sound and azimuth angle
+        msg = audio()        
         ## rate = rospy.Rate(25) # 25Hz, nominally.    
         while not rospy.is_shutdown():
-            ## print "running test: ", len(self.centers)
             audio_time, audio_data, audio_rms, audio_mfcc = self.get_data()
-            ## data = self.get_data2()
 
-            msg.header.stamp = audio_time #rospy.Time.now()
-            msg.audio_rms  = audio_rms
-            msg.audio_mfcc = audio_mfcc
-            msg.audio_data = audio_data            
+            if audio_rms > noise_rms:
+                signals   = np.reshape(audio_data, (self.FRAME_SIZE, self.CHANNEL)).astype(float).T
+                timeshift = self.calculate_timeshift(signals)
+            else:
+                timeshift = 0
+
+            audio_angle = self.calculate_angle([timeshift])
+            if audio_angle is None: audio_angle = 0.0
+
+            msg.header.stamp  = audio_time #rospy.Time.now()
+            msg.audio_rms     = audio_rms - noise_rms
+            msg.audio_azimuth = audio_angle
+            msg.audio_mfcc    = audio_mfcc
+            msg.audio_data    = audio_data            
             self.audio_pub.publish(msg)
 
 

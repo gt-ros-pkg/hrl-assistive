@@ -1390,8 +1390,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
 
-                    if Y_test[ii][0] < 0:
-                        print jj, Y_test[ii][0]
+                    ## if Y_test[ii][0] < 0:
+                    ##     print jj, Y_test[ii][0]
                     anomaly = True
                     break        
 

@@ -7,6 +7,7 @@ float64[] audio_head_joints
 string audio_cmd
 
 float64 audio_wrist_rms
+float64 audio_wrist_azimuth
 float64[] audio_wrist_mfcc
 
 float64[] kinematics_ee_pos

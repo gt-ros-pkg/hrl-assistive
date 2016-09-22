@@ -418,7 +418,8 @@ class logger:
                 ##     if len(self.audio_wrist.audio_data) <2: continue
                 ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
                 msg.audio_wrist_rms       = self.audio_wrist.audio_rms
-                msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
+                msg.audio_wrist_azimuth   = self.audio_wrist.audio_azimuth
+                ## msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
@@ -493,11 +494,13 @@ class logger:
                 if 'audio_wrist_time' not in self.data.keys():
                     self.data['audio_wrist_time']  = [self.audio_wrist.time]
                     self.data['audio_wrist_rms']   = [self.audio_wrist.audio_rms]
+                    self.data['audio_wrist_azimuth'] = [self.audio_wrist.audio_azimuth]
                     self.data['audio_wrist_mfcc']  = [self.audio_wrist.audio_mfcc]
                     self.data['audio_wrist_data']  = [self.audio_wrist.audio_data]
                 else:
                     self.data['audio_wrist_time'].append(self.audio_wrist.time)
                     self.data['audio_wrist_rms'].append(self.audio_wrist.audio_rms)
+                    self.data['audio_wrist_azimuth'].append(self.audio_wrist.audio_azimuth)
                     self.data['audio_wrist_mfcc'].append(self.audio_wrist.audio_mfcc)
                     self.data['audio_wrist_data'].append(self.audio_wrist.audio_data)
                     
