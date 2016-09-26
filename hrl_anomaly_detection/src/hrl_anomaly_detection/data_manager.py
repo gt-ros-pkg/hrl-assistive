@@ -2414,3 +2414,17 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
 
 
     
+def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
+
+    # get offset
+    refData = np.reshape( np.mean(normalTrainData[:,:,:startOffsetSize], axis=(1,2)), \
+                          (nEmissionDim,1,1) ) # 4,1,1
+
+    curData = np.reshape( np.mean(data[:,:,:startOffsetSize], axis=(1,2)), \
+                          (nEmissionDim,1,1) ) # 4,1,1
+    offsetData = refData - curData
+
+    for i in xrange(nEmissionDim):
+        data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()
+
+    return data

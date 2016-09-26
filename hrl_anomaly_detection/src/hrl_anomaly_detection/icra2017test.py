@@ -163,7 +163,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
@@ -197,7 +197,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d['scale']        = HMM_dict['scale']
         d['cov']          = HMM_dict['cov']
         ut.save_pickle(d, modeling_pkl)
-
+        sys.exit()
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -354,7 +354,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         if data_dict['handFeatures_noise']:
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(-0.03, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False)
         else:
             ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
@@ -384,7 +384,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
         # scaling and applying offset            
         testDataX = np.array(testDataX)*HMM_dict['scale']
-        testDataX = applying_offset(testDataX, normalTrainData, startIdx, nEmissionDim)
+        testDataX = dm.applying_offset(testDataX, normalTrainData, startIdx, nEmissionDim)
 
         testDataY = []
         for f in fileList:
@@ -716,12 +716,12 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
 
             # many to one adaptation
             if noise_max > 0.0:
-                normalTrainData[:,0:3] += np.random.normal( -noise_max, noise_max, \
+                normalTrainData[:,0:3] += np.random.normal( 0, noise_max, \
                                                             np.shape(normalTrainData[:,0:3]) )*scale
             
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(-0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
                          cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure' or np.isnan(ret):
                 print "hmm training failed"
@@ -1042,7 +1042,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
 
         # scaling and applying offset            
         testDataX = np.array(testDataX)*HMM_dict['scale']
-        testDataX = applying_offset(testDataX, normalTrainData, startIdx, nEmissionDim)
+        testDataX = dm.applying_offset(testDataX, normalTrainData, startIdx, nEmissionDim)
 
         testDataY = []
         for f in fileList:
@@ -1260,7 +1260,7 @@ def run_online_classifier(idx, processed_data_path, task_name, method, nPtrainDa
 
             alpha = np.exp(-0.5*float(i-1) )*alpha_coeff #0.15 #0.04
             ret = ml.partial_fit( normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]+\
-                                  np.random.normal(-0.03, 0.03, np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale,\
+                                  np.random.normal(0.0, 0.03, np.shape(normalTrainData[:,(i-1)*nTrainOffset:i*nTrainOffset]) )*scale,\
                                   learningRate=alpha, nrSteps=1 )
                                   
             if np.nan == ret or ret == 'Failure':
@@ -1444,20 +1444,20 @@ def run_classifier(idx, method, nState, nLength, param_dict, SVM_dict, ROC_dict,
     return idx, tp_l, fp_l, fn_l, tn_l, delay_l, tp_idx_l
 
 
-def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
+## def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
 
-    # get offset
-    refData = np.reshape( np.mean(normalTrainData[:,:,:startOffsetSize], axis=(1,2)), \
-                          (nEmissionDim,1,1) ) # 4,1,1
+##     # get offset
+##     refData = np.reshape( np.mean(normalTrainData[:,:,:startOffsetSize], axis=(1,2)), \
+##                           (nEmissionDim,1,1) ) # 4,1,1
 
-    curData = np.reshape( np.mean(data[:,:,:startOffsetSize], axis=(1,2)), \
-                          (nEmissionDim,1,1) ) # 4,1,1
-    offsetData = refData - curData
+##     curData = np.reshape( np.mean(data[:,:,:startOffsetSize], axis=(1,2)), \
+##                           (nEmissionDim,1,1) ) # 4,1,1
+##     offsetData = refData - curData
 
-    for i in xrange(nEmissionDim):
-        data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()
+##     for i in xrange(nEmissionDim):
+##         data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()
 
-    return data
+##     return data
 
 
 def data_selection(subject_names, task_name, raw_data_path, processed_data_path, \
@@ -1638,7 +1638,7 @@ if __name__ == '__main__':
             subjects = ['park', 'test'] #'Henry', 
         #---------------------------------------------------------------------------
         elif opt.task == 'feeding':
-            subjects = ['park', 'jina', 'sai', 'linda']        #'ari', 
+            subjects = ['park', 'sai'] #'jina', , 'linda']        #'ari', 
             ## subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
         elif opt.task == 'pushing':
             subjects = ['microblack', 'microwhite']        
@@ -1711,7 +1711,7 @@ if __name__ == '__main__':
                           verbose=opt.bVerbose)
                               
     elif opt.bEvaluationAll or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
