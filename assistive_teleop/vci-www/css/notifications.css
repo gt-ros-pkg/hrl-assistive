@@ -44,9 +44,20 @@
     padding: 3% 0%;
 }
 
+.motors-halted {
+    position: fixed;
+    top:0;
+    left:0;
+    display: block;
+    font-size:6em;
+    text-align:center;
+    background-color:rgba(180,180,180,0.46);
+}
+
 #image-cover {
-    z-index:100;
+    z-index:50;
     display: none;
+    pointer-events:none;
 }
 
 .connection-lost {
@@ -55,7 +66,6 @@
     left:0;
     display: block;
     font-size:10em;
-    padding-top:20%;
     text-align:center;
     background-color:rgba(100,100,100,0.76);
 }

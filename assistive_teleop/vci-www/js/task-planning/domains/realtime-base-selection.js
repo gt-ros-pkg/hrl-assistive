@@ -13,7 +13,7 @@ var RFH = (function (module) {
             messageType: 'hrl_task_planning/PDDLProblem'
         });
         self.taskPublisher.advertise();
-        var offset = {position: {x:0.06, y:0.0, z:0.0},
+        var offset = {position: {x:0.14, y:0.0, z:0.0},
             rotation: {x:0.0, y:Math.PI, z:0.0}};
 
         ros.getMsgDetails('hrl_task_planning/PDDLState');
@@ -40,7 +40,7 @@ var RFH = (function (module) {
                             var eeGoalPose = applyOffset(pose);
                             self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/'+args[0], eeGoalPose);
                         };
-                        RFH.actionMenu.tasks.getClickedPoseAction.registerPoseCB(getPoseCB, true);
+                        RFH.actionMenu.actions.getClickedPoseAction.registerPoseCB(getPoseCB, true);
                         RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('getClickedPoseAction');
                     };
@@ -157,7 +157,6 @@ var RFH = (function (module) {
             var goal = options.goal;
             self.clearParams(['EE_GOAL','BASE_GOAL','EE_FRAME']);
             var ee_frame = side[0] === 'r' ? 'r_gripper_tool_frame' : 'l_gripper_tool_frame';
-            self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/EE_FRAME', ee_frame);
             self.updatePDDLState(['(NOT (AT BASE_GOAL))', 
                 '(NOT (SCAN_COMPLETE))',
                 '(NOT (TORSO_SET TORSO_GOAL))',
@@ -165,6 +164,7 @@ var RFH = (function (module) {
                 '(NOT (KNOWN TORSO_GOAL))',
                 '(NOT (KNOWN EE_GOAL))',
                 '(NOT (KNOWN EE_FRAME))']);
+            self.setParam('/pddl_tasks/'+self.domain+'/KNOWN/EE_FRAME', ee_frame);
             var msg = ros.composeMsg('hrl_task_planning/PDDLProblem');
             msg.name = self.domain + '-' + new Date().getTime().toString();
             msg.domain = self.domain;

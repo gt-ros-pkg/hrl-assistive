@@ -109,8 +109,8 @@ var RFH = (function (module) {
             RFH.runStop = new RFH.RunStop({ros: RFH.ros});
 
             RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                imageTopic: '/head_mount_kinect/qhd/image_color',
-                infoTopic: '/head_mount_kinect/qhd/camera_info',
+                imageTopic: '/head_mount_kinect/hd/image_color',
+                infoTopic: '/head_mount_kinect/hd/camera_info',
                 divId: 'video-main',
                 imageId: 'mjpeg-image',
                 host: RFH.ROBOT,
@@ -128,6 +128,19 @@ var RFH = (function (module) {
             RFH.leftEEDisplay = new RFH.EEDisplay({side: 'l',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
+
+            RFH.leftSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
+                                                          head: RFH.pr2.head,
+                                                          camera: RFH.mjpeg.cameraModel,
+                                                          skins: [RFH.skins.left.upperarm,
+                                                                  RFH.skins.left.forearm]
+            });
+            RFH.rightSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
+                                                          head: RFH.pr2.head,
+                                                          camera: RFH.mjpeg.cameraModel,
+                                                          skins: [RFH.skins.right.upperarm,
+                                                                  RFH.skins.right.forearm]
+            });
             RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
@@ -141,6 +154,8 @@ var RFH = (function (module) {
                 maxPoints: 16000,
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
+            RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
+            RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
             RFH.initTaskMenu();
 
             /* Added content for left column */

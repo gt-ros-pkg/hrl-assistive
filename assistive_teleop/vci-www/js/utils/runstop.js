@@ -18,6 +18,16 @@ var RFH = (function (module) {
             border: "2px #000000"
         };
 
+        var grayVideo = function () {
+            var w = $('body').width();
+            var h = $('body').height();
+            $('#image-cover').css({'height':h, 'width':w}).text("Motors Halted").addClass('motors-halted').show();
+        };
+
+        var clearVideo = function () {
+            $('#image-cover').hide();
+        };
+
         // Get the current motor status
         var updateMotorState = function (bool_msg) {
             if (motorsHalted === bool_msg.data) { return; }
@@ -25,9 +35,11 @@ var RFH = (function (module) {
             if (motorsHalted) {
                 $div.css(buttonCSSToReset);
                 $textSpan.text('RESET MOTORS');
+                grayVideo();
             } else {
                 $div.css(buttonCSSToHalt);
                 $textSpan.text('HALT MOTORS');
+                clearVideo();
             }
         };
 

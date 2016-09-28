@@ -70,7 +70,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
-                'audioWristTimesList', 'audioWristRMSList', 'audioWristMFCCList', \
+                'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
@@ -215,20 +215,36 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         # wrist sound ----------------------------------------------------------------
         if 'audio_wrist_time' in d.keys():
-            audio_time = (np.array(d['audio_wrist_time']) - init_time).tolist()
-            audio_rms  = np.array([d['audio_wrist_rms']])
-            audio_mfcc = np.array(d['audio_wrist_mfcc']).T
+            audio_time    = (np.array(d['audio_wrist_time']) - init_time).tolist()
+            audio_rms     = np.array([d['audio_wrist_rms']])
+            audio_azimuth = d.get('audio_wrist_azimuth',None)
+            audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
+
+            if audio_azimuth is not None:
+                from scipy import stats
+                ang_range = 15.0
+                audio_front_rms = audio_rms*stats.norm.pdf(audio_azimuth,scale=ang_range)\
+                  /stats.norm.pdf(0.0,scale=ang_range)
+            else:
+                # TODO: Without wrist azimuth, we can still calculate azimuth from wrist_data
+                # But, we do not try in this moment.
+                audio_front_rms = audio_rms
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
+            raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
             raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
             
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
+                data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
+                                                                           new_times))
                 data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
             else:
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
+                data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
+                                                                             new_times))
                 data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
         # kinematics -----------------------------------------------------------

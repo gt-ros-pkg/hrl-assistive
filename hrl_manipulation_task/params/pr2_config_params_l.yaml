@@ -18,6 +18,8 @@ haptic_mpc:
     # Inposition parameter for action and log
     ee_motion_threshold: 0.015
     ee_orient_motion_threshold: 0.05
+    #ee_motion_threshold: 0.000000015
+    #ee_orient_motion_threshold: 0.00000005
     jts_motion_threshold: 0.0001
 
     # Joint limits.

@@ -203,7 +203,7 @@ var RFH = (function (module) {
             name: fullSide + '_arm/haptic_mpc/goal_pose', 
             messageType: 'geometry_msgs/PoseStamped'
         });
-        handGoalSubscriber.subscribe(displayGoalPose);
+//        handGoalSubscriber.subscribe(displayGoalPose);
 
         var deadzoneCB = function (bool_msg) {
             goalGripper.visible = !bool_msg.data;
@@ -213,7 +213,7 @@ var RFH = (function (module) {
             name: fullSide+'_arm/haptic_mpc/in_deadzone',
             messageType: 'std_msgs/Bool'
         });
-        deadZoneSubscriber.subscribe(deadzoneCB);
+//        deadZoneSubscriber.subscribe(deadzoneCB);
 
         self.showPreviewGripper = function(ps) {
             previewGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);

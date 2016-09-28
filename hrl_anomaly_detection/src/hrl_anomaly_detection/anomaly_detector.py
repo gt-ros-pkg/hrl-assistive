@@ -549,6 +549,7 @@ class anomaly_detector:
         self.audio_cmd         = msg.audio_cmd
 
         self.audio_wrist_rms   = msg.audio_wrist_rms
+        self.audio_wrist_azimuth = msg.audio_wrist_azimuth
         self.audio_wrist_mfcc  = msg.audio_wrist_mfcc
 
         self.kinematics_ee_pos      = msg.kinematics_ee_pos
@@ -974,8 +975,11 @@ class anomaly_detector:
 
         # Unimodal feature - AudioWrist ---------------------------------------
         if 'unimodal_audioWristRMS' in self.handFeatures:
-            data_dict['audioWristRMSList'] = [self.audio_wrist_rms]
-            ## self.data_dict['audioWristMFCCList'].append(audio_mfcc)
+            ang_range = 15.0
+            audio_front_rms = self.audio_wrist_rms*stats.norm.pdf(self.audio_wrist_azimuth,scale=ang_range)\
+              /stats.norm.pdf(0.0,scale=ang_range)            
+            ## data_dict['audioWristRMSList'] = [self.audio_wrist_rms]
+            data_dict['audioWristRMSList'] = [audio_front_rms]
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in self.handFeatures:

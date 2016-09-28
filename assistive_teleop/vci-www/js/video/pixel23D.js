@@ -37,19 +37,19 @@ var RFH = (function (module) {
                         cb(resp.pixel3d);
                         break;
                     case 1:
-                        RFH.log("ERROR: Still waiting for 3D camera image data");
+                        console.log("ERROR: Still waiting for 3D camera image data");
                         cb(null);
                         throw "Pixel23D (u: %u%, v:%v%): No Camera Info Received".replace("%u%", u).replace("%v%", v);
                     case 2:
-                        RFH.log("ERROR: Still waiting for 3D camera depth data");
+                        console.log("ERROR: Still waiting for 3D camera depth data");
                         cb(null);
                         throw "Pixel23D (u: %u%, v:%v%): No Pointcloud Received".replace("%u%", u).replace("%v%", v);
                     case 3:
-                        RFH.log("ERROR: Invalid Location Requested.");
+                        console.log("ERROR: Invalid Location Requested.");
                         cb(null);
                         throw "Pixel23D (u: %u%, v:%v%): Requested pixel is outside image".replace("%u%", u).replace("%v%", v);
                     case 4:
-                        RFH.log("ERROR: No Depth Data available at selected location.");
+                        console.log("ERROR: No Depth Data available at selected location.");
                         cb(null);
                         throw "Pixel23D (u: %u%, v:%v%): No Pointcloud data at requested pixel".replace("%u%", u).replace("%v%", v);
                 }

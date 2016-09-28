@@ -4,7 +4,7 @@ var RFH = (function (module) {
         var self = this;
         var $div = $('#'+ options.divId);
         var ros = options.ros;
-        self.tasks = {};
+        self.actions = {};
         self.activeAction = null;
         self.defaultActionName = null;
 
@@ -17,7 +17,7 @@ var RFH = (function (module) {
         statePublisher.advertise();
 
         self.addAction = function (actionObject) {
-            self.tasks[actionObject.name] = actionObject;
+            self.actions[actionObject.name] = actionObject;
             if (actionObject.showButton) {
                 actionObject.$button = $('#'+actionObject.buttonID).button();
                 $('label[for="'+actionObject.buttonID+'"]').prop('title', actionObject.toolTipText);
@@ -36,11 +36,11 @@ var RFH = (function (module) {
             self.startAction(newAction);
         };
 
-        self.startAction = function (taskName) {
+        self.startAction = function (actionName) {
             if (self.activeAction !== null) {
                 self.stopActiveAction();
             }
-            var actionObject = self.tasks[taskName] || self.tasks[self.defaultActionName];
+            var actionObject = self.actions[actionName] || self.actions[self.defaultActionName];
             actionObject.start();
             if (actionObject.showButton) {
                 actionObject.$button.prop('checked', true).button('refresh');
@@ -54,7 +54,7 @@ var RFH = (function (module) {
                 return;
             }
             var actionObject = self.activeAction;
-            // Stop currently running task
+            // Stop currently running action
             actionObject.stop();
             if (actionObject.showButton) {
                 actionObject.$button.prop('checked', false).button('refresh');
@@ -66,7 +66,7 @@ var RFH = (function (module) {
             self.stopTast(actionObject);
             actionObject.$button.off('click.rfh');
             $div.removeChild(actionObject.$button);
-            self.tasks.pop(self.tasks.indexOf(actionObject));
+            self.actions.pop(self.actions.indexOf(actionObject));
         };
     };
 
@@ -89,6 +89,7 @@ var RFH = (function (module) {
             gripper: RFH.pr2.l_gripper,
             tfClient: RFH.tfClient,
             eeDisplay: RFH.leftEEDisplay,
+            skinDisplay: RFH.leftSkinDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
         RFH.actionMenu.addAction(new RFH.CartesianEEControl({arm: RFH.pr2.r_arm_cart,
@@ -97,6 +98,7 @@ var RFH = (function (module) {
             gripper: RFH.pr2.r_gripper,
             tfClient: RFH.tfClient,
             eeDisplay: RFH.rightEEDisplay,
+            skinDisplay: RFH.rightSkinDisplay,
             camera: RFH.mjpeg.cameraModel}));
 
         RFH.actionMenu.addAction(new RFH.Drive({ros: RFH.ros, 
@@ -109,8 +111,8 @@ var RFH = (function (module) {
             forwardOnly: false}));
         RFH.actionMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
-        // Start looking task by default
-        RFH.actionMenu.tasks.lookingAction.$button.click();
+        // Start looking action by default
+        RFH.actionMenu.actions.lookingAction.$button.click();
     };
     return module;
 })(RFH || {});

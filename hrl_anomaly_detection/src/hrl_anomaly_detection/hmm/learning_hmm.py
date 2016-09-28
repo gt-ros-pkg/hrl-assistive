@@ -244,9 +244,100 @@ class learning_hmm(learning_base):
         
     def predict(self, X):
         '''
+        Input
+        @ X: dimension x sample x length #samples x known steps
+        Output
+        @ observation distribution: mu, var #samples x 1 [list]        
         '''
-        return
 
+        # sample x some length
+        X_test = util.convert_sequence(X, emission=False)
+
+        mu_l  = []     
+        cov_l = []      
+            
+        for i in xrange(len(X_test)):
+
+            # Past profile
+            final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i].tolist()) 
+
+            try:
+                # alpha: X_test length y #latent States at the moment t when state i is ended
+                #        test_profile_length x number_of_hidden_state
+                (alpha,scale) = self.ml.forward(final_ts_obj)
+                alpha         = np.array(alpha)
+                scale         = np.array(scale)
+            except:
+                print "No alpha is available !!"
+                sys.exit()
+                ## continue
+
+            f = lambda x: round(x,12)
+            for j in range(len(alpha)):
+                alpha[j] = map(f, alpha[j])
+            alpha[-1] = map(f, alpha[-1])
+
+            n     = len(X_test[i])
+            t_mu  = np.zeros(self.nEmissionDim)
+            t_cov = np.zeros(self.nEmissionDim*self.nEmissionDim)
+            t_sum = 0.0
+            for j in xrange(self.nState): # N+1
+
+                total = np.sum(self.A[:,j]*alpha[n/self.nEmissionDim-1,:]) #* scaling_factor
+                [mu, cov] = self.B[j]
+
+                t_mu  += np.array(mu)*total
+                t_cov += np.array(cov)*(total**2)
+                t_sum += total
+
+            mu_l.append( t_mu.tolist() )
+            cov_l.append( t_cov.tolist() )
+
+        return mu_l, cov_l
+
+
+    def predict_from_single_seq(self, x, nOrder):
+        '''
+        Input
+        @ x: length #samples x known steps
+        Output
+        @ observation distribution: nDimension
+        '''
+        
+        # new emission for partial sequence
+        B = []
+        for i in xrange(self.nState):    
+            B.append( [ self.B[i][0][nOrder], self.B[i][1][nOrder*self.nEmissionDim+nOrder] ] )
+
+        ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                  self.A, B, self.pi)
+
+        if type(x) is not list: x = x.tolist()            
+        final_ts_obj = ghmm.EmissionSequence(self.F, x)
+        
+        try:
+            (alpha, scale) = ml.forward(final_ts_obj)
+        except:
+            print "No alpha is available !!"
+            sys.exit()
+
+        x_pred = []
+        for i in xrange(self.nEmissionDim):
+            if i == nOrder:
+                x_pred.append(x[-1])
+            else:
+                src_cov_idx = nOrder*self.nEmissionDim+nOrder
+                tgt_cov_idx = i*self.nEmissionDim+i
+
+                t_o = 0.0
+                for j in xrange(self.nState):
+                    t_o += alpha[-1][j]*(self.B[j][0][i] + \
+                                         self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
+                                         (x[-1]-self.B[j][0][nOrder]))
+                x_pred.append(t_o)
+                
+        return x_pred
+        
 
     def loglikelihood(self, X, bPosterior=False):
         '''        

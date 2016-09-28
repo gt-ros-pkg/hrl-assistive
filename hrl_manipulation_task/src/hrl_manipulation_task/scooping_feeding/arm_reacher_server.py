@@ -61,7 +61,14 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
-        self.mouthOffset  = [-0.02, 0., 0.05] # -0.02, 0., 0.05
+        self.mouthOffset  = [-0.02, 0.02, 0.06] # -0.02, 0., 0.05
+
+        # exp 1:
+        #self.mouthOffset  = [-0.04, 0., 0.02] # 
+        #self.mouthOffset  = [-0.04, -0.12, 0.05] #
+        #self.mouthOffset  = [-0.04, -0.0, 0.18] #
+        #self.mouthOffset  = [-0.01, 0.04, 0.05] # 
+        
 
         self.bowl_pub = None
         self.mouth_pub = None

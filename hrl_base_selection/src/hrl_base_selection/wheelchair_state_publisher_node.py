@@ -23,6 +23,8 @@ from tf.transformations import quaternion_from_euler
 
 class WheelchairStatePublisherNode(object):
     def __init__(self):
+        self.listener = tf.TransformListener()
+        rospy.sleep(2)
         self.joint_pub = rospy.Publisher('wheelchair/joint_states', JointState, queue_size=100)
 
         # self.marker_pub=rospy.Publisher('visualization_marker', Marker)
@@ -35,7 +37,7 @@ class WheelchairStatePublisherNode(object):
     def run(self):
         # rate = rospy.Rate(30) #30 Hz
 
-        rate = rospy.Rate(20.0)
+        rate = rospy.Rate(5.0)
         while not rospy.is_shutdown():
             with self.frame_lock:
                 self.set_wheelchair_user_configuration()
@@ -47,8 +49,8 @@ class WheelchairStatePublisherNode(object):
             human_joint_state = JointState()
             human_joint_state.header.stamp = rospy.Time.now()
 
-            human_joint_state.name = [None]*(17)
-            human_joint_state.position = [None]*(17)
+            human_joint_state.name = [None]*(20)
+            human_joint_state.position = [None]*(20)
             human_joint_state.name[0] = "wheelchair/neck_body_joint"
             human_joint_state.name[1] = "wheelchair/upper_mid_body_joint"
             human_joint_state.name[2] = "wheelchair/mid_lower_body_joint"
@@ -64,28 +66,37 @@ class WheelchairStatePublisherNode(object):
             human_joint_state.name[12] = "wheelchair/arm_forearm_right_joint"
             human_joint_state.name[13] = "wheelchair/forearm_hand_left_joint"
             human_joint_state.name[14] = "wheelchair/forearm_hand_right_joint"
-            human_joint_state.name[15] = "wheelchair/head_neck_joint1"
-            human_joint_state.name[16] = "wheelchair/head_neck_joint2"
+            human_joint_state.name[15] = "wheelchair/neck_tilt_joint"
+            human_joint_state.name[16] = "wheelchair/neck_head_roty_joint"
+            human_joint_state.name[17] = "wheelchair/neck_head_rotx_joint"
+            human_joint_state.name[18] = "wheelchair/neck_twist_joint"
+            human_joint_state.name[19] = "wheelchair/neck_head_rotz_joint"
 
-            human_joint_state.position[0] = 0.0
-            human_joint_state.position[1] = -0.15
-            human_joint_state.position[2] = -0.72
-            human_joint_state.position[3] = 0.72
-            human_joint_state.position[4] = 0.72
-            human_joint_state.position[5] = 1.1
-            human_joint_state.position[6] = 1.1
-            human_joint_state.position[7] = 0.5
-            human_joint_state.position[8] = 0.5
-            human_joint_state.position[9] = 0.8
-            human_joint_state.position[10] = 0.8
-            human_joint_state.position[11] = 0.9
-            human_joint_state.position[12] = 0.9
-            human_joint_state.position[13] = -0.2
-            human_joint_state.position[14] = -0.2
-            human_joint_state.position[15] = 0.17
-            human_joint_state.position[16] = 0.0
-
-
+            human_joint_state.position[0] = -0.15
+            human_joint_state.position[1] = 0.4
+            human_joint_state.position[2] = 0.4
+            human_joint_state.position[3] = 0.5
+            human_joint_state.position[4] = 0.5
+            human_joint_state.position[5] = 1.3
+            human_joint_state.position[6] = 1.3
+            human_joint_state.position[7] = 0.2
+            human_joint_state.position[8] = 0.2
+            human_joint_state.position[9] = 0.6
+            human_joint_state.position[10] = 0.6
+            human_joint_state.position[11] = 0.8
+            human_joint_state.position[12] = 0.8
+            human_joint_state.position[13] = 0.
+            human_joint_state.position[14] = 0.
+            human_joint_state.position[15] = 0.75
+            human_joint_state.position[16] = -0.45
+            human_joint_state.position[17] = 0.
+            if self.listener.canTransform('/wheelchair/base_link', '/base_link', rospy.Time(0)):
+                (trans, rot) = self.listener.lookupTransform('/wheelchair/base_link', '/base_link', rospy.Time(0))
+                human_joint_state.position[18] = -1.*m.copysign(m.radians(60.), trans[1])
+                human_joint_state.position[19] = 0.
+            else:
+                human_joint_state.position[18] = 0.
+                human_joint_state.position[19] = 0.
             self.joint_pub.publish(human_joint_state)
 
 
