@@ -1,0 +1,14 @@
+<launch>
+
+    <node pkg="netft_rdt_driver" name="ft8" type="netft_node"
+          args="192.168.0.124 --rate 100" respawn="true">
+        <remap from='netft_data' to='/force_torque_pr2_sleeve' />
+    </node>
+    
+    <!--<node name="rqt_plot_view_pr2_sleeve" pkg="rqt_plot" type="rqt_plot" args="/force_torque_pr2_sleeve/wrench/force" />-->
+    <!--
+    <node name="rqt_plot_view_arm" pkg="rqt_plot" type="rqt_plot" args="/force_torque_sleeve/wrench/force" />
+    -->
+    <node pkg="hrl_dressing"  name="pr2_data_acquisition" type="pr2_data_acquisition.py" output="screen"></node>
+
+</launch>
