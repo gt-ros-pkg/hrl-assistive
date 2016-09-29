@@ -14,7 +14,7 @@ haptic_mpc:
 
     posture_weight: 0.0 # Cost function weight term
     posture_step_size: 0.1 # Step size in degrees
-    posture_step_scale: 10.0 # scale term. If we're within 10 steps of the goal, reduce the step allowed proportionally. 
+    posture_step_scale: 30.0 #10.0 # scale term. If we're within 10 steps of the goal, reduce the step allowed proportionally. 
 
     force_reduction_weight: 0.0005 #0.0005
     jerk_opt_weight: 0.00001
@@ -40,16 +40,6 @@ haptic_mpc:
     max_delta_force_mag: 0.1
     stopping_force: 200.0
 
-
-
-    #position_scale_size: 0.1 # metres. If dist remaining is less than this, scale the step size.
-    #position_scale_gradient: 1.0 # multiplier
-
-    #orientation_step_size: 0.4 # degrees per step in orientation
-    #orientation_scale_size: 30.0 # degrees. If the angular distance remaining is less than this, scale accordingly.
-    #orientation_scale_gradient: 1.0 # multiplier. 
-    #timeout: 100.0 #seconds
-  
     # Waypoint Generator Params
     waypoint_step_dist: 5.0  # Max Cartesian waypoint step size in meters. default=0.1 meters
     waypoint_dist_thresh: 0.02  # Distance threshold at which a waypoint has been 'reached.' default=0.03 meters

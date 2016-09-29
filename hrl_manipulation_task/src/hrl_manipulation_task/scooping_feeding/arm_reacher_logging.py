@@ -70,10 +70,11 @@ def scooping(armReachActionLeft, armReachActionRight, log, detection_flag, \
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping2Random',))
     else: 
         leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
-    rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping2',))
+    rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))    
     leftProc.start(); rightProc.start()
     leftProc.join(); rightProc.join()
-        
+    print armReachActionRight("initScooping2")
+       
     if rndVision: print armReachActionLeft("getBowlPosRandom")
     else:       print armReachActionLeft("getBowlPos")            
     print armReachActionLeft('lookAtBowl')
@@ -161,7 +162,7 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
 
     
-    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+    log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
                  vision_landmark=True, vision_change=False, pps=False, skin=False, \
                  subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
                  record_root_path=opt.sRecordDataPath, verbose=False)

@@ -45,6 +45,7 @@ from hrl_srvs.srv import String_String, String_StringRequest
 import hrl_lib.util as ut
 
 from hrl_manipulation_task.record_data import logger
+QUEUE_SIZE = 10
 
 
 class armReacherGUI:
@@ -80,13 +81,13 @@ class armReacherGUI:
 
     def initComms(self):
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String)        
-        self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String)
-        self.availablePub = rospy.Publisher("/manipulation_task/available", String)
+        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String, queue_size=QUEUE_SIZE)        
+        self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String, queue_size=QUEUE_SIZE)
+        self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
         self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String, queue_size=10, latch=True) 
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
-        self.debugPub1    = rospy.Publisher("/manipulation_task/debug/input_bool", Bool)
-        self.debugPub2    = rospy.Publisher("/manipulation_task/debug/emergency_bool", Bool)
+        self.debugPub1    = rospy.Publisher("/manipulation_task/debug/input_bool", Bool, queue_size=QUEUE_SIZE)
+        self.debugPub2    = rospy.Publisher("/manipulation_task/debug/emergency_bool", Bool, queue_size=QUEUE_SIZE)
 
         #subscriber:
         self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
@@ -447,8 +448,9 @@ if __name__ == '__main__':
     p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
                  default=False, help='Enable a quick feeding mode.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016', \
                  help='Enter a record data path')
+                 ## default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
  
     opt, args = p.parse_args()
     rospy.init_node('arm_reach_client')
@@ -460,9 +462,13 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=True, vision_change=False, pps=True, skin=True, \
-                     subject="bang", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     vision_landmark=True, vision_change=False, pps=False, skin=False, \
+                     subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
+        ## log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+        ##              vision_landmark=True, vision_change=False, pps=True, skin=True, \
+        ##              subject="bang", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
+        ##              record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None
 

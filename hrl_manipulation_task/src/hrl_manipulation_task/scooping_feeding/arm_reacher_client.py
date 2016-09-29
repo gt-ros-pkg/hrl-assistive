@@ -55,12 +55,9 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
 
-    if True:
-
-        print armReachActionLeft("movestest")
-        
-        
-        sys.exit()
+    ## if True:
+    ##     print armReachActionLeft("movestest")
+    ##     sys.exit()
 
 
 

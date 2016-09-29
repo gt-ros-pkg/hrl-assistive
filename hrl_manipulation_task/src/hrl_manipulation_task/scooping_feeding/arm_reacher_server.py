@@ -61,13 +61,14 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
-        self.mouthOffset  = [-0.02, 0.02, 0.06] # -0.02, 0., 0.05
+        # vertical x side x depth
+        self.mouthOffset  = [-0.04, 0.03, 0.02] # -0.02, 0., 0.05
 
         # exp 1:
-        #self.mouthOffset  = [-0.04, 0., 0.02] # 
-        #self.mouthOffset  = [-0.04, -0.12, 0.05] #
-        #self.mouthOffset  = [-0.04, -0.0, 0.18] #
-        #self.mouthOffset  = [-0.01, 0.04, 0.05] # 
+        #self.mouthOffset  = [-0.04, 0.03, -0.02] # 
+        #self.mouthOffset  = [-0.04, -0.12, 0.02] #
+        #self.mouthOffset  = [-0.04, 0.03, 0.1] #
+        #self.mouthOffset  = [-0.04, 0.06, 0.02] # 
         
 
         self.bowl_pub = None
@@ -257,9 +258,8 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
                                                 ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 2., 'self.mouth_frame'],\
-                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame']]
-                                              ## ['PAUSE', 0.5],
+        self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame'],\
+                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],
         ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
