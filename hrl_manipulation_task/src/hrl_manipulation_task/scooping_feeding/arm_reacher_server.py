@@ -168,6 +168,11 @@ class armReachAction(mpcBaseAction):
 
         self.motions = {}
 
+        self.motions['movestest'] = {}
+        self.motions['movestest']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 3.0],\
+                                             ['MOVEL', '[0, 0.0, 0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)'],\
+                                             ['MOVEL', '[0, 0.0, -0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)']]
+
 
         ## Testing Motions ---------------------------------------------------------
         # Used to test and find the best optimal procedure to scoop the target.
@@ -175,11 +180,6 @@ class armReachAction(mpcBaseAction):
         self.motions['test']['left'] = [['MOVEJ', '[0.255, 0.358, 0.559, -1.682, 1.379, -1.076, 1.695]', 7.0],\
                                         ['PAUSE', 2.0],
                                         ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
-                                        ## ['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 7.0]]
-        ##                                 ['MOVET', '[0., 0.0, 0.0, -0.5, 0., 0.]', 10., 'self.default_frame'],\
-        ##                                 ['MOVET', '[0., 0.0, 0.0, 0.5, 0., 0.]', 10., 'self.default_frame'] ]
-        ## self.motions['test']['left'] = [['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],
-        ##                                 ['PAUSE', 2.0]]
 
         self.motions['testingMotion'] = {}
         self.motions['testingMotion']['left'] = \
@@ -254,14 +254,12 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding3'] = {}
-        ## self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
-        ##                                       ['PAUSE', 1.0]]
         self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
-                                              ['PAUSE', 1.0]]
+                                                ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
-                                              ['PAUSE', 0.5],
-                                              ['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame']]
+        self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 2., 'self.mouth_frame'],\
+                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame']]
+                                              ## ['PAUSE', 0.5],
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],
         ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]

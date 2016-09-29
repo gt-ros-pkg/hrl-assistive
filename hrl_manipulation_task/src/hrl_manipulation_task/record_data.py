@@ -43,6 +43,8 @@ import hrl_lib.util as ut
 # msgs and srvs
 from hrl_anomaly_detection.msg import MultiModality
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None, StringArray_NoneResponse
+from std_msgs.msg import String
+from hrl_msgs.msg import StringArray
 
 # Sensors
 from sensor.kinect_audio import kinect_audio
@@ -56,9 +58,6 @@ from sensor.realsense_vision import realsense_vision
 from sensor.pps_skin import pps_skin
 from sensor.fabric_skin import fabric_skin
 
-##GUI
-from std_msgs.msg import String
-from hrl_msgs.msg import StringArray
 QUEUE_SIZE = 10
 
 class logger:
@@ -84,7 +83,6 @@ class logger:
         self.initParams()
 
         # A list of sensor objects
-        self.audio_kinect    = kinect_audio() if audio else None
         self.audio_kinect    = kinect_audio() if audio else None
         self.audio_wrist     = wrist_audio() if audio_wrist else None
         self.kinematics      = robot_kinematics() if kinematics else None
@@ -114,13 +112,14 @@ class logger:
         '''
         Record data and publish raw data
         '''        
-        ##GUI implementation       
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
-                                                   self.feedbackCallback)
-        
         if self.data_pub:
             self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
                                                  queue_size=QUEUE_SIZE)
+
+        # GUI implementation       
+        rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
+                         self.feedbackCallback)
+            
         if self.ad_flag:
             print "Wait anomaly detector service"
             rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
@@ -128,8 +127,10 @@ class logger:
             self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', StringArray_None)
             print "Detected anomaly detector service"
 
-    ##GUI implementation
+    
     def feedbackCallback(self, data):
+        ''' GUI implementation
+        '''
         #Just...log? idk where this one will go. I assume it is integrated with log....
         self.feedbackMSG = data.data
         print "Logger feedback received"
@@ -429,6 +430,8 @@ class logger:
                 msg.kinematics_jnt_eff = np.squeeze(self.kinematics.main_jnt_efforts.T).tolist()
                 msg.kinematics_target_pos  = np.squeeze(self.kinematics.target_pos.T).tolist()
                 msg.kinematics_target_quat = np.squeeze(self.kinematics.target_quat.T).tolist()
+                msg.kinematics_des_ee_pos  = np.squeeze(self.kinematics.des_ee_pos.T).tolist()
+                msg.kinematics_des_ee_quat = np.squeeze(self.kinematics.des_ee_quat.T).tolist()
 
             if self.ft is not None:
                 msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()
@@ -513,7 +516,9 @@ class logger:
                     self.data['kinematics_jnt_vel'] = self.kinematics.main_jnt_velocities
                     self.data['kinematics_jnt_eff'] = self.kinematics.main_jnt_efforts
                     self.data['kinematics_target_pos']  = self.kinematics.target_pos
-                    self.data['kinematics_target_quat'] = self.kinematics.target_quat                    
+                    self.data['kinematics_target_quat'] = self.kinematics.target_quat
+                    self.data['kinematics_des_ee_pos'] = self.kinematics.des_ee_pos
+                    self.data['kinematics_des_ee_quat'] = self.kinematics.des_ee_quat
                 else:
                     self.data['kinematics_time'].append(self.kinematics.time)
                     self.data['kinematics_ee_pos'] = np.hstack([self.data['kinematics_ee_pos'], \
@@ -530,6 +535,10 @@ class logger:
                                                                self.kinematics.target_pos])
                     self.data['kinematics_target_quat'] = np.hstack([self.data['kinematics_target_quat'], \
                                                                self.kinematics.target_quat])
+                    self.data['kinematics_des_ee_pos'] = np.hstack([self.data['kinematics_des_ee_pos'],\
+                                                                    self.kinematics.des_ee_pos])
+                    self.data['kinematics_des_ee_quat'] = np.hstack([self.data['kinematics_des_ee_quat'],\
+                                                                     self.kinematics.des_ee_quat ])
                                                                                
             if self.ft is not None:
                 if 'ft_time' not in self.data.keys():
@@ -554,7 +563,6 @@ class logger:
                                                                 self.vision_artag.artag_quat])
 
             if self.vision_landmark is not None:
-
                 if 'vision_landmark_time' not in self.data.keys():
                     self.data['vision_landmark_time'] = [self.vision_landmark.time]
                     self.data['vision_landmark_pos']  = self.vision_landmark.landmark_pos

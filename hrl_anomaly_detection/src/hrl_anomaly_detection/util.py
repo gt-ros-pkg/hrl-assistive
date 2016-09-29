@@ -73,6 +73,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
+                'kinDesEEPosList', 'kinDesEEQuatList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
                 'visionLandmarkTimesList', 'visionLandmarkPosList', 'visionLandmarkQuatList', \
@@ -255,6 +256,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
+            kin_des_ee_pos  = d.get('kinematics_des_ee_pos',kin_ee_pos)
+            kin_des_ee_quat  = d.get('kinematics_des_ee_quat', kin_ee_quat)
 
             # local kinematics feature
             if rf_center == 'kinEEPos':
@@ -312,8 +315,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                     last_mPose = mPose
                     last_time  = kin_time[i]
 
-            # Change the sign of quaternion
-            
+            # Change the sign of quaternion            
 
             # extract local feature
             data_set = [kin_time, kin_ee_pos, kin_ee_quat]
@@ -325,6 +327,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
             ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
             ##                                                                   data_set, global_data=global_data)
+            data_set = [kin_time, kin_des_ee_pos, kin_des_ee_quat]
+            [local_kin_des_ee_pos, local_kin_des_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+                                                                             data_set,\
+                                                                             global_data=True)
 
             raw_data_dict['kinTimesList'].append(kin_time)
             raw_data_dict['kinEEPosList'].append(local_kin_ee_pos)
@@ -334,6 +340,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
+            raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
+            raw_data_dict['kinDesEEQuatList'].append(local_kin_des_ee_quat)
 
             data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
             data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times, True))
@@ -343,6 +351,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
+
+            data_dict['kinDesEEPosList'].append(interpolationData(kin_time, local_kin_des_ee_pos, new_times, \
+                                                                  spline=False))
+            data_dict['kinDesEEQuatList'].append(interpolationData(kin_time, local_kin_des_ee_quat, new_times,\
+                                                                   True, spline=False))
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
@@ -719,7 +732,7 @@ def downSampleAudio(time_array, data_array, new_time_array):
 
 
 
-def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
+def interpolationData(time_array, data_array, new_time_array, quat_flag=False, spline=True):
     '''
     time_array: N - length array
     data_array: D x N - length array
@@ -742,18 +755,19 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
                 target_array[:,i+1] *= -1.0
 
     # remove repeated data
-    temp_time_array = [time_array[0]]
-    temp_data_array = target_array[:,0:1]
-    for i in xrange(1, len(time_array)):        
-        if time_array[i-1] != time_array[i]:
-            temp_time_array.append(time_array[i])
-            temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
-        else:
-            if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(target_array[:,i:i+1]):
-                temp_data_array[:,-1:] = target_array[:,i:i+1]
+    if spline is True:
+        temp_time_array = [time_array[0]]
+        temp_data_array = target_array[:,0:1]
+        for i in xrange(1, len(time_array)):        
+            if time_array[i-1] != time_array[i]:
+                temp_time_array.append(time_array[i])
+                temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
+            else:
+                if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(target_array[:,i:i+1]):
+                    temp_data_array[:,-1:] = target_array[:,i:i+1]
 
-    time_array = temp_time_array
-    target_array = temp_data_array
+        time_array = temp_time_array
+        target_array = temp_data_array
 
     if len(time_array) < 4:
         nDim = len(target_array)
@@ -762,10 +776,15 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False):
     new_data_array = None    
     for i in xrange(n):
         try:
-            interp = interpolate.splrep(time_array, target_array[i], s=0)
-            interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+            if spline:
+                interp = interpolate.splrep(time_array, target_array[i], s=0)
+                interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+            else:
+                if new_time_array[-1]>time_array[-1]: new_time_array[-1]=time_array[-1]
+                interp = interpolate.interp1d(time_array, target_array[i])
+                interp_data = interp(new_time_array)
         except:
-            print "splrep failed"
+            print "splrep failed (maybe new_time_array is over range of time_array)"
             print np.shape(time_array), np.shape(target_array[i]), i,n
             sys.exit()
             

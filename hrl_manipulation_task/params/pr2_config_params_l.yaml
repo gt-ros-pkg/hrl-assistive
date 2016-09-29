@@ -16,11 +16,11 @@ haptic_mpc:
     tool_frame: 'l_gripper_spoon_frame'
 
     # Inposition parameter for action and log
-    ee_motion_threshold: 0.015
-    ee_orient_motion_threshold: 0.05
-    #ee_motion_threshold: 0.000000015
-    #ee_orient_motion_threshold: 0.00000005
-    jts_motion_threshold: 0.0001
+    #ee_motion_threshold: 0.015
+    #ee_orient_motion_threshold: 0.05
+    ee_motion_threshold: 0.000000015
+    ee_orient_motion_threshold: 0.00000005
+    jts_motion_threshold: 0.1
 
     # Joint limits.
     # Should be equal in number and in the same order as the number of links in the arm (eg 7 for the PR2, starting at the shoulder). 

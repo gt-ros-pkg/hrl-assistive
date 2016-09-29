@@ -17,6 +17,8 @@ float64[] kinematics_jnt_vel
 float64[] kinematics_jnt_eff
 float64[] kinematics_target_pos
 float64[] kinematics_target_quat
+float64[] kinematics_des_ee_pos
+float64[] kinematics_des_ee_quat
 
 float64[] ft_force
 float64[] ft_torque

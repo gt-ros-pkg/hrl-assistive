@@ -492,6 +492,16 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                     time_list = target_dict['audioTimesList']
                     data_list = target_dict['audioPowerList']
 
+                elif 'kinematics_des' in modality:
+                    time_list = target_dict['kinTimesList']
+                    data_list = target_dict['kinDesEEPosList']
+
+                    # distance
+                    new_data_list = []
+                    for d in data_list:
+                        new_data_list.append( np.linalg.norm(d, axis=0) )
+                    data_list = new_data_list
+
                 elif 'kinematics' in modality:
                     time_list = target_dict['kinTimesList']
                     data_list = target_dict['kinPosList']

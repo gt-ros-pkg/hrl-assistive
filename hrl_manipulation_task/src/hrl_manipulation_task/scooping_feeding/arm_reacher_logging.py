@@ -97,9 +97,8 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     
     ## Feeding -----------------------------------
     print "Initializing left arm for feeding"
-    print armReachActionLeft('lookToRight')
+    ## print armReachActionLeft('lookToRight')
     print "Detect ar tag on the head"
-    print armReachActionLeft("getHeadPos")
     print armReachActionLeft("initFeeding1")  
     print armReachActionRight("getHeadPos")
     print armReachActionRight("initFeeding")  
@@ -112,6 +111,7 @@ def feeding(armReachActionLeft, armReachActionRight, log, detection_flag):
     ## print armReachActionLeft('lookAtMouth')
     print armReachActionLeft("getHeadPos")
     print armReachActionLeft("initFeeding2")
+    print armReachActionLeft("initFeeding3")
     
     print "Start to log!"    
     log.log_start()
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     p.add_option('--en_random_pose', '--rnd', action='store_true', dest='bRandPose',
                  default=False, help='Enable randomness in a right arm pose.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016', \
                  help='Enter a record data path')
     opt, args = p.parse_args()
 
@@ -161,14 +161,10 @@ if __name__ == '__main__':
     ## print armReachActionLeft('lookAtBowl')
 
     
-    log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                 vision_landmark=True, vision_change=False, \
-                 pps=True, skin=False, \
-                 subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, \
+    log = logger(ft=False, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
+                 vision_landmark=True, vision_change=False, pps=False, skin=False, \
+                 subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
                  record_root_path=opt.sRecordDataPath, verbose=False)
-    ## log = logger(ft=True, audio=True, kinematics=True, vision_artag=True, vision_change=False, \
-    ##              pps=True, skin=True, \
-    ##              subject="test", task='scooping', data_pub=opt.bDataPub, detector=opt.bAD, verbose=False)
 
                  
     last_trial  = '4'

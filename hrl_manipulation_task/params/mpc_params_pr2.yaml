@@ -32,7 +32,7 @@ haptic_mpc:
     #Goal velocities and update frequency will give max change per step
     goal_velocity_for_hand: 0.2 #0.3 #0.5 # Position step size is determined from this
     goal_ang_velocity_for_hand: 30.0 #10.0 #30.0 #degrees/sec. default=20.0
-    frequency: 25.0
+    frequency: 50.0 #25.0
 
     # Force parameters
     force_reduction_goal: 0.1
