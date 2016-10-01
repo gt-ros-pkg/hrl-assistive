@@ -1009,7 +1009,11 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     dtc.set_params( **param_dict )
     if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or\
       method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or method == 'svm_fixed':
-        weights = ROC_dict[method+'_param_range']
+        if method == 'svm_fixed': 
+            weights = ROC_dict['svm_param_range']
+        else:
+            weights = ROC_dict[method+'_param_range']
+            
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'bpsvm':
