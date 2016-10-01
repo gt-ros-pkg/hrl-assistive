@@ -376,7 +376,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
         fileList = util.getSubjectFileList(raw_data_path, unexpected_subjects, \
                                            task_name, no_split=True)                
                                            
-        testDataX = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
+        testDataX,_ = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
                                    handFeatureParams,\
                                    downSampleSize = data_dict['downSampleSize'], \
                                    cut_data       = data_dict['cut_data'],\
@@ -1034,7 +1034,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
         fileList = util.getSubjectFileList(raw_data_path, subject_names, \
                                            task_name, no_split=True)                
                                            
-        testDataX = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
+        testDataX,_ = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
                                    handFeatureParams,\
                                    downSampleSize = data_dict['downSampleSize'], \
                                    cut_data       = data_dict['cut_data'],\

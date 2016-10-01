@@ -769,11 +769,11 @@ class anomaly_detector:
                 ##                 break
 
                         
-            trainData = dm.getDataList(self.unused_fileList, self.rf_center, self.rf_radius,\
-                                       self.handFeatureParams,\
-                                       downSampleSize = self.downSampleSize, \
-                                       cut_data       = self.cut_data,\
-                                       handFeatures   = self.handFeatures)
+            trainData,_ = dm.getDataList(self.unused_fileList, self.rf_center, self.rf_radius,\
+                                         self.handFeatureParams,\
+                                         downSampleSize = self.downSampleSize, \
+                                         cut_data       = self.cut_data,\
+                                         handFeatures   = self.handFeatures)
 
             # scaling and applying offset            
             trainData = np.array(trainData)*self.scale
@@ -1219,7 +1219,7 @@ class anomaly_detector:
                 if unused_fileList[j].find('success')>=0: label = -1
                 else: label = 1
                     
-                trainData = dm.getDataList([unused_fileList[j]], self.rf_center, self.rf_radius,\
+                trainData,_ = dm.getDataList([unused_fileList[j]], self.rf_center, self.rf_radius,\
                                            self.handFeatureParams,\
                                            downSampleSize = self.downSampleSize, \
                                            cut_data       = self.cut_data,\
@@ -1442,7 +1442,7 @@ class anomaly_detector:
                                                          no_split=True)
 
         if self.eval_test_X is None:
-            trainData = dm.getDataList(self.eval_ref_fileList, self.rf_center, self.rf_radius,\
+            trainData,_ = dm.getDataList(self.eval_ref_fileList, self.rf_center, self.rf_radius,\
                                        self.handFeatureParams,\
                                        downSampleSize = self.downSampleSize, \
                                        cut_data       = self.cut_data,\

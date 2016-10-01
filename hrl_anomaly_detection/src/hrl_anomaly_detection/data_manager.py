@@ -144,7 +144,8 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
                                      init_param_dict=param_dict, cut_data=cut_data,\
                                      renew_minmax=renew_minmax)
 
-    return features
+    return features, data_dict
+
 
 
 def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
@@ -2428,3 +2429,4 @@ def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
         data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()
 
     return data
+

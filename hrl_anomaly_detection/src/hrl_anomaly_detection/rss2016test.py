@@ -2124,10 +2124,9 @@ if __name__ == '__main__':
         sys.exit()
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bAERenew, opt.bHMMRenew, opt.dim,\
+                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, \
                                                           bAESwitch=opt.bAESwitch)
-    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
         
     
     #---------------------------------------------------------------------------           
