@@ -56,7 +56,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          'hmmgp', 'rnd', 'svm', 'svm_fixed'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [  ]
+        param_dict['ROC']['update_list'] = [ 'svm', 'svm_fixed' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -522,7 +522,7 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 8.0,\
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.16, 'gamma': 0.08799, 'cost': 1.75,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 12.19, 'cost': 1.147,\
                           'hmmosvm_nu': 0.001}
 
         ROC_param_dict = {'methods': [ ],\
