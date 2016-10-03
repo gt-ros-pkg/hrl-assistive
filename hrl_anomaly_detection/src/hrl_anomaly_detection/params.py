@@ -210,7 +210,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, ae_
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 7.0, \
         ##                   'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
+        ## SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 7.2236, 'cost': 2.942,\
                           'hmmosvm_nu': 0.001,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.85, \
