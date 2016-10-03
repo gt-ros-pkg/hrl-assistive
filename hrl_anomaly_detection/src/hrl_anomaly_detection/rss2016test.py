@@ -47,6 +47,7 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
 ## from hrl_anomaly_detection.scooping_feeding import util as sutil
 ## import PyKDL
 ## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
