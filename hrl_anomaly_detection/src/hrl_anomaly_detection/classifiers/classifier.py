@@ -1110,17 +1110,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     nPoints    = ROC_dict['nPoints']
     add_logp_d = HMM_dict.get('add_logp_d', False)
 
-    data = {}
     # pass method if there is existing result
-    data[method] = {}
-    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
-
+    data = {}
+    data = util.reset_roc_data(data, [method], [], nPoints)
     if ROC_data[method]['complete'] == True: return data
     #-----------------------------------------------------------------------------------------
 

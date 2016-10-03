@@ -237,10 +237,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     print "finished to run run_classifiers"
-    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints)
-    for i, method in enumerate(method_list):
-        ROC_data[method]['complete'] = True
-
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
 
     #-----------------------------------------------------------------------------------------

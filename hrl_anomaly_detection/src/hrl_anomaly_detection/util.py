@@ -1967,7 +1967,7 @@ def reset_roc_data(ROC_data, method_list, update_list, nPoints):
     
     return ROC_data
 
-def update_roc_data(ROC_data, new_data, nPoints):
+def update_roc_data(ROC_data, new_data, nPoints, method_list):
     
     for i in xrange(len(new_data)):
         for j in xrange(nPoints):
@@ -1984,6 +1984,9 @@ def update_roc_data(ROC_data, new_data, nPoints):
             ROC_data[method]['delay_l'][j] += new_data[i][method]['delay_l'][j]
             ROC_data[method]['tp_delay_l'][j].append( new_data[i][method]['delay_l'][j] )
             ROC_data[method]['tp_idx_l'][j].append( new_data[i][method]['tp_idx_l'][j] )
+
+    for i, method in enumerate(method_list):
+        ROC_data[method]['complete'] = True
 
     return ROC_data
 
