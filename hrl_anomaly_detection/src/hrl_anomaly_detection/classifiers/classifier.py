@@ -50,6 +50,7 @@ from sklearn import metrics
 from sklearn.externals import joblib
 
 from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
