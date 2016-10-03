@@ -54,7 +54,7 @@ import matplotlib.pyplot as plt
 
 class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength=None,\
-                 weight=1., w_negative=1., gamma=1., cost=1.):
+                 weight=1., w_negative=1., gamma=1., cost=1., nu=0.5):
         self.method = method
         self.nState = nState
         self.scaler = None
@@ -63,6 +63,7 @@ class anomaly_detector(learning_base):
         self.w_negative = w_negative
         self.gamma      = gamma
         self.cost       = cost
+        self.nu         = nu
         
         self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )        
 
@@ -72,7 +73,7 @@ class anomaly_detector(learning_base):
 
         # set param
         d = {'w_negative': self.w_negative, 'gamma': self.gamma,\
-             'cost': self.cost, 'class_weight': self.weight}
+             'cost': self.cost, 'class_weight': self.weight, 'nu': self.nu}
         self.dtc.set_params(**d)
         
         # flatten the data
@@ -223,8 +224,10 @@ if __name__ == '__main__':
     from scipy.stats import uniform, expon
     param_dist = {'cost': [1.0],\
                   'gamma': [10.0], \
-                  'weight': expon(scale=0.3),
+                  'weight': [0.22],
+                  'nu': [0.1,0.9]
                   }
+        #'weight': expon(scale=0.3),
         # uniform(7.0,15.0)
         # 'cost': uniform(0.5,4.0)
         ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
