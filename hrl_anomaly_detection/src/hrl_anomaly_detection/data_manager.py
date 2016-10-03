@@ -2286,6 +2286,23 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
     '''
 
     if remove_fp:
+
+        pos_idx = []
+        neg_idx = []        
+        for i in xrange(len(ll_X)):
+            if ll_Y[i][0] < 0:
+                neg_idx.append(i)
+            else:
+                pos_idx.append(i)
+
+        # sample x length
+        ## ll_pos_X = np.array(ll_X)[pos_idx,:,0]
+        ll_neg_X = np.array(ll_X)[neg_idx,:,0]
+
+        # logp distribution
+        means = np.mean(ll_neg_X, axis=0)
+        stds = np.std(ll_neg_X, axis=0)
+        
         l_X   = []
         l_Y   = []
         l_idx = []
@@ -2301,9 +2318,12 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
                 else:
                     l_Y += ll_Y[i].tolist()
             else:
-                X,Y = getEstTruePositive(ll_X[i])
-                l_X += X
-                l_Y += Y
+                for j in xrange(len(ll_X[i])):
+                    if ll_X[i][j][0] < means[j]-stds[j]:
+                        break
+                ## X,Y = getEstTruePositive(ll_X[i])
+                l_X += np.array(ll_X)[i][j:].tolist()
+                l_Y += np.array(ll_Y)[i][j:].tolist()
         if len(np.shape(l_X))==1:
             warnings.warn("wrong size vector in flatten function")
             sys.exit()

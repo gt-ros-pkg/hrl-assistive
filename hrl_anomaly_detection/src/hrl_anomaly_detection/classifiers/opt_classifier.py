@@ -53,15 +53,16 @@ import matplotlib.pyplot as plt
 
 
 class anomaly_detector(learning_base):
-    def __init__(self, method, nState, nLength=None):
+    def __init__(self, method, nState, nLength=None,\
+                 weight=1., w_negative=1., gamma=1., cost=1.):
         self.method = method
         self.nState = nState
         self.scaler = None
 
-        self.weight     = 1.
-        self.w_negative = 1.
-        self.gamma      = 1.
-        self.cost       = 1.
+        self.weight     = weight
+        self.w_negative = w_negative
+        self.gamma      = gamma
+        self.cost       = cost
         
         self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )        
 
@@ -70,11 +71,10 @@ class anomaly_detector(learning_base):
     def fit(self, X, y):
 
         # set param
-        self.dtc.set_params(w_negative=self.w_negative)
-        self.dtc.set_params(gamma=self.gamma)
-        self.dtc.set_params(cost=self.cost)
-        self.dtc.set_params(class_weight=self.weight)
-
+        d = {'w_negative': self.w_negative, 'gamma': self.gamma,\
+             'cost': self.cost, 'class_weight': self.weight}
+        self.dtc.set_params(**d)
+        
         # flatten the data
         if self.method.find('svm')>=0 or self.method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
@@ -92,15 +92,12 @@ class anomaly_detector(learning_base):
             print "Fitting failure"
             sys.exit()
 
-        est_y = self.predict(X)
         return
 
     def predict(self, X):
 
         labels = []
         for i in xrange(len(X)):
-
-            print np.shape(X[i])
             
             X_scaled = self.scaler.transform(X[i])
             est_y    = self.dtc.predict(X_scaled)
@@ -112,10 +109,6 @@ class anomaly_detector(learning_base):
                     break
             
             labels.append(label)
-
-        print labels
-        sys.exit()
-        
         return labels
 
     ## def decision_function(self, X):
@@ -129,11 +122,6 @@ class anomaly_detector(learning_base):
         fn = 0.0
 
         est_y = self.predict(X)
-        print y[:,0]
-        print est_y
-        sys.exit()
-
-
         
         for i in xrange(len(est_y)):
             if y[i][0]>0:
@@ -234,16 +222,16 @@ if __name__ == '__main__':
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
     param_dist = {'cost': uniform(1.0,4.0),\
-                  'gamma': uniform(2.0,10.0), \
+                  'gamma': uniform(5.0,12.0), \
                   'weight': expon(scale=0.5),
                   }
                   ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
         
     # run randomized search
-    n_iter_search = 20
+    n_iter_search = 1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                       cv=2, n_jobs=1,
+                                       cv=2, n_jobs=8,
                                        n_iter=n_iter_search)
     random_search.fit(X, y)
 
@@ -253,11 +241,20 @@ if __name__ == '__main__':
     print()
     print("Grid scores on development set:")
     print()
-    means = random_search.cv_results_['mean_test_score']
-    stds = random_search.cv_results_['std_test_score']
-    for mean, std, params in zip(means, stds, random_search.cv_results_['params']):
+    means  = random_search.cv_results_['mean_test_score']
+    stds   = random_search.cv_results_['std_test_score']
+    params = random_search.cv_results_['params']
+
+    score_list = []
+    for i in xrange(len(means)):
+        score_list.append([means[i], stds[i], params[i]])
+
+    from operator import itemgetter
+    score_list.sort(key=itemgetter(0), reverse=False)
+    
+    for mean, std, param in score_list:
         print("%0.3f (+/-%0.03f) for %r"
-              % (mean, std * 2, params))
+              % (mean, std * 2, param))
     print()
 
     ## print("Detailed classification report:")

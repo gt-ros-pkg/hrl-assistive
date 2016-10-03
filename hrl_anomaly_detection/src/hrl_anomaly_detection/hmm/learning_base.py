@@ -124,14 +124,14 @@ class learning_base():
             return self 
 
         valid_params = self.get_params(deep=True)            
-        for key, value in six.iteritems(params): 
+        for key, value in six.iteritems(params):
             # simple objects case
             if not key in valid_params:
                 continue
                 ## raise ValueError('Invalid parameter %s ' 'for estimator %s'
                 ##                  % (key, self.__class__.__name__))                
             setattr(self, key, value)
-                       
+
         return self
 
         
