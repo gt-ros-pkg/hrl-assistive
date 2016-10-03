@@ -221,9 +221,9 @@ if __name__ == '__main__':
     
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
-    param_dist = {'cost': uniform(1.0,4.0),\
-                  'gamma': uniform(5.0,12.0), \
-                  'weight': expon(scale=0.5),
+    param_dist = {'cost': uniform(0.5,4.0),\
+                  'gamma': uniform(7.0,15.0), \
+                  'weight': expon(scale=0.3),
                   }
                   ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
