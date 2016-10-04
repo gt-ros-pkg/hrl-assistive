@@ -56,7 +56,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          'hmmgp', 'rnd', 'svm', 'svm_fixed'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ 'svm', 'svm_fixed' ]
+        param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -211,7 +211,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, ae_
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 7.0, \
         ##                   'add_logp_d': False}
         ## SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 7.2236, 'cost': 2.942,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 10.0, 'cost': 1.0,\
+                          'nu': 0.6896,\
                           'hmmosvm_nu': 0.001,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.85, \
@@ -524,6 +525,7 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 10.0, 'cost': 1.0,\
+                          'nu': 0.6136,\
                           'hmmosvm_nu': 0.001}
 
         ROC_param_dict = {'methods': [ ],\
