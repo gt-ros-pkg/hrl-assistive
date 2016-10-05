@@ -225,7 +225,7 @@ if __name__ == '__main__':
     param_dist = {'cost': [1.0],\
                   'gamma': uniform(0.1, 3.0),\
                   'weight': expon(scale=0.3),\
-                  'nu': [0.5]
+                  'nu': uniform(0.1,0.9)
                   }
         #, #uniform(0.1,0.9)
         # uniform(7.0,15.0)
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
         
     # run randomized search
-    n_iter_search = 3000 #1000 #20
+    n_iter_search = 200 #1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=8,
                                        n_iter=n_iter_search)
