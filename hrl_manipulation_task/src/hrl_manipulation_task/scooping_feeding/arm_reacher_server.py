@@ -34,7 +34,7 @@ import random
 import numpy as np
 
 # ROS
-import rospy, roslib
+import rospy
 import PyKDL
 import actionlib
 
