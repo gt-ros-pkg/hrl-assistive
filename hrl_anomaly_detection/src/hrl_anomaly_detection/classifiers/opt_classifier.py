@@ -223,7 +223,7 @@ if __name__ == '__main__':
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
     param_dist = {'cost': [1.0],\
-                  'gamma': [1.0],\
+                  'gamma': [0.1, 2.0],\
                   'weight': expon(scale=0.3),\
                   'nu': [0.5]
                   }
