@@ -234,7 +234,7 @@ if __name__ == '__main__':
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
         
     # run randomized search
-    n_iter_search = 200 #1000 #20
+    n_iter_search = 2000 #1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=8,
                                        n_iter=n_iter_search)
