@@ -224,17 +224,18 @@ if __name__ == '__main__':
     from scipy.stats import uniform, expon
     param_dist = {'cost': [1.0],\
                   'gamma': uniform(0.1, 3.0),\
-                  'weight': expon(scale=0.3),\
+                  'weight': [0.237],\
                   'nu': uniform(0.1,0.9)
                   }
         #, #uniform(0.1,0.9)
         # uniform(7.0,15.0)
         # 'cost': uniform(0.5,4.0)
+        #'weight': expon(scale=0.3),\
         ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
         
     # run randomized search
-    n_iter_search = 2000 #1000 #20
+    n_iter_search = 1000 #1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=8,
                                        n_iter=n_iter_search)
