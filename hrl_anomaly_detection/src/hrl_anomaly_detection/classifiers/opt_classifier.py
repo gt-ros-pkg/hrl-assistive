@@ -217,8 +217,10 @@ if __name__ == '__main__':
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+opt.task+'_'+str(file_idx)+'.pkl')
     X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
 
-    X = X_train
-    y = y_train
+    ## X = X_train
+    ## y = y_train
+    X = np.vstack([X_train, X_test])
+    y = np.vstack([y_train, y_test])
     
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
