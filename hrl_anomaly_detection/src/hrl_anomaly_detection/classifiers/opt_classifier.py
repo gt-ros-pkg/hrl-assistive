@@ -223,7 +223,7 @@ if __name__ == '__main__':
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
     param_dist = {'cost': [1.0],\
-                  'gamma': [0.1, 2.0],\
+                  'gamma': uniform(0.1, 3.0),\
                   'weight': expon(scale=0.3),\
                   'nu': [0.5]
                   }
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     clf = anomaly_detector(method, param_dict['HMM']['nState'])
         
     # run randomized search
-    n_iter_search = 200 #1000 #20
+    n_iter_search = 100 #1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=8,
                                        n_iter=n_iter_search)

@@ -36,15 +36,18 @@ import numpy as np
 # ROS
 import rospy, roslib
 import PyKDL
+import actionlib
+
+# Msg
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import String, Empty, Int64
 import pr2_controllers_msgs.msg
-import actionlib
+from hrl_msgs.msg import FloatArray
+from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath
-from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library - need to move neccessary libraries to a new package
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -130,6 +133,7 @@ class armReachAction(mpcBaseAction):
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
+        rospy.Subscriber('/hrl_manipulation_task/mouth_offset', FloatArray, self.mouthOffsetCallback)
         if self.arm_name == 'left':
             rospy.Subscriber('/feeding/manipulation_task/feeding_dist_request', Int64, self.feedingDistCallback)
 
@@ -375,6 +379,13 @@ class armReachAction(mpcBaseAction):
         M = PyKDL.Rotation(mouth_x, mouth_y, mouth_z)
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
+
+    def mouthOffsetCallback(self, msg):
+        offset = msg.data
+        self.mouth_pose[0] = offset[0]
+        self.mouth_pose[1] = offset[1]
+        self.mouth_pose[2] = offset[2]
+        
 
     def feedingDistCallback(self, msg):
         print "Feeding distance requested ", msg.data
