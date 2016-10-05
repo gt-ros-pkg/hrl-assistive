@@ -1749,6 +1749,8 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
         fn_ll = ROC_data[method]['fn_l']
+        tpr_l = []
+        tnr_l = []
 
         total_cost = []
         fscore_1   = []
@@ -1759,15 +1761,21 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             tp = float(np.sum(tp_ll[i]))
             fn = float(np.sum(fn_ll[i]))
             fp = float(np.sum(fp_ll[i]))
+            tn = float(np.sum(tn_ll[i]))
 
             fscore_1.append( 2.0*tp/(2.0*tp+fn+fp) )
             fscore_0_5.append( 1.25*tp/(1.25*tp+0.25*fn+fp) )
             fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
             ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
+            tpr_l.append( tp/(tp+fn) )
+            tnr_l.append( tn/(fp+tn) )
 
         max_score_idx[0].append( np.argmax(fscore_1) )
         max_score_idx[1].append( np.argmax(fscore_0_5) )
         max_score_idx[2].append( np.argmax(fscore_2) )
+        
+        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]]
+        print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
 
     ##     if method == 'progress' or method == 'hmmgp':
     ##         print fscore_2
