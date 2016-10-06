@@ -227,7 +227,7 @@ if __name__ == '__main__':
     param_dist = {'cost': [1.0],\
                   'gamma': [2.0],\
                   'weight': uniform(0.1,0.3),\
-                  'nu': uniform(0.2,0.8)
+                  'nu': uniform(0.1,0.5)
                   }
         #, #uniform(0.1,0.9)
         # uniform(7.0,15.0)
