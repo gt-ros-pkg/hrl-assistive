@@ -65,8 +65,9 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthOffset  = [-0.04, 0.03, 0.02] # -0.02, 0., 0.05
-        self.mouthNoise   = [0., 0., 0.]
+        self.mouthManOffset = np.array([-0.04, 0.03, 0.02]) # -0.02, 0., 0.05
+        self.mouthNoise     = np.array([0., 0., 0.])
+        self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
         # exp 1:
         #self.mouthOffset  = [-0.04, 0.03, -0.02] # 
@@ -124,7 +125,7 @@ class armReachAction(mpcBaseAction):
         if self.arm_name == 'left':
             self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
             msg = Int64()
-            msg.data = int(self.mouthOffset[2]*100.0)
+            msg.data = int(self.mouthManOffset[2]*100.0)
             self.feeding_dist_pub.publish(msg)
 
         # subscribers
@@ -134,7 +135,7 @@ class armReachAction(mpcBaseAction):
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
-        rospy.Subscriber('/hrl_manipulation_task/mouth_offset', FloatArray, self.mouthOffsetCallback)
+        rospy.Subscriber('/hrl_manipulation_task/mouth_noise', FloatArray, self.mouthNoiseCallback)
         if self.arm_name == 'left':
             rospy.Subscriber('/feeding/manipulation_task/feeding_dist_request', Int64, self.feedingDistCallback)
 
@@ -381,18 +382,19 @@ class armReachAction(mpcBaseAction):
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
 
-    def mouthOffsetCallback(self, msg):
+    def mouthNoiseCallback(self, msg):
         offset = msg.data
-        self.mouth_pose[0] = offset[0]
-        self.mouth_pose[1] = offset[1]
-        self.mouth_pose[2] = offset[2]
+        self.mouthNoise[0] = offset[0]
+        self.mouthNoise[1] = offset[1]
+        self.mouthNoise[2] = offset[2]
+        self.mouthOffset = self.mouthManOffset+self.mouthNoise
         
 
     def feedingDistCallback(self, msg):
         print "Feeding distance requested ", msg.data
-        self.mouthOffset[2] = float(msg.data)/100.0
+        self.mouthManOffset[2] = float(msg.data)/100.0
         msg = Int64()
-        msg.data = int(self.mouthOffset[2]*100.0)
+        msg.data = int(self.mouthManOffset[2]*100.0)
         self.feeding_dist_pub.publish(msg)
         
         
