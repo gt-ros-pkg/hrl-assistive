@@ -2319,7 +2319,7 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
                     l_Y += ll_Y[i].tolist()
             else:
                 for j in xrange(len(ll_X[i])):
-                    if ll_X[i][j][0] < means[j]-1.0*stds[j]-50:
+                    if ll_X[i][j][0] < means[j]-1.0*stds[j]-10:
                         break
                 ## X,Y = getEstTruePositive(ll_X[i])
                 l_X += np.array(ll_X)[i][j:].tolist()
