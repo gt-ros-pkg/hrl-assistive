@@ -12,17 +12,17 @@
         args="messages /netft_data 20" />
 
   
-  <node pkg="rosbag" type="record" name="rosbag" args="record -o
+  <!--node pkg="rosbag" type="record" name="rosbag" args="record -o
                                                        $(find
                                                        hrl_manipulation_task)/data/$(arg
-                                                       fname) -e 
+                                                       fname) 
                                                        /tf_throttle
                                                        /joint_states_throttle
-                                                       /haptic_mpc/(.*)
+                                                       /haptic_mpc
                                                        /right/haptic_mpc
                                                        /hrl_manipulation_task
                                                        /netft_data_throttle
-                                                       /manipulation_task/(.*)
+                                                       /manipulation_task
                                                        /feeding
                                                        pr2_fabric_l_forearm_sensor
                                                        pr2_fabric_l_upperarm_sensor
@@ -36,7 +36,7 @@
                                                        /head_mount_kinect/hd/points
                                                        /head_mount_kinect/hd/camera_info
                                                        " output="screen"/>
-</launch>
+</launch-->
 
 
 
