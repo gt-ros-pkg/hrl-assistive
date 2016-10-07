@@ -58,7 +58,7 @@ class mouth_noise():
 
             print "1: miss "
             print "2: collision (side movement)"
-            print "3: collision (depth)"            
+            print "3: collision (depth, too risky)"            
             print " else: disable)"
 
             val = raw_input('Enable random mouth pose?')
@@ -92,7 +92,7 @@ class mouth_noise():
                     ps.data = [-random.uniform(0.02,0.04),
                                0.0,
                                abs(np.random.normal(scale=0.04))]
-                    
+            # collision but too risky
             elif val == '3':
                 print "Collision - transition (depth)"
                 ps.data = [0.0,
