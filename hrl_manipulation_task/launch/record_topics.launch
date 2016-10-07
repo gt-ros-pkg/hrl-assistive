@@ -26,10 +26,10 @@
                                                        /haptic_mpc/traj_pose
                                                        /netft_data_throttle
                                                        /hrl_manipulation_task/mouth_pose
-                                                       pr2_fabric_l_forearm_sensor
-                                                       pr2_fabric_l_upperarm_sensor
-                                                       pr2_fabric_r_forearm_sensor
-                                                       pr2_fabric_r_upperarm_sensor
+                                                       /pr2_fabric_l_forearm_sensor
+                                                       /pr2_fabric_l_upperarm_sensor
+                                                       /pr2_fabric_r_forearm_sensor
+                                                       /pr2_fabric_r_upperarm_sensor
                                                        /SR300/rgb/image_raw
                                                        /SR300/rgb/image_color
                                                        /SR300/rgb/camera_info
