@@ -79,6 +79,33 @@ class MouthPoseDetector:
             self.load_loc = os.path.expanduser('~') + load_loc
             self.load(self.load_loc)
 
+        """
+        rate = rospy.Rate(10) # 25Hz, nominally.    
+        while not rospy.is_shutdown():
+            try:
+                self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time.now(), rospy.Duration(0))
+                self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time.now())#
+            except:
+                print "Waiting tf"
+
+            if self.gripper_to_sensor is not None: 
+                print self.gripper_to_sensor
+                break
+            rate.sleep()
+        """
+        self.gripper_to_sensor =  [[-0.072,-0.011,-0.068], [0.479, -0.514, 0.464, -0.540]]
+        #if self.gripper_to_sensor is None:
+        #    self.gripper_to_sensor = np.array([[ 0.04152687,  0.00870336,  0.99909948,  -0.072        ],\
+        #                                       [-0.99300273,  0.11099984,  0.04030652,  -0.011        ],\
+        #                                       [-0.11054908, -0.99378231,  0.01325194,  -0.068        ],\
+        #                                       [ 0.        ,  0.        ,  0.        ,  1.        ]])
+        #self.gripper_to_sensor = np.array([[ 0.04152687,  0.00870336,  0.99909948,  -0.015        ],\
+        #[-0.99300273,  0.11099984,  0.04030652,  -0.066        ],\
+        #[-0.11054908, -0.99378231,  0.01325194,  0.073        ],\
+        #[ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+
+
         #subscribers
         self.image_sub      = message_filters.Subscriber(rgb_image, Image, queue_size=1)
         self.depth_sub      = message_filters.Subscriber(depth_image, Image, queue_size=1)
@@ -162,14 +189,15 @@ class MouthPoseDetector:
         #if data is not recent enough, reject
         time1= time.time()
         self.subscribed_success = True
-        print "in callback"
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:# or abs(data.header.stamp.to_sec() - depth_data.header.stamp.to_sec()) > 0.1 or abs(depth_data.header.stamp.to_sec() - gripper_pose.header.stamp.to_sec()) > 0.1:
             return
-        print "hello world"
-        print "difference in time on camera images", data.header.stamp.to_sec() - depth_data.header.stamp.to_sec()
-        print "difference in image and tf", data.header.stamp.to_sec() - gripper_pose.header.stamp.to_sec()
-        print "rgb time", data.header.stamp
-        print "depth time", depth_data.header.stamp
+            
+        
+        #print "hello world"
+        #print "difference in time on camera images", data.header.stamp.to_sec() - depth_data.header.stamp.to_sec()
+        #print "difference in image and tf", data.header.stamp.to_sec() - gripper_pose.header.stamp.to_sec()
+        #print "rgb time", data.header.stamp
+        #print "depth time", depth_data.header.stamp
         #gripper_pose = PoseStamped()
         position, orientation = self.pose_to_tuple(gripper_pose)
         base_to_gripper = tft.quaternion_matrix(orientation)
@@ -265,7 +293,7 @@ class MouthPoseDetector:
                 eye_h = self.min_h
                 eye_img = cv2.resize(eye_img, (eye_w * 2, eye_h * 2))
                 img_rotation_matrix = cv2.getRotationMatrix2D((eye_img.shape[0] / 2, eye_img.shape[1] / 2), l_eye_thetha, 1)
-                print img_rotation_matrix, eye_img.shape
+                #print img_rotation_matrix, eye_img.shape
                 eye_img = cv2.warpAffine(eye_img, img_rotation_matrix, (eye_img.shape[0], eye_img.shape[1]))
                 eye_img = eye_img[int( 5 * eye_h / 6):int(7 * eye_h / 6), int( eye_w/ 3):int(5 * eye_w / 3)].astype('uint8')
                 if self.display_2d:
@@ -286,7 +314,7 @@ class MouthPoseDetector:
                         #self.face_vertical_model  = self.find_mean_var(self.registered_vertical)
                         self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
                         self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
-                        print self.eye_horizontal_model
+                        #print self.eye_horizontal_model
                         #print "finished registering!"
                         #print self.registered_vertical
                 if self.display_2d:
@@ -325,9 +353,12 @@ class MouthPoseDetector:
                 pnp_trans = self.use_pnp_ransac(landmarks, self.cam_matrix)
                 """
                 if self.first:
-                    self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(4.0))
-                    self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
-                    print self.gripper_to_sensor
+                    ## try:
+                    ##     self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(5.0))
+                    ## except:
+                    ##     self.tf_listnr.waitForTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time(), rospy.Duration(5.0))
+                    ## self.gripper_to_sensor = self.tf_listnr.lookupTransform("/r_gripper_tool_frame", self.camera_link, rospy.Time())#
+                    ## print self.gripper_to_sensor
                     matrix_form = tft.quaternion_matrix(self.gripper_to_sensor[1])
                     for i in xrange(3):
                         matrix_form[i][3] = self.gripper_to_sensor[0][i]
@@ -369,7 +400,7 @@ class MouthPoseDetector:
                     for i, offset in enumerate(self.pose_to_tuple(pose)[0]):
                         transform_matrix[i][3] = offset
                     transform_matrix = tft.inverse_matrix(transform_matrix)
-                    print transform_matrix
+                    #print transform_matrix
                     for point in points_ordered:
                         lm_point = tft.translation_matrix(point)
                         lm_point = np.array(np.matrix(transform_matrix)*np.matrix(lm_point))
@@ -389,7 +420,7 @@ class MouthPoseDetector:
                         left_vertical_integral  = self.align_integral(left_vertical_integral, self.eye_vertical_model)
                         #right_vertical_integral = self.align_integral(right_vertical_integral, self.eye_vertical_model)
 
-                        print "time to align: ", time.time() - time_to_align
+                        #print "time to align: ", time.time() - time_to_align
                         #count = left_horizontal_integral[1]
                         count = (left_horizontal_integral[1] / self.min_w + left_vertical_integral[1]) / (self.min_h / 3)
                         count = count / 2
@@ -425,7 +456,7 @@ class MouthPoseDetector:
                         curr_point_2d = self.get_2d_pixel(curr_point)
                         retrieved_landmarks.append(dlib.dlib.point(int(curr_point_2d[0]), int(curr_point_2d[1])))
                     new_point_set, new_points_ordered = self.retrieve_points(retrieved_landmarks, depth, use_points=False)#point_set, points_ordered#
-                    print self.pose_to_tuple(pose)
+                    #print self.pose_to_tuple(pose)
                     transformation_matrix = tft.quaternion_matrix(self.pose_to_tuple(pose)[1])
                     for i in xrange(3):
                         transformation_matrix[i][3] = self.pose_to_tuple(pose)[0][i]
@@ -478,7 +509,7 @@ class MouthPoseDetector:
                 no_jump = False
             if best < 15 and best_point_set is None:
                 no_jump = False
-        print no_jump
+        #print no_jump
         if no_jump:
             self.current_positions = current_positions
             self.previous_position, self.previous_orientation = position, orientation
@@ -492,7 +523,7 @@ class MouthPoseDetector:
         #publish
         temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
         curr_angle = qt.quat_angle(orientation, tft.quaternion_from_euler(0, 0, np.math.pi/2)) / np.math.pi * 180            
-        print curr_angle
+        #print curr_angle
         for i in xrange(3):
             temp_pose[i][3] = position[i]
         temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
@@ -513,7 +544,7 @@ class MouthPoseDetector:
                                 
             except:
                 print "failed"
-        self.mouth_pub.publish(best_pose)
+        #self.mouth_pub.publish(best_pose)
         if best_point_set is not None:
             print "best was ", best
             #time.sleep(2)
@@ -527,13 +558,13 @@ class MouthPoseDetector:
         else:
             d_x = p2.x - p1.x
             d_y = p2.y - p1.y
-        print "d_x and d_y", d_x, d_y
-        print tft.unit_vector((d_x, d_y))
+        #print "d_x and d_y", d_x, d_y
+        #print tft.unit_vector((d_x, d_y))
         thetha =  np.arccos(np.clip(np.dot(tft.unit_vector((d_x, d_y)), (1.0, 0.0)), -1.0, 1.0))
         thetha = thetha / np.math.pi * 180
         if d_x * d_y < 0:
             thetha = thetha * -1.0
-        print "angle was ", thetha
+        #print "angle was ", thetha
         return thetha
         
 
@@ -637,7 +668,7 @@ class MouthPoseDetector:
                 temp  = e_min
                 e_min = e_max - (e_max - e_min) / 4.0
                 e_max = temp  + (e_max - temp ) / 4.0
-        print best_score, best_set
+        #print best_score, best_set
         return best_set, best_score
 
     def find_mean_var(self, datas):
@@ -697,7 +728,7 @@ class MouthPoseDetector:
         else:
             half_width = half_height
         if self.flipped:
-            print "flipped!"
+            #print "flipped!"
             return dlib.dlib.rectangle(shape[1]- (center[0]+half_width) - 1, shape[0] - (center[1]+half_height)-1, shape[1] - (center[0]-half_width) - 1, shape[0] - (center[1]-half_height) - 1)
         else:
             return dlib.dlib.rectangle(center[0]-half_width, center[1]-half_height, center[0]+half_width, center[1]+half_height)
@@ -1357,6 +1388,7 @@ class Point:
 
 
 
+
 if __name__ == '__main__':
     rospy.init_node('mouth_detector')
 
@@ -1388,7 +1420,7 @@ if __name__ == '__main__':
     p.add_option("--save", dest="save")
     p.add_option("--load", dest="load")
     (options, args) = p.parse_args()
-    print options.offset
+    #print options.offset
     detector = MouthPoseDetector(options.rgb_camera_link, options.rgb_image,
                                  options.depth_image, options.rgb_info, 
                                  options.depth_info, options.depth_scale, options.offset,

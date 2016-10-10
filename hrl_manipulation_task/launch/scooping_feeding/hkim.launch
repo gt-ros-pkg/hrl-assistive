@@ -7,12 +7,12 @@
                                                   -r
                                                   /SR300/rgb/image_raw
                                                   -d
-                                                  /SR300/camera/depth_registered/image
+                                                  /SR300/depth_registered/sw_registered/image_rect
                                                   -R
                                                   /SR300/rgb/camera_info
                                                   -D
-                                                  /SR300/camera/depth_registered/camera_info
-                                                  -s 0.001 --flip
+                                                  /SR300/depth_registered/sw_registered/camera_info
+                                                  -s 1 --flip
                                                   --rgb_mode rgb8" output="screen"/>
 
         <!-- for filtering -->
