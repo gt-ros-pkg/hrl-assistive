@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="pts_relay_node" pkg="topic_tools" type="relay"
+        args="/SR300/depth/points /SR300/depth/points_relay" output="screen" />
+
+</launch>
