@@ -2,13 +2,13 @@ import os, sys
 import numpy as np
 
 
-def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
+def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
               local_range=10.0, bAESwitch=False, nPoints=None ):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':
         raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
-                                                                bAERenew, bHMMRenew,\
+                                                                bHMMRenew, bCFRenew, \
                                                                 rf_center, local_range,\
                                                                 ae_swtch=bAESwitch, dim=dim, \
                                                                 nPoints=nPoints)
@@ -16,7 +16,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     #---------------------------------------------------------------------------
     elif task == 'feeding':
         raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
-                                                               bAERenew, bHMMRenew,\
+                                                               bHMMRenew, bCFRenew, \
                                                                rf_center, local_range,\
                                                                ae_swtch=bAESwitch, dim=dim,\
                                                                nPoints=nPoints)
@@ -24,7 +24,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     #---------------------------------------------------------------------------           
     elif task == 'pushing_microwhite':
         raw_data_path, save_data_path, param_dict = getPushingMicroWhite(task, bDataRenew, \
-                                                                         bAERenew, bHMMRenew,\
+                                                                         bHMMRenew, bCFRenew, \
                                                                          rf_center, local_range, \
                                                                          ae_swtch=bAESwitch, dim=dim,\
                                                                          nPoints=nPoints)
@@ -32,7 +32,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     #---------------------------------------------------------------------------           
     elif task == 'pushing_microblack':
         raw_data_path, save_data_path, param_dict = getPushingMicroBlack(task, bDataRenew, \
-                                                                         bAERenew, bHMMRenew,\
+                                                                         bHMMRenew, bCFRenew, \
                                                                          rf_center, local_range, \
                                                                          ae_swtch=bAESwitch, dim=dim,\
                                                                          nPoints=nPoints)
@@ -40,7 +40,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     #---------------------------------------------------------------------------           
     elif task == 'pushing_toolcase':
         raw_data_path, save_data_path, param_dict = getPushingToolCase(task, bDataRenew, \
-                                                                       bAERenew, bHMMRenew,\
+                                                                       bHMMRenew, bCFRenew, \
                                                                        rf_center, local_range, \
                                                                        ae_swtch=bAESwitch, dim=dim,\
                                                                        nPoints=nPoints)
@@ -53,10 +53,10 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm', 'progress_svm',\
-                                         'hmmgp', 'rnd'] #'progress_state', 
+                                         'hmmgp', 'rnd', 'svm', 'svm_fixed'] #'progress_state', 
         ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ 'rnd' ]
+        param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
         ## param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
@@ -67,7 +67,7 @@ def getParams(task, bDataRenew, bAERenew, bHMMRenew, dim, rf_center='kinEEPos',\
     return raw_data_path, save_data_path, param_dict
     
 
-def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
+def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pre_train=False,\
                 ae_swtch=False, dim=4, nPoints=None):
 
     if nPoints is None: nPoints = 40
@@ -78,7 +78,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'unimodal_audioWristRMS']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.333,
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.9952, 'gamma': 0.0464, 'cost': 6.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.9952, 'gamma': 0.0464, 'cost': 6.0,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 0.01,\
@@ -123,7 +123,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.0, 'scale': 7.333, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.25, 'gamma': 1.05925, 'cost': 5.4,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 2.25, 'gamma': 1.05925, 'cost': 5.4,\
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
@@ -147,7 +147,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                         'crossmodal_targetEEDist' ]
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 6.44,
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.011, 'cost': 4.599,\
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': [ 'fixed', 'kmean'],\
@@ -171,7 +171,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
                      'vision_change', 'pps']
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -198,7 +198,7 @@ def getScooping(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pr
     return raw_data_path, save_data_path, param_dict
 
 
-def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_swtch=False, dim=4,\
+def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, ae_swtch=False, dim=4,\
                nPoints=None):
     if nPoints is None: nPoints = 40
 
@@ -210,7 +210,9 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 7.0, 'scale': 7.0, \
         ##                   'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
+        ## SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.05, 'gamma': 7.122, 'cost': 2.066,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 10.0, 'cost': 1.0,\
+                          'nu': 0.6896,\
                           'hmmosvm_nu': 0.001,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.85, \
@@ -258,7 +260,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist', 'crossmodal_artagEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 10.0, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.1, 'gamma': 3.911, 'cost': 1.625,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.1, 'gamma': 3.911, 'cost': 1.625,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 12.5,\
                           'hmmsvm_bpsvm_gamma': 0.507, \
@@ -285,7 +287,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
                         'crossmodal_artagEEDist']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.0, 'scale': 3.0, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 5.0, 'gamma': 0.1, 'cost': 2.5,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 5.0, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 15.0,\
                           'hmmsvm_bpsvm_gamma': 0.01, \
@@ -318,7 +320,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_artag']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': False, 'time_window': 4, \
+    AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, \
                       'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
                       'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
@@ -341,7 +343,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, ae_
 
     return raw_data_path, save_data_path, param_dict
 
-def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, \
+def getPushingMicroWhite(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pre_train=False, \
                          ae_swtch=False, dim=3, nPoints=None):
     if nPoints is None: nPoints = 40
 
@@ -353,7 +355,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.788, 'scale': 10.0, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.525, 'gamma': 0.0316, 'cost': 4.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.525, 'gamma': 0.0316, 'cost': 4.0,\
                           'hmmosvm_nu': 0.00316}
 
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
@@ -377,7 +379,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.33, 'scale': 7.33, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.85, 'gamma': 0.001, 'cost': 12.5,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.85, 'gamma': 0.001, 'cost': 12.5,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                           'hmmosvm_nu': 0.00316,
                           'hmmsvm_diag_w_negative': 1.5, \
@@ -430,7 +432,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ##                   'add_logp_d': False}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.06, 'scale': 10.,\
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.175, 'gamma': 0.0063, 'cost':7.5,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.175, 'gamma': 0.0063, 'cost':7.5,\
                           'hmmosvm_nu': 0.001}
         
         ROC_param_dict = {'methods': ['fixed', 'progress', 'kmean'],\
@@ -450,7 +452,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.3, 'scale': 10.0,\
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.584, 'gamma': 6.0, 'cost': 2.1666,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.584, 'gamma': 6.0, 'cost': 2.1666,\
                           'hmmosvm_nu': 0.001,
                           'hmmsvm_diag_w_negative': 1.5, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01}
@@ -476,7 +478,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -509,7 +511,7 @@ def getPushingMicroWhite(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     return raw_data_path, save_data_path, param_dict
 
 
-def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False,\
+def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pre_train=False,\
                          ae_swtch=False, dim=3, nPoints=None):
 
     if nPoints is None: nPoints        = 40  #
@@ -522,7 +524,8 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 8.0,\
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.16, 'gamma': 0.08799, 'cost': 1.75,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 1.0, 'cost': 1.0,\
+                          'nu': 0.5,\
                           'hmmosvm_nu': 0.001}
 
         ROC_param_dict = {'methods': [ ],\
@@ -547,7 +550,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.25, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.7498, 'gamma': 6.244, 'cost': 1.75,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 1.738, 'cost': 1.0, 'nu': 0.5, \
                           'osvm_nu': 0.01,\
                           'hmmosvm_nu': 0.001,
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
@@ -576,7 +579,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
                           'hmmgp_param_range':np.logspace(-1, 1.6, nPoints)*-1.0, \
-                          'svm_param_range': np.linspace(0.002, 0.476, nPoints),\
+                          'svm_param_range': np.linspace(0.005, 0.7, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': np.linspace(-0.305, 0.85, nPoints ),\
                           'change_param_range': np.logspace(0.0, 1.3, nPoints)*-1.0,\
@@ -595,7 +598,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.0, 'scale': 8.0, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.1622, 'gamma': 0.1, 'cost': 2.5,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.1622, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.001}
         
         ROC_param_dict = {'methods': [ ],\
@@ -617,7 +620,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.5, 'scale': 7.33,\
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 8.0,\
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.7498, 'gamma': 0.1, 'cost': 2.5,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.7498, 'gamma': 0.1, 'cost': 2.5,\
                           'hmmosvm_nu': 0.000316}
 
         ROC_param_dict = {'methods': [ ],\
@@ -640,7 +643,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -688,7 +691,7 @@ def getPushingMicroBlack(task, data_renew, AE_renew, HMM_renew, rf_center,local_
     return raw_data_path, save_data_path, param_dict
 
 
-def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_range, pre_train=False, \
+def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pre_train=False, \
                        ae_swtch=False, dim=3, nPoints=None):
 
     
@@ -701,7 +704,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.5, 'scale': 5.5, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 5.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 2.0, 'gamma': 0.1, 'cost': 5.0,\
                           'hmmosvm_nu': 0.00316}
                           ## 'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           
@@ -725,7 +728,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.775, 'scale': 6.66, \
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.73, 'scale': 13.25, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.711, 'gamma': 0.01, 'cost': 3.0,\
                           'cssvm_w_negative': 2.0, 'cssvm_gamma': 0.05, 'cssvm_cost': 9.75,\
                           'osvm_nu': 0.00316,\
                           'hmmosvm_nu': 0.001,\
@@ -772,7 +775,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 7.66, \
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.06, 'scale': 10.0, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.01, 'cost': 5.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.0, 'gamma': 0.01, 'cost': 5.0,\
                           'cssvm_w_negative': 8.0, 'cssvm_gamma': 0.1, 'cssvm_cost': 8.0,\
                           'hmmosvm_nu': 0.001}
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean'],\
@@ -792,7 +795,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.77, 'scale': 15.00, \
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': False, 'w_negative': 0.575, 'gamma': 0.1, 'cost': 7.75,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.575, 'gamma': 0.1, 'cost': 7.75,\
                           'hmmosvm_nu': 0.01}                          
         ROC_param_dict = {'methods': [ 'fixed', 'progress', 'kmean' ],\
                           'update_list': [ 'progress', 'hmmgp','fixed' ],\
@@ -814,7 +817,7 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
     modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RSS2016/'
 
-    AE_param_dict  = {'renew': AE_renew, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
                       'layer_sizes':[], 'learning_rate':1e-4, \
                       'learning_rate_decay':1e-6, \
                       'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
@@ -859,10 +862,10 @@ def getPushingToolCase(task, data_renew, AE_renew, HMM_renew, rf_center,local_ra
         
 
     if AE_param_dict['switch'] and AE_param_dict['method']=='pca':            
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 5.0, 'scale': 0.5}
     elif AE_param_dict['switch'] and AE_param_dict['method']=='ae':            
-        SVM_param_dict = {'renew': False, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.0, 'gamma': 0.334, 'cost': 1.0}
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 4.0, 'scale': 1.5}
 
 

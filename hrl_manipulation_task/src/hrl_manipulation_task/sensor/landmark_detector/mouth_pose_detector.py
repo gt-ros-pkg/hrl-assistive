@@ -238,13 +238,6 @@ class MouthPoseDetector:
                 for i in xrange(3):
                     faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()- 10 * (i + 1), self.previous_face[0].bottom()))
                     faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 10 * (i+1), self.previous_face[0].top(), self.previous_face[0].right()+ 10 * (i + 1), self.previous_face[0].bottom()))
-            """
-                for j in xrange(1):
-                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top() - (5 * (j+1)), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom() - (5 * (j+1))))
-                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top() - (5 * (j+1)), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom() - (5 * (j+1))))
-                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 5 * (i+1), self.previous_face[0].top() + (5 * (j+1)), self.previous_face[0].right()- 5 * (i + 1), self.previous_face[0].bottom() + (5 * (j+1))))
-                    faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 5 * (i+1), self.previous_face[0].top() + (5 * (j+1)), self.previous_face[0].right()+ 5 * (i + 1), self.previous_face[0].bottom() + (5 * (j+1))))
-            """
             #faces.append(self.previous_face[0])
             faces.append(self.previous_face[0])
             #faces = self.previous_face
@@ -283,8 +276,8 @@ class MouthPoseDetector:
                 if self.first:
                     self.min_w = 24#int(eye_w)
                     self.min_h = 30#int(eye_h)
-                    print self.min_w
-                    print self.min_h
+                    #print self.min_w
+                    #print self.min_h
                 if eye_y < 0 or eye_x < 0 or eye_y+(2 * eye_h) >= gray_img.shape[0] or eye_x+(2 * eye_w) >= gray_img.shape[1]:
                     continue
                 else:
@@ -407,7 +400,7 @@ class MouthPoseDetector:
                         lm_point = tft.translation_from_matrix(lm_point)
                         self.lm_coor.append(lm_point)
                         if np.allclose(point, (0.0, 0.0, 0.0)):
-                            print lm_point
+                            #print lm_point
                             self.wrong_coor = lm_point
                     self.first = False 
                     if self.save_loc is not None:
@@ -521,7 +514,7 @@ class MouthPoseDetector:
         if self.display_3d:
             self.br.sendTransform(position, orientation, rospy.Time.now(), "/mouth_position", self.camera_link)
         #publish
-        temp_pose = tft.quaternion_matrix(tft.unit_vector(orientation))
+        temp_pose = tft.quaternion_matrix(qt.quat_normal(orientation))
         curr_angle = qt.quat_angle(orientation, tft.quaternion_from_euler(0, 0, np.math.pi/2)) / np.math.pi * 180            
         #print curr_angle
         for i in xrange(3):
@@ -529,19 +522,15 @@ class MouthPoseDetector:
         temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
         temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
         temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
-        ## orientation = tft.quaternion_from_matrix(pnp_trans)
-        ## pnp_position = (pnp_trans[0][3], pnp_trans[1][3], pnp_trans[2][3])
-        ## pnp_pose = self.make_pose(pnp_position, orientation=orientation, frame_id=self.camera_link)
-        ## if self.display_3d:
-        ##     self.br.sendTransform(pnp_position, orientation, rospy.Time.now(), "/mouth_position2", self.camera_link)
         if not np.isnan(temp_pose.pose.position.x) and not np.isnan(temp_pose.pose.orientation.x) and (curr_angle < 45 or curr_angle > 135):
             self.quat_pub.publish(temp_pose.pose.orientation)
             try:
-                temp_pose.header.stamp = rospy.Time.now() #gripper_pose.header.stamp
+                temp_pose.header.stamp = data.header.stamp#rospy.Time.now() #
                 temp_pose.header.frame_id = "torso_lift_link"
                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
                 self.mouth_calc_pub.publish(temp_pose)
-                                
+                #print "pose time", temp_pose.header.stamp.to_sec()
+                #print "image times", data.header.stamp.to_sec(), depth_data.header.stamp.to_sec()
             except:
                 print "failed"
         #self.mouth_pub.publish(best_pose)
@@ -966,8 +955,8 @@ class MouthPoseDetector:
                 quaternions.append(tft.unit_vector(pose))
             else:
                 orientation = pose.pose.orientation
-                quaternions.append(tft.unit_vector([orientation.x, orientation.y, orientation.z, orientation.w]))
-        return tft.unit_vector(tft.quaternion_multiply(tft.quaternion_inverse(quaternions[0]), quaternions[1]))
+                quaternions.append(qt.quat_normal([orientation.x, orientation.y, orientation.z, orientation.w]))
+        return qt.quat_normal(tft.quaternion_multiply(tft.quaternion_inverse(quaternions[0]), quaternions[1]))
 
     def make_pose(self, point, orientation=None, frame_id=None, stamped=True):
         if stamped:
@@ -1413,7 +1402,7 @@ if __name__ == '__main__':
     p.add_option("-s", "--scale", dest="depth_scale", type="float",
                  default=1.0, help="scale depth to meters")
     p.add_option("-o", "--offset", dest="offset", type="float", nargs=3, default=(0.0, 0.0, 0.0))
-    p.add_option("--rgb_mode", dest="rgb_mode", default="bgr8", help="rgb format")
+    p.add_option("--rgb_mode", dest="rgb_mode", default="rgb8", help="rgb format")
     p.add_option("--flip", dest="flipped", action="store_true", default=False)
     p.add_option("--display_2d", dest="display_2d", action="store_true", default=False)
     p.add_option("--display_3d", dest="display_3d", action="store_true", default=False)

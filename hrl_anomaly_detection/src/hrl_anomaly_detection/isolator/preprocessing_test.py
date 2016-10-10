@@ -46,9 +46,10 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
-from hrl_anomaly_detection.ICRA2017_params import *
+from hrl_anomaly_detection.AURO2016_params import *
 from hrl_anomaly_detection.optimizeParam import *
 from hrl_anomaly_detection import util as util
+import hrl_lib.circular_buffer as cb
 
 # learning
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -139,25 +140,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     handFeatureParams = d['param_dict']
     normalTrainData   = d['successData'] * HMM_dict['scale']
 
-    # expected traj: 2.5, 0.5, 3.0???
-    # 15cm, 0.5s, 20cm
-    # 0.2m/sec
-    # 0.75s, 0.5s, 1s   = 2.25s
-    # 2.25s, 0.5s, 3.0s = 5.75s
-    t    = np.linspace(0,timeList[-1],len(timeList))
-    tx   = [0.,  0.15/0.2, 0.5,  0.2/0.2]
-    ty   = [0., -0.15,     0.0, 0.2]
-    txx  = [0]
-    tyy  = [0]
-    for i in xrange(1,len(tx)):            
-        txx.append(txx[-1]+tx[i])
-        tyy.append(tyy[-1]+ty[i])
-        txx.append(txx[-1]+tx[i])
-        tyy.append(tyy[-1])
-    txx.append(timeList[-1])
-    tyy.append(tyy[-1])
-    from scipy import interpolate            
-    ip = interpolate.interp1d(txx,tyy)
+    ## dist_buff1 = cb.CircularBuffer(8, (1,))
+    ## dist_buff2 = cb.CircularBuffer(8, (1,))
+    ## dist_buff3 = cb.CircularBuffer(8, (1,))
 
     classes = []
     classes.append([52,53,54,55])
@@ -191,28 +176,84 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         fileList = util.getSubjectFileList(raw_data_path, subject_names, \
                                            task_name, no_split=True)                
                                            
-        testDataX = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
-                                   handFeatureParams,\
-                                   downSampleSize = data_dict['downSampleSize'], \
-                                   cut_data       = data_dict['cut_data'],\
-                                   handFeatures   = data_dict['handFeatures'])
+        testDataX,testDataDict = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
+                                                handFeatureParams,\
+                                                downSampleSize = data_dict['downSampleSize'], \
+                                                cut_data       = data_dict['cut_data'],\
+                                                handFeatures   = data_dict['handFeatures'])
 
         testDataY = []
+        normalIdxList  = []
+        normalFileList = []
         abnormalIdxList  = []
         abnormalFileList = []
         for i, f in enumerate(fileList):
             if f.find("success")>=0:
                 testDataY.append(-1)
+                normalIdxList.append(i)
+                normalFileList.append(f.split('/')[-1])
             elif f.find("failure")>=0:
                 testDataY.append(1)
                 abnormalIdxList.append(i)
                 abnormalFileList.append(f.split('/')[-1])
+
+        #temp
+        ## abnormalIdxList = normalIdxList
+        ## abnormalFileList = normalFileList
 
         # reduce data
         fileList  = np.array(fileList)[abnormalIdxList]
         testDataX = np.array(testDataX)[:,abnormalIdxList,:]
         testDataY = np.array(testDataY)[abnormalIdxList]
 
+        ## # Expected raw trajectory
+        ## nOrder = 2
+        ## exp_traj  = []
+        ## exp_interp_traj = []
+        ## for i in xrange(len(abnormalIdxList)):
+        ##     kinEEPos  = testDataDict['kinDesEEPosList'][abnormalIdxList[i]]
+        ##     targetPos = testDataDict['visionLandmarkPosList'][abnormalIdxList[i]]
+
+        ##     dist = np.linalg.norm(targetPos[:,0:1]-kinEEPos, axis=0)
+        ##     dist -= np.mean(dist[:4])
+        ##     exp_traj.append(dist)
+
+        ##     new_dist = []
+        ##     for j in xrange(len(dist_buff1)):
+        ##         dist_buff1[j] = np.mean(dist[:4])
+        ##     for j in xrange(len(dist_buff2)):
+        ##         dist_buff2[j] = np.mean(dist[:4])
+        ##     for j in xrange(len(dist_buff3)):
+        ##         dist_buff3[j] = np.mean(dist[:4])
+        ##     for j in xrange(len(dist)):
+        ##         dist_buff1.append(dist[j])
+        ##         dist_buff2.append(dist_buff1[0])
+        ##         dist_buff3.append(dist_buff2[0])
+        ##         new_dist.append( np.mean(dist_buff3.get_array()) )                
+        ##     exp_interp_traj.append(new_dist)
+
+        ## # scaling
+        ## exp_traj = ( np.array(exp_traj) - handFeatureParams['feature_min'][nOrder] )\
+        ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
+        ## exp_interp_traj = ( np.array(exp_interp_traj) - handFeatureParams['feature_min'][nOrder] )\
+        ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
+
+        ## refData = np.mean(normalTrainData[nOrder,:,:startIdx])
+        ## for i in xrange(len(exp_traj)):
+        ##     offset = refData - np.mean(exp_traj[i][:startIdx])
+        ##     exp_traj[i] += offset
+        ## for i in xrange(len(exp_interp_traj)):
+        ##     offset = refData - np.mean(exp_interp_traj[i][:startIdx])
+        ##     exp_interp_traj[i] += offset
+
+        ## exp_traj = dm.applying_offset(exp_traj*HMM_dict['scale'], \
+        ##                               normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+        ## exp_interp_traj = dm.applying_offset(exp_interp_traj*HMM_dict['scale'], \
+        ##                                      normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+        ## exp_traj /= HMM_dict['scale']
+        ## exp_interp_traj /= HMM_dict['scale']
+
+        #temp
         ## fileList  = fileList[:5]
         ## testDataX = testDataX[:,:5,:]
         ## testDataY = testDataY[:5]
@@ -238,51 +279,21 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         targetDataY = testDataY
         print "Target Data: ", np.shape(targetDataX), np.shape(targetDataY)
 
-
-        # expected traj
-        ## traj   = ip(t)
-        nOrder = 2
-        ## # align
-        ## traj_start = np.mean(normalTrainData[nOrder,:,:3])*\
-        ##   (handFeatureParams['feature_max'][nOrder]-handFeatureParams['feature_min'][nOrder])+\
-        ##   handFeatureParams['feature_min'][nOrder]
-        ## traj_diff  = traj_start-traj[0]
-        ## traj      += traj_diff
-
-        ## traj = (traj-handFeatureParams['feature_min'][nOrder])/\
-        ##   (handFeatureParams['feature_max'][nOrder]-handFeatureParams['feature_min'][nOrder])
-
         abnormal_windows = []
         abnormal_class   = []
         for i in xrange(len(targetDataX[0])):
 
-            if targetDataY[i] < 0: continue
-
-            ## # Expected output (one-step ahead prediction)
-            ## mu  = []
-            ## var = []
-            ## for j in xrange(startIdx, len(x)):
-            ##     m, v = ml.predict(targetDataX[:,i:i+1,:j])
-            ##     mu.append(m[0])
-            ##     var.append(v[0])
-            ## mu  = np.array(mu)
-            ## var = np.array(var)
-
-            ## for j in xrange(startIdx):
-            ##     mu  = np.vstack( [mu[0:1,:], mu] )
-            ##     var = np.vstack( [var[0:1,:], var] )
+            ## if targetDataY[i] < 0: continue
 
             # Expected output (prediction from partial observation)
-            exp_traj = np.array(normalMean)[nOrder]
-            ## exp_traj = traj
             mu       = []
             for j in xrange(len(x)):
                 if j < startIdx:
                     mu.append(ml.B[0][0])
                 else:
-                    x_pred = ml.predict_from_single_seq(exp_traj[:j]*HMM_dict['scale'], \
-                                                        nOrder=2)
-                    ## x_pred = ml.predict_from_single_seq(targetDataX[nOrder,i,:j], nOrder=2)
+                    ## x_pred = ml.predict_from_single_seq(exp_interp_traj[i][:j]*HMM_dict['scale'], \
+                    ##                                     nOrder=2)
+                    x_pred = ml.predict_from_single_seq(targetDataX[nOrder,i,:j], nOrder=2)
                     mu.append(x_pred)
             mu  = np.array(mu)
 
@@ -297,27 +308,28 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
             # Anomaly point
             anomaly_idx = detection_idx_list[i]
-            if anomaly_idx is None:
-                continue
+            if anomaly_idx is not None:
 
-            # mean, range, slope
-            abnormal_window = []
-            for k in xrange(nEmissionDim):
-                single_data   = (targetDataX[k,i]-mu[:,k])/HMM_dict['scale']
-                single_window = single_data[anomaly_idx-window_size[0]:anomaly_idx-window_size[1]+1]
-                ## slope,_,_,_,_ = stats.linregress(range(len(single_window)), single_window)
-                abnormal_window += [np.mean(single_window),\
-                                    np.amax(single_window)-np.amin(single_window)] 
-            abnormal_windows.append(abnormal_window)
-            tid = int(abnormalFileList[i].split('_')[1].split('_')[0])
-            for kk in xrange(len(classes)):
-                if tid in classes[kk]:
-                    abnormal_class.append(kk)
-                    break
+                # mean, range, slope
+                abnormal_window = []
+                for k in xrange(nEmissionDim):
+                    single_data   = (targetDataX[k,i]-mu[:,k])/HMM_dict['scale']
+                    single_window = single_data[anomaly_idx-window_size[0]:anomaly_idx-window_size[1]+1]
+                    ## slope,_,_,_,_ = stats.linregress(range(len(single_window)), single_window)
+                    abnormal_window += [np.mean(single_window),\
+                                        np.amax(single_window)-np.amin(single_window)] 
+                abnormal_windows.append(abnormal_window)
+                tid = int(abnormalFileList[i].split('_')[1].split('_')[0])
+                for kk in xrange(len(classes)):
+                    if tid in classes[kk]:
+                        abnormal_class.append(kk)
+                        break
             
-                
+            lim_list = []
+                    
             fig = plt.figure(1)
             for k in xrange(nEmissionDim):
+                lim_list.append([ np.amin(normalMean[k]-1.0*normalStd[k])*0.75, np.amax(normalMean[k]+1.0*normalStd[k])*1.5 ])
                 
                 ax = fig.add_subplot(nEmissionDim*100+20+k*2+1)
                 ax.fill_between(x, normalMean[k]-1.0*normalStd[k], \
@@ -325,8 +337,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                 facecolor='green', alpha=0.3)
                 ax.plot(x, targetDataX[k,i]/HMM_dict['scale'], 'r-')
                 ax.plot(x, mu[:,k]/HMM_dict['scale'], 'b-')
-                ## ax.plot(x, normalMean[k], 'k-')
-                ax.plot([anomaly_idx, anomaly_idx], [0.0,2.0], 'm-')
+                if anomaly_idx is not None:
+                    ax.plot([anomaly_idx, anomaly_idx], [0.0,2.0], 'm-')
                 
                 if k == 0:
                     for l in xrange(len(x)):
@@ -342,21 +354,23 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
                 ax = fig.add_subplot(nEmissionDim*100+20+k*2+2)
                 ax.plot(x, (targetDataX[k,i]-mu[:,k])/HMM_dict['scale'],'r-')
-                ax.plot([anomaly_idx, anomaly_idx], [-2.0,2.0], 'm-')
+                if anomaly_idx is not None:
+                    ax.plot([anomaly_idx, anomaly_idx], [-2.0,2.0], 'm-')
 
-                min_idx = anomaly_idx-window_size[0]
-                max_idx = anomaly_idx+window_size[1]
-                if min_idx <0 : min_idx = 0
-                ax.plot([anomaly_idx-window_size[0], anomaly_idx-window_size[1]], [-2.0,2.0], 'm-')
-                ax.plot([anomaly_idx+window_size[0], anomaly_idx+window_size[1]], [-2.0,2.0], 'm-')
+                    min_idx = anomaly_idx-window_size[0]
+                    max_idx = anomaly_idx+window_size[1]
+                    if min_idx <0 : min_idx = 0
+                    ax.plot([anomaly_idx-window_size[0], anomaly_idx-window_size[1]], [-2.0,2.0], 'm-')
+                    ax.plot([anomaly_idx+window_size[0], anomaly_idx+window_size[1]], [-2.0,2.0], 'm-')
 
 
             for k in xrange(nEmissionDim):
                 ax = fig.add_subplot(nEmissionDim*100+20+k*2+1)
-                if k==0: ax.set_ylim([-0.1,0.4])
-                elif k==1: ax.set_ylim([0.15,0.4])
-                elif k==2: ax.set_ylim([0.1,0.75])
-                else: ax.set_ylim([0.1,0.7])
+                ax.set_ylim(lim_list[k])
+                ## if k==0: ax.set_ylim([-0.1,0.4])
+                ## elif k==1: ax.set_ylim([0.15,0.4])
+                ## elif k==2: ax.set_ylim([0.1,0.75])
+                ## else: ax.set_ylim([0.1,0.7])
                 ax = fig.add_subplot(nEmissionDim*100+20+k*2+2)
                 ax.set_ylim([-0.2,0.2])
 
@@ -575,9 +589,9 @@ if __name__ == '__main__':
     local_range    = 10.0    
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bAERenew, opt.bHMMRenew, opt.dim,\
-                                                          rf_center, local_range, \
-                                                          bAESwitch=opt.bAESwitch)
+                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                          rf_center, local_range)
+    subjects = ['park']
 
 
     #---------------------------------------------------------------------------
@@ -585,17 +599,13 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['park', 'sai'] #'linda', 'jina', #'ari', 
-        ## subjects = [ 'zack', 'hkim', 'ari', 'park', 'jina', 'linda']
+        subjects = ['park']
     elif opt.task == 'pushing':
         subjects = ['microblack', 'microwhite']        
     else:
         print "Selected task name is not available."
         sys.exit()
-
                                                           
-    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
-    
     #---------------------------------------------------------------------------           
     if opt.bRawDataPlot or opt.bInterpDataPlot:
         '''
@@ -604,11 +614,11 @@ if __name__ == '__main__':
         '''
         successData = True
         failureData = True
-        modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
+        modality_list   = ['kinematics', 'audio', 'ft', 'vision_landmark'] # raw plot
 
         dv.data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \
-                  local_range=local_range, rf_center=rf_center, \
+                  local_range=local_range, rf_center=rf_center, global_data=True,\
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
                   successData=successData, failureData=failureData,\
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
@@ -653,7 +663,7 @@ if __name__ == '__main__':
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         ## unexp_subjects = ['bang']
-        unexp_subjects = ['test']
+        unexp_subjects = ['park']
                     
         evaluation_test(unexp_subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \

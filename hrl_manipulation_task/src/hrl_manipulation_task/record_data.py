@@ -430,8 +430,9 @@ class logger:
                 msg.kinematics_jnt_eff = np.squeeze(self.kinematics.main_jnt_efforts.T).tolist()
                 msg.kinematics_target_pos  = np.squeeze(self.kinematics.target_pos.T).tolist()
                 msg.kinematics_target_quat = np.squeeze(self.kinematics.target_quat.T).tolist()
-                msg.kinematics_des_ee_pos  = np.squeeze(self.kinematics.des_ee_pos.T).tolist()
-                msg.kinematics_des_ee_quat = np.squeeze(self.kinematics.des_ee_quat.T).tolist()
+                if self.kinematics.des_ee_pos is not None:
+                    msg.kinematics_des_ee_pos  = np.squeeze(self.kinematics.des_ee_pos.T).tolist()
+                    msg.kinematics_des_ee_quat = np.squeeze(self.kinematics.des_ee_quat.T).tolist()
 
             if self.ft is not None:
                 msg.ft_force  = np.squeeze(self.ft.force_raw.T).tolist()

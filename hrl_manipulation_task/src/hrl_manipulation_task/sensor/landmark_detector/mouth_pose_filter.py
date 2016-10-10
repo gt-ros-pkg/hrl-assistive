@@ -57,19 +57,30 @@ class MouthPoseFilter():
 
                 
     def publish_current(self):
-        position = self.pos_buf.get_array()
-        quaternion = self.quat_buf.get_array()
+        positions = self.pos_buf.get_array()
+        quaternions = self.quat_buf.get_array()
 
         p = None
         q = None
         if False:
             p = np.mean(positions, axis=0)
-            q = qt.quat_avg(quaternion)
+            q = qt.quat_avg(quaternions)
         else:
+            positions = np.sort(positions, axis=0)
+            p = positions[len(positions)/2]
+            
+            quaternions = np.sort(quaternions, axis=0)
+            q = quaternions[len(quaternions)/2]
+            q = qt.quat_normal(q)
+            temp_q = PyKDL.Rotation.Quaternion(q[0], q[1], q[2], q[3])
+            q = np.array(temp_q.GetQuaternion())
+            print q, np.linalg.norm(q)
+
+            """
             p = np.median(position, axis=0)
             q = np.median(quaternion, axis=0)
             q = qt.quat_normal(q)
-
+            """
 
         self.mouth_pos  = p.reshape(3, 1)
         self.mouth_quat = q.reshape(4, 1)

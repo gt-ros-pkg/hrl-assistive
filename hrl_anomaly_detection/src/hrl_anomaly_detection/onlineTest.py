@@ -195,7 +195,7 @@ def onlineEvaluationSingleIncrementalICRA(task, raw_data_path, save_data_path, p
                                               time_sort=True,\
                                               no_split=True)
 
-    trainData = dm.getDataList(unused_fileList, rf_center, rf_radius,\
+    trainData,_ = dm.getDataList(unused_fileList, rf_center, rf_radius,\
                                handFeatureParams,\
                                downSampleSize = downSampleSize, \
                                cut_data       = cut_data,\
@@ -506,14 +506,14 @@ def dataCompPlot(task, dim, all_data, one_data, rf_center='kinEEPos', local_rang
 
     (success_list, failure_list) = \
       util.getSubjectFileList(raw_data_path2, subjects2, task, time_sort=True)
-    successData2 = dm.getDataList(success_list, rf_center, local_range,\
+    successData2,_ = dm.getDataList(success_list, rf_center, local_range,\
                                   handFeatureParams,\
                                   downSampleSize = downSampleSize, \
                                   cut_data       = cut_data,\
                                   handFeatures   = handFeatures,\
                                   renew_minmax   = False)
 
-    ## failureData2 = dm.getDataList(failure_list, rf_center, local_range,\
+    ## failureData2,_ = dm.getDataList(failure_list, rf_center, local_range,\
     ##                               handFeatureParams,\
     ##                               downSampleSize = downSampleSize, \
     ##                               cut_data       = cut_data,\

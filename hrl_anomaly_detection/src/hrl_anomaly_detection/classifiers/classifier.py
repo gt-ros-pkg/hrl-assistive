@@ -33,7 +33,6 @@ import os, sys, copy, time
 
 # visualization
 import matplotlib
-#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
@@ -51,6 +50,7 @@ from sklearn import metrics
 from sklearn.externals import joblib
 
 from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
@@ -257,6 +257,9 @@ class classifier(learning_base):
             elif self.method == 'progress_svm':
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.progress_svm_gamma)\
                   +' -w-1 '+str(self.progress_svm_w_negative)+' -c '+str(self.progress_svm_cost)
+            elif self.method == 'svm_fixed':
+                commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
+                  +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
             else:
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.gamma)\
                   +' -w-1 '+str(self.w_negative)+' -c '+str(self.cost)
@@ -267,6 +270,14 @@ class classifier(learning_base):
                 print np.shape(y), np.shape(X)
                 print commands                
                 return False
+
+
+            if self.method == 'svm_fixed':
+                if type(X) == list: X = np.array(X)
+                ll_logp = X[:,0:1]
+                self.mu  = np.mean(ll_logp)
+                self.std = np.std(ll_logp)
+                
             return True
 
         elif self.method.find('svr')>=0:
@@ -575,6 +586,17 @@ class classifier(learning_base):
                 p_labels, _, p_vals = svm.svm_predict(y, X, self.dt)
             else:
                 p_labels, _, p_vals = svm.svm_predict([0]*len(X), X, self.dt)
+
+            if self.method.find('fixed')>=0:
+                if len(np.shape(X))==1: X = [X]
+                self.ths_mult = -3
+
+                for i in xrange(len(X)):
+                    logp = X[i][0]
+                    err = self.mu + self.ths_mult * self.std - logp
+                    if p_labels[i] > 0: continue
+                    else:
+                        if err>0: p_labels[i] = 1.0
             return p_labels
         
         elif self.method == 'progress' or self.method == 'progress_diag':
@@ -987,8 +1009,12 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
     if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or\
-      method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm':
-        weights = ROC_dict[method+'_param_range']
+      method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or method == 'svm_fixed':
+        if method == 'svm_fixed': 
+            weights = ROC_dict['svm_param_range']
+        else:
+            weights = ROC_dict[method+'_param_range']
+            
         dtc.set_params( class_weight=weights[j] )
         ret = dtc.fit(X_train, Y_train, parallel=False)
     elif method == 'bpsvm':
@@ -1085,17 +1111,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     nPoints    = ROC_dict['nPoints']
     add_logp_d = HMM_dict.get('add_logp_d', False)
 
-    data = {}
     # pass method if there is existing result
-    data[method] = {}
-    data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
-    data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
-
+    data = {}
+    data = util.reset_roc_data(data, [method], [], nPoints)
     if ROC_data[method]['complete'] == True: return data
     #-----------------------------------------------------------------------------------------
 
@@ -1320,8 +1338,12 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         dtc.set_params( **SVM_dict )
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-          method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm':
-            weights = ROC_dict[method+'_param_range']
+          method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or \
+          method == 'svm_fixed':
+            if method == 'svm_fixed': 
+                weights = ROC_dict['svm_param_range']
+            else:
+                weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':

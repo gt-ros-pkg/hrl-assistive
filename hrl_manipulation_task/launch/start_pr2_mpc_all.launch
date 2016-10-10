@@ -10,15 +10,15 @@
     <rosparam command="load" file="$(arg mpc_config)" />
     <rosparam command="load" file="$(arg robot_config)" />
 
-    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
+    <!--node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_left_arm_kinematics" output="screen">
       <param name="tip_name" value="l_gripper_tool_frame" />
       <param name="root_name" value="torso_lift_link" />
-    </node>
+    </node-->
 
-    <node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
+    <!--node pkg="pr2_arm_kinematics" type="pr2_arm_kinematics_node" name="pr2_right_arm_kinematics" output="screen">
       <param name="tip_name" value="r_gripper_tool_frame" />
       <param name="root_name" value="torso_lift_link" />
-    </node>
+    </node-->
 
     <node name="waypoint_generator" pkg="hrl_haptic_mpc" type="waypoint_generator" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>
     <node name="robot_haptic_state" pkg="hrl_haptic_mpc" type="robot_haptic_state_node" args="-r pr2 -s fabric -a $(arg arm1)" output="screen"/>

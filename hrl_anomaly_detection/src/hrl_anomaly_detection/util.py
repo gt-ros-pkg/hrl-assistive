@@ -219,7 +219,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             audio_time    = (np.array(d['audio_wrist_time']) - init_time).tolist()
             audio_rms     = np.array([d['audio_wrist_rms']])
             audio_azimuth = d.get('audio_wrist_azimuth',None)
-            audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
+            ## audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
 
             if audio_azimuth is not None:
                 from scipy import stats
@@ -235,18 +235,18 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
             raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
-            raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
+            ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
             
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
                                                                            new_times))
-                data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
+                ## data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
             else:
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
                                                                              new_times))
-                data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
+                ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
@@ -780,11 +780,13 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
                 interp = interpolate.splrep(time_array, target_array[i], s=0)
                 interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
             else:
-                if new_time_array[-1]>time_array[-1]: new_time_array[-1]=time_array[-1]
-                interp = interpolate.interp1d(time_array, target_array[i])
+                if new_time_array[-1]>time_array[-1]:
+                    interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
+                else:
+                    interp = interpolate.interp1d(time_array, target_array[i] )
                 interp_data = interp(new_time_array)
         except:
-            print "splrep failed (maybe new_time_array is over range of time_array)"
+            print "splrep failed (maybe new_time_array is over range of time_array)", spline
             print np.shape(time_array), np.shape(target_array[i]), i,n
             sys.exit()
             
@@ -1747,6 +1749,8 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
         fn_ll = ROC_data[method]['fn_l']
+        tpr_l = []
+        tnr_l = []
 
         total_cost = []
         fscore_1   = []
@@ -1757,15 +1761,21 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             tp = float(np.sum(tp_ll[i]))
             fn = float(np.sum(fn_ll[i]))
             fp = float(np.sum(fp_ll[i]))
+            tn = float(np.sum(tn_ll[i]))
 
             fscore_1.append( 2.0*tp/(2.0*tp+fn+fp) )
             fscore_0_5.append( 1.25*tp/(1.25*tp+0.25*fn+fp) )
             fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
             ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
+            tpr_l.append( tp/(tp+fn) )
+            tnr_l.append( tn/(fp+tn) )
 
         max_score_idx[0].append( np.argmax(fscore_1) )
         max_score_idx[1].append( np.argmax(fscore_0_5) )
         max_score_idx[2].append( np.argmax(fscore_2) )
+        
+        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]]
+        print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
 
     ##     if method == 'progress' or method == 'hmmgp':
     ##         print fscore_2
@@ -1948,8 +1958,46 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
     
 
 
+def reset_roc_data(ROC_data, method_list, update_list, nPoints):
 
+    for i, method in enumerate(method_list):
+        if method not in ROC_data.keys() or method in update_list: 
+        ## if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
+    
+    return ROC_data
 
+def update_roc_data(ROC_data, new_data, nPoints, method_list):
+    
+    for i in xrange(len(new_data)):
+        for j in xrange(nPoints):
+            try:
+                method = new_data[i].keys()[0]
+            except:                
+                print "Error when collect ROC data:", new_data[i]
+                sys.exit()
+            if ROC_data[method]['complete'] == True: continue
+            ROC_data[method]['tp_l'][j] += new_data[i][method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += new_data[i][method]['fp_l'][j]
+            ROC_data[method]['tn_l'][j] += new_data[i][method]['tn_l'][j]
+            ROC_data[method]['fn_l'][j] += new_data[i][method]['fn_l'][j]
+            ROC_data[method]['delay_l'][j] += new_data[i][method]['delay_l'][j]
+            ROC_data[method]['tp_delay_l'][j].append( new_data[i][method]['delay_l'][j] )
+            ROC_data[method]['tp_idx_l'][j].append( new_data[i][method]['tp_idx_l'][j] )
+            ROC_data[method]['fn_labels'][j] += new_data[i][method]['fn_labels'][j]
 
+    for i, method in enumerate(method_list):
+        ROC_data[method]['complete'] = True
+
+    return ROC_data
 
 

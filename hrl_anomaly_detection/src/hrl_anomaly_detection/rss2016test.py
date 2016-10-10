@@ -47,6 +47,7 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
 ## from hrl_anomaly_detection.scooping_feeding import util as sutil
 ## import PyKDL
 ## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
@@ -402,22 +403,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
-        ROC_data = {}
-    else:
-        ROC_data = ut.load_pickle(roc_pkl)
-        
-    for i, method in enumerate(method_list):
-        if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
-            ROC_data[method] = {}
-            ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
@@ -455,37 +443,18 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
-                                                                         method, ROC_data, \
-                                                                         ROC_dict, AE_dict, \
-                                                                         SVM_dict, HMM_dict, \
-                                                                         raw_data=(osvm_data,bpsvm_data),\
-                                                                         startIdx=startIdx, nState=nState) \
-                                                                         for idx in xrange(len(kFold_list)) \
-                                                                         for method in method_list )
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                              task_name, \
+                                                                              method, ROC_data, \
+                                                                              ROC_dict, AE_dict, \
+                                                                              SVM_dict, HMM_dict, \
+                                                                              raw_data=(osvm_data,bpsvm_data),\
+                                                                              startIdx=startIdx, nState=nState) \
+                                                                              for idx in xrange(len(kFold_list)) \
+                                                                              for method in method_list )
                                                                   
-    l_data = r
     print "finished to run run_classifiers"
-
-    for i in xrange(len(l_data)):
-        for j in xrange(nPoints):
-            try:
-                method = l_data[i].keys()[0]
-            except:
-                print l_data[i]
-                sys.exit()
-            if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-            ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
-            ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
-
-    for i, method in enumerate(method_list):
-        ROC_data[method]['complete'] = True
-
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         
     #-----------------------------------------------------------------------------------------
@@ -2124,10 +2093,9 @@ if __name__ == '__main__':
         sys.exit()
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bAERenew, opt.bHMMRenew, opt.dim,\
+                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, \
                                                           bAESwitch=opt.bAESwitch)
-    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
         
     
     #---------------------------------------------------------------------------           
@@ -2210,7 +2178,7 @@ if __name__ == '__main__':
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, method='hmmgp', \
-                          useTrain=True, useNormalTest=False, useAbnormalTest=False,\
+                          useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
