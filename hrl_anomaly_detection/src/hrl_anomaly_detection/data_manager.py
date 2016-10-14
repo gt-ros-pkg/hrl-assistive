@@ -94,13 +94,13 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
     return kFold_list
 
 def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
-    '''
+    """
     Output:
     Normal training data 
     Abnormal training data 
     Normal test data 
     Abnormal test data 
-    '''
+    """
 
     normal_folds   = cross_validation.KFold(nNormal, n_folds=nNormalFold, shuffle=True)
     abnormal_folds = cross_validation.KFold(nAbnormal, n_folds=nAbnormalFold, shuffle=True)
@@ -116,6 +116,69 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
     return kFold_list
 
+def LOPO_data_index(success_data_list, failure_data_list, \
+                    success_file_list, failure_file_list, many_to_one=True):
+    """
+    Return completed set of success and failure data with LOPO cross-validatation fold list
+    """
+    nSubject = len(success_data_list)
+    successIdx = []
+    failureIdx = []
+    success_files = []
+    failure_files = []
+    for i in xrange(nSubject):
+
+        if i == 0:
+            success_data = success_data_list[i]
+            failure_data = failure_data_list[i]
+            successIdx.append( range(len(success_data_list[i][0])) )
+            failureIdx.append( range(len(failure_data_list[i][0])) )
+        else:
+            success_data = np.vstack([ np.swapaxes(success_data,0,1), \
+                                      np.swapaxes(success_data_list[i], 0,1)])
+            failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
+                                      np.swapaxes(failure_data_list[i], 0,1)])
+            success_data = np.swapaxes(success_data, 0, 1)
+            failure_data = np.swapaxes(failure_data, 0, 1)
+            successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
+                                     len(success_data_list[i][0])) )
+            failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
+                                     len(failure_data_list[i][0])) )
+
+        success_files += success_file_list[i]
+        failure_files += failure_file_list[i]
+
+    # only for hmm tuning
+    kFold_list = []
+    # leave-one-person-out
+    for idx in xrange(nSubject):
+        idx_list = range(nSubject)
+        train_idx = idx_list[:idx]+idx_list[idx+1:]
+        test_idx  = idx_list[idx:idx+1]        
+
+        normalTrainIdx = []
+        abnormalTrainIdx = []
+        for tidx in train_idx:
+            if many_to_one:
+                normalTrainIdx   += successIdx[tidx]
+                abnormalTrainIdx += failureIdx[tidx]
+            else:                
+                normalTrainIdx   = successIdx[tidx]
+                abnormalTrainIdx = failureIdx[tidx]
+                normalTestIdx    = successIdx[test_idx[0]]
+                abnormalTestIdx  = failureIdx[test_idx[0]]
+                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
+        if many_to_one:
+            normalTestIdx = []
+            abnormalTestIdx = []
+            for tidx in test_idx:
+                normalTestIdx   += successIdx[tidx]
+                abnormalTestIdx += failureIdx[tidx]
+
+            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
+    return success_data, failure_data, success_files, failure_files, kFold_list
 
 
 #-------------------------------------------------------------------------------------------------
@@ -351,9 +414,9 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 save_pdf=False, solid_color=True, \
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
                 time_sort=False, max_time=None):
-    '''
-    Get data per subject
-    '''
+    """
+    Get data per subject. It also returns leave-one-out cross-validataion indices.
+    """
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
@@ -401,6 +464,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         # leave-one-person-out
         successDataList = []
         failureDataList = []
+        successFileList = []
+        failureFileList = []
         for i in xrange(len(subject_names)):
 
             ## train_subjects = subject_names[:i]+subject_names[i+1:]
@@ -430,10 +495,14 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
             successDataList.append(successData)
             failureDataList.append(failureData)
+            successFileList.append(success_list)
+            failureFileList.append(failure_list)
 
         data_dict = {}
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
+        data_dict['successFileList'] = successFileList
+        data_dict['failureFileList'] = failureFileList        
         data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['param_dict']      = param_dict
         
@@ -479,6 +548,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         if fig is None: fig = plt.figure()
 
         for failureData in failureDataList:
+            if len(failureData)==0: break
             n,m,k = np.shape(failureData)            
             nPlot = n
 
@@ -1230,6 +1300,8 @@ def variancePooling(X, param_dict):
 
 def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dict=None, verbose=False, \
                        renew_minmax=False):
+
+    if len(d['timesList']) == 0: return [], {}
 
     if init_param_dict is None:
         isTrainingData=True

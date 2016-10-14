@@ -31,7 +31,6 @@
 # system
 import os, sys, copy
 import random
-import socket
 
 # visualization
 import matplotlib
@@ -50,9 +49,9 @@ from hrl_anomaly_detection.AURO2016_params import *
 from hrl_anomaly_detection.optimizeParam import *
 from hrl_anomaly_detection import util as util
 import hrl_lib.circular_buffer as cb
+import hrl_anomaly_detection.data_viz as dv
 
-# learning
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
+# External ml
 from mvpa2.datasets.base import Dataset
 from joblib import Parallel, delayed
 from sklearn import metrics
@@ -60,8 +59,8 @@ from sklearn.grid_search import ParameterGrid
 from scipy import stats
 
 # private learner
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
 import hrl_anomaly_detection.classifiers.classifier as cf
-import hrl_anomaly_detection.data_viz as dv
 
 import itertools
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
@@ -537,30 +536,15 @@ if __name__ == '__main__':
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
     
-    p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
-                 default=False, help='Evaluate a classifier with cross-validation.')
-    p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
-                 default=False, help='Evaluate a classifier with cross-validation.')
-    p.add_option('--evaluation_online', '--eo', action='store_true', dest='bOnlineEval',
-                 default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
-    p.add_option('--evaluation_online_temp', '--eot', action='store_true', dest='bOnlineEvalTemp',
-                 default=False, help='Evaluate a classifier with cross-validation with onlineHMM.')
-    p.add_option('--evaluation_acc', '--eaa', action='store_true', dest='bEvaluationMaxAcc',
-                 default=False, help='Evaluate the max acc.')
-
     
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
     p.add_option('--find_param', action='store_true', dest='bFindParam',
                  default=False, help='Find hmm parameter.')
-    p.add_option('--eval_aws', '--aws', action='store_true', dest='bEvaluationAWS',
-                 default=False, help='Data generation before evaluation.')
     p.add_option('--cparam', action='store_true', dest='bCustomParam',
                  default=False, help='')
                  
 
-    p.add_option('--m2o', action='store_true', dest='bManyToOneAdaptation',
-                 default=False, help='Many-To-One adaptation flag')
     p.add_option('--no_partial_fit', '--npf', action='store_true', dest='bNoPartialFit',
                  default=False, help='HMM partial fit')
 
@@ -591,15 +575,16 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range)
-    subjects = ['park']
-
-
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
+      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+                                                          
     #---------------------------------------------------------------------------
     if opt.task == 'scooping':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['park']
+        subjects = ['s1']
     elif opt.task == 'pushing':
         subjects = ['microblack', 'microwhite']        
     else:
@@ -663,9 +648,9 @@ if __name__ == '__main__':
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         ## unexp_subjects = ['bang']
-        unexp_subjects = ['park']
+        ## unexp_subjects = ['park']
                     
-        evaluation_test(unexp_subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+        evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                         save_pdf=opt.bSavePdf, \
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                         find_param=False, data_gen=opt.bDataGen)

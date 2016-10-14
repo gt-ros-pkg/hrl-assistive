@@ -100,7 +100,11 @@ class anomaly_detector(learning_base):
         labels = []
         for i in xrange(len(X)):
             
-            X_scaled = self.scaler.transform(X[i])
+            if (self.method.find('svm')>=0 or self.method.find('sgd')>=0) and \
+              not(self.method == 'osvm' or self.method == 'bpsvm'):
+                X_scaled = self.scaler.transform(X[i])
+            else:
+                X_scaled = X[i]
             est_y    = self.dtc.predict(X_scaled)
 
             label = -1.0
@@ -184,6 +188,8 @@ if __name__ == '__main__':
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
                  default=False, help='Enable ICRA2017.')
+    p.add_option('--auro2016', action='store_true', dest='bAURO2016',
+                 default=False, help='Enable AURO2016.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -195,19 +201,28 @@ if __name__ == '__main__':
     local_range    = 10.0    
     nPoints        = 10
 
-    if opt.bICRA2017 is False:
-        from hrl_anomaly_detection.params import *
-        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
-                                                              False, False, opt.dim,\
-                                                              rf_center, local_range, \
-                                                              nPoints=nPoints)
-    else:
+    if opt.bICRA2017:
         from hrl_anomaly_detection.ICRA2017_params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               nPoints=nPoints)
-    nFiles     =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+    elif opt.bAURO2016:
+        from hrl_anomaly_detection.AURO2016_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    else:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+    nFiles     = 1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
     method     = opt.method
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
@@ -224,22 +239,26 @@ if __name__ == '__main__':
     
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
-    param_dist = {'cost': [1.0],\
-                  'gamma': [2.0],\
-                  'weight': uniform(0.1,0.3),\
-                  'nu': uniform(0.1,0.5)
-                  }
-        #, #uniform(0.1,0.9)
-        # uniform(7.0,15.0)
-        # 'cost': uniform(0.5,4.0)
-        #'weight': expon(scale=0.3),\
-        ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
-    clf = anomaly_detector(method, param_dict['HMM']['nState'])
+    if 'svm' in method:
+        param_dist = {'cost': [1.0],\
+                      'gamma': [2.0],\
+                      'weight': uniform(0.1,0.3),\
+                      'nu': uniform(0.1,0.5)
+                      }
+            #, #uniform(0.1,0.9)
+            # uniform(7.0,15.0)
+            # 'cost': uniform(0.5,4.0)
+            #'weight': expon(scale=0.3),\
+            ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
+    elif 'hmmgp' in method:
+        param_dist = {'weight': uniform(0.1,0.3)}
+        
         
     # run randomized search
-    n_iter_search = 200 #1000 #20
+    clf           = anomaly_detector(method, param_dict['HMM']['nState'])
+    n_iter_search = 5 #1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                       cv=2, n_jobs=8,
+                                       cv=2, n_jobs=1,
                                        n_iter=n_iter_search)
     random_search.fit(X, y)
 

@@ -32,7 +32,6 @@
 ## import rospy, roslib
 import os, sys, copy
 import random
-import socket
 
 # visualization
 import matplotlib
@@ -250,6 +249,198 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
 
+def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                     no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+    """Get a list of failures that executin monitoring systems cannot detect."""
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # AE
+    AE_dict     = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    scale      = HMM_dict['scale']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = 1 #ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+   
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+        successData = d['successData']
+        failureData = d['failureData']        
+        success_files = d['success_files']
+        failure_files = d['failure_files']
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''
+        # Get a data set with a leave-one-person-out
+        print "Extract data using getDataLOPO"
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+    #-----------------------------------------------------------------------------------------
+    # HMM-induced vector with LOPO
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        # Training HMM, and getting classifier training and testing data
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
+            print idx, " : learned hmm exists"
+            continue
+
+        # dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
+        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
+
+        # training hmm
+        if verbose: print "start to fit hmm"
+        nEmissionDim = len(normalTrainData)
+        nLength      = len(normalTrainData[0][0]) - startIdx
+        cov_mult     = [cov]*(nEmissionDim**2)
+
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+        ret = ml.fit(normalTrainData+\
+                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                     cov_mult=cov_mult, use_pkl=False)
+        if ret == 'Failure' or np.isnan(ret):
+            print "hmm training failed"
+            sys.exit()
+
+        # Classifier training data
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+        
+        # Classifier test data
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+
+        ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
+        ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+
+        #-----------------------------------------------------------------------------------------
+        d = {}
+        d['nEmissionDim'] = ml.nEmissionDim
+        d['A']            = ml.A 
+        d['B']            = ml.B 
+        d['pi']           = ml.pi
+        d['F']            = ml.F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_train_X']  = ll_classifier_train_X
+        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']= ll_classifier_train_idx
+        d['ll_classifier_test_X']   = ll_classifier_test_X
+        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = ll_classifier_test_labels
+        d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
+        ## d['normalTrainData']   = normalTrainData
+        ## d['abnormalTrainData'] = abnormalTrainData
+        ## d['normalTestData']    = normalTestData
+        ## d['abnormalTestData']  = abnormalTestData
+        ut.save_pickle(d, modeling_pkl)
+        
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                         task_name, \
+                                                                         method, ROC_data, \
+                                                                         ROC_dict, AE_dict, \
+                                                                         SVM_dict, HMM_dict, \
+                                                                         startIdx=startIdx, nState=nState) \
+                                                                         for idx in xrange(len(kFold_list)) \
+                                                                         for method in method_list )
+
+
+    print "finished to run run_classifiers"
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ut.save_pickle(ROC_data, roc_pkl)
+
+
+    #----------------- List up anomaly cases ------------------
+    ## for method in method_list:
+    ##     max_idx = np.argmax(acc_rates[method])
+
+    ##     print "-----------------------------------"
+    ##     print "Method: ", method
+    ##     print acc_rates[method][max_idx]
+    if nPoints > 1:
+        print "Wrong number of points"
+        sys.exit()
+    
+    for method in method_list:
+        print "---------- ", method, " -----------"
+        n = len(ROC_data[method]['fn_labels'])
+        labels = ROC_data[method]['fn_labels'][0]            
+        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+            
+        d = {x: anomalies.count(x) for x in anomalies}
+        l_idx = np.array(d.values()).argsort()[-10:]
+
+        for idx in l_idx:
+            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx]
+
+
+
+
 if __name__ == '__main__':
 
     import optparse
@@ -279,6 +470,8 @@ if __name__ == '__main__':
                  default=False, help='Data generation before evaluation.')
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
+                 default=False, help='Evaluate a classifier with cross-validation.')
 
 
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
@@ -300,12 +493,16 @@ if __name__ == '__main__':
     #---------------------------------------------------------------------------           
     rf_center     = 'kinEEPos'        
     scale         = 1.0
-    local_range   = 10.0    
+    local_range   = 10.0
+    nPoints = 1 if opt.bEvaluationUnexpected else None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
-                                                          rf_center, local_range)
+                                                          rf_center, local_range, nPoints=nPoints)
+    if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['park']
+    subjects = ['kaci']
+    subjects = ['s1', 'test']
 
     
     #---------------------------------------------------------------------------           
@@ -352,9 +549,19 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         ## param_dict['ROC']['update_list'] = ['svm']
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
+
+    elif opt.bEvaluationUnexpected:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['fixed']
+
+        evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
+                         param_dict, save_pdf=opt.bSavePdf, \
+                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                         find_param=False, data_gen=opt.bDataGen)

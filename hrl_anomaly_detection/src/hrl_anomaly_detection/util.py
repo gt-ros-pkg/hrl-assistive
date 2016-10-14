@@ -340,8 +340,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
-            raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
-            raw_data_dict['kinDesEEQuatList'].append(local_kin_des_ee_quat)
+            ## raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
+            ## raw_data_dict['kinDesEEQuatList'].append(local_kin_des_ee_quat)
 
             data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
             data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times, True))
@@ -352,10 +352,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
-            data_dict['kinDesEEPosList'].append(interpolationData(kin_time, local_kin_des_ee_pos, new_times, \
-                                                                  spline=False))
-            data_dict['kinDesEEQuatList'].append(interpolationData(kin_time, local_kin_des_ee_quat, new_times,\
-                                                                   True, spline=False))
+            ## data_dict['kinDesEEPosList'].append(interpolationData(kin_time, local_kin_des_ee_pos, new_times, \
+            ##                                                       spline=False))
+            ## data_dict['kinDesEEQuatList'].append(interpolationData(kin_time, local_kin_des_ee_quat, new_times,\
+            ##                                                        True, spline=False))
 
         # ft -------------------------------------------------------------------
         if 'ft_time' in d.keys():
