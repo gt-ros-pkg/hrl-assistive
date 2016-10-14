@@ -2094,13 +2094,16 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    if opt.bTEST:
+    if opt.bTest:
         ## from hrl_anomaly_detection.AURO2016_params import *
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                               opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch)
+        param_dict['HMM']['nState'] = 20
+        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['cov']    = 5.25
         raw_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TEST/'
         save_data_path = os.path.expanduser('~')+\

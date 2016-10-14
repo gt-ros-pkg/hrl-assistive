@@ -98,30 +98,38 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         os.system('mkdir -p '+processed_data_path)
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-    
-    if os.path.isfile(crossVal_pkl):
+
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
-        kFold_list = d['kFoldList']
+        kFold_list  = d['kFoldList']
+        successData = d['successData']
+        failureData = d['failureData']        
+        success_files = d['success_files']
+        failure_files = d['failure_files']
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
-        '''        
-        print "No CV data"
-        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+        '''
+        # Get a data set with a leave-one-person-out
+        print "Extract data using getDataLOPO"
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
 
-        # TODO: need leave-one-person-out
-        # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
-                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-        d['kFoldList']   = kFold_list
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-        sys.exit()
+        if data_gen: sys.exit()
         
     #-----------------------------------------------------------------------------------------
     # parameters
@@ -130,8 +138,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     nPoints     = ROC_dict['nPoints']
     window_size = [10,10]
 
-    successData = d['successData']
-    failureData = d['failureData']
     param_dict2  = d['param_dict']
     if 'timeList' in param_dict2.keys():
         timeList    = param_dict2['timeList'][startIdx:]

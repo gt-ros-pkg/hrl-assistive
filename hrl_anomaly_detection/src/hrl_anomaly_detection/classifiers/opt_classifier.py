@@ -190,6 +190,8 @@ if __name__ == '__main__':
                  default=False, help='Enable ICRA2017.')
     p.add_option('--auro2016', action='store_true', dest='bAURO2016',
                  default=False, help='Enable AURO2016.')
+    p.add_option('--test', action='store_true', dest='bTest',
+                 default=False, help='Enable Test.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -207,6 +209,7 @@ if __name__ == '__main__':
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               nPoints=nPoints)
+                                                              
     elif opt.bAURO2016:
         from hrl_anomaly_detection.AURO2016_params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
@@ -216,6 +219,22 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+          
+    elif opt.bTest:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+        param_dict['HMM']['nState'] = 20
+        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['cov']    = 5.25
+        raw_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+          
     else:
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
@@ -256,7 +275,7 @@ if __name__ == '__main__':
         
     # run randomized search
     clf           = anomaly_detector(method, param_dict['HMM']['nState'])
-    n_iter_search = 5 #1000 #20
+    n_iter_search = 1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=1,
                                        n_iter=n_iter_search)
