@@ -182,10 +182,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 
             # flatten the data
+            if method.find('svm')>=0: remove_fp = True
+            else: remove_fp = False
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx,
-                                                                       remove_fp=False)
+                                                                       remove_fp=remove_fp)
 
 
             if X_train_org == []:
@@ -235,7 +237,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
                 ## cf_dict['nPosteriors'] = dtc.nPosteriors
                 cf_dict['ths_mult']    = dtc.ths_mult
                 dtc.save_model('./temp_hmmgp.pkl')
-            elif method == 'svm':
+            elif method.find('svm')>=0:
                 dtc.save_model('./temp_'+method+'.pkl')
                 
                 
@@ -327,7 +329,7 @@ def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, n
     else:
         for k, v in cf_dict.iteritems():        
             exec 'dtc.%s = v' % k        
-        if method == 'hmmgp' or method == 'svm':
+        if method == 'hmmgp' or method.find('svm')>=0:
             dtc.load_model('./temp_'+method+'.pkl')
 
     if method.find('svm')>=0:
@@ -431,8 +433,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=8)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(1.0,15.0,1) }
+        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(0.5,10.0,5) }
         max_check_fold = 1 #None
         no_cov = False
         
