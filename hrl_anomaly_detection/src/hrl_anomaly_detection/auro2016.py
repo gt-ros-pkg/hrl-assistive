@@ -362,6 +362,11 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation.')
 
 
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
+                 default=False, help='Search hmm parameters.')    
+
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out.')
     p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
@@ -391,6 +396,16 @@ if __name__ == '__main__':
     subjects = ['park']
     subjects = ['kaci']
     subjects = ['s1', 'test']
+
+
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    param_dict['ROC']['methods'] = ['fixed']
+    param_dict['HMM']['nState'] = 25
+    param_dict['HMM']['scale']  = 12.33
+    param_dict['HMM']['cov']    = 1.0
+
 
     
     #---------------------------------------------------------------------------           
@@ -435,6 +450,21 @@ if __name__ == '__main__':
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
 
+    elif opt.HMM_param_search:
+        from hrl_anomaly_detection.hmm import run_hmm_cpy as hmm_opt
+        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(0.5,10.0,5) }
+        max_check_fold = 1 #None
+        no_cov = False
+        
+        hmm_opt.tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
+
+    elif opt.CLF_param_search:
+        from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
+        method = 'hmmgp'
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=1, n_iter_search=2)
+
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
         ## param_dict['ROC']['update_list'] = ['svm']
@@ -444,11 +474,6 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationUnexpected:
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['fixed']
-
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
