@@ -169,9 +169,11 @@ def getSamples(modeling_pkl):
     return X_train, y_train, X_test, y_test
     
 
-def tune_classifier(save_data_path, task_name, method, param_dict):
-
-    file_idx = 1
+def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=None, file_idx=1,\
+                    n_jobs=8, n_iter_search=1000):
+    """
+    Search the best classifier parameter set.
+    """
 
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
     X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
@@ -182,27 +184,27 @@ def tune_classifier(save_data_path, task_name, method, param_dict):
     y = np.vstack([y_train, y_test])
     
     # specify parameters and distributions to sample from
-    from scipy.stats import uniform, expon
-    if 'svm' in method:
-        param_dist = {'cost': [1.0],\
-                      'gamma': [2.0],\
-                      'weight': uniform(0.1,0.3),\
-                      'nu': uniform(0.1,0.5)
-                      }
-            #, #uniform(0.1,0.9)
-            # uniform(7.0,15.0)
-            # 'cost': uniform(0.5,4.0)
-            #'weight': expon(scale=0.3),\
-            ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
-    elif 'hmmgp' in method:
-        param_dist = {'weight': uniform(0.1,0.3)}
+    if param_dist is None:
+        from scipy.stats import uniform, expon
+        if 'svm' in method:
+            param_dist = {'cost': [1.0],\
+                          'gamma': [2.0],\
+                          'weight': uniform(0.1,0.3),\
+                          'nu': uniform(0.1,0.5)
+                          }
+                #, #uniform(0.1,0.9)
+                # uniform(7.0,15.0)
+                # 'cost': uniform(0.5,4.0)
+                #'weight': expon(scale=0.3),\
+                ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
+        elif 'hmmgp' in method:
+            param_dist = {'weight': uniform(0.1,0.4)}
         
         
     # run randomized search
     clf           = anomaly_detector(method, param_dict['HMM']['nState'])
-    n_iter_search = 1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                       cv=2, n_jobs=1,
+                                       cv=2, n_jobs=n_jobs,
                                        n_iter=n_iter_search)
     random_search.fit(X, y)
 
@@ -315,70 +317,72 @@ if __name__ == '__main__':
     method     = opt.method
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
-    
-    # get training X,y
-    file_idx = 1
-    modeling_pkl = os.path.join(save_data_path, 'hmm_'+opt.task+'_'+str(file_idx)+'.pkl')
-    X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
 
-    ## X = X_train
-    ## y = y_train
-    X = np.vstack([X_train, X_test])
-    y = np.vstack([y_train, y_test])
+    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=1)
     
-    # specify parameters and distributions to sample from
-    from scipy.stats import uniform, expon
-    if 'svm' in method:
-        param_dist = {'cost': [1.0],\
-                      'gamma': [2.0],\
-                      'weight': uniform(0.1,0.3),\
-                      'nu': uniform(0.1,0.5)
-                      }
-            #, #uniform(0.1,0.9)
-            # uniform(7.0,15.0)
-            # 'cost': uniform(0.5,4.0)
-            #'weight': expon(scale=0.3),\
-            ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
-    elif 'hmmgp' in method:
-        param_dist = {'weight': uniform(0.1,0.3)}
+    ## # get training X,y
+    ## file_idx = 1
+    ## modeling_pkl = os.path.join(save_data_path, 'hmm_'+opt.task+'_'+str(file_idx)+'.pkl')
+    ## X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
+
+    ## ## X = X_train
+    ## ## y = y_train
+    ## X = np.vstack([X_train, X_test])
+    ## y = np.vstack([y_train, y_test])
+    
+    ## # specify parameters and distributions to sample from
+    ## from scipy.stats import uniform, expon
+    ## if 'svm' in method:
+    ##     param_dist = {'cost': [1.0],\
+    ##                   'gamma': [2.0],\
+    ##                   'weight': uniform(0.1,0.3),\
+    ##                   'nu': uniform(0.1,0.5)
+    ##                   }
+    ##         #, #uniform(0.1,0.9)
+    ##         # uniform(7.0,15.0)
+    ##         # 'cost': uniform(0.5,4.0)
+    ##         #'weight': expon(scale=0.3),\
+    ##         ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
+    ## elif 'hmmgp' in method:
+    ##     param_dist = {'weight': uniform(0.1,0.3)}
         
         
-    # run randomized search
-    clf           = anomaly_detector(method, param_dict['HMM']['nState'])
-    n_iter_search = 1000 #20
-    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                       cv=2, n_jobs=1,
-                                       n_iter=n_iter_search)
-    random_search.fit(X, y)
+    ## # run randomized search
+    ## clf           = anomaly_detector(method, param_dict['HMM']['nState'])
+    ## n_iter_search = 1000 #20
+    ## random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+    ##                                    cv=2, n_jobs=1,
+    ##                                    n_iter=n_iter_search)
+    ## random_search.fit(X, y)
 
-    print("Best parameters set found on development set:")
-    print()
-    print(random_search.best_params_)
-    print()
-    print("Grid scores on development set:")
-    print()
-    means  = random_search.cv_results_['mean_test_score']
-    stds   = random_search.cv_results_['std_test_score']
-    params = random_search.cv_results_['params']
+    ## print("Best parameters set found on development set:")
+    ## print()
+    ## print(random_search.best_params_)
+    ## print()
+    ## print("Grid scores on development set:")
+    ## print()
+    ## means  = random_search.cv_results_['mean_test_score']
+    ## stds   = random_search.cv_results_['std_test_score']
+    ## params = random_search.cv_results_['params']
 
-    score_list = []
-    for i in xrange(len(means)):
-        score_list.append([means[i], stds[i], params[i]])
+    ## score_list = []
+    ## for i in xrange(len(means)):
+    ##     score_list.append([means[i], stds[i], params[i]])
 
-    from operator import itemgetter
-    score_list.sort(key=itemgetter(0), reverse=False)
+    ## from operator import itemgetter
+    ## score_list.sort(key=itemgetter(0), reverse=False)
     
-    for mean, std, param in score_list:
-        print("%0.3f (+/-%0.03f) for %r"
-              % (mean, std * 2, param))
-    print()
+    ## for mean, std, param in score_list:
+    ##     print("%0.3f (+/-%0.03f) for %r"
+    ##           % (mean, std * 2, param))
+    ## print()
 
-    ## print("Detailed classification report:")
-    ## print()
-    ## print("The model is trained on the full development set.")
-    ## print("The scores are computed on the full evaluation set.")
-    ## print()
-    ## y_true, y_pred = y_test, random_search.predict(X_test)
-    ## print(classification_report(y_true, y_pred))
-    ## print()
+    ## ## print("Detailed classification report:")
+    ## ## print()
+    ## ## print("The model is trained on the full development set.")
+    ## ## print("The scores are computed on the full evaluation set.")
+    ## ## print()
+    ## ## y_true, y_pred = y_test, random_search.predict(X_test)
+    ## ## print(classification_report(y_true, y_pred))
+    ## ## print()
     
