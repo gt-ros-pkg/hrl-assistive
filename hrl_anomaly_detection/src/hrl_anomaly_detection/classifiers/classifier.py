@@ -772,7 +772,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':       
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            svm.svm_save_model(use_pkl, self.dt)
+            svm.svm_save_model(fileName, self.dt)
         elif self.method.find('sgd')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
@@ -804,7 +804,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            self.dt = svm.svm_load_model(use_pkl) 
+            self.dt = svm.svm_load_model(fileName) 
         elif self.method.find('sgd')>=0:
             import pickle
             with open(fileName, 'rb') as f:
@@ -904,7 +904,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
-            
+        
         if min_dist > dist:
             min_index = j
             min_dist  = dist

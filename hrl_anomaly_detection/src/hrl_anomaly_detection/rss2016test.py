@@ -53,7 +53,6 @@ from hrl_anomaly_detection import util as util
 ## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
 ## import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
 ## import hrl_lib.circular_buffer as cb
-from hrl_anomaly_detection.params import *
 from hrl_anomaly_detection.optimizeParam import *
 
 # learning
@@ -237,7 +236,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           rawFeatures=None,\
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
@@ -2047,7 +2046,10 @@ if __name__ == '__main__':
     p.add_option('--findParams', '--frp', action='store_true', dest='bFindROCparamRange',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
-                
+
+    p.add_option('--test', action='store_true', dest='bTest',
+                 default=False, help='Enable Test.')
+                 
 
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
@@ -2092,10 +2094,28 @@ if __name__ == '__main__':
         print "Selected task name is not available."
         sys.exit()
 
-    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
-                                                          rf_center, local_range, \
-                                                          bAESwitch=opt.bAESwitch)
+    if opt.bTest:
+        ## from hrl_anomaly_detection.AURO2016_params import *
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
+                                                              opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch)
+        param_dict['HMM']['nState'] = 20
+        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['cov']    = 5.25
+        raw_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+                                                              
+    else:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
+                                                              opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch)
         
     
     #---------------------------------------------------------------------------           

@@ -65,7 +65,7 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthManOffset = np.array([-0.04, 0.03, 0.02]) # -0.02, 0., 0.05
+        self.mouthManOffset = np.array([-0.04, 0.0, 0.05]) # -0.02, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
@@ -241,7 +241,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
           [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
            ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
         ## Feeding motoins --------------------------------------------------------
@@ -265,6 +267,7 @@ class armReachAction(mpcBaseAction):
                                                 ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame'],\
+                                              ['PAUSE', 0.0],
                                               ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],

@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="fname" default="feeding_hrl"/>
+  <arg name="fname" default="test"/>
 
   <!--node pkg="topic_tools" type="throttle" name="kinect_throttle"
         args="messages /head_mount_kinect/hd/points 0.05" /-->
@@ -13,9 +13,7 @@
 
   
   <node pkg="rosbag" type="record" name="rosbag" args="record -o
-                                                       $(find
-                                                       hrl_manipulation_task)/$(arg
-                                                       fname) 
+                                                       /home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/$(arg fname) 
                                                        /tf_throttle
                                                        /joint_states_throttle
                                                        /haptic_mpc/goal_pose_array
@@ -26,15 +24,46 @@
                                                        /haptic_mpc/traj_pose
                                                        /netft_data_throttle
                                                        /hrl_manipulation_task/mouth_pose
-                                                       /pr2_fabric_l_forearm_sensor
-                                                       /pr2_fabric_l_upperarm_sensor
-                                                       /pr2_fabric_r_forearm_sensor
-                                                       /pr2_fabric_r_upperarm_sensor
+                                                       /hrl_manipulation_task/mouth_pose_backpack
+                                                       /pr2_fabric_l_forearm_sensor/disable_sensor
+                                                       /pr2_fabric_l_forearm_sensor/enable_sensor
+                                                       /pr2_fabric_l_forearm_sensor/taxels/data_valid
+                                                       /pr2_fabric_l_forearm_sensor/taxels/forces
+                                                       /pr2_fabric_l_forearm_sensor/taxels/raw_data
+                                                       /pr2_fabric_l_forearm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_l_forearm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_l_forearm_sensor/zero_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/disable_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/enable_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/data_valid
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/forces
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/raw_data
+                                                       /pr2_fabric_l_upperarm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_l_upperarm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_l_upperarm_sensor/zero_sensor
+                                                       /pr2_fabric_r_forearm_sensor/disable_sensor
+                                                       /pr2_fabric_r_forearm_sensor/enable_sensor
+                                                       /pr2_fabric_r_forearm_sensor/taxels/data_valid
+                                                       /pr2_fabric_r_forearm_sensor/taxels/forces
+                                                       /pr2_fabric_r_forearm_sensor/taxels/raw_data
+                                                       /pr2_fabric_r_forearm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_r_forearm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_r_forearm_sensor/zero_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/disable_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/enable_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/data_valid
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/forces
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/raw_data
+                                                       /pr2_fabric_r_upperarm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_r_upperarm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_r_upperarm_sensor/zero_sensor
                                                        /SR300/rgb/image_raw
                                                        /SR300/rgb/image_color
                                                        /SR300/rgb/camera_info
                                                        /SR300/depth_registered/image
                                                        /SR300/depth_registered/camera_info
+                                                       /SR300/depth/points
+                                                       /SR300/depth/camera_info
                                                        /head_mount_kinect/hd/points
                                                        /head_mount_kinect/hd/camera_info
                                                        " output="screen"/>

@@ -100,7 +100,11 @@ class anomaly_detector(learning_base):
         labels = []
         for i in xrange(len(X)):
             
-            X_scaled = self.scaler.transform(X[i])
+            if (self.method.find('svm')>=0 or self.method.find('sgd')>=0) and \
+              not(self.method == 'osvm' or self.method == 'bpsvm'):
+                X_scaled = self.scaler.transform(X[i])
+            else:
+                X_scaled = X[i]
             est_y    = self.dtc.predict(X_scaled)
 
             label = -1.0
@@ -165,6 +169,76 @@ def getSamples(modeling_pkl):
     return X_train, y_train, X_test, y_test
     
 
+def tune_classifier(save_data_path, task_name, method, param_dict):
+
+    file_idx = 1
+
+    modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
+    X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
+
+    ## X = X_train
+    ## y = y_train
+    X = np.vstack([X_train, X_test])
+    y = np.vstack([y_train, y_test])
+    
+    # specify parameters and distributions to sample from
+    from scipy.stats import uniform, expon
+    if 'svm' in method:
+        param_dist = {'cost': [1.0],\
+                      'gamma': [2.0],\
+                      'weight': uniform(0.1,0.3),\
+                      'nu': uniform(0.1,0.5)
+                      }
+            #, #uniform(0.1,0.9)
+            # uniform(7.0,15.0)
+            # 'cost': uniform(0.5,4.0)
+            #'weight': expon(scale=0.3),\
+            ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
+    elif 'hmmgp' in method:
+        param_dist = {'weight': uniform(0.1,0.3)}
+        
+        
+    # run randomized search
+    clf           = anomaly_detector(method, param_dict['HMM']['nState'])
+    n_iter_search = 1000 #20
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       cv=2, n_jobs=1,
+                                       n_iter=n_iter_search)
+    random_search.fit(X, y)
+
+    print("Best parameters set found on development set:")
+    print()
+    print(random_search.best_params_)
+    print()
+    print("Grid scores on development set:")
+    print()
+    means  = random_search.cv_results_['mean_test_score']
+    stds   = random_search.cv_results_['std_test_score']
+    params = random_search.cv_results_['params']
+
+    score_list = []
+    for i in xrange(len(means)):
+        score_list.append([means[i], stds[i], params[i]])
+
+    from operator import itemgetter
+    score_list.sort(key=itemgetter(0), reverse=False)
+    
+    for mean, std, param in score_list:
+        print("%0.3f (+/-%0.03f) for %r"
+              % (mean, std * 2, param))
+    print()
+
+    ## print("Detailed classification report:")
+    ## print()
+    ## print("The model is trained on the full development set.")
+    ## print("The scores are computed on the full evaluation set.")
+    ## print()
+    ## y_true, y_pred = y_test, random_search.predict(X_test)
+    ## print(classification_report(y_true, y_pred))
+    ## print()
+
+
+
 
 if __name__ == '__main__':
 
@@ -184,6 +258,10 @@ if __name__ == '__main__':
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
                  default=False, help='Enable ICRA2017.')
+    p.add_option('--auro2016', action='store_true', dest='bAURO2016',
+                 default=False, help='Enable AURO2016.')
+    p.add_option('--test', action='store_true', dest='bTest',
+                 default=False, help='Enable Test.')
 
     p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
                  default=False, help='Plot raw data.')
@@ -195,19 +273,45 @@ if __name__ == '__main__':
     local_range    = 10.0    
     nPoints        = 10
 
-    if opt.bICRA2017 is False:
-        from hrl_anomaly_detection.params import *
-        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
-                                                              False, False, opt.dim,\
-                                                              rf_center, local_range, \
-                                                              nPoints=nPoints)
-    else:
+    if opt.bICRA2017:
         from hrl_anomaly_detection.ICRA2017_params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
                                                               False, False, opt.dim,\
                                                               rf_center, local_range, \
                                                               nPoints=nPoints)
-    nFiles     =  1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
+                                                              
+    elif opt.bAURO2016:
+        from hrl_anomaly_detection.AURO2016_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+          
+    elif opt.bTest:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+        param_dict['HMM']['nState'] = 20
+        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['cov']    = 5.25
+        raw_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+          
+    else:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              nPoints=nPoints)
+    nFiles     = 1 #param_dict['data_param']['nNormalFold']*param_dict['data_param']['nAbnormalFold']
     method     = opt.method
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
@@ -224,22 +328,26 @@ if __name__ == '__main__':
     
     # specify parameters and distributions to sample from
     from scipy.stats import uniform, expon
-    param_dist = {'cost': [1.0],\
-                  'gamma': [2.0],\
-                  'weight': uniform(0.1,0.3),\
-                  'nu': uniform(0.1,0.5)
-                  }
-        #, #uniform(0.1,0.9)
-        # uniform(7.0,15.0)
-        # 'cost': uniform(0.5,4.0)
-        #'weight': expon(scale=0.3),\
-        ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
-    clf = anomaly_detector(method, param_dict['HMM']['nState'])
+    if 'svm' in method:
+        param_dist = {'cost': [1.0],\
+                      'gamma': [2.0],\
+                      'weight': uniform(0.1,0.3),\
+                      'nu': uniform(0.1,0.5)
+                      }
+            #, #uniform(0.1,0.9)
+            # uniform(7.0,15.0)
+            # 'cost': uniform(0.5,4.0)
+            #'weight': expon(scale=0.3),\
+            ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
+    elif 'hmmgp' in method:
+        param_dist = {'weight': uniform(0.1,0.3)}
+        
         
     # run randomized search
-    n_iter_search = 200 #1000 #20
+    clf           = anomaly_detector(method, param_dict['HMM']['nState'])
+    n_iter_search = 1000 #20
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                       cv=2, n_jobs=8,
+                                       cv=2, n_jobs=1,
                                        n_iter=n_iter_search)
     random_search.fit(X, y)
 

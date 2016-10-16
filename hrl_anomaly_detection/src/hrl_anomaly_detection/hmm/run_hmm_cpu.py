@@ -45,7 +45,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
+def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
              bSave=False, method='svm', max_check_fold=None, no_cov=False):
 
     ## Parameters
@@ -64,6 +64,16 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     ROC_dict = param_dict['ROC']
     
     #------------------------------------------
+
+    crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        cv_dict = ut.load_pickle(crossVal_pkl)
+        ## kFold_list  = d['kFoldList']
+    else:
+        print "no existing data file, ", crossVal_pkl
+        sys.exit()
+
+    
     kFold_list = cv_dict['kFoldList']
     if max_check_fold is not None:
         if max_check_fold < len(kFold_list):
@@ -76,6 +86,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     
     for param in param_list:
 
+        nState = HMM_dict['nState'] = param['nState']
+
         tp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
         fp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
         tn_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
@@ -87,10 +99,10 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
           in enumerate(kFold_list):
 
             # dim x sample x length
-            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :] * param['scale']
+            normalTrainData   = cv_dict['successData'][:, normalTrainIdx, :]   * param['scale']
             abnormalTrainData = cv_dict['failureData'][:, abnormalTrainIdx, :] * param['scale'] 
-            normalTestData    = cv_dict['successData'][:, normalTestIdx, :] * param['scale'] 
-            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :] * param['scale'] 
+            normalTestData    = cv_dict['successData'][:, normalTestIdx, :]    * param['scale'] 
+            abnormalTestData  = cv_dict['failureData'][:, abnormalTestIdx, :]  * param['scale'] 
 
             #
             nEmissionDim = len(normalTrainData)
@@ -182,10 +194,12 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
                 
             # flatten the data
+            if method.find('svm')>=0: remove_fp = True
+            else: remove_fp = False
             X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
                                                                        ll_classifier_train_Y, \
                                                                        ll_classifier_train_idx,
-                                                                       remove_fp=False)
+                                                                       remove_fp=remove_fp)
 
 
             if X_train_org == []:
@@ -218,32 +232,33 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             weights = ROC_dict[method+'_param_range']
 
 
+            print "Classifier fitting", method
+            dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
+            dtc.set_params( **SVM_dict )
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
+            cf_dict = {}
+            cf_dict['method']      = dtc.method
             if method == 'progress':
-                print "Classifier fitting", method
-                dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
-                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
-                cf_dict = {}
-                cf_dict['method']      = dtc.method
-                cf_dict['nPosteriors'] = dtc.nPosteriors
+                ## cf_dict['nPosteriors'] = dtc.nPosteriors
                 cf_dict['l_statePosterior'] = dtc.l_statePosterior
                 cf_dict['ths_mult']    = dtc.ths_mult
                 cf_dict['ll_mu']       = dtc.ll_mu
                 cf_dict['ll_std']      = dtc.ll_std
                 cf_dict['logp_offset'] = dtc.logp_offset
             elif method == 'hmmgp':
-                print "Classifier fitting", method
-                dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
-                ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
-                cf_dict = {}
-                cf_dict['method']      = dtc.method
-                cf_dict['nPosteriors'] = dtc.nPosteriors
+                ## cf_dict['nPosteriors'] = dtc.nPosteriors
                 cf_dict['ths_mult']    = dtc.ths_mult
                 dtc.save_model('./temp_hmmgp.pkl')
+            elif method.find('svm')>=0:
+                dtc.save_model('./temp_'+method+'.pkl')
+                
+                
             
             print "Start to run classifiers"
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
                                                                              X_test, Y_test, \
+                                                                             nState,\
                                                                              nEmissionDim, nLength, \
                                                                              SVM_dict, weight=weights[iii], \
                                                                              method=method, cf_dict=cf_dict,\
@@ -312,12 +327,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
 
-def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, nEmissionDim, nLength, \
+def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, \
+                    nState, nEmissionDim, nLength, \
                     SVM_dict, weight, method='svm', cf_dict=None,\
                     verbose=False):
 
     if verbose: print "Run a classifier"
-    dtc = cb.classifier( method=method, nPosteriors=nEmissionDim, nLength=nLength )
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     dtc.set_params( **SVM_dict )
     if cf_dict is None:
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)        
@@ -327,8 +343,8 @@ def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, n
     else:
         for k, v in cf_dict.iteritems():        
             exec 'dtc.%s = v' % k        
-        if method == 'hmmgp':
-            dtc.load_model('./temp_hmmgp.pkl')
+        if method == 'hmmgp' or method.find('svm')>=0:
+            dtc.load_model('./temp_'+method+'.pkl')
 
     if method.find('svm')>=0:
         dtc.set_params( class_weight=weight )
@@ -377,6 +393,10 @@ if __name__ == '__main__':
 
     p.add_option('--icra2017', action='store_true', dest='bICRA2017',
                  default=False, help='Enable ICRA2017.')
+    p.add_option('--auro2016', action='store_true', dest='bAURO2016',
+                 default=False, help='Enable AURO2016.')
+    p.add_option('--test', action='store_true', dest='bTest',
+                 default=False, help='Enable Test.')
     
     p.add_option('--save', action='store_true', dest='bSave',
                  default=False, help='Save result.')
@@ -385,7 +405,63 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     local_range    = 10.0    
 
-    if opt.bICRA2017 is False:
+    if opt.bICRA2017:
+
+        from hrl_anomaly_detection.ICRA2017_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=8)
+        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,15.0,1) }
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+
+        max_check_fold = None
+        ## max_check_fold = 3
+        no_cov = True
+
+    elif opt.bAURO2016:
+        from hrl_anomaly_detection.AURO2016_params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=8)
+        parameters = {'nState': [20,25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,10.0,5) }
+        max_check_fold = None
+        no_cov = True
+        
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    elif opt.bTest:
+        from hrl_anomaly_detection.params import *
+        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
+                                                              False, False, opt.dim,\
+                                                              rf_center, local_range, \
+                                                              bAESwitch=opt.bAESwitch, \
+                                                              nPoints=8)
+        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(0.5,10.0,5) }
+        max_check_fold = 1 #None
+        no_cov = False
+
+        param_dict['SVM']['gamma'] = 0.208
+        param_dict['SVM']['nu'] = 0.5
+        
+        raw_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TEST/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        
+    else:
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
                                                               False, False, opt.dim,\
@@ -432,35 +508,10 @@ if __name__ == '__main__':
         max_check_fold = None #2
         no_cov = False
 
-    else:
-
-        from hrl_anomaly_detection.ICRA2017_params import *
-        raw_data_path, save_data_path, param_dict = getParams(opt.task, False, \
-                                                              False, False, opt.dim,\
-                                                              rf_center, local_range, \
-                                                              bAESwitch=opt.bAESwitch, \
-                                                              nPoints=8)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(1.0,15.0,1) }
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
-
-        max_check_fold = None
-        ## max_check_fold = 3
-        no_cov = True
 
     #--------------------------------------------------------------------------------------
     # test change of logp
     
-    crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
-    if os.path.isfile(crossVal_pkl):
-        d = ut.load_pickle(crossVal_pkl)
-        kFold_list  = d['kFoldList']
-    else:
-        print "no existing data file, ", crossVal_pkl
-        sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+    tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
              bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
