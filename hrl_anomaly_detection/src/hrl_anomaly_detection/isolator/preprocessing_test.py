@@ -145,6 +145,17 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     handFeatureParams = d['param_dict']
     normalTrainData   = d['successData'] * HMM_dict['scale']
 
+
+    #-----------------------------------------------------------------------------------------
+    # HMM-induced vector with LOPO
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              success_files=success_files, failure_files=failure_files,\
+                              add_logp_d=add_logp_d, verbose=verbose)
+
+
+
     ## dist_buff1 = cb.CircularBuffer(8, (1,))
     ## dist_buff2 = cb.CircularBuffer(8, (1,))
     ## dist_buff3 = cb.CircularBuffer(8, (1,))
@@ -161,7 +172,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
         if verbose: print idx, " : training hmm and getting classifier training and testing data"
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-
         ## if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         dd = ut.load_pickle(modeling_pkl)
@@ -173,26 +183,22 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         normalTrainData   = successData[:, normalTrainIdx, :]
         abnormalTrainData = failureData[:, abnormalTrainIdx, :]
         normalTestData    = successData[:, normalTestIdx, :] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :]
+
+        abnormal_test_files = np.array(failure_files)[abnormalTestIdx].tolist()
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
         #-----------------------------------------------------------------------------------------
-        fileList = util.getSubjectFileList(raw_data_path, subject_names, \
-                                           task_name, no_split=True)                
-                                           
-        testDataX,testDataDict = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
-                                                handFeatureParams,\
-                                                downSampleSize = data_dict['downSampleSize'], \
-                                                cut_data       = data_dict['cut_data'],\
-                                                handFeatures   = data_dict['handFeatures'])
+        nOrder    = 2
+        testDataX = abnormalTestData*HMM_dict['scale']
 
         testDataY = []
         normalIdxList  = []
         normalFileList = []
         abnormalIdxList  = []
         abnormalFileList = []
-        for i, f in enumerate(fileList):
+        for i, f in enumerate(abnormal_test_files):
             if f.find("success")>=0:
                 testDataY.append(-1)
                 normalIdxList.append(i)
@@ -202,70 +208,97 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalIdxList.append(i)
                 abnormalFileList.append(f.split('/')[-1])
 
-        #temp
-        ## abnormalIdxList = normalIdxList
-        ## abnormalFileList = normalFileList
+        
+        ## fileList = util.getSubjectFileList(raw_data_path, subject_names, \
+        ##                                    task_name, no_split=True)                
+                                           
+        ## testDataX,testDataDict = dm.getDataList(fileList, data_dict['rf_center'], data_dict['local_range'],\
+        ##                                         handFeatureParams,\
+        ##                                         downSampleSize = data_dict['downSampleSize'], \
+        ##                                         cut_data       = data_dict['cut_data'],\
+        ##                                         handFeatures   = data_dict['handFeatures'])
 
-        # reduce data
-        fileList  = np.array(fileList)[abnormalIdxList]
-        testDataX = np.array(testDataX)[:,abnormalIdxList,:]
-        testDataY = np.array(testDataY)[abnormalIdxList]
+        ## testDataY = []
+        ## normalIdxList  = []
+        ## normalFileList = []
+        ## abnormalIdxList  = []
+        ## abnormalFileList = []
+        ## for i, f in enumerate(fileList):
+        ##     if f.find("success")>=0:
+        ##         testDataY.append(-1)
+        ##         normalIdxList.append(i)
+        ##         normalFileList.append(f.split('/')[-1])
+        ##     elif f.find("failure")>=0:
+        ##         testDataY.append(1)
+        ##         abnormalIdxList.append(i)
+        ##         abnormalFileList.append(f.split('/')[-1])
 
-        ## # Expected raw trajectory
-        ## nOrder = 2
-        ## exp_traj  = []
-        ## exp_interp_traj = []
-        ## for i in xrange(len(abnormalIdxList)):
-        ##     kinEEPos  = testDataDict['kinDesEEPosList'][abnormalIdxList[i]]
-        ##     targetPos = testDataDict['visionLandmarkPosList'][abnormalIdxList[i]]
+        ## #temp
+        ## ## abnormalIdxList = normalIdxList
+        ## ## abnormalFileList = normalFileList
 
-        ##     dist = np.linalg.norm(targetPos[:,0:1]-kinEEPos, axis=0)
-        ##     dist -= np.mean(dist[:4])
-        ##     exp_traj.append(dist)
+        ## ## # reduce data
+        ## ## fileList  = np.array(fileList)[abnormalIdxList]
+        ## ## testDataX = np.array(testDataX)[:,abnormalIdxList,:]
+        ## ## testDataY = np.array(testDataY)[abnormalIdxList]
 
-        ##     new_dist = []
-        ##     for j in xrange(len(dist_buff1)):
-        ##         dist_buff1[j] = np.mean(dist[:4])
-        ##     for j in xrange(len(dist_buff2)):
-        ##         dist_buff2[j] = np.mean(dist[:4])
-        ##     for j in xrange(len(dist_buff3)):
-        ##         dist_buff3[j] = np.mean(dist[:4])
-        ##     for j in xrange(len(dist)):
-        ##         dist_buff1.append(dist[j])
-        ##         dist_buff2.append(dist_buff1[0])
-        ##         dist_buff3.append(dist_buff2[0])
-        ##         new_dist.append( np.mean(dist_buff3.get_array()) )                
-        ##     exp_interp_traj.append(new_dist)
+        ## ## # Expected raw trajectory
+        ## ## nOrder = 2
+        ## ## exp_traj  = []
+        ## ## exp_interp_traj = []
+        ## ## for i in xrange(len(abnormalIdxList)):
+        ## ##     kinEEPos  = testDataDict['kinDesEEPosList'][abnormalIdxList[i]]
+        ## ##     targetPos = testDataDict['visionLandmarkPosList'][abnormalIdxList[i]]
 
-        ## # scaling
-        ## exp_traj = ( np.array(exp_traj) - handFeatureParams['feature_min'][nOrder] )\
-        ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
-        ## exp_interp_traj = ( np.array(exp_interp_traj) - handFeatureParams['feature_min'][nOrder] )\
-        ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
+        ## ##     dist = np.linalg.norm(targetPos[:,0:1]-kinEEPos, axis=0)
+        ## ##     dist -= np.mean(dist[:4])
+        ## ##     exp_traj.append(dist)
 
-        ## refData = np.mean(normalTrainData[nOrder,:,:startIdx])
-        ## for i in xrange(len(exp_traj)):
-        ##     offset = refData - np.mean(exp_traj[i][:startIdx])
-        ##     exp_traj[i] += offset
-        ## for i in xrange(len(exp_interp_traj)):
-        ##     offset = refData - np.mean(exp_interp_traj[i][:startIdx])
-        ##     exp_interp_traj[i] += offset
+        ## ##     new_dist = []
+        ## ##     for j in xrange(len(dist_buff1)):
+        ## ##         dist_buff1[j] = np.mean(dist[:4])
+        ## ##     for j in xrange(len(dist_buff2)):
+        ## ##         dist_buff2[j] = np.mean(dist[:4])
+        ## ##     for j in xrange(len(dist_buff3)):
+        ## ##         dist_buff3[j] = np.mean(dist[:4])
+        ## ##     for j in xrange(len(dist)):
+        ## ##         dist_buff1.append(dist[j])
+        ## ##         dist_buff2.append(dist_buff1[0])
+        ## ##         dist_buff3.append(dist_buff2[0])
+        ## ##         new_dist.append( np.mean(dist_buff3.get_array()) )                
+        ## ##     exp_interp_traj.append(new_dist)
 
-        ## exp_traj = dm.applying_offset(exp_traj*HMM_dict['scale'], \
-        ##                               normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
-        ## exp_interp_traj = dm.applying_offset(exp_interp_traj*HMM_dict['scale'], \
-        ##                                      normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
-        ## exp_traj /= HMM_dict['scale']
-        ## exp_interp_traj /= HMM_dict['scale']
+        ## ## # scaling
+        ## ## exp_traj = ( np.array(exp_traj) - handFeatureParams['feature_min'][nOrder] )\
+        ## ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
+        ## ## exp_interp_traj = ( np.array(exp_interp_traj) - handFeatureParams['feature_min'][nOrder] )\
+        ## ##   /( handFeatureParams['feature_max'][nOrder] - handFeatureParams['feature_min'][nOrder])
 
-        #temp
-        ## fileList  = fileList[:5]
-        ## testDataX = testDataX[:,:5,:]
-        ## testDataY = testDataY[:5]
+        ## ## refData = np.mean(normalTrainData[nOrder,:,:startIdx])
+        ## ## for i in xrange(len(exp_traj)):
+        ## ##     offset = refData - np.mean(exp_traj[i][:startIdx])
+        ## ##     exp_traj[i] += offset
+        ## ## for i in xrange(len(exp_interp_traj)):
+        ## ##     offset = refData - np.mean(exp_interp_traj[i][:startIdx])
+        ## ##     exp_interp_traj[i] += offset
 
-        # scaling and applying offset            
-        testDataX = dm.applying_offset(testDataX*HMM_dict['scale'], \
-                                       normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+        ## ## exp_traj = dm.applying_offset(exp_traj*HMM_dict['scale'], \
+        ## ##                               normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+        ## ## exp_interp_traj = dm.applying_offset(exp_interp_traj*HMM_dict['scale'], \
+        ## ##                                      normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+        ## ## exp_traj /= HMM_dict['scale']
+        ## ## exp_interp_traj /= HMM_dict['scale']
+
+        ## #temp
+        ## ## fileList  = fileList[:5]
+        ## ## testDataX = testDataX[:,:5,:]
+        ## ## testDataY = testDataY[:5]
+
+        ## # scaling and applying offset            
+        ## testDataX = dm.applying_offset(testDataX*HMM_dict['scale'], \
+        ##                                normalTrainData*HMM_dict['scale'], startIdx, nEmissionDim)
+
+
 
         # anomaly detection
         detection_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
@@ -324,11 +357,12 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                     abnormal_window += [np.mean(single_window),\
                                         np.amax(single_window)-np.amin(single_window)] 
                 abnormal_windows.append(abnormal_window)
-                tid = int(abnormalFileList[i].split('_')[1].split('_')[0])
-                for kk in xrange(len(classes)):
-                    if tid in classes[kk]:
-                        abnormal_class.append(kk)
-                        break
+                tid = int(abnormalFileList[i].split('_')[0])
+                abnormal_class.append(tid)
+                ## for kk in xrange(len(classes)):
+                ##     if tid in classes[kk]:
+                ##         abnormal_class.append(kk)
+                ##         break
             
             lim_list = []
                     
@@ -542,7 +576,8 @@ if __name__ == '__main__':
     p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
                  default=False, help='Plot data and select it.')
     
-    
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
     p.add_option('--find_param', action='store_true', dest='bFindParam',
@@ -590,7 +625,7 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['s1']
+        subjects = ['s1', 'test']
     elif opt.task == 'pushing':
         subjects = ['microblack', 'microwhite']        
     else:
@@ -649,7 +684,21 @@ if __name__ == '__main__':
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                        max_time=param_dict['data_param']['max_time'])
 
-                              
+    elif opt.HMM_param_search:
+
+        from hrl_anomaly_detection.hmm import run_hmm_cpy as hmm_opt
+        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(0.5,10.0,5) }
+        max_check_fold = 1 #None
+        no_cov = False
+        
+        hmm_opt.tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
+
+    elif opt.CLF_param_search:
+
+        clf_opt.tune_clf(save_data_path, opt.task, )
+                         
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []

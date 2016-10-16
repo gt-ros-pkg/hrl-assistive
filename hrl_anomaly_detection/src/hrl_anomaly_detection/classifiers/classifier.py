@@ -904,7 +904,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
-            
+        
         if min_dist > dist:
             min_index = j
             min_dist  = dist

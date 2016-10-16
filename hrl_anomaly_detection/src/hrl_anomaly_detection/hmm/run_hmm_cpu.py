@@ -45,7 +45,7 @@ from hrl_anomaly_detection.classifiers import classifier as cb
 
 from joblib import Parallel, delayed
 
-def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
+def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=False, n_jobs=-1, \
              bSave=False, method='svm', max_check_fold=None, no_cov=False):
 
     ## Parameters
@@ -64,6 +64,16 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     ROC_dict = param_dict['ROC']
     
     #------------------------------------------
+
+    crossVal_pkl        = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        cv_dict = ut.load_pickle(crossVal_pkl)
+        ## kFold_list  = d['kFoldList']
+    else:
+        print "no existing data file, ", crossVal_pkl
+        sys.exit()
+
+    
     kFold_list = cv_dict['kFoldList']
     if max_check_fold is not None:
         if max_check_fold < len(kFold_list):
@@ -75,6 +85,8 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
     std_list   = []
     
     for param in param_list:
+
+        nState = HMM_dict['nState'] = param['nState']
 
         tp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
         fp_l = [[] for i in xrange((ROC_dict['nPoints'])) ]
@@ -246,6 +258,7 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
                                                                              idx_train_org, \
                                                                              X_test, Y_test, \
+                                                                             nState,\
                                                                              nEmissionDim, nLength, \
                                                                              SVM_dict, weight=weights[iii], \
                                                                              method=method, cf_dict=cf_dict,\
@@ -314,12 +327,13 @@ def tune_hmm(parameters, cv_dict, param_dict, processed_data_path, verbose=False
 
 
 
-def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, nEmissionDim, nLength, \
+def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, \
+                    nState, nEmissionDim, nLength, \
                     SVM_dict, weight, method='svm', cf_dict=None,\
                     verbose=False):
 
     if verbose: print "Run a classifier"
-    dtc = cb.classifier( method=method, nPosteriors=nEmissionDim, nLength=nLength )
+    dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     dtc.set_params( **SVM_dict )
     if cf_dict is None:
         ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)        
@@ -417,8 +431,8 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               bAESwitch=opt.bAESwitch, \
                                                               nPoints=8)
-        parameters = {'nState': [25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(1.0,15.0,1) }
+        parameters = {'nState': [20,25], 'scale': np.linspace(3.0,15.0,10), \
+                      'cov': np.linspace(1.0,10.0,5) }
         max_check_fold = None
         no_cov = True
         
@@ -437,6 +451,9 @@ if __name__ == '__main__':
                       'cov': np.linspace(0.5,10.0,5) }
         max_check_fold = 1 #None
         no_cov = False
+
+        param_dict['SVM']['gamma'] = 0.208
+        param_dict['SVM']['nu'] = 0.5
         
         raw_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TEST/'
@@ -495,13 +512,6 @@ if __name__ == '__main__':
     #--------------------------------------------------------------------------------------
     # test change of logp
     
-    crossVal_pkl        = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl')
-    if os.path.isfile(crossVal_pkl):
-        d = ut.load_pickle(crossVal_pkl)
-        ## kFold_list  = d['kFoldList']
-    else:
-        print "no existing data file, ", crossVal_pkl
-        sys.exit()
 
-    tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
+    tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
              bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)

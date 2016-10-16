@@ -139,65 +139,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
-    #-----------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
-
-        if verbose: print idx, " : training hmm and getting classifier training and testing data"
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-
-        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
-
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
-
-        # training hmm
-        if verbose: print "start to fit hmm"
-        nEmissionDim = len(normalTrainData)
-        cov_mult     = [cov]*(nEmissionDim**2)
-        nLength      = len(normalTrainData[0][0]) - startIdx
-
-        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        if data_dict['handFeatures_noise']:
-            ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                         cov_mult=cov_mult, use_pkl=False)
-        else:
-            ret = ml.fit(normalTrainData, cov_mult=cov_mult, use_pkl=False)
-
-        if ret == 'Failure' or np.isnan(ret): return (-1,-1,-1,-1)
-
-        # Classifier training data
-        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
-
-        # Classifier test data
-        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
-
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = ml.nEmissionDim
-        d['A']            = ml.A 
-        d['B']            = ml.B 
-        d['pi']           = ml.pi
-        d['F']            = ml.F
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
-        d['nLength']      = nLength
-        d['scale']        = HMM_dict['scale']
-        d['cov']          = HMM_dict['cov']
-        ut.save_pickle(d, modeling_pkl)
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              add_logp_d=add_logp_d, verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -325,71 +272,12 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
 
     #-----------------------------------------------------------------------------------------
     # HMM-induced vector with LOPO
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
-
-        # Training HMM, and getting classifier training and testing data
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
-            print idx, " : learned hmm exists"
-            continue
-
-        # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
-
-        # training hmm
-        if verbose: print "start to fit hmm"
-        nEmissionDim = len(normalTrainData)
-        nLength      = len(normalTrainData[0][0]) - startIdx
-        cov_mult     = [cov]*(nEmissionDim**2)
-
-        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-        ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
-                     cov_mult=cov_mult, use_pkl=False)
-        if ret == 'Failure' or np.isnan(ret):
-            print "hmm training failed"
-            sys.exit()
-
-        # Classifier training data
-        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
-        
-        # Classifier test data
-        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
-
-        ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
-        ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
-
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = ml.nEmissionDim
-        d['A']            = ml.A 
-        d['B']            = ml.B 
-        d['pi']           = ml.pi
-        d['F']            = ml.F
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
-        d['ll_classifier_test_labels'] = ll_classifier_test_labels
-        d['nLength']      = nLength
-        d['scale']        = HMM_dict['scale']
-        d['cov']          = HMM_dict['cov']
-        ## d['normalTrainData']   = normalTrainData
-        ## d['abnormalTrainData'] = abnormalTrainData
-        ## d['normalTestData']    = normalTestData
-        ## d['abnormalTestData']  = abnormalTestData
-        ut.save_pickle(d, modeling_pkl)
-        
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              success_files=success_files, failure_files=failure_files,\
+                              add_logp_d=add_logp_d, verbose=verbose)
+                              
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
