@@ -299,7 +299,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               nPoints=nPoints)
         param_dict['HMM']['nState'] = 20
-        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['scale']  = 11.
         param_dict['HMM']['cov']    = 5.25
         raw_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TEST/'
