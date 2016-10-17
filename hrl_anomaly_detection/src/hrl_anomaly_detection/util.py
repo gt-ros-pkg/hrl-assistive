@@ -236,7 +236,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioWristRMSList'].append(audio_rms)
             raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
             ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
-            
+
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
@@ -248,6 +248,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                                                                              new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
+                
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -821,7 +822,10 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
 
-    return new_data_array
+    if len(np.shape(new_data_array)) < 2:
+        return [new_data_array]
+    else:
+        return new_data_array
     
 def interpolationQuatData(time_array, data_array, new_time_array):
     '''

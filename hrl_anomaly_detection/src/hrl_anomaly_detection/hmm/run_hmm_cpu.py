@@ -239,20 +239,15 @@ def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=Fal
             cf_dict = {}
             cf_dict['method']      = dtc.method
             if method == 'progress':
-                ## cf_dict['nPosteriors'] = dtc.nPosteriors
                 cf_dict['l_statePosterior'] = dtc.l_statePosterior
-                cf_dict['ths_mult']    = dtc.ths_mult
                 cf_dict['ll_mu']       = dtc.ll_mu
                 cf_dict['ll_std']      = dtc.ll_std
                 cf_dict['logp_offset'] = dtc.logp_offset
             elif method == 'hmmgp':
-                ## cf_dict['nPosteriors'] = dtc.nPosteriors
-                cf_dict['ths_mult']    = dtc.ths_mult
+                cf_dict['logp_offset'] = dtc.logp_offset
                 dtc.save_model('./temp_hmmgp.pkl')
             elif method.find('svm')>=0:
                 dtc.save_model('./temp_'+method+'.pkl')
-                
-                
             
             print "Start to run classifiers"
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \

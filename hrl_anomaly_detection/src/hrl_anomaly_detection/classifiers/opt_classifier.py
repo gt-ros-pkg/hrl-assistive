@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
 
     tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=8,\
-                    n_iter_search=2000)
+                    n_iter_search=200)
     
     ## # get training X,y
     ## file_idx = 1
