@@ -319,6 +319,7 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
+                ## ll_idx = [ range() for i in xrange(len(X)) if y[i]<0 ]
                 print "Error>> ll_idx is not inserted"
                 sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
