@@ -318,7 +318,7 @@ if __name__ == '__main__':
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
 
-    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=1)
+    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=8)
     
     ## # get training X,y
     ## file_idx = 1
