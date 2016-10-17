@@ -186,6 +186,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
     # specify parameters and distributions to sample from
     if param_dist is None:
         from scipy.stats import uniform, expon
+        print "Setting parameter search range for ", method
         if 'svm' in method:
             param_dist = {'cost': [1.0],\
                           'gamma': [2.0],\
@@ -197,8 +198,8 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 # 'cost': uniform(0.5,4.0)
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
-        elif 'hmmgp' in method:
-            param_dist = {'weight': uniform(-1.0,-20.0)}
+        elif 'hmmgp' in method or 'progress' in method:            
+            param_dist = {'ths_mult': uniform(-20.0,19.0)}
         
         
     # run randomized search
