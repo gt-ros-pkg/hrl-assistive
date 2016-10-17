@@ -189,7 +189,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
         print "Setting parameter search range for ", method
         if 'svm' in method:
             param_dist = {'cost': [1.0],\
-                          'gamma': [2.0],\
+                          'gamma': uniform(0.05,2.0),\
                           'weight': uniform(0.1,0.3),\
                           'nu': uniform(0.1,0.5)
                           }
