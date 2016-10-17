@@ -198,7 +198,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method:
-            param_dist = {'ths_mult': uniform(-1.0,-20.0)}
+            param_dist = {'weight': uniform(-1.0,-20.0)}
         
         
     # run randomized search
