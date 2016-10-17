@@ -198,7 +198,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method:
-            param_dist = {'weight': uniform(0.1,0.4)}
+            param_dist = {'ths_mult': uniform(-1.0,-20.0)}
         
         
     # run randomized search
@@ -299,7 +299,7 @@ if __name__ == '__main__':
                                                               rf_center, local_range, \
                                                               nPoints=nPoints)
         param_dict['HMM']['nState'] = 20
-        param_dict['HMM']['scale']  = 3.
+        param_dict['HMM']['scale']  = 11.
         param_dict['HMM']['cov']    = 5.25
         raw_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TEST/'
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
 
-    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=1)
+    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=8)
     
     ## # get training X,y
     ## file_idx = 1

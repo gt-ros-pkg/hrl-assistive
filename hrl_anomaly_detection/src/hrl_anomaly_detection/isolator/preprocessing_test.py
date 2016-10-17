@@ -45,7 +45,6 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
-from hrl_anomaly_detection.AURO2016_params import *
 from hrl_anomaly_detection.optimizeParam import *
 from hrl_anomaly_detection import util as util
 import hrl_lib.circular_buffer as cb
@@ -613,6 +612,7 @@ if __name__ == '__main__':
     # Dectection TEST 
     local_range    = 10.0    
 
+    from hrl_anomaly_detection.AURO2016_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range)
@@ -696,8 +696,9 @@ if __name__ == '__main__':
                          bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
-
-        clf_opt.tune_clf(save_data_path, opt.task, )
+        from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
+        method = 'hmmgp'
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=8, n_iter_search=1000)
                          
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 

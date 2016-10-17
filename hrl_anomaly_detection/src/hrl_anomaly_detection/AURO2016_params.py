@@ -166,7 +166,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 7.,\
                           'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.52, 'gamma': 5.0, 'cost': 1.0,\
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
