@@ -403,8 +403,8 @@ if __name__ == '__main__':
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
     param_dict['HMM']['nState'] = 25
-    param_dict['HMM']['scale']  = 12.33
-    param_dict['HMM']['cov']    = 1.0
+    param_dict['HMM']['scale']  = 11.
+    param_dict['HMM']['cov']    = 5.25
 
 
     
@@ -452,8 +452,8 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(0.5,10.0,5) }
+        parameters = {'nState': [25], 'scale': np.linspace(7.0,13.0,10), \
+                      'cov': np.linspace(2.5,7.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
         method = 'hmmgp'
