@@ -456,9 +456,10 @@ if __name__ == '__main__':
                       'cov': np.linspace(0.5,10.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
+        method = 'hmmgp'
         
-        hmm_opt.tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-                         bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
