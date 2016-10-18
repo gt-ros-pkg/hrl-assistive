@@ -244,7 +244,7 @@ def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=Fal
                 cf_dict['ll_std']      = dtc.ll_std
                 cf_dict['logp_offset'] = dtc.logp_offset
             elif method == 'hmmgp':
-                cf_dict['logp_offset'] = dtc.logp_offset
+                ## cf_dict['logp_offset'] = dtc.logp_offset
                 dtc.save_model('./temp_hmmgp.pkl')
             elif method.find('svm')>=0:
                 dtc.save_model('./temp_'+method+'.pkl')
