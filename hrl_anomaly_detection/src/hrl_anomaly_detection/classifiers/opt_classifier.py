@@ -189,11 +189,11 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
         print "Setting parameter search range for ", method
         if 'svm' in method:
             param_dist = {'cost': [1.0],\
-                          'gamma': uniform(0.05,2.0),\
-                          'weight': uniform(0.1,0.3),\
-                          'nu': uniform(0.1,0.5)
+                          'gamma': [1.0],\
+                          'weight': expon(scale=0.3),\
+                          'nu': [0.5]
                           }
-                #, #uniform(0.1,0.9)
+                ## 'gamma': uniform(0.05,2.0),\
                 # uniform(7.0,15.0)
                 # 'cost': uniform(0.5,4.0)
                 #'weight': expon(scale=0.3),\
@@ -240,7 +240,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
     ## print(classification_report(y_true, y_pred))
     ## print()
 
-
+    return score_list[-1][0], score_list[-1][1], score_list[-1][2]
 
 
 if __name__ == '__main__':
