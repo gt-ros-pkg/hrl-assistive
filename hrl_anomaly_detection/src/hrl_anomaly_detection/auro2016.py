@@ -396,9 +396,9 @@ if __name__ == '__main__':
     subjects = ['s1','s2','s3']
 
 
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
     param_dict['HMM']['nState'] = 25
     param_dict['HMM']['scale']  = 12.33

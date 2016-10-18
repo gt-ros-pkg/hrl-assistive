@@ -444,10 +444,10 @@ if __name__ == '__main__':
                                                               nPoints=8)
         parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
                       'cov': np.linspace(0.5,10.0,5) }
-        max_check_fold = 1 #None
+        max_check_fold = 3 #None
         no_cov = False
 
-        param_dict['SVM']['gamma'] = 0.208
+        param_dict['SVM']['gamma'] = 1.0
         param_dict['SVM']['nu'] = 0.5
         
         raw_data_path = os.path.expanduser('~')+\
