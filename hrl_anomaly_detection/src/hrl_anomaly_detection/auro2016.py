@@ -458,7 +458,7 @@ if __name__ == '__main__':
         no_cov = False
         method = 'hmmgp'
         
-        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=-1, \
                          bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
