@@ -377,6 +377,8 @@ if __name__ == '__main__':
                  default=False, help='Set debug mode.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
 
     
     opt, args = p.parse_args()
@@ -393,7 +395,7 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-    subjects = ['s1','s2','s3']
+    subjects = ['s1', 's2', 's3', 's4', 's5']
 
 
     save_data_path = os.path.expanduser('~')+\
@@ -452,7 +454,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.hmm import run_hmm_cpy as hmm_opt
         parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
                       'cov': np.linspace(0.5,10.0,5) }
-        max_check_fold = 1 #None
+        max_check_fold = 5 #None
         no_cov = False
         
         hmm_opt.tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
