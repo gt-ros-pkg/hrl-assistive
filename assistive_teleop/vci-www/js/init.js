@@ -156,6 +156,9 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
+            RFH.pingRelay = new RFH.PingRelay({ros: RFH.ros,
+                                               inTopic: '/ping_relay_out',
+                                               outTopic: '/ping_relay_return'});
             RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
             // RFH.initTaskMenu();
 
