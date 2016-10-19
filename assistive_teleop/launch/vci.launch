@@ -19,9 +19,6 @@
   <!-- Data Logging -->
   <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
 
-  <!-- Task Planning -->
-  <include file="$(find hrl_task_planning)/launch/task_planner.launch" />
-
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="$(arg ws_port)" />
@@ -33,9 +30,6 @@
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
   </node>
   <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
-
-  <!-- Automatic pick-and-place actions -->
-  <node name="overhead_grasp_actions" pkg="assistive_teleop" type="overhead_grasp_action" output="screen" />
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
   <node name="pixel_2_3d" pkg="pixel_2_3d" type="pixel_2_3d" machine="c1" output="screen" >
@@ -102,21 +96,5 @@
   </include>
 
   <node name="shaver_toggle_node" pkg="assistive_teleop" type="shaver" />
-
-  <!--i <node if="$(arg run_ft_sensor)" name="throttle_wt_force_out" pkg="topic_tools" type="throttle"
-        args="messages /netft_gravity_zeroing/wrench_zeroed 10 /wt_force_out_throttle" />
--->
-
-  <!-- Image Rotation Nodes for right + left arm cameras 
-  <node name="image_rotater_right" pkg="image_rotate" type="image_rotate" machine = "c1"> 
-    <remap from="image" to="/r_forearm_cam/image_color"/>
-    <remap from="rotated/image" to="/r_forearm_cam/image_color_rotated"/>
-  </node>
-
-  <node name="image_rotater_left" pkg="image_rotate" type="image_rotate" machine="c1"> 
-    <remap from="image" to="/l_forearm_cam/image_color"/>
-    <remap from="rotated/image" to="/l_forearm_cam/image_color_rotated"/>
-  </node>
-  -->
 
 </launch>

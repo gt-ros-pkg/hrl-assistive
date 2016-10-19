@@ -142,13 +142,14 @@ var RFH = (function (module) {
                                                                   RFH.skins.right.forearm]
             });
             RFH.initActionMenu('main-menu');
-            RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
+           /* RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
             RFH.undo = new RFH.Undo({ros: RFH.ros,
                 undoTopic: '/undo',
                 buttonDiv: 'undo',
                 rightEEDisplay: RFH.rightEEDisplay,
                 leftEEDisplay: RFH.leftEEDisplay});
+            */
             RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
                 topic: "/pcl_filters/peek_points",
                 maxPoints: 16000,
@@ -156,7 +157,7 @@ var RFH = (function (module) {
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
             RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
-            RFH.initTaskMenu();
+            // RFH.initTaskMenu();
 
             /* Added content for left column */
             var showLeftColumn = function (event) {

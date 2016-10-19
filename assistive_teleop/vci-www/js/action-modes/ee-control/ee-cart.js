@@ -17,7 +17,7 @@ var RFH = (function (module) {
         self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
-        self.stepSizes = {'tiny': 0.015,
+        self.stepSizes = {'xsmall': 0.015,
             'small': 0.04,
             'medium': 0.11,
             'large': 0.25};
