@@ -5,23 +5,23 @@ var RFH = (function(module) {
     var inTopic = options.inTopic;
     var outTopic = options.outTopic;
     
-    ros.getMsgDetails('assistive_teleop/PingMsg');
+    ros.getMsgDetails('assistive_teleop/Ping');
     var relayPub = new ROSLIB.Topic({
         ros: ros,
         name: outTopic,
-        messageType: 'assistive_teleop/PingMsg'
+        messageType: 'assistive_teleop/Ping'
     });
     relayPub.advertise();
 
     var stampAndReturn = function (pingMsg) {
-        pingMsg.clientTime = new Date();
+        pingMsg.recv_time = new Date();
         relayPub.publish(pingMsg);
     };
 
     var relaySub = new ROSLIB.Topic({
         ros: ros,
         name: inTopic,
-        messageType: 'assistive_teleop/PingMsg'
+        messageType: 'assistive_teleop/Ping'
     });
     relaySub.subscribe(stampAndReturn);
     };

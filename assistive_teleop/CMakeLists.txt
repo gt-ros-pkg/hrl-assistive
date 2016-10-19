@@ -18,6 +18,7 @@ add_message_files(
   DIRECTORY msg
   FILES 
   InterfaceLog.msg
+  Ping.msg
 )
 
 add_service_files(
