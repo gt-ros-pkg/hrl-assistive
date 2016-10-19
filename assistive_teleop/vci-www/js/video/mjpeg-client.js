@@ -15,7 +15,7 @@ var RFH = (function (module) {
         ros.getMsgDetails('geometry_msgs/Vector3');
         var imageParamsPub = new ROSLIB.Topic({
             ros: ros,
-            name: 'web_image_size',
+            name: 'web_image_params',
             messageType: 'geometry_msgs/Vector3'
         });
         imageParamsPub.advertise();

@@ -1,9 +1,9 @@
 <launch>
 
-    <node name="kinect_throttle" pkg="topic_tools" type="throttle" args="messages /head_mount_kinect/qhd/image_color 0.25 kinect_throttled" />
+    <node name="kinect_throttle" pkg="topic_tools" type="throttle" args="messages /head_mount_kinect/qhd/image_color 1 kinect_throttled" />
     <node name="joints_throttle" pkg="topic_tools" type="throttle" args="messages /joint_states 4 joint_states_throttled" />
-    <node name="video_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/video --topic /kinect_throttled --size 250 --split" />
-    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/data --size 250 --split
+    <node name="video_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/video --topic /kinect_throttled --size 500 --split" />
+    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/data --size 500 --split
                                                            --topic
                                                             /ar_pose_marker
                                                             /base_controller/command
@@ -42,6 +42,8 @@
                                                             /pddl_tasks/state_updates
                                                             /pddl_tasks/tool_pick/state
                                                             /perform_task
+                                                            /ping_relay_out
+                                                            /ping_relay_return
                                                             /pixel3d
                                                             /pr2_fabric_base_sensor/zero_sensor
                                                             /pr2_fabric_base_sensor/disable_sensor
@@ -111,6 +113,21 @@
                                                             /tuck_arms/goal
                                                             /tuck_arms/result
                                                             /tuck_arms/status
+                                                            /web_image_params
+                                                            /battery/server2
+                                                            /diagnostics
+                                                            /diagnostics_agg
+                                                            /joy
+                                                            /power_board/state
+                                                            /power_state
+                                                            /pr2_etherCAT/motors_halted
+                                                            /pr2_ethercat/motors_halted
+                                                            /robotsound
+                                                            /rosout
+                                                            /rosout_agg
+                                                            /runstop_status
+                                                            /vci_running
+                                                            /joint_states_throttled
                                                            "/>
 
 </launch>
