@@ -2,6 +2,7 @@ var RFH = (function (module) {
     module.MjpegClient = function (options) {
         "use strict";
         var self = this;
+        var ros = options.ros;
         options = options || {};
         self.imageTopic = options.imageTopic;
         self.$div = $('#'+options.divId);
@@ -11,7 +12,15 @@ var RFH = (function (module) {
         self.activeParams = {'topic': options.imageTopic,
             'quality': options.quality || 50};
 
-        self.cameraModel = new RFH.ROSCameraModel({ros: options.ros,
+        ros.getMsgDetails('geometry_msgs/Vector3');
+        var imageParamsPub = new ROSLIB.Topic({
+            ros: ros,
+            name: 'web_image_size',
+            messageType: 'geometry_msgs/Vector3'
+        });
+        imageParamsPub.advertise();
+
+        self.cameraModel = new RFH.ROSCameraModel({ros: ros,
             infoTopic: options.infoTopic,
             rotated: options.rotated || false,
             tfClient: options.tfClient});
@@ -49,6 +58,11 @@ var RFH = (function (module) {
             }
             self.$imageDiv.attr("src", srcStr);
             console.log("Video Request: ", srcStr);
+            var sizeMsg = ros.composeMsg('geometry_msgs/Vector3');
+            sizeMsg.x = self.activeParams.width;
+            sizeMsg.y = self.activeParams.height;
+            sizeMsg.z = self.activeParams.quality;
+            imageParamsPub.publish(sizeMsg);
             self.$imageDiv.width(self.activeParams.width)
                 .height(self.activeParams.height);
         };
