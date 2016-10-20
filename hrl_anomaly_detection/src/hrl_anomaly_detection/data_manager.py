@@ -1393,7 +1393,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             audioWristRMS = d['audioWristRMSList'][idx]            
             unimodal_audioWristRMS = audioWristRMS
             if offset_flag:
-                unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
+                unimodal_audioWristRMS -= np.amin(audioWristRMS)
+                ## unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
@@ -1741,6 +1742,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
                 
+            ## dist = np.linalg.norm(visionLandmarkPos, axis=0)            
             dist = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])

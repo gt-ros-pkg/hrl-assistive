@@ -396,11 +396,13 @@ if __name__ == '__main__':
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['s1', 's2', 's3', 's4', 's5']
+    subjects = ['s1', 's2', 's3', 's4']
+    ## subjects = ['s1', 's4']
 
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
     param_dict['HMM']['nState'] = 25
     param_dict['HMM']['scale']  = 11.
@@ -423,6 +425,7 @@ if __name__ == '__main__':
                   local_range=local_range, rf_center=rf_center, global_data=True, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
                   successData=successData, failureData=failureData,\
+                  continuousPlot=True, \
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     elif opt.bFeaturePlot:
@@ -452,7 +455,7 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [25], 'scale': np.linspace(7.0,13.0,10), \
+        parameters = {'nState': [20, 25], 'scale': np.linspace(7.0,13.0,10), \
                       'cov': np.linspace(2.5,7.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
