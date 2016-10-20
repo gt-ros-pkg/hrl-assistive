@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from assistive_telep.msg import Ping
+from assistive_teleop.msg import Ping
 
 
 class CheckPingServer(object):
@@ -10,8 +10,9 @@ class CheckPingServer(object):
         self.ping_sub = rospy.Subscriber(inTopic, Ping, self.ping_cb)
 
     def ping_cb(self, return_msg):
+        print return_msg
         now = rospy.Time.now()
-        sent_time = return_msg.sent_time
+        sent_time = return_msg.send_time
         client_time = return_msg.recv_time
         s_to_c = (client_time - sent_time).to_sec()
         c_to_s = (now - client_time).to_sec()

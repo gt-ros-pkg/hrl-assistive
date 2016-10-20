@@ -26,9 +26,10 @@
   </node>
   <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
   <node name="roswww" pkg="roswww" type="webserver.py" output="screen" args="--port $(arg html_port) --webpath vci-www"/>
-  <node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
+  <!--<node pkg="mjpeg_server" type="mjpeg_server"  name="mjpeg_server" output="screen">
     <param name="port" type="int" value="$(arg mjpeg_port)"/>
-  </node>
+  </node>-->
+  <node pkg="web_video_server" type="web_video_server"  name="web_video_server" output="screen"/>
   <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
 
   <!-- Pixel_2_3d: Returns PoseStamped with point and normal from click on image with kinect  -->
@@ -56,6 +57,7 @@
         <param name="unreliable" value="true"/>
         <param name="lazy" value="true"/>
   </node>
+  <!--<node name="web_ping_check" pkg="assistive_teleop" type="ping_check"/>-->
 
   <!-- Gripper Grasping State Monitors -->
   <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="right" output="screen"/>

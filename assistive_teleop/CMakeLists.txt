@@ -54,6 +54,7 @@ catkin_install_python(PROGRAMS
     scripts/head_sweep_action
     scripts/servo_action
     scripts/shaver
+    scripts/ping_check
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch/

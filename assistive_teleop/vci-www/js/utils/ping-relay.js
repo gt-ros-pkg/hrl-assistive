@@ -14,7 +14,11 @@ var RFH = (function(module) {
     relayPub.advertise();
 
     var stampAndReturn = function (pingMsg) {
-        pingMsg.recv_time = new Date();
+        var ms = new Date().getTime();
+        var s = Math.round(ms / 1000);
+        var ns = (ms - 1000*s) * 1000000;
+        pingMsg.recv_time.secs = s;
+        pingMsg.recv_time.nsecs = ns;
         relayPub.publish(pingMsg);
     };
 

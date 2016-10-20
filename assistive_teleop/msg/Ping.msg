@@ -1,2 +1,2 @@
-std_msgs/Time send_time
-std_msgs/Time recv_time
+time send_time
+time recv_time
