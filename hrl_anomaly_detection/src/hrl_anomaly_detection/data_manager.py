@@ -1930,15 +1930,15 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
-            ## audioWristRMS  = d['audioWristRMSList'][idx]
-            audioWristMFCC = d['audioWristMFCCList'][idx]            
+            audioWristRMS  = d['audioWristRMSList'][idx]
+            ## audioWristMFCC = d['audioWristMFCCList'][idx]            
 
-            ## if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
-            ## else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
-
-            dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            ## if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
-            if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
+            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+            ## dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
+            
+            if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
+            ## if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:

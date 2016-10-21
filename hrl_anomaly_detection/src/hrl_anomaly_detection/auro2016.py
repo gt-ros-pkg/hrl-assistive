@@ -396,8 +396,7 @@ if __name__ == '__main__':
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['s1', 's2', 's3', 's4', 's5']
-    subjects = ['s1', 's2', 's3', 's4']
-    ## subjects = ['s1', 's4']
+    ## subjects = ['s1', 's5']
 
 
     ## save_data_path = os.path.expanduser('~')+\
@@ -455,7 +454,7 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [20, 25], 'scale': np.linspace(7.0,13.0,10), \
+        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(9.0,15.0,7), \
                       'cov': np.linspace(2.5,7.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
