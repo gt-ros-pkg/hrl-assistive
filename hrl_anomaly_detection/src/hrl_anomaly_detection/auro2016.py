@@ -396,16 +396,16 @@ if __name__ == '__main__':
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['s1', 's2', 's3', 's4', 's5']
-    ## subjects = ['s1', 's5']
+    ## subjects = ['s1', 'Kwon']
 
 
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
     ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
-    param_dict['HMM']['nState'] = 25
-    param_dict['HMM']['scale']  = 11.
-    param_dict['HMM']['cov']    = 5.25
+    param_dict['HMM']['nState'] = 20
+    param_dict['HMM']['scale']  = 14.
+    param_dict['HMM']['cov']    = 2.5
 
 
     
@@ -454,8 +454,8 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(9.0,15.0,7), \
-                      'cov': np.linspace(2.5,7.0,5) }
+        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(10.0,15.0,7), \
+                      'cov': np.linspace(1.5,6.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
         method = 'hmmgp'
