@@ -170,7 +170,7 @@ def getSamples(modeling_pkl):
     
 
 def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=None, file_idx=1,\
-                    n_jobs=8, n_iter_search=1000):
+                    n_jobs=8, n_iter_search=1000, save=False):
     """
     Search the best classifier parameter set.
     """
@@ -239,6 +239,22 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
     ## y_true, y_pred = y_test, random_search.predict(X_test)
     ## print(classification_report(y_true, y_pred))
     ## print()
+
+    if save:
+        savefile = os.path.join(save_data_path,'../','result_run_clf.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                for mean, std, param in score_list:
+                    file.write( "%0.3f (+/-%0.03f) for %r"
+                                % (mean, std * 2, param)+'\n\n')
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                for mean, std, param in score_list:
+                    file.write( "%0.3f (+/-%0.03f) for %r"
+                                % (mean, std * 2, param)+'\n\n')
+        
 
     return score_list[-1][0], score_list[-1][1], score_list[-1][2]
 

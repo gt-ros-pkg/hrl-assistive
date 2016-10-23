@@ -405,9 +405,9 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
-    param_dict['HMM']['nState'] = 20
-    param_dict['HMM']['scale']  = 14.
-    param_dict['HMM']['cov']    = 2.5
+    param_dict['HMM']['nState'] = 15
+    param_dict['HMM']['scale']  = 15.
+    param_dict['HMM']['cov']    = 1.5
 
 
     
@@ -469,7 +469,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=0,\
-                                n_jobs=8, n_iter_search=1000)
+                                n_jobs=8, n_iter_search=2000, save=opt.bSave)
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
