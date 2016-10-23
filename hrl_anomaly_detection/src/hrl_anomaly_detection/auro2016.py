@@ -235,6 +235,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
+        print d.keys()
         kFold_list  = d['kFoldList']
         successData = d['successData']
         failureData = d['failureData']        
@@ -469,7 +470,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=0,\
-                                n_jobs=8, n_iter_search=1000)
+                                n_jobs=-1, n_iter_search=2000)
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
