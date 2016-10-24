@@ -111,7 +111,7 @@ class classifier(learning_base):
                  progress_svm_cost       = 4.,\
                  progress_svm_gamma      = 0.3,\
                  # hmmgp
-                 theta0 = 1.0
+                 theta0 = 1.0,\
                  nugget = 100.0,\
                  verbose=False):
         '''
