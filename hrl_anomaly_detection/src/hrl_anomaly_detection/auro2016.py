@@ -459,7 +459,7 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(10.0,15.0,7), \
+        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(10.0,20.0,10), \
                       'cov': np.linspace(1.5,6.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False

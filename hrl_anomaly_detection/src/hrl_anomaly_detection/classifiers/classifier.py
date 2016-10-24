@@ -111,6 +111,7 @@ class classifier(learning_base):
                  progress_svm_cost       = 4.,\
                  progress_svm_gamma      = 0.3,\
                  # hmmgp
+                 theta0 = 1.0
                  nugget = 100.0,\
                  verbose=False):
         '''
@@ -199,8 +200,9 @@ class classifier(learning_base):
             self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
             self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linear'
             self.nugget = nugget
+            self.theta0 = theta0
 
-            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
+            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=self.theta0, corr=self.corr, \
                                                        normalize=True, nugget=self.nugget)            
         elif self.method == 'hmmsvr':
             self.svm_type    = svm_type
