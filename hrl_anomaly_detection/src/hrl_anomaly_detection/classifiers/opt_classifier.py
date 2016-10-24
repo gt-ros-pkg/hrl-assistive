@@ -217,9 +217,11 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method or 'progress' in method:            
-            param_dist = {'ths_mult': uniform(-10.0,9.0),\
-                          'nugget': [10, 50, 100, 200],\
-                          'theta0': [0.5, 1.0, 1.5]}
+            param_dist = {'ths_mult': uniform(-8.0,4.0),\
+                          'nugget': uniform(100.0,50.0),\
+                          'theta0': uniform(1.0,0.5)}
+                          ## 'nugget': [10, 50, 100, 200],\
+                          ## 'theta0': [0.5, 1.0, 1.5]}
         
         
     # run randomized search
