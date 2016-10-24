@@ -55,7 +55,7 @@ import matplotlib.pyplot as plt
 class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength=None,\
                  weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
-                 nugget=100.0, theta0=1.0):
+                 ths_mult=-1.0, nugget=100.0, theta0=1.0):
         self.method = method
         self.nState = nState
         self.scaler = None
@@ -66,6 +66,7 @@ class anomaly_detector(learning_base):
         self.cost       = cost
         self.nu         = nu
 
+        self.ths_mult = ths_mult
         self.nugget = nugget
         self.theta0 = theta0
         
@@ -78,7 +79,7 @@ class anomaly_detector(learning_base):
         # set param
         d = {'w_negative': self.w_negative, 'gamma': self.gamma,\
              'cost': self.cost, 'class_weight': self.weight, 'nu': self.nu,\
-             'nugget': self.nugget, 'theta0': self.theta0}
+             'ths_mult': self.ths_mult, 'nugget': self.nugget, 'theta0': self.theta0}
         self.dtc.set_params(**d)
 
         if self.method.find('hmmgp')>=0:
@@ -216,7 +217,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method or 'progress' in method:            
-            param_dist = {'ths_mult': uniform(-20.0,19.0),\
+            param_dist = {'ths_mult': uniform(-10.0,9.0),\
                           'nugget': [10, 50, 100, 200],\
                           'theta0': [0.5, 1.0, 1.5]}
         
