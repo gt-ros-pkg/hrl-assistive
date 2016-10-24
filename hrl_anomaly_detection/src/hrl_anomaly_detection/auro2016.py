@@ -376,6 +376,8 @@ if __name__ == '__main__':
                  default=False, help='No update.')    
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
     p.add_option('--save', action='store_true', dest='bSave',
@@ -463,14 +465,14 @@ if __name__ == '__main__':
         no_cov = False
         method = 'hmmgp'
         
-        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=-1, \
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
                          bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=0,\
-                                n_jobs=12, n_iter_search=2000, save=opt.bSave)
+                                n_jobs=opt.n_jobs, n_iter_search=2000, save=opt.bSave)
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
