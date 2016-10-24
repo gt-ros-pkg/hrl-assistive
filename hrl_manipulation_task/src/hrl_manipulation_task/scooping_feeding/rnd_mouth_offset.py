@@ -85,7 +85,7 @@ class mouth_noise():
                 if val2 == 0:
                     print "Collision - transition (mainly side movement)"
                     ps.data = [0.0,
-                               random.choice([-1.,1.])*random.uniform(0.02,0.04),
+                               random.choice([-1.,1.])*random.uniform(0.04,0.06),
                                abs(np.random.normal(scale=0.04))]
                 else:
                     print "Collision - transition (mainly lowering movement)"
