@@ -383,7 +383,7 @@ class classifier(learning_base):
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             # to prevent multiple same input we add noise into X
-            ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))
+            ll_post = np.array(ll_post) + np.random.normal(0.0, 0.001, np.shape(ll_post))
 
             if False:
                 from sklearn.utils import check_array

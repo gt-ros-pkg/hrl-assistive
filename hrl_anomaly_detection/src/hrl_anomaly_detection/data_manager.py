@@ -2473,7 +2473,7 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
-def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
+def subsampleData(X,Y,idx=None, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
 
     import random
 
@@ -2486,7 +2486,8 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
 
         X = np.array(X)[sample_id_list]
         Y = np.array(Y)[sample_id_list]
-        idx = np.array(idx)[sample_id_list]
+        if idx is not None:
+            idx = np.array(idx)[sample_id_list]
 
     print "before: ", np.shape(X), np.shape(Y)
     new_X = []
@@ -2497,13 +2498,15 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
             idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
             new_X.append( np.array(X)[i,idx_list].tolist() )
             new_Y.append( np.array(Y)[i,idx_list].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list].tolist() )
+            if idx is not None:
+                new_idx.append( np.array(idx)[i,idx_list].tolist() )
         else:
             idx_list = range(len(X[i]))
             random.shuffle(idx_list)
             new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
             new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+            if idx is not None:            
+                new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
 
     return new_X, new_Y, new_idx
 

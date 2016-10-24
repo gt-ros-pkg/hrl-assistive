@@ -75,11 +75,23 @@ class anomaly_detector(learning_base):
         d = {'w_negative': self.w_negative, 'gamma': self.gamma,\
              'cost': self.cost, 'class_weight': self.weight, 'nu': self.nu}
         self.dtc.set_params(**d)
+
+        if self.method.find('hmmgp')>=0:
+            nSubSample = 20 #20 # 20 
+            nMaxData   = 50 # 40 100
+            rnd_sample = True #False
+            train_X, train_Y, _ =\
+              dm.subsampleData(X, y, None,\
+                               nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
+        else:
+            train_X = X
+            train_Y = y
+
         
         # flatten the data
         if self.method.find('svm')>=0 or self.method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
-        X_train, y_train, _ = dm.flattenSample(X, y, remove_fp=remove_fp)
+        X_train, y_train, _ = dm.flattenSample(train_X, train_Y, remove_fp=remove_fp)
         ## print self.w_negative, self.weight
 
         if (self.method.find('svm')>=0 or self.method.find('sgd')>=0) and \
