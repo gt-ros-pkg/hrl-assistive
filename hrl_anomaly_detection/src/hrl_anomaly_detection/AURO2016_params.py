@@ -206,7 +206,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         if nPoints == 1:
             ROC_param_dict['fixed_param_range'] = [-1.0]
             ROC_param_dict['progress_param_range'] = [-5.0]
-            ROC_param_dict['hmmgp_param_range'] = [-15.0]
+            ROC_param_dict['hmmgp_param_range'] = [-4.9]
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
                           

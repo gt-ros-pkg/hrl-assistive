@@ -1143,6 +1143,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ll_classifier_test_labels = None
         step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
+        # TODO: set automatically!
         nLength = 200
     else:
 
