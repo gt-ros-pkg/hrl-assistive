@@ -470,6 +470,7 @@ var RFH = (function (module) {
 
         self.driveGo = function (event) {
 //            console.log("Clearing timer for new cmd");
+            self.resetTimeout();
             clearTimeout(timer);
             if (event.which === 1) { //Only react to left mouse button
                 self.setSafe();
@@ -539,6 +540,13 @@ var RFH = (function (module) {
         $('.turn-signal').on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
         $('.turn-signal').on('mouseenter.rfh', function(){self.$div.blur();}); // Blurs driving on enter.  Otherwise, blur occurs on 1st click, and blur cb sets unsafe, stopping turning.
 
+        var onTimeout = function() {RFH.actionMenu.startAction('lookingAction');};
+
+        self.resetTimeout = function () {
+            clearTimeout(self.timeout);
+            self.timeout = setTimeout(onTimeout, 15000);
+        };
+
         self.start = function () {           
             // everything i can think of to not get stuck driving...
             $('.turn-signal').on('mousedown.rfh', self.driveGo);
@@ -551,6 +559,7 @@ var RFH = (function (module) {
             moveToStop(getNearestStop());
             self.$div.on('resize.rfh', self.updateLineOffsets);
             $('#controls h3').text("Head Controls");
+            self.resetTimeout();
         };
 
         self.stop = function () {
