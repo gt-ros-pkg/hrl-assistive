@@ -318,12 +318,14 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     for method in method_list:
         print "---------- ", method, " -----------"
         n = len(ROC_data[method]['fn_labels'])
+        print np.shape(ROC_data[method]['fn_labels'])
         labels = ROC_data[method]['fn_labels'][0]            
         anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
             
         d = {x: anomalies.count(x) for x in anomalies}
         l_idx = np.array(d.values()).argsort()[-10:]
 
+        print "Max count is ", len(kFold_list)*2
         for idx in l_idx:
             print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx]
 
@@ -470,7 +472,7 @@ if __name__ == '__main__':
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
-        method = 'hmmgp'
+        method = 'progress'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
                                 n_jobs=opt.n_jobs, n_iter_search=3000, save=opt.bSave)
 
@@ -484,6 +486,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
+
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \

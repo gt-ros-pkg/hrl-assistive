@@ -53,11 +53,12 @@ import matplotlib.pyplot as plt
 
 
 class anomaly_detector(learning_base):
-    def __init__(self, method, nState, nLength=None,\
+    def __init__(self, method, nState, nLength,\
                  weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
                  ths_mult=-1.0, nugget=100.0, theta0=1.0):
         self.method = method
         self.nState = nState
+        self.nLength = nLength
         self.scaler = None
 
         self.weight     = weight
@@ -91,7 +92,7 @@ class anomaly_detector(learning_base):
                                nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
         else:
             train_X = X
-            train_Y = y
+            train_Y = y            
 
         
         # flatten the data
@@ -188,13 +189,14 @@ def getSamples(modeling_pkl):
     
 
 def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=None, file_idx=1,\
-                    n_jobs=8, n_iter_search=1000, save=False):
+                    n_jobs=8, n_iter_search=1000, startIdx=4, save=False):
     """
     Search the best classifier parameter set.
     """
 
     modeling_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(file_idx)+'.pkl')
     X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
+    nLength = startIdx+len(X_train[0])
 
     ## X = X_train
     ## y = y_train
@@ -223,9 +225,8 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                           ## 'nugget': [10, 50, 100, 200],\
                           ## 'theta0': [0.5, 1.0, 1.5]}
         
-        
     # run randomized search
-    clf           = anomaly_detector(method, param_dict['HMM']['nState'])
+    clf           = anomaly_detector(method, param_dict['HMM']['nState'], nLength=nLength)
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        cv=2, n_jobs=n_jobs,
                                        n_iter=n_iter_search)
