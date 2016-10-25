@@ -236,7 +236,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioWristRMSList'].append(audio_rms)
             raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
             ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
-            
+
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
@@ -248,6 +248,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                                                                              new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
+                
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -431,25 +432,39 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 print fileName, np.shape(local_vision_quat)
                 sys.exit()
 
-            ## plt.figure(1)
-            ## data_list = []
-            ## print fileName
-            ## for time_idx in xrange(len(vision_time)):
-
-            ##     ## startQuat = kinEEQuat[:,time_idx]
-            ##     startQuat = local_vision_quat[:,0]
-            ##     endQuat   = local_vision_quat[:,time_idx]
-            ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
-            ##     data_list.append(diff_ang)
-            
-            ## plt.plot(data_list)
-            ## plt.show()
-                
-
-            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
+            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
             vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)
+
+
+            ## if 'iteration_8' in fileName:
+            ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ##     vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True,\
+            ##                                           temp=True)
+            ##     plt.figure(1)
+            ##     ## data_list = []
+            ##     ## data_list2 = []
+            ##     print fileName
+            ##     ## for time_idx in xrange(len(vision_time)):
+
+            ##         ##     ## startQuat = kinEEQuat[:,time_idx]
+            ##         ##     startQuat = local_vision_quat[:,0]
+            ##         ##     endQuat   = local_vision_quat[:,time_idx]
+            ##         ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
+            ##         ##     data_list.append(diff_ang)
+            ##         ## data_list.append(local_vision_pos[0,time_idx])
+            ##         ## data_list2.append(vision_pos_array[0,time_idx])
+            ##     plt.subplot(2,1,1)
+            ##     plt.plot(vision_time, local_vision_pos[0], '-*')
+            ##     plt.plot(new_times, vision_pos_array[0], '-o')
+            ##     plt.subplot(2,1,2)
+            ##     plt.plot(vision_time)
+            ##     plt.show()
+
+                
+
+
 
             
         # vision change -----------------------------------------------------------
@@ -732,7 +747,7 @@ def downSampleAudio(time_array, data_array, new_time_array):
 
 
 
-def interpolationData(time_array, data_array, new_time_array, quat_flag=False, spline=True):
+def interpolationData(time_array, data_array, new_time_array, quat_flag=False, spline=True, temp=False):
     '''
     time_array: N - length array
     data_array: D x N - length array
@@ -747,12 +762,20 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
     n,m = np.shape(target_array)    
     if len(time_array) > m: time_array = time_array[0:m]
 
+    if time_array[-1] < new_time_array[-1]:
+        time_array[-1] = new_time_array[-1]
+
     # change quaternion sign
     if quat_flag:
         for i in xrange(m-1):            
             cosHalfTheta = np.sum(target_array[:,i]*target_array[:,i+1])
             if cosHalfTheta < 0.0:
                 target_array[:,i+1] *= -1.0
+
+    if len(time_array) < 4:
+        ## print "Time array is tooooooo short", np.shape(time_array)
+        nDim = len(target_array)
+        return np.zeros((nDim,len(new_time_array)))
 
     # remove repeated data
     if spline is True:
@@ -762,23 +785,41 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
             if time_array[i-1] != time_array[i]:
                 temp_time_array.append(time_array[i])
                 temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
+            ## elif np.linalg.norm(temp_data_array[:,-1]) != np.linalg.norm(target_array[:,i]):
+            ##     temp_time_array.append(temp_time_array[-1]+0.0001)
+            ##     temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
             else:
-                if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(target_array[:,i:i+1]):
-                    temp_data_array[:,-1:] = target_array[:,i:i+1]
+                if len(temp_data_array[0])>2:
+                    if np.linalg.norm(temp_data_array[:,-1]-temp_data_array[:,-2]) < \
+                      np.linalg.norm(target_array[:,i]-temp_data_array[:,-2]):
+                        temp_data_array[:,-1:] = target_array[:,i:i+1]
 
         time_array = temp_time_array
         target_array = temp_data_array
 
-    if len(time_array) < 4:
-        nDim = len(target_array)
-        return np.zeros((nDim,len(new_time_array)))
-    
+        
     new_data_array = None    
     for i in xrange(n):
         try:
             if spline:
-                interp = interpolate.splrep(time_array, target_array[i], s=0)
+                if len(time_array)<20:
+                    # linear interpolation time array
+                    temp_time_array = np.linspace(time_array[0], time_array[-1], 20 )
+                    interp_1d   = interpolate.interp1d(time_array, target_array[i])
+                    temp_target_array = interp_1d(temp_time_array)
+                    interp = interpolate.splrep(temp_time_array, temp_target_array, s=0)
+                else:                
+                    interp = interpolate.splrep(time_array, target_array[i], s=0)
                 interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+
+                ## if temp:
+                ##     print np.shape(time_array), np.shape(target_array), m
+                ##     print np.shape(new_time_array), np.shape(interp_data)
+                ##     plt.figure(1)
+                ##     plt.plot(time_array, target_array[i])
+                ##     plt.plot(new_time_array, interp_data, '-r')
+                ##     plt.show()
+                
             else:
                 if new_time_array[-1]>time_array[-1]:
                     interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
@@ -821,7 +862,10 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
 
-    return new_data_array
+    if len(np.shape(new_data_array)) < 2:
+        return [new_data_array]
+    else:
+        return new_data_array
     
 def interpolationQuatData(time_array, data_array, new_time_array):
     '''
@@ -1770,11 +1814,12 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             tpr_l.append( tp/(tp+fn) )
             tnr_l.append( tn/(fp+tn) )
 
-        max_score_idx[0].append( np.argmax(fscore_1) )
-        max_score_idx[1].append( np.argmax(fscore_0_5) )
-        max_score_idx[2].append( np.argmax(fscore_2) )
-        
-        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]]
+        max_score_idx[0].append( argmax(fscore_1) )
+        max_score_idx[1].append( argmax(fscore_0_5) )
+        max_score_idx[2].append( argmax(fscore_2) )
+
+        print "---------------------- ", method, " ----------------------"
+        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)
         print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
 
     ##     if method == 'progress' or method == 'hmmgp':
@@ -1822,13 +1867,14 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
                     
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
-                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                                   if delay_ll[i][ii]>=0 ]
-                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-                                   
+                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                    ##                if delay_ll[i][ii]>=0 ]
+                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
+                    print tp
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
@@ -2001,3 +2047,17 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
     return ROC_data
 
 
+def argmax(x, last=False):
+    """
+    Return the index of the maximum values.
+    If last option is enabled, only the last occurrence is returned. 
+    """
+
+    max_val = np.amax(x)
+    cnt = list(x).count(max_val)
+
+    if cnt > 1 and last:
+        indices = [i for i, v in enumerate(x) if v == max_val]
+        return indices[len(indices)/2]
+    else:
+        return np.argmax(x)

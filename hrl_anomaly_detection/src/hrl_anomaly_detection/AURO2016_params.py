@@ -178,7 +178,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_gamma': 0.01, \
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
-                          'sgd_gamma':0.32, 'sgd_w_negative':2.5
+                          'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
+                          'nugget': 104.12, 'theta0': 1.0
                           }
 
         

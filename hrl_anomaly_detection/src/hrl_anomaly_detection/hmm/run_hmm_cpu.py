@@ -239,20 +239,15 @@ def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=Fal
             cf_dict = {}
             cf_dict['method']      = dtc.method
             if method == 'progress':
-                ## cf_dict['nPosteriors'] = dtc.nPosteriors
                 cf_dict['l_statePosterior'] = dtc.l_statePosterior
-                cf_dict['ths_mult']    = dtc.ths_mult
                 cf_dict['ll_mu']       = dtc.ll_mu
                 cf_dict['ll_std']      = dtc.ll_std
                 cf_dict['logp_offset'] = dtc.logp_offset
             elif method == 'hmmgp':
-                ## cf_dict['nPosteriors'] = dtc.nPosteriors
-                cf_dict['ths_mult']    = dtc.ths_mult
+                ## cf_dict['logp_offset'] = dtc.logp_offset
                 dtc.save_model('./temp_hmmgp.pkl')
             elif method.find('svm')>=0:
                 dtc.save_model('./temp_'+method+'.pkl')
-                
-                
             
             print "Start to run classifiers"
             r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(run_classifiers)(iii, X_scaled, Y_train_org, \
@@ -449,10 +444,10 @@ if __name__ == '__main__':
                                                               nPoints=8)
         parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
                       'cov': np.linspace(0.5,10.0,5) }
-        max_check_fold = 1 #None
+        max_check_fold = 3 #None
         no_cov = False
 
-        param_dict['SVM']['gamma'] = 0.208
+        param_dict['SVM']['gamma'] = 1.0
         param_dict['SVM']['nu'] = 0.5
         
         raw_data_path = os.path.expanduser('~')+\

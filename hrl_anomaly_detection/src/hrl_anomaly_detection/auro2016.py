@@ -235,6 +235,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
+        print d.keys()
         kFold_list  = d['kFoldList']
         successData = d['successData']
         failureData = d['failureData']        
@@ -375,8 +376,12 @@ if __name__ == '__main__':
                  default=False, help='No update.')    
     p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
                  default=False, help='Set debug mode.')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
 
     
     opt, args = p.parse_args()
@@ -393,18 +398,19 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-    subjects = ['park']
-    subjects = ['kaci']
-    subjects = ['s1', 'test']
+    # Mikako - bad camera
+    # s1 - kaci - before camera calibration
+    subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
+    ## subjects = ['s1', 's5', 's6']
 
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
-    param_dict['HMM']['nState'] = 25
-    param_dict['HMM']['scale']  = 12.33
-    param_dict['HMM']['cov']    = 1.0
+    param_dict['HMM']['nState'] = 15
+    param_dict['HMM']['scale']  = 15.
+    param_dict['HMM']['cov']    = 1.5
 
 
     
@@ -415,7 +421,7 @@ if __name__ == '__main__':
         After localization: Raw or interpolated data plot
         '''
         successData = True
-        failureData = True
+        failureData = False
         modality_list   = ['kinematics', 'kinematics_des', 'audioWrist', 'ft', 'vision_landmark'] # raw plot
 
         dv.data_plot(subjects, opt.task, raw_data_path, save_data_path,\
@@ -423,11 +429,12 @@ if __name__ == '__main__':
                   local_range=local_range, rf_center=rf_center, global_data=True, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
                   successData=successData, failureData=failureData,\
+                  continuousPlot=True, \
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = True
+        failure_viz = False
         ## param_dict['data_param']['handFeatures'] = ['crossmodal_targetEEDist', \
         ##                                             'crossmodal_targetEEAng']
         
@@ -451,20 +458,21 @@ if __name__ == '__main__':
                           verbose=opt.bVerbose)
 
     elif opt.HMM_param_search:
-        from hrl_anomaly_detection.hmm import run_hmm_cpy as hmm_opt
-        parameters = {'nState': [20, 25], 'scale': np.linspace(3.0,15.0,10), \
-                      'cov': np.linspace(0.5,10.0,5) }
-        max_check_fold = 1 #None
+        from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
+        parameters = {'nState': [15, 20, 25], 'scale': np.linspace(10.0,20.0,10), \
+                      'cov': np.linspace(1.5,6.0,5) }
+        max_check_fold = len(subjects) #5 #None
         no_cov = False
+        method = 'hmmgp'
         
-        hmm_opt.tune_hmm(parameters, d, param_dict, save_data_path, verbose=True, n_jobs=opt.n_jobs, \
-                         bSave=opt.bSave, method=opt.method, max_check_fold=max_check_fold, no_cov=no_cov)
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
-        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=0,\
-                                n_jobs=8, n_iter_search=1000)
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
+                                n_jobs=opt.n_jobs, n_iter_search=3000, save=opt.bSave)
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 

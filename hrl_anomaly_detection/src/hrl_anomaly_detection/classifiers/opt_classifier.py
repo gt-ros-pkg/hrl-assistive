@@ -54,7 +54,8 @@ import matplotlib.pyplot as plt
 
 class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength=None,\
-                 weight=1., w_negative=1., gamma=1., cost=1., nu=0.5):
+                 weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
+                 ths_mult=-1.0, nugget=100.0, theta0=1.0):
         self.method = method
         self.nState = nState
         self.scaler = None
@@ -64,6 +65,10 @@ class anomaly_detector(learning_base):
         self.gamma      = gamma
         self.cost       = cost
         self.nu         = nu
+
+        self.ths_mult = ths_mult
+        self.nugget = nugget
+        self.theta0 = theta0
         
         self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )        
 
@@ -73,13 +78,26 @@ class anomaly_detector(learning_base):
 
         # set param
         d = {'w_negative': self.w_negative, 'gamma': self.gamma,\
-             'cost': self.cost, 'class_weight': self.weight, 'nu': self.nu}
+             'cost': self.cost, 'class_weight': self.weight, 'nu': self.nu,\
+             'ths_mult': self.ths_mult, 'nugget': self.nugget, 'theta0': self.theta0}
         self.dtc.set_params(**d)
+
+        if self.method.find('hmmgp')>=0:
+            nSubSample = 20 #20 # 20 
+            nMaxData   = 50 # 40 100
+            rnd_sample = True #False
+            train_X, train_Y, _ =\
+              dm.subsampleData(X, y, None,\
+                               nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
+        else:
+            train_X = X
+            train_Y = y
+
         
         # flatten the data
         if self.method.find('svm')>=0 or self.method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
-        X_train, y_train, _ = dm.flattenSample(X, y, remove_fp=remove_fp)
+        X_train, y_train, _ = dm.flattenSample(train_X, train_Y, remove_fp=remove_fp)
         ## print self.w_negative, self.weight
 
         if (self.method.find('svm')>=0 or self.method.find('sgd')>=0) and \
@@ -170,7 +188,7 @@ def getSamples(modeling_pkl):
     
 
 def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=None, file_idx=1,\
-                    n_jobs=8, n_iter_search=1000):
+                    n_jobs=8, n_iter_search=1000, save=False):
     """
     Search the best classifier parameter set.
     """
@@ -189,17 +207,21 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
         print "Setting parameter search range for ", method
         if 'svm' in method:
             param_dist = {'cost': [1.0],\
-                          'gamma': [2.0],\
-                          'weight': uniform(0.1,0.3),\
-                          'nu': uniform(0.1,0.5)
+                          'gamma': [1.0],\
+                          'weight': expon(scale=0.3),\
+                          'nu': [0.5]
                           }
-                #, #uniform(0.1,0.9)
+                ## 'gamma': uniform(0.05,2.0),\
                 # uniform(7.0,15.0)
                 # 'cost': uniform(0.5,4.0)
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method or 'progress' in method:            
-            param_dist = {'ths_mult': uniform(-20.0,19.0)}
+            param_dist = {'ths_mult': uniform(-5.0,4.0),\
+                          'nugget': uniform(100.0,50.0),\
+                          'theta0': uniform(1.0,0.5)}
+                          ## 'nugget': [10, 50, 100, 200],\
+                          ## 'theta0': [0.5, 1.0, 1.5]}
         
         
     # run randomized search
@@ -240,7 +262,23 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
     ## print(classification_report(y_true, y_pred))
     ## print()
 
+    if save:
+        savefile = os.path.join(save_data_path,'../','result_run_clf.txt')       
+        if os.path.isfile(savefile) is False:
+            with open(savefile, 'w') as file:
+                file.write( "-----------------------------------------\n")
+                for mean, std, param in score_list:
+                    file.write( "%0.3f (+/-%0.03f) for %r"
+                                % (mean, std * 2, param)+'\n\n')
+        else:
+            with open(savefile, 'a') as file:
+                file.write( "-----------------------------------------\n")
+                for mean, std, param in score_list:
+                    file.write( "%0.3f (+/-%0.03f) for %r"
+                                % (mean, std * 2, param)+'\n\n')
+        
 
+    return score_list[-1][0], score_list[-1][1], score_list[-1][2]
 
 
 if __name__ == '__main__':
@@ -301,7 +339,7 @@ if __name__ == '__main__':
                                                               nPoints=nPoints)
         param_dict['HMM']['nState'] = 20
         param_dict['HMM']['scale']  = 11.
-        param_dict['HMM']['cov']    = 5.25
+        param_dict['HMM']['cov']    = 0.5
         raw_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TEST/'
         save_data_path = os.path.expanduser('~')+\
@@ -319,7 +357,8 @@ if __name__ == '__main__':
     result_pkl = os.path.join(save_data_path, 'result_'+opt.task+'_'+str(opt.dim)+'_'+method+'.pkl')
 
 
-    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=8)
+    tune_classifier(save_data_path, opt.task, method, param_dict, param_dist=None, n_jobs=8,\
+                    n_iter_search=200)
     
     ## # get training X,y
     ## file_idx = 1

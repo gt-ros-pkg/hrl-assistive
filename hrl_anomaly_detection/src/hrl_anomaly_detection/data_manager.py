@@ -1393,7 +1393,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             audioWristRMS = d['audioWristRMSList'][idx]            
             unimodal_audioWristRMS = audioWristRMS
             if offset_flag:
-                unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
+                unimodal_audioWristRMS -= np.amin(audioWristRMS)
+                ## unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
@@ -1741,6 +1742,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
                 
+            ## dist = np.linalg.norm(visionLandmarkPos, axis=0)            
             dist = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
@@ -1928,15 +1930,15 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
-            ## audioWristRMS  = d['audioWristRMSList'][idx]
-            audioWristMFCC = d['audioWristMFCCList'][idx]            
+            audioWristRMS  = d['audioWristRMSList'][idx]
+            ## audioWristMFCC = d['audioWristMFCCList'][idx]            
 
-            ## if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
-            ## else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
-
-            dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            ## if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
-            if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
+            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+            ## dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
+            
+            if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
+            ## if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:
@@ -2471,7 +2473,7 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
-def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
+def subsampleData(X,Y,idx=None, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
 
     import random
 
@@ -2484,7 +2486,8 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
 
         X = np.array(X)[sample_id_list]
         Y = np.array(Y)[sample_id_list]
-        idx = np.array(idx)[sample_id_list]
+        if idx is not None:
+            idx = np.array(idx)[sample_id_list]
 
     print "before: ", np.shape(X), np.shape(Y)
     new_X = []
@@ -2495,13 +2498,15 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
             idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
             new_X.append( np.array(X)[i,idx_list].tolist() )
             new_Y.append( np.array(Y)[i,idx_list].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list].tolist() )
+            if idx is not None:
+                new_idx.append( np.array(idx)[i,idx_list].tolist() )
         else:
             idx_list = range(len(X[i]))
             random.shuffle(idx_list)
             new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
             new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+            if idx is not None:            
+                new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
 
     return new_X, new_Y, new_idx
 
