@@ -1814,11 +1814,12 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             tpr_l.append( tp/(tp+fn) )
             tnr_l.append( tn/(fp+tn) )
 
-        max_score_idx[0].append( np.argmax(fscore_1) )
-        max_score_idx[1].append( np.argmax(fscore_0_5) )
-        max_score_idx[2].append( np.argmax(fscore_2) )
-        
-        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]]
+        max_score_idx[0].append( argmax(fscore_1) )
+        max_score_idx[1].append( argmax(fscore_0_5) )
+        max_score_idx[2].append( argmax(fscore_2) )
+
+        print "---------------------- ", method, " ----------------------"
+        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)
         print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
 
     ##     if method == 'progress' or method == 'hmmgp':
@@ -1866,13 +1867,14 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
                     
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
-                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                                   if delay_ll[i][ii]>=0 ]
-                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-                                   
+                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                    ##                if delay_ll[i][ii]>=0 ]
+                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
+                    print tp
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
@@ -2045,3 +2047,17 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
     return ROC_data
 
 
+def argmax(x, last=False):
+    """
+    Return the index of the maximum values.
+    If last option is enabled, only the last occurrence is returned. 
+    """
+
+    max_val = np.amax(x)
+    cnt = list(x).count(max_val)
+
+    if cnt > 1 and last:
+        indices = [i for i, v in enumerate(x) if v == max_val]
+        return indices[len(indices)/2]
+    else:
+        return np.argmax(x)
