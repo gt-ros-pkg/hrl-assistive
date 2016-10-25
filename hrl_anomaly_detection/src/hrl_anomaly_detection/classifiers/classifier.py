@@ -946,7 +946,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         logp = ll_logp[j]
         post = ll_post[j]
 
-        weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+        weight = norm(loc=g_mu, scale=g_sig).pdf(idx)
 
         if weight < 1e-3: continue
         g_post   += post * weight
