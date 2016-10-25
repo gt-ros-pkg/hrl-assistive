@@ -661,7 +661,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
-    pkl_target_prefix = pkl_prefix.split('_')[0]+'_0.05'
+    pkl_target_prefix = pkl_prefix.split('_')[0] #+'_0.05'
 
     #------------------------------------------
     # Get features
