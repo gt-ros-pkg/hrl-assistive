@@ -54,7 +54,8 @@ from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
-    def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4,\
+                 ths_mult=-1.0,\
                  #progress time or state?
                  logp_offset = 0.0,\
                  class_weight=1.0, \
@@ -122,8 +123,10 @@ class classifier(learning_base):
         self.method = method
         self.nPosteriors = nPosteriors
         self.dt     = None
+        self.nLength = nLength
+        self.startIdx = startIdx
         self.verbose = verbose
-
+                
         # constants to adjust thresholds
         self.class_weight = class_weight
         self.ths_mult = ths_mult
@@ -214,6 +217,7 @@ class classifier(learning_base):
             self.nu          = nu
                         
         learning_base.__init__(self)
+
 
 
     def fit(self, X, y, ll_idx=None, parallel=True, warm_start=False):
@@ -324,9 +328,10 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
-                ## ll_idx = [ range() for i in xrange(len(X)) if y[i]<0 ]
-                print "Error>> ll_idx is not inserted"
-                sys.exit()
+                # Need to artificially generate ll_idx....
+                ll_idx = [ range(self.nLength)[self.startIdx:] for i in xrange(len(y)) if y[i]<0 ]
+                ## print "Error>> ll_idx is not inserted"
+                ## sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
