@@ -594,20 +594,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:        
-        ROC_data = {}
-    else:
-        ROC_data = ut.load_pickle(roc_pkl)
-
-    for i, method in enumerate(method_list):
-        if method not in ROC_data.keys() or method in ROC_dict['update_list'] or SVM_dict['renew']:
-            ROC_data[method] = {}
-            ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
@@ -635,23 +624,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     l_data = r
     print "finished to run run_classifiers"
 
-    for i in xrange(len(l_data)):
-        for j in xrange(nPoints):
-            try:
-                method = l_data[i].keys()[0]
-            except:
-                print l_data[i]
-                sys.exit()
-            if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-
-    for i, method in enumerate(method_list):
-        ROC_data[method]['complete'] = True
-
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         
     #-----------------------------------------------------------------------------------------
@@ -802,22 +775,9 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     #-----------------------------------------------------------------------------------------
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_target_prefix+'_'+str(idx)+'.pkl')
 
-        if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
-            ROC_data = {}
-        else:
-            ROC_data = ut.load_pickle(roc_pkl)
-
-        for i, method in enumerate(method_list):
-            if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
-                ROC_data[method] = {}
-                ROC_data[method]['complete'] = False 
-                ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
-                ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
+        if os.path.isfile(roc_pkl) is False or HMM_dict['renew']: ROC_data = {}
+        else: ROC_data = ut.load_pickle(roc_pkl)
+        ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
         osvm_data = None ; bpsvm_data = None
         if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
@@ -852,25 +812,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         l_data = r
         print "finished to run run_classifiers"
 
-        for i in xrange(len(l_data)):
-            for j in xrange(nPoints):
-                try:
-                    method = l_data[i].keys()[0]
-                except:
-                    print l_data[i]
-                    sys.exit()
-                if ROC_data[method]['complete'] == True: continue
-                ROC_data[method]['tp_l'][j] += l_data[i][method]['tp_l'][j]
-                ROC_data[method]['fp_l'][j] += l_data[i][method]['fp_l'][j]
-                ROC_data[method]['tn_l'][j] += l_data[i][method]['tn_l'][j]
-                ROC_data[method]['fn_l'][j] += l_data[i][method]['fn_l'][j]
-                ROC_data[method]['delay_l'][j] += l_data[i][method]['delay_l'][j]
-                ROC_data[method]['tp_delay_l'][j].append( l_data[i][method]['delay_l'][j] )
-                ROC_data[method]['tp_idx_l'][j].append( l_data[i][method]['tp_idx_l'][j] )
-
-        for i, method in enumerate(method_list):
-            ROC_data[method]['complete'] = True
-
+        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
 
         #-----------------------------------------------------------------------------------------
@@ -894,6 +836,76 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
         
+
+def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         step_mag, pkl_prefix,\
+                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    dim        = len(data_dict['handFeatures'])
+    # AE
+    AE_dict    = param_dict['AE']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    add_logp_d = HMM_dict.get('add_logp_d', False)
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # reference data #TODO
+    ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
+                                 '_'+str(dim))
+    pkl_target_prefix = pkl_prefix.split('_')[0]+'_0.05'
+
+    #------------------------------------------
+    # Get features
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(ref_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+    
+    score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+    delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
+    ROC_data = ut.load_pickle(roc_pkl)
+    scores, delays = cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
+                                            timeList=timeList, verbose=False)
+
+    for i in xrange(len(method_list)):
+        for j in xrange(3):
+            score_list[j][i].append( scores[j][i] )
+            delay_list[j][i] += delays[j][i]
+            ## print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
+
+    if no_plot is False:
+        plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
+        
+
 
 
 def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -2248,16 +2260,19 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif False:
+        elif 0:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif False:
+        elif 0:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif False:
+        elif 1:
+            step_mag = 0.15*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_0.15'
+        elif 0:
             step_mag = 0.2*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.2'
-        elif False:
+        elif 0:
             step_mag = 0.25*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.25'
         elif True:
