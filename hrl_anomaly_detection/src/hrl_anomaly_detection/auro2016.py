@@ -408,9 +408,9 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
-    param_dict['HMM']['nState'] = 15
-    param_dict['HMM']['scale']  = 15.
-    param_dict['HMM']['cov']    = 1.5
+    param_dict['HMM']['nState'] = 20
+    param_dict['HMM']['scale']  = 15.55
+    param_dict['HMM']['cov']    = 3.75
 
 
     
@@ -483,6 +483,7 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationUnexpected:
+        param_dict['ROC']['methods'] = ['progress', 'hmmgp']
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \

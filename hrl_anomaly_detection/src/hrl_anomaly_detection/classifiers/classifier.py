@@ -1131,8 +1131,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
 
-        if modeling_pkl_prefix is not None and delay_estimation is False:
-            idx = int(modeling_pkl_prefix.split('_')[-1])
+        ## if modeling_pkl_prefix is not None and delay_estimation is False:
+        ##     idx = int(modeling_pkl_prefix.split('_')[-1])
             
         X_train_org   = raw_data[raw_data_idx][idx]['X_scaled']
         Y_train_org   = raw_data[raw_data_idx][idx]['Y_train_org']

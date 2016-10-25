@@ -1874,7 +1874,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
-                    print tp
+                    print tp, j, method
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
@@ -1883,6 +1883,70 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     ##     print delay_list
                     ##     print time_step
                     ##     sys.exit()
+                    
+    return m_score_l, m_delay_l
+
+def cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
+                           timeList=None, verbose=True):
+
+    m_score_l  = [[],[],[]]
+    m_delay_l = [[],[],[]]
+
+
+    for mi, method in enumerate(method_list):
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            ## print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        tp_l = []
+        fp_l = []
+        tpr_l = []
+        f_scores = [[],[],[]]
+        for i in xrange(nPoints):
+
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
+            tp_l.append(tp)
+            fp_l.append(fp)
+            tpr_l.append( tp/(tp+fn) )
+            f_scores[0].append(2.0*tp/(2.0*tp+fn+fp))
+            f_scores[1].append(1.25*tp/(1.25*tp+0.25*fn+fp))
+            f_scores[2].append(5.0*tp/(5.0*tp+4.0*fn+fp))
+
+        ## idx = np.argmin(fp_l) 
+        ## idx = np.argmax(tp_l) 
+        ## idx = np.argmax(tpr_l) 
+        ## tp = float(np.sum(tp_ll[idx]))
+        ## fn = float(np.sum(fn_ll[idx]))
+        ## fp = float(np.sum(fp_ll[idx]))
+       
+        # 0: f1, 1: f0.5, 2: f2        
+        for j in xrange(3):
+
+            idx = np.argmin(fp_l) 
+            #idx = np.argmax(f_scores[j])
+            print method, idx, np.shape(fp_l)
+            fscore = f_scores[j][idx]
+            ## if j==0: fscore = 2.0*tp/(2.0*tp+fn+fp)
+            ## elif j==1: fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
+            ## else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
+                    
+            ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[idx][ii]*time_step for ii in xrange(len(delay_ll[idx])) ]
+
+            m_score_l[j].append( fscore )
+            m_delay_l[j].append( delay_list )
                     
     return m_score_l, m_delay_l
 
@@ -2047,7 +2111,7 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
     return ROC_data
 
 
-def argmax(x, last=False):
+def argmax(x, last=True):
     """
     Return the index of the maximum values.
     If last option is enabled, only the last occurrence is returned. 
