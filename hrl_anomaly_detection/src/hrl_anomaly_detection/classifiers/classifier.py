@@ -329,7 +329,12 @@ class classifier(learning_base):
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
                 # Need to artificially generate ll_idx....
-                ll_idx = [ range(self.nLength)[self.startIdx:] for i in xrange(len(y)) if y[i]<0 ]
+                nSample  = len(y)/(self.nLength-self.startIdx)
+                idx_list = range(self.nLength)[self.startIdx:]
+                ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample) if y[i*(self.nLength-self.startIdx)+1]<0 ]
+                ## ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+                ## print np.shape(ll_logp), np.shape(ll_idx), np.shape(y), len(y)/(self.nLength-self.startIdx)
+                ## sys.exit()
                 ## print "Error>> ll_idx is not inserted"
                 ## sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
