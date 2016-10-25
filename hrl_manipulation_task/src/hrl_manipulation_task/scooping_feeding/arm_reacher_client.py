@@ -55,8 +55,21 @@ if __name__ == '__main__':
     armReachActionRight = rospy.ServiceProxy("/right/arm_reach_enable", String_String)
 
 
+    ## import time
+    ## t1 = datetime.datetime.now()
+    ## ## rospy.sleep(0.1)
+    ## time.sleep(0.1)
+    ## t2 = datetime.datetime.now()
+    ## t  = t2-t1
+    ## print "time delay: ", t.seconds
+    ## print t
+    ## sys.exit()
+
     ## if True:
-    ##     print armReachActionLeft("movestest")
+    ##     #print armReachActionLeft("movestest")
+    ##     print armReachActionLeft("getHeadPos")
+    ##     print armReachActionLeft("initFeeding2")
+    ##     print armReachActionLeft("runFeeding")
     ##     sys.exit()
 
 

@@ -487,7 +487,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 if 'audioWrist' in modality:
                     time_list = target_dict['audioWristTimesList']
                     data_list = target_dict['audioWristRMSList']
-                    
+
                 elif 'audio' in modality:
                     time_list = target_dict['audioTimesList']
                     data_list = target_dict['audioPowerList']
@@ -639,8 +639,9 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                     
                 else:
                     interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
+                    if len(data_list) == 0: continue
                     for i in xrange(len(data_list)):
-                        ax.plot(interp_time, data_list[i], c=color)                
+                        ax.plot(interp_time, np.squeeze(data_list[i]), c=color)                
                 
                 ax.set_xlim(time_lim)
                 ax.set_title(modality)

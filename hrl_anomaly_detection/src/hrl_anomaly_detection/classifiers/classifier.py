@@ -110,6 +110,9 @@ class classifier(learning_base):
                  progress_svm_w_negative = 7.0,\
                  progress_svm_cost       = 4.,\
                  progress_svm_gamma      = 0.3,\
+                 # hmmgp
+                 theta0 = 1.0,\
+                 nugget = 100.0,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -196,9 +199,11 @@ class classifier(learning_base):
             from sklearn import gaussian_process
             self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
             self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linear'
+            self.nugget = nugget
+            self.theta0 = theta0
 
-            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                       normalize=True, nugget=100.)            
+            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=self.theta0, corr=self.corr, \
+                                                       normalize=True, nugget=self.nugget)            
         elif self.method == 'hmmsvr':
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
@@ -319,6 +324,7 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
+                ## ll_idx = [ range() for i in xrange(len(X)) if y[i]<0 ]
                 print "Error>> ll_idx is not inserted"
                 sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
@@ -382,7 +388,7 @@ class classifier(learning_base):
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             # to prevent multiple same input we add noise into X
-            ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))
+            ll_post = np.array(ll_post) + np.random.normal(0.0, 0.001, np.shape(ll_post))
 
             if False:
                 from sklearn.utils import check_array
@@ -772,7 +778,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':       
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            svm.svm_save_model(use_pkl, self.dt)
+            svm.svm_save_model(fileName, self.dt)
         elif self.method.find('sgd')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
@@ -804,7 +810,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            self.dt = svm.svm_load_model(use_pkl) 
+            self.dt = svm.svm_load_model(fileName) 
         elif self.method.find('sgd')>=0:
             import pickle
             with open(fileName, 'rb') as f:
@@ -904,7 +910,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
-            
+        
         if min_dist > dist:
             min_index = j
             min_dist  = dist

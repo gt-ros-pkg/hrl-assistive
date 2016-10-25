@@ -94,13 +94,13 @@ def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
     return kFold_list
 
 def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
-    '''
+    """
     Output:
     Normal training data 
     Abnormal training data 
     Normal test data 
     Abnormal test data 
-    '''
+    """
 
     normal_folds   = cross_validation.KFold(nNormal, n_folds=nNormalFold, shuffle=True)
     abnormal_folds = cross_validation.KFold(nAbnormal, n_folds=nAbnormalFold, shuffle=True)
@@ -116,6 +116,69 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
 
     return kFold_list
 
+def LOPO_data_index(success_data_list, failure_data_list, \
+                    success_file_list, failure_file_list, many_to_one=True):
+    """
+    Return completed set of success and failure data with LOPO cross-validatation fold list
+    """
+    nSubject = len(success_data_list)
+    successIdx = []
+    failureIdx = []
+    success_files = []
+    failure_files = []
+    for i in xrange(nSubject):
+
+        if i == 0:
+            success_data = success_data_list[i]
+            failure_data = failure_data_list[i]
+            successIdx.append( range(len(success_data_list[i][0])) )
+            failureIdx.append( range(len(failure_data_list[i][0])) )
+        else:
+            success_data = np.vstack([ np.swapaxes(success_data,0,1), \
+                                      np.swapaxes(success_data_list[i], 0,1)])
+            failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
+                                      np.swapaxes(failure_data_list[i], 0,1)])
+            success_data = np.swapaxes(success_data, 0, 1)
+            failure_data = np.swapaxes(failure_data, 0, 1)
+            successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
+                                     len(success_data_list[i][0])) )
+            failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
+                                     len(failure_data_list[i][0])) )
+
+        success_files += success_file_list[i]
+        failure_files += failure_file_list[i]
+
+    # only for hmm tuning
+    kFold_list = []
+    # leave-one-person-out
+    for idx in xrange(nSubject):
+        idx_list = range(nSubject)
+        train_idx = idx_list[:idx]+idx_list[idx+1:]
+        test_idx  = idx_list[idx:idx+1]        
+
+        normalTrainIdx = []
+        abnormalTrainIdx = []
+        for tidx in train_idx:
+            if many_to_one:
+                normalTrainIdx   += successIdx[tidx]
+                abnormalTrainIdx += failureIdx[tidx]
+            else:                
+                normalTrainIdx   = successIdx[tidx]
+                abnormalTrainIdx = failureIdx[tidx]
+                normalTestIdx    = successIdx[test_idx[0]]
+                abnormalTestIdx  = failureIdx[test_idx[0]]
+                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
+        if many_to_one:
+            normalTestIdx = []
+            abnormalTestIdx = []
+            for tidx in test_idx:
+                normalTestIdx   += successIdx[tidx]
+                abnormalTestIdx += failureIdx[tidx]
+
+            kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
+
+    return success_data, failure_data, success_files, failure_files, kFold_list
 
 
 #-------------------------------------------------------------------------------------------------
@@ -351,9 +414,9 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 save_pdf=False, solid_color=True, \
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
                 time_sort=False, max_time=None):
-    '''
-    Get data per subject
-    '''
+    """
+    Get data per subject. It also returns leave-one-out cross-validataion indices.
+    """
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
@@ -401,6 +464,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         # leave-one-person-out
         successDataList = []
         failureDataList = []
+        successFileList = []
+        failureFileList = []
         for i in xrange(len(subject_names)):
 
             ## train_subjects = subject_names[:i]+subject_names[i+1:]
@@ -430,10 +495,14 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
             successDataList.append(successData)
             failureDataList.append(failureData)
+            successFileList.append(success_list)
+            failureFileList.append(failure_list)
 
         data_dict = {}
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
+        data_dict['successFileList'] = successFileList
+        data_dict['failureFileList'] = failureFileList        
         data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['param_dict']      = param_dict
         
@@ -479,6 +548,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         if fig is None: fig = plt.figure()
 
         for failureData in failureDataList:
+            if len(failureData)==0: break
             n,m,k = np.shape(failureData)            
             nPlot = n
 
@@ -1231,6 +1301,8 @@ def variancePooling(X, param_dict):
 def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dict=None, verbose=False, \
                        renew_minmax=False):
 
+    if len(d['timesList']) == 0: return [], {}
+
     if init_param_dict is None:
         isTrainingData=True
         param_dict = {}
@@ -1321,7 +1393,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             audioWristRMS = d['audioWristRMSList'][idx]            
             unimodal_audioWristRMS = audioWristRMS
             if offset_flag:
-                unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
+                unimodal_audioWristRMS -= np.amin(audioWristRMS)
+                ## unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
@@ -1669,6 +1742,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
                 
+            ## dist = np.linalg.norm(visionLandmarkPos, axis=0)            
             dist = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
@@ -1856,15 +1930,15 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
 
         # AudioWrist ---------------------------------------
         if 'wristAudio' in raw_feature_list:
-            ## audioWristRMS  = d['audioWristRMSList'][idx]
-            audioWristMFCC = d['audioWristMFCCList'][idx]            
+            audioWristRMS  = d['audioWristRMSList'][idx]
+            ## audioWristMFCC = d['audioWristMFCCList'][idx]            
 
-            ## if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
-            ## else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
-
-            dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            ## if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
-            if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
+            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+            ## dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
+            
+            if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
+            ## if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:
@@ -2319,7 +2393,7 @@ def flattenSample(ll_X, ll_Y, ll_idx=None, remove_fp=False):
                     l_Y += ll_Y[i].tolist()
             else:
                 for j in xrange(len(ll_X[i])):
-                    if ll_X[i][j][0] < means[j]-2.0*stds[j]+10.:
+                    if ll_X[i][j][0] < means[j]-1.0*stds[j]-10:
                         break
                 ## X,Y = getEstTruePositive(ll_X[i])
                 l_X += np.array(ll_X)[i][j:].tolist()
@@ -2399,7 +2473,7 @@ def sampleWithWindow(ll_X, window=2):
     return ll_X_new
 
 
-def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
+def subsampleData(X,Y,idx=None, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=False):
 
     import random
 
@@ -2412,7 +2486,8 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
 
         X = np.array(X)[sample_id_list]
         Y = np.array(Y)[sample_id_list]
-        idx = np.array(idx)[sample_id_list]
+        if idx is not None:
+            idx = np.array(idx)[sample_id_list]
 
     print "before: ", np.shape(X), np.shape(Y)
     new_X = []
@@ -2423,13 +2498,15 @@ def subsampleData(X,Y,idx, nSubSample=40, nMaxData=50, startIdx=4, rnd_sample=Fa
             idx_list = np.linspace(startIdx, len(X[i])-1, nSubSample).astype(int)
             new_X.append( np.array(X)[i,idx_list].tolist() )
             new_Y.append( np.array(Y)[i,idx_list].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list].tolist() )
+            if idx is not None:
+                new_idx.append( np.array(idx)[i,idx_list].tolist() )
         else:
             idx_list = range(len(X[i]))
             random.shuffle(idx_list)
             new_X.append( np.array(X)[i,idx_list[:nSubSample]].tolist() )
             new_Y.append( np.array(Y)[i,idx_list[:nSubSample]].tolist() )
-            new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
+            if idx is not None:            
+                new_idx.append( np.array(idx)[i,idx_list[:nSubSample]].tolist() )
 
     return new_X, new_Y, new_idx
 
@@ -2450,3 +2527,87 @@ def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
 
     return data
 
+
+def saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                           task_name, processed_data_path,\
+                           HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                           success_files=None, failure_files=None,\
+                           add_logp_d=False, verbose=False):
+    """
+    Training HMM, and getting classifier training and testing data.
+    """
+    
+    from hrl_anomaly_detection.hmm import learning_hmm as hmm
+
+    if type(successData) is list:
+        successData = np.array(successData)
+        failureData = np.array(failureData)
+
+    # HMM-induced vector with LOPO
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        # Training HMM, and getting classifier training and testing data
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
+            print idx, " : learned hmm exists"
+            continue
+
+        # dim x sample x length
+        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
+        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
+        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
+        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
+
+        # training hmm
+        if verbose: print "start to fit hmm"
+        nEmissionDim = len(normalTrainData)
+        nLength      = len(normalTrainData[0][0]) - startIdx
+        cov_mult     = [cov]*(nEmissionDim**2)
+
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+        ret = ml.fit(normalTrainData+\
+                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                     cov_mult=cov_mult, use_pkl=False)
+        if ret == 'Failure' or np.isnan(ret):
+            print "hmm training failed"
+            sys.exit()
+
+        # Classifier training data
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
+        
+        # Classifier test data
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+
+        if success_files is not None:
+            ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
+            ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+        else:
+            ll_classifier_test_labels = None
+
+        #-----------------------------------------------------------------------------------------
+        d = {}
+        d['nEmissionDim'] = ml.nEmissionDim
+        d['A']            = ml.A 
+        d['B']            = ml.B 
+        d['pi']           = ml.pi
+        d['F']            = ml.F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_train_X']  = ll_classifier_train_X
+        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']= ll_classifier_train_idx
+        d['ll_classifier_test_X']   = ll_classifier_test_X
+        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = ll_classifier_test_labels
+        d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
+        ## d['normalTrainData']   = normalTrainData
+        ## d['abnormalTrainData'] = abnormalTrainData
+        ## d['normalTestData']    = normalTestData
+        ## d['abnormalTestData']  = abnormalTestData
+        ut.save_pickle(d, modeling_pkl)
