@@ -2047,7 +2047,7 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
     return ROC_data
 
 
-def argmax(x, last=False):
+def argmax(x, last=True):
     """
     Return the index of the maximum values.
     If last option is enabled, only the last occurrence is returned. 
