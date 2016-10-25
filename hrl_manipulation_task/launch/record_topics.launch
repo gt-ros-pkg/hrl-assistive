@@ -1,36 +1,81 @@
 <launch>
 
-  <arg name="fname" default="feeding_hrl"/>
+  <arg name="fname" default="test"/>
+
+  <!--node pkg="topic_tools" type="throttle" name="kinect_throttle"
+        args="messages /head_mount_kinect/hd/points 0.05" /-->
+  <node pkg="topic_tools" type="throttle" name="tf_throttle"
+        args="messages /tf 50" />
+  <node pkg="topic_tools" type="throttle" name="joint_states_throttle"
+        args="messages /joint_states 50" />
+  <node pkg="topic_tools" type="throttle" name="netft_data_throttle"
+        args="messages /netft_data 50" />
 
   
-  <node pkg="rosbag" type="record" name="rosbag" args="record -o $(find hrl_manipulation_task)/data/$(arg fname) 
-                                                       /tf
-                                                       /joint_states
-                                                       /l_arm_controller/command
-                                                       /l_arm_controller/follow_joint_trajectory/cancel
-                                                       /l_arm_controller/follow_joint_trajectory/feedback
-                                                       /l_arm_controller/follow_joint_trajectory/goal
-                                                       /l_arm_controller/follow_joint_trajectory/result
-                                                       /l_arm_controller/follow_joint_trajectory/status
-                                                       /l_arm_controller/joint_trajectory_action/cancel
-                                                       /l_arm_controller/joint_trajectory_action/feedback
-                                                       /l_arm_controller/joint_trajectory_action/goal
-                                                       /l_arm_controller/joint_trajectory_action/result
-                                                       /l_arm_controller/joint_trajectory_action/status
-                                                       /l_arm_controller/state
-                                                       /haptic_mpc/goal_pose
-                                                       /haptic_mpc/weights
-                                                       /haptic_mpc/goal_posture
-                                                       /right/haptic_mpc/goal_pose
-                                                       /right/haptic_mpc/weights
-                                                       /right/haptic_mpc/goal_posture
-                                                       /ar_pose_marker
+  <node pkg="rosbag" type="record" name="rosbag" args="record -o
+                                                       /home/dpark/$(arg fname) 
+                                                       /tf_throttle
+                                                       /joint_states_throttle
+                                                       /haptic_mpc/goal_pose_array
                                                        /haptic_mpc/robot_state
-                                                       HarkSrcFFT/all
-                                                       julius_recog_cmd
-                                                       /head_traj_controller/state
-                                                       /hrl_manipulation_task/changes
-                                                       /pressure/r_gripper_motor
-                                                       /netft_data
+                                                       /right/haptic_mpc/robot_state
+                                                       /right/haptic_mpc/gripper_pose
+                                                       /hrl_manipulation_task/raw_data
+                                                       /hrl_manipulation_task/wrist_audio
+                                                       /haptic_mpc/traj_pose
+                                                       /netft_data_throttle
+                                                       /hrl_manipulation_task/mouth_pose
+                                                       /hrl_manipulation_task/mouth_pose_backpack
+                                                       /pr2_fabric_l_forearm_sensor/disable_sensor
+                                                       /pr2_fabric_l_forearm_sensor/enable_sensor
+                                                       /pr2_fabric_l_forearm_sensor/taxels/data_valid
+                                                       /pr2_fabric_l_forearm_sensor/taxels/forces
+                                                       /pr2_fabric_l_forearm_sensor/taxels/raw_data
+                                                       /pr2_fabric_l_forearm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_l_forearm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_l_forearm_sensor/zero_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/disable_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/enable_sensor
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/data_valid
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/forces
+                                                       /pr2_fabric_l_upperarm_sensor/taxels/raw_data
+                                                       /pr2_fabric_l_upperarm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_l_upperarm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_l_upperarm_sensor/zero_sensor
+                                                       /pr2_fabric_r_forearm_sensor/disable_sensor
+                                                       /pr2_fabric_r_forearm_sensor/enable_sensor
+                                                       /pr2_fabric_r_forearm_sensor/taxels/data_valid
+                                                       /pr2_fabric_r_forearm_sensor/taxels/forces
+                                                       /pr2_fabric_r_forearm_sensor/taxels/raw_data
+                                                       /pr2_fabric_r_forearm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_r_forearm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_r_forearm_sensor/zero_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/disable_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/enable_sensor
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/data_valid
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/forces
+                                                       /pr2_fabric_r_upperarm_sensor/taxels/raw_data
+                                                       /pr2_fabric_r_upperarm_sensor/viz/taxel_array_array
+                                                       /pr2_fabric_r_upperarm_sensor/viz/taxel_array_text_array
+                                                       /pr2_fabric_r_upperarm_sensor/zero_sensor
+                                                       /SR300/depth_registered/sw_registered/image_rect
+                                                       /SR300/depth_registered/sw_registered/camera_info
+                                                       /SR300/rgb/image_raw
+                                                       /SR300/rgb/camera_info
+                                                       /SR300/depth/points
+                                                       /SR300/depth/camera_info
+                                                       /head_mount_kinect/hd/points
+                                                       /head_mount_kinect/hd/camera_info
                                                        " output="screen"/>
 </launch>
+
+
+
+<!--                                                       /pressure/r_gripper_motor
+                                                       /head_traj_controller/state
+                                                       /l_arm_controller
+                                                       /r_arm_controller
+                                                     /ar_pose_marker
+                                                     HarkSrcFFT/all
+                                                       julius_recog_cmd
+    -->
