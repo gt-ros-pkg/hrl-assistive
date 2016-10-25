@@ -53,7 +53,7 @@ var RFH = (function (module) {
         gripperMaterial.transparent = true;
         gripperMaterial.depthTest = false;
         gripperMaterial.depthWrite = false;
-        //gripperMaterial.color.setRGB(1.6,1.6,1.6); // Light gray default
+        gripperMaterial.color.setRGB(1.6,1.6,1.6); // Light gray default
         gripperMaterial.color.setRGB(2.4,2.4,0.2);
         gripperMaterial.opacity = 0.55;
 
@@ -124,7 +124,7 @@ var RFH = (function (module) {
             palmMesh.material = goalMaterial;
             goalGripper.add(palmMesh.clone());
 
-            //        tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
+            tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
         };
 
         var fingerOnLoad = function (collada) {
@@ -203,7 +203,7 @@ var RFH = (function (module) {
             name: fullSide + '_arm/haptic_mpc/goal_pose', 
             messageType: 'geometry_msgs/PoseStamped'
         });
-//        handGoalSubscriber.subscribe(displayGoalPose);
+        handGoalSubscriber.subscribe(displayGoalPose);
 
         var deadzoneCB = function (bool_msg) {
             goalGripper.visible = !bool_msg.data;
@@ -213,7 +213,7 @@ var RFH = (function (module) {
             name: fullSide+'_arm/haptic_mpc/in_deadzone',
             messageType: 'std_msgs/Bool'
         });
-//        deadZoneSubscriber.subscribe(deadzoneCB);
+        deadZoneSubscriber.subscribe(deadzoneCB);
 
         self.showPreviewGripper = function(ps) {
             previewGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);

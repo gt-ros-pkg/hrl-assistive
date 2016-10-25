@@ -109,8 +109,8 @@ var RFH = (function (module) {
             RFH.runStop = new RFH.RunStop({ros: RFH.ros});
 
             RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                imageTopic: '/head_mount_kinect/hd/image_color',
-                infoTopic: '/head_mount_kinect/hd/camera_info',
+                imageTopic: '/head_mount_kinect/qhd/image_color',
+                infoTopic: '/head_mount_kinect/qhd/camera_info',
                 divId: 'video-main',
                 imageId: 'mjpeg-image',
                 host: RFH.ROBOT,
@@ -159,7 +159,7 @@ var RFH = (function (module) {
             RFH.pingRelay = new RFH.PingRelay({ros: RFH.ros,
                                                inTopic: '/ping_relay_out',
                                                outTopic: '/ping_relay_return'});
-            RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
+//            RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
             // RFH.initTaskMenu();
 
             /* Added content for left column */

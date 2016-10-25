@@ -41,7 +41,7 @@ var RFH = (function (module) {
         $(window).on('resize.rfh', resizeRenderer);
         resizeRenderer();
 
-        RFH.tfClient.subscribe('head_mount_kinect_rgb_link', updateCamera);
+        RFH.tfClient.subscribe('head_mount_kinect_mid_link', updateCamera);
     };
     return module;
 })(RFH || {});
