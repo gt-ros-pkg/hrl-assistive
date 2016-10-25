@@ -2234,14 +2234,15 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
         elif opt.task == 'feeding':
+            nPoints = 50
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
-            param_dict['ROC']['hmmgp_param_range']  = np.logspace(2.1, 2.8, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range']  = np.logspace(2.1, 3.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-            param_dict['ROC']['progress_param_range'] = -np.logspace(1.6, 2.5, nPoints)            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-4,0,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,-2,nPoints)
+            param_dict['ROC']['progress_param_range'] = -np.logspace(1.0, 2.5, nPoints)            
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-5,0,nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-5,-1,nPoints)
             param_dict['ROC']['fixed_param_range']  = np.linspace(0.0, -2.5, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(-5.0, -55.0, nPoints)
+            param_dict['ROC']['change_param_range'] = np.linspace(0.0, -55.0, nPoints)
 
 
         if False:
@@ -2253,7 +2254,7 @@ if __name__ == '__main__':
         elif False:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        elif False:
+        elif True:
             step_mag = 0.25*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.25'
         elif True:
