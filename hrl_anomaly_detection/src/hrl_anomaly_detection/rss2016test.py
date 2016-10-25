@@ -798,14 +798,14 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         # parallelization
         if debug: n_jobs=1
         else: n_jobs=-1
-        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
+        r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( iidx, processed_data_path, task_name, \
                                                                              method, ROC_data, \
                                                                              ROC_dict, AE_dict, \
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState, \
                                                                              modeling_pkl_prefix=\
-                                                                             'hmm_'+pkl_target_prefix+'_'+str(idx)+'_'+str(iidx))\
+                                                                             'hmm_'+pkl_target_prefix+'_'+str(idx))\
                                                                              for iidx in xrange(len(normal_folds))
                                                                              for method in method_list )
 
