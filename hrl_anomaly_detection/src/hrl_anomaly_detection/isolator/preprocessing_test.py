@@ -425,10 +425,10 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         sys.exit()
 
     # Create anomaly classifier
-    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
     dtc.set_params( class_weight=weight )
     dtc.set_params( ths_mult = weight )    
-    ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)
+    ret = dtc.fit(X_train, Y_train, idx_train)
 
     # anomaly detection
     detection_idx = [None for i in xrange(len(ll_classifier_test_X))]

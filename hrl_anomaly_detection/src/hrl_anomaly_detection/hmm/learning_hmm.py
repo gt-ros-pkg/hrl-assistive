@@ -334,6 +334,7 @@ class learning_hmm(learning_base):
                     t_o += alpha[-1][j]*(self.B[j][0][i] + \
                                          self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
                                          (x[-1]-self.B[j][0][nOrder]))
+                print np.sum(alpha[-1])
                 x_pred.append(t_o)
                 
         return x_pred
