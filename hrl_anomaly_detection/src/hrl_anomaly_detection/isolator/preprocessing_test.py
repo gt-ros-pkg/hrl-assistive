@@ -135,7 +135,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    window_size = [10,10]
+    window_size = [10,20]
 
     param_dict2  = d['param_dict']
     if 'timeList' in param_dict2.keys():
@@ -590,6 +590,7 @@ if __name__ == '__main__':
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
+                       ## handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.HMM_param_search:

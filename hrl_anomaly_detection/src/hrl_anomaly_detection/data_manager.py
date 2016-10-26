@@ -413,6 +413,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
+                isolationFeatures=[],\
                 time_sort=False, max_time=None):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
@@ -460,6 +461,11 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         else:
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
                                                      cut_data=cut_data)
+
+        ## if len(isolationFeatures) > 0:
+        ##     allData_isol, param_dict_isol = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+        ##                                                        cut_data=cut_data)
+            
 
         # leave-one-person-out
         successDataList = []

@@ -264,6 +264,18 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
+    isolationFeatures = ['unimodal_audioWristRMS', \
+                         'unimodal_audioWristAng',
+                         'unimodal_ftForceX', \
+                         'unimodal_ftForceY', \
+                         'unimodal_ftForceZ', \
+                         'unimodal_jointEffort', \
+                         'crossmodal_landmarkEEDist', \
+                         'crossmodal_landmarkEEAng',\
+                         'unimodal_skin',\
+                         'unimodal_landmarkPos']
+                   
+
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
@@ -279,6 +291,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'downSampleSize': 140, 'cut_data': None, \
                       'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\

@@ -71,6 +71,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
+                'audioWristAzimuthList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
                 'kinTargetQuatList', 'kinPosList', 'kinVelList',\
                 'kinDesEEPosList', 'kinDesEEQuatList',\
@@ -235,6 +236,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
             raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
+            raw_data_dict['audioWristAzimuthList'].append(audio_azimuth)
             ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
 
             if len(audio_time)>len(new_times):
