@@ -159,10 +159,10 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     ## dist_buff2 = cb.CircularBuffer(8, (1,))
     ## dist_buff3 = cb.CircularBuffer(8, (1,))
 
-    classes = []
-    classes.append([52,53,54,55])
-    classes.append([33,34,35,36,37,41,42,43,44,45,46,47,48,49,50,51,58,59,57,11])
-    classes.append([31,32,60,61,39,40,38])
+    ## classes = []
+    ## classes.append([52,53,54,55])
+    ## classes.append([33,34,35,36,37,41,42,43,44,45,46,47,48,49,50,51,58,59,57,11])
+    ## classes.append([31,32,60,61,39,40,38])
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -208,7 +208,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalFileList.append(f.split('/')[-1])    
 
         # anomaly detection
-        weight = -13.89
+        weight = -4.9
         detection_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
                                                task_name, save_data_path, param_dict,\
                                                logp_viz=False, verbose=False, weight=weight)
@@ -533,7 +533,7 @@ if __name__ == '__main__':
         subjects = ['park', 'test'] #'Henry', 
     #---------------------------------------------------------------------------
     elif opt.task == 'feeding':
-        subjects = ['s1', 's2', 's3']
+        subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     elif opt.task == 'pushing':
         subjects = ['microblack', 'microwhite']        
     else:
@@ -606,7 +606,7 @@ if __name__ == '__main__':
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
-        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=8, n_iter_search=1000)
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=-1, n_iter_search=1000)
                          
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 

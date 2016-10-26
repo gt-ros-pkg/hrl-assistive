@@ -562,7 +562,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
                                                  nSubSample=None, nMaxData=100000, rnd_sample=True):
-    n_jobs=1
+
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
