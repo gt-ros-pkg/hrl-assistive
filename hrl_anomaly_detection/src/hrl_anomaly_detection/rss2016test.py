@@ -2074,6 +2074,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
                  default=False, help='No Plot.')    
     p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
