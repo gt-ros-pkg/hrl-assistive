@@ -208,7 +208,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalFileList.append(f.split('/')[-1])    
 
         # anomaly detection
-        weight = -4.9
+        weight = -5.5 #-4.9
         detection_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
                                                task_name, save_data_path, param_dict,\
                                                logp_viz=False, verbose=False, weight=weight)
