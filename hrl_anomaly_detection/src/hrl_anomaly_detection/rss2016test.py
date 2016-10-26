@@ -2059,6 +2059,11 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
 
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
+                 default=False, help='Search hmm parameters.')    
+
     p.add_option('--test', action='store_true', dest='bTest',
                  default=False, help='Enable Test.')
                  
@@ -2069,6 +2074,8 @@ if __name__ == '__main__':
                  default=False, help='Renew pickle files.')
     p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
                  default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
     p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
                  default=False, help='No Plot.')    
     p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
@@ -2248,11 +2255,11 @@ if __name__ == '__main__':
         elif opt.task == 'feeding':
             nPoints = 50
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
-            param_dict['ROC']['hmmgp_param_range']  = np.logspace(1.0, 3.0, nPoints)*-1.0
+            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-            param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)            
+            param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
             param_dict['ROC']['osvm_param_range']     = np.logspace(-5,1,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-5,0,nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
             param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
             param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
 
@@ -2328,3 +2335,9 @@ if __name__ == '__main__':
             
     elif opt.bStatePathPlot:
         plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)
+
+    elif opt.CLF_param_search:
+        from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
+        method = 'hmmgp'
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
+                                n_jobs=-1, n_iter_search=1000, save=opt.bSave)

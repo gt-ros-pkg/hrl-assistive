@@ -189,7 +189,7 @@ def getSamples(modeling_pkl):
     
 
 def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=None, file_idx=1,\
-                    n_jobs=8, n_iter_search=1000, startIdx=4, save=False):
+                    n_jobs=-1, n_iter_search=1000, startIdx=4, save=False):
     """
     Search the best classifier parameter set.
     """
@@ -198,10 +198,10 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
     X_train, y_train, X_test, y_test = getSamples(modeling_pkl)
     nLength = startIdx+len(X_train[0])
 
-    ## X = X_train
-    ## y = y_train
-    X = np.vstack([X_train, X_test])
-    y = np.vstack([y_train, y_test])
+    X = X_train
+    y = y_train
+    ## X = np.vstack([X_train, X_test])
+    ## y = np.vstack([y_train, y_test])
     
     # specify parameters and distributions to sample from
     if param_dist is None:
