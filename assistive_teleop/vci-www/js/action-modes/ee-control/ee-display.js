@@ -38,6 +38,14 @@ var RFH = (function (module) {
             currentGripper.visible = false;
         };
 
+        self.showGoal = function () {
+            goalGripper.visible = true;
+        };
+
+        self.hideGoal = function () {
+            goalGripper.visible = false;
+        };
+
         self.hide = function () {
             currentGripper.visible = false;
             previewGripper.visible = false;

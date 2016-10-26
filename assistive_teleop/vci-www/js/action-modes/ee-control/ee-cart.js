@@ -53,7 +53,9 @@ var RFH = (function (module) {
         });
 
         /* Arm Posture-based tucking/untucking */
-        self.armPostureUtility = new RFH.ArmPostureUtility({ros: ros, arm: self.arm});
+        self.armPostureUtility = new RFH.ArmPostureUtility({ros: ros,
+                                                            arm: self.arm,
+                                                            eeDisplay: self.eeDisplay});
 
         /* GRIPPER SLIDER CONTROLS */
         var gripperZeroOffset = self.side[0] == 'r' ? -0.00063 : 0.0013;
@@ -542,6 +544,7 @@ var RFH = (function (module) {
             self.active = true;
             self.$viewer.show();
             self.updateCtrlRingViz();
+            self.eeDisplay.hideGoal();
             self.skinContactDisplay.show();
         };
 
@@ -554,6 +557,7 @@ var RFH = (function (module) {
             self.active = false;
             self.rotationControl.hide();
             self.skinContactDisplay.hide();
+            self.eeDisplay.hide();
 //            if (armCameraOn) {
 //                hideArmCamera();
 //            }
