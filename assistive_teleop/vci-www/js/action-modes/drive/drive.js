@@ -303,18 +303,19 @@ var RFH = (function (module) {
                 lines.center[i].attr({'cx':imgpts[0][0] + slideX[i], 'cy':imgpts[0][1] + slideY[i]});
                 lines.right[i].attr({'cx':imgpts[3][0] + slideX[i], 'cy':imgpts[3][1] + slideY[i]});
             }
-            var delX = clamp((T[0] - B[0])/2, -0.45, 0.45);
-            var delY = clamp((T[1] - B[1])/2, -0.45, 0.45);
+            var delX = clamp((T[0] - B[0])/3, -0.25, 0.25);
+            var delY = clamp((T[1] - B[1])/3, -0.25, 0.25);
             self.cmd = {'x':delX, 'y':delY, 'theta':0};
         };
 
         self.updateVis = function (event) {
             var rtxy = self.getRTheta(event); //Get real-world point in base frame
-            if (rtxy[0] < 0.45) {
-                drawSlidePath(rtxy);
-            } else {
-                drawPath(rtxy);
-            }
+            drawSlidePath(rtxy);
+          //  if (rtxy[0] < 0.45) {
+          //      drawSlidePath(rtxy);
+          //  } else {
+          //      drawPath(rtxy);
+          //  }
         };
         self.$div.on("mousemove.rfh", self.updateVis);
 
@@ -470,7 +471,6 @@ var RFH = (function (module) {
 
         self.driveGo = function (event) {
 //            console.log("Clearing timer for new cmd");
-            self.resetTimeout();
             clearTimeout(timer);
             if (event.which === 1) { //Only react to left mouse button
                 self.setSafe();
@@ -531,6 +531,7 @@ var RFH = (function (module) {
                 console.log("Not safe to drive"); 
                 return ;}
             base.pubCmd(cmd.x, cmd.y, cmd.theta);
+            self.resetTimeout();
 //            console.log("Sent ", cmd);
             timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
 //            console.log("Set Timer: ", timer);

@@ -108,7 +108,7 @@ var RFH = (function (module) {
             left_arm: RFH.pr2.l_arm_cart,
             right_arm: RFH.pr2.r_arm_cart,
             base: RFH.pr2.base,
-            forwardOnly: false}));
+            forwardOnly: true}));
         RFH.actionMenu.addAction(new RFH.GetClickedPose({ros:RFH.ros,
             camera: RFH.mjpeg.cameraModel}));
         // Start looking action by default
