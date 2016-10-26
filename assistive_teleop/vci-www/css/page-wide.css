@@ -57,7 +57,8 @@ div.left-col-accordion > .ui-accordion-content {
 #video-main {
     overflow: hidden;
     position: absolute;
-    right: 0;
+    /*right: 0;*/
+    left: 200px;
 }
 
 #viewer-canvas {

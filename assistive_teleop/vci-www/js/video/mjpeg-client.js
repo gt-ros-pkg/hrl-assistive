@@ -31,8 +31,8 @@ var RFH = (function (module) {
                 return false;
             }
             var camRatio = self.cameraModel.width/self.cameraModel.height;
-            //var contWidth = $('body').width() - self.$div.offset().left;  // For left-aligned video-main
-            var contWidth = $('body').width(); // For right-aligned video-main
+            var contWidth = $('body').width() - self.$div.offset().left;  // For left-aligned video-main
+            //var contWidth = $('body').width(); // For right-aligned video-main
             var contHeight = $('body').height() - self.$div.offset().top;
             var contRatio = contWidth/contHeight;
             if (contRatio > camRatio) {
