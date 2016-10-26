@@ -562,7 +562,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData,
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
                                                  nSubSample=None, nMaxData=100000, rnd_sample=True):
-    n_jobs=1
+
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
@@ -734,7 +734,9 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             logp = -1000000000000
             # we keep the state as the previous one
             l_likelihood.append( logp )
-            if bPosterior: l_posterior.append( l_posterior[-1] )
+            if bPosterior:
+                if len(l_posterior) == 0: l_posterior.append(list(pi))
+                else: l_posterior.append( l_posterior[-1] )
 
         l_idx.append( i )
             
