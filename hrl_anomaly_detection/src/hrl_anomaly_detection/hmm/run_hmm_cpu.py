@@ -233,9 +233,9 @@ def tune_hmm(parameters, task_name, param_dict, processed_data_path, verbose=Fal
 
 
             print "Classifier fitting", method
-            dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
+            dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
             dtc.set_params( **SVM_dict )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=True)
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
             cf_dict = {}
             cf_dict['method']      = dtc.method
             if method == 'progress':
@@ -331,7 +331,7 @@ def run_classifiers(idx, X_scaled, Y_train_org, idx_train_org, X_test, Y_test, \
     dtc = cb.classifier( method=method, nPosteriors=nState, nLength=nLength )
     dtc.set_params( **SVM_dict )
     if cf_dict is None:
-        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)        
+        ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)        
         if ret is False:
             print "SVM fitting failure!!"
             return idx, [np.nan], [np.nan], [np.nan], [np.nan]

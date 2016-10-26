@@ -1692,16 +1692,16 @@ def plotDecisionBoundaries(subjects, task, raw_data_path, save_data_path, param_
                     weights = ROC_dict['svm_param_range']
                     dtc.set_params( class_weight=weights[j] )
                     dtc.set_params( kernel_type=0 ) # temp
-                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat)                
                 elif method == 'cssvm':
                     weights = ROC_dict['cssvm_param_range']
                     dtc.set_params( class_weight=weights[j] )
-                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                    ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat)                
                 elif method == 'progress' or method == 'fixed':
                     weights = ROC_dict[method+'_param_range']
                     dtc.set_params( ths_mult=weights[j] )
                     if j==startPoint:
-                        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat, parallel=False)                
+                        ret = dtc.fit(X_scaled, Y_train_flat, idx_train_flat)                
 
                 if method.find('svm')>=0:
                     print "SVM Weight: ", weights[j], np.shape(X_bg)

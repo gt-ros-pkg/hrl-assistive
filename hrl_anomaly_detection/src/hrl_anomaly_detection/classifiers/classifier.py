@@ -54,7 +54,7 @@ from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
-    def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4, parallel=False,\
                  ths_mult=-1.0,\
                  #progress time or state?
                  std_coff = 1.0,\
@@ -126,6 +126,7 @@ class classifier(learning_base):
         self.dt     = None
         self.nLength = nLength
         self.startIdx = startIdx
+        self.parallel = parallel
         self.verbose = verbose
                 
         # constants to adjust thresholds
@@ -221,7 +222,7 @@ class classifier(learning_base):
 
 
 
-    def fit(self, X, y, ll_idx=None, parallel=True, warm_start=False):
+    def fit(self, X, y, ll_idx=None, warm_start=False):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
@@ -342,7 +343,7 @@ class classifier(learning_base):
             self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
-            if parallel:
+            if self.parallel:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
                                                                        self.g_mu_list[i],\
                                                                        self.g_sig, self.nPosteriors)
@@ -1030,30 +1031,30 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             weights = ROC_dict[method+'_param_range']
             
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train, parallel=False)
+        ret = dtc.fit(X_train, Y_train)
     elif method == 'bpsvm':
         weights = ROC_dict[method+'_param_range']
         ## dtc.set_params( kernel_type=0 )
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train, parallel=False)
+        ret = dtc.fit(X_train, Y_train)
     elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
         dtc.set_params( gamma=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
     elif method == 'cssvm':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train)                
     elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
       or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
-        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train)                
     elif method == 'rfc':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
     else:
         print "Not available method: ", method
         return "Not available method", -1
@@ -1360,22 +1361,22 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             else:
                 weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
         elif method == 'cssvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
+            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org)                
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
           method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
