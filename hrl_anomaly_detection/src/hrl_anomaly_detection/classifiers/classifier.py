@@ -57,6 +57,7 @@ class classifier(learning_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4,\
                  ths_mult=-1.0,\
                  #progress time or state?
+                 std_coff = 1.0,\
                  logp_offset = 0.0,\
                  class_weight=1.0, \
                  # svm
@@ -177,7 +178,7 @@ class classifier(learning_base):
             self.cssvm_w_negative = cssvm_w_negative 
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
-            self.std_coff  = 1.0
+            self.std_coff  = std_coff
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
@@ -332,9 +333,6 @@ class classifier(learning_base):
                 nSample  = len(y)/(self.nLength-self.startIdx)
                 idx_list = range(self.nLength)[self.startIdx:]
                 ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample) if y[i*(self.nLength-self.startIdx)+1]<0 ]
-                ## ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-                ## print np.shape(ll_logp), np.shape(ll_idx), np.shape(y), len(y)/(self.nLength-self.startIdx)
-                ## sys.exit()
                 ## print "Error>> ll_idx is not inserted"
                 ## sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
