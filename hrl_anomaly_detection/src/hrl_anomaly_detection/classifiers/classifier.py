@@ -350,6 +350,9 @@ class classifier(learning_base):
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
+                ## print "--------------------------------"
+                ## t = time.time()
+
                 self.l_statePosterior = []
                 self.ll_mu            = []
                 self.ll_std           = []
@@ -359,6 +362,8 @@ class classifier(learning_base):
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
+
+                ## print 'One clustering takes ', time.time() - t
 
             return True
 

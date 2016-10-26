@@ -2059,6 +2059,11 @@ if __name__ == '__main__':
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
 
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
+                 default=False, help='Search hmm parameters.')    
+
     p.add_option('--test', action='store_true', dest='bTest',
                  default=False, help='Enable Test.')
                  
@@ -2328,3 +2333,9 @@ if __name__ == '__main__':
             
     elif opt.bStatePathPlot:
         plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)
+
+    elif opt.CLF_param_search:
+        from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
+        method = 'hmmgp'
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
+                                n_jobs=opt.n_jobs, n_iter_search=1000, save=opt.bSave)
