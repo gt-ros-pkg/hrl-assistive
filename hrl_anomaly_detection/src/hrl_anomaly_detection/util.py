@@ -1821,6 +1821,7 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         print "---------------------- ", method, " ----------------------"
         print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)
         print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
+        print fscore_1
 
     ##     if method == 'progress' or method == 'hmmgp':
     ##         print fscore_2
