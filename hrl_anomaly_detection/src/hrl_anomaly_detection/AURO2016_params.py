@@ -179,7 +179,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                          'nugget': 104.42, 'theta0': 1.42
+                          'nugget': 104.42, 'theta0': 1.42,\
+                          'std_offset': 1.4464
                           }
 
         
@@ -205,7 +206,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         # Parameters should be determinded by optimizer.
         if nPoints == 1:
             ROC_param_dict['fixed_param_range'] = [-1.0]
-            ROC_param_dict['progress_param_range'] = [-5.0]
+            ROC_param_dict['progress_param_range'] = [-1.8413]
             ROC_param_dict['hmmgp_param_range'] = [-4.9]
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
@@ -265,11 +266,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'relativePose_landmark_EE']
 
     isolationFeatures = ['unimodal_audioWristRMS', \
-                         'unimodal_audioWristAng',
+                         'unimodal_audioWristAzimuth',
+                         'unimodal_kinEff', \
                          'unimodal_ftForceX', \
                          'unimodal_ftForceY', \
                          'unimodal_ftForceZ', \
-                         'unimodal_jointEffort', \
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
                          'unimodal_skin',\

@@ -73,7 +73,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'audioWristAzimuthList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
-                'kinTargetQuatList', 'kinPosList', 'kinVelList',\
+                'kinTargetQuatList', 'kinPosList', 'kinVelList', 'kinEffList',\
                 'kinDesEEPosList', 'kinDesEEQuatList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
@@ -243,11 +243,13 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
                                                                            new_times))
+                data_dict['audioWristAzimuthList'].append(downSampleAudio(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
             else:
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
                 data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
                                                                              new_times))
+                data_dict['audioWristAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
                 
@@ -259,6 +261,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
+            kin_jnt_eff     = d['kinematics_jnt_eff'] # 7xN
             kin_des_ee_pos  = d.get('kinematics_des_ee_pos',kin_ee_pos)
             kin_des_ee_quat  = d.get('kinematics_des_ee_quat', kin_ee_quat)
 
@@ -341,6 +344,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinTargetPosList'].append(local_kin_target_pos)
             raw_data_dict['kinTargetQuatList'].append(local_kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
+            raw_data_dict['kinJntEffList'].append(kin_jnt_pos)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
             ## raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
@@ -352,6 +356,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, \
                                                                     new_times, True))
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
+            data_dict['kinJntEffList'].append(interpolationData(kin_time, kin_jnt_eff, new_times))
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
