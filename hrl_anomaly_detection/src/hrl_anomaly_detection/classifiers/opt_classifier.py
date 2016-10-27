@@ -227,7 +227,7 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
         elif 'progress' in method:            
             param_dist = {'ths_mult': uniform(-8.0,7.0),\
                           'std_offset': uniform(0.5, 1.0),\
-                          'logp_offset': [0, -100.0],\
+                          'logp_offset': [0],\
                           }
         
     # run randomized search
