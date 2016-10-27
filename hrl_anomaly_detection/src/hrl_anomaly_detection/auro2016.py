@@ -317,8 +317,16 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     
     for method in method_list:
         print "---------- ", method, " -----------"
-        n = len(ROC_data[method]['fn_labels'])
-        print np.shape(ROC_data[method]['fn_labels'])
+
+        # fscore
+        tp = float(np.sum(ROC_data[method]['tp_l'][0]))
+        fn = float(np.sum(ROC_data[method]['fn_l'][0]))
+        fp = float(np.sum(ROC_data[method]['fp_l'][0]))
+        fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
+        print "F1-score: ", fscore_1
+        
+        # false negatives
+        ## n = len(ROC_data[method]['fn_labels'])
         labels = ROC_data[method]['fn_labels'][0]            
         anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
             
@@ -394,7 +402,7 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
-    nPoints = 1 if opt.bEvaluationUnexpected else None
+    ## nPoints = 1 if opt.bEvaluationUnexpected else None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
@@ -486,7 +494,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['progress']
+        param_dict['ROC']['update_list'] = []
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
