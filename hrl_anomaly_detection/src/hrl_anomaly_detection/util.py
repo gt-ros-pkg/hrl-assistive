@@ -1807,6 +1807,8 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         fscore_1   = []
         fscore_0_5 = []
         fscore_2   = []
+        tn_l = []
+        fp_l = []
         for i in xrange(nPoints):
 
             tp = float(np.sum(tp_ll[i]))
@@ -1820,10 +1822,17 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
             tpr_l.append( tp/(tp+fn) )
             tnr_l.append( tn/(fp+tn) )
+            tn_l.append(tn)
+            fp_l.append(fp)
 
         max_score_idx[0].append( argmax(fscore_1) )
         max_score_idx[1].append( argmax(fscore_0_5) )
         max_score_idx[2].append( argmax(fscore_2) )
+
+        ## max_score_idx[0].append( np.argmax(tn_l) )
+        ## max_score_idx[1].append( np.argmax(tn_l) )
+        ## max_score_idx[2].append( np.argmax(tn_l) )
+
 
         print "---------------------- ", method, " ----------------------"
         print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)

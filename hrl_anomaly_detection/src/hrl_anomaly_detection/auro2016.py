@@ -328,7 +328,8 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         fscore_l = 2.0*np.array(tp_l)/(2.0*np.array(tp_l)+np.array(fp_l)+np.array(fn_l))
 
         ##################################3
-        best_idx = np.argmin(fp_l)
+        ## best_idx = np.argmin(fp_l)
+        best_idx = np.argmax(fscore_l)
         ##################################3
         
         print 'fp_l:', fp_l
@@ -420,7 +421,7 @@ if __name__ == '__main__':
     scale         = 1.0
     local_range   = 10.0
     ## nPoints = 1 if opt.bEvaluationUnexpected else None
-    nPoints = None
+    nPoints = 40 #None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
