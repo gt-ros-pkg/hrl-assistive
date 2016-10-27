@@ -344,7 +344,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinTargetPosList'].append(local_kin_target_pos)
             raw_data_dict['kinTargetQuatList'].append(local_kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
-            raw_data_dict['kinJntEffList'].append(kin_jnt_pos)
+            raw_data_dict['kinJntEffList'].append(kin_jnt_eff)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
             ## raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
