@@ -66,6 +66,8 @@ from sklearn import metrics
 # private learner
 import hrl_anomaly_detection.classifiers.classifier as cf
 
+import hrl_anomaly_detection.evaluation as ev 
+
 import itertools
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
@@ -462,177 +464,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ##          timeList=timeList, legend=True)
     delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
 
-
-def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                          step_mag, pkl_prefix,\
-                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
-
-    ## Parameters
-    # data
-    data_dict  = param_dict['data_param']
-    data_renew = data_dict['renew']
-    dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
-    # HMM
-    HMM_dict   = param_dict['HMM']
-    nState     = HMM_dict['nState']
-    cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
-    # SVM
-    SVM_dict   = param_dict['SVM']
-    # ROC
-    ROC_dict = param_dict['ROC']
-
-    # reference data #TODO
-    ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
-                                 '_'+str(dim))
-
-    #------------------------------------------
-    # Get features
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
-
-    crossVal_pkl = os.path.join(ref_data_path, 'cv_'+task_name+'.pkl')
-    
-    if os.path.isfile(crossVal_pkl) and data_renew is False:
-        d = ut.load_pickle(crossVal_pkl)
-        kFold_list  = d['kFoldList']
-    else: sys.exit()
-
-    #-----------------------------------------------------------------------------------------
-    # parameters
-    startIdx    = 4
-    method_list = ROC_dict['methods'] 
-    nPoints     = ROC_dict['nPoints']
-
-    successData = d['successData']
-    failureData = d['failureData']
-    param_dict2  = d['param_dict']
-    if 'timeList' in param_dict2.keys():
-        timeList = param_dict2['timeList'][startIdx:]
-    else: timeList = None
-
-    #-----------------------------------------------------------------------------------------
-    # Training HMM, and getting classifier training and testing data
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
-
-        if verbose: print idx, " : training hmm and getting classifier training and testing data"            
-        ref_modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        if os.path.isfile(ref_modeling_pkl) is False:
-            print "No reference modeling file exists"
-            sys.exit()
-        
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+pkl_prefix+'_'+str(idx)+'.pkl')
-        if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
-
-        # dim x sample x length
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
-
-        # training hmm
-        if verbose: print "start to fit hmm"
-        dd = ut.load_pickle(ref_modeling_pkl)
-        nEmissionDim = dd['nEmissionDim']
-        nLength      = len(normalTestData[0][0]) - startIdx
-
-        # Classifier test data
-        # random step noise
-        abnormalTestData = copy.copy(normalTestData)
-        step_idx_l = []
-        for i in xrange(len(normalTestData[0])):
-            step_idx_l.append(None)
-        for i in xrange(len(abnormalTestData[0])):
-            start_idx = np.random.randint(0, nLength/2, 1)[0]
-            
-            if start_idx < startIdx: start_idx=startIdx
-            abnormalTestData[:,i,start_idx:] += step_mag
-            step_idx_l.append(start_idx)
-
-        ml = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
-        ml.set_hmm_object(dd['A'], dd['B'], dd['pi'])            
-
-        # Classifier test data
-        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
-                                                   add_logp_d=add_logp_d)
-
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = nEmissionDim
-        d['A']            = dd['A'] 
-        d['B']            = dd['B'] 
-        d['pi']           = dd['pi']
-        d['F']            = dd['F']
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']   = dd['ll_classifier_train_X']
-        d['ll_classifier_train_Y']   = dd['ll_classifier_train_Y']
-        d['ll_classifier_train_idx'] = dd['ll_classifier_train_idx']
-        d['ll_classifier_test_X']    = ll_classifier_test_X
-        d['ll_classifier_test_Y']    = ll_classifier_test_Y            
-        d['ll_classifier_test_idx']  = ll_classifier_test_idx
-        d['nLength']      = nLength
-        d['step_idx_l']   = step_idx_l
-        ut.save_pickle(d, modeling_pkl)
-
-    ## fig = plt.figure()
-    ## ## modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
-    ## ## modeling_pkl = os.path.join(ref_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
-    ## d = ut.load_pickle(modeling_pkl)
-    ## ll_classifier_test_X = d['ll_classifier_test_X']
-    ## ll_classifier_test_Y = d['ll_classifier_test_Y']
-    ## print np.shape(ll_classifier_test_Y)
-    ## for i in xrange(len(ll_classifier_test_X)):        
-    ##     if ll_classifier_test_Y[i][0] > 0: continue
-    ##     print "test normal: ", np.shape(ll_classifier_test_X[i])        
-    ##     x = ll_classifier_test_X[i]
-    ##     plt.plot(np.argmax(np.array(x)[:,2:],axis=1), np.array(x)[:,0], 'b-')
-    ## plt.show()
-    ## sys.exit()
-
-    #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
-    else: ROC_data = ut.load_pickle(roc_pkl)
-    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
-
-    osvm_data = None ; bpsvm_data = None
-    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_prefix)
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'],
-                                  use_test=True, use_pca=False, \
-                                  step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
-
-    ## kFold_list = kFold_list[:1]
-                                  
-    # parallelization
-    if debug: n_jobs=1
-    else: n_jobs=-1
-    r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
-                                                                 method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
-                                                                 SVM_dict, HMM_dict, \
-                                                                 raw_data=(osvm_data,bpsvm_data),\
-                                                                 startIdx=startIdx, nState=nState,\
-                                                                 modeling_pkl_prefix='hmm_'+pkl_prefix,\
-                                                                 delay_estimation=True) \
-                                                                 for idx in xrange(len(kFold_list)) \
-                                                                 for method in method_list )
-    print "finished to run run_classifiers"
-
-    ROC_data = util.update_roc_data(ROC_data, r, nPoints, method_list)
-    ut.save_pickle(ROC_data, roc_pkl)
-        
-    #-----------------------------------------------------------------------------------------
-    # ---------------- ROC Visualization ----------------------
-    if all_plot:
-        task_list = ["pushing_microblack", "pushing_microwhite", "pushing_toolcase", "scooping", "feeding"]
-    else:
-        ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
-        delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
         
 
 def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -2297,10 +2128,10 @@ if __name__ == '__main__':
                                  save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                                  no_plot=opt.bNoPlot, delay_plot=True)
         else:        
-            evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                                  step_mag, pkl_prefix,\
-                                  save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                  no_plot=opt.bNoPlot, delay_plot=True)
+            ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                                     step_mag, pkl_prefix,\
+                                     save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                                     no_plot=opt.bNoPlot, delay_plot=True)
 
 
     elif opt.bEvaluationWithDrop:
