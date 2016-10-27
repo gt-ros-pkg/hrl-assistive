@@ -1884,9 +1884,9 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
                     
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
-                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                    ##                if delay_ll[i][ii]>=0 ]
-                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                                   if delay_ll[i][ii]>=0 ]
+                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
 
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
