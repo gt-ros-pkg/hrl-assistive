@@ -2142,3 +2142,62 @@ def argmax(x, last=True):
         return indices[len(indices)/2]
     else:
         return np.argmax(x)
+
+
+def initialiseOptParser(p):
+
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+                 default=False, help='Renew Classifiers.')
+
+    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
+                 help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+                 help='type the desired dimension')
+
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
+                 default=False, help='Plot features.')
+    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+
+    p.add_option('--data_generation', action='store_true', dest='bDataGen',
+                 default=False, help='Data generation before evaluation.')
+    p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
+                 default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
+                 default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
+                 default=False, help='Evaluate a classifier with cross-validation plus noise.')
+    p.add_option('--evaluation_acc_param', '--eaap', action='store_true', dest='bEvaluationAccParam',
+                 default=False, help='Evaluate the acc params.')
+
+
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
+                 default=False, help='Search hmm parameters.')    
+
+    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
+                 default=False, help='Print out.')
+    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
+                 default=False, help='No Plot.')    
+    p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
+                 default=False, help='No update.')    
+    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
+                 default=False, help='Set debug mode.')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
+
+    
+    opt, args = p.parse_args()

@@ -362,57 +362,9 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
-                 default=False, help='Renew pickle files.')
-    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
-                 default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
-                 default=False, help='Renew Classifiers.')
-
-    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
-                 help='type the desired task name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
-                 help='type the desired dimension')
-
-    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
-                 default=False, help='Plot raw data.')
-    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
-                 default=False, help='Plot raw data.')
-    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
-                 default=False, help='Plot features.')
-    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
-                 default=False, help='Plot the change of likelihood.')
-
-    p.add_option('--data_generation', action='store_true', dest='bDataGen',
-                 default=False, help='Data generation before evaluation.')
-    p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
-                 default=False, help='Evaluate a classifier with cross-validation.')
-    p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
-                 default=False, help='Evaluate a classifier with cross-validation.')
-
-
-    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
-                 default=False, help='Search hmm parameters.')    
-    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
-                 default=False, help='Search hmm parameters.')    
-
-    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
-                 default=False, help='Print out.')
-    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
-                 default=False, help='No Plot.')    
-    p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
-                 default=False, help='No update.')    
-    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
-                 default=False, help='Set debug mode.')
-    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
-                 help='number of processes for multi processing')
-    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
-                 default=False, help='Save pdf files.')    
-    p.add_option('--save', action='store_true', dest='bSave',
-                 default=False, help='Save result.')
-
-    
+    util.initialiseOptParser(p)
     opt, args = p.parse_args()
+    
 
     #---------------------------------------------------------------------------           
     # Run evaluation
@@ -521,25 +473,15 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        ## param_dict['ROC']['methods']     = ['hmmosvm']
-        ## param_dict['ROC']['update_list'] = ['hmmosvm']
+        param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
-        if opt.task == 'pushing_microblack':
-            param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
-            param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(-1.1, 2.0, nPoints)*-1.0
-        elif opt.task == 'pushing_microwhite':
-            param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
-            param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-        elif opt.task == 'feeding':
+        if opt.task == 'feeding':
             nPoints = 50
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
@@ -549,7 +491,8 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
             param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
             param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
-
+        else:
+            sys.exit()
 
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
@@ -579,11 +522,12 @@ if __name__ == '__main__':
             step_mag = 10000000*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_10000000'
 
+        import hrl_anomaly_detection.evaluation as ev 
         if opt.bEvaluationAccParam:
-            evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                                 step_mag, pkl_prefix,\
-                                 save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                 no_plot=opt.bNoPlot, delay_plot=True)
+            ev.evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                                    step_mag, pkl_prefix,\
+                                    save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                                    no_plot=opt.bNoPlot, delay_plot=True)
         else:        
             ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                      step_mag, pkl_prefix,\
