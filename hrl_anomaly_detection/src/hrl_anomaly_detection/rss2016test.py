@@ -621,10 +621,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                                                  delay_estimation=True) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
-    l_data = r
     print "finished to run run_classifiers"
 
-    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ROC_data = util.update_roc_data(ROC_data, r, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         
     #-----------------------------------------------------------------------------------------
