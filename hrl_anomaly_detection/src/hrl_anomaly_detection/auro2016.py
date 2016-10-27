@@ -403,6 +403,7 @@ if __name__ == '__main__':
     scale         = 1.0
     local_range   = 10.0
     ## nPoints = 1 if opt.bEvaluationUnexpected else None
+    nPoints = None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
