@@ -273,8 +273,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_ftForceZ', \
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
-                         'unimodal_skin',\
-                         'unimodal_landmarkPos']
+                         'unimodal_fabricForce',\
+                         'unimodal_landmarkDist']
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']

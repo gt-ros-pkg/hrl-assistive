@@ -413,7 +413,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
-                isolationFeatures=[],\
+                isolationFeatures=[], isolation_viz=False,\
                 time_sort=False, max_time=None):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
@@ -435,6 +435,9 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         failureDataList = data_dict['failureDataList']
         failureNameList = None #failure_data_dict['fileNameList']
         param_dict      = data_dict['param_dict']
+        successIsolDataList = data_dict.get('successIsolDataList',[])
+        failureIsolDataList = data_dict.get('failureIsolDataList',[])
+        param_dict_isol     = data_dict.get('param_dict_isol',[])
 
     else:
         ## data_renew = False #temp        
@@ -470,6 +473,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         # leave-one-person-out
         successDataList = []
         failureDataList = []
+        successIsolDataList = []
+        failureIsolDataList = []
         successFileList = []
         failureFileList = []
         for i in xrange(len(subject_names)):
@@ -504,13 +509,29 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             successFileList.append(success_list)
             failureFileList.append(failure_list)
 
+            # Get isolation data
+            if len(isolationFeatures) > 0:
+                print " --------------------- Success -----------------------------"  
+                successData, _ = extractHandFeature(success_data_dict, isolationFeatures, scale=scale, \
+                                                    init_param_dict=param_dict_isol, cut_data=cut_data)
+                print " --------------------- Failure -----------------------------"  
+                failureData, _ = extractHandFeature(failure_data_dict, isolationFeatures, scale=scale, \
+                                                    init_param_dict=param_dict_isol, cut_data=cut_data)
+
+                successIsolDataList.append(successData)
+                failureIsolDataList.append(failureData)
+            
+
         data_dict = {}
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
+        data_dict['param_dict']      = param_dict
         data_dict['successFileList'] = successFileList
         data_dict['failureFileList'] = failureFileList        
         data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['param_dict']      = param_dict
+        data_dict['successIsolDataList'] = successIsolDataList
+        data_dict['failureIsolDataList'] = failureIsolDataList
+        data_dict['param_dict_isol']     = param_dict_isol
         
         ut.save_pickle(data_dict, save_pkl)
 
@@ -519,8 +540,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     nPlot = None
 
     # almost deprecated??
-    feature_names = np.array(param_dict.get('feature_names', handFeatures))
-    AddFeature_names    = feature_names
+    if isolation_viz is False:
+        AddFeature_names = np.array(param_dict.get('feature_names', handFeatures))
+    else:
+        AddFeature_names = np.array(param_dict_isol.get('feature_names', isolationFeatures))
 
     # -------------------- Display ---------------------
     
@@ -1442,12 +1465,11 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
         if 'unimodal_kinEff' in feature_list:
             unimodal_kinEff = d['kinEffList'][idx]
 
-            if dataSample is None: dataSample = np.array(unimodal_kinVel)
-            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-            if 'kinVel_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinVel_x')
-                param_dict['feature_names'].append('kinVel_y')
-                param_dict['feature_names'].append('kinVel_z')
+            if dataSample is None: dataSample = np.array(unimodal_kinEff)
+            else: dataSample = np.vstack([dataSample, unimodal_kinEff])
+            if 'kinEff_1' not in param_dict['feature_names']:           
+                for i in xrange(len(unimodal_kinEff)):
+                    param_dict['feature_names'].append('kinEff_'+str(i+1))
 
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
@@ -1480,6 +1502,44 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
                 if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
+
+
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForceX' in feature_list:
+            ftForce = d['ftForceList'][idx]
+            
+            # magnitude
+            if len(np.shape(ftForce)) > 1:
+                unimodal_ftForce_x = ftForce[0:1,:]
+                if offset_flag:
+                    unimodal_ftForce_x -= np.mean(unimodal_ftForce_x[:,:startOffsetSize])
+            else:                
+                unimodal_ftForce_x = ftForce
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_x)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_x])
+
+            if 'ftForce_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_x')
+
+
+        # Unimodal feature - Force -------------------------------------------
+        if 'unimodal_ftForceY' in feature_list:
+            ftForce = d['ftForceList'][idx]
+            
+            # magnitude
+            if len(np.shape(ftForce)) > 1:
+                unimodal_ftForce_y = ftForce[1:2,:]
+                if offset_flag:
+                    unimodal_ftForce_y -= np.mean(unimodal_ftForce_y[:,:startOffsetSize])
+            else:                
+                unimodal_ftForce_y = ftForce
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_y)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_y])
+
+            if 'ftForce_y' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_y')
 
 
         # Unimodal feature - Force -------------------------------------------
@@ -1544,9 +1604,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
         # Unimodal feature - vision change ------------------------------------
         if 'unimodal_visionChange' in feature_list:
-            visionChangeMag = d['visionChangeMagList'][idx]
-
-            unimodal_visionChange = visionChangeMag
+            unimodal_visionChange = d['visionChangeMagList'][idx]
 
             if dataSample is None: dataSample = unimodal_visionChange
             else: dataSample = np.vstack([dataSample, unimodal_visionChange])
@@ -1556,9 +1614,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in feature_list:
-            fabricMag = d['fabricMagList'][idx]
-
-            unimodal_fabricForce = fabricMag
+            unimodal_fabricForce = d['fabricMagList'][idx]
 
             if dataSample is None: dataSample = unimodal_fabricForce
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
@@ -1567,7 +1623,6 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
         # Unimodal feature - landmark motion --------------------------
         if 'unimodal_landmarkDist' in feature_list:
-            #kinEEPos  = d['kinEEPosList'][idx]
             visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
 
             if len(np.shape(visionLandmarkPos)) == 1:
@@ -1577,12 +1632,12 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
             
-            crossmodal_landmarkEEDist = []
+            crossmodal_landmarkDist = []
             for time_idx in xrange(len(timeList)):
-                crossmodal_landmarkEEDist.append(dist[time_idx])
+                crossmodal_landmarkDist.append(dist[time_idx])
                 
-            if dataSample is None: dataSample = np.array(crossmodal_landmarkEEDist)
-            else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEDist])
+            if dataSample is None: dataSample = np.array(crossmodal_landmarkDist)
+            else: dataSample = np.vstack([dataSample, crossmodal_landmarkDist])
             
             if 'landmarkDistDiff' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('landmarkDist')
