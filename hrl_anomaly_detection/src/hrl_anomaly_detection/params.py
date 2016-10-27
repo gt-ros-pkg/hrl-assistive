@@ -92,8 +92,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pr
                           'bpsvm_w_negative': 0.2,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
                           'progress_svm_gamma': 0.01,\
-                          'nugget': 66.03, 'theta0': 1.0729,\                          
-                          }
+                          'nugget': 66.03, 'theta0': 1.0729 }
                           
         # , 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'svm', 'hmmsvm_no_dL'
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
