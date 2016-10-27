@@ -53,11 +53,11 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     if dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'kmean', 'progress_osvm', 'progress_svm',\
-                                         'hmmgp', 'rnd', 'svm', 'svm_fixed'] #'progress_state', 
-        ## param_dict['ROC']['methods'] = [ 'hmmgp' ]
+                                         'hmmgp', 'rnd'] #'progress_state', 
+        param_dict['ROC']['methods'] = [ 'hmmgp' ]
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
-        param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ ]
+        ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
+        param_dict['ROC']['update_list'] = ['hmmgp']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
                                          ]
@@ -91,18 +91,19 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pr
                           'bpsvm_gamma': 0.507, \
                           'bpsvm_w_negative': 0.2,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
-                          'progress_svm_gamma': 0.01 }
+                          'progress_svm_gamma': 0.01,\
+                          'nugget': 66.03, 'theta0': 1.0729 }
                           
         # , 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'progress_state', 'svm', 'hmmsvm_no_dL'
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
-                          'update_list': [ 'progress_svm', 'change'],\
+                          'update_list': [ ],\
                           'nPoints': nPoints,\
                           'progress_param_range':np.logspace(-0.5, 1.3, nPoints)*-1.0 + 0.5, \
                           'progress_diag_param_range':np.logspace(-2.0, 1.3, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2.5, nPoints)*-1+3.0, \
                           'progress_svm_param_range': np.linspace(0.005, 6.0, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1., 1.8, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(-0.4, 2.0, nPoints)*-1.0+0.5, \
                           'kmean_param_range':np.logspace(-1.0, 1.1, nPoints)*-1.0 + 0.5, \
                           'svm_param_range': np.logspace(-2, 0.2553, nPoints),\
                           'change_param_range': np.linspace(-1.0, -22.0, nPoints),\
@@ -523,7 +524,6 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 8.0,\
                           'add_logp_d': False}
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 5.5}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 1.0, 'cost': 1.0,\
                           'nu': 0.5,\
                           'hmmosvm_nu': 0.001}
@@ -563,8 +563,8 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'bpsvm_gamma': 0.5075, \
                           'bpsvm_w_negative': 1.5,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
-                          'progress_svm_gamma': 0.01                              
-                          }                              
+                          'progress_svm_gamma': 0.01,\
+                          'nugget': 79.9, 'theta0': 1.16 }
 
         ## ROC_param_dict = {'methods': ['fixed', 'change','progress', 'svm', 'hmmsvm_dL', 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_no_dL' ],\
         ROC_param_dict = {'methods': [ 'change','fixed','progress',\
@@ -578,7 +578,7 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 1.6, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(0.4, 1.85, nPoints)*-1.0, \
                           'svm_param_range': np.linspace(0.005, 0.7, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': np.linspace(-0.305, 0.85, nPoints ),\

@@ -135,7 +135,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    window_size = [10,10]
+    window_size = [10,20]
 
     param_dict2  = d['param_dict']
     if 'timeList' in param_dict2.keys():
@@ -208,7 +208,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalFileList.append(f.split('/')[-1])    
 
         # anomaly detection
-        weight = -4.9
+        weight = -5.5 #-4.9
         detection_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
                                                task_name, save_data_path, param_dict,\
                                                logp_viz=False, verbose=False, weight=weight)
@@ -425,10 +425,10 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         sys.exit()
 
     # Create anomaly classifier
-    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
     dtc.set_params( class_weight=weight )
     dtc.set_params( ths_mult = weight )    
-    ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)
+    ret = dtc.fit(X_train, Y_train, idx_train)
 
     # anomaly detection
     detection_idx = [None for i in xrange(len(ll_classifier_test_X))]
@@ -590,6 +590,7 @@ if __name__ == '__main__':
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
+                       ## handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.HMM_param_search:

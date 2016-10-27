@@ -179,7 +179,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                          'nugget': 104.42, 'theta0': 1.42
+                          'nugget': 104.42, 'theta0': 1.42,\
+                          'std_offset': 1.4464
                           }
 
         
@@ -188,10 +189,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                                   'noise_max': 0.0 },\
                           'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 3.0, 'hmm_cov': 1.0,\
                                   'noise_max': 0.05 },\
-                          'progress_param_range': -np.logspace(0, 2.5, nPoints),\
+                          'progress_param_range': -np.logspace(0, 2.5, nPoints)+1.0,\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 3.5, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(-1, 2.5, nPoints)*-1.0+0.5, \
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
@@ -205,7 +206,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         # Parameters should be determinded by optimizer.
         if nPoints == 1:
             ROC_param_dict['fixed_param_range'] = [-1.0]
-            ROC_param_dict['progress_param_range'] = [-5.0]
+            ROC_param_dict['progress_param_range'] = [-1.8413]
             ROC_param_dict['hmmgp_param_range'] = [-4.9]
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
@@ -264,6 +265,18 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
+    isolationFeatures = ['unimodal_audioWristRMS', \
+                         'unimodal_audioWristAzimuth',
+                         'unimodal_kinEff', \
+                         'unimodal_ftForceX', \
+                         'unimodal_ftForceY', \
+                         'unimodal_ftForceZ', \
+                         'crossmodal_landmarkEEDist', \
+                         'crossmodal_landmarkEEAng',\
+                         'unimodal_skin',\
+                         'unimodal_landmarkPos']
+                   
+
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
@@ -279,6 +292,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'downSampleSize': 140, 'cut_data': None, \
                       'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\

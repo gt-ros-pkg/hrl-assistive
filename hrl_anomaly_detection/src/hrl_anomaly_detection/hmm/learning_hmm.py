@@ -327,15 +327,16 @@ class learning_hmm(learning_base):
                 x_pred.append(x[-1])
             else:
                 src_cov_idx = nOrder*self.nEmissionDim+nOrder
-                tgt_cov_idx = i*self.nEmissionDim+i
+                tgt_cov_idx = nOrder*self.nEmissionDim+i
 
                 t_o = 0.0
                 for j in xrange(self.nState):
-                    t_o += alpha[-1][j]*(self.B[j][0][i] + \
-                                         self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
-                                         (x[-1]-self.B[j][0][nOrder]))
+                    m_j = self.B[j][0][i] + \
+                      self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
+                      (x[-1]-self.B[j][0][nOrder])
+                    t_o += alpha[-1][j]*m_j
                 x_pred.append(t_o)
-                
+
         return x_pred
         
 

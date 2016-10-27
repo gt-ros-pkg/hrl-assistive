@@ -413,6 +413,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
                 handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
+                isolationFeatures=[],\
                 time_sort=False, max_time=None):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
@@ -460,6 +461,11 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         else:
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
                                                      cut_data=cut_data)
+
+        if len(isolationFeatures) > 0:
+            allData_isol, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures, scale=scale,\
+                                                               cut_data=cut_data)
+            
 
         # leave-one-person-out
         successDataList = []
@@ -1379,9 +1385,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
             ## audioAzimuth = d['audioAzimuthList'][idx]
-            audioPower   = d['audioPowerList'][idx]            
-            unimodal_audioPower = audioPower
-            print idx, np.amax(audioPower)
+            unimodal_audioPower = d['audioPowerList'][idx]
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
@@ -1390,10 +1394,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
         # Unimoda feature - AudioWrist ---------------------------------------
         if 'unimodal_audioWristRMS' in feature_list:
-            audioWristRMS = d['audioWristRMSList'][idx]            
-            unimodal_audioWristRMS = audioWristRMS
+            unimodal_audioWristRMS = d['audioWristRMSList'][idx]
             if offset_flag:
-                unimodal_audioWristRMS -= np.amin(audioWristRMS)
+                unimodal_audioWristRMS -= np.amin(unimodal_audioWristRMS)
                 ## unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
@@ -1403,20 +1406,41 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
         # Unimoda feature - AudioWristFront------------------------------------
         if 'unimodal_audioWristFrontRMS' in feature_list:
-            audioWristFrontRMS = d['audioWristFrontRMSList'][idx]            
-            unimodal_audioWristFrontRMS = audioWristFrontRMS
+            unimodal_audioWristFrontRMS = d['audioWristFrontRMSList'][idx]
             if offset_flag:
-                unimodal_audioWristFrontRMS -= np.mean(audioWristFrontRMS[:startOffsetSize])
+                unimodal_audioWristFrontRMS -= np.amin(unimodal_audioWristFrontRMS[:startOffsetSize])
+                ## unimodal_audioWristFrontRMS -= np.mean(audioWristFrontRMS[:startOffsetSize])
 
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristFrontRMS))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristFrontRMS)])
             if 'audioWristFrontRMS' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristFrontRMS')
 
+        # Unimoda feature - AudioWristAzimuth------------------------------------
+        if 'unimodal_audioWristAzimuth' in feature_list:
+            unimodal_audioWristAzimuth = d['audioWristAzimuthList'][idx]
+            if offset_flag:
+                unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
+
+            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
+            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristAzimuth)])
+            if 'audioWristAzimuth' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioWristAzimuth')
+
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:
-            kinVel  = d['kinVelList'][idx]
-            unimodal_kinVel = kinVel
+            unimodal_kinVel = d['kinVelList'][idx]
+
+            if dataSample is None: dataSample = np.array(unimodal_kinVel)
+            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
+            if 'kinVel_x' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinVel_x')
+                param_dict['feature_names'].append('kinVel_y')
+                param_dict['feature_names'].append('kinVel_z')
+
+        # Unimodal feature - Kinematics --------------------------------------
+        if 'unimodal_kinEff' in feature_list:
+            unimodal_kinEff = d['kinEffList'][idx]
 
             if dataSample is None: dataSample = np.array(unimodal_kinVel)
             else: dataSample = np.vstack([dataSample, unimodal_kinVel])

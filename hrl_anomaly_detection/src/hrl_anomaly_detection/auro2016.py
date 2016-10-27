@@ -222,7 +222,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     # parameters
     startIdx    = 4
     method_list = ROC_dict['methods'] 
-    nPoints     = 1 #ROC_dict['nPoints']
+    nPoints     = ROC_dict['nPoints']
     
     #------------------------------------------
 
@@ -311,15 +311,41 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     ##     print "-----------------------------------"
     ##     print "Method: ", method
     ##     print acc_rates[method][max_idx]
-    if nPoints > 1:
-        print "Wrong number of points"
-        sys.exit()
+    ## if nPoints > 1:
+    ##     print "Wrong number of points"
+    ##     sys.exit()
     
     for method in method_list:
         print "---------- ", method, " -----------"
-        n = len(ROC_data[method]['fn_labels'])
-        print np.shape(ROC_data[method]['fn_labels'])
-        labels = ROC_data[method]['fn_labels'][0]            
+
+        tp_l = []
+        fn_l = []
+        fp_l = []
+        for i in xrange(nPoints):
+            tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
+            fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
+            fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
+        fscore_l = 2.0*np.array(tp_l)/(2.0*np.array(tp_l)+np.array(fp_l)+np.array(fn_l))
+
+        ##################################3
+        ## best_idx = np.argmin(fp_l)
+        best_idx = np.argmax(fscore_l)
+        ##################################3
+        
+        print 'fp_l:', fp_l
+        print 'fscore: ', fscore_l
+        print "F1-score: ", fscore_l[best_idx]
+        print "best idx: ", best_idx
+
+        # fscore
+        ## tp = float(np.sum(ROC_data[method]['tp_l'][0]))
+        ## fn = float(np.sum(ROC_data[method]['fn_l'][0]))
+        ## fp = float(np.sum(ROC_data[method]['fp_l'][0]))
+        ## fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
+        
+        # false negatives
+        ## n = len(ROC_data[method]['fn_labels'])
+        labels = ROC_data[method]['fn_labels'][best_idx]            
         anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
             
         d = {x: anomalies.count(x) for x in anomalies}
@@ -394,7 +420,8 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
-    nPoints = 1 if opt.bEvaluationUnexpected else None
+    ## nPoints = 1 if opt.bEvaluationUnexpected else None
+    nPoints = 40 #None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
@@ -486,7 +513,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = []
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
