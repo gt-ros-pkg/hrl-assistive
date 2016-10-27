@@ -222,7 +222,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     # parameters
     startIdx    = 4
     method_list = ROC_dict['methods'] 
-    nPoints     = 1 #ROC_dict['nPoints']
+    nPoints     = ROC_dict['nPoints']
     
     #------------------------------------------
 
