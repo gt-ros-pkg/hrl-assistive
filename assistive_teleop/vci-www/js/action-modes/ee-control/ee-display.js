@@ -1,9 +1,10 @@
 var RFH = (function (module) {
     module.EEDisplay = function (options) {
         'use strict'; 
-        self = this;
+        var self = this;
         var ros = options.ros;
         var side = options.side[0];
+        self.fullSide = side === 'r' ? 'right' : 'left';
         var tfClient = options.tfClient;
         var localTFClient = new ROSLIB.TFClient({ros: ros,
             angularThres: 0.001,
@@ -23,6 +24,7 @@ var RFH = (function (module) {
         var goalGripper = new THREE.Object3D();
         goalGripper.userData.interactive = false;
         goalGripper.visible = false;
+        goalGripper.disabled = true;
         var allGrippers = [currentGripper, previewGripper, goalGripper];
         RFH.viewer.scene.add(currentGripper, previewGripper, goalGripper);
 
@@ -39,11 +41,24 @@ var RFH = (function (module) {
         };
 
         self.showGoal = function () {
-            goalGripper.visible = true;
+            if (!goalGripper.disabled) {
+                goalGripper.visible = true;
+            } else {
+                goalGripper.visible = false;
+            }
         };
 
         self.hideGoal = function () {
             goalGripper.visible = false;
+        };
+
+        self.disableGoal = function () {
+            goalGripper.disabled = true;
+            self.hideGoal();
+        };
+
+        self.enableGoal = function () {
+            goalGripper.disabled = false;
         };
 
         self.hide = function () {
@@ -201,24 +216,27 @@ var RFH = (function (module) {
             goalGripper.position.set(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);
             goalGripper.quaternion.set(ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w);
             goalGripper.translateX(-0.18);
-            goalGripper.visible = true;
+            self.showGoal();
             RFH.viewer.renderer.render(RFH.viewer.scene, RFH.viewer.camera);
         };
 
-        var fullSide = side === 'r' ? 'right' : 'left';
         var handGoalSubscriber = new ROSLIB.Topic({
             ros: ros,
-            name: fullSide + '_arm/haptic_mpc/goal_pose', 
+            name: self.fullSide + '_arm/haptic_mpc/goal_pose', 
             messageType: 'geometry_msgs/PoseStamped'
         });
         handGoalSubscriber.subscribe(displayGoalPose);
 
         var deadzoneCB = function (bool_msg) {
-            goalGripper.visible = !bool_msg.data;
+            if (bool_msg.data) {
+                self.hideGoal();
+            } else {
+                self.showGoal();
+            }
         };
         var deadZoneSubscriber = new ROSLIB.Topic({
             ros: ros,
-            name: fullSide+'_arm/haptic_mpc/in_deadzone',
+            name: self.fullSide+'_arm/haptic_mpc/in_deadzone',
             messageType: 'std_msgs/Bool'
         });
         deadZoneSubscriber.subscribe(deadzoneCB);

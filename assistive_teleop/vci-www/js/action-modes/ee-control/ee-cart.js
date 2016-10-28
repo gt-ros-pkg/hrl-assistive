@@ -241,6 +241,7 @@ var RFH = (function (module) {
 
         self.eeDeltaCmd = function (xyzrpy) {
             var goal = self.getPoseFromDelta(xyzrpy);
+            self.eeDisplay.enableGoal();
             self.arm.sendPoseGoal(goal);
         };
 
@@ -558,6 +559,7 @@ var RFH = (function (module) {
             self.rotationControl.hide();
             self.skinContactDisplay.hide();
             self.eeDisplay.hide();
+            self.eeDisplay.disableGoal();
 //            if (armCameraOn) {
 //                hideArmCamera();
 //            }

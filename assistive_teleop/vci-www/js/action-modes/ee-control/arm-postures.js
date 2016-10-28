@@ -14,6 +14,7 @@ var RFH = (function (module) {
         var goToPosture = function (postureName) {
             var angles = postures[postureName];
             eeDisplay.hide();
+            eeDisplay.disableGoal();
             arm.sendJointAngleGoal(angles);
         };
 
