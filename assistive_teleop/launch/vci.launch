@@ -97,6 +97,6 @@
     <arg name="verbose" value="true"/>
   </include>
 
-  <node name="shaver_toggle_node" pkg="assistive_teleop" type="shaver" />
+ <!-- <node name="shaver_toggle_node" pkg="assistive_teleop" type="shaver" />-->
 
 </launch>
