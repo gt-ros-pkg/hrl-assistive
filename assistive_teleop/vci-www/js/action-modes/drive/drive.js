@@ -18,8 +18,9 @@ var RFH = (function (module) {
         var camera = options.camera;
         var base = options.base;
         var baseOffset = options.baseOffset || [0.0, 0.35]; //Half-width of PR2 Base [x - front/back, y-left/right]
-        var timer = null;
+        var cmdTimer = null;
         var spinTimer = null;
+        var timeoutTimer = null;
         var lines = {'left':null, 'center':null, 'right':null};
         var nDots = 25;
         var driveSVG = new Snap('#drive-lines');
@@ -471,7 +472,7 @@ var RFH = (function (module) {
 
         self.driveGo = function (event) {
 //            console.log("Clearing timer for new cmd");
-            clearTimeout(timer);
+            clearTimeout(cmdTimer);
             if (event.which === 1) { //Only react to left mouse button
                 self.setSafe();
                 self.sendCmd(self.cmd);
@@ -488,7 +489,7 @@ var RFH = (function (module) {
         self.setUnsafe = function (event) {
             //alert("Unsafe: "+event.type);
 //            console.log(event.type.toString() + ": Clearing timer to stop driving");
-            clearTimeout(timer);
+            clearTimeout(cmdTimer);
             self.$div.removeClass('drive-safe');
         };
 
@@ -533,7 +534,7 @@ var RFH = (function (module) {
             base.pubCmd(cmd.x, cmd.y, cmd.theta);
             self.resetTimeout();
 //            console.log("Sent ", cmd);
-            timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
+            cmdTimer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
 //            console.log("Set Timer: ", timer);
         };
 
@@ -544,8 +545,8 @@ var RFH = (function (module) {
         var onTimeout = function() {RFH.actionMenu.startAction('lookingAction');};
 
         self.resetTimeout = function () {
-            clearTimeout(self.timeout);
-            self.timeout = setTimeout(onTimeout, 15000);
+            clearTimeout(self.timeoutTimer);
+            self.timeoutTimer = setTimeout(onTimeout, 20000);
         };
 
         self.start = function () {           
@@ -565,7 +566,9 @@ var RFH = (function (module) {
 
         self.stop = function () {
             //   $(document).off("mouseleave.rfh mouseout.rfh");
-            self.$div.removeClass('drive-safe');
+            self.setUnsafe();
+            clearTimeout(self.timeoutTimer);
+//            self.$div.removeClass('drive-safe');
             //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
             self.hideGoal();
             $('.drive-ctrl').hide();
