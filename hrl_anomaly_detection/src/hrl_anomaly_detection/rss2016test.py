@@ -1884,6 +1884,7 @@ if __name__ == '__main__':
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
         elif opt.task == 'feeding':
             nPoints = 50
+            param_dict['ROC']['nPoints'] = nPoints
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0

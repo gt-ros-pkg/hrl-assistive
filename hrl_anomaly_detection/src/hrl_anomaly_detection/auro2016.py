@@ -474,16 +474,16 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
+        #param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        nPoints = param_dict['ROC']['nPoints']
+        nPoints = 50
+        param_dict['ROC']['nPoints'] = nPoints
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'feeding':
-            nPoints = 50
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
