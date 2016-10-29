@@ -163,7 +163,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     # training data
     if useTrain:
         ## normalTrainData = np.array(normalTrainData)[:,0:3,:]
-        
+
         testDataY = -np.ones(len(normalTrainData[0]))
         
         ll_X, ll_Y, _ = \
@@ -230,7 +230,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     # abnormal test data
     if useAbnormalTest:
         log_ll = []
-        exp_log_ll = []        
+        exp_log_ll = []
         for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
