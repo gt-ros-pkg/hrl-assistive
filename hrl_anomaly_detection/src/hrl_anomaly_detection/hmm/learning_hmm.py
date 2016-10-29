@@ -97,7 +97,7 @@ class learning_hmm(learning_base):
 
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False, cov_type='full'):
+            ml_pkl=None, use_pkl=False, cov_type='full', fixed_trans=0):
         '''
         Input :
         - xData: dimension x sample x length
@@ -186,7 +186,7 @@ class learning_hmm(learning_base):
             if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-            ret = self.ml.baumWelch(final_seq, 10000)
+            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixedTrans)
             if np.isnan(ret):
                 print 'Baum Welch return:', ret
                 return 'Failure'

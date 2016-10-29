@@ -28,10 +28,25 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-# system
-## import rospy, roslib
-import os, sys, copy
-import random
+# system & utils
+import os, sys, copy, random
+import numpy as np
+import scipy
+from joblib import Parallel, delayed
+import hrl_lib.util as ut
+
+# Private utils
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection.AURO2016_params import *
+## from hrl_anomaly_detection.optimizeParam import *
+from hrl_anomaly_detection import util as util
+
+# Private learners
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
+import hrl_anomaly_detection.classifiers.classifier as cf
+import hrl_anomaly_detection.data_viz as dv
 
 # visualization
 import matplotlib
@@ -39,30 +54,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
-# util
-import numpy as np
-import scipy
-import hrl_lib.util as ut
-from hrl_anomaly_detection.util import *
-from hrl_anomaly_detection.util_viz import *
-from hrl_anomaly_detection import data_manager as dm
-from hrl_anomaly_detection.AURO2016_params import *
-from hrl_anomaly_detection.optimizeParam import *
-from hrl_anomaly_detection import util as util
-
-# learning
-## from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
-from mvpa2.datasets.base import Dataset
-## from sklearn import svm
-from joblib import Parallel, delayed
-from sklearn import metrics
-from sklearn.grid_search import ParameterGrid
-
-# private learner
-import hrl_anomaly_detection.classifiers.classifier as cf
-import hrl_anomaly_detection.data_viz as dv
-
 import itertools
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
 shapes = itertools.cycle(['x','v', 'o', '+'])
@@ -389,9 +380,6 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
-    param_dict['HMM']['nState'] = 20
-    param_dict['HMM']['scale']  = 15.55
-    param_dict['HMM']['cov']    = 3.75
 
 
     
@@ -474,16 +462,16 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
+        #param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        nPoints = param_dict['ROC']['nPoints']
+        nPoints = 50
+        param_dict['ROC']['nPoints'] = nPoints
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'feeding':
-            nPoints = 50
             ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0

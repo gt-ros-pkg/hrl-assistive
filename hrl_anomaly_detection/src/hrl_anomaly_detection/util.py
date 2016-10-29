@@ -73,7 +73,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'audioWristAzimuthList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
-                'kinTargetQuatList', 'kinPosList', 'kinVelList', 'kinEffList',\
+                'kinTargetQuatList', 'kinPosList', 'kinVelList', 'kinJntEffList',\
                 'kinDesEEPosList', 'kinDesEEQuatList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
@@ -2169,6 +2169,11 @@ def initialiseOptParser(p):
 
     p.add_option('--data_generation', action='store_true', dest='bDataGen',
                  default=False, help='Data generation before evaluation.')
+    p.add_option('--find_param', action='store_true', dest='bFindParam',
+                 default=False, help='Find hmm parameter.')
+    p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
+                 default=False, help='Plot data and select it.')
+    
     p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
                  default=False, help='Evaluate a classifier with cross-validation.')
     p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',

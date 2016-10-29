@@ -544,6 +544,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         AddFeature_names = np.array(param_dict.get('feature_names', handFeatures))
     else:
         AddFeature_names = np.array(param_dict_isol.get('feature_names', isolationFeatures))
+        successDataList = successIsolDataList
+        failureDataList = failureIsolDataList
 
     # -------------------- Display ---------------------
     
@@ -562,8 +564,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             color = colors.next()
 
             for i in xrange(n):
-                ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-                ax = fig.add_subplot(n*100+10+i)
+                if n>9:
+                    ax = fig.add_subplot(nPlot/2,2,i)
+                else:
+                    ax = fig.add_subplot(n*100+10+i)
                 if solid_color: ax.plot(successData[i].T, c=color)
                 else: ax.plot(successData[i].T)
 
@@ -582,16 +586,18 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             nPlot = n
 
             for i in xrange(n):
-                ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-                ax = fig.add_subplot(n*100+10+i)
+                if n>9:
+                    ax = fig.add_subplot(nPlot/2,2,i)
+                else:
+                    ax = fig.add_subplot(n*100+10+i)
                 if solid_color: ax.plot(failureData[i].T, c='r')
                 else: ax.plot(failureData[i].T)
                 ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
-        plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
-        for i in xrange(n):
-            ax = fig.add_subplot(n*100+10+i)
+        ## plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
+        ## for i in xrange(n):
+        ##     ax = fig.add_subplot(n*100+10+i)
             ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
             ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
 
@@ -1462,14 +1468,20 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 param_dict['feature_names'].append('kinVel_z')
 
         # Unimodal feature - Kinematics --------------------------------------
-        if 'unimodal_kinEff' in feature_list:
-            unimodal_kinEff = d['kinEffList'][idx]
+        if 'unimodal_kinJntEff' in feature_list:
+            unimodal_kinJntEff = d['kinJntEffList'][idx]
 
-            if dataSample is None: dataSample = np.array(unimodal_kinEff)
-            else: dataSample = np.vstack([dataSample, unimodal_kinEff])
-            if 'kinEff_1' not in param_dict['feature_names']:           
-                for i in xrange(len(unimodal_kinEff)):
-                    param_dict['feature_names'].append('kinEff_'+str(i+1))
+            if offset_flag:
+                offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
+                for i in xrange(len(offset)):
+                    unimodal_kinJntEff[i] -= offset[i]
+
+
+            if dataSample is None: dataSample = np.array(unimodal_kinJntEff)
+            else: dataSample = np.vstack([dataSample, unimodal_kinJntEff])
+            if 'kinJntEff_1' not in param_dict['feature_names']:           
+                for i in xrange(len(unimodal_kinJntEff)):
+                    param_dict['feature_names'].append('kinJntEff_'+str(i+1))
 
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
@@ -1615,6 +1627,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in feature_list:
             unimodal_fabricForce = d['fabricMagList'][idx]
+
+            if offset_flag:
+                unimodal_fabricForce -= np.amin(unimodal_fabricForce)
 
             if dataSample is None: dataSample = unimodal_fabricForce
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
