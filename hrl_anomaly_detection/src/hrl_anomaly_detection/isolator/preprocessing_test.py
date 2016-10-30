@@ -248,13 +248,12 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         abnormal_isol_test_data  = failure_isol_data[:, abnormalTestIdx, :]
 
         # get individual HMM
-        A  = dd['A']
-        pi = dd['pi']
+        A        = dd['A']
+        pi       = dd['pi']
         cov_mult = [cov]*(nEmissionDim**2)
 
-
-        print np.shape(normal_isol_train_data)
-        sys.exit()
+        ## print np.shape(normal_isol_train_data)
+        ## sys.exit()
 
         ml_dict = {}
         ref_data = normal_isol_train_data[0:1]
@@ -272,12 +271,14 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
                                                                 abnormalTrainFileList, \
-                                                                window_size, hmm_model=ml_dict)
+                                                                window_size, hmm_model=ml_dict,\
+                                                                scale=HMM_dict['scale'])
         test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
-                                                              window_size, hmm_model=ml_dict)
+                                                              window_size, hmm_model=ml_dict,\
+                                                              scale=HMM_dict['scale'])
 
         d = {}
         d['train_feature_list'] = train_feature_list
@@ -449,7 +450,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 
 
 def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size,\
-                   hmm_model=None):
+                   hmm_model=None, scale=1.0):
 
     if hmm_model is None:
         normal_mean = []
@@ -494,8 +495,8 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ml            = hmm_model[j-1]
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
-                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1], ref_num=ref_num)
-                    single_window.append(abnormal_data[j,i,k] - x_pred[1])
+                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, ref_num=ref_num)
+                    single_window.append( (abnormal_data[j,i,k] - x_pred[1])/scale )
             else:
                 single_data   = abnormal_data[j,i] - normal_mean[j]
                 if anomaly_idx-window_size[0] <0: start_idx = 0
