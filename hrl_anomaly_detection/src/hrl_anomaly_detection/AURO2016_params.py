@@ -265,9 +265,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
-    isolationFeatures = ['unimodal_audioWristRMS', \
+    isolationFeatures = ['unimodal_kinEEChange',\
+                         'unimodal_audioWristRMS', \
                          'unimodal_audioWristFrontRMS', \
-                         'unimodal_audioWristAzimuth',
+                         'unimodal_audioWristAzimuth',                         
                          'unimodal_kinJntEff', \
                          'unimodal_ftForceX', \
                          'unimodal_ftForceY', \

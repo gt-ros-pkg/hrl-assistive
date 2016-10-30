@@ -186,7 +186,7 @@ class learning_hmm(learning_base):
             if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixedTrans)
+            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixed_trans)
             if np.isnan(ret):
                 print 'Baum Welch return:', ret
                 return 'Failure'
@@ -296,7 +296,7 @@ class learning_hmm(learning_base):
         return mu_l, cov_l
 
 
-    def predict_from_single_seq(self, x, nOrder):
+    def predict_from_single_seq(self, x, ref_num):
         '''
         Input
         @ x: length #samples x known steps
@@ -307,7 +307,7 @@ class learning_hmm(learning_base):
         # new emission for partial sequence
         B = []
         for i in xrange(self.nState):    
-            B.append( [ self.B[i][0][nOrder], self.B[i][1][nOrder*self.nEmissionDim+nOrder] ] )
+            B.append( [ self.B[i][0][ref_num], self.B[i][1][ref_num*self.nEmissionDim+ref_num] ] )
 
         ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
                                   self.A, B, self.pi)
@@ -323,17 +323,17 @@ class learning_hmm(learning_base):
 
         x_pred = []
         for i in xrange(self.nEmissionDim):
-            if i == nOrder:
+            if i == ref_num:
                 x_pred.append(x[-1])
             else:
-                src_cov_idx = nOrder*self.nEmissionDim+nOrder
-                tgt_cov_idx = nOrder*self.nEmissionDim+i
+                src_cov_idx = ref_num*self.nEmissionDim+ref_num
+                tgt_cov_idx = ref_num*self.nEmissionDim+i
 
                 t_o = 0.0
                 for j in xrange(self.nState):
                     m_j = self.B[j][0][i] + \
                       self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
-                      (x[-1]-self.B[j][0][nOrder])
+                      (x[-1]-self.B[j][0][ref_num])
                     t_o += alpha[-1][j]*m_j
                 x_pred.append(t_o)
 

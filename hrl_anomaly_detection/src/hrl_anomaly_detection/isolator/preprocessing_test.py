@@ -145,7 +145,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         
     #-----------------------------------------------------------------------------------------
     # parameters
-    nOrder      = 2
+    ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
     weight      = -4.9 #-5.5 
@@ -162,8 +162,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     # 0 1 2345678 91011 12 13 14 15
     ## success_isol_data = success_isol_data[[0,1,2,3,9,10,11,12,13,14,15]]
     ## failure_isol_data = failure_isol_data[[0,1,2,3,9,10,11,12,13,14,15]]
-    success_isol_data = success_isol_data[[0,3,4,5,6,7,8,9,10,11,12,13,14,15]]
-    failure_isol_data = failure_isol_data[[0,3,4,5,6,7,8,9,10,11,12,13,14,15]]
+    ## success_isol_data = success_isol_data[[0,3,4,5,6,7,8,9,10,11,12,13,14,15]]
+    ## failure_isol_data = failure_isol_data[[0,3,4,5,6,7,8,9,10,11,12,13,14,15]]
 
     #-----------------------------------------------------------------------------------------
     # HMM-induced vector with LOPO
@@ -250,17 +250,34 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         # get individual HMM
         A  = dd['A']
         pi = dd['pi']
+        cov_mult = [cov]*(nEmissionDim**2)
+
+
+        print np.shape(normal_isol_train_data)
+        sys.exit()
+
+        ml_dict = {}
+        ref_data = normal_isol_train_data[0:1]
+        tgt_data = normal_isol_train_data[1:]
+        for i in xrange(len(tgt_data)):
+            x = np.vstack([ref_data, tgt_data[i:i+1]])
+
+            ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale'], \
+                          cov_mult=cov_mult, use_pkl=False)
+            ml_dict[i] = ml
+        
 
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
                                                                 abnormalTrainFileList, \
-                                                                window_size)
+                                                                window_size, hmm_model=ml_dict)
         test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
-                                                              window_size)
+                                                              window_size, hmm_model=ml_dict)
 
         d = {}
         d['train_feature_list'] = train_feature_list
@@ -316,7 +333,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         ## raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
         ##              detection_idx_list, abnormalFileList, timeList,\
         ##              HMM_dict, \
-        ##              startIdx=4, nOrder=2, window_size=window_size)
+        ##              startIdx=4, ref_num=2, window_size=window_size)
 
     print np.shape(y_test), np.shape(y_pred)
     print "Score: ", np.mean(scores), np.std(scores)
@@ -431,15 +448,32 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     return detection_idx
 
 
-def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size):
+def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size,\
+                   hmm_model=None):
 
-    normal_mean = []
-    for i in xrange(len(normal_data)):
-        normal_mean.append(np.mean(normal_data[i],axis=0))
+    if hmm_model is None:
+        normal_mean = []
+        for i in xrange(len(normal_data)):
+            normal_mean.append(np.mean(normal_data[i],axis=0))
+    ## else:        
+    ##     (A,pi,nState,scale) = hmm_param
+
+    ##     for i in xrange(len(normal_data)):
+    ##         x = normal_data[i:i+1]+np.random.normal(0.0, 0.03, np.shape(normalTrainData[i:i+1]) )
+    ##         x *= scale
+            
+    ##         ml  = hmm.learning_hmm(nState, 1, verbose=verbose)
+    ##         ml.fit(x, A=A, pi=pi, fixed_trans=1)
+    ##         if ret == 'Failure' or np.isnan(ret):
+    ##             print "hmm training failed"
+    ##             sys.exit()
+            
+    ref_num = 0
+         
 
     anomaly_list = []
     feature_list = []
-    for i in xrange(len(abnormal_data[0])):
+    for i in xrange(len(abnormal_data[0])): # per sample
         # Anomaly point
         anomaly_idx = anomaly_idx_list[i]
         if anomaly_idx is None:
@@ -448,11 +482,25 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
 
         # for each feature
         features = []
-        for j in xrange(len(abnormal_data)):
-            single_data   = abnormal_data[j,i] - normal_mean[j]
-            if anomaly_idx-window_size[0] <0: start_idx = 0
-            else: start_idx = anomaly_idx-window_size[0]
-            single_window = single_data[start_idx:anomaly_idx+window_size[1]+1]
+        for j in xrange(len(abnormal_data)): # per feature
+
+            if j == 0: continue
+            if hmm_model is not None:
+
+                start_idx = anomaly_idx-window_size[0]
+                end_idx   = anomaly_idx+window_size[1]
+                if start_idx < 0: start_idx = 0
+
+                ml            = hmm_model[j-1]
+                single_window = []
+                for k in xrange(start_idx, end_idx+1):
+                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1], ref_num=ref_num)
+                    single_window.append(abnormal_data[j,i,k] - x_pred[1])
+            else:
+                single_data   = abnormal_data[j,i] - normal_mean[j]
+                if anomaly_idx-window_size[0] <0: start_idx = 0
+                else: start_idx = anomaly_idx-window_size[0]
+                single_window = single_data[start_idx:anomaly_idx+window_size[1]+1]
 
             features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
         feature_list.append(features)
@@ -466,7 +514,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
 def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
                  detection_idx_list, abnormalFileList, timeList,\
                  HMM_dict, \
-                 startIdx=4, nOrder=2, window_size = [10,20]):
+                 startIdx=4, ref_num=2, window_size = [10,20]):
 
     normalMean = []
     normalStd  = []
@@ -474,7 +522,7 @@ def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,
         normalMean.append(np.mean(normalTestData[i],axis=0))
         normalStd.append(np.std(normalTestData[i],axis=0))
                  
-    x = range(len(normalMean[0]))
+    x = range(len(normalMean[0])) # length
 
     targetDataX = testDataX #abnormalTestData
     targetDataY = testDataY
@@ -482,7 +530,7 @@ def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,
 
     abnormal_windows = []
     abnormal_class   = []
-    for i in xrange(len(targetDataX[0])):
+    for i in xrange(len(targetDataX[0])): # per sample
 
         if targetDataY[i] < 0:
             print "Ignored negative data: ", i
@@ -490,13 +538,13 @@ def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,
 
         # Expected output (prediction from partial observation)
         mu       = []
-        for j in xrange(len(x)):
+        for j in xrange(len(x)): # per time sample
             if j < startIdx:
                 mu.append(ml.B[0][0])
             else:
                 ## x_pred = ml.predict_from_single_seq(exp_interp_traj[i][:j]*HMM_dict['scale'], \
-                ##                                     nOrder=2)
-                x_pred = ml.predict_from_single_seq(targetDataX[nOrder,i,:j], nOrder=2)
+                ##                                     ref_num=2)
+                x_pred = ml.predict_from_single_seq(targetDataX[ref_num,i,:j], ref_num=2)
                 mu.append(x_pred)
         mu  = np.array(mu)
 
