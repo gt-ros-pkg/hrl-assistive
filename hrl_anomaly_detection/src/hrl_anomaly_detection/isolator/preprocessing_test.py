@@ -450,7 +450,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 
 
 def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size,\
-                   hmm_model=None, scale=1.0):
+                   hmm_model=None, scale=1.0, startIdx=4):
 
     if hmm_model is None:
         normal_mean = []
