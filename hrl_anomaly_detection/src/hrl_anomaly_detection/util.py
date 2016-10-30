@@ -1896,7 +1896,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
-                    print tp, j, method
+                    print "tp: ", tp, method
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
@@ -1954,8 +1954,10 @@ def cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
         # 0: f1, 1: f0.5, 2: f2        
         for j in xrange(3):
 
-            idx = np.argmin(fp_l) 
-            #idx = np.argmax(f_scores[j])
+            # select the best idx
+            ## idx = np.argmin(fp_l) 
+            idx = np.argmax(f_scores[j])
+            
             print method, idx, np.shape(fp_l)
             fscore = f_scores[j][idx]
             ## if j==0: fscore = 2.0*tp/(2.0*tp+fn+fp)
