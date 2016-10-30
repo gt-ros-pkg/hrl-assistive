@@ -254,6 +254,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         cov_mult = [cov]*(nEmissionDim**2)
 
         ## print np.shape(normal_isol_train_data)
+        ## print np.shape(abnormal_isol_train_data)
         ## sys.exit()
 
         ml_dict = {}
@@ -498,7 +499,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     if k<startIdx:
                         x_pred = ml.B[0][1]
                     else:
-                        x_pred = ml.predict_from_single_seq(abnormal_data[ref_num:ref_num+1,i,:k+1]*scale, \
+                        x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
                                                             ref_num=ref_num)[1]
                     print np.shape(abnormal_data[j,i,k]), np.shape(x_pred)
                     single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
