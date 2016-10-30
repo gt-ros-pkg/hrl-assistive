@@ -186,7 +186,7 @@ class learning_hmm(learning_base):
             if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixedTrans)
+            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixed_trans)
             if np.isnan(ret):
                 print 'Baum Welch return:', ret
                 return 'Failure'
