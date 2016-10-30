@@ -250,6 +250,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         # get individual HMM
         A        = dd['A']
         pi       = dd['pi']
+        nEmissionDim = 2
         cov_mult = [cov]*(nEmissionDim**2)
 
         ## print np.shape(normal_isol_train_data)
