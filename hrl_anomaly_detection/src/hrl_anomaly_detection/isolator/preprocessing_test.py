@@ -501,7 +501,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     else:
                         x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
                                                             ref_num=ref_num)[1]
-                    print np.shape(abnormal_data[j,i,k]), np.shape(x_pred)
+                    print np.shape(abnormal_data), j,i,k, np.shape(abnormal_data[j,i,k]), np.shape(x_pred)
                     single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
             else:
                 single_data   = abnormal_data[j,i] - normal_mean[j]
