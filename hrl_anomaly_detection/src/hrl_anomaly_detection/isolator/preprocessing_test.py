@@ -267,7 +267,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                           cov_mult=cov_mult, use_pkl=False)
             ml_dict[i] = ml
         
-
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
@@ -496,7 +495,9 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ml            = hmm_model[j-1]
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
-                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, ref_num=ref_num)
+                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num:ref_num+1,i,:k+1]*scale, \
+                                                        ref_num=ref_num)
+                    print np.shape(abnormal_data[j,i,k]), np.shape(x_pred)
                     single_window.append( (abnormal_data[j,i,k] - x_pred[1])/scale )
             else:
                 single_data   = abnormal_data[j,i] - normal_mean[j]
