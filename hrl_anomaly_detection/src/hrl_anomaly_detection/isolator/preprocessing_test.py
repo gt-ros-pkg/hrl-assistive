@@ -495,10 +495,13 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ml            = hmm_model[j-1]
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
-                    x_pred = ml.predict_from_single_seq(abnormal_data[ref_num:ref_num+1,i,:k+1]*scale, \
-                                                        ref_num=ref_num)
+                    if k<startIdx:
+                        x_pred = ml.B[0][1]
+                    else:
+                        x_pred = ml.predict_from_single_seq(abnormal_data[ref_num:ref_num+1,i,:k+1]*scale, \
+                                                            ref_num=ref_num)[1]
                     print np.shape(abnormal_data[j,i,k]), np.shape(x_pred)
-                    single_window.append( (abnormal_data[j,i,k] - x_pred[1])/scale )
+                    single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
             else:
                 single_data   = abnormal_data[j,i] - normal_mean[j]
                 if anomaly_idx-window_size[0] <0: start_idx = 0
