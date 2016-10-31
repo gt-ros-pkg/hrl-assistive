@@ -2210,6 +2210,5 @@ def initialiseOptParser(p):
                  default=False, help='Save pdf files.')    
     p.add_option('--save', action='store_true', dest='bSave',
                  default=False, help='Save result.')
-
     
-    opt, args = p.parse_args()
+    ## opt, args = p.parse_args()

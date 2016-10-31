@@ -1666,10 +1666,11 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
                 for i in xrange(len(offset)):
                     kinEEPos[i] -= offset[i]
+            dist = np.linalg.norm(kinEEPos, axis=0)
 
-            if dataSample is None: dataSample = np.array(kinEEPos)
-            else: dataSample = np.vstack([dataSample, kinEEPos])
-            if 'EEChange' not in param_dict['feature_names']:
+            if dataSample is None: dataSample = np.array(dist)
+            else: dataSample = np.vstack([dataSample, dist])
+            If 'EEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('EEChange')
 
             
