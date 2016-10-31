@@ -264,7 +264,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
             x = np.vstack([ref_data, tgt_data[i:i+1]])
 
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale'], \
+            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale']/2.0, \
                           cov_mult=cov_mult, use_pkl=False)
             ml_dict[i] = ml
             if ml.B is None:
@@ -277,13 +277,13 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                                 detection_train_idx_list, \
                                                                 abnormalTrainFileList, \
                                                                 window_size, hmm_model=ml_dict,\
-                                                                scale=HMM_dict['scale'])
+                                                                scale=HMM_dict['scale']/2.0)
         test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
                                                               window_size, hmm_model=ml_dict,\
-                                                              scale=HMM_dict['scale'])
+                                                              scale=HMM_dict['scale']/2.0)
 
         d = {}
         d['train_feature_list'] = train_feature_list
