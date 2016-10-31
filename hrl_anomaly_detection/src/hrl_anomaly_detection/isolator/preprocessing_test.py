@@ -267,7 +267,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
             ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale'], \
                           cov_mult=cov_mult, use_pkl=False)
             ml_dict[i] = ml
-        
+
+        print "-------------------------------------------------------------"
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
@@ -493,8 +494,9 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 end_idx   = anomaly_idx+window_size[1]
                 if start_idx < 0: start_idx = 0
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
-
+                
                 ml            = hmm_model[j-1]
+                print hmm_model.keys(), j-1, np.shape(ml.B)
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
                     if k<startIdx:
