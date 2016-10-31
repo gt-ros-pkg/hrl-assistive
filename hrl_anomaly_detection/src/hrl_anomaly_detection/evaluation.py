@@ -156,10 +156,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
-            start_idx = np.random.randint(0, nLength/2, 1)[0]
+            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             dim_idx   = np.random.randint(0, len(abnormalTestData))
             
-            if start_idx < startIdx: start_idx=startIdx
             abnormalTestData[dim_idx,i,start_idx:] += step_mag
             step_idx_l.append(start_idx)
 
