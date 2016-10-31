@@ -1668,15 +1668,9 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                     kinEEPos[i] -= offset[i]
             dist = np.linalg.norm(kinEEPos, axis=0)
 
-            print np.shape(dist)
-            unimodal_dist = []
-            for time_idx in xrange(len(timeList)):
-                unimodal_dist.append(dist[time_idx])
-            print np.shape(timeList), np.shape(unimodal_dist)
-
-            if dataSample is None: dataSample = np.array(kinEEPos)
-            else: dataSample = np.vstack([dataSample, kinEEPos])
-            if 'EEChange' not in param_dict['feature_names']:
+            if dataSample is None: dataSample = np.array(dist)
+            else: dataSample = np.vstack([dataSample, dist])
+            If 'EEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('EEChange')
 
             
