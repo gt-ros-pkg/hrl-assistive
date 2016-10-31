@@ -276,6 +276,11 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
+    osvm_data = None ; bpsvm_data = None
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False)
 
     # parallelization
     if debug: n_jobs=1
@@ -285,6 +290,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
                                                                          method, ROC_data, \
                                                                          ROC_dict, AE_dict, \
                                                                          SVM_dict, HMM_dict, \
+                                                                         raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
@@ -452,7 +458,7 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationUnexpected:
-        param_dict['ROC']['methods'] = ['progress', 'hmmgp']
+        param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
