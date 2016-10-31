@@ -29,10 +29,23 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-## import rospy, roslib
 import os, sys, copy
 import random
-import socket
+import numpy as np
+import scipy
+from joblib import Parallel, delayed
+
+# util
+import hrl_lib.util as ut
+from hrl_anomaly_detection.util import *
+from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
+## from hrl_anomaly_detection.optimizeParam import *
+
+# learning
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
+import hrl_anomaly_detection.classifiers.classifier as cf
 
 # visualization
 import matplotlib
@@ -40,31 +53,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
-# util
-import numpy as np
-import scipy
-import hrl_lib.util as ut
-from hrl_anomaly_detection.util import *
-from hrl_anomaly_detection.util_viz import *
-from hrl_anomaly_detection import data_manager as dm
-from hrl_anomaly_detection import util as util
-## from hrl_anomaly_detection.scooping_feeding import util as sutil
-## import PyKDL
-## import sandbox_dpark_darpa_m3.lib.hrl_check_util as hcu
-## import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as hdl
-## import hrl_lib.circular_buffer as cb
-from hrl_anomaly_detection.optimizeParam import *
-
-# learning
-## from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
-from mvpa2.datasets.base import Dataset
-## from sklearn import svm
-from joblib import Parallel, delayed
-from sklearn import metrics
-
-# private learner
-import hrl_anomaly_detection.classifiers.classifier as cf
 
 import itertools
 colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
