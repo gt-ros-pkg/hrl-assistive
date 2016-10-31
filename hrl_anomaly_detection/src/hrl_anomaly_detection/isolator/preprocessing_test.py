@@ -159,7 +159,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     handFeatureParams = d['param_dict']
     normalTrainData   = d['successData'] * HMM_dict['scale']
 
-    # 0 1 2345678 91011 12 13 14 15
+    # 0 1 2 3 45678910 111213 14 15 16 17
     ## success_isol_data = success_isol_data[[0,1,2,3,9,10,11,12,13,14,15]]
     ## failure_isol_data = failure_isol_data[[0,1,2,3,9,10,11,12,13,14,15]]
     ## success_isol_data = success_isol_data[[0,3,4,5,6,7,8,9,10,11,12,13,14,15]]
@@ -251,7 +251,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         A        = dd['A']
         pi       = dd['pi']
         nEmissionDim = 2
-        cov_mult = [cov*2.0]*(nEmissionDim**2)
+        cov_mult = [cov/2.0]*(nEmissionDim**2)
 
         ## print np.shape(normal_isol_train_data)
         ## print np.shape(abnormal_isol_train_data)
@@ -264,7 +264,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
             x = np.vstack([ref_data, tgt_data[i:i+1]])
 
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale']/2.0, \
+            ret = ml.fit( (x+np.random.normal(0.0, 0.05, np.shape(x)))*HMM_dict['scale']/2.0, \
                           cov_mult=cov_mult, use_pkl=False)
             ml_dict[i] = ml
             if ml.B is None:
