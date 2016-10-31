@@ -316,22 +316,33 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         print "---------- ", method, " -----------"
 
         tp_l = []
+        tn_l = []
         fn_l = []
         fp_l = []
         for i in xrange(nPoints):
             tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
+            tn_l.append( float(np.sum(ROC_data[method]['tn_l'][i])) )
             fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
             fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
-        fscore_l = 2.0*np.array(tp_l)/(2.0*np.array(tp_l)+np.array(fp_l)+np.array(fn_l))
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+            
+        fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
+        ## fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        ## fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
 
         ##################################3
-        ## best_idx = np.argmin(fp_l)
+        #best_idx = np.argmin(fp_l)
+        ## best_idx = np.argmax(acc_l)
         best_idx = np.argmax(fscore_l)
         ##################################3
         
         print 'fp_l:', fp_l
         print 'fscore: ', fscore_l
-        print "F1-score: ", fscore_l[best_idx]
+        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx]
         print "best idx: ", best_idx
 
         # fscore
@@ -341,7 +352,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         ## fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
         
         # false negatives
-        ## n = len(ROC_data[method]['fn_labels'])
         labels = ROC_data[method]['fn_labels'][best_idx]            
         anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
             
@@ -350,7 +360,8 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
 
         print "Max count is ", len(kFold_list)*2
         for idx in l_idx:
-            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx]
+            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
+              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
 
 
 

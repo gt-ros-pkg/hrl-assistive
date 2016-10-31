@@ -305,8 +305,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         test_anomaly_list  = d['test_anomaly_list']  
 
         # 0 1 2 3 45678910 111213 14 15 16 17
-        print np.shape(train_feature_list)
-        sys.exit()
+        ## print np.shape(train_feature_list)
+        ## sys.exit()
 
         # scaling
         ## scaler = preprocessing.StandardScaler()
