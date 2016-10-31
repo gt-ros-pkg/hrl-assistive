@@ -307,7 +307,6 @@ class learning_hmm(learning_base):
         # new emission for partial sequence
         B = []
         for i in xrange(self.nState):
-            print np.shape(self.B), i, ref_num
             B.append( [ self.B[i][0][ref_num], self.B[i][1][ref_num*self.nEmissionDim+ref_num] ] )
 
         ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \

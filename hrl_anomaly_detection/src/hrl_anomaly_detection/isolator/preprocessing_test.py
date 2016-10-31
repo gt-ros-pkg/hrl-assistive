@@ -267,6 +267,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
             ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*HMM_dict['scale'], \
                           cov_mult=cov_mult, use_pkl=False)
             ml_dict[i] = ml
+            if ml.B is None:
+                print "fitting failed... ", i, ml.B
+                sys.exit()
 
         print "-------------------------------------------------------------"
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
