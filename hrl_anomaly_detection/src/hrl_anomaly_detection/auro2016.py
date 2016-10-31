@@ -459,7 +459,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['osvm']
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
