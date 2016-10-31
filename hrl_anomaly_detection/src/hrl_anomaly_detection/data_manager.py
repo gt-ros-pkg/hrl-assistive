@@ -1670,7 +1670,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
             if dataSample is None: dataSample = np.array(dist)
             else: dataSample = np.vstack([dataSample, dist])
-            If 'EEChange' not in param_dict['feature_names']:
+            if 'EEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('EEChange')
 
             
