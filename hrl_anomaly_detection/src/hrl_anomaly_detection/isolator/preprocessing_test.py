@@ -68,6 +68,7 @@ np.random.seed(3334)
 
 def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                    low_dim_viz=False,\
                     no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
     ## Parameters
@@ -142,7 +143,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         d['kFoldList']       = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
-        
+
     #-----------------------------------------------------------------------------------------
     # parameters
     ref_num      = 2
@@ -169,7 +170,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     # HMM-induced vector with LOPO
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, HMM_dict['scale'], \
                               success_files=success_files, failure_files=failure_files,\
                               add_logp_d=add_logp_d, verbose=verbose)
 
@@ -252,10 +253,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         pi       = dd['pi']
         nEmissionDim = 2
         cov_mult = [cov/2.0]*(nEmissionDim**2)
-
-        ## print np.shape(normal_isol_train_data)
-        ## print np.shape(abnormal_isol_train_data)
-        ## sys.exit()
+        scale    = HMM_dict['scale']/2.0
 
         ml_dict = {}
         ref_data = normal_isol_train_data[0:1]
@@ -264,26 +262,25 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
             x = np.vstack([ref_data, tgt_data[i:i+1]])
 
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.05, np.shape(x)))*HMM_dict['scale']/2.0, \
+            ret = ml.fit( (x+np.random.normal(0.0, 0.05, np.shape(x)))*scale, \
                           cov_mult=cov_mult, use_pkl=False)
-            ml_dict[i] = ml
-            if ml.B is None:
+            if ret == 'Failure':
                 print "fitting failed... ", i, ml.B
                 sys.exit()
+            ml_dict[i] = ml
 
-        print "-------------------------------------------------------------"
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
                                                                 abnormalTrainFileList, \
                                                                 window_size, hmm_model=ml_dict,\
-                                                                scale=HMM_dict['scale']/2.0)
+                                                                scale=scale)
         test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
                                                               window_size, hmm_model=ml_dict,\
-                                                              scale=HMM_dict['scale']/2.0)
+                                                              scale=scale)
 
         d = {}
         d['train_feature_list'] = train_feature_list
@@ -307,13 +304,14 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         test_feature_list  = d['test_feature_list']  
         test_anomaly_list  = d['test_anomaly_list']  
 
+        # 0 1 2 3 45678910 111213 14 15 16 17
+        print np.shape(train_feature_list)
+        sys.exit()
+
         # scaling
         ## scaler = preprocessing.StandardScaler()
         ## train_feature_list = scaler.fit_transform(train_feature_list)
         ## test_feature_list = scaler.transform(test_feature_list)
-            
-        ## low_dim_viz((train_feature_list, train_anomaly_list), \
-        ##             xy_test=(test_feature_list, test_anomaly_list))
         
         #-----------------------------------------------------------------------------------------
         # Classification
@@ -329,13 +327,16 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         y_test += list(test_anomaly_list)
         y_pred += list(pred_anomaly_list)
         scores.append(score)
+        print idx, "'s score : ", score
         
-        ## print y_test
-        ## print y_pred
-        ## break
         #-----------------------------------------------------------------------------------------
         # Visualization
         #-----------------------------------------------------------------------------------------            
+        if low_dim_viz:
+            low_dim_viz((train_feature_list, train_anomaly_list), \
+                        xy_test=(test_feature_list, test_anomaly_list))
+            sys.exit()
+            
         ## raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
         ##              detection_idx_list, abnormalFileList, timeList,\
         ##              HMM_dict, \
@@ -344,15 +345,16 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     print np.shape(y_test), np.shape(y_pred)
     print "Score: ", np.mean(scores), np.std(scores)
 
-    ## class_names = np.unique(y_test)
-    ## from sklearn.metrics import confusion_matrix
-    ## cnf_matrix = confusion_matrix(y_test, y_pred, labels=class_names)
-    ## np.set_printoptions(precision=2)
+    if no_plot is False:
+        class_names = np.unique(y_test)
+        from sklearn.metrics import confusion_matrix
+        cnf_matrix = confusion_matrix(y_test, y_pred, labels=class_names)
+        np.set_printoptions(precision=2)
 
-    ## plt.figure()
-    ## plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-    ##                                         title='Normalized confusion matrix')
-    ## plt.show()
+        plt.figure()
+        plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+                                                title='Normalized confusion matrix')
+        plt.show()
 
 
 
@@ -499,7 +501,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
                 ml            = hmm_model[j-1]
-                print hmm_model.keys(), j-1, np.shape(ml.B)
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
                     if k<startIdx:
@@ -730,6 +731,10 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
+
+    p.add_option('--low_dim_viz', '--lv', action='store_true', dest='low_dim_viz',
+                 default=False, help='Plot low-dimensional embedding.')
+    
     opt, args = p.parse_args()
     
     #---------------------------------------------------------------------------           
@@ -833,18 +838,9 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                        save_pdf=opt.bSavePdf, \
+                        save_pdf=opt.bSavePdf, low_dim_viz=opt.low_dim_viz,\
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                         find_param=False, data_gen=opt.bDataGen)
-
-
-
-
-
-
-
-
-
 
 
         ## print np.shape(abnormal_windows)

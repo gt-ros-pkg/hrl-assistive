@@ -1666,6 +1666,13 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
                 for i in xrange(len(offset)):
                     kinEEPos[i] -= offset[i]
+            dist = np.linalg.norm(kinEEPos, axis=0)
+
+            print np.shape(dist)
+            unimodal_dist = []
+            for time_idx in xrange(len(timeList)):
+                unimodal_dist.append(dist[time_idx])
+            print np.shape(timeList), np.shape(unimodal_dist)
 
             if dataSample is None: dataSample = np.array(kinEEPos)
             else: dataSample = np.vstack([dataSample, kinEEPos])
