@@ -393,6 +393,10 @@ if __name__ == '__main__':
 
     param_dict['ROC']['methods'] = ['fixed']
 
+    if opt.bEvaluationUnexpected:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     
     #---------------------------------------------------------------------------           
@@ -463,9 +467,6 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
