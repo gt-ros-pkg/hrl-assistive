@@ -331,18 +331,19 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
         ## fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
-        ## fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
+        ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        fpr_l = fp_l/(fp_l+tn_l)
 
         ##################################3
-        #best_idx = np.argmin(fp_l)
+        ## best_idx = np.argmin(fp_l)
         ## best_idx = np.argmax(acc_l)
         best_idx = np.argmax(fscore_l)
         ##################################3
         
         print 'fp_l:', fp_l
         print 'fscore: ', fscore_l
-        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx]
+        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
         # fscore
@@ -356,14 +357,19 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
             
         d = {x: anomalies.count(x) for x in anomalies}
-        l_idx = np.array(d.values()).argsort()[-10:]
+        l_idx = np.array(d.values()).argsort() #[-10:]
 
+        t_sum = []
         print "Max count is ", len(kFold_list)*2
         for idx in l_idx:
             print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
               " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
 
+        if len(t_sum)<12:
+            t_sum.append(1.0)
 
+        print "Avg.: ", np.mean(t_sum)
 
 
 if __name__ == '__main__':
@@ -435,6 +441,10 @@ if __name__ == '__main__':
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.bLikelihoodPlot:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_lp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, \
@@ -456,7 +466,7 @@ if __name__ == '__main__':
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
-        method = 'progress'
+        method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
                                 n_jobs=opt.n_jobs, n_iter_search=1000, save=opt.bSave)
 

@@ -531,7 +531,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['successIsolDataList'] = successIsolDataList
         data_dict['failureIsolDataList'] = failureIsolDataList
-        data_dict['param_dict_isol']     = param_dict_isol
+        if len(isolationFeatures) > 0:
+            data_dict['param_dict_isol']     = param_dict_isol
         
         ut.save_pickle(data_dict, save_pkl)
 
