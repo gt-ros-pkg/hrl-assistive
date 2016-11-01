@@ -431,6 +431,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         # Task-oriented hand-crafted features
+        print data_dict.keys()
         successDataList = data_dict['successDataList']
         failureDataList = data_dict['failureDataList']
         failureNameList = None #failure_data_dict['fileNameList']

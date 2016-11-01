@@ -35,9 +35,10 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
 
     # common params
     if dim == 4:
-        param_dict['ROC']['methods'] = [ 'hmmgp' ]
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
+                                         'osvm', 'hmmosvm', 'hmmgp', 'rnd' ]
     else:
-        param_dict['ROC']['methods'] = [ 'hmmgp']
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
     param_dict['ROC']['update_list'] = [ ]
     param_dict['SVM']['raw_window_size'] = 5
 
@@ -60,7 +61,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
                           'hmmosvm_nu': 0.00316,\
                           'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
                           'hmmsvm_diag_gamma': 0.01,\
-                          'osvm_nu': 0.000215, 'raw_window_size': 10,\
+                          'osvm_nu': 0.000215,\
                           'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
                           'hmmsvm_dL_gamma': 0.50749,
                           }
@@ -158,25 +159,25 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
 def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local_range=10.0, \
                ae_swtch=False, dim=4, nPoints=None):
 
-    if nPoints is None: nPoints = 20 
+    if nPoints is None: nPoints = 40 
 
     if dim == 5:
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng',\
-                        'unimodal_fabricForce' ]
+                        'unimodal_kinEEChange']
+                        ## 'unimodal_fabricForce' ]
             ## ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 10.55,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.75, 'scale': 10.55,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 2.0,\
-                          'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
                           'bpsvm_cost': 12.5,\
@@ -219,18 +220,17 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     elif dim == 4:
 
-        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 40, 'cov': 3.75, 'scale': 5.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.75, 'scale': 15.55,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
                           'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
                           'hmmsvm_diag_gamma': 2.0,\
-                          'raw_window_size': 10,\
                           'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
                           'hmmsvm_dL_gamma': 4.0,\
                           'bpsvm_cost': 12.5,\
@@ -274,7 +274,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.5, 'scale': 2.555,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
                           'hmmosvm_nu': 0.001,\
@@ -298,7 +298,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         ## handFeatures = ['unimodal_ftForce', \
         ##                 'crossmodal_landmarkEEDist']
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.5, 'scale': 13.444,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 13.444,\
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
