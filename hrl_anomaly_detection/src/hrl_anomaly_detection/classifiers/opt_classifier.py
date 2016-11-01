@@ -158,7 +158,7 @@ class anomaly_detector(learning_base):
         # f1-score
         fscore = 2.0*tp/(2.0*tp+fn+fp)
         # f0.5-score
-        ## fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
+        fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
         # f2-score
         ## fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)
         
