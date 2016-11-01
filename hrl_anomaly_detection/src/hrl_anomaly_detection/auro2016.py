@@ -85,6 +85,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     # ROC
     ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
     
     #------------------------------------------
 
@@ -98,34 +103,30 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']        
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
-        d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
 
-        # TODO: need leave-one-person-out
-        # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
-                                          data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
-        d['kFoldList']   = kFold_list
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    # parameters
-    startIdx    = 4
-    method_list = ROC_dict['methods'] 
-    nPoints     = ROC_dict['nPoints']
-
-    successData = d['successData']
-    failureData = d['failureData']
-    param_dict2  = d['param_dict']
+    param_dict2 = d['param_dict']
     if 'timeList' in param_dict2.keys():
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
@@ -146,16 +147,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        normalTrainData   = successData[:, normalTrainIdx, :] 
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :]
-
-        fold_list = []
-        for train_fold, test_fold in normal_folds:
-            fold_list.append([train_fold, test_fold])
-
-        normalFoldData = (fold_list, normalTrainData, abnormalTrainData)
-
-        osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False )
 
@@ -399,9 +391,6 @@ if __name__ == '__main__':
     ## subjects = ['s1', 's5', 's6']
 
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     param_dict['ROC']['methods'] = ['fixed']
 
 
@@ -474,6 +463,9 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
 
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
