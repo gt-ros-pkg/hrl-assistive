@@ -472,10 +472,6 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAll or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
-        ## param_dict['ROC']['update_list'] = ['svm']
-        print "Wrong command"
-        sys.exit()
                     
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
