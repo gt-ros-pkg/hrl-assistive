@@ -350,7 +350,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         #-----------------------------------------------------------------------------------------
         # Visualization
         #-----------------------------------------------------------------------------------------            
-        if dim_viz:
+        if dim_viz and idx==5:
             low_dim_viz(train_feature_list, train_anomaly_list, \
                         test_feature_list, test_anomaly_list)
             sys.exit()
@@ -668,14 +668,14 @@ def low_dim_viz(x_train, y_train, x_test=None, y_test=None ):
 
     ## print np.shape(feature_list), np.shape(anomaly_list)
     from sklearn.manifold import TSNE
-    model = TSNE(n_components=2, random_state=0, perplexity=17) #, init='pca')
+    model = TSNE(n_components=2, random_state=0, perplexity=20) #, init='pca')
     x = model.fit_transform(x_train,y_train)
     ## test_x_new = model.transform(test_feature_list)
     y_uni = np.unique(y_train)
     y     = y_train
     
     #colors = ['g', 'm', 'c', 'k', 'y','r', 'b', ]
-    markers = ['x','v', 'o', '+', 'D', 'H', 's', '*', '1', '3', '8', '^', 'd']
+    markers = ['x','v', 'o', '+', 'D', 'H', 's', '*', '1', '>', '8', '^', 'd']
     cmap = plt.get_cmap('gnuplot')
     colors = [cmap(i) for i in np.linspace(0, 1, len(y_uni))]
 
@@ -687,8 +687,15 @@ def low_dim_viz(x_train, y_train, x_test=None, y_test=None ):
         m.append( markers[j] )
 
     fig = plt.figure(1)
-    for _x, _y, _c, _m in zip(x[:,0], x[:,1], c, m):
-        plt.scatter(_x,_y, c=_c, marker=_m, cmap=plt.cm.Spectral, s=80)
+    y_uni = y_uni.tolist()
+    print y_uni
+    for _x, _y, _l, _c, _m in zip(x[:,0], x[:,1], y, c, m):
+        if _l in y_uni:
+            idx = y_uni.index(_l)            
+            plt.scatter(_x,_y, c=_c, marker=_m, cmap=plt.cm.Spectral, s=80, label=_l)
+            y_uni = [y_uni[i] for i in xrange(len(y_uni)) if i != idx]
+        else:
+            plt.scatter(_x,_y, c=_c, marker=_m, cmap=plt.cm.Spectral, s=80)
 
 
     ## if x_test is not None:
@@ -704,7 +711,7 @@ def low_dim_viz(x_train, y_train, x_test=None, y_test=None ):
     ##     for _x, _y, _c, _m in zip(x_test[:,0], x_test[:,1], c, m):
     ##         plt.scatter(_x,_y, c=_c, marker=_m, cmap=plt.cm.Spectral, s=160)
 
-            
+    plt.legend(loc=3,ncol=4,mode='expand')
     plt.axis('tight')
     plt.show()
 
