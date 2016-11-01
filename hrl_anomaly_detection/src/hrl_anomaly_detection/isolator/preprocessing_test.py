@@ -68,7 +68,7 @@ np.random.seed(3334)
 
 def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                    low_dim_viz=False,\
+                    dim_viz=False,\
                     no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
     ## Parameters
@@ -304,14 +304,32 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         test_feature_list  = d['test_feature_list']  
         test_anomaly_list  = d['test_anomaly_list']  
 
-        # 0 1 2 3 45678910 111213 14 15 16 17
         ## print np.shape(train_feature_list)
         ## sys.exit()
+        # 0 : 1 2 3 45678910 111213 14 15 16 17  # = total 18
+        # (i-1)*2, (i-1)*2+1
+        ## remove_list = [1,2,4,5,12,13]
+        remove_list = [1,4,13]
+        out_list = []
+        for i in remove_list:
+            out_list.append( (i-1)*2 )
+            out_list.append( (i-1)*2 + 1 )
 
+        def feature_remove(x, out_list):
+            x = np.swapaxes(x, 0,1).tolist()
+            x = [x[i] for i in xrange(len(x)) if i not in out_list]
+            x = np.swapaxes(x, 0,1)
+            return x
+
+        print np.shape(train_feature_list), np.shape(test_feature_list)
+        train_feature_list = feature_remove(train_feature_list, out_list)
+        test_feature_list = feature_remove(test_feature_list, out_list)
+        print np.shape(train_feature_list), np.shape(test_feature_list)
+                   
         # scaling
-        ## scaler = preprocessing.StandardScaler()
-        ## train_feature_list = scaler.fit_transform(train_feature_list)
-        ## test_feature_list = scaler.transform(test_feature_list)
+        scaler = preprocessing.StandardScaler()
+        train_feature_list = scaler.fit_transform(train_feature_list)
+        test_feature_list = scaler.transform(test_feature_list)
         
         #-----------------------------------------------------------------------------------------
         # Classification
@@ -332,9 +350,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         #-----------------------------------------------------------------------------------------
         # Visualization
         #-----------------------------------------------------------------------------------------            
-        if low_dim_viz:
-            low_dim_viz((train_feature_list, train_anomaly_list), \
-                        xy_test=(test_feature_list, test_anomaly_list))
+        if dim_viz:
+            low_dim_viz(train_feature_list, train_anomaly_list, \
+                        test_feature_list, test_anomaly_list)
             sys.exit()
             
         ## raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
@@ -644,13 +662,13 @@ def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,
         plt.show()
 
 
-def low_dim_viz(xy_train, xy_test=None):
+def low_dim_viz(x_train, y_train, x_test=None, y_test=None ):
 
-    (x_train,y_train) = xy_train
+    ## (x_train,y_train) = xy_train
 
     ## print np.shape(feature_list), np.shape(anomaly_list)
     from sklearn.manifold import TSNE
-    model = TSNE(n_components=2, random_state=0, perplexity=15) #, init='pca')
+    model = TSNE(n_components=2, random_state=0, perplexity=17) #, init='pca')
     x = model.fit_transform(x_train,y_train)
     ## test_x_new = model.transform(test_feature_list)
     y_uni = np.unique(y_train)
@@ -838,7 +856,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                        save_pdf=opt.bSavePdf, low_dim_viz=opt.low_dim_viz,\
+                        save_pdf=opt.bSavePdf, dim_viz=opt.low_dim_viz,\
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                         find_param=False, data_gen=opt.bDataGen)
 

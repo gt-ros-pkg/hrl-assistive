@@ -230,8 +230,8 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         kFold_list  = d['kFoldList']
         successData = d['successData']
         failureData = d['failureData']        
-        success_files = d['success_files']
-        failure_files = d['failure_files']
+        success_files = d['successFiles'] #d['success_files']
+        failure_files = d['failureFiles'] #d['failure_files']
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -435,6 +435,10 @@ if __name__ == '__main__':
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.bLikelihoodPlot:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_lp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, \
