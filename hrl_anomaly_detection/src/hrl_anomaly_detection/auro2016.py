@@ -470,14 +470,6 @@ if __name__ == '__main__':
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
                                 n_jobs=opt.n_jobs, n_iter_search=500, save=opt.bSave)
 
-    elif opt.bEvaluationAll or opt.bDataGen:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
-        ## param_dict['ROC']['update_list'] = ['svm']
-                    
-        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                       find_param=False, data_gen=opt.bDataGen)
-
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
@@ -486,6 +478,16 @@ if __name__ == '__main__':
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                          find_param=False, data_gen=opt.bDataGen)
+
+    elif opt.bEvaluationAll or opt.bDataGen:
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
+        ## param_dict['ROC']['update_list'] = ['svm']
+        print "Wrong command"
+        sys.exit()
+                    
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                       find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
