@@ -468,7 +468,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
-                                n_jobs=opt.n_jobs, n_iter_search=1, save=opt.bSave)
+                                n_jobs=opt.n_jobs, n_iter_search=500, save=opt.bSave)
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed'] 
