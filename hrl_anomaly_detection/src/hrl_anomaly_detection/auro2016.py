@@ -554,4 +554,4 @@ if __name__ == '__main__':
         
         from hrl_anomaly_detection import optimizeParam as op
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
-                         save=opt.bSave, method=method, n_iter_search=1000)
+                         save=opt.bSave, method=method, n_iter_search=100)
