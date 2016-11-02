@@ -651,7 +651,7 @@ def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=Fal
     score_list = score_list[-20:]
 
     if save:
-        savefile = os.path.join(save_data_path,'../','result_run_clf.txt')       
+        savefile = os.path.join(save_data_path,'../','result_run_opt.txt')       
         if os.path.isfile(savefile) is False:
             with open(savefile, 'w') as file:
                 file.write( "-----------------------------------------\n")
