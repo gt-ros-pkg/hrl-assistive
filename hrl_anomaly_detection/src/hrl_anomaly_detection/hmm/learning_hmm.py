@@ -97,7 +97,8 @@ class learning_hmm(learning_base):
 
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False, cov_type='full', fixed_trans=0):
+            ml_pkl=None, use_pkl=False, cov_type='full', fixed_trans=0,\
+            shuffle=False):
         '''
         Input :
         - xData: dimension x sample x length
@@ -108,7 +109,15 @@ class learning_hmm(learning_base):
         '''
         
         # Daehyung: What is the shape and type of input data?
-        X     = [np.array(data) for data in xData]
+        if shuffle:
+            X = xData
+            X = np.swapaxes(X,0,1)
+            id_list = range(len(X))
+            random.shuffle(id_list)
+            X = np.array(X)[id_list]
+            X = np.swapaxes(X,0,1)
+        else:
+            X = [np.array(data) for data in xData]
         nData = len(xData[0])
         
         param_dict = {}
@@ -549,14 +558,19 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     return X_flat, Y_flat, idx_flat
 
 
-def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=None, startIdx=4, \
+                                         add_logp_d=False,\
                                          cov_type='full'):
 
-    testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
-    testDataX = np.swapaxes(testDataX, 0,1)
-    testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                            np.ones(len(abnormalTrainData[0])) ])
-
+    if abnormalTrainData is not None:
+        testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
+        testDataX = np.swapaxes(testDataX, 0,1)
+        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                np.ones(len(abnormalTrainData[0])) ])
+    else:
+        testDataX = normalTrainData
+        testDataY = -np.ones(len(testDataX[0]))
+        
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                         add_logp_d=add_logp_d, cov_type=cov_type)
 

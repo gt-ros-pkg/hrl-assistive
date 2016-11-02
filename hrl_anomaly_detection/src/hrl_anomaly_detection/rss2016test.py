@@ -40,7 +40,7 @@ from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
-from hrl_anomaly_detection.optimizeParam import *
+from hrl_anomaly_detection import optimizeParam as op
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -422,7 +422,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         #find the best parameters
         for method in method_list:
             if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
-            find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
+            op.find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
                                  add_print="eval_all")            
         sys.exit()
                                    
@@ -745,7 +745,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     if find_param:
         for method in method_list:
             if method == 'osvm' or method == 'bpsvm' or 'osvm' in method: continue
-            find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
+            op.find_ROC_param_range(method, task_name, processed_data_path, param_dict, \
                                  modeling_pkl_prefix='hmm_drop_'+task_name, \
                                  add_print="eval_drop")
             
@@ -1620,36 +1620,10 @@ if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
-    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
-                 default=False, help='Renew pickle files.')
-    p.add_option('--AERenew', '--ar', action='store_true', dest='bAERenew',
-                 default=False, help='Renew AE data.')
-    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
-                 default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
-                 default=False, help='Renew Classifiers.')
-
-    p.add_option('--task', action='store', dest='task', type='string', default='pushing_microwhite',
-                 help='type the desired task name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=3,
-                 help='type the desired dimension')
-    p.add_option('--aeswtch', '--aesw', action='store_true', dest='bAESwitch',
-                 default=False, help='Enable AE data.')
-
-    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
-                 default=False, help='Plot raw data.')
-    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
-                 default=False, help='Plot raw data.')
-    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
-                 default=False, help='Plot features.')
-    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
-                 default=False, help='Plot the change of likelihood.')
+    util.initialiseOptParser(p)
+    
     p.add_option('--statepathplot', '--spp', action='store_true', dest='bStatePathPlot',
                  default=False, help='Plot state path.')
-    p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
-                 default=False, help='Plot data and select it.')
-    p.add_option('--data_generation', action='store_true', dest='bDataGen',
-                 default=False, help='Data generation before evaluation.')
     p.add_option('--decision_boundary', '--db', action='store_true', dest='bDecisionBoundary',
                  default=False, help='Plot decision boundaries.')
     
@@ -1660,45 +1634,17 @@ if __name__ == '__main__':
     p.add_option('--aeDataAddFeature', '--aea', action='store_true', dest='bAEDataAddFeature',
                  default=False, help='Add hand-crafted data.')
 
-    p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
-                 default=False, help='Evaluate a classifier with cross-validation.')
     p.add_option('--evaluation_acc', '--eaa', action='store_true', dest='bEvaluationMaxAcc',
                  default=False, help='Evaluate the max acc.')
     p.add_option('--evaluation_drop', '--ead', action='store_true', dest='bEvaluationWithDrop',
                  default=False, help='Evaluate a classifier with cross-validation plus drop.')
-    p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
-                 default=False, help='Evaluate a classifier with cross-validation plus noise.')
-    p.add_option('--evaluation_acc_param', '--eaap', action='store_true', dest='bEvaluationAccParam',
-                 default=False, help='Evaluate the acc params.')
     p.add_option('--findParams', '--frp', action='store_true', dest='bFindROCparamRange',
                  default=False, help='Evaluate a classifier with cross-validation and different sampling\
                  frequency.')
 
-    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
-                 default=False, help='Search hmm parameters.')    
-    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
-                 default=False, help='Search hmm parameters.')    
-
     p.add_option('--test', action='store_true', dest='bTest',
                  default=False, help='Enable Test.')
-                 
-
-    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
-                 default=False, help='Set debug mode.')
-    p.add_option('--renew', action='store_true', dest='bRenew',
-                 default=False, help='Renew pickle files.')
-    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
-                 default=False, help='Save pdf files.')    
-    p.add_option('--save', action='store_true', dest='bSave',
-                 default=False, help='Save result.')
-    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
-                 default=False, help='No Plot.')    
-    p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
-                 default=False, help='No update.')    
-    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
-                 default=False, help='Print out.')
-
-    
+                     
     opt, args = p.parse_args()
 
     #---------------------------------------------------------------------------           
@@ -1733,8 +1679,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                               opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
-                                                              rf_center, local_range, \
-                                                              bAESwitch=opt.bAESwitch)
+                                                              rf_center, local_range)
         param_dict['HMM']['nState'] = 20
         param_dict['HMM']['scale']  = 11.
         param_dict['HMM']['cov']    = 5.25
@@ -1748,8 +1693,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                               opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
-                                                              rf_center, local_range, \
-                                                              bAESwitch=opt.bAESwitch)
+                                                              rf_center, local_range)
         
     
     #---------------------------------------------------------------------------           
@@ -1944,7 +1888,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         for method in param_dict['ROC']['methods']:
-            find_ROC_param_range(method, opt.task, save_data_path, param_dict, debug=opt.bDebug)
+            op.find_ROC_param_range(method, opt.task, save_data_path, param_dict, debug=opt.bDebug)
 
     elif opt.bEvaluationMaxAcc:
         plotEvalMaxAcc(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
@@ -1957,3 +1901,18 @@ if __name__ == '__main__':
         method = 'progress'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
                                 n_jobs=-1, n_iter_search=1000, save=opt.bSave)
+
+    elif opt.param_search:
+        
+        from scipy.stats import uniform, expon
+        param_dist = {'step_mag': uniform(0.05,0.1),\
+                      'scale': uniform(1.0,15.0),\
+                      'cov': uniform(0.1,3.0),\
+                      'ths_mult': uniform(-30.0,25.0),\
+                      'nugget': uniform(60.0,80.0),\
+                      'theta0': uniform(1.0,0.5)}
+        method = 'hmmgp'
+        
+        op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         save=opt.bSave, method=method, n_iter_search=1000)
+
