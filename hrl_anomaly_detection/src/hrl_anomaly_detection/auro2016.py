@@ -540,3 +540,17 @@ if __name__ == '__main__':
                                      step_mag, pkl_prefix,\
                                      save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                                      no_plot=opt.bNoPlot, delay_plot=True)
+
+    elif opt.param_search:
+        
+        from scipy.stats import uniform, expon
+        param_dist = {'step_mag': uniform(0.05,0.1),\
+                      'scale': uniform(1.0,15.0),\
+                      'cov': uniform(0.1,3.0),\
+                      'ths_mult': uniform(-30.0,25.0),\
+                      'nugget': uniform(60.0,80.0),\
+                      'theta0': uniform(1.0,0.5)}
+        method = 'hmmgp'
+        
+        op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         save=opt.bSave, method=method, n_iter_search=1000)

@@ -574,7 +574,7 @@ class anomaly_detector(learning_base):
 
 
 def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=False, n_jobs=-1, \
-                  save=False, method='hmmgp', n_iter_search=1000):
+                  save=False, method='hmmgp', n_iter_search=1000, cv=3):
 
     ## Parameters
     # data
@@ -623,7 +623,7 @@ def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=Fal
     from sklearn.model_selection import RandomizedSearchCV
     clf           = anomaly_detector(method, nState, nLength, nEmissionDim)
     random_search = RandomizedSearchCV(clf, param_distributions=parameters,
-                                       cv=3, n_jobs=n_jobs,
+                                       cv=cv, n_jobs=n_jobs,
                                        n_iter=n_iter_search)
     random_search.fit(X, y)
 
