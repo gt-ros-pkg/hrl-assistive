@@ -552,5 +552,6 @@ if __name__ == '__main__':
                       'theta0': uniform(1.0,0.5)}
         method = 'hmmgp'
         
+        from hrl_anomaly_detection import optimizeParam as op
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
                          save=opt.bSave, method=method, n_iter_search=1000)
