@@ -251,18 +251,20 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         # get individual HMM
         A        = dd['A']
         pi       = dd['pi']
-        nEmissionDim = 2
+        nEmissionDim = 1
         cov_mult = [cov/2.0]*(nEmissionDim**2)
         scale    = HMM_dict['scale']/2.0
 
         ml_dict = {}
-        ref_data = normal_isol_train_data[0:1]
-        tgt_data = normal_isol_train_data[1:]
+        ## ref_data = normal_isol_train_data[0:1]
+        ## tgt_data = normal_isol_train_data[1:]
+        tgt_data = normal_isol_train_data
         for i in xrange(len(tgt_data)):
-            x = np.vstack([ref_data, tgt_data[i:i+1]])
+            ## x = np.vstack([ref_data, tgt_data[i:i+1]])
+            x = tgt_data[i:i+1]
 
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.05, np.shape(x)))*scale, \
+            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
                           cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure':
                 print "fitting failed... ", i, ml.B
@@ -522,13 +524,21 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
                     if k<startIdx:
-                        x_pred = ml.B[0][0][1]
+                        logp = 0
                     else:
-                        x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
-                                                            ref_num=ref_num)[1]
-                    ## print np.shape(abnormal_data), j,i,k, (abnormal_data[j,i,k] - x_pred)/scale
-                    single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
+                        logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
+                    single_window.append( logp )
+                        
+                    ## if k<startIdx:
+                    ##     x_pred = ml.B[0][0][1]
+                    ## else:
+                    ##     x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
+                    ##                                         ref_num=ref_num)[1]
+                    ## ## print np.shape(abnormal_data), j,i,k, (abnormal_data[j,i,k] - x_pred)/scale
+                    ## single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
             else:
+                print "Not available"
+                sys.exit()
                 single_data   = abnormal_data[j,i] - normal_mean[j]
                 if anomaly_idx-window_size[0] <0: start_idx = 0
                 else: start_idx = anomaly_idx-window_size[0]

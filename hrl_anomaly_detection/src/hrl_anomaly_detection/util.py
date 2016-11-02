@@ -2195,6 +2195,8 @@ def initialiseOptParser(p):
                  default=False, help='Search hmm parameters.')    
     p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
                  default=False, help='Search hmm parameters.')    
+    p.add_option('--opt_param', action='store_true', dest='param_search',
+                 default=False, help='Search hmm and classifier parameters.')    
 
     p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
                  default=False, help='Print out.')

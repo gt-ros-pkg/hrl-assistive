@@ -393,6 +393,10 @@ if __name__ == '__main__':
 
     param_dict['ROC']['methods'] = ['fixed']
 
+    if opt.bEvaluationUnexpected:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     
     #---------------------------------------------------------------------------           
@@ -444,8 +448,8 @@ if __name__ == '__main__':
 
     elif opt.HMM_param_search:
         from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
-        parameters = {'nState': [20,25], 'scale': np.linspace(1.0,20.0,5), \
-                      'cov': np.linspace(1.0,4.0,2) }
+        parameters = {'nState': [20], 'scale': np.linspace(1.0,20.0,20), \
+                      'cov': np.linspace(1.0,4.0,5) }
         max_check_fold = len(subjects) #5 #None
         no_cov = False
         method = 'hmmgp'
@@ -463,9 +467,6 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
         param_dict['ROC']['update_list'] = []
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
                          verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
@@ -539,3 +540,18 @@ if __name__ == '__main__':
                                      step_mag, pkl_prefix,\
                                      save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                                      no_plot=opt.bNoPlot, delay_plot=True)
+
+    elif opt.param_search:
+        
+        from scipy.stats import uniform, expon
+        param_dist = {'step_mag': uniform(0.05,0.1),\
+                      'scale': uniform(1.0,15.0),\
+                      'cov': uniform(0.1,3.0),\
+                      'ths_mult': uniform(-30.0,25.0),\
+                      'nugget': uniform(60.0,80.0),\
+                      'theta0': uniform(1.0,0.5)}
+        method = 'hmmgp'
+        
+        from hrl_anomaly_detection import optimizeParam as op
+        op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         save=opt.bSave, method=method, n_iter_search=100)
