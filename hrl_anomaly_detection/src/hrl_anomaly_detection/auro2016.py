@@ -392,7 +392,7 @@ if __name__ == '__main__':
     ## subjects = ['s1', 's5', 's6']
 
 
-    param_dict['ROC']['methods'] = ['fixed']
+    ## param_dict['ROC']['methods'] = ['fixed']
 
     if opt.bEvaluationUnexpected:
         save_data_path = os.path.expanduser('~')+\
