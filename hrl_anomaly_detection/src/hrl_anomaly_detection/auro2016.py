@@ -136,6 +136,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              noise_mag=0.05,\
                               add_logp_d=add_logp_d, verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
@@ -391,7 +392,7 @@ if __name__ == '__main__':
     ## subjects = ['s1', 's5', 's6']
 
 
-    param_dict['ROC']['methods'] = ['fixed']
+    ## param_dict['ROC']['methods'] = ['fixed']
 
     if opt.bEvaluationUnexpected:
         save_data_path = os.path.expanduser('~')+\
@@ -554,4 +555,4 @@ if __name__ == '__main__':
         
         from hrl_anomaly_detection import optimizeParam as op
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
-                         save=opt.bSave, method=method, n_iter_search=500)
+                         save=opt.bSave, method=method, n_iter_search=50)

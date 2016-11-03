@@ -2643,6 +2643,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            task_name, processed_data_path,\
                            HMM_dict, data_renew, startIdx, nState, cov, scale, \
                            success_files=None, failure_files=None,\
+                           noise_mag = 0.03,\
                            add_logp_d=False, verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
@@ -2678,7 +2679,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*scale, \
+                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*scale, \
                      cov_mult=cov_mult, use_pkl=False)
         if ret == 'Failure' or np.isnan(ret):
             print "hmm training failed"
