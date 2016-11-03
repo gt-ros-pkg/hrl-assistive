@@ -383,6 +383,8 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         #-----------------------------------------------------------------------------------------
         # Classification
         #-----------------------------------------------------------------------------------------            
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=6.0) #, decision_function_shape='ovo')
         ## from sklearn.neighbors import KNeighborsClassifier
         ## clf = KNeighborsClassifier(n_neighbors=10, weights='distance')
         from sklearn.ensemble import RandomForestClassifier
