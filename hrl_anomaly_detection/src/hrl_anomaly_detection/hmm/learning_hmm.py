@@ -701,6 +701,12 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+
+            l_idx.append( i )
+            l_likelihood.append( -100000000 )
+            if bPosterior: 
+                if len(l_posterior) == 0: l_posterior.append(list(pi))
+                else: l_posterior.append( l_posterior[-1] )            
             ## return False, False # anomaly
             continue
 
@@ -746,9 +752,8 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
             ## return False, False # anomaly            
             ## continue
-            logp = -1000000000000
             # we keep the state as the previous one
-            l_likelihood.append( logp )
+            l_likelihood.append( -1000000000000 )
             if bPosterior:
                 if len(l_posterior) == 0: l_posterior.append(list(pi))
                 else: l_posterior.append( l_posterior[-1] )

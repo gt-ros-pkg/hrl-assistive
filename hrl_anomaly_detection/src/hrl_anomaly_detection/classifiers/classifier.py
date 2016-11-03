@@ -678,9 +678,11 @@ class classifier(learning_base):
                     y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
                     sigma = np.sqrt(MSE)
                 except:
-                    for i, post in enumerate(posts):                        
-                        print i, post
-                    sys.exit()
+                    print "posterior probability is weired"
+                    ## for i, post in enumerate(posts):                        
+                    ##     print i, post
+                    #sys.exit()
+                    return np.ones(len(y_pred))
 
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
