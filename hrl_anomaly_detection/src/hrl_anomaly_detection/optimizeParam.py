@@ -86,6 +86,7 @@ class anomaly_detector(learning_base):
         return
 
     def fit(self, X, y):
+        print "---------------NEW--------------------"
         self.fit_complete = False
 
         X_train = np.swapaxes(X,0,1)*self.scale
