@@ -80,7 +80,7 @@ class anomaly_detector(learning_base):
         self.step_mag = step_mag
         
         self.hmm = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-        self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength )        
+        self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )        
 
         self.fit_complete = False
         return
@@ -167,9 +167,6 @@ class anomaly_detector(learning_base):
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(self.hmm, normalTestData, abnormalTestData, self.startIdx)
 
-        print np.shape(ll_classifier_test_X), np.shape(ll_classifier_test_Y), np.shape(ll_classifier_test_idx)
-        print np.shape(step_idx_l)
-        
         labels = []
         delays = []
         for i in xrange(len(ll_classifier_test_X)):
@@ -270,6 +267,7 @@ def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=Fal
     nLength = len(normalTrainData[0][0])
 
     # run randomized search
+    n_jobs = 1
     from sklearn.model_selection import RandomizedSearchCV
     clf           = anomaly_detector(method, nState, nLength, nEmissionDim)
     random_search = RandomizedSearchCV(clf, param_distributions=parameters,

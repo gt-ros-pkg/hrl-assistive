@@ -67,9 +67,9 @@ random.seed(3334)
 np.random.seed(3334)
 
 def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                    feature_selection=False,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                    dim_viz=False,\
-                    no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                    dim_viz=False, no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
     ## Parameters
     # data
@@ -293,6 +293,45 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         feature_pkl = os.path.join(processed_data_path, 'isol_'+task_name+'_'+str(idx)+'.pkl')
         ut.save_pickle(d, feature_pkl)
 
+    if feature_selection:
+        score_list = []
+        for i in xrange(len(success_isol_data)):
+            add_list = [i]            
+            y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
+                                                       dim_viz=dim_viz, add_list=add_list)
+            score_list.append([np.mean(scores), np.std(scores), i])
+
+        from operator import itemgetter
+        score_list.sort(key=itemgetter(0), reverse=False)
+        for mean, std, param in score_list:
+            print("%0.3f (+/-%0.03f) for %r"
+                  % (mean, std * 2, param))
+        
+        sys.exit()
+    else:
+        #0 17 9 7 8
+        add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+        y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
+                                               dim_viz=dim_viz, add_list=add_list)
+
+    print np.shape(y_test), np.shape(y_pred)
+    print "Score: ", np.mean(scores), np.std(scores)
+
+    if no_plot is False:
+        class_names = np.unique(y_test)
+        from sklearn.metrics import confusion_matrix
+        cnf_matrix = confusion_matrix(y_test, y_pred, labels=class_names)
+        np.set_printoptions(precision=2)
+
+        plt.figure()
+        plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+                                                title='Normalized confusion matrix')
+        plt.show()
+
+
+
+def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None, dim_viz=False):
+
     y_test = []
     y_pred = []
     scores = []   
@@ -310,12 +349,20 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         ## sys.exit()
         # 0 : 1 2 3 45678910 111213 14 15 16 17  # = total 18
         # (i-1)*2, (i-1)*2+1
-        ## remove_list = [1,2,4,5,12,13]
-        remove_list = [1,4,13]
+
         out_list = []
-        for i in remove_list:
-            out_list.append( (i-1)*2 )
-            out_list.append( (i-1)*2 + 1 )
+        if add_list is not None:
+            for i in range(len(train_feature_list[0])/2):
+                if i not in add_list:
+                    out_list.append( (i-1)*2 )
+                    out_list.append( (i-1)*2 + 1 )
+        else:                            
+            ## remove_list = [1,2,4,5,12,13]
+            ## remove_list = [1,4,13]
+            remove_list = [2]
+            for i in remove_list:
+                out_list.append( (i-1)*2 )
+                out_list.append( (i-1)*2 + 1 )
 
         def feature_remove(x, out_list):
             x = np.swapaxes(x, 0,1).tolist()
@@ -361,22 +408,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         ##              detection_idx_list, abnormalFileList, timeList,\
         ##              HMM_dict, \
         ##              startIdx=4, ref_num=2, window_size=window_size)
-
-    print np.shape(y_test), np.shape(y_pred)
-    print "Score: ", np.mean(scores), np.std(scores)
-
-    if no_plot is False:
-        class_names = np.unique(y_test)
-        from sklearn.metrics import confusion_matrix
-        cnf_matrix = confusion_matrix(y_test, y_pred, labels=class_names)
-        np.set_printoptions(precision=2)
-
-        plt.figure()
-        plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                                                title='Normalized confusion matrix')
-        plt.show()
-
-
+    
+    return y_test, y_pred, scores
 
 
 def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
@@ -769,6 +802,8 @@ if __name__ == '__main__':
 
     p.add_option('--low_dim_viz', '--lv', action='store_true', dest='low_dim_viz',
                  default=False, help='Plot low-dimensional embedding.')
+    p.add_option('--feature_selection', '--fs', action='store_true', dest='feature_selection',
+                 default=False, help='Search the best features.')
     
     opt, args = p.parse_args()
     
@@ -873,6 +908,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                        feature_selection=opt.feature_selection,\
                         save_pdf=opt.bSavePdf, dim_viz=opt.low_dim_viz,\
                         verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                         find_param=False, data_gen=opt.bDataGen)
