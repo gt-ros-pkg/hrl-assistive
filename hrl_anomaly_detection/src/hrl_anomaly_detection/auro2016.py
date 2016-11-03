@@ -136,6 +136,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              noise_mag=0.05,\
                               add_logp_d=add_logp_d, verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
