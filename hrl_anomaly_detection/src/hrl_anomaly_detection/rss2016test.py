@@ -1795,7 +1795,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         param_dict['ROC']['methods']     = ['fixed', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = []
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -1833,7 +1833,7 @@ if __name__ == '__main__':
         elif 0:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif 1:
+        elif 0:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         ## elif 0:
