@@ -1845,18 +1845,22 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         fscore_2   = np.array(fscore_2)
         delay_mean_l = np.array(delay_mean_l)
 
-        print method
-        print tpr_l
-        print fpr_l
-        print acc_l
-        print fscore_1
-        print delay_mean_l
-        print np.argmax(fscore_1 + delay_mean_l )
-        sys.exit()
+        ## print method
+        ## print tpr_l
+        ## print fpr_l
+        ## print acc_l
+        ## print fscore_1
+        ## print delay_mean_l
+        ## print np.argmax(fscore_1 + delay_mean_l )
+        ## sys.exit()
 
-        max_score_idx[0].append( np.argmax(fscore_1 + delay_mean_l ) )
-        max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
-        max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
+        ## max_score_idx[0].append( np.argmax(fscore_1 + delay_mean_l ) )
+        ## max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
+        ## max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
+
+        max_score_idx[0].append( np.argmax(fscore_1) )
+        max_score_idx[1].append( np.argmax(fscore_0_5) )
+        max_score_idx[2].append( np.argmax(fscore_2) )
 
         ## max_score_idx[0].append( np.argmin(fp_l) )
         ## max_score_idx[1].append( np.argmin(fp_l) )
