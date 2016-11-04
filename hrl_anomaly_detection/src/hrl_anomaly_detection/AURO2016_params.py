@@ -34,12 +34,15 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         sys.exit()
 
     # common params
-    if dim == 4:
+    if dim == 5:
+        param_dict['ROC']['methods'] = ['hmmgp']
+    elif dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
                                          'osvm', 'hmmosvm', 'hmmgp', 'rnd' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
-    param_dict['ROC']['update_list'] = [ 'hmmosvm', 'hmmgp', 'progress']
+
+    param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
@@ -165,8 +168,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng',\
-                        'unimodal_kinEEChange']
-                        ## 'unimodal_fabricForce' ]
+                        'unimodal_fabricForce']
+                        ## 'unimodal_kinEEChange']
+                        ##  ]
             ## ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
@@ -224,7 +228,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.75, 'scale': 15.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 5.512,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 5.512,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 6.512,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
