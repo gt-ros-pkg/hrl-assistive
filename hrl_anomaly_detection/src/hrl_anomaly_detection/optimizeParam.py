@@ -305,12 +305,14 @@ def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=Fal
         if os.path.isfile(savefile) is False:
             with open(savefile, 'w') as file:
                 file.write( "-----------------------------------------\n")
+                file.write( str(nEmissionDim)+'\n\n' )
                 for mean, std, param in score_list:
                     file.write( "%0.3f (+/-%0.03f) for %r"
                                 % (mean, std * 2, param)+'\n\n')
         else:
             with open(savefile, 'a') as file:
                 file.write( "-----------------------------------------\n")
+                file.write( str(nEmissionDim)+'\n\n' )
                 for mean, std, param in score_list:
                     file.write( "%0.3f (+/-%0.03f) for %r"
                                 % (mean, std * 2, param)+'\n\n')
