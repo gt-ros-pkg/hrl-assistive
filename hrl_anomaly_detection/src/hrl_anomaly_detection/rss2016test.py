@@ -1898,9 +1898,9 @@ if __name__ == '__main__':
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
-        method = 'progress'
+        method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
-                                n_jobs=-1, n_iter_search=1000, save=opt.bSave)
+                                n_jobs=-1, n_iter_search=100, save=opt.bSave)
 
     elif opt.param_search:
         
