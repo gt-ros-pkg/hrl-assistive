@@ -1809,7 +1809,7 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-3, 2.8, nPoints)*-1.0
             param_dict['ROC']['osvm_param_range']  = np.logspace(-4., 0.0, nPoints)
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-6.0, 1.0, nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(0.05, 0.15, nPoints )
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-1.5, 2.0, nPoints )
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
@@ -1827,13 +1827,13 @@ if __name__ == '__main__':
             param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
 
 
-        if False:
+        if 0:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 1:
+        elif 0:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif 0:
+        elif 1:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         ## elif 0:

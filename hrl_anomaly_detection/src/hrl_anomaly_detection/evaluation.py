@@ -297,7 +297,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     for i in xrange(len(failureData[0])):
         start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
         dim_idx   = np.random.randint(0, len(failureData))
-        step_mag  = np.random.uniform(0.05, 0.3)
+        step_mag  = np.random.uniform(0.01, 0.15)
         
         failureData[dim_idx,i,start_idx:] += step_mag
         step_idx_l.append(start_idx)
@@ -345,6 +345,12 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             t_abnormalTrainData = abnormalTrainData #[:,train_fold]
             t_normalTestData    = normalTrainData[:,test_fold]
             t_abnormalTestData  = abnormalTrainData #[:,test_fold]
+            t_step_idx_l = []
+            for i in xrange(len(t_normalTestData[0])):
+                t_step_idx_l.append(None)
+            for i in xrange(len(t_abnormalTestData[0])):
+                t_step_idx_l.append(step_idx_l_train)
+
 
             #-----------------------------------------------------------------------------------------
             # Full co-variance
@@ -382,7 +388,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             d['ll_classifier_test_X']        = ll_classifier_test_X
             d['ll_classifier_test_Y']        = ll_classifier_test_Y            
             d['ll_classifier_test_idx']      = ll_classifier_test_idx
-            d['step_idx_l']   = step_idx_l_train
+            d['step_idx_l']   = t_step_idx_l
             ut.save_pickle(d, modeling_pkl)
 
 
@@ -398,6 +404,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             normalTrainData   = successData[:, normalTrainIdx, :] 
             abnormalTrainData = failureData[:, normalTrainIdx, :]
             ## abnormalTrainData = failureData[:, abnormalTrainIdx, :]
+            step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx] 
 
             fold_list = []
             for train_fold, test_fold in normal_folds:
@@ -407,9 +414,9 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             
             osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
                                       window=SVM_dict['raw_window_size'],
-                                      use_test=True, use_pca=False, step_anomaly_info=step_idx_l)
+                                      use_test=True, use_pca=False, step_anomaly_info=step_idx_l_train)
             
-
+ 
         # parallelization
         if debug: n_jobs=1
         else: n_jobs=-1
@@ -419,6 +426,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState, \
+                                                                             delay_estimation=True,\
                                                                              modeling_pkl_prefix=\
                                                                              'hmm_'+pkl_target_prefix+'_'+str(idx))\
                                                                              for iidx in xrange(len(normal_folds))
