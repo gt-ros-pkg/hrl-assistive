@@ -51,13 +51,13 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
 
     # common params
     if dim == 4:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
-                                         'osvm', 'hmmosvm',\
-                                         'hmmgp', 'rnd']
+        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress_diag', \
+                                         'osvm', 'hmmosvm', 'rnd', \
+                                         'hmmgp', 'progress' ]
                                          #'progress_state', 'kmean', 'progress_osvm', 'progress_svm'
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'kmean', 'hmmgp',\
                                          ]
@@ -579,14 +579,14 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                                        'progress_diag', 'kmean'],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(0.01, 0.85, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(0.01, 0.9, nPoints)*-1.0, \
                           'progress_diag_param_range':np.logspace(-0.7, 1.0, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(-1, 0.8, nPoints)*-1.0, \
                           'state_kmean_param_range':np.logspace(-1, 0.8, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(-0.5, 3.0, nPoints)*-1.0, \
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'progress_svm_param_range': np.linspace(0.002, 3.809, nPoints),\
-                          'hmmgp_param_range':np.logspace(0.7, 1.5, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(0.0, 1.8, nPoints)*-1.0, \
                           'svm_param_range': np.linspace(0.005, 0.7, nPoints),\
                           'bpsvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'fixed_param_range': np.linspace(-0.01, 0.1, nPoints ),\
