@@ -249,6 +249,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 3.0, 'hmm_cov': 1.0,\
                                   'noise_max': 0.05 },\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints)+1.0,\
+                          'progress_diag_param_range': -np.logspace(-1.5, 1.6, nPoints),\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
                           'hmmgp_param_range':np.logspace(-1, 2.5, nPoints)*-1.0+0.5, \
