@@ -52,7 +52,7 @@ class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength, nEmissionDim,\
                  scale=1.0, cov=1.0, noise_std=0.03,\
                  weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
-                 ths_mult=-1.0, nugget=100.0, theta0=1.0, step_mag=0.05, verbose=False):
+                 ths_mult=-1.0, nugget=100.0, theta0=1.0, step_mag_range=[0.05, 0.2], verbose=False):
         self.method = method
         self.nLength = nLength
         self.scaler = None
@@ -77,7 +77,7 @@ class anomaly_detector(learning_base):
         self.theta0 = theta0
 
         # step noise
-        self.step_mag = step_mag
+        self.step_mag_range = step_mag_range
         
         self.hmm = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         self.dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )        
@@ -156,8 +156,9 @@ class anomaly_detector(learning_base):
         for i in xrange(len(X)):
             start_idx = np.random.randint(self.startIdx, self.nLength*2/3, 1)[0]
             dim_idx   = np.random.randint(0, len(X[0]))
+            step_mag  = np.random.uniform(self.step_mag_range[0], self.step_mag_range[1])
             
-            abnormalTestData[i,dim_idx,start_idx:] += self.step_mag
+            abnormalTestData[i,dim_idx,start_idx:] += step_mag
             step_idx_l.append(start_idx)
 
         # dim x sample x length
