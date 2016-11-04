@@ -39,7 +39,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          'osvm', 'hmmosvm', 'hmmgp', 'rnd' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
-    param_dict['ROC']['update_list'] = [ ]
+    param_dict['ROC']['update_list'] = [ 'hmmosvm', 'hmmgp', 'progress']
     param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
@@ -248,21 +248,21 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                                   'noise_max': 0.0 },\
                           'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 3.0, 'hmm_cov': 1.0,\
                                   'noise_max': 0.05 },\
-                          'progress_param_range': -np.logspace(0, 2.5, nPoints)+1.0,\
+                          'progress_param_range': -np.logspace(0.2, 1.5, nPoints)+1.0,\
                           'progress_diag_param_range': -np.logspace(-1.5, 1.6, nPoints),\
-                          'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 2.5, nPoints)*-1.0+0.5, \
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmgp_param_range':np.logspace(0, 2.3, nPoints)*-1.0+0.5, \
+                          'hmmosvm_param_range': np.logspace(-5.0, 0.7, nPoints),\
                           'change_param_range': np.logspace(0.0, 2.6, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-4., 1.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.3, -0.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
                           'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
+                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
+
+                          ## 'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
+                          ## 'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          ## 'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
 
         # Parameters should be determinded by optimizer.
         if nPoints == 1:

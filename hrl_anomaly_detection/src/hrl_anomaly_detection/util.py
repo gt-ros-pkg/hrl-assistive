@@ -1464,6 +1464,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             #auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
             auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             auc_rates[method] = auc
+            print auc
         print "--------------------------------"
 
         if method == 'svm': label='HMM-BPSVM'
