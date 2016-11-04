@@ -281,7 +281,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     nPoints     = ROC_dict['nPoints']
 
     successData = d['successData']
-    failureData = d['failureData']
+    failureData = d['successData'] #d['failureData']
     param_dict2  = d['param_dict']
     if 'timeList' in param_dict2.keys():
         timeList = param_dict2['timeList'][startIdx:]
@@ -292,6 +292,17 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
     delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
+    nLength = len(failureData[0][0])
+    step_idx_l = []
+    for i in xrange(len(failureData[0])):
+        start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+        dim_idx   = np.random.randint(0, len(failureData))
+        step_mag  = np.random.uniform(0.05, 0.3)
+        
+        failureData[dim_idx,i,start_idx:] += step_mag
+        step_idx_l.append(start_idx)
+
+
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -301,9 +312,12 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
+        abnormalTrainData = failureData[:, normalTrainIdx, :] * HMM_dict['scale']
+        step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx]
+        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
         ## abnormalTrainData = copy.copy(normalTrainData)
         ## normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
+
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -319,7 +333,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             
 
         from sklearn import cross_validation
-        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
+        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=2, shuffle=True)
 
         for iidx, (train_fold, test_fold) in enumerate(normal_folds):
 
@@ -368,6 +382,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             d['ll_classifier_test_X']        = ll_classifier_test_X
             d['ll_classifier_test_Y']        = ll_classifier_test_Y            
             d['ll_classifier_test_idx']      = ll_classifier_test_idx
+            d['step_idx_l']   = step_idx_l_train
             ut.save_pickle(d, modeling_pkl)
 
 
@@ -381,7 +396,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         osvm_data = None ; bpsvm_data = None
         if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
             normalTrainData   = successData[:, normalTrainIdx, :] 
-            abnormalTrainData = failureData[:, abnormalTrainIdx, :]
+            abnormalTrainData = failureData[:, normalTrainIdx, :]
+            ## abnormalTrainData = failureData[:, abnormalTrainIdx, :]
 
             fold_list = []
             for train_fold, test_fold in normal_folds:
@@ -391,7 +407,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             
             osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
                                       window=SVM_dict['raw_window_size'],
-                                      use_test=True, use_pca=False )
+                                      use_test=True, use_pca=False, step_anomaly_info=step_idx_l)
             
 
         # parallelization
