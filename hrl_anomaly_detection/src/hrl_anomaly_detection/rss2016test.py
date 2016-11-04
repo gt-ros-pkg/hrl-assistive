@@ -1913,5 +1913,5 @@ if __name__ == '__main__':
         method = 'hmmgp'
         
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
-                         save=opt.bSave, method=method, n_iter_search=500)
+                         save=opt.bSave, method=method, n_iter_search=100)
 
