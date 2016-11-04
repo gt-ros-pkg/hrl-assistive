@@ -261,6 +261,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.3, -0.0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
         # Parameters should be determinded by optimizer.
