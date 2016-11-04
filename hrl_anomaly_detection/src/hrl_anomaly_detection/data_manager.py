@@ -2644,7 +2644,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            HMM_dict, data_renew, startIdx, nState, cov, scale, \
                            success_files=None, failure_files=None,\
                            noise_mag = 0.03,\
-                           add_logp_d=False, verbose=False):
+                           add_logp_d=False, diag=False, verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
     """
@@ -2699,6 +2699,29 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         else:
             ll_classifier_test_labels = None
 
+
+        #-----------------------------------------------------------------------------------------
+        # Diagonal co-variance
+        #-----------------------------------------------------------------------------------------
+        if diag:
+            ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+            ret = ml.fit(normalTrainData+\
+                         np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*scale, \
+                         cov_mult=cov_mult, use_pkl=False, cov_type='diag')
+            if ret == 'Failure' or np.isnan(ret): sys.exit()
+
+            # Classifier training data
+            ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, \
+                                                       add_logp_d,\
+                                                       cov_type='diag')
+
+            # Classifier test data
+            ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
+                                                       add_logp_d,\
+                                                       cov_type='diag')
+
         #-----------------------------------------------------------------------------------------
         d = {}
         d['nEmissionDim'] = ml.nEmissionDim
@@ -2722,4 +2745,12 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         ## d['abnormalTrainData'] = abnormalTrainData
         ## d['normalTestData']    = normalTestData
         ## d['abnormalTestData']  = abnormalTestData
+        if diag:
+            d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
+            d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            
+            d['ll_classifier_diag_train_idx']= ll_classifier_diag_train_idx
+            d['ll_classifier_diag_test_X']   = ll_classifier_diag_test_X
+            d['ll_classifier_diag_test_Y']   = ll_classifier_diag_test_Y            
+            d['ll_classifier_diag_test_idx'] = ll_classifier_diag_test_idx
+        
         ut.save_pickle(d, modeling_pkl)

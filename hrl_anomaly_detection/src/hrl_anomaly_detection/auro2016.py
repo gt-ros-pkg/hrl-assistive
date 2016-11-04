@@ -131,12 +131,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
+    if 'progress_diag' in method_list: diag = True
+    else: diag = False
+
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
-                              noise_mag=0.05,\
+                              noise_mag=0.03, diag=diag, \
                               add_logp_d=add_logp_d, verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
