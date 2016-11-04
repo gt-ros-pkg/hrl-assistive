@@ -1795,7 +1795,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         param_dict['ROC']['methods']     = ['fixed', 'hmmgp']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['update_list'] = ['fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -1809,7 +1809,7 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-3, 2.8, nPoints)*-1.0
             param_dict['ROC']['osvm_param_range']  = np.logspace(-4., 0.0, nPoints)
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-6.0, 1.0, nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(-3.2, 1.4, nPoints )
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-1.2, 0.7, nPoints )
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
