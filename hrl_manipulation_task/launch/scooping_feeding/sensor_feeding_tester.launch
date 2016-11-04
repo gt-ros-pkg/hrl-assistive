@@ -1,0 +1,51 @@
+<launch>
+
+	<!--arg name="marker_size" default="3.3" /-->
+	<arg name="task_name" default="feeding" />
+	<!--arg name="marker_size" default="6.8" -->
+	<arg name="marker_size" default="8.0" />
+	<arg name="max_new_marker_error" default="0.08" />
+	<arg name="max_track_error" default="0.2" />
+
+	<!--arg name="cam_image_topic" default="/head_mount_kinect/depth_registered/points" /-->
+	<!--arg name="cam_info_topic" default="/head_mount_kinect/rgb/camera_info" /-->		
+	<!--arg name="cam_image_topic" default="/head_mount_kinect/hd/points" /-->
+	<!--arg name="cam_info_topic" default="/head_mount_kinect/hd/camera_info" /-->		
+	<arg name="cam_image_topic" default="/camera/depth_registered/points" />
+	<arg name="cam_info_topic" default="/camera/depth_registered/camera_info" />		
+	<arg name="output_frame" default="/torso_lift_link" />        
+
+        <rosparam command="load" file="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />
+
+        <!-- Vision sensor -->
+        <arg name="mouth_marker_size" default="8.0" />
+        <arg name="mouth_max_new_marker_error" default="0.08" />
+        <arg name="mouth_max_track_error" default="0.2" />
+	<node name="mouth_ar_track_alvar" pkg="ar_track_alvar"
+              type="individualMarkers" respawn="false" output="screen"
+              args="$(arg mouth_marker_size) $(arg mouth_max_new_marker_error)
+                    $(arg mouth_max_track_error) $(arg cam_image_topic)
+                    $(arg cam_info_topic) $(arg output_frame)">
+          <remap from="ar_pose_marker" to="ar_mouth_pose_marker" />
+        </node>
+	<node name="ar_track_alvar" pkg="ar_track_alvar"
+              type="individualMarkers" respawn="false" output="screen"
+              args="$(arg marker_size) $(arg max_new_marker_error)
+                    $(arg max_track_error) $(arg cam_image_topic)
+                    $(arg cam_info_topic) $(arg output_frame)">
+        </node>
+
+        
+        <!--node name="change_detector" pkg="hrl_manipulation_task" type="change_detector" respawn="false" output="screen" /-->
+
+        <!-- Bowl and Head conversion -->  
+        <!--node name="findBowl" pkg="hrl_manipulation_task" type="findBowl.py" respawn="false" output="screen" /-->
+        <node name="findMouth" pkg="hrl_manipulation_task" type="measureMethodError.py" respawn="false" output="screen" />
+
+        <!-- F/T sensor -->
+        <!--node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --><!--rate 10" respawn="true" /-->
+                    
+        <!-- Audio (wrist) -->
+        <!-- node name="pubWristAudio" pkg="hrl_manipulation_task" type="pubWristAudio.py" respawn="true" output="screen" args="--><!--t $(arg task_name)" / -->
+
+</launch>
