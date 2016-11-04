@@ -1713,7 +1713,8 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
+            #delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
             if len(delay_list)>0:
                 delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
                 delay_std_l.append( np.std(np.array(delay_list)*time_step) )
@@ -1832,7 +1833,9 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
             tn_l.append(tn)
             fp_l.append(fp)
 
-            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            #delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ] 
+            print delay_list
             if len(delay_list)>0:
                 delay_mean_l.append( 1.0 - np.mean( np.abs(np.array(delay_list).astype(float))/200.0 ) )
                 ## delay_std_l.append( np.std(np.array(delay_list)) )
@@ -1849,8 +1852,10 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         ## print tpr_l
         ## print fpr_l
         ## print acc_l
-        ## print fscore_1
-        ## print delay_mean_l
+        ## print fscore_0_5
+        print fscore_1
+        #print delay_mean_l
+        print delay_list
         ## print np.argmax(fscore_1 + delay_mean_l )
         ## sys.exit()
 
@@ -1858,9 +1863,9 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         ## max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
         ## max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
 
-        max_score_idx[0].append( np.argmax(fscore_1) )
-        max_score_idx[1].append( np.argmax(fscore_0_5) )
-        max_score_idx[2].append( np.argmax(fscore_2) )
+        max_score_idx[0].append( argmax(fscore_1) )
+        max_score_idx[1].append( argmax(fscore_0_5) )
+        max_score_idx[2].append( argmax(fscore_2) )
 
         ## max_score_idx[0].append( np.argmin(fp_l) )
         ## max_score_idx[1].append( np.argmin(fp_l) )
@@ -1875,7 +1880,7 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         print "---------------------- ", method, " ----------------------"
         print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)
         print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
-        print fscore_1
+
 
     ##     if method == 'progress' or method == 'hmmgp':
     ##         print fscore_2
@@ -1929,7 +1934,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
 
-                    print "tp: ", tp, method
+                    #print "tp: ", tp, method
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
