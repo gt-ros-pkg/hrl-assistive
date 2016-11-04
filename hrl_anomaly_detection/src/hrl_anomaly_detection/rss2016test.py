@@ -1804,9 +1804,12 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'pushing_microblack':
+            param_dict['ROC']['progress_param_range'] = np.logspace(0.01, 1.1, nPoints)*-1.0, \
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-1, 1.8, nPoints)*-1.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(-1.1, 2.0, nPoints)*-1.0
+            param_dict['ROC']['osvm_param_range']  = np.logspace(-4., 0.0, nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-6.0, 1.0, nPoints)
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-0.2, 0.4, nPoints )
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
