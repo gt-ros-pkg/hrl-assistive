@@ -1788,7 +1788,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
     
 
 
-def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
+def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
     '''
     Return three index of the best weight from weight list using f1, f0.5, f2 scores
     '''
@@ -1835,7 +1835,7 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
 
             delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
             if len(delay_list)>0:
-                delay_mean_l.append( 1.0 - np.mean( np.abs(np.array(delay_list).astype(float))/200.0 ) )
+                delay_mean_l.append( 1.0 - np.mean( np.abs(np.array(delay_list).astype(float))/float(nLength) ) )
                 ## delay_std_l.append( np.std(np.array(delay_list)) )
             else:
                 delay_mean_l.append( 0 )

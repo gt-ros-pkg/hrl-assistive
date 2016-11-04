@@ -431,7 +431,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         ut.save_pickle(ROC_data, roc_pkl)
         #-----------------------------------------------------------------------------------------
         # ---------------- ROC Visualization ----------------------
-        best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
+        best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, nLength=nLength)
 
         print method_list
         print best_param_idx
