@@ -682,7 +682,7 @@ class classifier(learning_base):
                     ## for i, post in enumerate(posts):                        
                     ##     print i, post
                     #sys.exit()
-                    return np.ones(len(y_pred))
+                    return np.ones(len(posts))
 
             l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
