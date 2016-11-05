@@ -980,9 +980,9 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             for i in xrange(len(normalTestData[0])):
                 step_idx_l.append(None) 
             for i in xrange(len(abnormalTestData[0])): 
-                step_idx_l.append(step_idx_l_train[i]) 
+                step_idx_l.append(step_anomaly_info[i]) 
 
-            step_idx_l = step_anomaly_info
+            ## step_idx_l = step_anomaly_info
             ## print "we do not use step_anomaly_info"
             ## sys.exit()
             ## modeling_pkl_prefix = step_anomaly_info[0]
