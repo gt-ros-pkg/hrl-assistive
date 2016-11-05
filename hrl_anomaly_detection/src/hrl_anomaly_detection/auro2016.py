@@ -549,10 +549,10 @@ if __name__ == '__main__':
         
         from scipy.stats import uniform, expon
         param_dist = {'scale': uniform(1.0,15.0),\
-                      'cov': uniform(0.1,3.0),\
+                      'cov': uniform(0.5,3.0),\
                       'ths_mult': uniform(-30.0,25.0),\
                       'nugget': uniform(60.0,80.0),\
-                      'theta0': uniform(1.0,0.5)}
+                      'theta0': uniform(0.8,0.5)}
         method = 'hmmgp'
         
         from hrl_anomaly_detection import optimizeParam as op
