@@ -472,6 +472,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         l_data = r
         print "finished to run run_classifiers"
+        continue
 
         ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
