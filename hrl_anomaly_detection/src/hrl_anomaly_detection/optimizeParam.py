@@ -101,6 +101,9 @@ class anomaly_detector(learning_base):
             print "hmm training failed"
             return
             #sys.exit()
+        elif ret > 200 or ret<0:
+            print "hmm training result is not good"
+            return
         
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
