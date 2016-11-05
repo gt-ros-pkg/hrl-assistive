@@ -1794,8 +1794,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['methods']     = ['fixed']
-        param_dict['ROC']['update_list'] = ['fixed']
+        param_dict['ROC']['methods']     = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -1830,10 +1830,10 @@ if __name__ == '__main__':
         if 0:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 0:
+        elif 1:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif 1:
+        elif 0:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
         ## elif 0:
@@ -1842,13 +1842,13 @@ if __name__ == '__main__':
         elif 0:
             step_mag = 0.2*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.2'
-        elif 0:
+        elif 1:
             step_mag = 0.25*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.25'
-        elif True:
+        elif 0:
             step_mag = 0.5*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.5'
-        elif True:
+        elif 0:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:

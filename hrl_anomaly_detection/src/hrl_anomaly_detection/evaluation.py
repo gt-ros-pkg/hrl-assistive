@@ -137,6 +137,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         nEmissionDim = dd['nEmissionDim']
         nLength      = len(normalTestData[0][0]) - startIdx
 
+
         # Classifier test data
         # random step noise
         abnormalTestData = copy.copy(normalTestData)
@@ -146,8 +147,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(abnormalTestData[0])):
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             dim_idx   = np.random.randint(0, len(abnormalTestData))
-            
-            abnormalTestData[dim_idx,i,start_idx:] += step_mag
+
+            #abnormalTestData[dim_idx,i,start_idx:] += step_mag
+            abnormalTestData[:,i,start_idx:] += step_mag
             step_idx_l.append(start_idx)
 
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
@@ -155,8 +157,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
-                                                   add_logp_d=add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx)
 
         #-----------------------------------------------------------------------------------------
         d = {}
@@ -176,6 +177,23 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         d['nLength']      = nLength
         d['step_idx_l']   = step_idx_l
         ut.save_pickle(d, modeling_pkl)
+
+
+    ## modeling_pkl = os.path.join(processed_data_path, 'hmm_'+pkl_prefix+'_'+str(0)+'.pkl')
+    ## d = ut.load_pickle(modeling_pkl)
+    ## ll_classifier_train_X = d['ll_classifier_train_X']
+    ## ll_classifier_train_Y = d['ll_classifier_train_Y']
+    ## ll_classifier_test_X = d['ll_classifier_test_X']
+    ## ll_classifier_test_Y = d['ll_classifier_test_Y']
+
+    ## print np.shape(ll_classifier_test_X)
+    ## nNormal = len(kFold_list[0][2])
+    ## nAbnormal = len(kFold_list[0][3])
+    ## ll_logp_neg = np.array(ll_classifier_test_X)[:nNormal,:,0]
+    ## ll_logp_pos = np.array(ll_classifier_test_X)[nNormal:,:,0]
+    ## import hrl_anomaly_detection.data_viz as dv        
+    ## dv.vizLikelihood(ll_logp_neg, ll_logp_pos)
+    ## sys.exit()
 
     ## fig = plt.figure()
     ## ## modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(0)+'.pkl')
@@ -260,7 +278,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
-    pkl_target_prefix = pkl_prefix.split('_')[0] #+'_0.05'
+    pkl_target_prefix = pkl_prefix.split('_')[0] 
 
     #------------------------------------------
     # Get features
@@ -281,7 +299,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     nPoints     = ROC_dict['nPoints']
 
     successData = d['successData']
-    failureData = d['successData'] #d['failureData']
+    failureData = copy.copy(d['successData']) #d['failureData']
     param_dict2  = d['param_dict']
     if 'timeList' in param_dict2.keys():
         timeList = param_dict2['timeList'][startIdx:]
@@ -296,10 +314,11 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     step_idx_l = []
     for i in xrange(len(failureData[0])):
         start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-        dim_idx   = np.random.randint(0, len(failureData))
-        step_mag  = np.random.uniform(0.01, 0.15)
+        ## dim_idx   = np.random.randint(0, len(failureData))
+        step_mag  = np.random.uniform(0.01, 0.10)
         
-        failureData[dim_idx,i,start_idx:] += step_mag
+        ## failureData[dim_idx,i,start_idx:] += step_mag
+        failureData[:,i,start_idx:] += step_mag
         step_idx_l.append(start_idx)
 
 
@@ -341,10 +360,10 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                                         'hmm_'+pkl_target_prefix+'_'+str(idx)+'_'+str(iidx)+'.pkl')
             if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
             
-            t_normalTrainData   = normalTrainData[:,train_fold]
-            t_abnormalTrainData = abnormalTrainData 
-            t_normalTestData    = normalTrainData[:,test_fold]
-            t_abnormalTestData  = abnormalTrainData 
+            t_normalTrainData   = copy.copy(normalTrainData[:,train_fold])
+            t_abnormalTrainData = copy.copy(abnormalTrainData)
+            t_normalTestData    = copy.copy(normalTrainData[:,test_fold])
+            t_abnormalTestData  = copy.copy(abnormalTrainData )
             t_step_idx_l = []
             for i in xrange(len(t_normalTestData[0])):
                 t_step_idx_l.append(None)
@@ -390,6 +409,26 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             d['ll_classifier_test_idx']      = ll_classifier_test_idx
             d['step_idx_l']   = t_step_idx_l
             ut.save_pickle(d, modeling_pkl)
+            break
+
+
+        ## modeling_pkl = os.path.join(processed_data_path, \
+        ##                             'hmm_'+pkl_target_prefix+'_'+str(0)+'_'+str(0)+'.pkl')
+        ## d = ut.load_pickle(modeling_pkl)
+        ## ll_classifier_train_X = d['ll_classifier_train_X']
+        ## ll_classifier_train_Y = d['ll_classifier_train_Y']
+        ## ll_classifier_test_X = d['ll_classifier_test_X']
+        ## ll_classifier_test_Y = d['ll_classifier_test_Y']
+
+        ## for iidx, (train_fold, test_fold) in enumerate(normal_folds):
+        ##     print np.shape(ll_classifier_test_X)
+        ##     nNormal = len(train_fold)
+        ##     ll_logp_neg = np.array(ll_classifier_test_X)[:nNormal,:,0]
+        ##     ll_logp_pos = np.array(ll_classifier_test_X)[nNormal:,:,0]
+        ##     import hrl_anomaly_detection.data_viz as dv        
+        ##     dv.vizLikelihood(ll_logp_neg, ll_logp_pos)
+        ##     sys.exit()
+
 
 
     #-----------------------------------------------------------------------------------------
