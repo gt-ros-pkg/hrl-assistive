@@ -168,8 +168,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
                         'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng',\
-                        'unimodal_fabricForce']
-                        ## 'unimodal_kinEEChange']
+                        'unimodal_kinEEChange']
+                        ## 'unimodal_fabricForce']
+                        ## ]
                         ##  ]
             ## ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
