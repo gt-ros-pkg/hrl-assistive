@@ -218,6 +218,9 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+
+        foldData = (kFold_list, successData, failureData)
+        
         modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_prefix)
         osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
