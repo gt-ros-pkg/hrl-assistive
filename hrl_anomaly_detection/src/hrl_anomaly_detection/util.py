@@ -1836,7 +1836,6 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
 
             #delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
             delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ] 
-            print delay_list
             if len(delay_list)>0:
                 delay_mean_l.append( 1.0 - np.mean( np.abs(np.array(delay_list).astype(float))/float(nLength) ) )
                 ## delay_std_l.append( np.std(np.array(delay_list)) )
@@ -1854,9 +1853,9 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
         ## print fpr_l
         ## print acc_l
         ## print fscore_0_5
-        print fscore_1
+        ## print fscore_1
         #print delay_mean_l
-        print delay_list
+        ## print delay_list
         ## print np.argmax(fscore_1 + delay_mean_l )
         ## sys.exit()
 
