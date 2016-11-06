@@ -425,7 +425,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+\
                             str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is False:
+    if os.path.isfile(save_pkl) and data_renew is False and False:
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -1477,6 +1477,21 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 param_dict['feature_names'].append('kinVel_x')
                 param_dict['feature_names'].append('kinVel_y')
                 param_dict['feature_names'].append('kinVel_z')
+
+        # Unimodal feature - Kinematics --------------------------------------
+        if 'unimodal_kinJntEff_1' in feature_list:
+            unimodal_kinJntEff = d['kinJntEffList'][idx]
+
+            if offset_flag:
+                offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
+                for i in xrange(len(offset)):
+                    unimodal_kinJntEff[i] -= offset[i]
+
+
+            if dataSample is None: dataSample = np.array( unimodal_kinJntEff[0:1] )
+            else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[0:1] ])
+            if 'kinJntEff_1' not in param_dict['feature_names']:           
+                param_dict['feature_names'].append( 'kinJntEff_1' )
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinJntEff' in feature_list:
