@@ -441,7 +441,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         param_dict_isol     = data_dict.get('param_dict_isol',[])
 
     else:
-        ## data_renew = False #temp        
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True)
 
