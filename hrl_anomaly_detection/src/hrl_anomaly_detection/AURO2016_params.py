@@ -176,7 +176,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 10.55,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
@@ -203,7 +203,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'progress_param_range': -np.logspace(0, 2.5, nPoints)+1.0,\
                           'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
-                          'hmmgp_param_range':np.logspace(-1, 2.5, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(-0.2, 3.0, nPoints)*-1.0+0.5, \
                           'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
