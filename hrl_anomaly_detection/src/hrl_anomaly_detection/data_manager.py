@@ -425,7 +425,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+\
                             str(local_range) )
             
-    if os.path.isfile(save_pkl) and data_renew is False and False:
+    if os.path.isfile(save_pkl) and data_renew is False:
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -444,6 +444,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         ## data_renew = False #temp        
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True)
+
+        data_renew = False
 
         print "start to load data"
         # loading and time-sync    
