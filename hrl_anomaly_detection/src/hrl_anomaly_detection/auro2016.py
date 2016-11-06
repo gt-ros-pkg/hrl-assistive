@@ -99,7 +99,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False and False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -483,11 +483,11 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods'] = ['fixed', 'change', 'hmmgp']
+        param_dict['ROC']['methods'] = ['fixed', 'hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         #param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        nPoints = 50
+        nPoints = 40
         param_dict['ROC']['nPoints'] = nPoints
 
         ## save_data_path = os.path.expanduser('~')+\
