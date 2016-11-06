@@ -171,12 +171,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                         
                         ## 'unimodal_fabricForce' ,\
                         ## 'unimodal_kinEEChange']
-                        ## ]
                         ## 'crossmodal_landmarkEEAng'
-                        ##  ]
+
             ## ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
+
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
                           'add_logp_d': False}
@@ -247,7 +246,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                          'nugget': 105.44, 'theta0': 1.21,\
+                          'nugget': 81.24, 'theta0': 0.878,\
                           'std_offset': 1.4464
                           }
 

@@ -485,7 +485,6 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        #param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = 40
         param_dict['ROC']['nPoints'] = nPoints
@@ -495,7 +494,6 @@ if __name__ == '__main__':
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'feeding':
-            ## param_dict['SVM']['hmmosvm_nu'] = 0.1
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
