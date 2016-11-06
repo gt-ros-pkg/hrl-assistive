@@ -37,8 +37,8 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     if dim == 5:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
     elif dim == 4:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'progress_diag', \
-                                         'osvm', 'hmmosvm', 'hmmgp', 'rnd' ]
+        param_dict['ROC']['methods'] = [ 'hmmgp' ]
+        # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd'
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
 
@@ -226,8 +226,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     elif dim == 4:
 
-        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
-                        'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
+        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                        'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+
+        ## handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+        ##                 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.75, 'scale': 15.55,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 5.512,\
