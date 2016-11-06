@@ -179,7 +179,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
             ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
 
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.82, 'scale': 13.03,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
@@ -193,9 +194,12 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                          'nugget': 104.42, 'theta0': 1.42,\
+                          'nugget': 80.0, 'theta0': 0.91,\
                           'std_offset': 1.4464
                           }
+                          ## 'nugget': 104.42, 'theta0': 1.42,\
+                          ## 'std_offset': 1.4464
+                          ## }
 
         
         ROC_param_dict = {'nPoints': nPoints,\
