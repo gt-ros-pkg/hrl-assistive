@@ -228,7 +228,7 @@ class anomaly_detector(learning_base):
 
         delay_score = 1.0 - np.mean( np.abs( np.array(delays).astype(float) /float(self.nLength)) )
         ## print fscore, delay_score
-        return fscore+delay_score
+        return fscore+2.0*delay_score
 
 
 
