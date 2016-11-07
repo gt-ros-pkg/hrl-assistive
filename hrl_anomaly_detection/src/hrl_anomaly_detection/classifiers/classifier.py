@@ -687,9 +687,10 @@ class classifier(learning_base):
             mult_coeff = []
             for post in posts:
                 min_index = np.argmax(post)
+                ## mult_coeff.append( 1.0 + 0.* float(min_index)/(float(self.nPosteriors)-1.0) )
                 mult_coeff.append( 1.0 + 3.* float(min_index)/(float(self.nPosteriors)-1.0) )
             mult_coeff = np.array(mult_coeff)
-                
+
             l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
