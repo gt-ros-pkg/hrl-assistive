@@ -35,121 +35,10 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['update_list'] = [ 'hmmgp']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp', 'osvm', 'hmmosvm']
+        param_dict['ROC']['update_list'] = [ 'hmmgp']
 
     param_dict['SVM']['raw_window_size'] = 5
 
-    return raw_data_path, save_data_path, param_dict
-
-def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', local_range=10.0, \
-                pre_train=False,\
-                ae_swtch=False, dim=4, nPoints=None):
-
-    if nPoints is None: nPoints = 20  
-
-    if dim == 4:
-        handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng', \
-                        'unimodal_audioWristRMS']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': 1.0,
-                          'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.2, 'gamma': 0.01, 'cost': 15.0,\
-                          'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
-                          'hmmsvm_diag_gamma': 0.01,\
-                          'osvm_nu': 0.000215,\
-                          'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
-                          'hmmsvm_dL_gamma': 0.50749,
-                          }
-        
-        ROC_param_dict = {'nPoints': nPoints,\
-                          'hmmgp_param_range':np.linspace(0, -40.0, nPoints), \
-                          'progress_param_range':np.linspace(0.0, -7., nPoints), \
-                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
-                          'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                          'sgd_param_range': np.logspace(-4.0, 1.3, nPoints)}
-
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
-        
-    elif dim == 3:
-        handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist', \
-                        'crossmodal_targetEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': 3.0,\
-                          'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0,\
-                          'hmmosvm_nu': 0.00316,\
-                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
-                          'hmmsvm_diag_gamma': 0.01}
-
-        ROC_param_dict = {'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-0.8, -5., nPoints), \
-                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
-                          'fixed_param_range': np.linspace(0.0, -1.5, nPoints),\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
-        AD_param_dict = {'svm_w_positive': 0.1, 'sgd_w_positive': 1.0}
-        
-    elif dim == 2:
-        handFeatures = ['unimodal_ftForce',\
-                        'crossmodal_targetEEDist' ]
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.4, 'scale': 3.0,\
-                          'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
-                          'hmmosvm_nu': 0.00316}
-
-        ROC_param_dict = {'nPoints': nPoints,\
-                          'progress_param_range':np.linspace(-0.8, -8., nPoints), \
-                          'svm_param_range': np.logspace(-1.5, 1, nPoints),\
-                          'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
-                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
-                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
-        
-    rawFeatures = ['relativePose_target_EE', \
-                   'wristAudio', \
-                   'ft' ]                                
-    modality_list = ['kinematics', 'audioWrist', 'ft', \
-                     'pps']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
-
-    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
-                      'layer_sizes':[], 'learning_rate':1e-4, \
-                      'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
-                      'pca_gamma': 1.0,\
-                      'filter':False, 'filterDim':4, \
-                      'nAugment': 1, \
-                      'add_option': None, 'rawFeatures': rawFeatures,\
-                      'add_noise_option': [], 'preTrainModel': None}
-
-    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': 140, 'cut_data': None, \
-                      'nNormalFold':3, 'nAbnormalFold':3,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
-                      'handFeatures_noise': True, 'max_time': None}
-
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
-      str(data_param_dict['downSampleSize'])+'_'+str(dim)
-      
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                  'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
-      
     return raw_data_path, save_data_path, param_dict
 
 
@@ -367,4 +256,115 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     return raw_data_path, save_data_path, param_dict
 
+
+def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', local_range=10.0, \
+                pre_train=False,\
+                ae_swtch=False, dim=4, nPoints=None):
+
+    if nPoints is None: nPoints = 20  
+
+    if dim == 4:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng', \
+                        'unimodal_audioWristRMS']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': 1.0,
+                          'add_logp_d': False}
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.2, 'gamma': 0.01, 'cost': 15.0,\
+                          'hmmosvm_nu': 0.00316,\
+                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
+                          'hmmsvm_diag_gamma': 0.01,\
+                          'osvm_nu': 0.000215,\
+                          'hmmsvm_dL_w_negative': 0.85, 'hmmsvm_dL_cost': 7.5, \
+                          'hmmsvm_dL_gamma': 0.50749,
+                          }
+        
+        ROC_param_dict = {'nPoints': nPoints,\
+                          'hmmgp_param_range':np.linspace(0, -40.0, nPoints), \
+                          'progress_param_range':np.linspace(0.0, -7., nPoints), \
+                          'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
+                          'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4.0, 1.3, nPoints)}
+
+        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
+        
+    elif dim == 3:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist', \
+                        'crossmodal_targetEEAng']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': 3.0,\
+                          'add_logp_d': False}
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.825, 'gamma': 3.16, 'cost': 4.0,\
+                          'hmmosvm_nu': 0.00316,\
+                          'hmmsvm_diag_w_negative': 0.85, 'hmmsvm_diag_cost': 12.5, \
+                          'hmmsvm_diag_gamma': 0.01}
+
+        ROC_param_dict = {'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-0.8, -5., nPoints), \
+                          'svm_param_range': np.logspace(-2.5, 0, nPoints),\
+                          'fixed_param_range': np.linspace(0.0, -1.5, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+        AD_param_dict = {'svm_w_positive': 0.1, 'sgd_w_positive': 1.0}
+        
+    elif dim == 2:
+        handFeatures = ['unimodal_ftForce',\
+                        'crossmodal_targetEEDist' ]
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1.4, 'scale': 3.0,\
+                          'add_logp_d': False}
+        SVM_param_dict = {'renew': CF_renew, 'w_negative': 3.5, 'gamma': 0.0147, 'cost': 3.0,\
+                          'hmmosvm_nu': 0.00316}
+
+        ROC_param_dict = {'nPoints': nPoints,\
+                          'progress_param_range':np.linspace(-0.8, -8., nPoints), \
+                          'svm_param_range': np.logspace(-1.5, 1, nPoints),\
+                          'fixed_param_range': np.linspace(0.2, -3.0, nPoints),\
+                          'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
+                          ## 'svm_param_range': np.logspace(-4, 1.2, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-4.0, 1.5, nPoints),\
+                          'osvm_param_range': np.linspace(0.1, 2.0, nPoints),\
+                          'sgd_param_range': np.logspace(-4, 1.2, nPoints)}        
+        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
+        
+    rawFeatures = ['relativePose_target_EE', \
+                   'wristAudio', \
+                   'ft' ]                                
+    modality_list = ['kinematics', 'audioWrist', 'ft', \
+                     'pps']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
+
+    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
+                      'layer_sizes':[], 'learning_rate':1e-4, \
+                      'learning_rate_decay':1e-6, \
+                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+                      'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
+                      'pca_gamma': 1.0,\
+                      'filter':False, 'filterDim':4, \
+                      'nAugment': 1, \
+                      'add_option': None, 'rawFeatures': rawFeatures,\
+                      'add_noise_option': [], 'preTrainModel': None}
+
+    data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
+                      'downSampleSize': 140, 'cut_data': None, \
+                      'nNormalFold':3, 'nAbnormalFold':3,\
+                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures_noise': True, 'max_time': None}
+
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
+      str(data_param_dict['downSampleSize'])+'_'+str(dim)
+      
+    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+                  'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
+      
+    return raw_data_path, save_data_path, param_dict
 
