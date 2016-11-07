@@ -468,8 +468,10 @@ if __name__ == '__main__':
                                 n_jobs=opt.n_jobs, n_iter_search=100, save=opt.bSave)
 
     elif opt.bEvaluationUnexpected:
-        param_dict['ROC']['methods'] = ['osvm','progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = []
+        param_dict['ROC']['methods'] = ['progress', 'hmmgp'] #'osvm',
+        param_dict['ROC']['update_list'] = ['hmmgp']
+        
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.9, 1.5, nPoints)+0.5
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
