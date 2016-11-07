@@ -120,7 +120,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'hmmosvm_nu': 0.5,\
                           'osvm_nu': 0.5,\
                           'logp_offset': 0,\
-                          'nugget': 50.0, 'theta0': 1.0,\
+                          'nugget': 10.0, 'theta0': 1.0,\
                           'std_offset': 1.4464
                           }
 
