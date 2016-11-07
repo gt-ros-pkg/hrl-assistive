@@ -1761,6 +1761,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            
             ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
             ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
 
@@ -1863,9 +1864,13 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
         ## max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
         ## max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
 
-        max_score_idx[0].append( argmax(fscore_1) )
-        max_score_idx[1].append( argmax(fscore_0_5) )
-        max_score_idx[2].append( argmax(fscore_2) )
+        max_score_idx[0].append( np.argmax(fscore_1) )
+        max_score_idx[1].append( np.argmax(fscore_0_5) )
+        max_score_idx[2].append( np.argmax(fscore_2) )
+
+        ## max_score_idx[0].append(np.argmin(np.abs(fscore_1-0.8)))
+        ## max_score_idx[1].append(np.argmin(np.abs(fscore_0_5-0.8)))
+        ## max_score_idx[2].append(np.argmin(np.abs(fscore_2-0.8)))
 
         ## max_score_idx[0].append( np.argmin(fp_l) )
         ## max_score_idx[1].append( np.argmin(fp_l) )
@@ -1917,9 +1922,9 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             tp = float(np.sum(tp_ll[i]))
             fn = float(np.sum(fn_ll[i]))
             fp = float(np.sum(fp_ll[i]))
-            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-            ##                if delay_ll[i][ii]>=0 ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                           if delay_ll[i][ii]>=0 ]
 
             # 0: f1, 1: f0.5, 2: f2
             for j in xrange(3):
