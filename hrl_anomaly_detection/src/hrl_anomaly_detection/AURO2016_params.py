@@ -32,7 +32,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     elif dim == 4:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
         # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd' 
-        param_dict['ROC']['update_list'] = [ ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp']
@@ -279,14 +279,14 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           }
                           
         ROC_param_dict = {'nPoints': nPoints,\
-                          'hmmgp_param_range': -np.logspace(-0.7, 1.7, nPoints)+0.2, \
+                          'hmmgp_param_range': -np.logspace(-0.7, 1.3, nPoints), \
                           'progress_param_range': -np.logspace(0., 1.5, nPoints),\
                           'svm_param_range': np.logspace(-0.8, 2.5, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.5, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.1, -0.1, nPoints),\
+                          'hmmosvm_param_range': np.logspace(-3.0, 0.5, nPoints),\
+                          'fixed_param_range': np.linspace(0.1, -0.01, nPoints),\
                           'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
-                          'osvm_param_range': np.logspace(-6., 0.5, nPoints),\
+                          'osvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
