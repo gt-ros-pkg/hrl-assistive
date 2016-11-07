@@ -472,6 +472,8 @@ if __name__ == '__main__':
         param_dict['ROC']['update_list'] = ['hmmgp']
         
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.3, 1.5, nPoints)+0.5
+        param_dict['SVM']['nugget'] = 67.27
+        param_dict['SVM']['theta0'] = 1.2748
 
         evaluation_unexp(subjects, opt.task, raw_data_path, save_data_path, \
                          param_dict, save_pdf=opt.bSavePdf, \
