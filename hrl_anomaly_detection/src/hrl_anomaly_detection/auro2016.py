@@ -443,11 +443,11 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['HMM']['nState'] = 25
         ## param_dict['HMM']['scale'] = 9.0
-        param_dict['SVM']['nugget'] = 10.0
+        ## param_dict['SVM']['nugget'] = 10.0
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=True, method='hmmgp', \
+                          decision_boundary_viz=False, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=False,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
