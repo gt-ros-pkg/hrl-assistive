@@ -21,14 +21,6 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                                                ae_swtch=bAESwitch, dim=dim,\
                                                                nPoints=nPoints)
 
-    #---------------------------------------------------------------------------
-    elif task == 'pushing':
-        raw_data_path, save_data_path, param_dict = getPushing(task, bDataRenew, \
-                                                               bHMMRenew, bCFRenew, \
-                                                               rf_center, local_range,\
-                                                               ae_swtch=bAESwitch, dim=dim,\
-                                                               nPoints=nPoints)
-
     else:
         print "Selected task name is not available."
         sys.exit()
@@ -309,6 +301,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.5, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.1, -0.1, nPoints),\
+                          'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
+                          'osvm_param_range': np.logspace(-6., 0.5, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
         AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
@@ -334,6 +328,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'svm_param_range': np.logspace(-2.5, 0.7, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.5, -0.0, nPoints),\
+                          'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
+                          'osvm_param_range': np.logspace(-6., 0.5, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
