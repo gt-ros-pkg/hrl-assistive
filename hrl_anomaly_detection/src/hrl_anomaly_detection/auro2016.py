@@ -489,9 +489,9 @@ if __name__ == '__main__':
         nPoints = 40
         param_dict['ROC']['nPoints'] = nPoints
 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'feeding':
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
@@ -507,7 +507,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 0:
+        elif 1:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif 1:
