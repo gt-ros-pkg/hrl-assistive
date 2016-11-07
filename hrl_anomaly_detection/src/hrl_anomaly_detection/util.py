@@ -1892,24 +1892,28 @@ def delay_info2(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False,
     for method in sorted(method_list):
 
         # interpolation
-        max_idx = np.argmax(delay_dict[method]['f05_score'])
-
-        xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
-        yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]
+        max_idx = argmax(delay_dict[method]['f05_score'])
+        if len(np.unique(delay_dict[method]['f05_score'])) < len(delay_dict[method]['f05_score']):
+            xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
+            yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]            
+        else:        
+            xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
+            yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]
         print np.shape(xx), np.shape(yy)
 
         from scipy import interpolate
         f = interpolate.interp1d(xx,yy)
 
-        y = []
+        x_list = []
+        y_list = []
         for i in xrange(len(x)):
             if x[i] <= xx[-1]:
-                y.append(float(f(x[i])))
-            else:
-                y.append(0)
+                x_list.append(x[i])
+                y_list.append(float(f(x[i])))
 
         print method
-        print y
+        print x_list
+        print y_list
        
 
         if method == 'svm': label='HMM-BPSVM'
@@ -1932,7 +1936,7 @@ def delay_info2(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False,
             shape = shapes.next()
             ax1 = fig.add_subplot(111)
 
-            plt.plot(x, y, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(x_list, y_list, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
             
             plt.xlabel('F1 score', fontsize=24)
             plt.ylabel('Detection Delay [s]', fontsize=24)

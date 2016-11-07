@@ -253,7 +253,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         task_list = ["pushing_microblack", "pushing_microwhite", "pushing_toolcase", "scooping", "feeding"]
     else:
         ## roc_info(method_list, ROC_data, nPoints, delay_plot=delay_plot, no_plot=no_plot, save_pdf=save_pdf)
-        delay_info2(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
+        delay_info(method_list, ROC_data, nPoints, no_plot=no_plot, save_pdf=save_pdf, timeList=timeList)
 
 
 def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
