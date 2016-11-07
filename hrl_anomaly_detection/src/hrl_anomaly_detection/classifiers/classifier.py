@@ -692,7 +692,7 @@ class classifier(learning_base):
             ## mult_coeff = np.array(mult_coeff)
 
             ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
-            l_err = y_pred + self.ths_mult*sigma - logps -50 #- self.logp_offset
+            l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
             return l_err
 
         elif self.method == 'fixed':
