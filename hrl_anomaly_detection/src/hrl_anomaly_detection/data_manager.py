@@ -977,23 +977,24 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
 
         #--------------------------------------------------------------------------------
         if step_anomaly_info is not None:
-            step_idx_l = [] 
-            for i in xrange(len(normalTestData[0])):
-                step_idx_l.append(None) 
-            for i in xrange(len(abnormalTestData[0])): 
-                step_idx_l.append(step_anomaly_info[i]) 
+            ## step_idx_l = [] 
+            ## for i in xrange(len(normalTestData[0])):
+            ##     step_idx_l.append(None) 
+            ## for i in xrange(len(abnormalTestData[0])): 
+            ##     step_idx_l.append(step_anomaly_info[i]) 
 
             ## step_idx_l = step_anomaly_info
             ## print "we do not use step_anomaly_info"
             ## sys.exit()
-            ## modeling_pkl_prefix = step_anomaly_info[0]
-            ## step_mag = step_anomaly_info[1]
-            ## dd = ut.load_pickle(modeling_pkl_prefix+'_'+str(file_idx)+'.pkl')
-            ## step_idx_l = dd['step_idx_l']
+            
+            modeling_pkl_prefix = step_anomaly_info[0]
+            step_mag = step_anomaly_info[1]
+            dd = ut.load_pickle(modeling_pkl_prefix+'_'+str(file_idx)+'.pkl')
+            step_idx_l = dd['step_idx_l']
 
-            ## abnormalTestData = copy.copy(normalTestData)
-            ## for i in xrange(len(abnormalTestData)):
-            ##     abnormalTestData[i,step_idx_l[len(normalTestData)+i],:] += step_mag
+            abnormalTestData = copy.copy(normalTestData)
+            for i in xrange(len(abnormalTestData)):
+                abnormalTestData[i,step_idx_l[len(normalTestData)+i],:] += step_mag
         else:
             step_idx_l = None
 
