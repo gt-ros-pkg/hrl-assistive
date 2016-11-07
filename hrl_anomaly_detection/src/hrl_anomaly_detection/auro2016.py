@@ -507,7 +507,7 @@ if __name__ == '__main__':
         if False:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 1:
+        elif 0:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
         elif 0:
@@ -516,7 +516,7 @@ if __name__ == '__main__':
         ## elif 0:
         ##     step_mag = 0.15*param_dict['HMM']['scale'] # need to varying it
         ##     pkl_prefix = 'step_0.15'
-        elif 1:
+        elif 0:
             step_mag = 0.2*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.2'
         elif 0:
