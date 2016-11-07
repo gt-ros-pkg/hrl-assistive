@@ -259,7 +259,7 @@ def tune_detector(parameters, task_name, param_dict, save_data_path, verbose=Fal
         sys.exit()
 
     ## print np.shape(kFold_list)
-    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[1]
     normalTrainData   = cv_dict['successData']#[:, normalTrainIdx, :]   
 
     # sample x feature x length
