@@ -314,6 +314,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         ## handFeatures = ['unimodal_ftForce', \
         ##                 'crossmodal_landmarkEEDist']
         handFeatures = ['unimodal_ftForceZ', 'crossmodal_landmarkEEDist']
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.5, 'scale': 19.11,\
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.5, 'scale': 18.88,\
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
