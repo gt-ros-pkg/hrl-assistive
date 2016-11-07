@@ -247,7 +247,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
                           'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
-                          'nugget': 81.24, 'theta0': 0.878,\
+                          'nugget': 119.43, 'theta0': 1.423,\
                           'std_offset': 1.4464
                           }
 
@@ -322,7 +322,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'hmmsvm_bpsvm_cost': 15.0,\
                           'hmmsvm_bpsvm_gamma': 0.01, \
                           'hmmsvm_bpsvm_w_negative': 1.5,\
-                          'nugget': 110.24, 'theta0': 1.02,\
+                          'nugget': 74.51, 'theta0': 1.0,\
                           }
 
         ROC_param_dict = {'nPoints': nPoints,\
