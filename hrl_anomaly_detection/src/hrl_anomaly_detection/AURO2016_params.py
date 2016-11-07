@@ -32,7 +32,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     elif dim == 4:
         param_dict['ROC']['methods'] = [ 'progress_diag', 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
         # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd' 
-        param_dict['ROC']['update_list'] = [ ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
         param_dict['ROC']['update_list'] = [ ]
@@ -260,11 +260,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'progress_param_range': -np.logspace(0.2, 1.2, nPoints)+1.0,\
                           'progress_diag_param_range': -np.logspace(-0.7, 1.4, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
-                          'hmmgp_param_range':np.logspace(0.5, 2.0, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(0.2, 2.0, nPoints)*-1.0+0.5, \
                           'hmmosvm_param_range': np.logspace(-4.0, 0.2, nPoints),\
                           'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-7., 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.1, -0.0, nPoints),\
+                          'fixed_param_range': np.linspace(0.07, -0.0, nPoints),\
                           'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
@@ -285,13 +285,15 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.5, 'scale': 2.555,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.26, 'scale': 10.42,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 12.5,\
                           'hmmsvm_bpsvm_gamma': 0.507, \
                           'hmmsvm_bpsvm_w_negative': 0.2
+                          'nugget': 110.24, 'theta0': 1.02,\
+                          'std_offset': 1.0
                           }
                           
         ROC_param_dict = {'nPoints': nPoints,\
