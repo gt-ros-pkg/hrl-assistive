@@ -285,7 +285,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.88, 'scale': 11.94,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.88, 'scale': 11.94,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 16.36,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
                           'hmmosvm_nu': 0.001,\
