@@ -177,15 +177,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
-                          'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
-                          'hmmsvm_diag_gamma': 2.0,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
-                          'hmmsvm_dL_gamma': 4.0,\
-                          'bpsvm_cost': 12.5,\
-                          'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
-                          'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                           'nugget': 80.0, 'theta0': 0.91,\
                           'std_offset': 1.4464
                           }
@@ -232,21 +224,14 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 1., 'scale': 20.,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.75, 'scale': 15.55,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 5.512,\
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 3.111,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.615, 'scale': 6.512,\
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 3.111,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
-                          'hmmosvm_nu': 0.000316,\
-                          'osvm_nu': 0.000359,\
-                          'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
-                          'hmmsvm_diag_gamma': 2.0,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
-                          'hmmsvm_dL_gamma': 4.0,\
-                          'bpsvm_cost': 12.5,\
-                          'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2,\
+                          'hmmosvm_nu': 0.5,\
+                          'osvm_nu': 0.5,\
                           'logp_offset': 0,\
-                          'sgd_gamma':0.32, 'sgd_w_negative':2.5,\
                           'nugget': 119.43, 'theta0': 1.423,\
                           'std_offset': 1.4464
                           }

@@ -482,7 +482,12 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-                    
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['HMM']['scale'] = 5.0
+            
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
@@ -490,7 +495,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['hmmgp'] #'fixed', 
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'osvm' ]
+        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm' ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = 40
         param_dict['ROC']['nPoints'] = nPoints
