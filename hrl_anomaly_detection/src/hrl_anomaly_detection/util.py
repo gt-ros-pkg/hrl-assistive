@@ -1787,7 +1787,170 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
+
+
+def delay_info2(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+                timeList=None, only_tpr=False):
+    # ---------------- ROC Visualization ----------------------
     
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    if no_plot is False:
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
+
+    delay_dict = {}
+
+    for method in sorted(method_list):
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        tnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+        acc_l = []
+        f_score   = []
+        f05_score = []
+        f2_score  = []
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        for i in xrange(nPoints):
+            
+            ## fnr_l.append( 100.0 - tpr_l[-1] )
+            ## if float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) > 0:            
+            ##     tnr_l.append( float(np.sum(tn_ll[i])) / float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) * 100.0 )
+            ## else:
+            ##     tnr_l.append(0)
+            ## if only_tpr is False:
+            ##     fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            ## sen_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            ## spec_l.append( float(np.sum(tn_ll[i]))/float(np.sum(tn_ll[i])+np.sum(fp_ll[i]))*100.0 )
+
+            f_score.append(2.0*float(np.sum(tp_ll[i])) / (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f05_score.append((1.0+0.25)*float(np.sum(tp_ll[i])) / ((1.0+0.25)*float(np.sum(tp_ll[i])) + 0.25*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            f2_score.append((1.0+4.0)*float(np.sum(tp_ll[i])) / ((1.0+4.0)*float(np.sum(tp_ll[i])) + 4.0*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            if len(delay_list)>0:
+                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
+                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
+            else:
+                delay_mean_l.append( 0 )
+                delay_std_l.append( 0 )
+                
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        from sklearn import metrics
+        print "--------------------------------"
+        print " AUC "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+
+        delay_dict[method] = {}
+        delay_dict[method]['delay_mean'] = delay_mean_l
+        delay_dict[method]['delay_std'] = delay_std_l
+        delay_dict[method]['f_score'] = f_score
+        delay_dict[method]['f05_score'] = f05_score
+        delay_dict[method]['f2_score'] = f2_score
+
+
+    f_score_init = np.amax([delay_dict[method]['f05_score'][0] for method in method_list  ])
+    x = np.linspace(f_score_init,1.0, 10)
+        
+    for method in sorted(method_list):
+
+        # interpolation
+        max_idx = np.argmax(delay_dict[method]['f05_score'])
+
+        xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
+        yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]
+        print np.shape(xx), np.shape(yy)
+
+        from scipy import interpolate
+        f = interpolate.interp1d(xx,yy)
+
+        y = []
+        for i in xrange(len(x)):
+            if x[i] <= xx[-1]:
+                y.append(float(f(x[i])))
+            else:
+                y.append(0)
+
+        print method
+        print y
+       
+
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='OSVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            plt.plot(x, y, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            
+            plt.xlabel('F1 score', fontsize=24)
+            plt.ylabel('Detection Delay [s]', fontsize=24)
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+
+    if no_plot is False:
+        ## plt.xlim([0,1])
+        ## plt.ylim([0,3])
+        plt.legend(loc='upper left', prop={'size':24})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+        
 
 
 def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
