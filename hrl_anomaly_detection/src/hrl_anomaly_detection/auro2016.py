@@ -442,10 +442,11 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_lp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## param_dict['HMM']['scale'] = 9.0
+        param_dict['SVM']['nugget'] = 100.0
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=False, \
+                          decision_boundary_viz=True, \
                           useTrain=True, useNormalTest=True, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\

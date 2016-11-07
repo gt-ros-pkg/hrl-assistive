@@ -47,7 +47,7 @@ from matplotlib import gridspec
 
 
 def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   decision_boundary_viz=False, method='progress',\
+                   decision_boundary_viz=False, method='hmmgp',\
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                    data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
@@ -66,6 +66,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
+    SVM_dict = param_dict['SVM']
     
     #------------------------------------------
     if dd is None:        
@@ -150,8 +151,9 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-10.0 )
-        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+                             nLength=len(normalTestData[0,0]), ths_mult=-10.0,
+                             nugget=SVM_dict['nugget'], parallel=True )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
 
     print "----------------------------------------------------------------------------"
