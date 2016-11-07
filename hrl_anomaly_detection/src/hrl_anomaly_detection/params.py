@@ -57,7 +57,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          #'progress_state', 'kmean', 'progress_osvm', 'progress_svm'
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ 'hmmgp','fixed' ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
@@ -567,8 +567,9 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'bpsvm_w_negative': 1.5,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
                           'progress_svm_gamma': 0.01,\
-                          'nugget': 114.21, 'theta0': 1.376,\
+                          'nugget': 10.0, 'theta0': 1.376,\
                           'std_offset': 0.7473}
+                          ## 'nugget': 114.21, 'theta0': 1.376,\
                           ## 'nugget': 122.09, 'theta0': 1.168,\
                           ## 'std_offset': 0.7473}
                           ## 'nugget': 79.9, 'theta0': 1.16,\
