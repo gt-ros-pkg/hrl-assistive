@@ -174,8 +174,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'svm_param_range': np.logspace(-0.8, 2.5, nPoints),\
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.0, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.7, -0.01, nPoints),\
-                          'change_param_range': np.logspace(0., 4.0, nPoints)*-1.0,\
+                          'fixed_param_range': np.linspace(1.5, -0.1, nPoints),\
+                          'change_param_range': np.logspace(-2., 5.0, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-4., 0.5, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
