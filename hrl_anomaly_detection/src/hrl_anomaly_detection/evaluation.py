@@ -146,7 +146,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-            dim_idx   = np.random.randint(0, len(abnormalTestData))
+            ## dim_idx   = np.random.randint(0, len(abnormalTestData))
 
             #abnormalTestData[dim_idx,i,start_idx:] += step_mag
             abnormalTestData[:,i,start_idx:] += step_mag
@@ -313,16 +313,16 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
     delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
-    nLength = len(failureData[0][0])
-    step_idx_l = []
-    for i in xrange(len(failureData[0])):
-        start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-        ## dim_idx   = np.random.randint(0, len(failureData))
-        step_mag  = np.random.uniform(0.01, 0.10)
+    ## nLength = len(failureData[0][0])
+    ## step_idx_l = []
+    ## for i in xrange(len(failureData[0])):
+    ##     start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+    ##     ## dim_idx   = np.random.randint(0, len(failureData))
+    ##     step_mag  = np.random.uniform(0.01, 0.10)
         
-        ## failureData[dim_idx,i,start_idx:] += step_mag
-        failureData[:,i,start_idx:] += step_mag
-        step_idx_l.append(start_idx)
+    ##     ## failureData[dim_idx,i,start_idx:] += step_mag
+    ##     failureData[:,i,start_idx:] += step_mag
+    ##     step_idx_l.append(start_idx)
 
 
     #-----------------------------------------------------------------------------------------
@@ -334,8 +334,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        abnormalTrainData = failureData[:, normalTrainIdx, :] * HMM_dict['scale']
-        step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx]
+        ## abnormalTrainData = failureData[:, normalTrainIdx, :] * HMM_dict['scale']
+        ## step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx]
         ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
         ## abnormalTrainData = copy.copy(normalTrainData)
         ## normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
@@ -364,35 +364,33 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
             
             t_normalTrainData   = copy.copy(normalTrainData[:,train_fold])
-            t_abnormalTrainData = copy.copy(abnormalTrainData)
             t_normalTestData    = copy.copy(normalTrainData[:,test_fold])
-            t_abnormalTestData  = copy.copy(abnormalTrainData )
+            t_abnormalTestData  = copy.copy(normalTrainData[:,test_fold])
+            
             t_step_idx_l = []
             for i in xrange(len(t_normalTestData[0])):
                 t_step_idx_l.append(None)
             for i in xrange(len(t_abnormalTestData[0])):
-                t_step_idx_l.append(step_idx_l_train[i])
-
+                start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+                t_abnormalTestData[:,i,start_idx:] += step_mag
+                t_step_idx_l.append(start_idx)
 
             #-----------------------------------------------------------------------------------------
             # Full co-variance
             #-----------------------------------------------------------------------------------------
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-            if data_dict['handFeatures_noise']:
-                ret = ml.fit(t_normalTrainData+\
-                             np.random.normal(0.0, 0.03, np.shape(t_normalTrainData) )*HMM_dict['scale'], \
-                             cov_mult=cov_mult, use_pkl=False)
-            else:
-                ret = ml.fit(t_normalTrainData, cov_mult=cov_mult, use_pkl=False)
+            ret = ml.fit(t_normalTrainData+\
+                         np.random.normal(0.0, 0.03, np.shape(t_normalTrainData) )*HMM_dict['scale'], \
+                         cov_mult=cov_mult, use_pkl=False)
             if ret == 'Failure': sys.exit()
 
             # Classifier training data
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-              hmm.getHMMinducedFeaturesFromRawFeatures(ml, t_normalTrainData, t_abnormalTrainData, startIdx, add_logp_d)
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, t_normalTrainData, startIdx=startIdx)
 
             # Classifier test data
             ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-              hmm.getHMMinducedFeaturesFromRawFeatures(ml, t_normalTestData, t_abnormalTestData, startIdx, add_logp_d)
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, t_normalTestData, t_abnormalTestData, startIdx)
            
             #-----------------------------------------------------------------------------------------
             d = {}
@@ -442,20 +440,18 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         osvm_data = None ; bpsvm_data = None
         if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-            normalTrainData   = successData[:, normalTrainIdx, :] 
-            abnormalTrainData = failureData[:, normalTrainIdx, :]
-            ## abnormalTrainData = failureData[:, abnormalTrainIdx, :]
-            step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx] 
 
             fold_list = []
             for train_fold, test_fold in normal_folds:
                 fold_list.append([train_fold, test_fold])
 
-            normalFoldData = (fold_list, normalTrainData, abnormalTrainData)
+            normalFoldData = (fold_list, normalTrainData/HMM_dict['scale'], normalTrainData/HMM_dict['scale'])
+            modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_target_prefix+'_'+str(idx) )
             
             osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
                                       window=SVM_dict['raw_window_size'],
-                                      use_test=True, use_pca=False, step_anomaly_info=step_idx_l_train)
+                                      use_test=True, use_pca=False, \
+                                      step_anomaly_info=(modeling_pkl_prefix,step_mag/HMM_dict['scale']))
             
  
         # parallelization
