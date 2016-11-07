@@ -272,10 +272,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 16.36,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.55, 'gamma': 3.911, 'cost': 1.0,\
-                          'hmmosvm_nu': 0.001,\
-                          'hmmsvm_bpsvm_cost': 12.5,\
-                          'hmmsvm_bpsvm_gamma': 0.507, \
-                          'hmmsvm_bpsvm_w_negative': 0.2,\
+                          'hmmosvm_nu': 0.5,\
+                          'osvm_nu': 0.5,\
                           'nugget': 65.70, 'theta0': 1.097,\
                           'std_offset': 1.0
                           }
@@ -303,10 +301,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
-                          'hmmosvm_nu': 0.0001,\
-                          'hmmsvm_bpsvm_cost': 15.0,\
-                          'hmmsvm_bpsvm_gamma': 0.01, \
-                          'hmmsvm_bpsvm_w_negative': 1.5,\
+                          'hmmosvm_nu': 0.5,\
+                          'osvm_nu': 0.5,\
                           'nugget': 74.51, 'theta0': 1.0,\
                           }
 
