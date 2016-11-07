@@ -441,6 +441,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_lp/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['HMM']['nState'] = 25
         ## param_dict['HMM']['scale'] = 9.0
         param_dict['SVM']['nugget'] = 100.0
 

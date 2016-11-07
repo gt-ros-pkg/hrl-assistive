@@ -202,8 +202,8 @@ class classifier(learning_base):
             self.ll_std = np.zeros(nPosteriors)
         elif self.method == 'hmmgp':
             from sklearn import gaussian_process
-            self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linear'
+            self.regr = 'constant' #'constant', 'linear', 'quadratic'
+            self.corr = 'squared_exponential' #'absolute_exponential', squared_exponential','generalized_exponential', 'cubic', 'linear'
             self.nugget = nugget
             self.theta0 = theta0
 
