@@ -566,9 +566,9 @@ if __name__ == '__main__':
         
         from scipy.stats import uniform, expon
         param_dist = {'scale': uniform(2.0,15.0),\
-                      'cov': uniform(0.1,4.9),\
-                      'ths_mult': uniform(-35.0,25.0),\
-                      'nugget': uniform(60.0,80.0),\
+                      'cov': [1.0],\
+                      'ths_mult': uniform(-35.0,35.0),\
+                      'nugget': uniform(1.0,100.0),\
                       'theta0': [1.0] }
         method = 'hmmgp'
         
