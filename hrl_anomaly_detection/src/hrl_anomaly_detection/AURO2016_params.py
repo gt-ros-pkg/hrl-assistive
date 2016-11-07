@@ -307,7 +307,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           }
 
         ROC_param_dict = {'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(0.8, 1.7, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(1.1, 1.5, nPoints)*-1.0, \
                           'progress_param_range': -np.logspace(0.0, 1.2, nPoints),\
                           'svm_param_range': np.logspace(-2.5, 0.7, nPoints),\
                           'hmmosvm_param_range': np.logspace(-3.0, 0., nPoints),\
