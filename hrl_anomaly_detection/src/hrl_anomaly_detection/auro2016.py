@@ -510,7 +510,7 @@ if __name__ == '__main__':
         else:
             sys.exit()
 
-        if 1:
+        if 0:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
         elif 0:
