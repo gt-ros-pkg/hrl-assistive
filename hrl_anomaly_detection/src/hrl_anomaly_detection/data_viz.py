@@ -134,8 +134,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             rnd_sample = True #False
         else:
             nSubSample = None
-            ## nMaxData   = 40 #100
-            ## rnd_sample = True #False
+            nMaxData   = None
+            rnd_sample = False
             
 
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
