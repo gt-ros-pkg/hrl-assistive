@@ -32,7 +32,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     elif dim == 4:
         param_dict['ROC']['methods'] = [ 'progress_diag', 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
         # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd' 
-        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress', 'progress_diag' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
         param_dict['ROC']['update_list'] = [ ]
@@ -291,7 +291,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'hmmosvm_nu': 0.001,\
                           'hmmsvm_bpsvm_cost': 12.5,\
                           'hmmsvm_bpsvm_gamma': 0.507, \
-                          'hmmsvm_bpsvm_w_negative': 0.2
+                          'hmmsvm_bpsvm_w_negative': 0.2,\
                           'nugget': 110.24, 'theta0': 1.02,\
                           'std_offset': 1.0
                           }
