@@ -496,12 +496,10 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        ## param_dict['ROC']['methods'] = ['hmmgp'] #'fixed', 
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         param_dict['ROC']['update_list'] = [ ]
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        nPoints = 40
-        param_dict['ROC']['nPoints'] = nPoints
+        param_dict['ROC']['nPoints'] = nPoints = 40
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
