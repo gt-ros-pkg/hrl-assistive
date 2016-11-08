@@ -489,7 +489,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                                    timeList=timeList, verbose=False)
         ## scores, delays = cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
         ##                                         timeList=timeList, verbose=False)
-
         for i in xrange(len(method_list)):
             for j in xrange(3):
                 score_list[j][i].append( scores[j][i] )
