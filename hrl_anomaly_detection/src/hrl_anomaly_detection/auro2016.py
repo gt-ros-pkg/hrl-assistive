@@ -226,13 +226,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         kFold_list  = d['kFoldList']
         successData = d['successData']
         failureData = d['failureData']
-        successData, failureData, success_files, failure_files, kFold_list \
-          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
-                               d['successFileList'], d['failureFileList'])
-        d['success_files'] = success_files
-        d['failure_files'] = failure_files
-        ut.save_pickle(d, crossVal_pkl)
-        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -333,7 +326,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         fn_l = np.array(fn_l)
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        ## AUfscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
         ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
