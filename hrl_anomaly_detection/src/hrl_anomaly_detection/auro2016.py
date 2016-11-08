@@ -506,13 +506,12 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
 
         if opt.task == 'feeding':
-            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-            param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-1,1,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-1,1,nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
+            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
+            param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 2.0, nPoints)+2.0            
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-0.5,0.5,nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-0.5,0.5,nPoints)
+            param_dict['ROC']['fixed_param_range']  = np.linspace(1.0, -1.0, nPoints)
+            param_dict['ROC']['change_param_range'] = np.linspace(4.3, -55.0, nPoints)
         else:
             sys.exit()
 
