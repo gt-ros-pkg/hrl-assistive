@@ -485,7 +485,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm']
+        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm', 'fixed', 'change']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 40
 
@@ -496,10 +496,10 @@ if __name__ == '__main__':
         if opt.task == 'feeding':
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 2.0, nPoints)+2.0            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-2.5,0.0,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-2.5,0.0,nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(1.0,-1.0, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(10.0, -30.0, nPoints)
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-4.5, 0.0, nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4.5, 0.0, nPoints)
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-4.0, 1.0, nPoints)
+            param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         else:
             sys.exit()
 
