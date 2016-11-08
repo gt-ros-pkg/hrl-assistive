@@ -326,7 +326,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         fn_l = np.array(fn_l)
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        #fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
         ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
@@ -393,10 +393,10 @@ if __name__ == '__main__':
     # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
-    ## if opt.bEvaluationUnexpected:
-    ##     save_data_path = os.path.expanduser('~')+\
-    ##       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-    ##       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    if opt.bEvaluationUnexpected:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     
     #---------------------------------------------------------------------------           
