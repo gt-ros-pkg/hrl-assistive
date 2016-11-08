@@ -467,7 +467,7 @@ if __name__ == '__main__':
         ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         
-        param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 0.6, nPoints)+1.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 0.6, nPoints)
         param_dict['ROC']['hmmgp_param_range']    = -np.logspace(0.8, 1.4, nPoints)
         ## param_dict['SVM']['nugget'] = 119.43
         ## param_dict['SVM']['theta0'] = 1.423
