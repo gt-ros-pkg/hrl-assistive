@@ -225,7 +225,14 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         print d.keys()
         kFold_list  = d['kFoldList']
         successData = d['successData']
-        failureData = d['failureData']        
+        failureData = d['failureData']
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        ut.save_pickle(d, crossVal_pkl)
+        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
