@@ -62,7 +62,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.82, 'scale': 13.03,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.82, 'scale': 7.0,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
