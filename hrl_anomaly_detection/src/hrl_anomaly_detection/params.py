@@ -62,7 +62,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
-        param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress' ]
+        param_dict['ROC']['update_list'] = [ 'progress' ]
     param_dict['SVM']['raw_window_size'] = 5
 
     return raw_data_path, save_data_path, param_dict
@@ -619,7 +619,7 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'update_list': [ 'fixed'],\
                           'nPoints': nPoints,\
                           'hmmgp_param_range':np.logspace(0.1, 1.8, nPoints)*-1.0, \
-                          'progress_param_range':-np.logspace(0, 0.8, nPoints), \
+                          'progress_param_range':-np.logspace(0, 1.0, nPoints), \
                           'kmean_param_range':np.linspace(0.5, -6.6, nPoints), \
                           'fixed_param_range': np.linspace(-2.0, 2.0, nPoints),\
                           'svm_param_range': np.logspace(-2.0, 0.592, nPoints),\
