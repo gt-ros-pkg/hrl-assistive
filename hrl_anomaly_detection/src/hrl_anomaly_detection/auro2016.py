@@ -392,15 +392,11 @@ if __name__ == '__main__':
     # Mikako - bad camera
     # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
-    ## subjects = ['s1', 's5', 's6']
 
-
-    ## param_dict['ROC']['methods'] = ['fixed']
-
-    if opt.bEvaluationUnexpected:
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    ## if opt.bEvaluationUnexpected:
+    ##     save_data_path = os.path.expanduser('~')+\
+    ##       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
+    ##       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     
     #---------------------------------------------------------------------------           
@@ -438,9 +434,6 @@ if __name__ == '__main__':
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.bLikelihoodPlot:
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_lp/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## param_dict['HMM']['nState'] = 25
         ## param_dict['HMM']['scale'] = 9.0
         ## param_dict['SVM']['nugget'] = 10.0
@@ -472,10 +465,10 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp'] #'osvm',
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.3, 1.5, nPoints)+0.5
+        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.3, 1.5, nPoints)+0.5
         ## param_dict['SVM']['nugget'] = 119.43
         ## param_dict['SVM']['theta0'] = 1.423
 
@@ -486,12 +479,6 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAll or opt.bDataGen:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_unexp/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['HMM']['scale'] = 8.0
-            
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
