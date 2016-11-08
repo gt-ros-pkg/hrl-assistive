@@ -188,13 +188,13 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         handFeatures = ['unimodal_ftForceZ', 'crossmodal_landmarkEEDist']
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.5, 'scale': 19.11,\
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 8.33,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': 12.33,\
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 12.33,\
                           'add_logp_d': False}
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 6.0, 'scale': 3.0}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
                           'hmmosvm_nu': 0.01,\
                           'osvm_nu': 0.01,\
-                          'nugget': 10.0, 'theta0': 1.0,\
+                          'nugget': 100.0, 'theta0': 1.0,\
                           }
 
         ROC_param_dict = {'nPoints': nPoints,\
