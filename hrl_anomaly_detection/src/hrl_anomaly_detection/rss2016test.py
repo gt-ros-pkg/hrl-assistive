@@ -1898,6 +1898,17 @@ if __name__ == '__main__':
     elif opt.bStatePathPlot:
         plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)
 
+    elif opt.HMM_param_search:
+        from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
+        parameters = {'nState': [25], 'scale': np.linspace(1.0,18.0,10), \
+                      'cov': np.linspace(0.1, 3.0, 2) }
+        max_check_fold = 1 #len(subjects) #5 #None
+        no_cov = False
+        method = 'hmmgp'
+        
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
+
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
@@ -1909,9 +1920,9 @@ if __name__ == '__main__':
         from scipy.stats import uniform, expon
         param_dist = {'scale': uniform(1.0,15.0),\
                       'cov': uniform(0.1,3.0),\
-                      'ths_mult': uniform(-30.0,25.0),\
-                      'nugget': uniform(60.0,80.0),\
-                      'theta0': uniform(1.0,0.5)}
+                      'ths_mult': uniform(-35.0,35.0),\
+                      'nugget': uniform(1.0,100.0),\
+                      'theta0': [1.0] }
         method = 'hmmgp'
         
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
