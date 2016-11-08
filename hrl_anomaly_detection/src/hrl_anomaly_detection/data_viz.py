@@ -51,7 +51,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                    data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
-                   nSubSample=None):
+                   nSubSample=None, lopo=False):
 
     from hrl_anomaly_detection import data_manager as dm
     from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -69,7 +69,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     SVM_dict = param_dict['SVM']
     
     #------------------------------------------
-    if dd is None:        
+    if dd is None and lopo is False:        
         dd = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], \
                            data_dict['local_range'],\
@@ -79,9 +79,24 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'],\
                            data_renew=data_dict['renew'], max_time=data_dict.get('max_time', None))
-
-    successData = dd['successData'] * HMM_dict['scale']
-    failureData = dd['failureData'] * HMM_dict['scale']
+        successData = dd['successData'] * HMM_dict['scale']
+        failureData = dd['failureData'] * HMM_dict['scale']                           
+    elif dd is None and lopo:
+        dd = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(dd['successDataList'], dd['failureDataList'],\
+                               dd['successFileList'], dd['failureFileList'])
+        successData *= HMM_dict['scale']
+        failureData *= HMM_dict['scale']
+        dd['kFoldList'] = kFold_list
+    else:    
+        successData = dd['successData'] * HMM_dict['scale']
+        failureData = dd['failureData'] * HMM_dict['scale']
                            
 
     normalTestData = None                                    
