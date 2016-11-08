@@ -1437,6 +1437,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
                         if delay_estimation:
+                            if step_idx_l[ii] is None:
+                                print "Wrong step idx setting"
+                                sys.exit()
                             delay_l.append(delay_idx-step_idx_l[ii])
                         else:
                             delay_l.append(delay_idx)
