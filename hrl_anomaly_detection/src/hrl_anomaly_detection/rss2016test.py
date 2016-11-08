@@ -1794,7 +1794,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp' ]
-        ## param_dict['ROC']['methods']     = ['fixed'] 'hmmosvm', 
+        param_dict['ROC']['methods']     = ['fixed'] 'hmmosvm', 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -1808,22 +1808,22 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-3, 2.8, nPoints)*-1.0
             param_dict['ROC']['osvm_param_range']  = np.logspace(-4., 0.0, nPoints)
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-6.0, 1.0, nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(-1.5, 2.0, nPoints )
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-3.5, 1.0, nPoints )
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-        elif opt.task == 'feeding':
-            nPoints = 50
-            param_dict['ROC']['nPoints'] = nPoints
-            ## param_dict['SVM']['hmmosvm_nu'] = 0.1
-            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-            param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-5,1,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
+        ## elif opt.task == 'feeding':
+        ##     nPoints = 50
+        ##     param_dict['ROC']['nPoints'] = nPoints
+        ##     ## param_dict['SVM']['hmmosvm_nu'] = 0.1
+        ##     param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
+        ##     param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
+        ##     param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
+        ##     param_dict['ROC']['osvm_param_range']     = np.logspace(-5,1,nPoints)
+        ##     param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
+        ##     param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
+        ##     param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
 
 
         if 0:
