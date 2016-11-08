@@ -2032,9 +2032,9 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
         ## max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
         ## max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
 
-        max_score_idx[0].append( np.argmax(fscore_1) )
-        max_score_idx[1].append( np.argmax(fscore_0_5) )
-        max_score_idx[2].append( np.argmax(fscore_2) )
+        max_score_idx[0].append( argmax(fscore_1) )
+        max_score_idx[1].append( argmax(fscore_0_5) )
+        max_score_idx[2].append( argmax(fscore_2) )
 
         ## max_score_idx[0].append(np.argmin(np.abs(fscore_1-0.8)))
         ## max_score_idx[1].append(np.argmin(np.abs(fscore_0_5-0.8)))
