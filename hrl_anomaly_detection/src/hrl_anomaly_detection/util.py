@@ -1672,6 +1672,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             fig = plt.figure()
 
     for method in sorted(method_list):
+        print "------------ ", method , " ------------------"
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1723,6 +1724,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             else:
                 delay_mean_l.append( 0 )
                 delay_std_l.append( 0 )
+            print len(delay_list)
                 
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
