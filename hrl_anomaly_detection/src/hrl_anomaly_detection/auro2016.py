@@ -326,7 +326,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         fn_l = np.array(fn_l)
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        ## fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        ## AUfscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
         ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, method='hmmgp', \
-                          useTrain=True, useNormalTest=False, useAbnormalTest=False,\
+                          useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
@@ -473,6 +473,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationUnexpected:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp'] #'osvm',
         param_dict['ROC']['update_list'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.3, 1.5, nPoints)+0.5
         ## param_dict['SVM']['nugget'] = 119.43
@@ -508,17 +509,17 @@ if __name__ == '__main__':
         if opt.task == 'feeding':
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
             param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 2.0, nPoints)+2.0            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-0.5,0.5,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-0.5,0.5,nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(1.0, -1.0, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(4.3, -55.0, nPoints)
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-2.5,0.0,nPoints)
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-2.5,0.0,nPoints)
+            param_dict['ROC']['fixed_param_range']  = np.linspace(1.0,-1.0, nPoints)
+            param_dict['ROC']['change_param_range'] = np.linspace(10.0, -30.0, nPoints)
         else:
             sys.exit()
 
         if 0:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 0:
+        elif 1:
             step_mag =0.02*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.02'
         elif 1:
