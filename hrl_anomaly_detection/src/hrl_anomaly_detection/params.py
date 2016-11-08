@@ -642,8 +642,8 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
         ROC_param_dict = {'methods': [ ],\
                           'update_list': [ 'hmmgp', 'fixed' ],\
                           'nPoints': nPoints,\
-                          'hmmgp_param_range':np.logspace(-0.3, 1.8, nPoints)*-1.0, \
-                          'progress_param_range':np.logspace(0.0, 1.0, nPoints)*-1.0, \
+                          'hmmgp_param_range':np.logspace(-0.3, 1.9, nPoints)*-1.0, \
+                          'progress_param_range':np.logspace(-0.3, 1.3, nPoints)*-1.0, \
                           'kmean_param_range':np.logspace(0.0, 1.5, nPoints)*-1.0, \
                           'fixed_param_range': np.linspace(-3.5, 0.5, nPoints),\
                           'svm_param_range': np.logspace(-2.523, 0.0484, nPoints),\
