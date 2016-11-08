@@ -355,7 +355,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             
 
         from sklearn import cross_validation
-        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=2, shuffle=True)
+        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
 
         for iidx, (train_fold, test_fold) in enumerate(normal_folds):
 
@@ -371,7 +371,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             for i in xrange(len(t_normalTestData[0])):
                 t_step_idx_l.append(None)
             for i in xrange(len(t_abnormalTestData[0])):
-                start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+                start_idx = np.random.randint(startIdx, nLength/2, 1)[0]
                 t_abnormalTestData[:,i,start_idx:] += step_mag
                 t_step_idx_l.append(start_idx)
 

@@ -382,7 +382,6 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
-    ## nPoints = 1 if opt.bEvaluationUnexpected else None
     nPoints = 40 #None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
