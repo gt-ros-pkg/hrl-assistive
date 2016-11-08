@@ -36,7 +36,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['update_list'] = ['fixed' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp', 'fixed', 'progress', 'change']
+        param_dict['ROC']['update_list'] = [ 'hmmgp']
 
     param_dict['SVM']['raw_window_size'] = 5
 
@@ -194,7 +194,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 5.0, 'gamma': 2.049, 'cost': 1.75,\
                           'hmmosvm_nu': 0.01,\
                           'osvm_nu': 0.01,\
-                          'nugget': 10.0, 'theta0': 1.0,\
+                          'nugget': 50.0, 'theta0': 1.0,\
                           }
 
         ROC_param_dict = {'nPoints': nPoints,\
