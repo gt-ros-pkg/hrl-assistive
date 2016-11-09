@@ -58,7 +58,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          # 'progress_diag', 
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ 'hmmgp', 'change' ]
+        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
@@ -758,7 +758,8 @@ def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_ra
                           'bpsvm_gamma': 1.0, \
                           'bpsvm_w_negative': 1.2589,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
-                          'progress_svm_gamma': 0.01
+                          'progress_svm_gamma': 0.01,
+                          'nugget': 10.0, 'theta0': 1.0,\
                           }
 
         # 'bpsvm', 'osvm', 
