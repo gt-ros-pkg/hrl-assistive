@@ -58,7 +58,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          # 'progress_diag', 
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'hmmgp', 'change' ]
+        param_dict['ROC']['update_list'] = [ 'change' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
@@ -108,7 +108,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pr
                           'hmmgp_param_range':np.logspace(-0.8, 2.2, nPoints)*-1.0+0.5, \
                           'kmean_param_range':np.logspace(-1.0, 1.1, nPoints)*-1.0 + 0.5, \
                           'svm_param_range': np.logspace(-2, 0.2553, nPoints),\
-                          'change_param_range': np.linspace(1.0, -1.0, nPoints),\
+                          'change_param_range': np.linspace(-10.0, 10.0, nPoints),\
                           'fixed_param_range': np.linspace(-1.1, 0.7, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.3, nPoints),\

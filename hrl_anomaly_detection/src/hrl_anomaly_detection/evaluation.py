@@ -500,7 +500,5 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
-
-
-        for i in xrange(len(det_rate_list)):
-            print i, det_rate_list[i]
+        ## for i in xrange(len(det_rate_list)):
+        ##     print i, det_rate_list[i]

@@ -2109,7 +2109,6 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             ## # to handle.....
             tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
             n_true_detection = float(len(delay_list))/float(tot_pos)
-            print tot_pos, len(delay_list)
             if len(delay_list) < tot_pos:
                 for k in xrange(tot_pos-len(delay_list)):
                     delay_list.append(200*time_step)
