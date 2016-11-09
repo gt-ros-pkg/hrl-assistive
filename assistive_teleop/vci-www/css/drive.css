@@ -67,21 +67,21 @@ h4.drive-ctrl {
     position:absolute;
     bottom:0px;
     height:13%;
-    border: 2px solid rgba(0,188,212,0.55);
+    border: 2px solid rgba(0,188,212,0.87);
     border-bottom:none;
-    background-color: rgba(0,188,212,0.3);
+    background-color: rgba(0,188,212,0.6);
     z-index: 10;
 }
 
 .turn-signal:hover{
-    background-color: rgba(0,188,212,0.6);
-    border: 2px solid rgba(0,188,212,0.45);
+    border: 2px solid rgba(0,188,212,0.97);
+    background-color: rgba(0,188,212,0.45);
     border-bottom:none;
 }
 
 .turn-signal:active{
-    background-color: rgba(10,212,242,0.55);
-    border: 2px solid rgba(0,142,168,0.9);
+    border: 2px solid rgba(0,142,168,0.3);
+    background-color: rgba(10,212,242,0.7);
     border-bottom:none;
 }
 

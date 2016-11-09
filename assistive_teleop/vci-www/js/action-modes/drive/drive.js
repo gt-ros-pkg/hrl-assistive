@@ -38,18 +38,17 @@ var RFH = (function (module) {
 
         $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
 
-        self.goalDisplay = new RFH.DriveGoalDisplay({
-            ros: ros,
-            tfClient: tfClient,
-            viewer: $viewer
-        });
+//        self.goalDisplay = new RFH.DriveGoalDisplay({
+//            ros: ros,
+//            tfClient: tfClient,
+//            viewer: $viewer
+//        });
+//        self.showGoal = self.goalDisplay.show;
+//        self.hideGoal = self.goalDisplay.hide;
 
         var clamp = function (x,a,b) {
             return ( x < a ) ? a : ( ( x > b ) ? b : x );
         };
-
-        self.showGoal = self.goalDisplay.show;
-        self.hideGoal = self.goalDisplay.hide;
 
         var zeroArmSkins = function () {
             RFH.skins.left.upperarm.zeroSensor();
@@ -555,7 +554,7 @@ var RFH = (function (module) {
             self.$div.on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
             self.$div.on('mousedown.rfh', self.driveGo);
             $('.drive-ctrl').show();
-            self.showGoal();
+//            self.showGoal();
             $viewer.show();
             self.baseContactDisplay.show();
             moveToStop(getNearestStop());
@@ -570,7 +569,7 @@ var RFH = (function (module) {
             clearTimeout(self.timeoutTimer);
 //            self.$div.removeClass('drive-safe');
             //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
-            self.hideGoal();
+//            self.hideGoal();
             $('.drive-ctrl').hide();
             $viewer.hide();
             self.baseContactDisplay.hide();
