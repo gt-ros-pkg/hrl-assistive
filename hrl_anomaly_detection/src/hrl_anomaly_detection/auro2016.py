@@ -326,7 +326,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         fn_l = np.array(fn_l)
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        ## fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
         ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
@@ -362,9 +362,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
               " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
             t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
 
-        if len(t_sum)<12:
-            t_sum.append(1.0)
-
+        if len(t_sum)<12: t_sum.append(1.0)
         print "Avg.: ", np.mean(t_sum)
 
 
