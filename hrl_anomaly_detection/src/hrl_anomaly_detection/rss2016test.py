@@ -871,6 +871,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
             successData = d['successData'][[0,1]]
             failureData = d['failureData'][[0,1]]
         elif modality == 'fk':            
+            noise_mag = 0.05
             successData = d['successData'][1:]
             failureData = d['failureData'][1:]
         elif modality == 'sk':            
