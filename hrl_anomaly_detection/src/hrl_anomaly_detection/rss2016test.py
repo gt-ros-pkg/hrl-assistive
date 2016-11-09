@@ -856,6 +856,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk'] #, 'fsk']
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
+        noise_mag = 0.03
         if modality == 'f':            
             successData = d['successData'][1:2]
             failureData = d['failureData'][1:2]
@@ -866,6 +867,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
             successData = d['successData'][2:]
             failureData = d['failureData'][2:]
         elif modality == 'fs':            
+            noise_mag = 0.05
             successData = d['successData'][[0,1]]
             failureData = d['failureData'][[0,1]]
         elif modality == 'fk':            
@@ -884,7 +886,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
                                   HMM_dict, data_renew, startIdx, nState, cov, scale, \
-                                  noise_mag=0.03, verbose=verbose)
+                                  noise_mag=noise_mag, verbose=verbose)
 
         #-----------------------------------------------------------------------------------------
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
