@@ -58,7 +58,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          # 'progress_diag', 
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
+        param_dict['ROC']['update_list'] = [ 'progress', 'fixed', 'hmmgp', 'change' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
@@ -99,16 +99,16 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pr
         ROC_param_dict = {'methods': [ 'fixed', 'change', 'progress', 'progress_state', 'osvm', 'progress_diag', ],\
                           'update_list': [ ],\
                           'nPoints': nPoints,\
-                          'progress_param_range':np.logspace(-0.5, 1.3, nPoints)*-1.0 + 0.5, \
+                          'progress_param_range':np.logspace(-0.3, 1.1, nPoints)*-1.0 + 0.5, \
                           'progress_diag_param_range':np.logspace(-2.0, 1.3, nPoints)*-1.0, \
                           'progress_state_param_range':np.logspace(0, 2.5, nPoints)*-1+3.0, \
                           'progress_svm_param_range': np.linspace(0.005, 6.0, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
-                          'hmmgp_param_range':np.logspace(-0.4, 2.0, nPoints)*-1.0+0.5, \
+                          'hmmgp_param_range':np.logspace(-0.4, 2.4, nPoints)*-1.0+0.5, \
                           'kmean_param_range':np.logspace(-1.0, 1.1, nPoints)*-1.0 + 0.5, \
                           'svm_param_range': np.logspace(-2, 0.2553, nPoints),\
-                          'change_param_range': np.linspace(-1.0, -22.0, nPoints),\
-                          'fixed_param_range': np.linspace(-1.5, 0.3, nPoints),\
+                          'change_param_range': np.linspace(1.0, -10.0, nPoints),\
+                          'fixed_param_range': np.linspace(-1.3, 0.6, nPoints),\
                           'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
                           'hmmosvm_param_range': np.logspace(-4.0, 0.3, nPoints),\
                           'hmmsvm_diag_param_range': np.logspace(-3.7, -0.1, nPoints),\
@@ -414,7 +414,7 @@ def getPushingMicroWhite(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'progress_svm_param_range': np.linspace(0.005, 6.0, nPoints),\
                           'progress_osvm_param_range': np.logspace(-6.0, 1.0, nPoints),\
                           'hmmgp_param_range':np.logspace(0.51, 2.05, nPoints)*-1.0, \
-                          'fixed_param_range': np.linspace(-1.1, 0.171, nPoints),\
+                          'fixed_param_range': np.linspace(-1.1, 0.3, nPoints),\
                           'change_param_range': np.logspace(0.2, 1.3, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-6, 0.0, nPoints),\
                           'svm_param_range': np.logspace(-1.236, 0.7, nPoints),\
