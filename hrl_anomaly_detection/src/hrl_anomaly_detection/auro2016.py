@@ -436,23 +436,23 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
         if modality == 'f':            
-            successData = successData[2:3]
-            failureData = failureData[2:3]
+            successData = d['successData'][2:3]
+            failureData = d['failureData'][2:3]
         elif modality == 's':            
-            successData = successData[0:1]
-            failureData = failureData[0:1]
+            successData = d['successData'][0:1]
+            failureData = d['failureData'][0:1]
         elif modality == 'k':            
-            successData = successData[[1,3]]
-            failureData = failureData[[1,3]]
+            successData = d['successData'][[1,3]]
+            failureData = d['failureData'][[1,3]]
         elif modality == 'fs':            
-            successData = successData[[0,2]]
-            failureData = failureData[[0,2]]
+            successData = d['successData'][[0,2]]
+            failureData = d['failureData'][[0,2]]
         elif modality == 'fk':            
-            successData = successData[1:]
-            failureData = failureData[1:]
+            successData = d['successData'][1:]
+            failureData = d['failureData'][1:]
         elif modality == 'sk':            
-            successData = successData[[0,1,3]]
-            failureData = failureData[[0,1,3]]
+            successData = d['successData'][[0,1,3]]
+            failureData = d['failureData'][[0,1,3]]
 
         processed_data_path = os.path.join(org_processed_data_path, modality)
         if os.path.isdir(processed_data_path) is False:

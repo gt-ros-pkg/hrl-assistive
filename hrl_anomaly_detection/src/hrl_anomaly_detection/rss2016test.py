@@ -857,23 +857,23 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
         if modality == 'f':            
-            successData = successData[1:2]
-            failureData = failureData[1:2]
+            successData = d['successData'][1:2]
+            failureData = d['failureData'][1:2]
         elif modality == 's':            
-            successData = successData[0:1]
-            failureData = failureData[0:1]
+            successData = d['successData'][0:1]
+            failureData = d['failureData'][0:1]
         elif modality == 'k':            
-            successData = successData[2:]
-            failureData = failureData[2:]
+            successData = d['successData'][2:]
+            failureData = d['failureData'][2:]
         elif modality == 'fs':            
-            successData = successData[[0,1]]
-            failureData = failureData[[0,1]]
+            successData = d['successData'][[0,1]]
+            failureData = d['failureData'][[0,1]]
         elif modality == 'fk':            
-            successData = successData[1:]
-            failureData = failureData[1:]
+            successData = d['successData'][1:]
+            failureData = d['failureData'][1:]
         elif modality == 'sk':            
-            successData = successData[[0,2,3]]
-            failureData = failureData[[0,2,3]]
+            successData = d['successData'][[0,2,3]]
+            failureData = d['failureData'][[0,2,3]]
 
         processed_data_path = os.path.join(org_processed_data_path, modality)
         if os.path.isdir(processed_data_path) is False:
@@ -893,12 +893,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         else: ROC_data = ut.load_pickle(roc_pkl)
         ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
-        osvm_data = None ; bpsvm_data = None
-        if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-            osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                      window=SVM_dict['raw_window_size'],
-                                      use_test=True, use_pca=False )
-
         # parallelization
         if debug: n_jobs=1
         else: n_jobs=-1
@@ -907,7 +901,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
                                                                              method, ROC_data, \
                                                                              ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
-                                                                             raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState) \
                                                                              for idx in xrange(len(kFold_list)) \
                                                                              for method in method_list )
