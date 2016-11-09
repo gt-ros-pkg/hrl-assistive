@@ -2102,9 +2102,9 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             tp = float(np.sum(tp_ll[i]))
             fn = float(np.sum(fn_ll[i]))
             fp = float(np.sum(fp_ll[i]))
-            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                           if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>=0 ]
 
             ## # to handle.....
             tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
@@ -2113,6 +2113,8 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             if len(delay_list) < tot_pos:
                 for k in xrange(tot_pos-len(delay_list)):
                     delay_list.append(200*time_step)
+
+            delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
                            
 
             # 0: f1, 1: f0.5, 2: f2
@@ -2254,7 +2256,7 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F2 score')
     ax1.set_ylabel('Detection Delay [s]', fontsize=20)
     ax1.set_xlim([-0.2, ind[-1]+4.0*width])
-    ## ax1.set_ylim([0,2.0])
+    ax1.set_ylim([0,6.0])
     ax1.yaxis.grid()
     ax1.set_axisbelow(True) 
     plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
