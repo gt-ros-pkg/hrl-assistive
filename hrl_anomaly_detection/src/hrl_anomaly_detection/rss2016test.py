@@ -865,8 +865,8 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
             successData = successData[2:]
             failureData = failureData[2:]
         elif modality == 'fs':            
-            successData = successData[0:2]
-            failureData = failureData[0:2]
+            successData = successData[[0,1]]
+            failureData = failureData[[0,1]]
         elif modality == 'fk':            
             successData = successData[1:]
             failureData = failureData[1:]
@@ -922,6 +922,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
         roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
 
 
 def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
