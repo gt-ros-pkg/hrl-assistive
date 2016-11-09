@@ -759,7 +759,7 @@ def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_ra
                           'bpsvm_w_negative': 1.2589,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
                           'progress_svm_gamma': 0.01,
-                          'nugget': 60.0, 'theta0': 1.0,\
+                          'nugget': 10.0, 'theta0': 1.0,\
                           }
 
         # 'bpsvm', 'osvm', 
