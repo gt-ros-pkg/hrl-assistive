@@ -432,7 +432,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     print d['param_dict']['feature_names']
 
     org_processed_data_path = copy.copy(processed_data_path)
-    modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk', 'fsk']
+    modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk'] #, 'fsk']
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
         if modality == 'f':            
