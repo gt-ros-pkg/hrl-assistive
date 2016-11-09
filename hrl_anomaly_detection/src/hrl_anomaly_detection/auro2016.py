@@ -431,6 +431,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
     print d['param_dict']['feature_names']
 
+    org_processed_data_path = copy.copy(processed_data_path)
     modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk', 'fsk']
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
@@ -453,7 +454,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
             successData = successData[[0,1,3]]
             failureData = failureData[[0,1,3]]
 
-        processed_data_path = os.path.join(processed_data_path, modality)
+        processed_data_path = os.path.join(org_processed_data_path, modality)
         if os.path.isdir(processed_data_path) is False:
             os.system('mkdir -p '+processed_data_path)
             
@@ -497,7 +498,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
     # ---------------- ROC Visualization ----------------------
     for modality in modality_list:
-        processed_data_path = os.path.join(processed_data_path, modality)
+        processed_data_path = os.path.join(org_processed_data_path, modality)
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
         roc_info(method_list, ROC_data, nPoints, no_plot=True)
