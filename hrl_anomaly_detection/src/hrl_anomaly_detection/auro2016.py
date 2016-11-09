@@ -73,8 +73,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -161,7 +159,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                          task_name, \
                                                                          method, ROC_data, \
-                                                                         ROC_dict, AE_dict, \
+                                                                         ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
@@ -192,8 +190,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -284,7 +280,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                          task_name, \
                                                                          method, ROC_data, \
-                                                                         ROC_dict, AE_dict, \
+                                                                         ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
@@ -379,8 +375,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -435,27 +429,30 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
+    print d['param_dict']['feature_names']
+    sys.exit()
+
     modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk', 'fsk']
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
         if modality == 'f':            
-            successData = successData[1:2]
-            failureData = failureData[1:2]
+            successData = successData[2:3]
+            failureData = failureData[2:3]
         elif modality == 's':            
             successData = successData[0:1]
             failureData = failureData[0:1]
         elif modality == 'k':            
-            successData = successData[2:]
-            failureData = failureData[2:]
+            successData = successData[[1,3]]
+            failureData = failureData[[1,3]]
         elif modality == 'fs':            
-            successData = successData[0:2]
-            failureData = failureData[0:2]
+            successData = successData[[0,2]]
+            failureData = failureData[[0,2]]
         elif modality == 'fk':            
             successData = successData[1:]
             failureData = failureData[1:]
         elif modality == 'sk':            
-            successData = successData[[0,2,3]]
-            failureData = failureData[[0,2,3]]
+            successData = successData[[0,1,3]]
+            failureData = failureData[[0,1,3]]
 
         processed_data_path = os.path.join(processed_data_path, modality)
         if os.path.isdir(processed_data_path) is False:
@@ -487,7 +484,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                              task_name, \
                                                                              method, ROC_data, \
-                                                                             ROC_dict, AE_dict, \
+                                                                             ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState) \
@@ -499,12 +496,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
 
-    #-----------------------------------------------------------------------------------------
-    ## best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
-    ## scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
-    ##                            timeList=timeList, verbose=False)
-
-    
     # ---------------- ROC Visualization ----------------------
     for modality in modality_list:
         processed_data_path = os.path.join(processed_data_path, modality)
@@ -520,8 +511,6 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
-    p.add_option('--evaluation_modality', '--em', action='store_true', dest='bEvaluationModality',
-                 default=False, help='Evaluate a classifier per modality.')    
     opt, args = p.parse_args()
     
 
@@ -632,18 +621,6 @@ if __name__ == '__main__':
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
 
-    elif opt.bEvaluationModality:
-        param_dict['ROC']['methods'] = ['hmmgp']
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_modality/'+\
-          str(param_dict['data_param']['downSampleSize'])
-            
-        evaluation_modality(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                            save_pdf=opt.bSavePdf, \
-                            verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                            data_gen=opt.bDataGen)
-
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'osvm']
@@ -726,3 +703,16 @@ if __name__ == '__main__':
         from hrl_anomaly_detection import optimizeParam as op
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
                          save=opt.bSave, method=method, n_iter_search=100)
+
+    elif opt.bEvaluationModality:
+        param_dict['ROC']['methods'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_modality/'+\
+          str(param_dict['data_param']['downSampleSize'])
+            
+        evaluation_modality(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                            save_pdf=opt.bSavePdf, \
+                            verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                            data_gen=opt.bDataGen)
+        

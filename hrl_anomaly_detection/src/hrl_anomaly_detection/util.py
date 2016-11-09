@@ -2422,6 +2422,8 @@ def initialiseOptParser(p):
                  default=False, help='Evaluate a classifier with cross-validation plus noise.')
     p.add_option('--evaluation_acc_param', '--eaap', action='store_true', dest='bEvaluationAccParam',
                  default=False, help='Evaluate the acc params.')
+    p.add_option('--evaluation_modality', '--em', action='store_true', dest='bEvaluationModality',
+                 default=False, help='Evaluate a classifier per modality.')    
 
 
     p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',

@@ -221,7 +221,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=None,\
                            cut_data=data_dict['cut_data'], \
@@ -432,7 +431,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               raw_data=(osvm_data,bpsvm_data),\
                                                                               startIdx=startIdx, nState=nState) \
@@ -462,8 +461,6 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -532,8 +529,6 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -756,7 +751,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
@@ -792,6 +787,143 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
 
 
+def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                        data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                        no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']        
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+    print d['param_dict']['feature_names']
+    sys.exit()
+
+    modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk', 'fsk']
+    for modality in modality_list:
+        print "-------------------- Modality: ", modality ," ------------------------"
+        if modality == 'f':            
+            successData = successData[1:2]
+            failureData = failureData[1:2]
+        elif modality == 's':            
+            successData = successData[0:1]
+            failureData = failureData[0:1]
+        elif modality == 'k':            
+            successData = successData[2:]
+            failureData = failureData[2:]
+        elif modality == 'fs':            
+            successData = successData[0:2]
+            failureData = failureData[0:2]
+        elif modality == 'fk':            
+            successData = successData[1:]
+            failureData = failureData[1:]
+        elif modality == 'sk':            
+            successData = successData[[0,2,3]]
+            failureData = failureData[[0,2,3]]
+
+        processed_data_path = os.path.join(processed_data_path, modality)
+        if os.path.isdir(processed_data_path) is False:
+            os.system('mkdir -p '+processed_data_path)
+            
+        #-----------------------------------------------------------------------------------------    
+        # Training HMM, and getting classifier training and testing data
+        dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                                  task_name, processed_data_path,\
+                                  HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                  noise_mag=0.03, verbose=verbose)
+
+        #-----------------------------------------------------------------------------------------
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+
+        if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+        else: ROC_data = ut.load_pickle(roc_pkl)
+        ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+        osvm_data = None ; bpsvm_data = None
+        if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+            osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                      window=SVM_dict['raw_window_size'],
+                                      use_test=True, use_pca=False )
+
+        # parallelization
+        if debug: n_jobs=1
+        else: n_jobs=-1
+        l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                             task_name, \
+                                                                             method, ROC_data, \
+                                                                             ROC_dict, \
+                                                                             SVM_dict, HMM_dict, \
+                                                                             raw_data=(osvm_data,bpsvm_data),\
+                                                                             startIdx=startIdx, nState=nState) \
+                                                                             for idx in xrange(len(kFold_list)) \
+                                                                             for method in method_list )
+
+
+        print "finished to run run_classifiers"
+        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+        ut.save_pickle(ROC_data, roc_pkl)
+
+    # ---------------- ROC Visualization ----------------------
+    for modality in modality_list:
+        processed_data_path = os.path.join(processed_data_path, modality)
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+        ROC_data = ut.load_pickle(roc_pkl)        
+        roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
+
 def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     refSampleSize,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -801,8 +933,6 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -836,7 +966,6 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
@@ -987,7 +1116,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
@@ -1743,7 +1872,6 @@ if __name__ == '__main__':
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=False,\
                       cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=False,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
@@ -1894,7 +2022,19 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationMaxAcc:
         plotEvalMaxAcc(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
+
+    elif opt.bEvaluationModality:
+        param_dict['ROC']['methods'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data_modality/'+\
+          str(param_dict['data_param']['downSampleSize'])
             
+        evaluation_modality(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                            save_pdf=opt.bSavePdf, \
+                            verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                            data_gen=opt.bDataGen)
+        
     elif opt.bStatePathPlot:
         plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)
 
