@@ -82,8 +82,12 @@ class learning_hmm(learning_base):
 
     def set_hmm_object(self, A, B, pi, out_a_num=None, vec_num=None, mat_num=None, u_denom=None):
 
-        self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
-                                       A, B, pi)
+        if self.nEmissionDim == 1:
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                           A, B, pi)
+        else:        
+            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                           A, B, pi)
         self.A = A
         self.B = B
         self.pi = pi
@@ -129,9 +133,13 @@ class learning_hmm(learning_base):
             param_dict = ut.load_pickle(ml_pkl)
             self.A  = param_dict['A']
             self.B  = param_dict['B']
-            self.pi = param_dict['pi']                       
-            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
-                                           self.A, self.B, self.pi)
+            self.pi = param_dict['pi']
+            if self.nEmissionDim == 1:
+                self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                               self.A, self.B, self.pi)
+            else:
+                self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                               self.A, self.B, self.pi)
 
             out_a_num = param_dict.get('out_a_num', None)
             vec_num   = param_dict.get('vec_num', None)
@@ -174,8 +182,11 @@ class learning_hmm(learning_base):
                 # Emission probability matrix
                 B = [0] * self.nState
                 for i in range(self.nState):
-                    B[i] = [[mu[i] for mu in mus]]
-                    B[i].append(cov[i].flatten())
+                    if self.nEmissionDim>1:
+                        B[i] = [[mu[i] for mu in mus]]
+                        B[i].append(cov[i].flatten().tolist())
+                    else:
+                        B[i] = [np.squeeze(mus[0][i]), float(cov[i])]
             if pi is None:
                 # pi - initial probabilities per state 
                 ## pi = [1.0/float(self.nState)] * self.nState
@@ -184,7 +195,12 @@ class learning_hmm(learning_base):
 
             # print 'Generating HMM'
             # HMM model object
-            self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), A, B, pi)
+            if self.nEmissionDim == 1:
+                self.ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                               A, B, pi)
+            else:
+                self.ml = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                               A, B, pi)
             if cov_type == 'diag': self.ml.setDiagonalCovariance(1)
                 
             # print 'Creating Training Data'            
@@ -578,7 +594,7 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
                                                  nSubSample=None, nMaxData=100000, rnd_sample=True):
 
-    r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+    r = Parallel(n_jobs=1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
                                                           ml.nEmissionDim, ml.nState,\

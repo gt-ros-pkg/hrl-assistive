@@ -2669,7 +2669,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            task_name, processed_data_path,\
                            HMM_dict, data_renew, startIdx, nState, cov, scale, \
                            success_files=None, failure_files=None,\
-                           noise_mag = 0.03,\
+                           noise_mag = 0.03, one_class=True,\
                            add_logp_d=False, diag=False, verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
@@ -2696,6 +2696,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
         normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
         abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
+        if one_class: abnormalTrainData = None
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -2713,11 +2714,12 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d)
-        
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
+                                                   startIdx, add_logp_d)
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, add_logp_d)
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, \
+                                                   startIdx, add_logp_d)
 
         if success_files is not None:
             ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
