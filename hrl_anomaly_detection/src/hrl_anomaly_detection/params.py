@@ -550,8 +550,8 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
                         
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.842, 'scale': 5.01, \
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.25, \
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.0, 'scale': 7.25, \
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.842, 'scale': 5.01, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 1.738, 'cost': 1.0, 'nu': 0.5, \
                           'osvm_nu': 0.01,\

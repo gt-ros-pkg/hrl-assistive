@@ -312,6 +312,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     
     score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
     delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+    det_rate_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
     ## nLength = len(failureData[0][0])
     ## step_idx_l = []
@@ -485,16 +486,21 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
-                                   timeList=timeList, verbose=False)
+        scores, delays, det_rate = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
+                                             timeList=timeList, verbose=False)
         ## scores, delays = cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
         ##                                         timeList=timeList, verbose=False)
+        
         for i in xrange(len(method_list)):
             for j in xrange(3):
                 score_list[j][i].append( scores[j][i] )
                 delay_list[j][i] += delays[j][i]
+                det_rate_list[j][i].append( det_rate[j][i])
                 ## print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
 
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
-        
+
+
+        for i in xrange(len(det_rate_list)):
+            print i, det_rate_list[i]

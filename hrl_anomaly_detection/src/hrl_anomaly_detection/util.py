@@ -1716,8 +1716,17 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
             delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+
+            ## ## # to handle.....
+            ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            ## print tot_pos, len(delay_list)
+            ## if len(delay_list) < tot_pos:
+            ##     for k in xrange(tot_pos-len(delay_list)):
+            ##         delay_list.append(200)
+
+            
             if len(delay_list)>0:
                 delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
                 delay_std_l.append( np.std(np.array(delay_list)*time_step) )
@@ -2071,6 +2080,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
 
     m_score_l  = [[],[],[]]
     m_delay_l = [[],[],[]]
+    m_true_detection_l = [[],[],[]]
 
 
     for mi, method in enumerate(method_list):
@@ -2096,6 +2106,15 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
                            if delay_ll[i][ii]>=0 ]
 
+            ## # to handle.....
+            tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            n_true_detection = float(len(delay_list))/float(tot_pos)
+            print tot_pos, len(delay_list)
+            if len(delay_list) < tot_pos:
+                for k in xrange(tot_pos-len(delay_list)):
+                    delay_list.append(200*time_step)
+                           
+
             # 0: f1, 1: f0.5, 2: f2
             for j in xrange(3):
                 
@@ -2107,6 +2126,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
+                    m_true_detection_l[j].append( n_true_detection)
 
                     #print "tp: ", tp, method
                     ## if method == 'progress':
@@ -2118,7 +2138,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     ##     print time_step
                     ##     sys.exit()
                     
-    return m_score_l, m_delay_l
+    return m_score_l, m_delay_l, m_true_detection_l
 
 def cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
                            timeList=None, verbose=True):
