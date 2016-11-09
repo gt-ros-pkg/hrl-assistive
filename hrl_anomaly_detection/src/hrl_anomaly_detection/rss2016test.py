@@ -2027,6 +2027,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data_modality/'+\
           str(param_dict['data_param']['downSampleSize'])
+        nPoints = param_dict['ROC']['nPoints']
 
         if opt.task == 'pushing_microwhite':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(0., 2.5, nPoints)*-1.0
