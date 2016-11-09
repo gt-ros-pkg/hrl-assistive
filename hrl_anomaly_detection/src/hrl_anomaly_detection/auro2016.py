@@ -342,6 +342,10 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
+        ## print fn_l+tp_l
+        ## print fp_l+tn_l
+        ## sys.exit()
+
         # fscore
         ## tp = float(np.sum(ROC_data[method]['tp_l'][0]))
         ## fn = float(np.sum(ROC_data[method]['fn_l'][0]))
