@@ -380,6 +380,7 @@ def getPushingMicroWhite(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                         'crossmodal_artagEEDist',\
                         'crossmodal_subArtagEEDist',\
                         'unimodal_audioWristRMS'] #'unimodal_audioPower', ,
+        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.33, 'scale': 7.33, \
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 5.33, 'scale': 7.33, \
                           'add_logp_d': False}
         SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.85, 'gamma': 0.001, 'cost': 12.5,\
@@ -400,7 +401,7 @@ def getPushingMicroWhite(task, data_renew, HMM_renew, CF_renew, rf_center,local_
                           'bpsvm_w_negative': 1.5,\
                           'progress_svm_w_negative': 1.5, 'progress_svm_cost': 15.0, \
                           'progress_svm_gamma': 0.01,\
-                          'nugget': 50.0, 'theta0': 1.0 }
+                          'nugget': 100.0, 'theta0': 1.0 }
                           ## 'nugget': 108.7, 'theta0': 1.174 }
 
         # 'svm' , 'hmmosvm', 'hmmsvm_diag', 'hmmsvm_dL', 'hmmsvm_no_dL', , 
