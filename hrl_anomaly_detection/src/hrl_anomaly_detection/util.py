@@ -235,21 +235,24 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
-            raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
-            raw_data_dict['audioWristAzimuthList'].append(audio_azimuth)
+            if audio_azimuth is not None:
+                raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
+                raw_data_dict['audioWristAzimuthList'].append(audio_azimuth)
             ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
 
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
-                data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
-                                                                           new_times))
-                data_dict['audioWristAzimuthList'].append(downSampleAudio(audio_time, audio_azimuth, new_times))
+                if audio_azimuth is not None:
+                    data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
+                                                                               new_times))
+                    data_dict['audioWristAzimuthList'].append(downSampleAudio(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
             else:
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
-                data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
-                                                                             new_times))
-                data_dict['audioWristAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
+                if audio_azimuth is not None:
+                    data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
+                                                                                 new_times))
+                    data_dict['audioWristAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
                 
