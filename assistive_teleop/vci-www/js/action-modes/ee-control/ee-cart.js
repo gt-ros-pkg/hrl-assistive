@@ -37,15 +37,15 @@ var RFH = (function (module) {
         $('#toward-button > span').remove();
         $('#away-button > span').remove();
         self.$pickAndPlaceButton = $('.'+self.side[0]+'-arm-ctrl.pick-and-place').button();
-        $('#speed-options-buttons, #'+self.side[0]+'-posrot-set').buttonset();
+        $('#speed-options-buttons').buttonset().prop('title', 'Change the distance the hand moves on each click.');
+        $('#'+self.side[0]+'-posrot-set').buttonset();
         $('#toward-button, #away-button, #armCtrlContainer').hide();
         $('#armCtrlContainer').css('zIndex',5);
         $('#ctrl-ring .center').on('mousedown.rfh', function (e) {e.stopPropagation(); });
         $('#zero-skin-'+self.side).button().on('click.skin', function (event) {
                                                                 RFH.skins[self.side].upperarm.zeroSensor();
                                                                 RFH.skins[self.side].forearm.zeroSensor();
-                                                                });
-
+                                                                }).prop('title', "Clear errors in this arm's tactile sensor");
         self.pixel23d = new RFH.Pixel23DClient({
             ros: ros,
             cameraInfoTopic: self.camera.infoTopic,
@@ -169,7 +169,7 @@ var RFH = (function (module) {
             };
             renderCameraStep(0); // Kick off with initial call
         };
-        $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing);
+        $('.camera-swing.'+self.side[0]+'-arm-ctrl').button().on('click.rfh', cameraSwing).prop('title',"Show 3D Rendered side-view of the area around the robot's hand.");
 
         self.getStepSize = function () {
             return $('input[name=speed-option]:checked').attr('id');

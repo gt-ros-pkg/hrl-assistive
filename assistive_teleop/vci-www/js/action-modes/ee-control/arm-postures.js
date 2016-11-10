@@ -18,8 +18,8 @@ var RFH = (function (module) {
             arm.sendJointAngleGoal(angles);
         };
 
-        $('#controls div.posture.aside.'+arm.side[0]+'-arm-ctrl').button().on('click.rfh', function () {goToPosture('aside');});
-        $('#controls div.posture.manip.'+arm.side[0]+'-arm-ctrl').button().on('click.rfh', function () {goToPosture('manip');});
+        $('#controls div.posture.aside.'+arm.side[0]+'-arm-ctrl').button().on('click.rfh', function () {goToPosture('aside');}).prop('title', "Move this hand down and to the side of the robot.");
+        $('#controls div.posture.manip.'+arm.side[0]+'-arm-ctrl').button().on('click.rfh', function () {goToPosture('manip');}).prop('title', "Move this hand up in front of the robot with the elbow raised.");
 
     };
     return module;

@@ -44,8 +44,8 @@ var RFH = (function (module) {
             head.pointHead(xyz[0], xyz[1], xyz[2], camera.frame_id);
         };
 
-        var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', function(e){self.setZoom(zoomLevel*2);});
-        var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', function(e){self.setZoom(zoomLevel*0.5);}).button('disable');
+        var $zoomInButton = $('#controls > .zoom.in').button().on('click.rfh', function(e){self.setZoom(zoomLevel*2);}).prop('title', "Zoom in on the center of the image by one step");
+        var $zoomOutButton = $('#controls > .zoom.out').button().on('click.rfh', function(e){self.setZoom(zoomLevel*0.5);}).button('disable').prop('title', "Zoom back out by one step");
 
         self.setZoom = function (newZoomLevel) {
             $zoomOutButton.button('enable');

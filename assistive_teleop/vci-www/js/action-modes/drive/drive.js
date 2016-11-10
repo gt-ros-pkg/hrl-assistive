@@ -36,7 +36,7 @@ var RFH = (function (module) {
                                                           edgeMarkers: $('#bumper-contact-display > .edge-contact')
         });
 
-        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
+        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();}).prop('title',"Clear errors from the bumper tactile sensor");
 
 //        self.goalDisplay = new RFH.DriveGoalDisplay({
 //            ros: ros,
@@ -87,7 +87,7 @@ var RFH = (function (module) {
             r_arm.disableMPC(sendGoalOnceDisabled);
 
         };
-        $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms);
+        $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms).prop('title','Fold both arms in front of the robot, above the base of the robot.');
 
         var initPathMarkers = function (nDots, d) {
             var opacity = numeric.linspace(1, 0.05, nDots);
