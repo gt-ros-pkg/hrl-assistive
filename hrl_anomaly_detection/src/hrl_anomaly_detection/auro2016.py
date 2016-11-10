@@ -326,6 +326,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
+        tpr_l = tp_l/(tp_l+fn_l)
 
         ##################################3
         ## best_idx = np.argmin(fp_l)
@@ -335,7 +336,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         
         print 'fp_l:', fp_l
         print 'fscore: ', fscore_l
-        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "fpr: ", fpr_l[best_idx]
+        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
         ## print fn_l+tp_l
