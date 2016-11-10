@@ -304,71 +304,13 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     ##     print "Wrong number of points"
     ##     sys.exit()
     
-    for method in method_list:
-        print "---------- ", method, " -----------"
-
-        tp_l = []
-        tn_l = []
-        fn_l = []
-        fp_l = []
-        for i in xrange(nPoints):
-            tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
-            tn_l.append( float(np.sum(ROC_data[method]['tn_l'][i])) )
-            fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
-            fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
-        tp_l = np.array(tp_l)
-        fp_l = np.array(fp_l)
-        tn_l = np.array(tn_l)
-        fn_l = np.array(fn_l)
-            
-        fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
-        fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
-        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
-        fpr_l = fp_l/(fp_l+tn_l)
-        tpr_l = tp_l/(tp_l+fn_l)
-
-        ##################################3
-        ## best_idx = np.argmin(fp_l)
-        ## best_idx = np.argmax(acc_l)
-        best_idx = np.argmax(fscore_l)
-        ##################################3
-        
-        print 'fp_l:', fp_l
-        print 'fscore: ', fscore_l
-        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
-        print "best idx: ", best_idx
-
-        ## print fn_l+tp_l
-        ## print fp_l+tn_l
-        ## sys.exit()
-
-        # fscore
-        ## tp = float(np.sum(ROC_data[method]['tp_l'][0]))
-        ## fn = float(np.sum(ROC_data[method]['fn_l'][0]))
-        ## fp = float(np.sum(ROC_data[method]['fp_l'][0]))
-        ## fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
-        
-        # false negatives
-        labels = ROC_data[method]['fn_labels'][best_idx]            
-        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
-            
-        d = {x: anomalies.count(x) for x in anomalies}
-        l_idx = np.array(d.values()).argsort() #[-10:]
-
-        t_sum = []
-        print "Max count is ", len(kFold_list)*2
-        for idx in l_idx:
-            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
-              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
-            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
-
-        if len(t_sum)<12: t_sum.append(1.0)
-        print "Avg.: ", np.mean(t_sum)
+    detection_info(method_list, ROC_data, nPoints, kFold_list)
+    
 
 
 
 def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                        detection_rate=False,\
                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
                         no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
@@ -497,12 +439,82 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
 
+        if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list)
+        
+
     # ---------------- ROC Visualization ----------------------
+    if detection_rate: sys.exit()
     for modality in modality_list:
         processed_data_path = os.path.join(org_processed_data_path, modality)
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
         roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
+
+def detection_info(method_list, ROC_data, nPoints, kFold_list):
+
+    for method in method_list:
+        print "---------- ", method, " -----------"
+
+        tp_l = []
+        tn_l = []
+        fn_l = []
+        fp_l = []
+        for i in xrange(nPoints):
+            tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
+            tn_l.append( float(np.sum(ROC_data[method]['tn_l'][i])) )
+            fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
+            fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+            
+        fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
+        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
+        fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        fpr_l = fp_l/(fp_l+tn_l)
+        tpr_l = tp_l/(tp_l+fn_l)
+
+        ##################################3
+        ## best_idx = np.argmin(fp_l)
+        ## best_idx = np.argmax(acc_l)
+        best_idx = np.argmax(fscore_l)
+        ##################################3
+        
+        print 'fp_l:', fp_l
+        print 'fscore: ', fscore_l
+        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
+        print "best idx: ", best_idx
+
+        ## print fn_l+tp_l
+        ## print fp_l+tn_l
+        ## sys.exit()
+
+        # fscore
+        ## tp = float(np.sum(ROC_data[method]['tp_l'][0]))
+        ## fn = float(np.sum(ROC_data[method]['fn_l'][0]))
+        ## fp = float(np.sum(ROC_data[method]['fp_l'][0]))
+        ## fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
+        
+        # false negatives
+        labels = ROC_data[method]['fn_labels'][best_idx]            
+        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+            
+        d = {x: anomalies.count(x) for x in anomalies}
+        l_idx = np.array(d.values()).argsort() #[-10:]
+
+        t_sum = []
+        print "Max count is ", len(kFold_list)*2
+        for idx in l_idx:
+            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
+              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
+
+        if len(t_sum)<12: t_sum.append(1.0)
+        print "Avg.: ", np.mean(t_sum)
+    
 
 
 
@@ -601,7 +613,7 @@ if __name__ == '__main__':
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, file_idx=2,\
                                 n_jobs=opt.n_jobs, n_iter_search=100, save=opt.bSave)
 
-    elif opt.bEvaluationUnexpected:
+    elif opt.bEvaluationUnexpected and opt.bEvaluationModality is False:
         param_dict['ROC']['methods'] = ['progress', 'hmmgp'] #'osvm',
         ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
@@ -714,9 +726,9 @@ if __name__ == '__main__':
         nPoints = param_dict['ROC']['nPoints']
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.5, 2.6, nPoints)*-1.0
-            
+        
         evaluation_modality(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                            detection_rate=opt.bEvaluationUnexpected,\
                             save_pdf=opt.bSavePdf, \
                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                             data_gen=opt.bDataGen)
-        
