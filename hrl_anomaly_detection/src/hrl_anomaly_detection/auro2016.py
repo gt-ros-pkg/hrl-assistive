@@ -345,7 +345,9 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
         successData = d['successData']
-        failureData = d['failureData']        
+        failureData = d['failureData']
+        success_files = d['success_files']
+        failure_files = d['failure_files']
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -362,6 +364,8 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
         d['successData']   = successData
         d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
         d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
@@ -406,6 +410,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
                                   HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                  success_files=success_files, failure_files=failure_files,\
                                   noise_mag=0.03, verbose=verbose)
 
         #-----------------------------------------------------------------------------------------
