@@ -57,7 +57,8 @@
         <param name="unreliable" value="true"/>
         <param name="lazy" value="true"/>
   </node>
-  <!--<node name="web_ping_check" pkg="assistive_teleop" type="ping_check"/>-->
+
+  <node name="web_ping_check" pkg="assistive_teleop" type="ping_check"/>
 
   <!-- Gripper Grasping State Monitors -->
   <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="right" output="screen"/>

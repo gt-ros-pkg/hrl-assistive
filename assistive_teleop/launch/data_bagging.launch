@@ -44,6 +44,7 @@
                                                             /perform_task
                                                             /ping_relay_out
                                                             /ping_relay_return
+                                                            /ping_relay_roundtrip
                                                             /pixel3d
                                                             /pr2_fabric_base_sensor/zero_sensor
                                                             /pr2_fabric_base_sensor/disable_sensor
