@@ -72,8 +72,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -234,7 +232,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
@@ -266,8 +264,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -460,7 +456,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         else: n_jobs=-1
         r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( iidx, processed_data_path, task_name, \
                                                                              method, ROC_data, \
-                                                                             ROC_dict, AE_dict, \
+                                                                             ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState, \
