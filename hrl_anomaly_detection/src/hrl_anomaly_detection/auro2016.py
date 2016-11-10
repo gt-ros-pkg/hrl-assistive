@@ -472,7 +472,7 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list):
             
         fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
         fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
-        fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
+        ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
