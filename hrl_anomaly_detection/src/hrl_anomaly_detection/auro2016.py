@@ -304,7 +304,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     ##     print "Wrong number of points"
     ##     sys.exit()
     
-    detection_info(method_list, ROC_data, nPoints, kFold_list)
+    detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=True)
     
 
 
@@ -444,7 +444,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
 
-        if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list)
+        if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list,zero_fp_flag=True)
         
 
     # ---------------- ROC Visualization ----------------------
@@ -456,7 +456,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
 
-def detection_info(method_list, ROC_data, nPoints, kFold_list):
+def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=False):
 
     for method in method_list:
         print "---------- ", method, " -----------"
@@ -481,12 +481,25 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list):
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
+        print "FPR: ", fpr_l
 
-        ##################################3
-        ## best_idx = np.argmin(fp_l)
-        ## best_idx = np.argmax(acc_l)
-        best_idx = np.argmax(fscore_l)
-        ##################################3
+        if zero_fp_flag:
+
+            i = (np.abs(fpr_l-0.1)).argmin()
+            
+            ## if fpr_l[0] > fpr_l[-1]:
+            ##     for i in xrange(len(fpr_l)):
+            ##         if fpr_l[i] < 0.1+0.02: break
+            ## else:
+            ##     for i in xrange(len(fpr_l)):
+            ##         if fpr_l[i] > 0.1-0.02 and fpr_l[i+1] > 0.1+0.02: break
+            best_idx = i
+        else:
+            ##################################3
+            ## best_idx = np.argmin(fp_l)
+            ## best_idx = np.argmax(acc_l)
+            best_idx = np.argmax(fscore_l)
+            ##################################3
         
         print 'fp_l:', fp_l
         print 'fscore: ', fscore_l
@@ -510,17 +523,83 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list):
         d = {x: anomalies.count(x) for x in anomalies}
         l_idx = np.array(d.values()).argsort() #[-10:]
 
+        d_list = []
         t_sum = []
         print "Max count is ", len(kFold_list)*2
         for idx in l_idx:
             print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
               " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
             t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
+            d_list.append([float(np.array(d.keys())[idx]), float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
 
         if len(t_sum)<12: t_sum.append(1.0)
         print "Avg.: ", np.mean(t_sum)
-    
 
+    d_list = np.array(d_list)
+    d_list = d_list[np.argsort(d_list[:,0])]
+    print d_list[:,0]
+    print d_list[:,1]
+
+    return d_list
+        
+
+def plotModalityVSAnomaly(save_pdf=False):
+
+    ## from sklearn.metrics import confusion_matrix
+
+    f   = np.array([[0., 0.0625, 0., 0.75, 0., 0.9375, 0., 0., 0., 0., 0.5, 0.0625]]).T #0.08125
+    s   = np.array([[0.25, 0.8125, 0.0625, 0.375, 0.1875, 0.1875, 0.9375, 0., 0.1875, 0.0625, 0.3125, 0.0625]]).T # 0.125
+    k   = np.array([[1.0, 0., 0.3125, 0.375, 1.0, 0.6875, 0.25, 0.9375, 0.1875, 0.5625, 0.75, 0. ]]).T #0.0875
+    fs  = np.array([[0.0625, 0.6875, 0.0625, 0.625, 0.0625, 0.8125, 0.875, 0., 0., 0., 0.4375, 0.125]]).T #0.0875
+    fk  = np.array([[1., 0., 0.1875, 0.875, 0.875, 1.0, 0.1875, 0.25, 0.125, 0.4375, 0.625, 0. ]]).T #0.1125
+    sk  = np.array([[1.0, 0.5625, 0.4375, 0.5, 1.0, 0.3125,  0.8125, 0.3125, 0.0625, 0.375, 0.625, 0.0625]]).T # 0.05
+    fsk = np.array([[1.0, 0.5, 0.375, 0.4375, 1.0, 0.9375, 0.8125, 0.4375, 0.1875, 0.1875, 0.625, 0.125]]).T # 0.08125
+
+    cm = np.hstack([f,s,k,fs,fk,sk,fsk])
+    np.set_printoptions(precision=3)
+    normalize=False
+    title='Confusion matrix'
+    cmap=plt.cm.Blues
+    ## x_classes = [1,2,3,4,5,6,7,8,9,10,11,12]
+    x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+    y_classes = ['force','sound','kinematics','force-sound','force-\n kinematics','sound-\n kinematics','force-sound-\n kinematics']
+    
+    fig = plt.figure(figsize=(9,7))
+    ## plt.rc('text', usetex=True)    
+    plt.imshow(cm, interpolation='nearest', cmap=cmap, aspect='auto')
+    ## plt.imshow(cm, interpolation='nearest', cmap=cmap, extent=[0,7,0,12], aspect='auto')
+    ## plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(y_classes))
+    plt.xticks(tick_marks, y_classes, rotation=30)
+    tick_marks = np.arange(len(x_classes))
+    plt.yticks(tick_marks, x_classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    ## thresh = cm.max() / 2.
+    ## for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    ##     plt.text(j, i, cm[i, j],
+    ##              horizontalalignment="center",
+    ##              color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('Anomaly class', fontsize=22)
+    plt.xlabel('Modalities', fontsize=22)
+    plt.tight_layout()
+
+    if save_pdf == True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()        
 
 
 
@@ -728,7 +807,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_modality/'+\
           str(param_dict['data_param']['downSampleSize'])
-        nPoints = param_dict['ROC']['nPoints']
+        nPoints = param_dict['ROC']['nPoints'] = 100
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.5, 2.6, nPoints)*-1.0
         
@@ -737,3 +816,6 @@ if __name__ == '__main__':
                             save_pdf=opt.bSavePdf, \
                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                             data_gen=opt.bDataGen)
+
+    else:
+        plotModalityVSAnomaly(opt.bSavePdf)
