@@ -485,7 +485,7 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=Fals
 
         if zero_fp_flag:
 
-            i = (np.abs(fpr_l-0.1)).argmin()
+            i = (np.abs(fpr_l-0.08)).argmin()
             
             ## if fpr_l[0] > fpr_l[-1]:
             ##     for i in xrange(len(fpr_l)):
