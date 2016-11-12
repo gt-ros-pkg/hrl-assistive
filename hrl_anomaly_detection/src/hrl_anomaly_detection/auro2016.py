@@ -553,7 +553,7 @@ def plotModalityVSAnomaly(save_pdf=False):
     k   = np.array([[1.0, 0., 0.375, 0.4375, 1.0, 0.6875, 0.25, 0.9375, 0.1875, 0.5, 0.6875, 0.]]).T #0.08125
     fs  = np.array([[0.0625, 0.5625, 0.0625, 0.625, 0.0625, 0.8125, 0.8125, 0., 0., 0., 0.3125, 0.0625]]).T #0.0875
     fk  = np.array([[1.0, 0., 0.1875, 0.875, 1.0, 0.875, 0.1875, 0.25, 0.0625, 0.4375, 0.5625, 0.]]).T #0.08125
-    sk  = np.array([[1., 0.625, 0.5, 0.4375, 1.0, 0.375, 0.8125, 0.375, 0.0625, 0.5, 0.6875, 0.0625]]).T # 0.08125
+    sk  = np.array([[0., 0.6875, 0.5, 0.25, 0.3125, 0.125, 0.875, 0.125, 0., 0.4375, 0.4375, 0.125]]).T # 0.08125
     fsk = np.array([[1.0, 0.5, 0.375, 0.4375, 1.0, 0.9375, 0.8125, 0.4375, 0.1875, 0.1875, 0.625, 0.125]]).T # 0.08125
 
     cm = np.hstack([f,s,k,fs,fk,sk,fsk])
@@ -819,7 +819,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_modality/'+\
           str(param_dict['data_param']['downSampleSize'])
-        nPoints = param_dict['ROC']['nPoints'] = 100
+        nPoints = param_dict['ROC']['nPoints'] = 200
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.5, 2.6, nPoints)*-1.0
         
