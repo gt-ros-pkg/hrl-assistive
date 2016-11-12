@@ -450,6 +450,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     # ---------------- ROC Visualization ----------------------
     if detection_rate: sys.exit()
     for modality in modality_list:
+        print "-------------------- Modality: ", modality ," ------------------------"
         processed_data_path = os.path.join(org_processed_data_path, modality)
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
