@@ -377,7 +377,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     else: timeList = None
 
     print d['param_dict']['feature_names']
-    sys.exit()
 
     org_processed_data_path = copy.copy(processed_data_path)
     modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk'] #, 'fsk']
