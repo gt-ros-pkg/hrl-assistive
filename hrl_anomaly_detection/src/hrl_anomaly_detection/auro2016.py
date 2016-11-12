@@ -377,29 +377,30 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     else: timeList = None
 
     print d['param_dict']['feature_names']
+    sys.exit()
 
     org_processed_data_path = copy.copy(processed_data_path)
     modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk'] #, 'fsk']
     for modality in modality_list:
         print "-------------------- Modality: ", modality ," ------------------------"
         if modality == 'f':            
-            successData = d['successData'][2:3]
-            failureData = d['failureData'][2:3]
+            successData = d['successData'][1:3]
+            failureData = d['failureData'][1:3]
         elif modality == 's':            
             successData = d['successData'][0:1]
             failureData = d['failureData'][0:1]
         elif modality == 'k':            
-            successData = d['successData'][[1,3]]
-            failureData = d['failureData'][[1,3]]
+            successData = d['successData'][3:]
+            failureData = d['failureData'][3:]
         elif modality == 'fs':            
-            successData = d['successData'][[0,2]]
-            failureData = d['failureData'][[0,2]]
+            successData = d['successData'][[0,1,2]]
+            failureData = d['failureData'][[0,1,2]]
         elif modality == 'fk':            
             successData = d['successData'][1:]
             failureData = d['failureData'][1:]
         elif modality == 'sk':            
-            successData = d['successData'][[0,1,3]]
-            failureData = d['failureData'][[0,1,3]]
+            successData = d['successData'][[0,3]]
+            failureData = d['failureData'][[0,3]]
 
         processed_data_path = os.path.join(org_processed_data_path, modality)
         if os.path.isdir(processed_data_path) is False:
@@ -547,12 +548,12 @@ def plotModalityVSAnomaly(save_pdf=False):
 
     ## from sklearn.metrics import confusion_matrix
 
-    f   = np.array([[0., 0.0625, 0., 0.75, 0., 0.9375, 0., 0., 0., 0., 0.5, 0.0625]]).T #0.08125
-    s   = np.array([[0.25, 0.8125, 0.0625, 0.375, 0.1875, 0.1875, 0.9375, 0., 0.1875, 0.0625, 0.3125, 0.0625]]).T # 0.125
-    k   = np.array([[1.0, 0., 0.3125, 0.375, 1.0, 0.6875, 0.25, 0.9375, 0.1875, 0.5625, 0.75, 0. ]]).T #0.0875
-    fs  = np.array([[0.0625, 0.6875, 0.0625, 0.625, 0.0625, 0.8125, 0.875, 0., 0., 0., 0.4375, 0.125]]).T #0.0875
-    fk  = np.array([[1., 0., 0.1875, 0.875, 0.875, 1.0, 0.1875, 0.25, 0.125, 0.4375, 0.625, 0. ]]).T #0.1125
-    sk  = np.array([[1.0, 0.5625, 0.4375, 0.5, 1.0, 0.3125,  0.8125, 0.3125, 0.0625, 0.375, 0.625, 0.0625]]).T # 0.05
+    f   = np.array([[0., 0., 0., 0.75, 0., 0.9375,  0., 0., 0., 0., 0.5, 0.125]]).T #0.0875
+    s   = np.array([[0.25, 0.875, 0.0625, 0.4375, 0.125, 0.125, 0.9375, 0., 0.0625, 0.0625, 0.1875, 0.0625]]).T # 0.06875
+    k   = np.array([[1.0, 0., 0.375, 0.4375, 1.0, 0.6875, 0.25, 0.9375, 0.1875, 0.5, 0.6875, 0.]]).T #0.08125
+    fs  = np.array([[0.0625, 0.5625, 0.0625, 0.625, 0.0625, 0.8125, 0.8125, 0., 0., 0., 0.3125, 0.0625]]).T #0.0875
+    fk  = np.array([[1.0, 0., 0.1875, 0.875, 1.0, 0.875, 0.1875, 0.25, 0.0625, 0.4375, 0.5625, 0.]]).T #0.08125
+    sk  = np.array([[1., 0.625, 0.5, 0.4375, 1.0, 0.375, 0.8125, 0.375, 0.0625, 0.5, 0.6875, 0.0625]]).T # 0.08125
     fsk = np.array([[1.0, 0.5, 0.375, 0.4375, 1.0, 0.9375, 0.8125, 0.4375, 0.1875, 0.1875, 0.625, 0.125]]).T # 0.08125
 
     cm = np.hstack([f,s,k,fs,fk,sk,fsk])
@@ -569,11 +570,14 @@ def plotModalityVSAnomaly(save_pdf=False):
     plt.imshow(cm, interpolation='nearest', cmap=cmap, aspect='auto')
     ## plt.imshow(cm, interpolation='nearest', cmap=cmap, extent=[0,7,0,12], aspect='auto')
     ## plt.title(title)
+    ## plt.colorbar(orientation='horizontal')
     plt.colorbar()
     tick_marks = np.arange(len(y_classes))
     plt.xticks(tick_marks, y_classes, rotation=30)
     tick_marks = np.arange(len(x_classes))
     plt.yticks(tick_marks, x_classes)
+    ## ax = plt.gca()
+    ## ax.xaxis.tick_top()
 
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -601,6 +605,14 @@ def plotModalityVSAnomaly(save_pdf=False):
     else:
         plt.show()        
 
+
+    f = [50.58 , 70.24 , 46.86 , 81.23 , 49.14, 68.39 , 73.53 , 54.96 , 51.68 , 63.92, 77.03 , 81.99 , 61.93 , 82.12 , 76.09]
+    fs = [66.72 , 82.88 , 55.37 , 71.78 , 58.98,  86.65 , 92.18 , 67.43 , 95.68, 73.30,  89.22 , 97.59 , 65.24 , 79.99 , 79.24]
+    fsk = [91.13, 99.38, 76.54, 86.08, 81.21]
+
+    print np.mean(f)
+    print np.mean(fs)
+    print np.mean(fsk)
 
 
 if __name__ == '__main__':
