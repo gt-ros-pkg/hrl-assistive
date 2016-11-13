@@ -2386,6 +2386,12 @@ def argmax(x, last=True):
     else:
         return np.argmax(x)
 
+def fscore(tp, fn, fp, beta=1.0):
+    """
+    Return f_beta score.
+    """
+    return ( (1.+beta*beta)*tp )/( (1.+beta*beta)*tp + beta*beta*fn + fp )
+
 
 def initialiseOptParser(p):
 
@@ -2452,3 +2458,4 @@ def initialiseOptParser(p):
                  default=False, help='Save result.')
     
     ## opt, args = p.parse_args()
+

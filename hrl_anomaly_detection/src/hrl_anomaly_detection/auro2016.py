@@ -77,7 +77,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
 
@@ -138,7 +137,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
                               noise_mag=0.03, diag=diag, \
-                              add_logp_d=add_logp_d, verbose=verbose)
+                              verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -195,7 +194,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     nState     = HMM_dict['nState']
     scale      = HMM_dict['scale']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
 
@@ -249,18 +247,13 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         if data_gen: sys.exit()
 
 
-    param_dict2  = d['param_dict']
-    if 'timeList' in param_dict2.keys():
-        timeList    = param_dict2['timeList'][startIdx:]
-    else: timeList = None
-
     #-----------------------------------------------------------------------------------------
     # HMM-induced vector with LOPO
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
                               success_files=success_files, failure_files=failure_files,\
-                              add_logp_d=add_logp_d, verbose=verbose)
+                              verbose=verbose)
                               
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -292,18 +285,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
 
-
-    #----------------- List up anomaly cases ------------------
-    ## for method in method_list:
-    ##     max_idx = np.argmax(acc_rates[method])
-
-    ##     print "-----------------------------------"
-    ##     print "Method: ", method
-    ##     print acc_rates[method][max_idx]
-    ## if nPoints > 1:
-    ##     print "Wrong number of points"
-    ##     sys.exit()
-    
     detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=True)
     
 
@@ -371,11 +352,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    param_dict2 = d['param_dict']
-    if 'timeList' in param_dict2.keys():
-        timeList    = param_dict2['timeList'][startIdx:]
-    else: timeList = None
-
     print d['param_dict']['feature_names']
 
     org_processed_data_path = copy.copy(processed_data_path)
@@ -457,7 +433,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
 
-def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=False):
+def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=False, save_pdf=False):
 
     for method in method_list:
         print "---------- ", method, " -----------"
@@ -476,65 +452,108 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=Fals
         tn_l = np.array(tn_l)
         fn_l = np.array(fn_l)
             
-        fscore_l = 2.0*tp_l/(2.0*tp_l+fp_l+fn_l)
-        fscore_l = fscore05_l =(1.0+0.25)*tp_l / ((1.0+0.25)*tp_l + 0.25*fn_l + fp_l )
-        ## fscore_l = fscore2_l =(1.0+4.0)*tp_l / ((1.0+4.0)*tp_l + 4.0*fn_l + fp_l )
         acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
-        print "FPR: ", fpr_l
 
         if zero_fp_flag:
-
+            fscore_l = fscore(tp_l, fn_l, fp_l) 
+            ## fscore_l = fscore05_l = fscore(tp_l, fn_l, fp_l, 0.5)
+            ## fscore_l = fscore2_l = fscore(tp_l, fn_l, fp_l, 2)
+        
             i = (np.abs(fpr_l-0.08)).argmin()
-            
-            ## if fpr_l[0] > fpr_l[-1]:
-            ##     for i in xrange(len(fpr_l)):
-            ##         if fpr_l[i] < 0.1+0.02: break
-            ## else:
-            ##     for i in xrange(len(fpr_l)):
-            ##         if fpr_l[i] > 0.1-0.02 and fpr_l[i+1] > 0.1+0.02: break
             best_idx = i
-        else:
-            ##################################3
-            ## best_idx = np.argmin(fp_l)
-            ## best_idx = np.argmax(acc_l)
-            best_idx = np.argmax(fscore_l)
-            ##################################3
-        
-        print 'fp_l:', fp_l
-        print 'fscore: ', fscore_l
-        print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
-        print "best idx: ", best_idx
 
-        ## print fn_l+tp_l
-        ## print fp_l+tn_l
-        ## sys.exit()
-
-        # fscore
-        ## tp = float(np.sum(ROC_data[method]['tp_l'][0]))
-        ## fn = float(np.sum(ROC_data[method]['fn_l'][0]))
-        ## fp = float(np.sum(ROC_data[method]['fp_l'][0]))
-        ## fscore_1 = 2.0*tp/(2.0*tp+fn+fp)
-        
-        # false negatives
-        labels = ROC_data[method]['fn_labels'][best_idx]            
-        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+            best_idx = argmax(fscore_l)
             
-        d = {x: anomalies.count(x) for x in anomalies}
-        l_idx = np.array(d.values()).argsort() #[-10:]
 
-        d_list = []
-        t_sum = []
-        print "Max count is ", len(kFold_list)*2
-        for idx in l_idx:
-            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
-              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
-            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
-            d_list.append([float(np.array(d.keys())[idx]), float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
+            print "FPR: ", fpr_l
+            print 'fscore: ', fscore_l
+            print "F1-score: ", fscore_l[best_idx], " fp: ", fp_l[best_idx], " acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
+            print "best idx: ", best_idx
 
-        if len(t_sum)<12: t_sum.append(1.0)
-        print "Avg.: ", np.mean(t_sum)
+            # false negatives
+            labels = ROC_data[method]['fn_labels'][best_idx]            
+            anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+
+            d = {x: anomalies.count(x) for x in anomalies}
+            l_idx = np.array(d.values()).argsort() #[-10:]
+
+            d_list = []
+            t_sum = []
+            print "Max count is ", len(kFold_list)*2
+            for idx in l_idx:
+                print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
+                  " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+                t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
+                d_list.append([float(np.array(d.keys())[idx]), float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
+
+            if len(t_sum)<12: t_sum.append(1.0)
+            print "Avg.: ", np.mean(t_sum)
+            
+        else:
+            ## if method is not 'hmmgp': continue
+            ## best_idx = np.argmax(fscore_l)
+            d_list = None
+            
+            beta_list = [0.1, 0.5, 0.8, 1.0, 1.5, 2.0]
+            beta_list = np.logspace(-1,np.log10(2.0),10)
+            fscore_list = []
+            acc_list    = []
+            tpr_list    = []
+            fpr_list    = []
+            for beta in beta_list:
+                fscores = fscore(tp_l, fn_l, fp_l, beta)
+                best_idx = argmax(fscores)
+
+                fscore_list.append(fscores[best_idx])
+                acc_list.append(acc_l[best_idx])
+                tpr_list.append(tpr_l[best_idx])
+                fpr_list.append(fpr_l[best_idx])
+
+            acc_list = np.array(acc_list)
+            tpr_list = np.array(tpr_list)
+            fpr_list = np.array(fpr_list)
+            fscore_list = np.array(fscore_list)
+
+            ## fig, ax1 = plt.figure()
+            fig, ax1 = plt.subplots()
+            plt.rc('text', usetex=True)
+            
+            ## plt.plot(fscore_list, acc_list)
+            ax1.plot(beta_list, acc_list*100.0, 'b*-')
+            ax1.set_ylim([0.0,100.0])
+            ## ax1.set_xticks(beta_list)
+            ax1.set_ylabel(r'Accuracy [$\%$]', fontsize=22)
+            ax1.set_xlabel(r'$\beta$ of $F_{\beta}$-score', fontsize=22)
+            for tl in ax1.get_yticklabels():
+                tl.set_color('b')
+
+            ax2 = ax1.twinx()
+            ax2.plot(beta_list, fpr_list*100.0, 'r^--')
+            ax2.plot(beta_list, tpr_list*100.0, 'go--')
+            ## ax2.plot(beta_list, tpr_list/fpr_list, 'k.--')
+            ## ax2.plot(beta_list, fscore_list/fpr_list, 'm-')
+            ax2.set_ylabel(r'False Positive Rate [$\%$]', fontsize=22)
+            ax2.set_ylim([0.0,100.0])
+            for tl in ax2.get_yticklabels():
+                tl.set_color('r')
+            
+            plt.tight_layout()
+
+            if save_pdf == True:
+                fig.savefig('test.pdf')
+                fig.savefig('test.png')
+                os.system('cp test.p* ~/Dropbox/HRL/')
+            else:
+                plt.show()        
+            
+            sys.exit()
+                
+                
+
+            
+        
 
     d_list = np.array(d_list)
     d_list = d_list[np.argsort(d_list[:,0])]
@@ -556,24 +575,41 @@ def plotModalityVSAnomaly(save_pdf=False):
     sk  = np.array([[0., 0.8125, 0.5, 0.25, 0.3125, 0.125, 0.875, 0.125, 0., 0.375, 0.5, 0.1875]]).T # 0.0875
     fsk = np.array([[1.0, 0.5, 0.375, 0.4375, 1.0, 0.9375, 0.8125, 0.4375, 0.1875, 0.1875, 0.625, 0.125]]).T # 0.08125
 
-    cm = np.hstack([f,s,k,fs,fk,sk,fsk])
+    X = np.hstack([f,s,k,fs,fk,sk,fsk])
 
-    # clustering and reordering....
-    print np.shape(cm)
-    sys.exit()
+    def dist(x1,x2):
+        print np.linalg.norm(x1-x2)
+        return np.linalg.norm(x1-x2)
 
+    # clustering
+    from sklearn.cluster import DBSCAN
+    db = DBSCAN(eps=0.65, min_samples=1, metric=dist).fit(X)
+    labels = db.labels_    
+    print np.shape(X)
+
+    # reordering
+    print labels
+    X_new = []
+    label_new = []
+    for i in xrange(max(labels)+1): # for label
+        for j in xrange(len(labels)):
+            if labels[j] == i:                            
+                X_new.append( X[j].tolist() )
+                label_new.append(i)
+    X = X_new
+    print "label: ", label_new
     
     np.set_printoptions(precision=3)
     normalize=False
     title='Confusion matrix'
-    cmap=plt.cm.Blues
+    cmap=plt.cm.Greys
     ## x_classes = [1,2,3,4,5,6,7,8,9,10,11,12]
     x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
     y_classes = ['force','sound','kinematics','force-sound','force-\n kinematics','sound-\n kinematics','force-sound-\n kinematics']
     
     fig = plt.figure(figsize=(9,7))
     ## plt.rc('text', usetex=True)    
-    plt.imshow(cm, interpolation='nearest', cmap=cmap, aspect='auto')
+    plt.imshow(X, interpolation='nearest', cmap=cmap, aspect='auto')
     ## plt.imshow(cm, interpolation='nearest', cmap=cmap, extent=[0,7,0,12], aspect='auto')
     ## plt.title(title)
     ## plt.colorbar(orientation='horizontal')
@@ -586,12 +622,12 @@ def plotModalityVSAnomaly(save_pdf=False):
     ## ax.xaxis.tick_top()
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        X = X.astype('float') / X.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
     else:
         print('Confusion matrix, without normalization')
 
-    print(cm)
+    print(X)
 
     ## thresh = cm.max() / 2.
     ## for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
@@ -611,11 +647,10 @@ def plotModalityVSAnomaly(save_pdf=False):
     else:
         plt.show()        
 
-
-    f = [50.58 , 70.24 , 46.86 , 81.23 , 49.14, 68.39 , 73.53 , 54.96 , 51.68 , 63.92, 77.03 , 81.99 , 61.93 , 82.12 , 76.09]
-    fs = [66.72 , 82.88 , 55.37 , 71.78 , 58.98,  86.65 , 92.18 , 67.43 , 95.68, 73.30,  89.22 , 97.59 , 65.24 , 79.99 , 79.24]
+    print "---------------------------------------------------------"
+    f = [50.58 , 70.24 , 46.86 , 81.23 , 64.41, 68.39 , 73.53 , 54.96 , 51.68 , 62.25, 77.03 , 81.99 , 61.93 , 82.12 , 63.55]
+    fs = [66.72 , 82.88 , 55.37 , 71.78 , 76.32,  86.65 , 92.18 , 67.43 , 95.68, 74.58,  89.22 , 97.59 , 65.24 , 79.99 , 61.73]
     fsk = [91.13, 99.38, 76.54, 86.08, 81.21]
-
     print np.mean(f)
     print np.mean(fs)
     print np.mean(fsk)
@@ -719,6 +754,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress', 'hmmgp'] #'osvm',
         ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        param_dict['ROC']['nPoints'] = nPoints = 80
         
         param_dict['ROC']['progress_param_range'] = -np.logspace(0.4, 0.8, nPoints)
         param_dict['ROC']['hmmgp_param_range']    = -np.logspace(0.8, 1.4, nPoints)
