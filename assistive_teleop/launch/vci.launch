@@ -5,16 +5,9 @@
   <arg name="kinect_points" default="/$(arg kinect_ns)/hd/points" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
-  <arg name="test" default="true"/>
-
-  <arg if="$(arg test)" name="ws_port" default="9091"/>
-  <arg unless="$(arg test)" name="ws_port" value="9091"/>
-
-  <arg if="$(arg test)" name="mjpeg_port" default="8080"/>
-  <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>
-
-  <arg if="$(arg test)" name="html_port" default="8008"/>
-  <arg unless="$(arg test)" name="html_port" value="8000"/>
+  <arg name="ws_port" default="9091"/>
+  <arg name="mjpeg_port" default="8080"/>
+  <arg name="html_port" default="8008"/>
 
   <!-- Data Logging -->
   <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
