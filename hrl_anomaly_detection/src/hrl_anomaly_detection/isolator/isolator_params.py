@@ -66,50 +66,32 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
-
 
     elif dim == 4:
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                        'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 9.0, 'scale': 9.0,\
+                        'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 6.111,\
                           'add_logp_d': False}
         SVM_param_dict = {'renew': False, 'w_negative': 1.52, 'gamma': 5.0, 'cost': 1.0,\
                           'hmmosvm_nu': 0.000316,\
                           'osvm_nu': 0.000359,\
-                          'hmmsvm_diag_w_negative': 0.2, 'hmmsvm_diag_cost': 15.0, \
-                          'hmmsvm_diag_gamma': 2.0,\
                           'raw_window_size': 10,\
-                          'hmmsvm_dL_w_negative': 0.525, 'hmmsvm_dL_cost': 5.0, \
-                          'hmmsvm_dL_gamma': 4.0,\
-                          'bpsvm_cost': 12.5,\
-                          'bpsvm_gamma': 0.01, \
-                          'bpsvm_w_negative': 0.2,\
                           'logp_offset': 0,\
-                          'sgd_gamma':0.32, 'sgd_w_negative':2.5
+                          'nugget': 10.0, 'theta0': 1.0,\
+                          'std_offset': 1.4464
                           }
             
-            #, 'bpsvm'      , 'osvm'
-            ## 'progress_param_range': -np.logspace(-1, 0.5, nPoints)+0.1,\
-        ROC_param_dict = {'methods': ['hmmgp', 'progress', 'fixed', 'change'],\
+        ROC_param_dict = {'methods': [],\
                           'update_list': [],\
                           'nPoints': nPoints,\
                           'progress_param_range': -np.logspace(0, 2.5, nPoints),\
-                          'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
                           'svm_param_range': np.logspace(-0.8, 0.5, nPoints),\
                           'hmmgp_param_range':np.logspace(0.0, 4.0, nPoints)*-1.0, \
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
                           'change_param_range': np.logspace(0.0, 2.6, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.15, -0.5, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-1, 1., nPoints)}
+                          'fixed_param_range': np.linspace(0.15, -0.5, nPoints)}
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
                           
     elif dim == 3:
 
@@ -134,7 +116,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'fixed_param_range': np.linspace(0.1, -0.1, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
                           
     elif dim == 2:
 
@@ -161,7 +142,6 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
                           'bpsvm_param_range': np.logspace(-2, 0, nPoints),\
                           'cssvm_param_range': np.logspace(0.0, 2.0, nPoints) }
 
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0}
 
         
     rawFeatures = ['relativePose_target_EE', \
@@ -191,7 +171,7 @@ def getFeeding(task, data_renew, AE_renew, HMM_renew, rf_center='kinEEPos',local
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-                  'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
+                  'SVM': SVM_param_dict, 'ROC': ROC_param_dict}
 
     return raw_data_path, save_data_path, param_dict
 

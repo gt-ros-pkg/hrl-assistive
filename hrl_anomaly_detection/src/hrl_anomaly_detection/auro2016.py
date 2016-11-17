@@ -285,7 +285,8 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
 
-    detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=True)
+    detection_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=save_pdf,\
+                   zero_fp_flag=False)
     
 
 
@@ -434,7 +435,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
 
 def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=False, save_pdf=False):
-
+        
     for method in method_list:
         print "---------- ", method, " -----------"
 
@@ -492,12 +493,17 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=Fals
             print "Avg.: ", np.mean(t_sum)
             
         else:
-            ## if method is not 'hmmgp': continue
+            if method is not 'hmmgp': continue
             ## best_idx = np.argmax(fscore_l)
             d_list = None
             
-            beta_list = [0.1, 0.5, 0.8, 1.0, 1.5, 2.0]
-            beta_list = np.logspace(-1,np.log10(2.0),10)
+            ## fig, ax1 = plt.figure()
+            fig, ax1 = plt.subplots()
+            plt.rc('text', usetex=True)
+            
+            ## beta_list = [0.1, 0.5, 0.8, 1.0, 1.5, 2.0]
+            ## beta_list = np.logspace(-1,np.log10(2.0),10)
+            beta_list = [0.0, 0.5, 1.0, 1.5, 2.0]
             fscore_list = []
             acc_list    = []
             tpr_list    = []
@@ -505,55 +511,65 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=Fals
             for beta in beta_list:
                 fscores = fscore(tp_l, fn_l, fp_l, beta)
                 best_idx = argmax(fscores)
+                ## best_idx = np.argmax(acc_l)
 
                 fscore_list.append(fscores[best_idx])
                 acc_list.append(acc_l[best_idx])
                 tpr_list.append(tpr_l[best_idx])
                 fpr_list.append(fpr_l[best_idx])
 
+            acc_best_idx = np.argmax(acc_l)
+            acc_tpr = tpr_l[acc_best_idx]
+            acc_fpr = fpr_l[acc_best_idx]
+
             acc_list = np.array(acc_list)
             tpr_list = np.array(tpr_list)
             fpr_list = np.array(fpr_list)
             fscore_list = np.array(fscore_list)
 
-            ## fig, ax1 = plt.figure()
-            fig, ax1 = plt.subplots()
-            plt.rc('text', usetex=True)
-            
-            ## plt.plot(fscore_list, acc_list)
-            ax1.plot(beta_list, acc_list*100.0, 'b*-')
+            ax1.plot(beta_list, acc_list*100.0, 'bo-', ms=10, lw=2)
             ax1.set_ylim([0.0,100.0])
-            ## ax1.set_xticks(beta_list)
+            ax1.set_xticks(beta_list)
+            ax1.set_xlim([beta_list[0]-0.2, beta_list[-1]+0.2])
             ax1.set_ylabel(r'Accuracy [$\%$]', fontsize=22)
             ax1.set_xlabel(r'$\beta$ of $F_{\beta}$-score', fontsize=22)
+            ax1.yaxis.label.set_color('blue')
+            for tl in ax1.get_xticklabels():
+                tl.set_fontsize(18)
+            
             for tl in ax1.get_yticklabels():
                 tl.set_color('b')
+                tl.set_fontsize(18)
 
             ax2 = ax1.twinx()
-            ax2.plot(beta_list, fpr_list*100.0, 'r^--')
-            ax2.plot(beta_list, tpr_list*100.0, 'go--')
-            ## ax2.plot(beta_list, tpr_list/fpr_list, 'k.--')
-            ## ax2.plot(beta_list, fscore_list/fpr_list, 'm-')
+            ax2.plot(beta_list, fpr_list*100.0, 'ro--', ms=10, lw=2)
             ax2.set_ylabel(r'False Positive Rate [$\%$]', fontsize=22)
             ax2.set_ylim([0.0,100.0])
+            ax2.yaxis.label.set_color('red')
             for tl in ax2.get_yticklabels():
                 tl.set_color('r')
-            
+                tl.set_fontsize(18)
+                                                       
             plt.tight_layout()
 
+            ## m1= ax1.plot([],[], 'bx-', markersize=15, label='HMM-D')
+            ## m2= ax1.plot([],[], 'bo-', markersize=15, label='HMM-GP')        
+            ## ax1.legend(loc=2, prop={'size':20}, ncol=2)
+
+            ## m3= ax2.plot([],[], 'rx--', markersize=15, label='HMM-D')
+            ## m4= ax2.plot([],[], 'ro--', markersize=15, label='HMM-GP')        
+            ## ax2.legend(loc=4, prop={'size':20} )
+
             if save_pdf == True:
-                fig.savefig('test.pdf')
-                fig.savefig('test.png')
-                os.system('cp test.p* ~/Dropbox/HRL/')
+                fig.savefig('test_'+method+'.pdf')
+                fig.savefig('test_'+method+'.png')
+                os.system('mv test_'+method+'.p* ~/Dropbox/HRL/')
             else:
                 plt.show()        
+            del fig, ax1, ax2
             
-            sys.exit()
-                
-                
-
-            
-        
+            ## sys.exit()
+    sys.exit()
 
     d_list = np.array(d_list)
     d_list = d_list[np.argsort(d_list[:,0])]

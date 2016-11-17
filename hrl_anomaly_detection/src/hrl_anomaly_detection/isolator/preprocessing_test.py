@@ -75,19 +75,14 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
-
     # ROC
     ROC_dict = param_dict['ROC']
-
 
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -146,7 +141,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
     #-----------------------------------------------------------------------------------------
     # parameters
-    ref_num      = 2
+    ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
     weight      = -4.9 #-5.5 
@@ -172,7 +167,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, HMM_dict['scale'], \
                               success_files=success_files, failure_files=failure_files,\
-                              add_logp_d=add_logp_d, verbose=verbose)
+                              verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -906,7 +901,7 @@ if __name__ == '__main__':
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=-1, n_iter_search=1000)
                          
     else:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['progress'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \

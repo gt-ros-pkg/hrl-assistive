@@ -41,6 +41,7 @@ from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import optimizeParam as op
+import hrl_anomaly_detection.data_viz as dv        
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -1839,7 +1840,7 @@ if __name__ == '__main__':
         failureData = False
         modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
         
-        data_plot(subjects, opt.task, raw_data_path, save_data_path,\
+        dv.data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
@@ -1900,7 +1901,6 @@ if __name__ == '__main__':
 
 
     elif opt.bLikelihoodPlot:
-        import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=True,\
