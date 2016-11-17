@@ -421,7 +421,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     method  = 'hmmgp' #'progress'
     ## weights = ROC_dict[method+'_param_range']
     nMaxData   = 20 # The maximun number of executions to train GP
-    nSubSample = 40 # The number of sub-samples from each execution to train GP
+    nSubSample = 50 # The number of sub-samples from each execution to train GP
 
     # Load a generative model
     idx = 0
@@ -901,7 +901,7 @@ if __name__ == '__main__':
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=-1, n_iter_search=1000)
                          
     else:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['progress'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['hmmgp'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
