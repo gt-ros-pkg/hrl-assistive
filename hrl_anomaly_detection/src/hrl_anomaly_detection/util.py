@@ -2211,6 +2211,20 @@ def cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
     return m_score_l, m_delay_l
 
 
+def plot_delay_step_mag(delay_list, tpr_list, step_mag_list):
+    '''
+    Plot delay - step_mag graph
+    '''
+
+    print step_mag_list
+    print tpr_list
+    print delay_list
+
+    
+
+    
+    return
+
 
 def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=True):
     '''

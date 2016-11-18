@@ -76,7 +76,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
     # ROC
@@ -87,7 +86,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                  '_'+str(dim))
 
     if pkl_prefix is None:
-        pkl_prefix = 'step_'+str(step_mag)
+        pkl_prefix = 'step_'+"%0.4f" % step_mag
         step_mag   = step_mag*param_dict['HMM']['scale']
 
     #------------------------------------------
@@ -272,7 +271,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
     # ROC
@@ -314,18 +312,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
     det_rate_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
-    ## nLength = len(failureData[0][0])
-    ## step_idx_l = []
-    ## for i in xrange(len(failureData[0])):
-    ##     start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-    ##     ## dim_idx   = np.random.randint(0, len(failureData))
-    ##     step_mag  = np.random.uniform(0.01, 0.10)
-        
-    ##     ## failureData[dim_idx,i,start_idx:] += step_mag
-    ##     failureData[:,i,start_idx:] += step_mag
-    ##     step_idx_l.append(start_idx)
-
-
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -335,25 +321,12 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        ## abnormalTrainData = failureData[:, normalTrainIdx, :] * HMM_dict['scale']
-        ## step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx]
-        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
-        ## abnormalTrainData = copy.copy(normalTrainData)
-        ## normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
-
 
         # training hmm
         if verbose: print "start to fit hmm"
         nEmissionDim = len(normalTrainData)
         cov_mult     = [cov]*(nEmissionDim**2)
         nLength      = len(normalTrainData[0][0]) - startIdx
-
-        ## # Random Step Noise to crossvalidation data
-        ## for i in xrange(len(abnormalTrainData[0])):
-        ##     start_idx = np.random.randint(0, nLength/2, 1)[0]
-        ##     if start_idx < startIdx: start_idx=startIdx
-        ##     abnormalTrainData[:,i,start_idx:] += step_mag
-            
 
         from sklearn import cross_validation
         normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
@@ -431,7 +404,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         ##     sys.exit()
 
 
-
         #-----------------------------------------------------------------------------------------
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_target_prefix+'_'+str(idx)+'.pkl')
 
@@ -500,5 +472,201 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
+        ## for i in xrange(len(det_rate_list)):
+        ##     print i, det_rate_list[i]
+
+
+def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          step_mag_list,\
+                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    dim        = len(data_dict['handFeatures'])
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # reference data #TODO
+    ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
+                                 '_'+str(dim))
+    crossVal_pkl = os.path.join(ref_data_path, 'cv_'+task_name+'.pkl')
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    d = ut.load_pickle(crossVal_pkl)
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+        time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+    else:
+        timeList = None
+        time_step = 1.0
+
+    nLength = np.shape(timeList)[-1]
+    score_list    = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+    delay_list    = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+    det_rate_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
+
+    #-----------------------------------------------------------------------------------------
+    method    = 'hmmgp'
+    s_tpr_l   = [[] for i in xrange(len(step_mag_list))]
+    s_delay_mean_l = [[] for i in xrange(len(step_mag_list))]
+    s_delay_std_l = [[] for i in xrange(len(step_mag_list))]
+
+    for step_mag in step_mag_list:
+
+        pkl_prefix = 'step_'+"%0.4f" % step_mag #str(step_mag)
+        step_mag   = step_mag*param_dict['HMM']['scale']
+        
+        roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
+        ROC_data = ut.load_pickle(roc_pkl)
+        print roc_pkl
+
+        try:
+            tp_ll = ROC_data[method]['tp_l']
+            fp_ll = ROC_data[method]['fp_l']
+            tn_ll = ROC_data[method]['tn_l']
+            fn_ll = ROC_data[method]['fn_l']
+            delay_ll = ROC_data[method]['delay_l']
+
+            print np.shape(tp_ll)
+            print np.shape(delay_ll)
+        except:
+            continue
+        continue
+
+        tp_l = []
+        tn_l = []
+        fn_l = []
+        fp_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+        for i in xrange(nPoints):
+            tp_l.append( tp_ll[i] )
+            tn_l.append( tn_ll[i] )
+            fn_l.append( fn_ll[i] )
+            fp_l.append( fp_ll[i] )
+
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>=0 ]
+
+            ## # to handle.....
+            tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            n_true_detection = float(len(delay_list))/float(tot_pos)
+            if len(delay_list) < tot_pos:
+                for k in xrange(tot_pos-len(delay_list)):
+                    delay_list.append(nLength*time_step)
+
+            delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
+
+            delay_mean_l.append( np.mean(delay_list) )
+            delay_std_l.append( np.std(delay_list) )
+
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        fpr_l = fp_l/(fp_l+tn_l)
+        tpr_l = tp_l/(tp_l+fn_l)
+
+        best_idx = (np.abs(fpr_l-0.08)).argmin()
+        print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
+        print "best idx: ", best_idx
+
+        s_tpr_l.append( tpr_l[best_idx] )
+        s_delay_mean_l.append( delay_mean_l[best_idx] )
+        s_delay_std_l.append( delay_std_l[best_idx] )
+
+    print s_delay_mean_l
+    print s_tpr_l
+    
+    if no_plot is False:
+
+        fig, ax1 = plt.subplots()
+        plt.rc('text', usetex=True)
+
+        beta_list = [0.0, 0.5, 1.0, 1.5, 2.0]
+        fscore_list = []
+        acc_list    = []
+        tpr_list    = []
+        fpr_list    = []
+        for beta in beta_list:
+            fscores = fscore(tp_l, fn_l, fp_l, beta)
+            best_idx = argmax(fscores)
+            ## best_idx = np.argmax(acc_l)
+
+            fscore_list.append(fscores[best_idx])
+            acc_list.append(acc_l[best_idx])
+            tpr_list.append(tpr_l[best_idx])
+            fpr_list.append(fpr_l[best_idx])
+
+        acc_best_idx = np.argmax(acc_l)
+        acc_tpr = tpr_l[acc_best_idx]
+        acc_fpr = fpr_l[acc_best_idx]
+
+        acc_list = np.array(acc_list)
+        tpr_list = np.array(tpr_list)
+        fpr_list = np.array(fpr_list)
+        fscore_list = np.array(fscore_list)
+
+        ax1.plot(beta_list, acc_list*100.0, 'bo-', ms=10, lw=2)
+        ax1.set_ylim([0.0,100.0])
+        ax1.set_xticks(beta_list)
+        ax1.set_xlim([beta_list[0]-0.2, beta_list[-1]+0.2])
+        ax1.set_ylabel(r'Accuracy [$\%$]', fontsize=22)
+        ax1.set_xlabel(r'$\beta$ of $F_{\beta}$-score', fontsize=22)
+        ax1.yaxis.label.set_color('blue')
+        for tl in ax1.get_xticklabels():
+            tl.set_fontsize(18)
+
+        for tl in ax1.get_yticklabels():
+            tl.set_color('b')
+            tl.set_fontsize(18)
+
+        ax2 = ax1.twinx()
+        ax2.plot(beta_list, fpr_list*100.0, 'ro--', ms=10, lw=2)
+        ax2.set_ylabel(r'False Positive Rate [$\%$]', fontsize=22)
+        ax2.set_ylim([0.0,100.0])
+        ax2.yaxis.label.set_color('red')
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')
+            tl.set_fontsize(18)
+
+        plt.tight_layout()
+
+        ## m1= ax1.plot([],[], 'bx-', markersize=15, label='HMM-D')
+        ## m2= ax1.plot([],[], 'bo-', markersize=15, label='HMM-GP')        
+        ## ax1.legend(loc=2, prop={'size':20}, ncol=2)
+
+        ## m3= ax2.plot([],[], 'rx--', markersize=15, label='HMM-D')
+        ## m4= ax2.plot([],[], 'ro--', markersize=15, label='HMM-GP')        
+        ## ax2.legend(loc=4, prop={'size':20} )
+
+        if save_pdf == True:
+            fig.savefig('test_'+method+'.pdf')
+            fig.savefig('test_'+method+'.png')
+            os.system('mv test_'+method+'.p* ~/Dropbox/HRL/')
+        else:
+            plt.show()        
+        del fig, ax1, ax2
+
+        
+        ## plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
         ## for i in xrange(len(det_rate_list)):
         ##     print i, det_rate_list[i]

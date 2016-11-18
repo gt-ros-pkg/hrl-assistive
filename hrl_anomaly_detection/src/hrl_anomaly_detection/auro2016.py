@@ -802,10 +802,10 @@ if __name__ == '__main__':
 
         import hrl_anomaly_detection.evaluation as ev 
         if opt.bEvaluationAccParam:
-            ev.evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                                    step_mag, pkl_prefix,\
-                                    save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                    no_plot=opt.bNoPlot, delay_plot=True)
+            ev.evaluation_acc_param2(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                                     step_mag_list,\
+                                     save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
+                                     no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for step_mag in step_mag_list:
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
