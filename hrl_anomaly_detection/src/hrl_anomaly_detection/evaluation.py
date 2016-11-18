@@ -63,7 +63,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                          step_mag, pkl_prefix,\
+                          step_mag, pkl_prefix=None,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=False, find_param=False, all_plot=False):
 
@@ -85,6 +85,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
+
+    if pkl_prefix is None:
+        pkl_prefix = 'step_'+str(step_mag)
+        step_mag   = step_mag*param_dict['HMM']['scale']
 
     #------------------------------------------
     # Get features
