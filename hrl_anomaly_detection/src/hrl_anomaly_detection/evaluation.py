@@ -516,37 +516,27 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         time_step = 1.0
 
     nLength = np.shape(timeList)[-1]
-    score_list    = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
-    delay_list    = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
-    det_rate_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
     #-----------------------------------------------------------------------------------------
     method    = 'hmmgp'
-    s_tpr_l   = [[] for i in xrange(len(step_mag_list))]
-    s_delay_mean_l = [[] for i in xrange(len(step_mag_list))]
-    s_delay_std_l = [[] for i in xrange(len(step_mag_list))]
+    s_tpr_l   = []
+    s_delay_mean_l = []
+    s_delay_std_l = []
 
     for step_mag in step_mag_list:
 
-        pkl_prefix = 'step_'+"%0.4f" % step_mag #str(step_mag)
+        pkl_prefix = 'step_'+"%0.4f" % step_mag #str(step_mag)        
         step_mag   = step_mag*param_dict['HMM']['scale']
         
         roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
         print roc_pkl
-
-        try:
-            tp_ll = ROC_data[method]['tp_l']
-            fp_ll = ROC_data[method]['fp_l']
-            tn_ll = ROC_data[method]['tn_l']
-            fn_ll = ROC_data[method]['fn_l']
-            delay_ll = ROC_data[method]['delay_l']
-
-            print np.shape(tp_ll)
-            print np.shape(delay_ll)
-        except:
-            continue
-        continue
+        
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
 
         tp_l = []
         tn_l = []
@@ -555,21 +545,21 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         delay_mean_l = []
         delay_std_l  = []
         for i in xrange(nPoints):
-            tp_l.append( tp_ll[i] )
-            tn_l.append( tn_ll[i] )
-            fn_l.append( fn_ll[i] )
-            fp_l.append( fp_ll[i] )
+            tp_l.append( float(np.sum(tp_ll[i])) )
+            tn_l.append( float(np.sum(tn_ll[i])) )
+            fn_l.append( float(np.sum(fn_ll[i])) )
+            fp_l.append( float(np.sum(fp_ll[i])) )
 
             delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
             ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
             ##                if delay_ll[i][ii]>=0 ]
 
             ## # to handle.....
-            tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
-            n_true_detection = float(len(delay_list))/float(tot_pos)
-            if len(delay_list) < tot_pos:
-                for k in xrange(tot_pos-len(delay_list)):
-                    delay_list.append(nLength*time_step)
+            ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            ## n_true_detection = float(len(delay_list))/float(tot_pos)
+            ## if len(delay_list) < tot_pos:
+            ##     for k in xrange(tot_pos-len(delay_list)):
+            ##         delay_list.append(nLength*time_step)
 
             delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
 
@@ -585,7 +575,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
 
-        best_idx = (np.abs(fpr_l-0.08)).argmin()
+        best_idx = (np.abs(fpr_l-0.1)).argmin()
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
@@ -593,44 +583,29 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         s_delay_mean_l.append( delay_mean_l[best_idx] )
         s_delay_std_l.append( delay_std_l[best_idx] )
 
-    print s_delay_mean_l
-    print s_tpr_l
+    s_tpr_l = np.array(s_tpr_l)
+
+    ## s_delay_mean_l = s_delay_mean_l[-1:]
+    ## s_delay_std_l = s_delay_std_l[-1:]
+    ## s_tpr_l       = s_tpr_l[-1:]
+    ## step_mag_list = step_mag_list[-1:] 
     
     if no_plot is False:
+
+        ## x_ticks = []
+        ## for step_mag in step_mag_list:
+        ##     x_ticks.append( str(round(step_mag,3)) )
 
         fig, ax1 = plt.subplots()
         plt.rc('text', usetex=True)
 
-        beta_list = [0.0, 0.5, 1.0, 1.5, 2.0]
-        fscore_list = []
-        acc_list    = []
-        tpr_list    = []
-        fpr_list    = []
-        for beta in beta_list:
-            fscores = fscore(tp_l, fn_l, fp_l, beta)
-            best_idx = argmax(fscores)
-            ## best_idx = np.argmax(acc_l)
-
-            fscore_list.append(fscores[best_idx])
-            acc_list.append(acc_l[best_idx])
-            tpr_list.append(tpr_l[best_idx])
-            fpr_list.append(fpr_l[best_idx])
-
-        acc_best_idx = np.argmax(acc_l)
-        acc_tpr = tpr_l[acc_best_idx]
-        acc_fpr = fpr_l[acc_best_idx]
-
-        acc_list = np.array(acc_list)
-        tpr_list = np.array(tpr_list)
-        fpr_list = np.array(fpr_list)
-        fscore_list = np.array(fscore_list)
-
-        ax1.plot(beta_list, acc_list*100.0, 'bo-', ms=10, lw=2)
-        ax1.set_ylim([0.0,100.0])
-        ax1.set_xticks(beta_list)
-        ax1.set_xlim([beta_list[0]-0.2, beta_list[-1]+0.2])
-        ax1.set_ylabel(r'Accuracy [$\%$]', fontsize=22)
-        ax1.set_xlabel(r'$\beta$ of $F_{\beta}$-score', fontsize=22)
+        ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
+        #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
+        ax1.set_ylim([0.0,9.0])
+        ## ax1.set_xticks(x_ticks)
+        ax1.set_xlim([step_mag_list[0]-0.01, step_mag_list[-1]+0.01])
+        ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)
+        ax1.set_xlabel(r'Amplitude of Step Signals [$\%$]', fontsize=22)
         ax1.yaxis.label.set_color('blue')
         for tl in ax1.get_xticklabels():
             tl.set_fontsize(18)
@@ -640,8 +615,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
             tl.set_fontsize(18)
 
         ax2 = ax1.twinx()
-        ax2.plot(beta_list, fpr_list*100.0, 'ro--', ms=10, lw=2)
-        ax2.set_ylabel(r'False Positive Rate [$\%$]', fontsize=22)
+        ax2.plot(step_mag_list, s_tpr_l*100.0, 'r^--', ms=10, lw=2)
+        ax2.set_ylabel(r'True Positive Rate [$\%$]', fontsize=22)
         ax2.set_ylim([0.0,100.0])
         ax2.yaxis.label.set_color('red')
         for tl in ax2.get_yticklabels():

@@ -590,28 +590,32 @@ def plotModalityVSAnomaly(save_pdf=False):
     fk  = np.array([[1.0, 0., 0.3125, 0.9375, 1.0, 0.9375, 0.1875, 0.25, 0.125, 0.5, 0.5625, 0.0625]]).T #0.08125
     sk  = np.array([[0., 0.8125, 0.5, 0.25, 0.3125, 0.125, 0.875, 0.125, 0., 0.375, 0.5, 0.1875]]).T # 0.0875
     fsk = np.array([[1.0, 0.5, 0.375, 0.4375, 1.0, 0.9375, 0.8125, 0.4375, 0.1875, 0.1875, 0.625, 0.125]]).T # 0.08125
-
     X = np.hstack([f,s,k,fs,fk,sk,fsk])
 
+    x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+    
     def dist(x1,x2):
-        print np.linalg.norm(x1-x2)
+        ## print np.linalg.norm(x1-x2)
         return np.linalg.norm(x1-x2)
+
+    # 0.65 for all    
 
     # clustering
     from sklearn.cluster import DBSCAN
-    db = DBSCAN(eps=0.65, min_samples=1, metric=dist).fit(X)
+    db = DBSCAN(eps=0.38, min_samples=1, metric=dist).fit(X[:,:3])
     labels = db.labels_    
-    print np.shape(X)
 
     # reordering
     print labels
     X_new = []
     label_new = []
+    x_classes_new = []
     for i in xrange(max(labels)+1): # for label
         for j in xrange(len(labels)):
             if labels[j] == i:                            
                 X_new.append( X[j].tolist() )
                 label_new.append(i)
+                x_classes_new.append(x_classes[j])
     X = X_new
     print "label: ", label_new
     
@@ -620,7 +624,6 @@ def plotModalityVSAnomaly(save_pdf=False):
     title='Confusion matrix'
     cmap=plt.cm.Greys
     ## x_classes = [1,2,3,4,5,6,7,8,9,10,11,12]
-    x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
     y_classes = ['force','sound','kinematics','force-sound','force-\n kinematics','sound-\n kinematics','force-sound-\n kinematics']
     
     fig = plt.figure(figsize=(9,7))
@@ -633,7 +636,7 @@ def plotModalityVSAnomaly(save_pdf=False):
     tick_marks = np.arange(len(y_classes))
     plt.xticks(tick_marks, y_classes, rotation=30)
     tick_marks = np.arange(len(x_classes))
-    plt.yticks(tick_marks, x_classes)
+    plt.yticks(tick_marks, x_classes_new)
     ## ax = plt.gca()
     ## ax.xaxis.tick_top()
 
@@ -789,7 +792,7 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['fixed', 'osvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 100
 
