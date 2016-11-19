@@ -800,6 +800,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
+        ## param_dict['ROC']['osvm_param_range']   = np.logspace(-4.5, 0.0, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-4.0, 1.0, nPoints)
 
         step_mag_list = np.logspace(-2,np.log10(0.5),10)
 
