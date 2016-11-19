@@ -596,7 +596,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         print fpr_l
 
-        best_idx = (np.abs(fpr_l-0.15)).argmin()
+        best_idx = (np.abs(fpr_l-0.125)).argmin()
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
