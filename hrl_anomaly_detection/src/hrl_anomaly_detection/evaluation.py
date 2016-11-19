@@ -127,7 +127,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]        
             noise_idx_l.append(start_idx)
         ddd = {}
-        ddd['noise_idxl_l'] = noise_idx_l
+        ddd['noise_idx_l'] = noise_idx_l
         ut.save_pickle(ddd, noise_idx_pkl)
     
 
