@@ -792,16 +792,18 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-        param_dict['ROC']['methods'] = ['fixed', 'osvm']
+        ## param_dict['ROC']['methods'] = ['fixed', 'osvm']
+        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 100
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
-        ## param_dict['ROC']['osvm_param_range']   = np.logspace(-4.5, 0.0, nPoints)
-        param_dict['ROC']['fixed_param_range']  = np.linspace(-4.0, 1.0, nPoints)
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.0, 2.0, nPoints)+2.0
+        param_dict['ROC']['osvm_param_range']   = np.logspace(-3.5, 0.0, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-3.0, 1.0, nPoints)
 
         step_mag_list = np.logspace(-2,np.log10(0.5),10)
 

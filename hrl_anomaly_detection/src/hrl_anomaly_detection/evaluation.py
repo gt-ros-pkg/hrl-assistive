@@ -115,6 +115,21 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     else: timeList = None
 
     #-----------------------------------------------------------------------------------------
+    # random noise idx
+    noise_idx_pkl = os.path.join(processed_data_path, 'noise_idx.pkl')
+    noise_idx_l   = []
+    if os.path.isfile(noise_idx_pkl) and HMM_dict['renew'] is False:
+        d = ut.load_pickle(noise_idx_pkl)
+        noise_idx_l = d['noise_idx_l']
+    else:
+        nLength = len(successData[0][0]) - startIdx    
+        for i in xrange(len(successData[0])):
+            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]        
+            noise_idx_l.append(start_idx)
+        ut.save_pickle(d, noise_idx_pkl)
+    
+
+    #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
@@ -130,7 +145,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
+        normalTestData     = successData[:, normalTestIdx, :] * HMM_dict['scale']
+        normalTestNoiseIdx = np.array(noise_idx_l)[normalTestIdx] 
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -146,7 +162,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
-            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+            start_idx = normalTestNoiseIdx[i]
+            ## start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             ## dim_idx   = np.random.randint(0, len(abnormalTestData))
 
             #abnormalTestData[dim_idx,i,start_idx:] += step_mag
