@@ -602,7 +602,7 @@ def plotModalityVSAnomaly(save_pdf=False):
 
     # clustering
     from sklearn.cluster import DBSCAN
-    db = DBSCAN(eps=0.38, min_samples=1, metric=dist).fit(X[:,:3])
+    db = DBSCAN(eps=0.45, min_samples=1, metric=dist).fit(X[:,:3])
     labels = db.labels_    
 
     # reordering
@@ -611,26 +611,41 @@ def plotModalityVSAnomaly(save_pdf=False):
     label_new = []
     x_classes_new = []
     for i in xrange(max(labels)+1): # for label
+
+        xx = []
+        xc = []
         for j in xrange(len(labels)):
-            if labels[j] == i:                            
-                X_new.append( X[j].tolist() )
-                label_new.append(i)
-                x_classes_new.append(x_classes[j])
+            if labels[j] == i:
+                xx.append( X[j].tolist() )
+                xc.append( x_classes[j] )
+                ## X_new.append( X[j].tolist() )
+                ## label_new.append(i)
+                ## x_classes_new.append(x_classes[j])
+
+        # reordering per label
+        mean_x   = np.max(xx, axis=1)
+        mean_idx = np.argsort(mean_x)[::-1]
+
+        xx = np.array(xx)[mean_idx]
+        xc = np.array(xc)[mean_idx]
+        
+        X_new += xx.tolist()
+        x_classes_new += xc.tolist()
+        label_new += [i for k in xrange(len(xc)) ]
+                
     X = X_new
     print "label: ", label_new
+
     
     np.set_printoptions(precision=3)
     normalize=False
     title='Confusion matrix'
     cmap=plt.cm.Greys
-    ## x_classes = [1,2,3,4,5,6,7,8,9,10,11,12]
     y_classes = ['force','sound','kinematics','force-sound','force-\n kinematics','sound-\n kinematics','force-sound-\n kinematics']
     
     fig = plt.figure(figsize=(9,7))
     ## plt.rc('text', usetex=True)    
     plt.imshow(X, interpolation='nearest', cmap=cmap, aspect='auto')
-    ## plt.imshow(cm, interpolation='nearest', cmap=cmap, extent=[0,7,0,12], aspect='auto')
-    ## plt.title(title)
     ## plt.colorbar(orientation='horizontal')
     plt.colorbar()
     tick_marks = np.arange(len(y_classes))
@@ -647,12 +662,6 @@ def plotModalityVSAnomaly(save_pdf=False):
         print('Confusion matrix, without normalization')
 
     print(X)
-
-    ## thresh = cm.max() / 2.
-    ## for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-    ##     plt.text(j, i, cm[i, j],
-    ##              horizontalalignment="center",
-    ##              color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Anomaly class', fontsize=22)
@@ -793,8 +802,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp']
-        ## param_dict['ROC']['methods'] = ['hmmgp']
-        ## param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['fixed']
+        param_dict['ROC']['update_list'] = ['fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 100
 
@@ -803,7 +812,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.0, 2.0, nPoints)+2.0
         param_dict['ROC']['osvm_param_range']   = np.logspace(-3.5, 0.0, nPoints)
-        param_dict['ROC']['fixed_param_range']  = np.linspace(-3.0, 1.0, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-1.0, 0.3, nPoints)
 
         step_mag_list = np.logspace(-2,np.log10(0.5),10)
 

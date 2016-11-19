@@ -523,6 +523,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     # parameters
     startIdx    = 4
     method_list = ROC_dict['methods'] 
+    method      = method_list[0]
     nPoints     = ROC_dict['nPoints']
 
     d = ut.load_pickle(crossVal_pkl)
@@ -537,7 +538,6 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     nLength = np.shape(timeList)[-1]
 
     #-----------------------------------------------------------------------------------------
-    method    = 'hmmgp'
     s_tpr_l   = []
     s_delay_mean_l = []
     s_delay_std_l = []
@@ -594,7 +594,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
 
-        best_idx = (np.abs(fpr_l-0.08)).argmin()
+        print fpr_l
+
+        best_idx = (np.abs(fpr_l-0.15)).argmin()
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
