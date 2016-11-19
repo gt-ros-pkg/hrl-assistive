@@ -569,9 +569,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
             fn_l.append( float(np.sum(fn_ll[i])) )
             fp_l.append( float(np.sum(fp_ll[i])) )
 
-            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-            ##                if delay_ll[i][ii]>=0 ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+                           if delay_ll[i][ii]>=0 ]
 
             ## # to handle.....
             ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
@@ -580,7 +580,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
             ##     for k in xrange(tot_pos-len(delay_list)):
             ##         delay_list.append(nLength*time_step)
 
-            delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
+            ## delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
+            ## delay_list = [ delay_list[ii] if delay_list[ii]>=0 else nLength*time_step for ii in xrange(len(delay_list)) ]
 
             delay_mean_l.append( np.mean(delay_list) )
             delay_std_l.append( np.std(delay_list) )
@@ -594,6 +595,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
 
+        print tpr_l
         print fpr_l
 
         best_idx = (np.abs(fpr_l-0.125)).argmin()
@@ -622,7 +624,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
         #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
-        ax1.set_ylim([0.0,9.0])
+        ax1.set_ylim([0.0,8.0])
         ## ax1.set_xticks(x_ticks)
         ax1.set_xlim([step_mag_list[0]-0.01, step_mag_list[-1]+0.01])
         ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)
