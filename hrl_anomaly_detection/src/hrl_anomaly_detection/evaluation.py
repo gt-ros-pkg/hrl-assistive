@@ -247,8 +247,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                   use_test=True, use_pca=False, \
                                   step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
 
-    ## kFold_list = kFold_list[:1]
-                                  
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -263,7 +261,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
     print "finished to run run_classifiers"
-
     ROC_data = util.update_roc_data(ROC_data, r, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         

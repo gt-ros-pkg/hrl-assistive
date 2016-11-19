@@ -823,8 +823,9 @@ if __name__ == '__main__':
                                      save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
-            for step_mag in step_mag_list:
-                if not(step_mag > 0.13 and step_mag < 0.14): continue
+            for i, step_mag in enumerate(step_mag_list):
+                if i>4: continue
+                ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
