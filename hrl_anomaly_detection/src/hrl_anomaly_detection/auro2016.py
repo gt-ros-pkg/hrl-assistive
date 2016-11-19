@@ -802,8 +802,8 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp']
-        param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        ## param_dict['ROC']['methods'] = ['fixed']
+        ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 100
 
@@ -814,7 +814,8 @@ if __name__ == '__main__':
         param_dict['ROC']['osvm_param_range']   = np.logspace(-3.5, 0.0, nPoints)
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.4, 0.1, nPoints)
 
-        step_mag_list = np.logspace(-2,np.log10(0.5),10)
+        ## step_mag_list = np.logspace(-2,np.log10(0.5),10)
+        step_mag_list = np.linspace(0.0001,0.5,10)
 
         import hrl_anomaly_detection.evaluation as ev 
         if opt.bEvaluationAccParam:
