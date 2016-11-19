@@ -812,7 +812,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.0, 2.0, nPoints)+2.0
         param_dict['ROC']['osvm_param_range']   = np.logspace(-3.5, 0.0, nPoints)
-        param_dict['ROC']['fixed_param_range']  = np.linspace(-1.0, 0.3, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-0.4, 0.1, nPoints)
 
         step_mag_list = np.logspace(-2,np.log10(0.5),10)
 
