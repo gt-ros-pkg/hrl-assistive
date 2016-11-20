@@ -569,7 +569,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
             ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
             delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
                            if delay_ll[i][ii]>=0 ]
-
+            ## delay_list = [ delay_ll[i][ii]*time_step if delay_ll[i][ii]>=0 else nLength*time_step for ii in xrange(len(delay_ll[i])) ]
             ## # to handle.....
             ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
             ## n_true_detection = float(len(delay_list))/float(tot_pos)
@@ -621,9 +621,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
         #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
-        ax1.set_ylim([0.0,8.0])
+        ax1.set_ylim([0.0,4.0])
         ## ax1.set_xticks(x_ticks)
-        ax1.set_xlim([step_mag_list[0]-0.01, step_mag_list[-1]+0.01])
+        ## ax1.set_xlim([step_mag_list[0]-0.02, step_mag_list[-1]+0.02])
         ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)
         ax1.set_xlabel(r'Amplitude of Step Signals [$\%$]', fontsize=22)
         ax1.yaxis.label.set_color('blue')
@@ -637,7 +637,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ax2 = ax1.twinx()
         ax2.plot(step_mag_list, s_tpr_l*100.0, 'r^--', ms=10, lw=2)
         ax2.set_ylabel(r'True Positive Rate [$\%$]', fontsize=22)
-        ax2.set_ylim([0.0,100.0])
+        ax2.set_xlim([step_mag_list[0]-0.01, step_mag_list[-1]+0.01])
+        ax2.set_ylim([-0.02,102.0])
         ax2.yaxis.label.set_color('red')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
