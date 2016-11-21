@@ -598,11 +598,12 @@ def plotModalityVSAnomaly(save_pdf=False):
         ## print np.linalg.norm(x1-x2)
         return np.linalg.norm(x1-x2)
 
-    # 0.65 for all    
+    # 0.65 for all
+    # 0.45 for three
 
     # clustering
     from sklearn.cluster import DBSCAN
-    db = DBSCAN(eps=0.45, min_samples=1, metric=dist).fit(X[:,:3])
+    db = DBSCAN(eps=0.405, min_samples=1, metric=dist).fit(X[:,:3])
     labels = db.labels_    
 
     # reordering
@@ -635,7 +636,6 @@ def plotModalityVSAnomaly(save_pdf=False):
                 
     X = X_new
     print "label: ", label_new
-
     
     np.set_printoptions(precision=3)
     normalize=False
@@ -675,13 +675,13 @@ def plotModalityVSAnomaly(save_pdf=False):
     else:
         plt.show()        
 
-    print "---------------------------------------------------------"
-    f = [50.58 , 70.24 , 46.86 , 81.23 , 64.41, 68.39 , 73.53 , 54.96 , 51.68 , 62.25, 77.03 , 81.99 , 61.93 , 82.12 , 63.55]
-    fs = [66.72 , 82.88 , 55.37 , 71.78 , 76.32,  86.65 , 92.18 , 67.43 , 95.68, 74.58,  89.22 , 97.59 , 65.24 , 79.99 , 61.73]
-    fsk = [91.13, 99.38, 76.54, 86.08, 81.21]
-    print np.mean(f)
-    print np.mean(fs)
-    print np.mean(fsk)
+    ## print "---------------------------------------------------------"
+    ## f = [50.58 , 70.24 , 46.86 , 81.23 , 64.41, 68.39 , 73.53 , 54.96 , 51.68 , 62.25, 77.03 , 81.99 , 61.93 , 82.12 , 63.55]
+    ## fs = [66.72 , 82.88 , 55.37 , 71.78 , 76.32,  86.65 , 92.18 , 67.43 , 95.68, 74.58,  89.22 , 97.59 , 65.24 , 79.99 , 61.73]
+    ## fsk = [91.13, 99.38, 76.54, 86.08, 81.21]
+    ## print np.mean(f)
+    ## print np.mean(fs)
+    ## print np.mean(fsk)
 
 
 if __name__ == '__main__':

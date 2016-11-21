@@ -400,12 +400,19 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         # 0 : 1 2 3 45678910 111213 14 15 16 17  # = total 18
         # (i-1)*2, (i-1)*2+1
 
+        ## print np.shape(train_feature_list)
+        ## print np.shape(train_feature_list[0])
+
         out_list = []
         if add_list is not None:
-            for i in range(len(train_feature_list[0])/2):
+            for i in range(len(train_feature_list[0])):
                 if i not in add_list:
-                    out_list.append( (i-1)*2 )
-                    out_list.append( (i-1)*2 + 1 )
+                    out_list.append( i-1 )
+            
+            ## for i in range(len(train_feature_list[0])/2):
+            ##     if i not in add_list:
+            ##         out_list.append( (i-1)*2 )
+            ##         out_list.append( (i-1)*2 + 1 )
         else:                            
             ## remove_list = [1,2,4,5,12,13]
             ## remove_list = [1,4,13]
@@ -613,7 +620,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
                 ml    = hmm_model[j-1]
-
                 
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
                 logps = np.squeeze(logps)
