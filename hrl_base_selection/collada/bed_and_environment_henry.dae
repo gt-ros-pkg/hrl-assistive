@@ -4,8 +4,8 @@
 		<contributor>
 			<authoring_tool>URDF Collada Writer</authoring_tool>
 		</contributor>
-		<created>2016-09-06T18:05:52.000000</created>
-		<modified>2016-09-06T18:05:52.000000</modified>
+		<created>2016-09-08T15:02:32.000000</created>
+		<modified>2016-09-08T15:02:32.000000</modified>
 		<unit/>
 		<up_axis>Z_UP</up_axis>
 	</asset>
@@ -361,7 +361,7 @@
 														<rotate>1 0 0 0</rotate>
 														<translate>0 0 0</translate>
 														<rotate>1 0 0 0</rotate>
-														<rotate sid="node_autobed_neck_tilt_joint_axis0">0 0 1 0</rotate>
+														<rotate sid="node_autobed_neck_tilt_joint_axis0">0 0 -1 0</rotate>
 														<translate>0 0 0</translate>
 														<rotate>1 0 0 0</rotate>
 														<node id="vkmodel0_node21" name="autobed/neck_link" sid="node21">
@@ -387,20 +387,20 @@
 																<rotate sid="node_autobed_neck_rotation_fixed_joint_axis0">0 0 0 0</rotate>
 																<translate>0 0 0</translate>
 																<rotate>1 0 0 0</rotate>
-																<node id="vkmodel0_node15" name="autobed/head_rotz_link" sid="node15">
+																<node id="vkmodel0_node14" name="autobed/head_roty_link" sid="node14">
 																	<translate>-0 -0 -0</translate>
 																	<rotate>1 0 0 0</rotate>
-																	<translate>-1.54e-05 0 0.07779</translate>
+																	<translate>0.0154 0 0.07779</translate>
 																	<rotate>1 0 0 0</rotate>
-																	<rotate sid="node_autobed_neck_head_rotz_joint_axis0">0 0 1 0</rotate>
+																	<rotate sid="node_autobed_neck_head_roty_joint_axis0">0 1 0 0</rotate>
 																	<translate>0 0 0</translate>
 																	<rotate>1 0 0 0</rotate>
-																	<node id="vkmodel0_node14" name="autobed/head_roty_link" sid="node14">
+																	<node id="vkmodel0_node15" name="autobed/head_rotz_link" sid="node15">
 																		<translate>-0 -0 -0</translate>
 																		<rotate>1 0 0 0</rotate>
 																		<translate>0 0 0</translate>
 																		<rotate>1 0 0 0</rotate>
-																		<rotate sid="node_autobed_neck_head_roty_joint_axis0">0 1 0 0</rotate>
+																		<rotate sid="node_autobed_neck_head_rotz_joint_axis0">0 0 1 0</rotate>
 																		<translate>0 0 0</translate>
 																		<rotate>1 0 0 0</rotate>
 																		<node id="vkmodel0_node12" name="autobed/head_link" sid="node12">
@@ -1960,7 +1960,7 @@
 				</joint>
 				<joint name="autobed/neck_tilt_joint" sid="autobed_neck_tilt_joint">
 					<revolute sid="axis0">
-						<axis>0 0 1</axis>
+						<axis>0 0 -1</axis>
 						<limits>
 							<min>-114.5915590261646</min>
 							<max>114.5915590261646</max>
@@ -2166,14 +2166,14 @@
 																										<translate>0 0 0</translate>
 																										<rotate>-0.5773503320813227 -0.5773501434062114 0.5773503320813227 119.9999783794225</rotate>
 																										<link sid="autobed_neck_top_rotated_link" name="autobed/neck_top_rotated_link">
-																											<attachment_full joint="kmodel0/autobed_neck_head_rotz_joint">
-																												<translate>-1.54e-05 0 0.07779</translate>
+																											<attachment_full joint="kmodel0/autobed_neck_head_roty_joint">
+																												<translate>0.0154 0 0.07779</translate>
 																												<rotate>1 0 0 0</rotate>
-																												<link sid="autobed_head_rotz_link" name="autobed/head_rotz_link">
-																													<attachment_full joint="kmodel0/autobed_neck_head_roty_joint">
+																												<link sid="autobed_head_roty_link" name="autobed/head_roty_link">
+																													<attachment_full joint="kmodel0/autobed_neck_head_rotz_joint">
 																														<translate>0 0 0</translate>
 																														<rotate>1 0 0 0</rotate>
-																														<link sid="autobed_head_roty_link" name="autobed/head_roty_link">
+																														<link sid="autobed_head_rotz_link" name="autobed/head_rotz_link">
 																															<attachment_full joint="kmodel0/autobed_neck_head_rotx_joint">
 																																<translate>0 0 0</translate>
 																																<rotate>1 0 0 0</rotate>
@@ -3943,7 +3943,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_body_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node25/node15/node12/node_autobed_neck_head_rotx_joint_axis0">
+			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node25/node14/node12/node_autobed_neck_head_rotx_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_head_rotx_joint_axis0</param>
 				</axis>
@@ -3951,7 +3951,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_head_rotx_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node25/node14/node_autobed_neck_head_roty_joint_axis0">
+			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node14/node_autobed_neck_head_roty_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_head_roty_joint_axis0</param>
 				</axis>
@@ -3959,7 +3959,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_head_roty_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node15/node_autobed_neck_head_rotz_joint_axis0">
+			<bind_joint_axis target="node2/node3/node13/node23/node28/node22/node27/node20/node26/node24/node21/node25/node15/node_autobed_neck_head_rotz_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_autobed_neck_head_rotz_joint_axis0</param>
 				</axis>

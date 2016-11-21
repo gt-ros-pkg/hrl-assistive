@@ -282,156 +282,162 @@ class RigControl(object):
         rospy.sleep(2.0)
         self.test_vel = 0.1
         for i in xrange(self.number_trials):
-            test_pos = 0.05
-            test_vel = self.test_vel
-            test_acc = 1.0
-            self.ft_sleeve_biased = False
-            rospy.sleep(0.5)
-            print 'Moving to goal position: ', test_pos
-            self.pulling = True
-            self.start_recording_data(i)
-            t = rospy.Time.now() - self.start_record_time
-            self.zenither_pose = self.z.get_position_meters()
-            # t = rospy.Time.now() - self.start_record_time
-            if self.position_profile_generation:
-                self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
-                                                  self.zenither_pose]))
-            rospy.sleep(4.0)
-            self.zenither_move(test_pos, test_vel, test_acc)
-
-            start_move_time = rospy.Time.now()
-            # rospy.sleep(15.0)
-            if self.position_profile_generation:
-                rospy.sleep(0.05*i)
-                for j in xrange(8):
-                    t = rospy.Time.now() - self.start_record_time
-                    self.zenither_pose = self.z.get_position_meters()
-                    # t = rospy.Time.now() - self.start_record_time
+            if rospy.is_shutdown():
+                break
+            else:
+                test_pos = 0.05
+                test_vel = self.test_vel
+                test_acc = 1.0
+                self.ft_sleeve_biased = False
+                rospy.sleep(0.5)
+                print 'Moving to goal position: ', test_pos
+                self.pulling = True
+                self.start_recording_data(i)
+                t = rospy.Time.now() - self.start_record_time
+                self.zenither_pose = self.z.get_position_meters()
+                # t = rospy.Time.now() - self.start_record_time
+                if self.position_profile_generation:
                     self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
                                                       self.zenither_pose]))
-                    rospy.sleep(1.0)
-            else:
-                if self.test_vel==0.1:
-                    rospy.sleep(9.2)
-                elif self.test_vel==0.15:
-                    rospy.sleep(6.2)
-            self.zenither_pose = self.z.get_position_meters()
-            pos = self.zenither_pose
-            rospy.sleep(1.0)
-            self.zenither_pose = self.z.get_position_meters()
-            new_pos = self.zenither_pose
-            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 15.0:
-                pos = new_pos
+                rospy.sleep(4.0)
+                self.zenither_move(test_pos, test_vel, test_acc)
+
+                start_move_time = rospy.Time.now()
+                # rospy.sleep(15.0)
+                if self.position_profile_generation:
+                    rospy.sleep(0.05*i)
+                    for j in xrange(8):
+                        t = rospy.Time.now() - self.start_record_time
+                        self.zenither_pose = self.z.get_position_meters()
+                        # t = rospy.Time.now() - self.start_record_time
+                        self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
+                                                          self.zenither_pose]))
+                        rospy.sleep(1.0)
+                else:
+                    if self.test_vel==0.1:
+                        rospy.sleep(9.2)
+                    elif self.test_vel==0.15:
+                        rospy.sleep(6.2)
+                self.zenither_pose = self.z.get_position_meters()
+                pos = self.zenither_pose
                 rospy.sleep(1.0)
                 self.zenither_pose = self.z.get_position_meters()
                 new_pos = self.zenither_pose
-            # rospy.loginfo('Final position is: ', self.z.get_position_meters())
-            print 'Final position is: ', self.z.get_position_meters()
-            self.z.estop()
-            self.stop_recording_data(i)
-            self.pulling = False
-            rospy.sleep(1.5)
-            # rospy.loginfo('Resetting...')
-            print 'Finished trial ', i+1, 'at velocity', self.test_vel
-            print 'Resetting...'
-            self.pulling = False
-            # self.ft_sleeve_biased = False
-            rospy.sleep(0.6)
-            reset_pos = 0.9
-            reset_vel = 0.1
-            reset_acc = 0.1
-            self.zenither_move(reset_pos, reset_vel, reset_acc)
-            print 'Moving to initial position: ', reset_pos
-            pos = self.z.get_position_meters()
-            print 'Current position is: ', pos
-            start_move_time = rospy.Time.now()
-            rospy.sleep(1.0)
-            new_pos = self.z.get_position_meters()
-            # print 'Current position is: ', new_pos
-            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 15.0:
+                    pos = new_pos
+                    rospy.sleep(1.0)
+                    self.zenither_pose = self.z.get_position_meters()
+                    new_pos = self.zenither_pose
+                # rospy.loginfo('Final position is: ', self.z.get_position_meters())
+                print 'Final position is: ', self.z.get_position_meters()
+                self.z.estop()
+                self.stop_recording_data(i)
+                self.pulling = False
+                rospy.sleep(1.5)
+                # rospy.loginfo('Resetting...')
+                print 'Finished trial ', i+1, 'at velocity', self.test_vel
+                print 'Resetting...'
+                self.pulling = False
+                # self.ft_sleeve_biased = False
+                rospy.sleep(0.6)
+                reset_pos = 0.9
+                reset_vel = 0.1
+                reset_acc = 0.1
+                self.zenither_move(reset_pos, reset_vel, reset_acc)
+                print 'Moving to initial position: ', reset_pos
                 pos = self.z.get_position_meters()
-                rospy.sleep(0.5)
+                print 'Current position is: ', pos
+                start_move_time = rospy.Time.now()
+                rospy.sleep(1.0)
                 new_pos = self.z.get_position_meters()
                 # print 'Current position is: ', new_pos
-            self.zenither_pose = self.z.get_position_meters()
-            print 'Current position is: ', self.zenither_pose
-            rospy.sleep(4.0)
+                while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                    pos = self.z.get_position_meters()
+                    rospy.sleep(0.5)
+                    new_pos = self.z.get_position_meters()
+                    # print 'Current position is: ', new_pos
+                self.zenither_pose = self.z.get_position_meters()
+                print 'Current position is: ', self.zenither_pose
+                rospy.sleep(4.0)
         self.test_vel = 0.15
         for i in xrange(self.number_trials):
-            test_pos = 0.05
-            test_vel = self.test_vel
-            test_acc = 1.0
-            self.ft_sleeve_biased = False
-            rospy.sleep(0.5)
-            print 'Moving to goal position: ', test_pos
-            self.pulling = True
-            self.start_recording_data(i)
-            t = rospy.Time.now() - self.start_record_time
-            self.zenither_pose = self.z.get_position_meters()
-            # t = rospy.Time.now() - self.start_record_time
-            if self.position_profile_generation:
-                self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
-                                                  self.zenither_pose]))
-            rospy.sleep(4.0)
-            self.zenither_move(test_pos, test_vel, test_acc)
-
-            start_move_time = rospy.Time.now()
-            # rospy.sleep(15.0)
-            if self.position_profile_generation:
-                rospy.sleep(0.05*i)
-                for j in xrange(8):
-                    t = rospy.Time.now() - self.start_record_time
-                    self.zenither_pose = self.z.get_position_meters()
-                    # t = rospy.Time.now() - self.start_record_time
+            if rospy.is_shutdown():
+                break
+            else:
+                test_pos = 0.05
+                test_vel = self.test_vel
+                test_acc = 1.0
+                self.ft_sleeve_biased = False
+                rospy.sleep(0.5)
+                print 'Moving to goal position: ', test_pos
+                self.pulling = True
+                self.start_recording_data(i)
+                t = rospy.Time.now() - self.start_record_time
+                self.zenither_pose = self.z.get_position_meters()
+                # t = rospy.Time.now() - self.start_record_time
+                if self.position_profile_generation:
                     self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
                                                       self.zenither_pose]))
-                    rospy.sleep(1.0)
-            else:
-                if self.test_vel==0.1:
-                    rospy.sleep(9.2)
-                elif self.test_vel==0.15:
-                    rospy.sleep(6.2)
-            self.zenither_pose = self.z.get_position_meters()
-            pos = self.zenither_pose
-            rospy.sleep(1.0)
-            self.zenither_pose = self.z.get_position_meters()
-            new_pos = self.zenither_pose
-            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 15.0:
-                pos = new_pos
+                rospy.sleep(4.0)
+                self.zenither_move(test_pos, test_vel, test_acc)
+
+                start_move_time = rospy.Time.now()
+                # rospy.sleep(15.0)
+                if self.position_profile_generation:
+                    rospy.sleep(0.05*i)
+                    for j in xrange(8):
+                        t = rospy.Time.now() - self.start_record_time
+                        self.zenither_pose = self.z.get_position_meters()
+                        # t = rospy.Time.now() - self.start_record_time
+                        self.position_file.write(''.join([str(t.to_sec()), ' %f \n' %
+                                                          self.zenither_pose]))
+                        rospy.sleep(1.0)
+                else:
+                    if self.test_vel==0.1:
+                        rospy.sleep(9.2)
+                    elif self.test_vel==0.15:
+                        rospy.sleep(6.2)
+                self.zenither_pose = self.z.get_position_meters()
+                pos = self.zenither_pose
                 rospy.sleep(1.0)
                 self.zenither_pose = self.z.get_position_meters()
                 new_pos = self.zenither_pose
-            # rospy.loginfo('Final position is: ', self.z.get_position_meters())
-            print 'Final position is: ', self.z.get_position_meters()
-            self.z.estop()
-            self.stop_recording_data(i)
-            self.pulling = False
-            rospy.sleep(1.5)
-            # rospy.loginfo('Resetting...')
-            print 'Finished trial ', i+1, 'at velocity', self.test_vel
-            print 'Resetting...'
-            self.pulling = False
-            # self.ft_sleeve_biased = False
-            rospy.sleep(0.6)
-            reset_pos = 0.9
-            reset_vel = 0.1
-            reset_acc = 0.1
-            self.zenither_move(reset_pos, reset_vel, reset_acc)
-            print 'Moving to initial position: ', reset_pos
-            pos = self.z.get_position_meters()
-            print 'Current position is: ', pos
-            start_move_time = rospy.Time.now()
-            rospy.sleep(1.0)
-            new_pos = self.z.get_position_meters()
-            # print 'Current position is: ', new_pos
-            while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 15.0:
+                    pos = new_pos
+                    rospy.sleep(1.0)
+                    self.zenither_pose = self.z.get_position_meters()
+                    new_pos = self.zenither_pose
+                # rospy.loginfo('Final position is: ', self.z.get_position_meters())
+                print 'Final position is: ', self.z.get_position_meters()
+                self.z.estop()
+                self.stop_recording_data(i)
+                self.pulling = False
+                rospy.sleep(1.5)
+                # rospy.loginfo('Resetting...')
+                print 'Finished trial ', i+1, 'at velocity', self.test_vel
+                print 'Resetting...'
+                self.pulling = False
+                # self.ft_sleeve_biased = False
+                rospy.sleep(0.6)
+                reset_pos = 0.9
+                reset_vel = 0.1
+                reset_acc = 0.1
+                self.zenither_move(reset_pos, reset_vel, reset_acc)
+                print 'Moving to initial position: ', reset_pos
                 pos = self.z.get_position_meters()
-                rospy.sleep(0.5)
+                print 'Current position is: ', pos
+                start_move_time = rospy.Time.now()
+                rospy.sleep(1.0)
                 new_pos = self.z.get_position_meters()
                 # print 'Current position is: ', new_pos
-            self.zenither_pose = self.z.get_position_meters()
-            print 'Current position is: ', self.zenither_pose
-            rospy.sleep(4.0)
+                while np.abs(new_pos-pos) > 0.005 and rospy.Time.now().to_sec()-start_move_time.to_sec() < 20.0:
+                    pos = self.z.get_position_meters()
+                    rospy.sleep(0.5)
+                    new_pos = self.z.get_position_meters()
+                    # print 'Current position is: ', new_pos
+                self.zenither_pose = self.z.get_position_meters()
+                print 'Current position is: ', self.zenither_pose
+                rospy.sleep(4.0)
         # rospy.loginfo('Movement complete!')
         if self.position_profile_generation:
             self.position_file.close()
@@ -841,7 +847,7 @@ if __name__ == "__main__":
     # mode = None
     plot = True
     # plot = False
-    num = 20
+    num = 3
     vel = 0.1
     subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12',
                        'with_sleeve_no_arm', 'no_sleeve_no_arm', 'moved_rig_onto_drawers', 'moved_rig_back', 'testing_level', 'tapo_test_data','wenhao_test_data', 'test_subj']

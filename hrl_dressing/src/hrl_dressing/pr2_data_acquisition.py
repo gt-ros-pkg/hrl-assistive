@@ -6,6 +6,8 @@ from geometry_msgs.msg import WrenchStamped
 from std_msgs.msg import Bool
 import numpy as np
 import os.path
+import ghmm
+import copy
 
 roslib.load_manifest('hrl_dressing')
 roslib.load_manifest('zenither')
@@ -23,12 +25,13 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 
 
-
 class PR2_FT_Data_Acquisition(object):
-    def __init__(self, plot=False, trial_number=None):
+    def __init__(self, plot=False, trial_number=None, realtime_HMM=False):
         # print 'Initializing Sleeve Rig'
         self.total_start_time = rospy.Time.now()
         rospy.loginfo('Initializing PR2 F/T Data Acquisition')
+
+        self.categories = ['missed/', 'good/', 'caught/']
 
         if not trial_number:
             self.trial_number = 0
@@ -38,6 +41,16 @@ class PR2_FT_Data_Acquisition(object):
 
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_dressing')
+
+        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
+
+        self.realtime_HMM = realtime_HMM
+        if self.realtime_HMM:
+            self.HMM_last_run_time = rospy.Time.now()
+            self.myHmms = []
+            self.F = ghmm.Float()
+            self.initialize_HMM()
+
         self.recording = False
 
         self.sleeve_file = None
@@ -68,7 +81,13 @@ class PR2_FT_Data_Acquisition(object):
 
         self.initialize_ft_sensor()
 
-        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
+    def initialize_HMM(self):
+
+        # self.myHmms = self.ghmm.HMMOpen(self.pkg_path+'/data/hmm_rig_subjects.xml')
+        self.myHmms = []
+        for i in xrange(len(self.categories)):
+            self.myHmms.append(ghmm.HMMOpen('/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing/hmm_rig_subjects_'+self.categories[i][:len(self.categories[i])-1]+'.xml'))
+        rospy.loginfo('HMMs loaded! Ready to classify!')
 
     def initialize_ft_sensor(self):
 
@@ -95,6 +114,7 @@ class PR2_FT_Data_Acquisition(object):
             self.ft_sleeve_bias_t_y = msg.wrench.torque.y
             self.ft_sleeve_bias_t_z = msg.wrench.torque.z
             self.ft_sleeve_biased = True
+            self.calibrate_now = False
         if rospy.Time.now().to_sec() - self.time_since_last_cb.to_sec() > 0.05:
             print 'The force-torque sensor callback is too slow. That is potentially very bad. Aborting everything!!!'
         self.time_since_last_cb = rospy.Time.now()
@@ -114,8 +134,26 @@ class PR2_FT_Data_Acquisition(object):
                                              x_torque,
                                              y_torque,
                                              z_torque)]))
-            self.array_to_save[self.array_line] = [t.to_sec(), x_force, y_force, z_force]
-            self.array_line += 1
+            self.array_to_save[self.array_line] = [t.to_sec(), -x_force, -y_force, -z_force]
+            if self.realtime_HMM:
+                HMM_run_timer = rospy.Time.now() - self.HMM_last_run_time
+                if HMM_run_timer.to_sec() > 0.5:
+                    self.HMM_last_run_time = rospy.Time.now()
+                    testing_with_saved_data = False
+                    if testing_with_saved_data:
+                        # /home/ari/svn/robot1_data/usr/ari/data/hrl_dressing/subject0/formatted_three/0.1mps/caught
+                        # saved_data = load_picke(self.data_path + '/subject0/formatted_three/0.1mps/good/force_profile_1.pkl')
+                        saved_data = load_pickle(self.pkg_path + '/data/pr2_test_ft_data/ft_sleeve_2.pkl')
+                        # self.run_HMM_realtime(np.dstack([saved_data[:, 1], saved_data[:,4]*1, saved_data[:,2]*1])[0])
+                        self.run_HMM_realtime(np.dstack([saved_data[:, 0], saved_data[:,4]*-1, saved_data[:,2]*-1])[0])
+                    else:
+                        self.run_HMM_realtime(np.dstack([self.array_to_save[:self.array_line+1, 0],
+                                                         self.array_to_save[:self.array_line+1, 3]*1,
+                                                         self.array_to_save[:self.array_line+1, 1]*1])[0])
+            if self.array_line < len(self.array_to_save):
+                self.array_line += 1
+            else:
+                print 'The array has reached max length (3000 entries which is around 30 seconds). Start a new trial'
 
     def ready_for_movements(self):
         # self.position_file = open(''.join([self.pkg_path, '/data/position_combined_0_15mps', '.log']), 'w')
@@ -134,8 +172,69 @@ class PR2_FT_Data_Acquisition(object):
                 self.start_recording_data(self.trial_number)
                 raw_input('Hit enter to stop recording data')
                 self.stop_recording_data(self.trial_number)
+                fig = plt.figure(1)
+                ax1 = fig.add_subplot(111)
+                # ax1.set_title('Data for caught trial on PR2: Classified Correctly!', fontsize=20)
+                ax1.set_title('Data from most recent trial', fontsize=20)
+                ax1.set_xlabel('Time (s)', fontsize=20)
+                ax1.set_ylabel('Force (N)', fontsize=20)
+                ax1.set_xlim(0., 8.2)
+                ax1.set_ylim(-10., 1.0)
+                ax1.tick_params(axis='x', labelsize=20)
+                ax1.tick_params(axis='y', labelsize=20)
+
+                plot1 = ax1.plot(self.plotTime, self.plotX, label='Direction of Movement', linewidth=2)
+                plot2 = ax1.plot(self.plotTime, self.plotY, label='Direction of Gravity', linewidth=2)
+                # ax1.legend([plot1, plot2], ['Direction of Movement', ])
+                ax1.legend(loc='lower left', borderaxespad=0., fontsize=20)
+                # plt.plot(self.plotTime, self.plotX)
+                # plt.plot(self.plotTime, self.plotY)
+
+                plt.show()
         # final_time = rospy.Time.now().to_sec() - self.total_start_time.to_sec()
         # print 'Total elapsed time is:', final_time
+
+
+    def run_HMM_realtime(self, test_data):
+        # temp = np.dstack([(test_data[:, 1]), (test_data[:, 3])])[0]
+        temp = test_data[:, 1:3]
+        # print temp
+        # orig = temp[0, 0]
+        # for p in range(len(temp[:, 0])):
+        #     temp[p, 0] -= orig
+        self.plotTime = test_data[:, 0]
+        self.plotX = temp[:, 1]
+        self.plotY = temp[:, 0]
+
+        # plt.figure(1)
+        # plt.plot(temp[:,0],temp[:,1])
+        # plt.show()
+        # values = []
+        max_value = -100000000000
+        max_category = -1
+        for modelid in xrange(len(self.categories)):
+            final_ts_obj = ghmm.EmissionSequence(self.F, np.array(temp).flatten().tolist())
+            pathobj = self.myHmms[modelid].viterbi(final_ts_obj)
+            # pathobj = self.myHMMs.test(self.model_trained[modelid])
+            print 'Log likelihood for ', self.categories[modelid], ' category'
+            print pathobj[1]
+            value = pathobj[1]
+            if value > max_value:
+                max_value = copy.copy(value)
+                max_category = copy.copy(modelid)
+        if max_category == -1:
+            print 'No category matched in any way well. The HMMs could not perform classification!'
+        else:
+            if self.categories[max_category] == 'good/':
+                hmm_prediction = 'good'
+            elif self.categories[max_category] == 'missed/':
+                hmm_prediction = 'missed'
+            elif self.categories[max_category] == 'caught/':
+                hmm_prediction = 'caught'
+            else:
+                print 'The categories do not match expected namings. Look into this!'
+            print 'The HMMs are currently estimating/predicting that the task outcome is/will be '
+            print hmm_prediction
 
     def load_and_plot(self, file_path, label):
         loaded_data = load_pickle(file_path)
@@ -448,13 +547,14 @@ class PR2_FT_Data_Acquisition(object):
         # self.arm_file.close()
         self.sleeve_file.close()
         # self.position_file.close()
-        save_pickle(self.array_to_save, ''.join([self.pkg_path, '/data/pr2_test_ft_data/', 'ft_sleeve_', str(num), '.pkl']))
+        if not self.realtime_HMM:
+            save_pickle(self.array_to_save, ''.join([self.pkg_path, '/data/pr2_test_ft_data/', 'ft_sleeve_', str(num), '.pkl']))
         self.trial_number += 1
         # self.array_to_save = np.zeros([1000, 5])
         # self.array_line = 0
 
 if __name__ == "__main__":
-    rospy.init_node('rig_control')
+    rospy.init_node('pr2_data_acquisition')
 
     import optparse
     p = optparse.OptionParser()
@@ -483,7 +583,7 @@ if __name__ == "__main__":
     subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12',
                        'with_sleeve_no_arm', 'no_sleeve_no_arm', 'moved_rig_onto_drawers', 'moved_rig_back', 'testing_level', 'tapo_test_data','wenhao_test_data', 'test_subj']
     subject = subject_options[17]
-    rc = PR2_FT_Data_Acquisition(trial_number=None)
+    rc = PR2_FT_Data_Acquisition(trial_number=None, realtime_HMM=True)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
     data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
