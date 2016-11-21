@@ -570,7 +570,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 
 
 def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size,\
-                   hmm_model=None, scale=1.0, startIdx=4):
+                   hmm_model=None, scale=1.0, startIdx=4, multi_window=False):
 
     if hmm_model is None:
         normal_mean = []
@@ -612,7 +612,21 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 if start_idx < 0: start_idx = 0
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
-                ml            = hmm_model[j-1]
+                ml    = hmm_model[j-1]
+
+                
+                ## logps = ml.loglikelihoods( abnormal_data[j:j+1,i]*scale )
+
+                ## s = start_idx - 5 if start_idx - 5 >=0 else 0
+                ## e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
+                ##   else len(abnormal_data[j,i])-window_size[0]-window_size[1]
+
+                ## ## single_window = []
+                ## for k in xrange( s, e ):
+                ##     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
+                ##     single_window = logps[k:k+window_size[0]+window_size[1]] 
+                ##     features     += [ np.amax(single_window)-np.amin(single_window) ]
+                    
                 single_window = []
                 for k in xrange(start_idx, end_idx+1):
                     if k<startIdx:
@@ -620,7 +634,9 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     else:
                         logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
                     single_window.append( logp )
-                        
+                features += [ np.amax(single_window)-np.amin(single_window) ]
+
+                    
                     ## if k<startIdx:
                     ##     x_pred = ml.B[0][0][1]
                     ## else:
@@ -636,8 +652,9 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 else: start_idx = anomaly_idx-window_size[0]
                 single_window = single_data[start_idx:anomaly_idx+window_size[1]+1]
 
-            ## features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
-            features += [ np.mean(single_window) ]
+                ## features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
+                ## features += [ np.mean(single_window) ]
+                features += [ np.amax(single_window)-np.amin(single_window) ]
         feature_list.append(features)
         tid = int(abnormal_file_list[i].split('_')[0])
         anomaly_list.append(tid)
