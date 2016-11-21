@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 import rospy
 import threading
 
+import PyKDL
 import numpy as np
 import hrl_lib.circular_buffer as cb
 import hrl_lib.quaternion as qt
@@ -24,7 +26,7 @@ class MouthPoseFilter():
             print "no max or min, assuming no limit"
             self.min = [-999, -999, -999]
             self.max = [999, 999, 999]
-        self.sub=rospy.Subscriber('/hrl_manipulation_task/mouth_pose_backpack_unfiltered', PoseStamped, self.callback, queue_size=10)
+        rospy.Subscriber('/hrl_manipulation_task/mouth_pose_backpack_unfiltered', PoseStamped, self.callback, queue_size=10)
         self.pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
         self.quat_pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_filtered_quat', Quaternion, queue_size=10)
 
@@ -55,19 +57,30 @@ class MouthPoseFilter():
 
                 
     def publish_current(self):
-        position = self.pos_buf.get_array()
-        quaternion = self.quat_buf.get_array()
+        positions = self.pos_buf.get_array()
+        quaternions = self.quat_buf.get_array()
 
         p = None
         q = None
         if False:
             p = np.mean(positions, axis=0)
-            q = qt.quat_avg(quaternion)
+            q = qt.quat_avg(quaternions)
         else:
+            positions = np.sort(positions, axis=0)
+            p = positions[len(positions)/2]
+            
+            quaternions = np.sort(quaternions, axis=0)
+            q = quaternions[len(quaternions)/2]
+            q = qt.quat_normal(q)
+            temp_q = PyKDL.Rotation.Quaternion(q[0], q[1], q[2], q[3])
+            q = np.array(temp_q.GetQuaternion())
+            print q, np.linalg.norm(q)
+
+            """
             p = np.median(position, axis=0)
             q = np.median(quaternion, axis=0)
             q = qt.quat_normal(q)
-
+            """
 
         self.mouth_pos  = p.reshape(3, 1)
         self.mouth_quat = q.reshape(4, 1)
@@ -95,8 +108,45 @@ class MouthPoseFilter():
                 return False
         return True
 
+    def pubVirtualMouthPose(self):
+
+        f = PyKDL.Frame.Identity()
+        f.p = PyKDL.Vector(0.85, 0.4, 0.0)
+        f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
+        f.M.DoRotX(np.pi/2.0)
+        f.M.DoRotZ(np.pi/2.0)
+        f.M.DoRotX(np.pi)        
+        
+        # frame pub --------------------------------------
+        ps = PoseStamped()
+        ps.header.frame_id = 'torso_lift_link'
+        ps.header.stamp = rospy.Time.now()
+        ps.pose.position.x = f.p[0]
+        ps.pose.position.y = f.p[1]
+        ps.pose.position.z = f.p[2]
+        
+        ps.pose.orientation.x = f.M.GetQuaternion()[0]
+        ps.pose.orientation.y = f.M.GetQuaternion()[1]
+        ps.pose.orientation.z = f.M.GetQuaternion()[2]
+        ps.pose.orientation.w = f.M.GetQuaternion()[3]
+
+        ## self.mouth_pose_pub.publish(ps)
+        self.pub.publish(ps)
+
+
 if __name__ == '__main__':
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--virtual', '--v', action='store_true', dest='bVirtual',
+                 default=False, help='Send a vitual frame.')
+    opt, args = p.parse_args()
+    
     rospy.init_node('mouth_pose_filter')
     pose_filter = MouthPoseFilter()
     while not rospy.is_shutdown():
+
+        if opt.bVirtual:
+            pose_filter.pubVirtualMouthPose()
+            continue
+        
         rospy.spin()

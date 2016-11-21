@@ -97,7 +97,8 @@ class learning_hmm(learning_base):
 
 
     def fit(self, xData, A=None, B=None, pi=None, cov_mult=None,
-            ml_pkl=None, use_pkl=False, cov_type='full'):
+            ml_pkl=None, use_pkl=False, cov_type='full', fixed_trans=0,\
+            shuffle=False):
         '''
         Input :
         - xData: dimension x sample x length
@@ -108,7 +109,15 @@ class learning_hmm(learning_base):
         '''
         
         # Daehyung: What is the shape and type of input data?
-        X     = [np.array(data) for data in xData]
+        if shuffle:
+            X = xData
+            X = np.swapaxes(X,0,1)
+            id_list = range(len(X))
+            random.shuffle(id_list)
+            X = np.array(X)[id_list]
+            X = np.swapaxes(X,0,1)
+        else:
+            X = [np.array(data) for data in xData]
         nData = len(xData[0])
         
         param_dict = {}
@@ -186,7 +195,7 @@ class learning_hmm(learning_base):
             if self.verbose: print 'Run Baum Welch method with (samples, length)', np.shape(X_train)
             final_seq = ghmm.SequenceSet(self.F, X_train)
             ## ret = self.ml.baumWelch(final_seq, loglikelihoodCutoff=2.0)
-            ret = self.ml.baumWelch(final_seq, 10000)
+            ret = self.ml.baumWelch(final_seq, 10000, fixedTrans=fixed_trans)
             if np.isnan(ret):
                 print 'Baum Welch return:', ret
                 return 'Failure'
@@ -296,7 +305,7 @@ class learning_hmm(learning_base):
         return mu_l, cov_l
 
 
-    def predict_from_single_seq(self, x, nOrder):
+    def predict_from_single_seq(self, x, ref_num):
         '''
         Input
         @ x: length #samples x known steps
@@ -306,8 +315,8 @@ class learning_hmm(learning_base):
         
         # new emission for partial sequence
         B = []
-        for i in xrange(self.nState):    
-            B.append( [ self.B[i][0][nOrder], self.B[i][1][nOrder*self.nEmissionDim+nOrder] ] )
+        for i in xrange(self.nState):
+            B.append( [ self.B[i][0][ref_num], self.B[i][1][ref_num*self.nEmissionDim+ref_num] ] )
 
         ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
                                   self.A, B, self.pi)
@@ -323,19 +332,20 @@ class learning_hmm(learning_base):
 
         x_pred = []
         for i in xrange(self.nEmissionDim):
-            if i == nOrder:
+            if i == ref_num:
                 x_pred.append(x[-1])
             else:
-                src_cov_idx = nOrder*self.nEmissionDim+nOrder
-                tgt_cov_idx = i*self.nEmissionDim+i
+                src_cov_idx = ref_num*self.nEmissionDim+ref_num
+                tgt_cov_idx = ref_num*self.nEmissionDim+i
 
                 t_o = 0.0
                 for j in xrange(self.nState):
-                    t_o += alpha[-1][j]*(self.B[j][0][i] + \
-                                         self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
-                                         (x[-1]-self.B[j][0][nOrder]))
+                    m_j = self.B[j][0][i] + \
+                      self.B[j][1][tgt_cov_idx]/self.B[j][1][src_cov_idx]*\
+                      (x[-1]-self.B[j][0][ref_num])
+                    t_o += alpha[-1][j]*m_j
                 x_pred.append(t_o)
-                
+
         return x_pred
         
 
@@ -548,21 +558,26 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     return X_flat, Y_flat, idx_flat
 
 
-def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, add_logp_d=False,\
+def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=None, startIdx=4, \
+                                         add_logp_d=False,\
                                          cov_type='full'):
 
-    testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
-    testDataX = np.swapaxes(testDataX, 0,1)
-    testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                            np.ones(len(abnormalTrainData[0])) ])
-
+    if abnormalTrainData is not None:
+        testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
+        testDataX = np.swapaxes(testDataX, 0,1)
+        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
+                                np.ones(len(abnormalTrainData[0])) ])
+    else:
+        testDataX = normalTrainData
+        testDataY = -np.ones(len(testDataX[0]))
+        
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
                                                         add_logp_d=add_logp_d, cov_type=cov_type)
 
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
                                                  nSubSample=None, nMaxData=100000, rnd_sample=True):
-    n_jobs=1
+
     r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
@@ -686,6 +701,12 @@ def computeLikelihood(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=1, \
             if bPosterior: post = np.array(ml.posterior(final_ts_obj))
         except:
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
+
+            l_idx.append( i )
+            l_likelihood.append( -100000000 )
+            if bPosterior: 
+                if len(l_posterior) == 0: l_posterior.append(list(pi))
+                else: l_posterior.append( l_posterior[-1] )            
             ## return False, False # anomaly
             continue
 
@@ -731,10 +752,11 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
             print "Unexpected profile!! GHMM cannot handle too low probability. Underflow?"
             ## return False, False # anomaly            
             ## continue
-            logp = -1000000000000
             # we keep the state as the previous one
-            l_likelihood.append( logp )
-            if bPosterior: l_posterior.append( l_posterior[-1] )
+            l_likelihood.append( -1000000000000 )
+            if bPosterior:
+                if len(l_posterior) == 0: l_posterior.append(list(pi))
+                else: l_posterior.append( l_posterior[-1] )
 
         l_idx.append( i )
             

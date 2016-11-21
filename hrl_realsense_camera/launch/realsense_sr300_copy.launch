@@ -62,9 +62,14 @@
     </include>
 
     <!-- Load driver -->
+    <!--include if="$(arg load_driver)"
+             file="$(find
+             realsense_camera)/launch/includes/realsense_r200_nodelet.launch.xml"-->
     <include if="$(arg load_driver)"
-             file="$(find realsense_camera)/launch/includes/realsense_r200_nodelet.launch.xml">
+             file="$(find
+             realsense_camera)/launch/includes/nodelet_rgbd.launch.xml">
       <arg name="camera"                    value="$(arg camera)" />
+      <arg name="camera_type"               value="SR300" />
       <arg name="serial_no"                 value="$(arg serial_no)" />
       <arg name="manager"                   value="$(arg manager)" />    
       <arg name="publish_tf"                value="$(arg publish_tf)" />    

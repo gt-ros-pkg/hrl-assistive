@@ -34,17 +34,20 @@ import random
 import numpy as np
 
 # ROS
-import rospy, roslib
+import rospy
 import PyKDL
+import actionlib
+
+# Msg
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
 from std_msgs.msg import String, Empty, Int64
 import pr2_controllers_msgs.msg
-import actionlib
+from hrl_msgs.msg import FloatArray
+from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
 import hrl_lib.quaternion as quatMath
-from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # Personal library - need to move neccessary libraries to a new package
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -61,13 +64,16 @@ class armReachAction(mpcBaseAction):
         self.verbose = verbose
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
-        self.mouthOffset  = [-0.02, 0.02, 0.06] # -0.02, 0., 0.05
+        # vertical x side x depth
+        self.mouthManOffset = np.array([-0.04, 0.0, 0.05]) # -0.02, 0., 0.05
+        self.mouthNoise     = np.array([0., 0., 0.])
+        self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
         # exp 1:
-        #self.mouthOffset  = [-0.04, 0., 0.02] # 
-        #self.mouthOffset  = [-0.04, -0.12, 0.05] #
-        #self.mouthOffset  = [-0.04, -0.0, 0.18] #
-        #self.mouthOffset  = [-0.01, 0.04, 0.05] # 
+        #self.mouthOffset  = [-0.04, 0.03, -0.02] # 
+        #self.mouthOffset  = [-0.04, -0.12, 0.02] #
+        #self.mouthOffset  = [-0.04, 0.03, 0.1] #
+        #self.mouthOffset  = [-0.04, 0.06, 0.02] # 
         
 
         self.bowl_pub = None
@@ -119,7 +125,7 @@ class armReachAction(mpcBaseAction):
         if self.arm_name == 'left':
             self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
             msg = Int64()
-            msg.data = int(self.mouthOffset[2]*100.0)
+            msg.data = int(self.mouthManOffset[2]*100.0)
             self.feeding_dist_pub.publish(msg)
 
         # subscribers
@@ -129,6 +135,7 @@ class armReachAction(mpcBaseAction):
         ##                  PoseStamped, self.bowlPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
+        rospy.Subscriber('/hrl_manipulation_task/mouth_noise', FloatArray, self.mouthNoiseCallback)
         if self.arm_name == 'left':
             rospy.Subscriber('/feeding/manipulation_task/feeding_dist_request', Int64, self.feedingDistCallback)
 
@@ -168,6 +175,11 @@ class armReachAction(mpcBaseAction):
 
         self.motions = {}
 
+        self.motions['movestest'] = {}
+        self.motions['movestest']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 3.0],\
+                                             ['MOVEL', '[0, 0.0, 0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)'],\
+                                             ['MOVEL', '[0, 0.0, -0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)']]
+
 
         ## Testing Motions ---------------------------------------------------------
         # Used to test and find the best optimal procedure to scoop the target.
@@ -175,11 +187,6 @@ class armReachAction(mpcBaseAction):
         self.motions['test']['left'] = [['MOVEJ', '[0.255, 0.358, 0.559, -1.682, 1.379, -1.076, 1.695]', 7.0],\
                                         ['PAUSE', 2.0],
                                         ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
-                                        ## ['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 7.0]]
-        ##                                 ['MOVET', '[0., 0.0, 0.0, -0.5, 0., 0.]', 10., 'self.default_frame'],\
-        ##                                 ['MOVET', '[0., 0.0, 0.0, 0.5, 0., 0.]', 10., 'self.default_frame'] ]
-        ## self.motions['test']['left'] = [['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],
-        ##                                 ['PAUSE', 2.0]]
 
         self.motions['testingMotion'] = {}
         self.motions['testingMotion']['left'] = \
@@ -234,7 +241,9 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
           [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
            ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
         ## Feeding motoins --------------------------------------------------------
@@ -254,14 +263,12 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding3'] = {}
-        ## self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.03, 0., -0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
-        ##                                       ['PAUSE', 1.0]]
         self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
-                                              ['PAUSE', 1.0]]
+                                                ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
-                                              ['PAUSE', 0.5],
-                                              ['MOVES', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame']]
+        self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame'],\
+                                              ['PAUSE', 0.0],
+                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],
         ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
@@ -378,11 +385,19 @@ class armReachAction(mpcBaseAction):
         self.mouth_frame_vision = PyKDL.Frame(M,p)
 
 
+    def mouthNoiseCallback(self, msg):
+        offset = msg.data
+        self.mouthNoise[0] = offset[0]
+        self.mouthNoise[1] = offset[1]
+        self.mouthNoise[2] = offset[2]
+        self.mouthOffset = self.mouthManOffset+self.mouthNoise
+        
+
     def feedingDistCallback(self, msg):
         print "Feeding distance requested ", msg.data
-        self.mouthOffset[2] = float(msg.data)/100.0
+        self.mouthManOffset[2] = float(msg.data)/100.0
         msg = Int64()
-        msg.data = int(self.mouthOffset[2]*100.0)
+        msg.data = int(self.mouthManOffset[2]*100.0)
         self.feeding_dist_pub.publish(msg)
         
         

@@ -47,7 +47,7 @@ from matplotlib import gridspec
 
 
 def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                   decision_boundary_viz=False, method='progress',\
+                   decision_boundary_viz=False, method='hmmgp',\
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                    data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
@@ -66,6 +66,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     nState   = HMM_dict['nState']
     cov      = HMM_dict['cov']
     # SVM
+    SVM_dict = param_dict['SVM']
     
     #------------------------------------------
     if dd is None:        
@@ -150,8 +151,9 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=-10.0 )
-        dtc.fit(X_train_org, Y_train_org, idx_train_org, parallel=True)
+                             nLength=len(normalTestData[0,0]), ths_mult=-10.0,
+                             nugget=SVM_dict['nugget'], parallel=True )
+        dtc.fit(X_train_org, Y_train_org, idx_train_org)
 
 
     print "----------------------------------------------------------------------------"
@@ -163,7 +165,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     # training data
     if useTrain:
         ## normalTrainData = np.array(normalTrainData)[:,0:3,:]
-        
+
         testDataY = -np.ones(len(normalTrainData[0]))
         
         ll_X, ll_Y, _ = \
@@ -230,7 +232,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     # abnormal test data
     if useAbnormalTest:
         log_ll = []
-        exp_log_ll = []        
+        exp_log_ll = []
         for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
@@ -487,10 +489,20 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                 if 'audioWrist' in modality:
                     time_list = target_dict['audioWristTimesList']
                     data_list = target_dict['audioWristRMSList']
-                    
+
                 elif 'audio' in modality:
                     time_list = target_dict['audioTimesList']
                     data_list = target_dict['audioPowerList']
+
+                elif 'kinematics_des' in modality:
+                    time_list = target_dict['kinTimesList']
+                    data_list = target_dict['kinDesEEPosList']
+
+                    # distance
+                    new_data_list = []
+                    for d in data_list:
+                        new_data_list.append( np.linalg.norm(d, axis=0) )
+                    data_list = new_data_list
 
                 elif 'kinematics' in modality:
                     time_list = target_dict['kinTimesList']
@@ -629,8 +641,9 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                     
                 else:
                     interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
+                    if len(data_list) == 0: continue
                     for i in xrange(len(data_list)):
-                        ax.plot(interp_time, data_list[i], c=color)                
+                        ax.plot(interp_time, np.squeeze(data_list[i]), c=color)                
                 
                 ax.set_xlim(time_lim)
                 ax.set_title(modality)

@@ -51,7 +51,7 @@ from scipy import signal, fftpack, conj, stats
 QUEUE_SIZE = 10
 
 class wrist_audio_collector:
-    FRAME_SIZE = 4096 # frame per buffer
+    FRAME_SIZE = 1024 #512 #4096 # frame per buffer
     RATE       = 44100 # sampling rate
     CHANNEL    = 2 # number of channels
     FORMAT     = pyaudio.paInt16
@@ -59,10 +59,11 @@ class wrist_audio_collector:
     WINLEN     = float(RATE)/float(FRAME_SIZE)
     MIC_DIST   = 0.05
 
-    def __init__(self, verbose=False):
+    def __init__(self, raw_data_only=False, verbose=False):
         self.verbose = verbose        
         self.initComms()
 
+        self.noise_rms = 0.0
         if self.verbose: print "Wrist Audio>> initialization complete"
 
     def initComms(self):
@@ -100,28 +101,42 @@ class wrist_audio_collector:
         return device_index
 
         
-    def get_data(self):
-        audio_rms = audio_mfcc = 0
+    def get_data(self, mfcc=False):
         
         try:
             data       = self.stream.read(self.FRAME_SIZE)
-            audio_rms  = self.get_rms(data)
-            audio_data = np.fromstring(data, np.int16)
-            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
         except:
             if self.verbose:
                 print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
                 print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
-            data       = self.stream.read(self.FRAME_SIZE)
-            audio_rms  = self.get_rms(data)
-            audio_data = np.fromstring(data, np.int16)
-            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, winlen=self.WINLEN).tolist()[0]
+            try:
+                data       = self.stream.read(self.FRAME_SIZE)
+            except:
+                data       = self.stream.read(self.FRAME_SIZE)
             ## self.stream.stop_stream()
             ## self.stream.close()
             ## sys.exit()
-            
+
         audio_time = rospy.Time.now() #rospy.get_rostime().to_sec()        
-        return audio_time, audio_data, audio_rms, audio_mfcc
+        audio_data = np.fromstring(data, np.int16)
+        audio_rms  = self.get_rms(data)-self.noise_rms
+        if audio_rms > 0.0:
+            signals   = np.reshape(audio_data, (self.FRAME_SIZE, self.CHANNEL)).astype(float).T
+            timeshift = self.calculate_timeshift(signals)
+        else:
+            timeshift = 0
+
+        audio_angle = self.calculate_angle([timeshift])
+        if audio_angle is None: audio_angle = 0.0
+
+        if mfcc:
+            audio_mfcc = mfcc(audio_data, samplerate=self.RATE, nfft=self.FRAME_SIZE, \
+                              winlen=self.WINLEN).tolist()[0]
+        else:
+            audio_mfcc  = None
+
+        return audio_time, audio_data, audio_rms, audio_mfcc, audio_angle
+    
 
     def get_data2(self):
         try:
@@ -221,7 +236,7 @@ class wrist_audio_collector:
         return angle
 
 
-    def run(self):
+    def run(self, mfcc=False):
         
         ## import hrl_lib.circular_buffer as cb
         ## self.rms_buf  = cb.CircularBuffer(100, (1,))
@@ -236,42 +251,42 @@ class wrist_audio_collector:
         count = 0
         rms_list = []
         while not rospy.is_shutdown():
-            audio_time, audio_data, audio_rms, audio_mfcc = self.get_data()
+            audio_time, audio_data, audio_rms, audio_mfcc, audio_angle = self.get_data(mfcc)
             rms_list.append(audio_rms)
-            if len(rms_list)>20:
-                break            
-        noise_rms = np.mean(rms_list)*1.2
-        print "Completed to measure noise RMS*1.2 = ", noise_rms
+            if len(rms_list)>100:
+                break
+        if rms_list[0] is not None:
+            self.noise_rms = np.mean(rms_list)*1.2
+            print "Completed to measure noise RMS*1.2 = ", self.noise_rms
 
         # Measure sound and azimuth angle
         msg = audio()        
         ## rate = rospy.Rate(25) # 25Hz, nominally.    
         while not rospy.is_shutdown():
-            audio_time, audio_data, audio_rms, audio_mfcc = self.get_data()
-
-            if audio_rms > noise_rms:
-                signals   = np.reshape(audio_data, (self.FRAME_SIZE, self.CHANNEL)).astype(float).T
-                timeshift = self.calculate_timeshift(signals)
-            else:
-                timeshift = 0
-
-            audio_angle = self.calculate_angle([timeshift])
-            if audio_angle is None: audio_angle = 0.0
+            audio_time, audio_data, audio_rms, audio_mfcc, audio_angle = self.get_data(mfcc)
 
             msg.header.stamp  = audio_time #rospy.Time.now()
-            msg.audio_rms     = audio_rms - noise_rms
+            msg.audio_data    = audio_data
+            msg.audio_rms     = audio_rms 
             msg.audio_azimuth = audio_angle
-            msg.audio_mfcc    = audio_mfcc
-            msg.audio_data    = audio_data            
+            if audio_mfcc is not None:
+                msg.audio_mfcc    = audio_mfcc
             self.audio_pub.publish(msg)
 
 
 
 if __name__ == '__main__':
+
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--mfcc', '--m', action='store_true', dest='bMFCC',
+                 default=False, help='Get mfcc data.')
+
+    opt, args = p.parse_args()    
     rospy.init_node('wrist_audio_publisher')
 
     kv = wrist_audio_collector()
-    kv.run()
+    kv.run(opt.bMFCC)
 
 
 

@@ -37,10 +37,12 @@ from pykdl_utils.kdl_kinematics import create_kdl_kin
 # util
 import numpy as np
 import PyKDL
+import sandbox_dpark_darpa_m3.lib.hrl_dh_lib as dh
 
 # ROS message
 from std_msgs.msg import Bool, Empty, Int32, Int64, Float32, Float64, String
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import PoseStamped, PointStamped, PoseArray
 
 class robot_kinematics(threading.Thread):
     def __init__(self, verbose=False):
@@ -51,6 +53,7 @@ class robot_kinematics(threading.Thread):
         self.verbose = verbose
 
         self.lock = threading.Lock()
+        self.goal_lock = threading.Lock()
 
         self.initVars()
         self.initParams()
@@ -81,16 +84,20 @@ class robot_kinematics(threading.Thread):
             self.ee_quat   = None
             self.target_pos    = None
             self.target_quat   = None
+            self.des_ee_pos    = None
+            self.des_ee_quat   = None
 
-            # Declare containers
-            self.time_data = []
-            self.kinematics_ee_pos  = None
-            self.kinematics_ee_quat = None
-            self.kinematics_main_jnt_pos = None
-            self.kinematics_main_jnt_vel = None
-            self.kinematics_main_jnt_eff = None
-            self.kinematics_target_pos = None
-            self.kinematics_target_quat = None
+            ## # Declare containers
+            ## self.time_data = []
+            ## self.kinematics_ee_pos  = None
+            ## self.kinematics_ee_quat = None
+            ## self.kinematics_main_jnt_pos = None
+            ## self.kinematics_main_jnt_vel = None
+            ## self.kinematics_main_jnt_eff = None
+            ## self.kinematics_target_pos = None
+            ## self.kinematics_target_quat = None
+            ## self.kinematics_des_ee_pos  = None
+            ## self.kinematics_des_ee_quat = None
             
     def initParams(self):
         '''
@@ -114,9 +121,6 @@ class robot_kinematics(threading.Thread):
         self.main_arm_kdl = create_kdl_kin(self.torso_frame, self.main_ee_frame)
         self.sub_arm_kdl  = create_kdl_kin(self.torso_frame, self.sub_ee_frame)
 
-
-
-        
         p = PyKDL.Vector(self.main_ee_pos_offset['x'], \
                          self.main_ee_pos_offset['y'], \
                          self.main_ee_pos_offset['z'])
@@ -139,6 +143,10 @@ class robot_kinematics(threading.Thread):
         Initialize pusblishers and subscribers
         '''
         rospy.Subscriber('joint_states', JointState, self.joint_states_callback)
+        # Task & motion command
+        rospy.Subscriber("haptic_mpc/traj_pose", PoseStamped, self.goalPoseCallback)
+        ## rospy.Subscriber("haptic_mpc/goal_pose", PoseStamped, self.goalPoseCallback)
+        ## rospy.Subscriber("haptic_mpc/goal_pose_array", PoseArray, self.poseTrajectoryCallback)
 
 
     #callback function: when a joint_states message arrives, save the values
@@ -205,41 +213,79 @@ class robot_kinematics(threading.Thread):
         self.ee_pos, self.ee_quat         = self.getEEFrame(main_positions)
         self.target_pos, self.target_quat = self.getTargetFrame(sub_positions)
 
-        if self.enable_log:
-            self.time_data.append(self.time)
+        ## if self.enable_log:
+        ##     self.time_data.append(self.time)
 
-            if self.kinematics_ee_pos is None:
-                self.kinematics_ee_pos  = self.ee_pos
-                self.kinematics_ee_quat = self.ee_quat
-                self.kinematics_main_jnt_pos = self.main_jnt_positions 
-                self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
-                self.kinematics_main_jnt_eff = self.main_jnt_efforts
+        ##     if self.kinematics_ee_pos is None:
+        ##         self.kinematics_ee_pos  = self.ee_pos
+        ##         self.kinematics_ee_quat = self.ee_quat
+        ##         self.kinematics_main_jnt_pos = self.main_jnt_positions 
+        ##         self.kinematics_main_jnt_vel = np.zeros((len(self.main_jnt_positions),1))
+        ##         self.kinematics_main_jnt_eff = self.main_jnt_efforts
 
-                self.kinematics_target_pos  = self.target_pos
-                self.kinematics_target_quat = self.target_quat
+        ##         self.kinematics_target_pos  = self.target_pos
+        ##         self.kinematics_target_quat = self.target_quat
 
-            else:
-                self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
-                self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
-                self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, \
-                                                          self.kinematics_main_jnt_pos - \
-                                                          self.kinematics_main_jnt_pos[:,-1:] ]) #delta
-                self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
-                self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
+        ##     else:
+        ##         self.kinematics_ee_pos  = np.hstack([self.kinematics_ee_pos, self.ee_pos])
+        ##         self.kinematics_ee_quat = np.hstack([self.kinematics_ee_quat, self.ee_quat])
+        ##         self.kinematics_main_jnt_vel = np.hstack([self.kinematics_main_jnt_vel, \
+        ##                                                   self.kinematics_main_jnt_pos - \
+        ##                                                   self.kinematics_main_jnt_pos[:,-1:] ]) #delta
+        ##         self.kinematics_main_jnt_pos = np.hstack([self.kinematics_main_jnt_pos, self.main_jnt_positions])
+        ##         self.kinematics_main_jnt_eff = np.hstack([self.kinematics_main_jnt_eff, self.main_jnt_efforts])
 
-                self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
-                self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
+        ##         self.kinematics_target_pos = np.hstack([self.kinematics_target_pos, self.target_pos])
+        ##         self.kinematics_target_quat= np.hstack([self.kinematics_target_quat, self.target_quat])
                 
         self.counter += 1
         self.lock.release()
 
-                                                                                                            
+
+    # Update goal pose.
+    # @param msg A geometry_msgs.msg.PoseStamped object.
+    def goalPoseCallback(self, msg):
+        # If no frame specified, clear current pose goal
+        if not (msg.header.frame_id or 'torso_lift_link' in msg.header.frame_id):
+            with self.goal_lock:
+                self.des_ee_pos, self.des_ee_quat = self.getEEFrame(main_positions)
+            rospy.logwarn("[%s] Received Pose Goal with Empty FrameID -- Clearing Pose Goal", rospy.get_name())
+            rospy.logwarn("frame id is not torso lift link")
+            return
+
+        poseFrame = dh.pose2KDLframe(msg.pose)*self.main_offset
+        with self.goal_lock:
+            self.des_ee_pos = np.array([[poseFrame.p.x(), poseFrame.p.y(), poseFrame.p.z()]]).T
+            self.des_ee_quat = np.array([[ poseFrame.M.GetQuaternion()[0], poseFrame.M.GetQuaternion()[1],
+                                           poseFrame.M.GetQuaternion()[2], poseFrame.M.GetQuaternion()[3] ]]).T
+
+
+    # Store a trajectory of poses in the deque. Converts it to the 'torso_frame' if required.
+    # @param msg A geometry_msgs.msg.PoseArray object
+    def poseTrajectoryCallback(self, msg):
+        # if we have an empty array, clear the deque and do nothing else.
+        if len(msg.poses) == 0 or 'torso_lift_link' not in msg.header.frame_id:
+            with self.goal_lock:
+                self.des_ee_pos, self.des_ee_quat = self.getEEFrame(main_positions)
+            rospy.logwarn(
+                "[%s] Received empty pose array or empty frame", rospy.get_name())
+            return
+
+        poseFrame = dh.pose2KDLframe(msg.poses[-1])*self.main_offset
+        with self.goal_lock:
+            self.des_ee_pos = np.array([[poseFrame.p.x(), poseFrame.p.y(), poseFrame.p.z()]]).T
+            self.des_ee_quat = np.array([[ poseFrame.M.GetQuaternion()[0], poseFrame.M.GetQuaternion()[1],
+                                           poseFrame.M.GetQuaternion()[2], poseFrame.M.GetQuaternion()[3] ]]).T
+
+
+
     def getEEFrame(self, joint_angles):
 
         mPose = self.main_arm_kdl.forward(joint_angles)
 
         p = PyKDL.Vector(mPose[0,3],mPose[1,3],mPose[2,3])
-        M = PyKDL.Rotation(mPose[0,0],mPose[0,1],mPose[0,2], mPose[1,0],mPose[1,1],mPose[1,2], \
+        M = PyKDL.Rotation(mPose[0,0],mPose[0,1],mPose[0,2], \
+                           mPose[1,0],mPose[1,1],mPose[1,2], \
                            mPose[2,0],mPose[2,1],mPose[2,2] )
         poseFrame = PyKDL.Frame(M,p)*self.main_offset
 
@@ -255,7 +301,8 @@ class robot_kinematics(threading.Thread):
         mPose = self.sub_arm_kdl.forward(joint_angles)
 
         p = PyKDL.Vector(mPose[0,3],mPose[1,3],mPose[2,3])
-        M = PyKDL.Rotation(mPose[0,0],mPose[0,1],mPose[0,2], mPose[1,0],mPose[1,1],mPose[1,2], \
+        M = PyKDL.Rotation(mPose[0,0],mPose[0,1],mPose[0,2], \
+                           mPose[1,0],mPose[1,1],mPose[1,2], \
                            mPose[2,0],mPose[2,1],mPose[2,2] )
         poseFrame = PyKDL.Frame(M,p)*self.sub_offset
 
@@ -317,14 +364,16 @@ class robot_kinematics(threading.Thread):
         self.isReset = True
 
         # Reset containers
-        self.time_data = []
-        self.kinematics_ee_pos  = None
-        self.kinematics_ee_quat = None
-        self.kinematics_main_jnt_pos = None
-        self.kinematics_main_jnt_vel = None
-        self.kinematics_main_jnt_eff = None
-        self.kinematics_target_pos = None
-        self.kinematics_target_quat = None
+        ## self.time_data = []
+        ## self.kinematics_ee_pos  = None
+        ## self.kinematics_ee_quat = None
+        ## self.kinematics_main_jnt_pos = None
+        ## self.kinematics_main_jnt_vel = None
+        ## self.kinematics_main_jnt_eff = None
+        ## self.kinematics_target_pos = None
+        ## self.kinematics_target_quat = None
+        ## self.kinematics_des_ee_pos  = None
+        ## self.kinematics_des_ee_quat = None
 
         self.counter = 0
         self.counter_prev = 0

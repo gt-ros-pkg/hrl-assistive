@@ -5,7 +5,7 @@ import wave
 
 import roslib
 
-CHUNK = 4096
+CHUNK = 1024 #4096
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 48000

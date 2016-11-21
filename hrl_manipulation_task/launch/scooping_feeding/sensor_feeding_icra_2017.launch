@@ -18,7 +18,10 @@
               args="/SR300/rgb/image_raw /SR300/rgb/image_raw_relay" output="screen" />
 
         <!-- F/T sensor -->
-        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="false" />
+        <node name="netft_node" pkg="netft_rdt_driver" type="netft_node" args="10.68.0.60 --rate 10" respawn="true" />
+
+        <!-- Skin -->
+        <!--node name="zero_skin" pkg="hrl_manipulation_task" type="zero_skin.py" args="-a $(arg arm)" output="screen"/-->
         
         <!-- Head conversion -->  
         <!--node name="findMouth" pkg="hrl_manipulation_task"

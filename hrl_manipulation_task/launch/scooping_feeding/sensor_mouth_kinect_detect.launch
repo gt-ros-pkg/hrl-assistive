@@ -1,0 +1,10 @@
+<launch>
+        <!-- makes unfiltered results -->
+	<node name="findMouthLM" pkg="hrl_manipulation_task"
+              type="mouth_pose_detector.py" args=" --rgb_mode rgb8 --display_2d" output="screen"/>
+
+
+
+        <!-- for filtering -->
+        <node name="findMouthFilterLM" output="screen" pkg="hrl_manipulation_task" type="mouth_pose_filter.py"/>
+</launch>

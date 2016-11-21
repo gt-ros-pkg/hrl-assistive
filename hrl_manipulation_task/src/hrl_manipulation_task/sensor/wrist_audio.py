@@ -87,10 +87,10 @@ class wrist_audio():
         
         time_stamp = msg.header.stamp
         self.time  = time_stamp.to_sec()
-        self.audio_rms  = msg.audio_rms
+        self.audio_rms     = msg.audio_rms
         self.audio_azimuth = msg.audio_azimuth
-        self.audio_mfcc = msg.audio_mfcc
-        self.audio_data = msg.audio_data
+        self.audio_mfcc    = msg.audio_mfcc
+        self.audio_data    = msg.audio_data
         
     
     def reset(self, init_time):
@@ -99,7 +99,7 @@ class wrist_audio():
 
         
     def isReady(self):
-        if self.audio_rms is not None:
+        if self.audio_rms is not None or self.audio_data is not None:
           return True
         else:
           return False
