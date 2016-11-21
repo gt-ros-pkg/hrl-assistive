@@ -615,7 +615,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ml    = hmm_model[j-1]
 
                 
-                logps = ml.loglikelihoods( abnormal_data[j:j+1,i]*scale )
+                logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
 
                 s = start_idx - 5 if start_idx - 5 >=0 else 0
                 e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
