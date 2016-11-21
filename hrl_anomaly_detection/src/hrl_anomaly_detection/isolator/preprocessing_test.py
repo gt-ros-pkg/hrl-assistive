@@ -870,9 +870,6 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
         
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
@@ -898,7 +895,8 @@ if __name__ == '__main__':
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
-        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=-1, n_iter_search=100)
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
+                                n_iter_search=1)
                          
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods'] = ['hmmgp'] 

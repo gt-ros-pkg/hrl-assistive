@@ -56,10 +56,10 @@ class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength,\
                  weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
                  ths_mult=-1.0, nugget=100.0, theta0=1.0):
-        self.method = method
-        self.nState = nState
+        self.method  = method
+        self.nState  = nState
         self.nLength = nLength
-        self.scaler = None
+        self.scaler  = None
 
         self.weight     = weight
         self.w_negative = w_negative
@@ -163,6 +163,7 @@ class anomaly_detector(learning_base):
         ## fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)
         
         return fscore
+
 
 def getSamples(modeling_pkl):
     print "start to load hmm data, ", modeling_pkl
