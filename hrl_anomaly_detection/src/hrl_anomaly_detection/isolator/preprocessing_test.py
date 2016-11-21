@@ -615,26 +615,26 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ml    = hmm_model[j-1]
 
                 
-                ## logps = ml.loglikelihoods( abnormal_data[j:j+1,i]*scale )
+                logps = ml.loglikelihoods( abnormal_data[j:j+1,i]*scale )
 
-                ## s = start_idx - 5 if start_idx - 5 >=0 else 0
-                ## e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
-                ##   else len(abnormal_data[j,i])-window_size[0]-window_size[1]
+                s = start_idx - 5 if start_idx - 5 >=0 else 0
+                e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
+                  else len(abnormal_data[j,i])-window_size[0]-window_size[1]
 
-                ## ## single_window = []
-                ## for k in xrange( s, e ):
-                ##     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
-                ##     single_window = logps[k:k+window_size[0]+window_size[1]] 
-                ##     features     += [ np.amax(single_window)-np.amin(single_window) ]
+                ## single_window = []
+                for k in xrange( s, e ):
+                    ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
+                    single_window = logps[k:k+window_size[0]+window_size[1]] 
+                    features     += [ np.amax(single_window)-np.amin(single_window) ]
                     
-                single_window = []
-                for k in xrange(start_idx, end_idx+1):
-                    if k<startIdx:
-                        logp = 0
-                    else:
-                        logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
-                    single_window.append( logp )
-                features += [ np.amax(single_window)-np.amin(single_window) ]
+                ## single_window = []
+                ## for k in xrange(start_idx, end_idx+1):
+                ##     if k<startIdx:
+                ##         logp = 0
+                ##     else:
+                ##         logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
+                ##     single_window.append( logp )
+                ## features += [ np.amax(single_window)-np.amin(single_window) ]
 
                     
                     ## if k<startIdx:
