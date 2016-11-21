@@ -144,7 +144,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
-    weight      = -10 #-16.0 #-5.5 
+    weight      = -14 #-16.0 #-5.5 
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -899,7 +899,7 @@ if __name__ == '__main__':
                                 n_iter_search=1)
                          
     else:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['hmmgp'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods']     = ['hmmgp'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
