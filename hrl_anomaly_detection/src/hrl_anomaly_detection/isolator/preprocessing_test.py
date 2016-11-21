@@ -625,6 +625,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 for k in xrange( s, e ):
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
                     single_window = logps[k:k+window_size[0]+window_size[1]] 
+                    print np.shape(single_window), np.shape(logps)
                     features     += [ np.amax(single_window)-np.amin(single_window) ]
                     
                 ## single_window = []
