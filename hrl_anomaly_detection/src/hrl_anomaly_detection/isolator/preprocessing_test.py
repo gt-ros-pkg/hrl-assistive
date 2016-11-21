@@ -248,7 +248,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         pi       = dd['pi']
         nEmissionDim = 1
         cov_mult = [cov/2.0]*(nEmissionDim**2)
-        scale    = HMM_dict['scale']/2.0
+        scale    = HMM_dict['scale'] #/2.0
 
         ml_dict = {}
         ## ref_data = normal_isol_train_data[0:1]
