@@ -144,7 +144,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
-    weight      = -16.0 #-5.5 
+    weight      = -10 #-16.0 #-5.5 
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
