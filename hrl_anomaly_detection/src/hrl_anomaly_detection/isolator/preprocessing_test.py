@@ -304,6 +304,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         
         sys.exit()
     else:
+        print "-----------------------------------------------"
         #0 17 9 7 8
         add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
         y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
@@ -400,8 +401,10 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         # 0 : 1 2 3 45678910 111213 14 15 16 17  # = total 18
         # (i-1)*2, (i-1)*2+1
 
-        ## print np.shape(train_feature_list)
-        ## print np.shape(train_feature_list[0])
+        # sample x feature x windows
+        print np.shape(train_feature_list)
+        print np.shape(train_feature_list[0])
+        print np.shape(train_feature_list[0][0])
 
         out_list = []
         if add_list is not None:
@@ -599,7 +602,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
     ref_num = 0
          
     anomaly_list = []
-    feature_list = []
+    feature_list = [] # sample x feature x windows
     for i in xrange(len(abnormal_data[0])): # per sample
         # Anomaly point
         anomaly_idx = anomaly_idx_list[i]
@@ -629,11 +632,13 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                   else len(abnormal_data[j,i])-window_size[0]-window_size[1]
 
                 ## single_window = []
+                feature_windows = []
                 for k in xrange( s, e ):
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
                     single_window = logps[k:k+window_size[0]+window_size[1]] 
                     print np.shape(single_window), np.shape(logps)
-                    features     += [ np.amax(single_window)-np.amin(single_window) ]
+                    feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                features.append( feature_windows )
                     
                 ## single_window = []
                 ## for k in xrange(start_idx, end_idx+1):
@@ -663,6 +668,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 ## features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
                 ## features += [ np.mean(single_window) ]
                 features += [ np.amax(single_window)-np.amin(single_window) ]
+                
         feature_list.append(features)
         tid = int(abnormal_file_list[i].split('_')[0])
         anomaly_list.append(tid)
