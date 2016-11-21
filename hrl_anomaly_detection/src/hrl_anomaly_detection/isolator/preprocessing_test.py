@@ -324,12 +324,67 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         plt.show()
 
 
+def evaluation_feature(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                       dim_viz=False, no_plot=False):
 
-def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None, dim_viz=False):
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    ## ref_num      = 2
+    window_size = [10,20]
+    startIdx    = 4
+    weight      = -14 #-16.0 #-5.5 
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+    handFeatureParams = d['param_dict']
+    normalTrainData   = d['successData'] * HMM_dict['scale']
+
+    #-----------------------------------------------------------------------------------------
+    add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
+                                               dim_viz=dim_viz, add_list=add_list,\
+                                               feature_importance=True)
+
+    print np.shape(y_test), np.shape(y_pred)
+    print "Score: ", np.mean(scores), np.std(scores)
+    
+
+    return
+
+
+
+def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None, dim_viz=False,
+                      feature_importance=False):
 
     y_test = []
     y_pred = []
-    scores = []   
+    scores = []
+    imp_list = []
+    
     # Training HMM, and getting classifier training and testing data
     for idx in xrange(len(kFold_list)):
 
@@ -392,6 +447,9 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         y_pred += list(pred_anomaly_list)
         scores.append(score)
         print idx, "'s score : ", score
+
+        if feature_importance:
+            imp_list.append( clf.feature_importances_ )
         
         #-----------------------------------------------------------------------------------------
         # Visualization
@@ -405,7 +463,12 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         ##              detection_idx_list, abnormalFileList, timeList,\
         ##              HMM_dict, \
         ##              startIdx=4, ref_num=2, window_size=window_size)
-    
+
+    if feature_importance:
+        print np.shape(imp_list)
+        print "Mean: ", np.mean(imp_list, axis=0)
+        print "Stds: ", np.std(imp_list, axis=0)
+        
     return y_test, y_pred, scores
 
 
@@ -528,7 +591,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
             
     ref_num = 0
          
-
     anomaly_list = []
     feature_list = []
     for i in xrange(len(abnormal_data[0])): # per sample
@@ -574,7 +636,8 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 else: start_idx = anomaly_idx-window_size[0]
                 single_window = single_data[start_idx:anomaly_idx+window_size[1]+1]
 
-            features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
+            ## features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
+            features += [ np.mean(single_window) ]
         feature_list.append(features)
         tid = int(abnormal_file_list[i].split('_')[0])
         anomaly_list.append(tid)
@@ -801,6 +864,8 @@ if __name__ == '__main__':
                  default=False, help='Plot low-dimensional embedding.')
     p.add_option('--feature_selection', '--fs', action='store_true', dest='feature_selection',
                  default=False, help='Search the best features.')
+    p.add_option('--feature_contribution', '--fc', action='store_true', dest='feature_contribution',
+                 default=False, help='Search the best features.')
     
     opt, args = p.parse_args()
     
@@ -897,6 +962,12 @@ if __name__ == '__main__':
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
                                 n_iter_search=1)
+    elif opt.feature_contribution:
+        param_dict['ROC']['methods']     = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        evaluation_feature(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                           dim_viz=opt.low_dim_viz, no_plot=opt.bNoPlot)
                          
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods']     = ['hmmgp'] 
