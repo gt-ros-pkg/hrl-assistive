@@ -616,6 +616,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
 
                 
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
+                logps = np.squeeze(logps)
 
                 s = start_idx - 5 if start_idx - 5 >=0 else 0
                 e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
