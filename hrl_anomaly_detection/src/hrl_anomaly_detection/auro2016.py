@@ -807,7 +807,7 @@ if __name__ == '__main__':
         param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         ## param_dict['ROC']['nPoints'] = nPoints = 100
-        param_dict['ROC']['nPoints'] = nPoints = 30
+        param_dict['ROC']['nPoints'] = nPoints = 24
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
