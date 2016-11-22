@@ -818,7 +818,7 @@ if __name__ == '__main__':
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
-        param_dict['ROC']['osvm_param_range']    = np.logspace(-5., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
+        param_dict['ROC']['osvm_param_range']    = np.logspace(-4., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
         param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-4., -0.5, nPoints)
         
         param_dict['SVM']['hmmosvm_nu'] = 0.001
@@ -835,7 +835,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==7): continue
+                ## if not(i==7): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
