@@ -802,12 +802,13 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
-        #param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        param_dict['ROC']['update_list'] = ['hmmosvm', 'osvm']
-        ## param_dict['ROC']['update_list'] = ['hmmosvm']
+        ## param_dict['ROC']['methods'] = ['hmmosvm']
+        ## param_dict['ROC']['update_list'] = ['osvm']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 30
+        ## param_dict['ROC']['nPoints'] = nPoints = 100
+        param_dict['ROC']['nPoints'] = nPoints = 100
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -835,7 +836,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                ## if not(i==7): continue
+                if not(i==5): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\

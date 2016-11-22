@@ -561,6 +561,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fp_l = []
         delay_mean_l = []
         delay_std_l  = []
+        nPoints = len(tp_ll)
         for i in xrange(nPoints):
             tp_l.append( float(np.sum(tp_ll[i])) )
             tn_l.append( float(np.sum(tn_ll[i])) )
