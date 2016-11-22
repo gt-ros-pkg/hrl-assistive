@@ -836,7 +836,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                ## if not(i==1): continue
+                if not(i==1): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
