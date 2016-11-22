@@ -821,7 +821,7 @@ if __name__ == '__main__':
         param_dict['ROC']['osvm_param_range']    = np.logspace(-4., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
         param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.6, -4.8, nPoints)
         
-        param_dict['SVM']['hmmosvm_nu'] = 0.005
+        param_dict['SVM']['hmmosvm_nu'] = 0.002
         param_dict['SVM']['osvm_nu'] = 0.001
 
         ## step_mag_list = np.logspace(-3,np.log10(0.4),10)
