@@ -1463,10 +1463,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
 
-        #temp
-        if np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)) <1.0:
-            print np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)), j, weights[j]
-            sys.exit()
+        ## #temp
+        ## if np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)) <1.0:
+        ##     print np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)), j, weights[j]
+        ##     sys.exit()
 
         data[method]['tp_l'][j] += tp_l
         data[method]['fp_l'][j] += fp_l
