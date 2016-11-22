@@ -804,19 +804,21 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         #param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        param_dict['ROC']['update_list'] = ['hmmosvm']
+        param_dict['ROC']['update_list'] = ['osvm', 'hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 5 #100
+        param_dict['ROC']['nPoints'] = nPoints = 10 #100
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.0, 2.0, nPoints)+2.0
-        param_dict['ROC']['osvm_param_range']   = np.logspace(-8., -6, nPoints) #np.logspace(-3.5, 0.0, nPoints)
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.4, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(0.4, 1.5, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4.5, -4.0, nPoints)
+        param_dict['ROC']['osvm_param_range']    = np.logspace(-7., -6, nPoints) #np.logspace(-3.5, 0.0, nPoints)
+        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.5, -4.5, nPoints)
+        ## param_dict['ROC']['osvm_param_range']    = np.logspace(-8., -6, nPoints) #np.logspace(-3.5, 0.0, nPoints)
+        ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-4.5, -4.0, nPoints)
 
         ## step_mag_list = np.logspace(-2,np.log10(0.5),10)
         step_mag_list = np.linspace(0.0001,0.5,10)
