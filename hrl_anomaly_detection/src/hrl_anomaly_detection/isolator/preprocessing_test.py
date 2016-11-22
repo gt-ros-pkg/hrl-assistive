@@ -434,7 +434,25 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         train_feature_list = feature_remove(train_feature_list, out_list)
         test_feature_list = feature_remove(test_feature_list, out_list)
         print np.shape(train_feature_list), np.shape(test_feature_list)
-                   
+
+        # flattening data
+        def flattenSample(x):
+            '''Convert sample x feature x windows to sample x feature
+            '''
+
+            x_new = None # sample x feature
+            for i in xrange(len(x)):
+                # feature x windows
+                x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])
+            
+            return x_new
+
+        train_feature_list = flattenSample(train_feature_list)
+        train_anomaly_list = np.flatten(train_anomaly_list)
+        test_feature_list  = flattenSample(test_feature_list)
+        test_anomaly_list  = np.flatten(test_anomaly_list)
+        print np.shape(train_feature_list), np.shape(test_feature_list)
+
         # scaling
         scaler = preprocessing.StandardScaler()
         train_feature_list = scaler.fit_transform(train_feature_list)
@@ -671,7 +689,8 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 
         feature_list.append(features)
         tid = int(abnormal_file_list[i].split('_')[0])
-        anomaly_list.append(tid)
+        ## anomaly_list.append(tid)
+        anomaly_list.append([tid]*len(features[0]))
 
     return feature_list, anomaly_list
 
