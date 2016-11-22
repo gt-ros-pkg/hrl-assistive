@@ -805,10 +805,10 @@ if __name__ == '__main__':
         ## param_dict['ROC']['methods'] = ['hmmosvm']
         param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['update_list'] = ['osvm']
-        ## param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        ## param_dict['ROC']['nPoints'] = nPoints = 100
-        param_dict['ROC']['nPoints'] = nPoints = 30
+        param_dict['ROC']['nPoints'] = nPoints = 100
+        ## param_dict['ROC']['nPoints'] = nPoints = 30
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
