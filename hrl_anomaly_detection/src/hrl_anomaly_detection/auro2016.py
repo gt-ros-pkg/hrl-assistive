@@ -803,12 +803,12 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        param_dict['ROC']['methods'] = ['hmmgp']
+        ## param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['update_list'] = ['osvm']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 100
-        ## param_dict['ROC']['nPoints'] = nPoints = 30
+        ## param_dict['ROC']['nPoints'] = nPoints = 100
+        param_dict['ROC']['nPoints'] = nPoints = 30
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -820,10 +820,10 @@ if __name__ == '__main__':
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
         param_dict['ROC']['osvm_param_range']    = np.logspace(-4., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
-        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-4., -0.5, nPoints)
+        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-6., -3.0, nPoints)
         
-        param_dict['SVM']['hmmosvm_nu'] = 0.01
-        param_dict['SVM']['osvm_nu'] = 0.01
+        param_dict['SVM']['hmmosvm_nu'] = 0.005
+        param_dict['SVM']['osvm_nu'] = 0.001
 
         ## step_mag_list = np.logspace(-2,np.log10(0.5),10)
         step_mag_list = np.linspace(0.0001,0.5,10)
@@ -836,7 +836,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==4): continue
+                ## if not(i==4): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
