@@ -804,7 +804,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         #param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        param_dict['ROC']['update_list'] = ['osvm']
+        param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 5 #100
 
@@ -816,7 +816,7 @@ if __name__ == '__main__':
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.4, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(0.4, 1.5, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4.5, 0.0, nPoints)
+        param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-2.5, 0.2, nPoints)
 
         ## step_mag_list = np.logspace(-2,np.log10(0.5),10)
         step_mag_list = np.linspace(0.0001,0.5,10)
