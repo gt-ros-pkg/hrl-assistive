@@ -825,7 +825,7 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmosvm_nu'] = 0.005
         param_dict['SVM']['osvm_nu'] = 0.001
 
-        ## step_mag_list = np.logspace(-2,np.log10(0.5),10)
+        ## step_mag_list = np.logspace(-3,np.log10(0.4),10)
         step_mag_list = np.linspace(0.0001,0.5,10)
 
         import hrl_anomaly_detection.evaluation as ev 
@@ -836,7 +836,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==1): continue
+                ## if not(i==1): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
