@@ -807,7 +807,7 @@ if __name__ == '__main__':
         param_dict['ROC']['update_list'] = ['hmmosvm', 'osvm']
         ## param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 4 #100
+        param_dict['ROC']['nPoints'] = nPoints = 30
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -818,8 +818,8 @@ if __name__ == '__main__':
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
-        param_dict['ROC']['osvm_param_range']    = np.logspace(-3., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
-        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-2., -1.0, nPoints)
+        param_dict['ROC']['osvm_param_range']    = np.logspace(-5., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
+        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-4., -0.5, nPoints)
         
         param_dict['SVM']['hmmosvm_nu'] = 0.001
         param_dict['SVM']['osvm_nu'] = 0.001
