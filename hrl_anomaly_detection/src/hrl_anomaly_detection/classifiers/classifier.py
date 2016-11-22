@@ -1168,7 +1168,10 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
         # TODO: set automatically!
-        nLength = 200
+        if processed_data_path.find('feeding')>=0:
+            nLength = 140
+        else:            
+            nLength = 200
     else:
 
         if modeling_pkl_prefix is not None:

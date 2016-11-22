@@ -804,7 +804,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         #param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        param_dict['ROC']['update_list'] = ['hmmosvm']
+        param_dict['ROC']['update_list'] = ['hmmosvm', 'osvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 10 #100
 
@@ -831,7 +831,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==2): continue
+                if not(i==5): continue
                 ## if not(step_mag > 0.13 and step_mag < 0.14): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
