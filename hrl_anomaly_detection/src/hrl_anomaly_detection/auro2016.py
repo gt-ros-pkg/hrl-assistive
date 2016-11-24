@@ -807,8 +807,8 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress', 'hmmosvm']
-        param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['ROC']['methods'] = ['fixed']
+        ## param_dict['ROC']['methods'] = ['hmmgp']
+        ## param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
