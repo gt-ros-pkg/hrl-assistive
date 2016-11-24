@@ -1243,6 +1243,39 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     return l_idx
     
 
+def getAnomalyInfo(processed_data_path, task_name, rf_center, local_range):
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+            
+    if os.path.isfile(crossVal_pkl) is False:
+        print "No data!!!!!!!!!!!!!"
+        sys.exit()
+        
+    # get success / failure data
+    print "CV data exists and no renew"
+    d = ut.load_pickle(crossVal_pkl)
+    kFold_list = d['kFoldList'] 
+    successData = d['successData']
+    failureData = d['failureData']        
+    
+    print np.shape(successData)
+    print np.shape(failureData)
+    sys.exit()
+   
+    # get difference
+    avg_success = np.mean(successData, axis=1)
+    print np.shape(avg_success)
+
+    
+    ## for i in xrange(len(success))
+    
+    
+
+    # inverse scale the difference
+
+    # print out
+    
+
 def errorPooling(norX, abnorX, param_dict):
     '''
     dim x samples

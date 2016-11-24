@@ -689,6 +689,10 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
+
+    p.add_option('--anomaly_info', '--ai', action='store_true', dest='anomaly_info',
+                 default=False, help='Get anomaly info.')
+    
     opt, args = p.parse_args()
     
 
@@ -916,6 +920,9 @@ if __name__ == '__main__':
                             save_pdf=opt.bSavePdf, \
                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                             data_gen=opt.bDataGen)
+
+    elif opt.anomaly_info:
+        dm.getAnomalyInfo()
 
     else:
         plotModalityVSAnomaly(opt.bSavePdf)
