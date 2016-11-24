@@ -192,10 +192,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(normalTestData)):
             temp = copy.copy(normalTestData)
 
-            for j in xrange(len(temp[0])):
+            for j in xrange(len(temp[i])):
                 start_idx = normalTestNoiseIdx[j]
                 noise_max = normalTestNoiseMax[j]
-                temp[i,j,start_idx:] += step_mag*noise_max
+                temp[i,j,start_idx:] += step_mag*noise_max[i]
                 step_idx_l.append(start_idx)
                         
             if abnormalTestData is None:
