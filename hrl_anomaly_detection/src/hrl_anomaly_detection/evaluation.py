@@ -136,7 +136,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                 if anomaly_dir[j] == 0:
                     noise_dir = np.random.choice([-1.0, 1.0])
                 else:
-                    noise_dir = anomaly_dir[dim_idx]
+                    noise_dir = anomaly_dir[i]
                 
                 if noise_dir>0:
                     mag = data_dict['noise_pos_max'][j]/\
