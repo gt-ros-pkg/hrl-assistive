@@ -1360,7 +1360,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             try:
                 X = scaler.transform(ll_classifier_test_X[j])
             except:
-                print "Feature: ", j
+                print "Feature: ", j, np.shape(ll_classifier_test_X)
                 for k in xrange(len(ll_classifier_test_X[j])):
                     if np.nan in ll_classifier_test_X[j][k]:
                         print k, ll_classifier_test_X[j][k]
