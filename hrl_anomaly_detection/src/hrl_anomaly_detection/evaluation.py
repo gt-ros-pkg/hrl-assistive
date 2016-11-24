@@ -118,16 +118,40 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # random noise idx
     noise_idx_pkl = os.path.join(processed_data_path, 'noise_idx.pkl')
     noise_idx_l   = []
+    noise_dim_l   = []
+    noise_max_l   = []
     if os.path.isfile(noise_idx_pkl) and HMM_dict['renew'] is False:
         ddd = ut.load_pickle(noise_idx_pkl)
         noise_idx_l = ddd['noise_idx_l']
+        noise_dim_l = ddd['noise_dim_l']
+        noise_max_l = ddd['noise_max_l']
     else:
         nLength = len(successData[0][0]) - startIdx    
         for i in xrange(len(successData[0])):
-            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]        
+            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+            dim_idx   = np.random.randint(0, len(successData))
             noise_idx_l.append(start_idx)
+            noise_dim_l.append(dim_idx)
+
+            anomaly_dir = data_dict['anomaly_dir']
+            if anomaly_dir[dim_idx] == 0:
+                noise_dir = np.random.choice([-1.0, 1.0])
+            else:
+                noise_dir = anomaly_dir[dim_idx]
+                
+            if noise_dir>0:
+                mag = data_dict['noise_pos_max'][dim_idx]/\
+                  (param_dict2['feature_max'][dim_idx]-param_dict2['feature_min'][dim_idx])
+            else:
+                mag = data_dict['noise_neg_max'][dim_idx]/\
+                  (param_dict2['feature_max'][dim_idx]-param_dict2['feature_min'][dim_idx])
+            noise_max_l.append( mag )
+            
         ddd = {}
         ddd['noise_idx_l'] = noise_idx_l
+        ddd['noise_dim_l'] = noise_dim_l        
+        ddd['noise_max_l'] = noise_max_l
+        
         ut.save_pickle(ddd, noise_idx_pkl)
     
 
@@ -149,13 +173,14 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         # dim x sample x length
         normalTestData     = successData[:, normalTestIdx, :] * HMM_dict['scale']
         normalTestNoiseIdx = np.array(noise_idx_l)[normalTestIdx] 
+        normalTestNoiseDim = np.array(noise_dim_l)[normalTestIdx] 
+        normalTestNoiseMax = np.array(noise_max_l)[normalTestIdx] 
 
         # training hmm
         if verbose: print "start to fit hmm"
         dd = ut.load_pickle(ref_modeling_pkl)
         nEmissionDim = dd['nEmissionDim']
         nLength      = len(normalTestData[0][0]) - startIdx
-
 
         # Classifier test data
         # random step noise
@@ -165,11 +190,13 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             step_idx_l.append(None)
         for i in xrange(len(abnormalTestData[0])):
             start_idx = normalTestNoiseIdx[i]
+            dim_idx   = normalTestNoiseDim[i]
+            noise_max = normalTestNoiseMax[i]
             ## start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             ## dim_idx   = np.random.randint(0, len(abnormalTestData))
 
-            #abnormalTestData[dim_idx,i,start_idx:] += step_mag
-            abnormalTestData[:,i,start_idx:] += step_mag
+            abnormalTestData[dim_idx,i,start_idx:] += step_mag*noise_max
+            ## abnormalTestData[:,i,start_idx:] += step_mag
             step_idx_l.append(start_idx)
 
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=False)

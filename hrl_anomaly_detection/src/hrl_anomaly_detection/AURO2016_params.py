@@ -108,6 +108,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        anomaly_dir   = [1,0,1,1]
+        noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
+        noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
 
         ## handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
         ##                 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
@@ -244,7 +247,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'nNormalFold':2, 'nAbnormalFold':2,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'isolationFeatures': isolationFeatures,\
-                      'handFeatures_noise': True, 'max_time': 7.0}
+                      'handFeatures_noise': True, 'max_time': 7.0,\
+                      'anomaly_dir': anomaly_dir, \
+                      'noise_pos_max': noise_pos_max,\
+                      'noise_neg_max': noise_neg_max }
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\

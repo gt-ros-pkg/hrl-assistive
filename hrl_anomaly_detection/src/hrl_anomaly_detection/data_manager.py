@@ -1243,7 +1243,7 @@ def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     return l_idx
     
 
-def getAnomalyInfo(processed_data_path, task_name, rf_center, local_range):
+def getAnomalyInfo(task_name, processed_data_path, rf_center='kinEEPos', local_range=10.0):
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
             
@@ -1256,24 +1256,60 @@ def getAnomalyInfo(processed_data_path, task_name, rf_center, local_range):
     d = ut.load_pickle(crossVal_pkl)
     kFold_list = d['kFoldList'] 
     successData = d['successData']
-    failureData = d['failureData']        
+    failureData = d['failureData']
+    param_dict  = d['param_dict']
     
     print np.shape(successData)
     print np.shape(failureData)
-    sys.exit()
    
     # get difference
     avg_success = np.mean(successData, axis=1)
     print np.shape(avg_success)
 
-    
-    ## for i in xrange(len(success))
-    
-    
+    feature_anomaly_diff = []
+    for i in xrange(len(failureData)): # per feature
+        diff = []
+        for j in xrange(len(failureData[i])): # per sample
+            diff.append(failureData[i][j]-avg_success[i])
+        feature_anomaly_diff.append(diff)
+        
+    print np.shape(feature_anomaly_diff)
+
+    # get scaling factor
+    print param_dict.keys()
+    scale = np.array(param_dict['feature_max'])-np.array(param_dict['feature_min'])
 
     # inverse scale the difference
+    avg_success_list = []
+    max_success_list = []
+    min_success_list = []
+    max_failure_list = []
+    min_failure_list = []
+    max_diff_list = []
+    min_diff_list = []
+    for i in xrange(len(feature_anomaly_diff)):
+        avg_success_list.append( np.mean(successData[i])*scale[i] + param_dict['feature_min'][i] )
+        
+        max_success_list.append( np.amax(successData[i])*scale[i] + param_dict['feature_min'][i] )
+        min_success_list.append( np.amin(successData[i])*scale[i] + param_dict['feature_min'][i] )
+        max_failure_list.append( np.amax(failureData[i])*scale[i] + param_dict['feature_min'][i] )
+        min_failure_list.append( np.amin(failureData[i])*scale[i] + param_dict['feature_min'][i] )
+        max_diff_list.append( np.amax(feature_anomaly_diff[i])*scale[i] )
+        min_diff_list.append( np.amin(feature_anomaly_diff[i])*scale[i] )
 
     # print out
+    print param_dict['feature_names']
+    print "--------- average --------------"
+    print avg_success_list
+    print "--------- success --------------"
+    print max_success_list
+    print min_success_list
+    print "--------- failure --------------"
+    print max_failure_list
+    print min_failure_list    
+    print "--------- diff -----------------" 
+    print max_diff_list
+    print min_diff_list
     
 
 def errorPooling(norX, abnorX, param_dict):
