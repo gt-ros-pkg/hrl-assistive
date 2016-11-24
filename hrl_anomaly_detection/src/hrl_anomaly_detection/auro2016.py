@@ -806,11 +806,11 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
-        param_dict['ROC']['methods'] = ['fixed'] #, 'hmmgp', 'progress']
+        param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
         ## param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['ROC']['update_list'] = ['fixed']
+        ## param_dict['ROC']['update_list'] = ['fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 4 
+        param_dict['ROC']['nPoints'] = nPoints = 20 
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -827,7 +827,7 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmosvm_nu'] = 0.002
         param_dict['SVM']['osvm_nu'] = 0.001
 
-        step_mag_list = np.logspace(-1,np.log10(2.0),3)
+        step_mag_list = np.logspace(-1,np.log10(2.0),8)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
 
         import hrl_anomaly_detection.evaluation as ev 
