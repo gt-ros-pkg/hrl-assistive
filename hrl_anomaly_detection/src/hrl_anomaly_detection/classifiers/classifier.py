@@ -1357,7 +1357,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if len(ll_classifier_test_X[j])==0: continue
 
         if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
-            X = scaler.transform(ll_classifier_test_X[j])                                
+            try:
+                X = scaler.transform(ll_classifier_test_X[j])
+            except:
+                print "Feature: ", j
+                for k in xrange(len(ll_classifier_test_X[j])):
+                    if np.nan in ll_classifier_test_X[j][k]:
+                        print k, ll_classifier_test_X[j][k]
+                sys.exit()
         else:
             X = ll_classifier_test_X[j]
 
