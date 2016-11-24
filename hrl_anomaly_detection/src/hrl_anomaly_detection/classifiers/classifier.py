@@ -1185,7 +1185,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             exec '%s = v' % k        
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
-    
+
+        
         if 'diag' in method:
             ll_classifier_train_X   = ll_classifier_diag_train_X
             ll_classifier_train_Y   = ll_classifier_diag_train_Y
@@ -1362,8 +1363,11 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             except:
                 print "Feature: ", j, np.shape(ll_classifier_test_X)
                 for k in xrange(len(ll_classifier_test_X[j])):
+                    print ll_classifier_test_X[j][k]
                     if np.nan in ll_classifier_test_X[j][k]:
+                        print "0-0000000000000000000000000000000000000000000000000"
                         print k, ll_classifier_test_X[j][k]
+                        print "0-0000000000000000000000000000000000000000000000000"
                 sys.exit()
         else:
             X = ll_classifier_test_X[j]
@@ -1461,7 +1465,15 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     break        
 
             if Y_test[ii][0] > 0.0:
-                if anomaly: tp_l.append(1)
+                if anomaly:
+                    if delay_estimation:
+                        if delay_l[-1] >= 0:
+                            tp_l.append(1)
+                        else:
+                            fp_l.append(1)
+                            del delay_l[-1]
+                    else:
+                        tp_l.append(1)
                 else:
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
