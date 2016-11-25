@@ -1466,14 +1466,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
             if Y_test[ii][0] > 0.0:
                 if anomaly:
-                    ## if delay_estimation:
-                    ##     if delay_l[-1] >= 0:
-                    ##         tp_l.append(1)
-                    ##     else:
-                    ##         fp_l.append(1)
-                    ##         del delay_l[-1]
-                    ## else:
-                    tp_l.append(1)
+                    if delay_estimation:
+                        if delay_l[-1] >= 0:
+                            tp_l.append(1)
+                        else:
+                            fp_l.append(1)
+                            del delay_l[-1]
+                    else:
+                        tp_l.append(1)
                 else:
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
