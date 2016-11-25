@@ -607,7 +607,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
         print roc_pkl
-        print ROC_data.keys()
+        ## print ROC_data
+        ## print ROC_data.keys()
         
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -657,7 +658,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         print tpr_l
         print fpr_l
 
-        best_idx = (np.abs(fpr_l-0.125)).argmin()
+        best_idx = np.argmin(np.abs(fpr_l-0.125))
+        #best_idx = util.argmin(np.abs(fpr_l-0.125))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 

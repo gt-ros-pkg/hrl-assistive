@@ -2402,6 +2402,21 @@ def argmax(x, last=True):
     else:
         return np.argmax(x)
 
+def argmin(x, last=True):
+    """
+    Return the index of the minimum values.
+    If last option is enabled, only the middle occurrence is returned. 
+    """
+
+    min_val = np.amin(x)
+    cnt = list(x).count(min_val)
+
+    if cnt > 1 and last:
+        indices = [i for i, v in enumerate(x) if v == min_val]
+        return indices[len(indices)/2]
+    else:
+        return np.argmin(x)
+
 def fscore(tp, fn, fp, beta=1.0):
     """
     Return f_beta score.
