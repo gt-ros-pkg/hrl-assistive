@@ -119,15 +119,19 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     noise_idx_pkl = os.path.join(processed_data_path, 'noise_idx.pkl')
     noise_idx_l   = []
     noise_max_l   = []
+    noise_dim_l   = []
     if os.path.isfile(noise_idx_pkl) and HMM_dict['renew'] is False:
         ddd = ut.load_pickle(noise_idx_pkl)
         noise_idx_l = ddd['noise_idx_l']
         noise_max_l = ddd['noise_max_l']
+        noise_dim_l = ddd['noise_dim_l']
     else:
         nLength = len(successData[0][0]) - startIdx    
         for i in xrange(len(successData[0])):
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             noise_idx_l.append(start_idx)
+            noise_dim = np.random.randint(0, len(data_dict['anomaly_dir']), 1)[0]
+            noise_dim_l.append(noise_dim)
 
             anomaly_dir = data_dict['anomaly_dir']
             mag_list = []
@@ -150,6 +154,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         ddd = {}
         ddd['noise_idx_l'] = noise_idx_l
         ddd['noise_max_l'] = noise_max_l
+        ddd['noise_dim_l'] = noise_dim_l
         
         ut.save_pickle(ddd, noise_idx_pkl)
     
@@ -172,8 +177,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         # dim x sample x length
         normalTestData     = successData[:, normalTestIdx, :] * HMM_dict['scale']
         normalTestNoiseIdx = np.array(noise_idx_l)[normalTestIdx] 
-        ## normalTestNoiseDim = np.array(noise_dim_l)[normalTestIdx] 
         normalTestNoiseMax = np.array(noise_max_l)[normalTestIdx] 
+        normalTestNoiseDim = np.array(noise_dim_l)[normalTestIdx] 
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -209,8 +214,11 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
             for i in xrange(len(temp[0])):
                 start_idx = normalTestNoiseIdx[i]
                 noise_max = normalTestNoiseMax[i]
-                for j in xrange(len(temp)):
-                    temp[j,i,start_idx:] += step_mag*noise_max[j]
+                noise_dim = normalTestNoiseDim[i]
+
+                temp[noise_dim,i,start_idx:] += step_mag*noise_max[noise_dim]
+                ## for j in xrange(len(temp)):
+                ##     temp[j,i,start_idx:] += step_mag*noise_max[j]
                 step_idx_l.append(start_idx)
             abnormalTestData = temp
             
