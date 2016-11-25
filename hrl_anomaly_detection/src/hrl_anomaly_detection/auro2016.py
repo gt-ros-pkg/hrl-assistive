@@ -841,7 +841,7 @@ if __name__ == '__main__':
 
         ## step_mag_list = np.logspace(-1,np.log10(2.0),5)
         ## step_mag_list = np.logspace(-2,np.log10(1.0),10)
-        step_mag_list = np.linspace(0.01,1.5,10)
+        ## step_mag_list = np.linspace(0.01,1.5,10)
         ## step_mag_list = np.logspace(-2,np.log10(0.5),2)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
 
