@@ -808,9 +808,9 @@ if __name__ == '__main__':
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
         ## param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['ROC']['methods'] = ['fixed']
+        ## param_dict['ROC']['methods'] = ['fixed']
         #param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['update_list'] = ['fixed']
+        ## param_dict['ROC']['update_list'] = ['fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 20
 
@@ -821,7 +821,7 @@ if __name__ == '__main__':
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.0, 2.3, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        step_mag_list = np.logspace(-1,np.log10(2.0),5)
+        step_mag_list = np.logspace(-2,np.log10(2.0),20)
         
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
