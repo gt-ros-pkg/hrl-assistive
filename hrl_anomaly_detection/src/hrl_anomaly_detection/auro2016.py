@@ -807,9 +807,9 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
-        #param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['hmmgp']
         #param_dict['ROC']['methods'] = ['fixed']
-        ## param_dict['ROC']['methods'] = ['fixed']
+        #param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 20
@@ -817,13 +817,20 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
+        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.3, 3.13, nPoints)
+        ## param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.0, 2.3, nPoints)+2.0            
+        ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
+        
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.3, 3.13, nPoints)
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        param_dict['ROC']['progress_param_range'] = -np.logspace(2.0, 2.3, nPoints)+2.0            
+        param_dict['ROC']['progress_param_range'] = -np.logspace(2.05, 2.27, nPoints)            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
+
+        
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
         param_dict['ROC']['osvm_param_range']    = np.logspace(-4., -2, nPoints) #np.logspace(-3.5, 0.0, nPoints)
@@ -833,7 +840,7 @@ if __name__ == '__main__':
         param_dict['SVM']['osvm_nu'] = 0.001
 
         ## step_mag_list = np.logspace(-1,np.log10(2.0),5)
-        step_mag_list = np.logspace(-2,np.log10(1.0),5)
+        step_mag_list = np.logspace(-2,np.log10(1.0),10)
         ## step_mag_list = np.logspace(-2,np.log10(0.5),5)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
 
