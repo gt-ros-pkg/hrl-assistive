@@ -189,21 +189,30 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
         # random step noise
         abnormalTestData = None
-        for i in xrange(len(normalTestData)):
+        if False:
+            for i in xrange(len(normalTestData)):
+                temp = copy.copy(normalTestData)
+
+                for j in xrange(len(temp[i])):
+                    start_idx = normalTestNoiseIdx[j]
+                    noise_max = normalTestNoiseMax[j]
+                    temp[i,j,start_idx:] += step_mag*noise_max[i]
+                    step_idx_l.append(start_idx)
+
+                if abnormalTestData is None:
+                    abnormalTestData = temp
+                else:
+                    abnormalTestData = np.vstack([ np.swapaxes(abnormalTestData,0,1), np.swapaxes(temp, 0,1)])
+                    abnormalTestData = np.swapaxes(abnormalTestData, 0,1)
+        else:
             temp = copy.copy(normalTestData)
-
-            for j in xrange(len(temp[i])):
-                start_idx = normalTestNoiseIdx[j]
-                noise_max = normalTestNoiseMax[j]
-                temp[i,j,start_idx:] += step_mag*noise_max[i]
+            for i in xrange(len(temp[0])):
+                start_idx = normalTestNoiseIdx[i]
+                noise_max = normalTestNoiseMax[i]
+                temp[:,i,start_idx:] += step_mag*noise_max
                 step_idx_l.append(start_idx)
-                        
-            if abnormalTestData is None:
-                abnormalTestData = temp
-            else:
-                abnormalTestData = np.vstack([ np.swapaxes(abnormalTestData,0,1), np.swapaxes(temp, 0,1)])
-                abnormalTestData = np.swapaxes(abnormalTestData, 0,1)
-
+            abnormalTestData = temp
+            
         ## for i in xrange(len(abnormalTestData[0])):
         ##     start_idx = normalTestNoiseIdx[i]
         ##     noise_max = normalTestNoiseMax[i]
