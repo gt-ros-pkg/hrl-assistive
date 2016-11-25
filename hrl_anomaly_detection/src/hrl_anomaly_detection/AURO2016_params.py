@@ -108,7 +108,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        anomaly_dir   = [1,1,1,1]
+        anomaly_dir   = [1,0,1,1]
         noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
         noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
 

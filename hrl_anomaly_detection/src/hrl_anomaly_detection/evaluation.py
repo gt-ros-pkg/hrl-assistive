@@ -196,7 +196,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
         # random step noise
         abnormalTestData = None
-        if False:
+        if True:
             for i in xrange(len(normalTestData)):
                 temp = copy.copy(normalTestData)
 
@@ -610,7 +610,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ROC_data = ut.load_pickle(roc_pkl)
         print roc_pkl
         ## print ROC_data
-        ## print ROC_data.keys()
+        print ROC_data.keys()
         
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
