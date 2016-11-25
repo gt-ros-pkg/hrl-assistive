@@ -832,7 +832,8 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmosvm_nu'] = 0.002
         param_dict['SVM']['osvm_nu'] = 0.001
 
-        step_mag_list = np.logspace(-1,np.log10(2.0),5)
+        ## step_mag_list = np.logspace(-1,np.log10(2.0),5)
+        step_mag_list = np.logspace(-2,np.log10(0.5),5)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
 
         import hrl_anomaly_detection.evaluation as ev 
