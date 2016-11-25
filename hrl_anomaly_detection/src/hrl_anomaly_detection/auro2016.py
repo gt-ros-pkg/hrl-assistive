@@ -807,8 +807,8 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
-        param_dict['ROC']['methods'] = ['hmmgp']
-        ## param_dict['ROC']['methods'] = ['fixed']
+        #param_dict['ROC']['methods'] = ['hmmgp']
+        #param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['fixed']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
@@ -820,7 +820,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.0, 3.15, nPoints)
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.3, 3.13, nPoints)
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.0, 2.3, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
