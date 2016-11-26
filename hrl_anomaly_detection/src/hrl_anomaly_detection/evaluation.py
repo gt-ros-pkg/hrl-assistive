@@ -130,7 +130,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(successData[0])):
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             ## start_idx = np.random.randint(startIdx, nLength/4, 1)[0]
-            start_idx = np.random.randint(startIdx, nLength/3, 1)[0]
+            start_idx = np.random.randint(nLength/3., nLength*2./3., 1)[0]
             noise_idx_l.append(start_idx)
             noise_dim = np.random.randint(0, len(data_dict['anomaly_dir']), 1)[0]
             noise_dim_l.append(noise_dim)
