@@ -130,7 +130,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(successData[0])):
             start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             ## start_idx = np.random.randint(startIdx, nLength/4, 1)[0]
-            ## start_idx = np.random.randint(startIdx, nLength/2, 1)[0]
+            start_idx = np.random.randint(startIdx, nLength/3, 1)[0]
             noise_idx_l.append(start_idx)
             noise_dim = np.random.randint(0, len(data_dict['anomaly_dir']), 1)[0]
             noise_dim_l.append(noise_dim)
@@ -189,7 +189,6 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         nLength      = len(normalTestData[0][0]) - startIdx
 
         # Classifier test data
-
         step_idx_l = []
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
@@ -677,8 +676,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         print tpr_l
         print fpr_l
 
-        ## best_idx = np.argmin(np.abs(fpr_l-0.125))
-        best_idx = util.argmin(np.abs(fpr_l-0.125))
+        best_idx = np.argmin(np.abs(fpr_l-0.125))
+        #best_idx = util.argmin(np.abs(fpr_l-0.125))
         #best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
