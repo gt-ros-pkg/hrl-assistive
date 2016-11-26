@@ -842,7 +842,8 @@ if __name__ == '__main__':
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.15, 2.3, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        step_mag_list = np.logspace(-2,np.log10(0.5),5)
+        step_mag_list = np.linspace(0.01,0.5,5)
+        #step_mag_list = np.logspace(-2,np.log10(0.5),5)
 
         # one dim, no temp fp
         ## save_data_path = os.path.expanduser('~')+\
@@ -853,7 +854,6 @@ if __name__ == '__main__':
         ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.05, 2.27, nPoints)            
         ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         ## step_mag_list = np.linspace(0.01,1.5,10) # 
-
         
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
