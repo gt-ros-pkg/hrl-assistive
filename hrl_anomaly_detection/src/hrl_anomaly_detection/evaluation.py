@@ -196,7 +196,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
         # random step noise
         abnormalTestData = None
-        if True:
+        if True and False:
             for i in xrange(len(normalTestData)):
                 temp = copy.copy(normalTestData)
 
@@ -211,6 +211,18 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                 else:
                     abnormalTestData = np.vstack([ np.swapaxes(abnormalTestData,0,1), np.swapaxes(temp, 0,1)])
                     abnormalTestData = np.swapaxes(abnormalTestData, 0,1)
+        elif True:
+            temp = copy.copy(normalTestData)
+            for i in xrange(len(temp[0])):
+                start_idx = normalTestNoiseIdx[i]
+                noise_max = normalTestNoiseMax[i]
+                noise_dim = normalTestNoiseDim[i]
+
+                ## temp[noise_dim,i,start_idx:] += step_mag*noise_max[noise_dim]
+                for j in xrange(len(temp)):
+                    temp[j,i,start_idx:] += step_mag*noise_max[j]
+                step_idx_l.append(start_idx)
+            abnormalTestData = temp
         else:
             temp = copy.copy(normalTestData)
             for i in xrange(len(temp[0])):
@@ -662,6 +674,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         ## best_idx = np.argmin(np.abs(fpr_l-0.125))
         best_idx = util.argmin(np.abs(fpr_l-0.125))
+        #best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
