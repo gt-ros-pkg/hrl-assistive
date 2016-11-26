@@ -617,6 +617,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     s_tpr_l   = []
     s_delay_mean_l = []
     s_delay_std_l = []
+    s_delay_cnt_l = []
 
     for step_mag in step_mag_list:
 
@@ -625,7 +626,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         
         roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        print roc_pkl
+        ## print roc_pkl
         ## print ROC_data
         print ROC_data.keys()
         
@@ -641,6 +642,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fp_l = []
         delay_mean_l = []
         delay_std_l  = []
+        delay_cnt_l  = []
         nPoints = len(tp_ll)
         for i in xrange(nPoints):
             tp_l.append( float(np.sum(tp_ll[i])) )
@@ -664,6 +666,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
             delay_mean_l.append( np.mean(delay_list) )
             delay_std_l.append( np.std(delay_list) )
+            delay_cnt_l.append( float(len(delay_list)) )
 
         tp_l = np.array(tp_l)
         fp_l = np.array(fp_l)
@@ -674,25 +677,28 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         fpr_l = fp_l/(fp_l+tn_l)
         tpr_l = tp_l/(tp_l+fn_l)
 
+        print method
         print tpr_l
         print fpr_l
 
-        best_idx = np.argmin(np.abs(fpr_l-0.125))
-        #best_idx = util.argmin(np.abs(fpr_l-0.125))
-        #best_idx = util.argmin(np.abs(fpr_l-0.00001))
+        ## best_idx = np.argmin(np.abs(fpr_l-0.125))
+        ## best_idx = util.argmin(np.abs(fpr_l-0.125))
+        best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
 
         s_tpr_l.append( tpr_l[best_idx] )
         s_delay_mean_l.append( delay_mean_l[best_idx] )
         s_delay_std_l.append( delay_std_l[best_idx] )
+        s_delay_cnt_l.append( delay_cnt_l[best_idx] )
 
     s_tpr_l = np.array(s_tpr_l)
 
     ## s_delay_mean_l = s_delay_mean_l[-1:]
     ## s_delay_std_l = s_delay_std_l[-1:]
     ## s_tpr_l       = s_tpr_l[-1:]
-    ## step_mag_list = step_mag_list[-1:] 
+    ## step_mag_list = step_mag_list[-1:]
+    print s_delay_cnt_l
     
     if no_plot is False:
 
