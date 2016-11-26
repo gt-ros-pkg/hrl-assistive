@@ -196,7 +196,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         
         # random step noise
         abnormalTestData = None
-        if True and False:
+        if True: # and False:
             for i in xrange(len(normalTestData)):
                 temp = copy.copy(normalTestData)
 
