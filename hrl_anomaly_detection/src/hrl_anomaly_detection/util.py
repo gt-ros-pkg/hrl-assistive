@@ -2413,7 +2413,8 @@ def argmin(x, last=True):
 
     if cnt > 1 and last:
         indices = [i for i, v in enumerate(x) if v == min_val]
-        return indices[len(indices)/2]
+        return indices[-1]
+        ## return indices[len(indices)/2]
     else:
         return np.argmin(x)
 
