@@ -166,7 +166,8 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
         # discriminative classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, \
-                             nLength=len(normalTestData[0,0]), ths_mult=0.0,
+                             nLength=len(normalTestData[0,0]), ths_mult=-10.0,\
+                             logp_offset=50.0,\
                              nugget=SVM_dict['nugget'], parallel=True )
         dtc.fit(X_train_org, Y_train_org, idx_train_org)
 

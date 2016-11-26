@@ -115,6 +115,7 @@ class classifier(learning_base):
                  # hmmgp
                  theta0 = 1.0,\
                  nugget = 100.0,\
+                 hmmgp_logp_offset = 0.0,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -206,6 +207,7 @@ class classifier(learning_base):
             self.corr = 'squared_exponential' #'absolute_exponential', squared_exponential','generalized_exponential', 'cubic', 'linear'
             self.nugget = nugget
             self.theta0 = theta0
+            self.hmmgp_logp_offset = hmmgp_logp_offset
 
             self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=self.theta0, corr=self.corr, \
                                                        normalize=True, nugget=self.nugget)            
@@ -692,7 +694,7 @@ class classifier(learning_base):
             ## mult_coeff = np.array(mult_coeff)
 
             ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
-            l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
+            l_err = y_pred + self.ths_mult*sigma - logps - self.hmmgp_logp_offset
             return l_err
 
         elif self.method == 'fixed':

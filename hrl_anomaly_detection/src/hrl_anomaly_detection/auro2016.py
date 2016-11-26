@@ -759,7 +759,7 @@ if __name__ == '__main__':
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=False, method='hmmgp', \
+                          decision_boundary_viz=True, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
@@ -812,17 +812,18 @@ if __name__ == '__main__':
         ## param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        param_dict['ROC']['nPoints'] = nPoints = 20
+        param_dict['ROC']['nPoints'] = nPoints = 8 #20
 
         # all one dim, no temp fp
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 3.0, nPoints)
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.9, 1.5, nPoints)
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.15, 2.3, nPoints)+2.0            
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        step_mag_list = np.logspace(-2,np.log10(2.0),20)
+        step_mag_list = np.logspace(-2,np.log10(2.0),5)
+        ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
         ## # all one dim, temp fp
         ## save_data_path = os.path.expanduser('~')+\
@@ -861,6 +862,8 @@ if __name__ == '__main__':
         
         param_dict['SVM']['hmmosvm_nu'] = 0.002
         param_dict['SVM']['osvm_nu'] = 0.001
+        param_dict['SVM']['nugget'] = 10.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 50.0
 
         ## step_mag_list = np.logspace(-2,np.log10(0.5),2)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
