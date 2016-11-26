@@ -220,8 +220,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
 
                 ## temp[noise_dim,i,start_idx:] += step_mag*noise_max[noise_dim]
                 for j in xrange(len(temp)):
-                    ## if j==0: continue
-                    temp[j,i,start_idx:] += step_mag*noise_max[j]
+                    if j==1: continue
+                        temp[j,i,start_idx:] += step_mag*noise_max[j]*2.0
+                    else:
+                        temp[j,i,start_idx:] += step_mag*noise_max[j]
                 step_idx_l.append(start_idx)
             abnormalTestData = temp
         else:
