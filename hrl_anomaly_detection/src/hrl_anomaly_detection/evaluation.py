@@ -714,7 +714,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
         #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
-        ax1.set_ylim([0.0,5.0])
+        ax1.set_ylim([0.0,7.0])
         ## ax1.set_xticks(x_ticks)
         ## ax1.set_xlim([step_mag_list[0]-0.02, step_mag_list[-1]+0.02])
         ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)
