@@ -76,7 +76,10 @@ class learning_hmm(learning_base):
     def get_hmm_object(self):
         
         [A, B, pi] = self.ml.asMatrices()
-        [out_a_num, vec_num, mat_num, u_denom] = self.ml.getBaumWelchParams()
+        try:
+            [out_a_num, vec_num, mat_num, u_denom] = self.ml.getBaumWelchParams()
+        except:
+            out_a_num=vec_num=mat_num=u_denom=None
 
         return [A, B, pi, out_a_num, vec_num, mat_num, u_denom]
 

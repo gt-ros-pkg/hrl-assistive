@@ -214,17 +214,10 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         # Classifier test data
         #-----------------------------------------------------------------------------------------
         testDataX = abnormalTestData*HMM_dict['scale']
-
         testDataY = []
-        normalIdxList  = []
-        normalFileList = []
         abnormalTestIdxList  = []
         abnormalTestFileList = []
         for i, f in enumerate(abnormal_test_files):
-            ## if f.find("success")>=0:
-            ##     testDataY.append(-1)
-            ##     normalIdxList.append(i)
-            ##     normalFileList.append(f.split('/')[-1])
             if f.find("failure")>=0:
                 testDataY.append(1)
                 abnormalTestIdxList.append(i)
@@ -251,20 +244,27 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         scale    = HMM_dict['scale'] #/2.0
 
         ml_dict = {}
-        ## ref_data = normal_isol_train_data[0:1]
-        ## tgt_data = normal_isol_train_data[1:]
-        tgt_data = normal_isol_train_data
-        for i in xrange(len(tgt_data)):
-            ## x = np.vstack([ref_data, tgt_data[i:i+1]])
-            x = tgt_data[i:i+1]
-
+        tgt_data = copy.copy(normal_isol_train_data)        
+        r = Parallel(n_jobs=-1)(delayed(trainHMM)(i, tgt_data[i:i+1], nState, nEmissionDim, scale,\
+                                                  cov_mult) \
+                                                  for i in xrange(len(tgt_data)) )
+        l_i, l_A, l_B, l_pi = zip(*r)
+        
+        for i, A, B, pi in zip(l_i, l_A, l_B, l_pi):
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
-                          cov_mult=cov_mult, use_pkl=False)
-            if ret == 'Failure':
-                print "fitting failed... ", i, ml.B
-                sys.exit()
+            ml.set_hmm_object(A,B,pi)
             ml_dict[i] = ml
+                    
+        ## for i in xrange(len(tgt_data)):
+        ##     x = tgt_data[i:i+1]
+
+        ##     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+        ##     ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
+        ##                   cov_mult=cov_mult, use_pkl=False)
+        ##     if ret == 'Failure':
+        ##         print "fitting failed... ", i, ml.B
+        ##         sys.exit()
+        ##     ml_dict[i] = ml
 
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
@@ -272,7 +272,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                                 abnormalTrainFileList, \
                                                                 window_size, hmm_model=ml_dict,\
                                                                 scale=scale)
-        test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
+        test_feature_list, test_anomaly_list = extractFeature(normal_isol_test_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
@@ -626,8 +626,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
     ##         ml.fit(x, A=A, pi=pi, fixed_trans=1)
     ##         if ret == 'Failure' or np.isnan(ret):
     ##             print "hmm training failed"
-    ##             sys.exit()
-            
+    ##             sys.exit()           
     ref_num = 0
          
     anomaly_list = []
@@ -643,7 +642,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
         features = []
         for j in xrange(len(abnormal_data)): # per feature
 
-            if j == 0: continue
+            ## if j == 0: continue
             if hmm_model is not None:
 
                 start_idx = anomaly_idx-window_size[0]
@@ -651,7 +650,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 if start_idx < 0: start_idx = 0
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
-                ml    = hmm_model[j-1]
+                ml    = hmm_model[j]
                 
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
                 logps = np.squeeze(logps)
@@ -664,10 +663,11 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 feature_windows = []
                 for k in xrange( s, e ):
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
-                    single_window = logps[k:k+window_size[0]+window_size[1]] 
-                    print np.shape(single_window), np.shape(logps)
+                    single_window    = logps[k:k+window_size[0]+window_size[1]] 
                     feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
                 features.append( feature_windows )
+                print np.shape(feature_windows), np.shape(features)
+                sys.exit()
                     
                 ## single_window = []
                 ## for k in xrange(start_idx, end_idx+1):
@@ -706,6 +706,19 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
     return feature_list, anomaly_list
 
 
+def trainHMM(i, x, nState, nEmissionDim, scale, cov_mult):
+
+    ml  = hmm.learning_hmm(nState, nEmissionDim)
+    ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
+                  cov_mult=cov_mult, use_pkl=False)
+    if ret == 'Failure':
+        print "fitting failed... ", i, ml.B
+        sys.exit()
+
+    A, B, pi, _,_,_,_ = ml.get_hmm_object()
+    
+    return i,A,B,pi
+    
 
 def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
                  detection_idx_list, abnormalFileList, timeList,\
@@ -1023,6 +1036,7 @@ if __name__ == '__main__':
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
                                 n_iter_search=1)
+                                
     elif opt.feature_contribution:
         param_dict['ROC']['methods']     = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
