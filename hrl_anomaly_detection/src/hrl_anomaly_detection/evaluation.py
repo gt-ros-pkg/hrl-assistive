@@ -128,7 +128,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     else:
         nLength = len(successData[0][0]) - startIdx    
         for i in xrange(len(successData[0])):
-            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+            ## start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
             ## start_idx = np.random.randint(startIdx, nLength/4, 1)[0]
             ## start_idx = np.random.randint(nLength/4, nLength/2, 1)[0]
             start_idx = np.random.randint(nLength/4, nLength*3/4, 1)[0]
@@ -686,6 +686,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ## best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
+
+        print delay_mean_l
 
         s_tpr_l.append( tpr_l[best_idx] )
         s_delay_mean_l.append( delay_mean_l[best_idx] )
