@@ -279,6 +279,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                               window_size, hmm_model=ml_dict,\
                                                               scale=scale)
 
+        print np.shape(train_feature_list), np.shape(test_feature_list)
+        sys.exit()
+
         d = {}
         d['train_feature_list'] = train_feature_list
         d['train_anomaly_list'] = train_anomaly_list
@@ -401,11 +404,6 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         # 0 : 1 2 3 45678910 111213 14 15 16 17  # = total 18
         # (i-1)*2, (i-1)*2+1
 
-        # sample x feature x windows
-        print np.shape(train_feature_list)
-        print np.shape(train_feature_list[0])
-        print np.shape(train_feature_list[0][0])
-
         out_list = []
         if add_list is not None:
             for i in range(len(train_feature_list[0])):
@@ -435,6 +433,13 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         test_feature_list = feature_remove(test_feature_list, out_list)
         print np.shape(train_feature_list), np.shape(test_feature_list)
 
+        # sample x feature x windows
+        print np.shape(train_feature_list)
+        print np.shape(train_feature_list[0])
+        print np.shape(train_feature_list[0][0])
+
+        print "---------------------------"
+        
         # flattening data
         def flattenSample(x):
             '''Convert sample x feature x windows to sample x feature
@@ -442,9 +447,15 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
 
             x_new = None # sample x feature
             for i in xrange(len(x)):
-                # feature x windows
-                x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])
-            
+
+                for j in xrange(len(x[i][0])):
+                    print np.shape(x[i][0])
+                
+                if x_new is None:
+                    x_new = np.swapaxes(x[i],0,1)
+                else:
+                    x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])
+                
             return x_new
 
         train_feature_list = flattenSample(train_feature_list)
