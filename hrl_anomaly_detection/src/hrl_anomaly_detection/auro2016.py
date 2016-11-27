@@ -809,8 +809,8 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
         ## param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed']
-        ## param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['update_list'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['progress']
+        ## param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         param_dict['ROC']['nPoints'] = nPoints = 20
 
