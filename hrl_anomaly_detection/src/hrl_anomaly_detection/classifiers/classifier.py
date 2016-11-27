@@ -1451,13 +1451,13 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         except:
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
-                        if delay_estimation:
+                        if delay_estimation: # and False:
                             if step_idx_l[ii] is None:
                                 print "Wrong step idx setting"
                                 sys.exit()
-                            delay_l.append( (delay_idx+startIdx)-step_idx_l[ii] )
+                            delay_l.append( delay_idx-step_idx_l[ii] )
                         else:
-                            delay_l.append( delay_idx+startIdx )
+                            delay_l.append( delay_idx )
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
 
