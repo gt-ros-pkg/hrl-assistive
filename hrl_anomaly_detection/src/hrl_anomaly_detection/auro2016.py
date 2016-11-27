@@ -807,7 +807,7 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'progress']
-        ## param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['fixed']
@@ -822,7 +822,7 @@ if __name__ == '__main__':
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        step_mag_list = np.logspace(-2,np.log10(1.5),20)
+        step_mag_list = np.logspace(-2,np.log10(1.5),15)
         ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
         ## # all one dim, temp fp
