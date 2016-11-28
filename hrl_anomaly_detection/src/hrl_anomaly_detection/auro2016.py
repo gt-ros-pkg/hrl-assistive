@@ -815,7 +815,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
         # all one dim, no temp fp
-        param_dict['ROC']['nPoints'] = nPoints = 15 #3 # 20
+        param_dict['ROC']['nPoints'] = nPoints = 8 #3 # 20
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
