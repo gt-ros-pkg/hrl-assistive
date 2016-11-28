@@ -821,7 +821,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.1, 1.45, nPoints) 
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        param_dict['ROC']['progress_param_range'] = -np.logspace(0.7, 0.8, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(0.65, 0.8, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         param_dict['SVM']['hmmgp_logp_offset'] = 50.0
@@ -897,7 +897,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==19): continue
+                if not(i==0): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
