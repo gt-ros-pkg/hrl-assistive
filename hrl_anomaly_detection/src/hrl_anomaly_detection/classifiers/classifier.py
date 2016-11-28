@@ -692,6 +692,7 @@ class classifier(learning_base):
             ##     ## mult_coeff.append( 1.0 + 0.* float(min_index)/(float(self.nPosteriors)-1.0) )
             ##     mult_coeff.append( 1.0 + 3.* float(min_index)/(float(self.nPosteriors)-1.0) )
             ## mult_coeff = np.array(mult_coeff)
+            print self.hmmgp_logp_offset
 
             ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
             l_err = y_pred + self.ths_mult*sigma - logps - self.hmmgp_logp_offset
