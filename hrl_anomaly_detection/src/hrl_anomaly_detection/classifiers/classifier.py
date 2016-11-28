@@ -826,8 +826,8 @@ class classifier(learning_base):
         elif self.method.find('hmmgp')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
+                print fileName
                 pickle.dump(self.dt, f)
-            
         else:
             print "Not available method"
 
