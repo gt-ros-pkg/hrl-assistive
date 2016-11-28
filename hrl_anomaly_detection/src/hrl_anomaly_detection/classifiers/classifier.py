@@ -1137,7 +1137,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False):
+                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
+                    save_model=False, load_model=False):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
@@ -1381,8 +1382,12 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # classifier # TODO: need to make it efficient!!
     dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints):
+        clf_pkl = os.path.join(processed_data_path, 'clf_'+method+'_'+str(j)+'.pkl')
+        if load_model: dtc.load_model(clf_pkl)
 
         dtc.set_params( **SVM_dict )
+        ret = True
+        
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
           method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or \
           method == 'svm_fixed':
@@ -1391,26 +1396,28 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             else:
                 weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+            if not load_model: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
+            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
         elif method == 'cssvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org)                
+            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org)                
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
           method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+            if not load_model:
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+            if not load_model:
+                if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
         elif method == 'rnd':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
@@ -1423,6 +1430,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             print "fit failed, ", weights[j]
             sys.exit()
             return 'fit failed', [],[],[],[],[]
+
+        if save_model:
+            dtc.save_model(clf_pkl)
         
         # evaluate the classifier
         tp_l = []

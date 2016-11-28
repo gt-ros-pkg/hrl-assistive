@@ -818,26 +818,26 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints)
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints) # 3.12, 3.0
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
-        # all one dim, no temp fp
-        param_dict['ROC']['nPoints'] = nPoints = 5
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
-        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints)
-        param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
-        param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        step_mag_list = np.logspace(-2,np.log10(1.5),10)
-        ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
+        ## # all one dim, no temp fp #c12
+        ## param_dict['ROC']['nPoints'] = nPoints = 5
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
+        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints)
+        ## param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
+        ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
+        ## step_mag_list = np.logspace(-2,np.log10(1.5),10)
+        ## ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
-        # all one dim, no temp fp
+        ## # all one dim, no temp fp #c8
         param_dict['ROC']['nPoints'] = nPoints = 8
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -847,6 +847,9 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),5)
+        param_dict['SVM']['hmmgp_logp_offset'] = 100.0
+        load_model=False
+        
 
 
         ## # all one dim, temp fp
@@ -860,25 +863,6 @@ if __name__ == '__main__':
         ## step_mag_list = np.logspace(-2,np.log10(1.5),5)
         ## ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
-        ## # all dim, no temp fp
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param5'
-        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3., 3.13, nPoints)
-        ## param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.15, 2.3, nPoints)+2.0            
-        ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        ## step_mag_list = np.linspace(0.01,0.5,5)
-
-        # one dim, no temp fp
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
-        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.0, 3.3, nPoints)
-        ## param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.05, 2.27, nPoints)            
-        ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        ## step_mag_list = np.linspace(0.01,1.5,10) # 
         
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
@@ -905,7 +889,8 @@ if __name__ == '__main__':
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                         no_plot=opt.bNoPlot, delay_plot=True)
+                                         no_plot=opt.bNoPlot, delay_plot=True, save_model=True, \
+                                         load_model=load_model)
 
 
     ## elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:

@@ -65,7 +65,8 @@ matplotlib.rcParams['ps.fonttype'] = 42
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           step_mag, pkl_prefix=None,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+                          no_plot=False, delay_plot=False, find_param=False, all_plot=False,\
+                          save_model=False, load_model=False):
 
     ## Parameters
     # data
@@ -336,7 +337,8 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix='hmm_'+pkl_prefix,\
-                                                                 delay_estimation=True) \
+                                                                 delay_estimation=True, save_model=save_model,\
+                                                                 load_model=load_model) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
     print "finished to run run_classifiers"
@@ -626,7 +628,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         
         roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        ## print roc_pkl
+        print roc_pkl
         ## print ROC_data
         print ROC_data.keys()
         
