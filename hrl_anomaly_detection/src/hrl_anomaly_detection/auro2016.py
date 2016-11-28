@@ -849,7 +849,7 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),5)
-        param_dict['SVM']['hmmgp_logp_offset'] = 1000.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 100000.0
         load_model=True
         
         ###########################################################################
