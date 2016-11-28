@@ -825,6 +825,18 @@ if __name__ == '__main__':
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
 
+        # all one dim, no temp fp
+        param_dict['ROC']['nPoints'] = nPoints = 5
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
+        param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
+        step_mag_list = np.logspace(-2,np.log10(1.5),10)
+        ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
+
         ## # all one dim, temp fp
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
