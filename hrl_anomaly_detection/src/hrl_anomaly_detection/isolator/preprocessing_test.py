@@ -279,9 +279,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                               window_size, hmm_model=ml_dict,\
                                                               scale=scale)
 
-        print np.shape(train_feature_list), np.shape(test_feature_list)
-        print "-----------------------------------------------"
-        sys.exit()
+        ## print np.shape(train_feature_list), np.shape(test_feature_list)
+        ## print "-----------------------------------------------"
+        ## sys.exit()
 
         d = {}
         d['train_feature_list'] = train_feature_list
@@ -438,7 +438,6 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         print np.shape(train_feature_list)
         print np.shape(train_feature_list[0])
         print np.shape(train_feature_list[0][0])
-
         print "---------------------------"
         
         # flattening data
