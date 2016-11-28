@@ -330,7 +330,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    n_jobs=1
+    ## n_jobs=1
     r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, \
