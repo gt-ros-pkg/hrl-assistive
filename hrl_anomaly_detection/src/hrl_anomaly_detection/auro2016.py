@@ -809,7 +809,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp', 'progress','fixed']
         param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed']
-        ## param_dict['ROC']['methods'] = ['progress']
+        param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
@@ -820,7 +820,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1., 1.5, nPoints) 
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(0.8, 0.85, nPoints)
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         param_dict['SVM']['hmmgp_logp_offset'] = 50.0
