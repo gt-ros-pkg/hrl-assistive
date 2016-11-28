@@ -1382,7 +1382,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # classifier # TODO: need to make it efficient!!
     dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
     for j in xrange(nPoints):
-        clf_pkl = os.path.join(processed_data_path, 'clf_'+method+'_'+str(j)+'.pkl')
+        clf_pkl = os.path.join(processed_data_path, 'clf_'+modeling_pkl_prefix+'_'+method+'_'+str(j)+'.pkl')
         if load_model: dtc.load_model(clf_pkl)
 
         dtc.set_params( **SVM_dict )

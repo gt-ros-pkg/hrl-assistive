@@ -824,20 +824,22 @@ if __name__ == '__main__':
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
+        param_dict['SVM']['hmmgp_logp_offset'] = 50.0
 
-        ## # all one dim, no temp fp #c12
-        ## param_dict['ROC']['nPoints'] = nPoints = 5
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
-        ## param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.2, 2.95, nPoints)
-        ## param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
-        ## param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-        ## step_mag_list = np.logspace(-2,np.log10(1.5),10)
-        ## ## step_mag_list = np.logspace(-2,np.log10(2.0),20)
+        # all one dim, no temp fp #c12
+        param_dict['ROC']['nPoints'] = nPoints = 5
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param3'
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(3.1, 3.0, nPoints)
+        param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(2.22, 2.3, nPoints)
+        param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
+        step_mag_list = np.logspace(-2,np.log10(1.5),10)
+        param_dict['SVM']['hmmgp_logp_offset'] = 150.0
+        load_model=True
 
-        ## # all one dim, no temp fp #c8
+        # all one dim, no temp fp #c8
         param_dict['ROC']['nPoints'] = nPoints = 8
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
@@ -872,7 +874,6 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmosvm_nu'] = 0.002
         param_dict['SVM']['osvm_nu'] = 0.001
         param_dict['SVM']['nugget'] = 10.0
-        param_dict['SVM']['hmmgp_logp_offset'] = 50.0
 
         ## step_mag_list = np.logspace(-2,np.log10(0.5),2)
         ## step_mag_list = np.linspace(0.0001,0.5,10)
