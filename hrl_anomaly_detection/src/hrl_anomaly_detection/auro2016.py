@@ -897,7 +897,7 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                if not(i==0): continue
+                if not(i==19): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
