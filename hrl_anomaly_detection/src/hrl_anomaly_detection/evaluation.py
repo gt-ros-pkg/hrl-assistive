@@ -178,7 +178,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
-        normalTestData     = successData[:, normalTestIdx, :] * HMM_dict['scale']
+        normalTestData     = copy.copy(successData[:, normalTestIdx, :] * HMM_dict['scale'])
         normalTestNoiseIdx = np.array(noise_idx_l)[normalTestIdx] 
         normalTestNoiseMax = np.array(noise_max_l)[normalTestIdx] 
         normalTestNoiseDim = np.array(noise_dim_l)[normalTestIdx] 
@@ -686,8 +686,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ## best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
-
-        print delay_mean_l
+        ## print delay_mean_l
 
         s_tpr_l.append( tpr_l[best_idx] )
         s_delay_mean_l.append( delay_mean_l[best_idx] )
@@ -700,7 +699,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     ## s_delay_std_l = s_delay_std_l[-1:]
     ## s_tpr_l       = s_tpr_l[-1:]
     ## step_mag_list = step_mag_list[-1:]
-    print s_delay_cnt_l
+    ## print s_delay_cnt_l
     
     if no_plot is False:
 
@@ -714,7 +713,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
         #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
-        ax1.set_ylim([0.0,7.0])
+        ax1.set_ylim([0.0,4.0])
         ## ax1.set_xticks(x_ticks)
         ## ax1.set_xlim([step_mag_list[0]-0.02, step_mag_list[-1]+0.02])
         ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)

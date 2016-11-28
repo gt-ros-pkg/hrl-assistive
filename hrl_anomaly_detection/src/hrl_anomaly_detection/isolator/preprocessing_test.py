@@ -280,6 +280,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                               scale=scale)
 
         print np.shape(train_feature_list), np.shape(test_feature_list)
+        print "-----------------------------------------------"
         sys.exit()
 
         d = {}
@@ -628,7 +629,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
     ##             print "hmm training failed"
     ##             sys.exit()           
     ref_num = 0
-         
+
     anomaly_list = []
     feature_list = [] # sample x feature x windows
     for i in xrange(len(abnormal_data[0])): # per sample
@@ -666,8 +667,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     single_window    = logps[k:k+window_size[0]+window_size[1]] 
                     feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
                 features.append( feature_windows )
-                print np.shape(feature_windows), np.shape(features)
-                sys.exit()
                     
                 ## single_window = []
                 ## for k in xrange(start_idx, end_idx+1):
