@@ -1380,7 +1380,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
 
     # classifier # TODO: need to make it efficient!!
-    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
+    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
     for j in xrange(nPoints):
         clf_pkl = os.path.join(processed_data_path, 'clf_'+modeling_pkl_prefix+'_'+method+'_'+\
                                str(idx)+'_'+str(j)+'.pkl')
