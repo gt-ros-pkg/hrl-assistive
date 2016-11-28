@@ -1417,7 +1417,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if not load_model:
+            if not load_model:                
                 if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
         elif method == 'rnd':
             weights = ROC_dict[method+'_param_range']
@@ -1434,7 +1434,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if save_model:
             dtc.save_model(clf_pkl)
-        
+
+        print "Start to evaluate"
+
         # evaluate the classifier
         tp_l = []
         fp_l = []
