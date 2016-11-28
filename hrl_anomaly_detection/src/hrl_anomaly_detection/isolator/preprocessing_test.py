@@ -266,6 +266,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         ##         sys.exit()
         ##     ml_dict[i] = ml
 
+        # Sliding window -based feature
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
@@ -278,6 +279,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                               abnormalTestFileList, \
                                                               window_size, hmm_model=ml_dict,\
                                                               scale=scale)
+
+        # HMP-based feature? (temporal correlation)
+        
 
         ## print np.shape(train_feature_list), np.shape(test_feature_list)
         ## print "-----------------------------------------------"
@@ -429,33 +433,20 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
             x = np.swapaxes(x, 0,1)
             return x
 
-        print np.shape(train_feature_list), np.shape(test_feature_list)
+        print "Before: ", np.shape(train_feature_list), np.shape(test_feature_list)
         train_feature_list = feature_remove(train_feature_list, out_list)
         test_feature_list = feature_remove(test_feature_list, out_list)
-        print np.shape(train_feature_list), np.shape(test_feature_list)
-
+        print "After: ", np.shape(train_feature_list), np.shape(test_feature_list)
         # sample x feature x windows
-        print np.shape(train_feature_list)
-        print np.shape(train_feature_list[0])
-        print np.shape(train_feature_list[0][0])
-        print "---------------------------"
         
         # flattening data
         def flattenSample(x):
             '''Convert sample x feature x windows to sample x feature
             '''
-
             x_new = None # sample x feature
-            for i in xrange(len(x)):
-
-                for j in xrange(len(x[i][0])):
-                    print np.shape(x[i][0])
-                
-                if x_new is None:
-                    x_new = np.swapaxes(x[i],0,1)
-                else:
-                    x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])
-                
+            for i in xrange(len(x)):                
+                if x_new is None: x_new = np.swapaxes(x[i],0,1)
+                else: x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])                
             return x_new
 
         train_feature_list = flattenSample(train_feature_list)
@@ -1033,7 +1024,7 @@ if __name__ == '__main__':
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
-                                n_iter_search=1)
+                                n_iter_search=100)
                                 
     elif opt.feature_contribution:
         param_dict['ROC']['methods']     = ['hmmgp']
