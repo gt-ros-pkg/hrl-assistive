@@ -222,7 +222,8 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
         elif 'hmmgp' in method:            
             param_dist = {'ths_mult': uniform(-25.0,25.0),\
                           'nugget': [10.0],\
-                          'theta0': [1.0] }
+                          'theta0': [1.0],\
+                          'hmmgp_logp_offset': [0,50,100,200]}
                           ## 'nugget': uniform(60.0,80.0),\
                           ## 'theta0': uniform(1.0,0.5)}
                           ## 'nugget': [10, 50, 100, 200],\
