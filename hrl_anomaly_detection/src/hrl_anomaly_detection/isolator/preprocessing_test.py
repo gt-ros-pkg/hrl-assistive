@@ -449,16 +449,11 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
                 else: x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])                
             return x_new
 
-        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
-        for ii in xrange(len(train_feature_list)):
-            print train_feature_list[ii][0]
         
         train_feature_list = flattenSample(train_feature_list)
-        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
-        train_anomaly_list = np.flatten(train_anomaly_list)
-        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
+        train_anomaly_list = np.array(train_anomaly_list).flatten()
         test_feature_list  = flattenSample(test_feature_list)
-        test_anomaly_list  = np.flatten(test_anomaly_list)
+        test_anomaly_list  = np.array(test_anomaly_list).flatten()
         print np.shape(train_feature_list), np.shape(test_feature_list)
 
         # scaling
