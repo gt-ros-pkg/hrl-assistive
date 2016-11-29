@@ -144,7 +144,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
-    weight      = -14.0 #-16.0 #-5.5 
+    weight      = -5.0 #-14.0 #-16.0 #-5.5 
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -212,7 +212,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
         print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         print idx
-        print len(detection_train_idx_list), np.count_nonzero(detection_train_idx_list == None)
+        print len(detection_train_idx_list), detection_train_idx_list.count(None)
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
@@ -231,7 +231,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                     logp_viz=False, verbose=False, weight=weight,\
                                                     idx=idx)
                                                     
-        print len(detection_test_idx_list), np.count_nonzero(detection_test_idx_list == None)
+        print len(detection_test_idx_list), detection_test_idx_list.count(None)
         print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
         #-----------------------------------------------------------------------------------------
