@@ -654,7 +654,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 s = start_idx - 5 if start_idx - 5 >=0 else 0
                 e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
                   else len(abnormal_data[j,i])-window_size[0]-window_size[1]
-
                 if s == e: e += 1
 
                 ## single_window = []
@@ -663,6 +662,10 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
                     single_window    = logps[k:k+window_size[0]+window_size[1]] 
                     feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+
+                if len(feature_windows) == 0:
+                    print "s,e: ", s,e, len(logps), start_idx
+                    sys.exit()
                     
                 features.append( feature_windows )
                     
