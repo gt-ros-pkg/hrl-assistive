@@ -313,8 +313,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         print "-----------------------------------------------"
         print "-----------------------------------------------"
         print "-----------------------------------------------"
-        #0 17 9 7 8
-        add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+        #0 10 9 17 5 16
+        add_list = [1,2,3,4,5,6,7,8,11,12,13,14,15,16]
         y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
                                                dim_viz=dim_viz, add_list=add_list)
 
