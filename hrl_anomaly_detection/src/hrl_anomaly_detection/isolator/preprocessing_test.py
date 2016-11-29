@@ -196,7 +196,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         #-----------------------------------------------------------------------------------------
         # Classifier train data
         #-----------------------------------------------------------------------------------------
-        trainDataX = abnormalTrainData*HMM_dict['scale']
         trainDataY = []
         abnormalTrainIdxList  = []
         abnormalTrainFileList = []
@@ -206,14 +205,13 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalTrainIdxList.append(i)
                 abnormalTrainFileList.append(f.split('/')[-1])    
 
-        detection_train_idx_list = anomaly_detection(trainDataX/HMM_dict['scale'], trainDataY, \
+        detection_train_idx_list = anomaly_detection(abnormalTrainData, trainDataY, \
                                                      task_name, save_data_path, param_dict,\
                                                      logp_viz=False, verbose=False, weight=weight)
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
         #-----------------------------------------------------------------------------------------
-        testDataX = abnormalTestData*HMM_dict['scale']
         testDataY = []
         abnormalTestIdxList  = []
         abnormalTestFileList = []
@@ -223,12 +221,12 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalTestIdxList.append(i)
                 abnormalTestFileList.append(f.split('/')[-1])    
 
-        detection_test_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
+        detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                     task_name, save_data_path, param_dict,\
                                                     logp_viz=False, verbose=False, weight=weight)
 
         #-----------------------------------------------------------------------------------------
-        # Expected output - it should be replaced.... using theoretical stuff
+        # 
         #-----------------------------------------------------------------------------------------        
         # get delta values...
         normal_isol_train_data   = success_isol_data[:, normalTrainIdx, :] 
@@ -312,6 +310,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         
         sys.exit()
     else:
+        print np.shape(success_isol_data)
+        print "-----------------------------------------------"
+        print "-----------------------------------------------"
         print "-----------------------------------------------"
         #0 17 9 7 8
         add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]

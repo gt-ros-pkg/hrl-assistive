@@ -905,50 +905,6 @@ if __name__ == '__main__':
                                          load_model=load_model)
 
 
-    ## elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
-    ##     param_dict['ROC']['methods'] = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp']
-    ##     param_dict['ROC']['update_list'] = [ 'osvm']
-    ##     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-    ##     param_dict['ROC']['nPoints'] = nPoints = 40
-
-    ##     save_data_path = os.path.expanduser('~')+\
-    ##       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
-    ##       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param'
-
-    ##     if opt.task == 'feeding':
-    ##         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.5, nPoints)+2.0
-    ##         param_dict['ROC']['progress_param_range'] = -np.logspace(0.2, 2.0, nPoints)+2.0            
-    ##         param_dict['ROC']['osvm_param_range']     = np.logspace(-4.5, 0.0, nPoints)
-    ##         param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4.5, 0.0, nPoints)
-    ##         param_dict['ROC']['fixed_param_range']  = np.linspace(-4.0, 1.0, nPoints)
-    ##         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
-    ##     else:
-    ##         sys.exit()
-
-    ##     step_mag = 0.01
-    ##     step_mag = 0.02
-    ##     step_mag = 0.025
-    ##     ## step_mag = 0.03
-    ##     ## step_mag = 0.05
-    ##     ## step_mag = 0.1
-    ##     ## step_mag = 0.2
-    ##     ## step_mag = 0.25
-    ##     ## step_mag = 0.5
-    ##     ## step_mag = 1.0
-    ##     ## step_mag = 10000000
-
-    ##     import hrl_anomaly_detection.evaluation as ev 
-    ##     if opt.bEvaluationAccParam:
-    ##         ev.evaluation_acc_param(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-    ##                                 step_mag, pkl_prefix,\
-    ##                                 save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-    ##                                 no_plot=opt.bNoPlot, delay_plot=True)
-    ##     else:        
-    ##         ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-    ##                                  step_mag, pkl_prefix,\
-    ##                                  save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-    ##                                  no_plot=opt.bNoPlot, delay_plot=True)
-
     elif opt.param_search:
         
         from scipy.stats import uniform, expon
