@@ -323,7 +323,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         print "-----------------------------------------------"
         # 8 9 15 17 7 4 16
         add_list = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
-        ## add_list = [0,1,2,3,5,6,10,11,12,13,14]
+        add_list = [ 3, 10,  6,  1,  0,  2, 12, 14, 11, 15, 16, 17,  7, 13,  5,  4 ]
         y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
                                                dim_viz=dim_viz, add_list=add_list)
 
@@ -344,8 +344,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
 def evaluation_feature(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                        dim_viz=False, no_plot=False):
-    print "Need to update"
-    sys.exit()
 
     ## Parameters
     # data
@@ -384,7 +382,8 @@ def evaluation_feature(subject_names, task_name, raw_data_path, processed_data_p
     normalTrainData   = d['successData'] * HMM_dict['scale']
 
     #-----------------------------------------------------------------------------------------
-    add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    ## add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    add_list = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
     y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
                                                dim_viz=dim_viz, add_list=add_list,\
                                                feature_importance=True)
@@ -466,7 +465,6 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         train_anomaly_list = np.array(train_anomaly_list).flatten()
         test_feature_list  = flattenSample(test_feature_list)
         test_anomaly_list  = np.array(test_anomaly_list).flatten()
-        print np.shape(train_feature_list), np.shape(test_feature_list)
 
         # scaling
         scaler = preprocessing.StandardScaler()
@@ -509,8 +507,17 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
 
     if feature_importance:
         print np.shape(imp_list)
-        print "Mean: ", np.mean(imp_list, axis=0)
-        print "Stds: ", np.std(imp_list, axis=0)
+        mean_scores = np.mean(imp_list, axis=0)
+        std_scores  = np.std(imp_list, axis=0)
+
+        ## scores = []
+        ## for i in xrange(len(mean_scores)):
+        ##     scores.append([mean_scores[i], std_scores[i]])
+
+        idx_list = np.argsort(mean_scores)[::-1]
+        print "Idx: ", idx_list        
+        print "Mean: ", mean_scores[idx_list]
+        print "Stds: ", std_scores[idx_list]
         
     return y_test, y_pred, scores
 
@@ -672,7 +679,8 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
                     ## single_window = logps[k:k+window_size[0]+window_size[1]] 
                     single_window = logps[s:e] 
-                    feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                    ## feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                    feature_windows += [ np.mean(single_window) ]
                     
                 if len(feature_windows) == 0:
                     print "s,e: ", s,e, len(logps), anomaly_idx
@@ -1048,12 +1056,12 @@ if __name__ == '__main__':
         clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
                                 n_iter_search=100)
                                 
-    ## elif opt.feature_contribution:
-    ##     param_dict['ROC']['methods']     = ['hmmgp']
-    ##     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+    elif opt.feature_contribution:
+        param_dict['ROC']['methods']     = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
-    ##     evaluation_feature(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-    ##                        dim_viz=opt.low_dim_viz, no_plot=opt.bNoPlot)
+        evaluation_feature(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                           dim_viz=opt.low_dim_viz, no_plot=opt.bNoPlot)
                          
     else:
         if opt.bHMMRenew: param_dict['ROC']['methods']     = ['hmmgp'] 
