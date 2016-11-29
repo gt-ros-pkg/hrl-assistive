@@ -655,11 +655,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
             ## if j == 0: continue
             if hmm_model is not None:
 
-                ## start_idx = anomaly_idx-window_size[0]
-                ## end_idx   = anomaly_idx+window_size[1]
-                ## if start_idx < 0: start_idx = 0
-                ## if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
-                
                 ml    = hmm_model[j]                
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
                 logps = np.squeeze(logps)
@@ -676,8 +671,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     e = k + window_size[1]
                     if e > len(abnormal_data[j,i])-1: e = len(abnormal_data[j,i])-1
                     
-                    ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
-                    ## single_window = logps[k:k+window_size[0]+window_size[1]] 
                     single_window = logps[s:e] 
                     ## feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
                     feature_windows += [ np.mean(single_window) ]
@@ -688,23 +681,6 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                     
                 features.append( feature_windows )
                     
-                ## single_window = []
-                ## for k in xrange(start_idx, end_idx+1):
-                ##     if k<startIdx:
-                ##         logp = 0
-                ##     else:
-                ##         logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
-                ##     single_window.append( logp )
-                ## features += [ np.amax(single_window)-np.amin(single_window) ]
-
-                    
-                    ## if k<startIdx:
-                    ##     x_pred = ml.B[0][0][1]
-                    ## else:
-                    ##     x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
-                    ##                                         ref_num=ref_num)[1]
-                    ## ## print np.shape(abnormal_data), j,i,k, (abnormal_data[j,i,k] - x_pred)/scale
-                    ## single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
             else:
                 print "Not available"
                 sys.exit()
