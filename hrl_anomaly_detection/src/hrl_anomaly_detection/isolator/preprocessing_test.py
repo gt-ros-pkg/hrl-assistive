@@ -311,10 +311,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     else:
         print np.shape(success_isol_data)
         print "-----------------------------------------------"
-        print "-----------------------------------------------"
-        print "-----------------------------------------------"
         #0 10 9 17 5 16
-        add_list = [1,2,3,4,5,6,7,8,11,12,13,14,15,16,17]
+        add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
         y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
                                                dim_viz=dim_viz, add_list=add_list)
 
@@ -411,9 +409,10 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
 
         out_list = []
         if add_list is not None:
+            print "total features: ", len(train_feature_list[0])
             for i in range(len(train_feature_list[0])):
                 if i not in add_list:
-                    out_list.append( i-1 )
+                    out_list.append( i )
             
             ## for i in range(len(train_feature_list[0])/2):
             ##     if i not in add_list:
