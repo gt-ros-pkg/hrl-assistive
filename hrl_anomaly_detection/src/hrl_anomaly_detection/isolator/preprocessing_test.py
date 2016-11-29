@@ -144,7 +144,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
-    weight      = -14 #-16.0 #-5.5 
+    weight      = -14.0 #-16.0 #-5.5 
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -209,6 +209,10 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                                                      task_name, save_data_path, param_dict,\
                                                      logp_viz=False, verbose=False, weight=weight)
 
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print idx
+        print len(detection_train_idx_list), np.count_nonzero(detection_train_idx_list == None)
+
         #-----------------------------------------------------------------------------------------
         # Classifier test data
         #-----------------------------------------------------------------------------------------
@@ -224,6 +228,9 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                     task_name, save_data_path, param_dict,\
                                                     logp_viz=False, verbose=False, weight=weight)
+                                                    
+        print len(detection_test_idx_list), np.count_nonzero(detection_test_idx_list == None)
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
         #-----------------------------------------------------------------------------------------
         # 
