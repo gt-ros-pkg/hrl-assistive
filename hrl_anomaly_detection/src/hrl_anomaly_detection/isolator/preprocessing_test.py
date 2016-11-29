@@ -642,29 +642,34 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
             ## if j == 0: continue
             if hmm_model is not None:
 
-                start_idx = anomaly_idx-window_size[0]
-                end_idx   = anomaly_idx+window_size[1]
-                if start_idx < 0: start_idx = 0
-                if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
+                ## start_idx = anomaly_idx-window_size[0]
+                ## end_idx   = anomaly_idx+window_size[1]
+                ## if start_idx < 0: start_idx = 0
+                ## if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
                 ml    = hmm_model[j]                
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
                 logps = np.squeeze(logps)
 
-                s = start_idx - 5 if start_idx - 5 >=0 else 0
-                e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
-                  else len(abnormal_data[j,i])-window_size[0]-window_size[1]
-                if s>=e: e = s+1
-
-                ## single_window = []
                 feature_windows = []
-                for k in xrange( s, e ):
-                    ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
-                    single_window    = logps[k:k+window_size[0]+window_size[1]] 
-                    feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                for k in xrange(anomaly_idx-5,anomaly_idx+5):
 
+                    if k < 0: continue
+                    if k > len(abnormal_data[j,i])-1: continue
+
+                    s = k - window_size[0]
+                    if s < 0:  s = 0
+
+                    e = k + window_size[1]
+                    if e > len(abnormal_data[j,i])-1: e = len(abnormal_data[j,i])-1
+                    
+                    ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
+                    ## single_window = logps[k:k+window_size[0]+window_size[1]] 
+                    single_window = logps[s:e] 
+                    feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                    
                 if len(feature_windows) == 0:
-                    print "s,e: ", s,e, len(logps), start_idx
+                    print "s,e: ", s,e, len(logps), anomaly_idx
                     sys.exit()
                     
                 features.append( feature_windows )
