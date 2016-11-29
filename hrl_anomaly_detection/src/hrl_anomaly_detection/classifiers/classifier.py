@@ -1481,7 +1481,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
             if Y_test[ii][0] > 0.0:
                 if anomaly:
-                    if delay_estimation and False:
+                    if delay_estimation and True:
                         if delay_l[-1] >= 0:
                             tp_l.append(1)
                         else:
