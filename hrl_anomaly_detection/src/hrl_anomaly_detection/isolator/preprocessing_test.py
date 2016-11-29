@@ -255,7 +255,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                     
         ## for i in xrange(len(tgt_data)):
         ##     x = tgt_data[i:i+1]
-
         ##     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         ##     ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
         ##                   cov_mult=cov_mult, use_pkl=False)
@@ -450,8 +449,14 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
                 else: x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])                
             return x_new
 
+        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
+        for ii in xrange(len(train_feature_list)):
+            print train_feature_list[ii][0]
+        
         train_feature_list = flattenSample(train_feature_list)
+        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
         train_anomaly_list = np.flatten(train_anomaly_list)
+        print "aaaaaaaaaaaaaaaaaaaaaaaaa"
         test_feature_list  = flattenSample(test_feature_list)
         test_anomaly_list  = np.flatten(test_anomaly_list)
         print np.shape(train_feature_list), np.shape(test_feature_list)
@@ -642,8 +647,7 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 if start_idx < 0: start_idx = 0
                 if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
                 
-                ml    = hmm_model[j]
-                
+                ml    = hmm_model[j]                
                 logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
                 logps = np.squeeze(logps)
 
@@ -651,12 +655,15 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 e = start_idx + 5 if start_idx + window_size[0] + window_size[1] < len(abnormal_data[j,i]) \
                   else len(abnormal_data[j,i])-window_size[0]-window_size[1]
 
+                if s == e: e += 1
+
                 ## single_window = []
                 feature_windows = []
                 for k in xrange( s, e ):
                     ## single_window.append( logps[s:s+window_size[0]+window_size[1]] )
                     single_window    = logps[k:k+window_size[0]+window_size[1]] 
                     feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                    
                 features.append( feature_windows )
                     
                 ## single_window = []
