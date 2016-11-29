@@ -207,7 +207,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
         detection_train_idx_list = anomaly_detection(abnormalTrainData, trainDataY, \
                                                      task_name, save_data_path, param_dict,\
-                                                     logp_viz=False, verbose=False, weight=weight)
+                                                     logp_viz=False, verbose=False, weight=weight,\
+                                                     idx=idx)
 
         print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         print idx
@@ -227,7 +228,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
         detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                     task_name, save_data_path, param_dict,\
-                                                    logp_viz=False, verbose=False, weight=weight)
+                                                    logp_viz=False, verbose=False, weight=weight,\
+                                                    idx=idx)
                                                     
         print len(detection_test_idx_list), np.count_nonzero(detection_test_idx_list == None)
         print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -514,7 +516,7 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
 
 
 def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
-                      weight=0.0):
+                      weight=0.0, idx=0):
     ''' Anomaly detector that return anomalous point on each data.
     '''
     HMM_dict = param_dict['HMM']
@@ -528,7 +530,6 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     nSubSample = 50 # The number of sub-samples from each execution to train GP
 
     # Load a generative model
-    idx = 0
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
     if verbose: print "start to load hmm data, ", modeling_pkl
