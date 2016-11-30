@@ -811,7 +811,7 @@ if __name__ == '__main__':
         #param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['progress']
+        param_dict['ROC']['update_list'] = ['fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
         # all one dim, no temp fp => ignore early delay
