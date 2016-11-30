@@ -832,7 +832,7 @@ if __name__ == '__main__':
         load_model=False
 
         # all one dim, no temp fp => ignore early delay
-        param_dict['ROC']['nPoints'] = nPoints = 2 #HMMOSVM 2, Hmmd 8 #16-HMMGP # 16-F
+        param_dict['ROC']['nPoints'] = nPoints = 14 #HMMOSVM 2, Hmmd 8 #16-HMMGP # 16-F
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param4'
