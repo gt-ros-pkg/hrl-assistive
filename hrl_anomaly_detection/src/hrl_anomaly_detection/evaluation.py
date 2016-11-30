@@ -330,7 +330,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    n_jobs=1
+    ## n_jobs=1
     r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
                                                                  ROC_dict, \
@@ -685,7 +685,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         best_idx = np.argmin(np.abs(fpr_l-0.125))
         ## best_idx = util.argmin(np.abs(fpr_l-0.125))
-        ## best_idx = util.argmin(np.abs(fpr_l-0.00001))
+        best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
         ## print delay_mean_l
@@ -713,6 +713,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
 
         fig, ax1 = plt.subplots()
         plt.rc('text', usetex=True)
+
+        print np.shape(step_mag_list), np.shape(s_delay_mean_l)
 
         ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
         #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
