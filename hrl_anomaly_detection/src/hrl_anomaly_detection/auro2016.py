@@ -839,9 +839,9 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range']  = -np.logspace(1.45, 1.8, nPoints) 
         param_dict['ROC']['fixed_param_range']  = np.linspace(-0.1, 0.1, nPoints)
         param_dict['ROC']['progress_param_range'] = -np.logspace(0.75, 0.85, nPoints)
-        param_dict['ROC']['change_param_range']   = np.linspace(-30.0, 10.0, nPoints)
+        param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         param_dict['ROC']['osvm_param_range']    = np.logspace(-4., -2, nPoints) 
-        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.0, -3.8, nPoints)
+        param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.0, -4.4, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.array([0] + np.logspace(-2,np.log10(1.5),20).tolist())
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #50.0
