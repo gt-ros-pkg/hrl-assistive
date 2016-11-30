@@ -807,15 +807,15 @@ if __name__ == '__main__':
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
         param_dict['ROC']['methods'] = ['hmmgp', 'fixed'] #'progress',
-        ## param_dict['ROC']['methods'] = ['progress']
+        param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp', 'fixed']
+        param_dict['ROC']['update_list'] = ['progress']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
         # all one dim, no temp fp
-        param_dict['ROC']['nPoints'] = nPoints = 16 #Hmmd 8 #16-HMMGP # 20-F
+        param_dict['ROC']['nPoints'] = nPoints = 8 #Hmmd 8 #16-HMMGP # 20-F
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param2'
