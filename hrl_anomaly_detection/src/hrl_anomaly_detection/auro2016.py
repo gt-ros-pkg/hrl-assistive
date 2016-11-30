@@ -901,7 +901,7 @@ if __name__ == '__main__':
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                         no_plot=opt.bNoPlot, delay_plot=True, save_model=True, \
+                                         no_plot=opt.bNoPlot, delay_plot=True, save_model=False, \
                                          load_model=load_model)
 
 
