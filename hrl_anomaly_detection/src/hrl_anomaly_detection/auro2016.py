@@ -810,6 +810,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
         ## param_dict['ROC']['methods'] = ['hmmgp']
         #param_dict['ROC']['methods'] = ['fixed']
+        param_dict['ROC']['methods'] = ['hmmosvm']
         ## param_dict['ROC']['methods'] = ['progress', 'hmmgp']
         param_dict['ROC']['update_list'] = ['hmmgp','progress']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
@@ -829,7 +830,7 @@ if __name__ == '__main__':
         load_model=False
 
         # all one dim, no temp fp => ignore early delay
-        param_dict['ROC']['nPoints'] = nPoints = 8 #Hmmd 8 #16-HMMGP # 16-F
+        param_dict['ROC']['nPoints'] = nPoints = 2 #HMMOSVM 2, Hmmd 8 #16-HMMGP # 16-F
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)+'_acc_param4'
@@ -913,7 +914,8 @@ if __name__ == '__main__':
                                      no_plot=opt.bNoPlot, delay_plot=True)
         else:
             for i, step_mag in enumerate(step_mag_list):
-                ## if not(i==16): continue
+                ## if not(i==19): continue
+                if i==19: continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
