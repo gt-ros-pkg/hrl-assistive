@@ -806,12 +806,12 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']
-        param_dict['ROC']['methods'] = ['hmmgp', 'progress','fixed']
+        param_dict['ROC']['methods'] = ['hmmgp', 'fixed'] #'progress',
         ## param_dict['ROC']['methods'] = ['progress']
         ## param_dict['ROC']['methods'] = ['hmmgp']
         ## param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['progress', 'hmmgp']
-        param_dict['ROC']['update_list'] = ['hmmgp', 'progress','fixed']
+        param_dict['ROC']['update_list'] = ['hmmgp', 'fixed']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
         # all one dim, no temp fp
@@ -825,7 +825,7 @@ if __name__ == '__main__':
         param_dict['ROC']['change_param_range'] = np.linspace(-30.0, 10.0, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #50.0
-        load_model=True
+        load_model=False
 
         # all one dim, temp fp #c12
         ## param_dict['ROC']['nPoints'] = nPoints = 16
@@ -901,7 +901,7 @@ if __name__ == '__main__':
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
-                                         no_plot=opt.bNoPlot, delay_plot=True, save_model=False, \
+                                         no_plot=opt.bNoPlot, delay_plot=True, save_model=True, \
                                          load_model=load_model)
 
 
