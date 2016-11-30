@@ -652,9 +652,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
             fn_l.append( float(np.sum(fn_ll[i])) )
             fp_l.append( float(np.sum(fp_ll[i])) )
 
-            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                           if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>0 ]
             ## delay_list = [ delay_ll[i][ii]*time_step if delay_ll[i][ii]>=0 else nLength*time_step for ii in xrange(len(delay_ll[i])) ]
             ## # to handle.....
             ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
@@ -701,7 +701,8 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     ## s_delay_std_l = s_delay_std_l[-1:]
     ## s_tpr_l       = s_tpr_l[-1:]
     ## step_mag_list = step_mag_list[-1:]
-    ## print s_delay_cnt_l
+    print s_delay_cnt_l
+    print s_delay_mean_l
     
     if no_plot is False:
 
