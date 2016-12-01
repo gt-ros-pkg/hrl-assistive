@@ -810,9 +810,9 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
         ## param_dict['ROC']['methods'] = ['hmmgp']
         #param_dict['ROC']['methods'] = ['fixed']
-        ## param_dict['ROC']['methods'] = ['hmmosvm']
+        param_dict['ROC']['methods'] = ['hmmosvm']
         ## param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['update_list'] = ['hmmgp','progress']
+        param_dict['ROC']['update_list'] = ['hmmosvm']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
         # all one dim, no temp fp => ignore early delay
@@ -903,7 +903,7 @@ if __name__ == '__main__':
         ## param_dict['ROC']['osvm_param_range']    = np.logspace(0, 1, nPoints) 
         ## param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-1, 0, nPoints)
         
-        param_dict['SVM']['hmmosvm_nu'] = 0.002
+        param_dict['SVM']['hmmosvm_nu'] = 0.0002
         param_dict['SVM']['osvm_nu'] = 0.001
         param_dict['SVM']['nugget'] = 10.0
 
@@ -917,7 +917,7 @@ if __name__ == '__main__':
         else:
             for i, step_mag in enumerate(step_mag_list):
                 ## if not(i==19): continue
-                ## if not(i==19): continue
+                if not(i==19): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
