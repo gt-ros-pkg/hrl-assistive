@@ -905,7 +905,7 @@ if __name__ == '__main__':
         
         param_dict['SVM']['hmmosvm_nu'] = 0.0002
         param_dict['SVM']['osvm_nu'] = 0.001
-        param_dict['SVM']['nugget'] = 10.0
+        param_dict['SVM']['nugget'] = 1.0
 
 
         import hrl_anomaly_detection.evaluation as ev 
