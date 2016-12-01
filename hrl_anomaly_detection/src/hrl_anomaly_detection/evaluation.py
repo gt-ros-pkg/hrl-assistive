@@ -684,8 +684,10 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         print fpr_l
 
         best_idx = np.argmin(np.abs(fpr_l-0.125))
+        ## best_idx = np.argmin(np.abs(fpr_l-0.02))
+        best_idx = util.argmin(np.abs(fpr_l-0.02))
         ## best_idx = util.argmin(np.abs(fpr_l-0.125))
-        best_idx = util.argmin(np.abs(fpr_l-0.00001))
+        ## best_idx = util.argmin(np.abs(fpr_l-0.00001))
         print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
         print "best idx: ", best_idx
         ## print delay_mean_l
@@ -752,9 +754,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ## ax2.legend(loc=4, prop={'size':20} )
 
         if save_pdf == True:
-            fig.savefig('test_'+method+'.pdf')
-            fig.savefig('test_'+method+'.png')
-            os.system('mv test_'+method+'.p* ~/Dropbox/HRL/')
+            fig.savefig('delay_'+method+'_125.pdf')
+            fig.savefig('delay_'+method+'_125.png')
+            os.system('mv delay_'+method+'_125.p* ~/Dropbox/HRL/')
         else:
             plt.show()        
         del fig, ax1, ax2
