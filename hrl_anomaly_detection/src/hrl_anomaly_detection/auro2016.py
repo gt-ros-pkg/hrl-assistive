@@ -844,7 +844,7 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.0, -4.4, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.array([0] + np.logspace(-2,np.log10(1.5),20).tolist())
-        param_dict['SVM']['hmmgp_logp_offset'] = 60.0 #50.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 70.0 #50.0
         load_model=False
 
 
@@ -917,7 +917,7 @@ if __name__ == '__main__':
         else:
             for i, step_mag in enumerate(step_mag_list):
                 ## if not(i==19): continue
-                if not(i==19): continue
+                if not(i==0): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
                                          save_pdf=opt.bSavePdf, verbose=opt.bVerbose, debug=opt.bDebug, \
