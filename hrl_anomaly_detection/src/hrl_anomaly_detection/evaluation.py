@@ -754,9 +754,9 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
         ## ax2.legend(loc=4, prop={'size':20} )
 
         if save_pdf == True:
-            fig.savefig('delay_'+method+'_125.pdf')
-            fig.savefig('delay_'+method+'_125.png')
-            os.system('mv delay_'+method+'_125.p* ~/Dropbox/HRL/')
+            fig.savefig('delay_'+method+'_0.pdf')
+            fig.savefig('delay_'+method+'_0.png')
+            os.system('mv delay_'+method+'_0.p* ~/Dropbox/HRL/')
         else:
             plt.show()        
         del fig, ax1, ax2
