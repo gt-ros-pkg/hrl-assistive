@@ -844,7 +844,7 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.0, -4.4, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.array([0] + np.logspace(-2,np.log10(1.5),20).tolist())
-        param_dict['SVM']['hmmgp_logp_offset'] = 80.0 #50.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 60.0 #50.0
         load_model=False
 
 
