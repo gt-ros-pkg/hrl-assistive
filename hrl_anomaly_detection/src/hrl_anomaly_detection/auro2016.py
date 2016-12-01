@@ -844,7 +844,7 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmosvm_param_range'] = np.logspace(-5.0, -4.4, nPoints)
         step_mag_list = np.logspace(-2,np.log10(1.5),20)
         ## step_mag_list = np.array([0] + np.logspace(-2,np.log10(1.5),20).tolist())
-        param_dict['SVM']['hmmgp_logp_offset'] = 70.0 #50.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 80.0 #50.0
         load_model=False
 
 
@@ -905,7 +905,7 @@ if __name__ == '__main__':
         
         param_dict['SVM']['hmmosvm_nu'] = 0.0002
         param_dict['SVM']['osvm_nu'] = 0.001
-        param_dict['SVM']['nugget'] = 15.0
+        param_dict['SVM']['nugget'] = 10.0
 
 
         import hrl_anomaly_detection.evaluation as ev 
