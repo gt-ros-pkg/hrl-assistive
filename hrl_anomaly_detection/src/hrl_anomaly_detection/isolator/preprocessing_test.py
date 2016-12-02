@@ -244,8 +244,8 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         abnormal_isol_test_data  = failure_isol_data[:, abnormalTestIdx, :]
 
         # get individual HMM
-        A        = dd['A']
-        pi       = dd['pi']
+        ## A        = dd['A']
+        ## pi       = dd['pi']
         nEmissionDim = 1
         cov_mult = [cov/2.0]*(nEmissionDim**2)
         scale    = HMM_dict['scale'] #/2.0

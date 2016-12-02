@@ -81,7 +81,6 @@ def isolation_test(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     param_dict = param_dict_hmm
     data_dict  = param_dict['data_param']
-    #return
     #-----------------------------------------------------------------------------------------
 
 

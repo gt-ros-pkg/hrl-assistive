@@ -246,7 +246,6 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
-
     #-----------------------------------------------------------------------------------------
     # HMM-induced vector with LOPO
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
@@ -280,14 +279,12 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
 
-
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
 
     detection_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=save_pdf,\
-                   zero_fp_flag=False)
-    
+                   zero_fp_flag=False)    
 
 
 
@@ -427,7 +424,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
     # ---------------- ROC Visualization ----------------------
     if detection_rate: sys.exit()
     for modality in modality_list:
-        print "-------------------- Modality: ", modality ," ------------------------"
+        print "-------------------- Modality: ", modality, " ------------------------"
         processed_data_path = os.path.join(org_processed_data_path, modality)
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
@@ -438,7 +435,6 @@ def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=Fals
         
     for method in method_list:
         print "---------- ", method, " -----------"
-
         tp_l = []
         tn_l = []
         fn_l = []
@@ -809,7 +805,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp', 'fixed'] #'progress',
         param_dict['ROC']['methods'] = ['progress', 'hmmgp']
         param_dict['ROC']['methods'] = ['hmmgp']
-        #param_dict['ROC']['methods'] = ['fixed']
+        ## param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
         ## param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
@@ -906,7 +902,6 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmosvm_nu'] = 0.0002
         param_dict['SVM']['osvm_nu'] = 0.001
         param_dict['SVM']['nugget'] = 10.0
-
 
         import hrl_anomaly_detection.evaluation as ev 
         if opt.bEvaluationAccParam:
