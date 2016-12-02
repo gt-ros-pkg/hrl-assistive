@@ -811,7 +811,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         #param_dict['ROC']['methods'] = ['fixed']
         ## param_dict['ROC']['methods'] = ['hmmosvm']
-        ## param_dict['ROC']['methods'] = ['progress']
+        param_dict['ROC']['methods'] = ['progress']
         param_dict['ROC']['update_list'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
 
@@ -917,7 +917,7 @@ if __name__ == '__main__':
         else:
             for i, step_mag in enumerate(step_mag_list):
                 ## if (i==19): continue
-                if not(i==18): continue
+                if not(i==19): continue
                 ## if not(i==0): continue
                 ev.evaluation_step_noise(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                          step_mag,\
