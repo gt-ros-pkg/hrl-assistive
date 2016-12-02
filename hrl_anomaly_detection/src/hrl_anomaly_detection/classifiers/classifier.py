@@ -1296,7 +1296,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         if method == 'hmmgp':
-            nSubSample = 100 #temp!!!!!!!!!!!!!
+            nSubSample = 50 #temp!!!!!!!!!!!!!
             ## nSubSample = 20 #20 # 20 
             nMaxData   = 50 #40 100
             rnd_sample = True #False
