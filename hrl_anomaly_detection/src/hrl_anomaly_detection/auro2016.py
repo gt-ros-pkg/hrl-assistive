@@ -665,10 +665,11 @@ def plotModalityVSAnomaly(save_pdf=False):
     plt.tight_layout()
 
     if save_pdf == True:
+        fig.savefig('test.eps')
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        fig.savefig('test.eps')
         os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.e* ~/Dropbox/HRL/')
     else:
         plt.show()        
 

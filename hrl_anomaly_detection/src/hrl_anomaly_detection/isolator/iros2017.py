@@ -206,10 +206,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
         ut.save_pickle(ROC_data, roc_pkl)
 
-        if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list,zero_fp_flag=True)
+        ## if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list,zero_fp_flag=True)
         
     # ---------------- ROC Visualization ----------------------
-    if detection_rate: sys.exit()
+    ## if detection_rate: sys.exit()
     for idx in xrange(len(success_isol_data)):
         print "-------------------- Modality: ", modality, " ------------------------"
         processed_data_path = os.path.join(org_processed_data_path, str(idx))
