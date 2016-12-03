@@ -667,6 +667,7 @@ def plotModalityVSAnomaly(save_pdf=False):
     if save_pdf == True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
+        fig.savefig('test.eps')
         os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()        
