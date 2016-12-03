@@ -282,6 +282,7 @@ if __name__ == '__main__':
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.bEvaluationAll:
+        param_dict['ROC']['methods'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
