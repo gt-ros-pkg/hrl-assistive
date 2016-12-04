@@ -599,6 +599,10 @@ if __name__ == '__main__':
         '''
         feature-wise evaluation
         '''        
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
         param_dict['ROC']['methods'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
