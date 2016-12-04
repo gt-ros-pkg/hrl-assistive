@@ -1390,10 +1390,10 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False, legend=False):
+             timeList=None, only_tpr=False, legend=False, verbose=True):
     # ---------------- ROC Visualization ----------------------
     
-    print "Start to visualize ROC curves!!!"
+    if verbose: print "Start to visualize ROC curves!!!"
     ## ROC_data = ut.load_pickle(roc_pkl)
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
@@ -1431,7 +1431,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
             ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
-            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+            if verbose: print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
         else:
             time_step = 1.0
 
@@ -1449,27 +1449,27 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         if len(fpr_l) < nPoints:
-            print method + ' has NaN? and fitting error?'
+            if verbose: print method + ' has NaN? and fitting error?'
             continue
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
 
-        from sklearn import metrics
-        print "--------------------------------"
-        print " AUC and delay "
-        print "--------------------------------"
-        print method
-        print tpr_l
-        print fpr_l
+        from sklearn import metrics 
+        if verbose:       
+            print "--------------------------------"
+            print " AUC and delay "
+            print "--------------------------------"
+            print method
+            print tpr_l
+            print fpr_l
         if only_tpr is False:
             auc = metrics.auc(fpr_l, tpr_l, True)
             ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
             ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             auc_rates[method] = auc
-            print auc
-        print "--------------------------------"
+            if verbose: print auc
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
@@ -1560,8 +1560,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
 
-    for key in auc_rates.keys():
-        print key, " : ", auc_rates[key]
+    ## for key in auc_rates.keys():
+    ##     print key, " : ", auc_rates[key]
 
     return auc_rates
     

@@ -351,9 +351,10 @@ def vizStatePath(ll_post, nState, time_list=None, single=False, save_pdf=False, 
         
 
     if save_pdf == True:
+        fig.savefig('test.eps')
         fig.savefig('test.pdf')
         fig.savefig('test.png')
-        os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.* ~/Dropbox/HRL/')
     else:
         plt.show()        
     return

@@ -152,6 +152,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if int(f.split('/')[-1].split('_')[0]) in target_class:
             target_idx.append(i)
 
+    print np.shape(d['failureIsolData']), np.shape(d['failure_files'])
+    d['failureIsolData'] = d['failureIsolData'][:,target_idx,:]
+    d['failure_files']   = [d['failure_files'][i] for i in target_idx]
+            
 
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_isol_data)):
@@ -166,6 +170,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if os.path.isdir(processed_data_path) is False:
             os.system('mkdir -p '+processed_data_path)
 
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+        ## if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False:
+        ##     continue
+
 
         #-----------------------------------------------------------------------------------------    
         # Training HMM, and getting classifier training and testing data
@@ -176,8 +184,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                   noise_mag=0.03, verbose=verbose)
         
         #-----------------------------------------------------------------------------------------
-        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
         else: ROC_data = ut.load_pickle(roc_pkl)
         ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
@@ -211,11 +217,71 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # ---------------- ROC Visualization ----------------------
     ## if detection_rate: sys.exit()
     for idx in xrange(len(success_isol_data)):
-        print "-------------------- Modality: ", modality, " ------------------------"
         processed_data_path = os.path.join(org_processed_data_path, str(idx))
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
-        roc_info(method_list, ROC_data, nPoints, no_plot=True)
+        ## auc = roc_info(method_list, ROC_data, nPoints, no_plot=True, verbose=False)
+
+
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        d            = ut.load_pickle(modeling_pkl)
+
+        print modeling_pkl
+        print d.keys()
+        
+        ll_classifier_test_labels = d['ll_classifier_test_labels']
+
+        tot_pos = 0
+        for c in target_class:
+            for l in ll_classifier_test_labels:
+                if c == int(l.split('/')[-1].split('_')[0]):
+                    tot_pos += 1.0
+        tot_pos *= float(len(kFold_list))
+
+
+        print "Total failures:", tot_pos
+        fn_ll = []
+        tp_ll = []
+        for i in xrange(len(ROC_data['hmmgp']['tp_l'])):
+
+            fn = 0
+            for l in ROC_data['hmmgp']['fn_labels'][i]:
+                for c in target_class:
+                    if c == int(l.split('/')[-1].split('_')[0]):
+                        fn += 1.0
+                        break
+
+            ## print tot_pos, fn, len(ROC_data['hmmgp']['fn_labels'][i]), np.sum(ROC_data['hmmgp']['fn_l'][i])
+            ## print "-----------------------------"
+            
+            fn_ll.append(fn)
+            tp_ll.append(tot_pos- fn)
+
+        
+        auc_rates = {}
+        for method in sorted(ROC_data.keys()):
+
+            ## tp_ll = ROC_data[method]['tp_l']
+            fp_ll = ROC_data[method]['fp_l']
+            tn_ll = ROC_data[method]['tn_l']
+            ## fn_ll = ROC_data[method]['fn_l']
+        
+            tpr_l = []
+            fpr_l = []
+            fnr_l = []
+            for i in xrange(nPoints):
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+                fnr_l.append( 100.0 - tpr_l[-1] )
+                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            ## print tpr_l
+            ## print fpr_l
+                
+            from sklearn import metrics 
+            auc = metrics.auc(fpr_l, tpr_l, True)
+            auc_rates[method] = auc
+               
+        print idx , auc_rates
 
 
 if __name__ == '__main__':
