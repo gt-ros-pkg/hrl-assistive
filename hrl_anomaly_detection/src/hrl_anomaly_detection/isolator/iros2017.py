@@ -171,8 +171,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             os.system('mkdir -p '+processed_data_path)
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-        ## if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False:
-        ##     continue
+        if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False:
+            continue
 
 
         #-----------------------------------------------------------------------------------------    
@@ -223,12 +223,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         ## auc = roc_info(method_list, ROC_data, nPoints, no_plot=True, verbose=False)
 
 
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
         d            = ut.load_pickle(modeling_pkl)
-
-        print modeling_pkl
-        print d.keys()
-        
         ll_classifier_test_labels = d['ll_classifier_test_labels']
 
         tot_pos = 0
@@ -239,20 +235,16 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         tot_pos *= float(len(kFold_list))
 
 
-        print "Total failures:", tot_pos
+        ## print "Total failures:", tot_pos
         fn_ll = []
         tp_ll = []
         for i in xrange(len(ROC_data['hmmgp']['tp_l'])):
-
             fn = 0
             for l in ROC_data['hmmgp']['fn_labels'][i]:
                 for c in target_class:
                     if c == int(l.split('/')[-1].split('_')[0]):
                         fn += 1.0
                         break
-
-            ## print tot_pos, fn, len(ROC_data['hmmgp']['fn_labels'][i]), np.sum(ROC_data['hmmgp']['fn_l'][i])
-            ## print "-----------------------------"
             
             fn_ll.append(fn)
             tp_ll.append(tot_pos- fn)
@@ -281,7 +273,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             auc = metrics.auc(fpr_l, tpr_l, True)
             auc_rates[method] = auc
                
-        print idx , auc_rates
+        print idx , auc_rates[method]
 
 
 if __name__ == '__main__':
@@ -313,7 +305,7 @@ if __name__ == '__main__':
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 

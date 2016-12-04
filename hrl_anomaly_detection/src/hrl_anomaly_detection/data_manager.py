@@ -1770,6 +1770,22 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if 'EEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('EEChange')
 
+
+        # Unimodal feature - Desired EE change --------------------------
+        if 'unimodal_kinDesEE' in feature_list:
+            kinEEPos     = d['kinDesEEPosList'][idx]
+
+            if offset_flag:
+                offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
+                for i in xrange(len(offset)):
+                    kinEEPos[i] -= offset[i]
+            dist = np.linalg.norm(kinEEPos, axis=0)
+
+            if dataSample is None: dataSample = np.array(dist)
+            else: dataSample = np.vstack([dataSample, dist])
+            if 'DesEEChange' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('DesEEChange')
+
             
         # Crossmodal feature - relative dist --------------------------
         if 'crossmodal_targetEEDist' in feature_list:
