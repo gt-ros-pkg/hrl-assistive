@@ -64,7 +64,7 @@ np.random.seed(3334)
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                   no_plot=False, delay_plot=True, find_param=False, data_gen=False, target_class=None):
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -111,8 +111,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        print subject_names
-        print d['successIsolDataList']
         for i in xrange(len(subject_names)):
             if i==0:
                 success_isol_data = d['successIsolDataList'][i]
@@ -142,19 +140,18 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## else: timeList = None
 
 
-    x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
-    x_id = range(2,14)
-    target_class = [11,4,13,10]
+    ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
     # Select specific anomalies
-    target_idx = []
-    for i, f in enumerate(d['failure_files']):
-        if int(f.split('/')[-1].split('_')[0]) in target_class:
-            target_idx.append(i)
+    if target_class is not None:
+        target_idx = []
+        for i, f in enumerate(d['failure_files']):
+            if int(f.split('/')[-1].split('_')[0]) in target_class:
+                target_idx.append(i)
 
-    print np.shape(d['failureIsolData']), np.shape(d['failure_files'])
-    d['failureIsolData'] = d['failureIsolData'][:,target_idx,:]
-    d['failure_files']   = [d['failure_files'][i] for i in target_idx]
+        print np.shape(d['failureIsolData']), np.shape(d['failure_files'])
+        d['failureIsolData'] = d['failureIsolData'][:,target_idx,:]
+        d['failure_files']   = [d['failure_files'][i] for i in target_idx]
             
 
     org_processed_data_path = copy.copy(processed_data_path)
@@ -227,53 +224,308 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d            = ut.load_pickle(modeling_pkl)
         ll_classifier_test_labels = d['ll_classifier_test_labels']
 
-        tot_pos = 0
-        for c in target_class:
-            for l in ll_classifier_test_labels:
-                if c == int(l.split('/')[-1].split('_')[0]):
-                    tot_pos += 1.0
-        tot_pos *= float(len(kFold_list))
 
-
-        ## print "Total failures:", tot_pos
-        fn_ll = []
-        tp_ll = []
-        for i in xrange(len(ROC_data['hmmgp']['tp_l'])):
-            fn = 0
-            for l in ROC_data['hmmgp']['fn_labels'][i]:
-                for c in target_class:
+        if target_class is not None:
+            tot_pos = 0
+            for c in target_class:
+                for l in ll_classifier_test_labels:
                     if c == int(l.split('/')[-1].split('_')[0]):
-                        fn += 1.0
-                        break
-            
-            fn_ll.append(fn)
-            tp_ll.append(tot_pos- fn)
+                        tot_pos += 1.0
+            tot_pos *= float(len(kFold_list))
+
+
+            ## print "Total failures:", tot_pos
+            fn_ll = []
+            tp_ll = []
+            for i in xrange(len(ROC_data['hmmgp']['tp_l'])):
+                fn = 0
+                for l in ROC_data['hmmgp']['fn_labels'][i]:
+                    for c in target_class:
+                        if c == int(l.split('/')[-1].split('_')[0]):
+                            fn += 1.0
+                            break
+
+                fn_ll.append(fn)
+                tp_ll.append(tot_pos- fn)
+        else:
+            tp_ll = ROC_data[method]['tp_l']
+            fn_ll = ROC_data[method]['fn_l']
 
         
-        auc_rates = {}
-        for method in sorted(ROC_data.keys()):
+        ## auc_rates = {}
+        ## tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        ## fn_ll = ROC_data[method]['fn_l']
 
-            ## tp_ll = ROC_data[method]['tp_l']
-            fp_ll = ROC_data[method]['fp_l']
-            tn_ll = ROC_data[method]['tn_l']
-            ## fn_ll = ROC_data[method]['fn_l']
-        
-            tpr_l = []
-            fpr_l = []
-            fnr_l = []
-            for i in xrange(nPoints):
-                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-                fnr_l.append( 100.0 - tpr_l[-1] )
-                fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-            ## print tpr_l
-            ## print fpr_l
-                
-            from sklearn import metrics 
-            auc = metrics.auc(fpr_l, tpr_l, True)
-            auc_rates[method] = auc
+        ## print tpr_l
+        ## print fpr_l
+
+        from sklearn import metrics 
+        auc = metrics.auc(fpr_l, tpr_l, True)
+        ## auc_rates[method] = auc
                
-        print idx , auc_rates[method]
+        print idx , auc
+
+
+def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
+                         target_class=None):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+   
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']
+        success_files = d['success_files']
+        failure_files = d['failure_files']        
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files']   = success_files
+        d['failure_files']   = failure_files        
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+    if 'progress_diag' in method_list: diag = True
+    else: diag = False
+
+
+    #-----------------------------------------------------------------------------------------    
+    # Select specific anomalies
+    if target_class is not None:
+        target_idx = []
+        for i, f in enumerate(d['failure_files']):
+            if int(f.split('/')[-1].split('_')[0]) in target_class:
+                target_idx.append(i)
+
+        print np.shape(d['failureData']), np.shape(d['failure_files'])
+        d['failureData'] = d['failureData'][:,target_idx,:]
+        d['failure_files']   = [d['failure_files'][i] for i in target_idx]
+            
+
+
+    #-----------------------------------------------------------------------------------------    
+    # Training HMM, and getting classifier training and testing data
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              noise_mag=0.03, diag=diag, \
+                              verbose=verbose)
+
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+    osvm_data = None ; bpsvm_data = None
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False )
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                         task_name, \
+                                                                         method, ROC_data, \
+                                                                         ROC_dict, \
+                                                                         SVM_dict, HMM_dict, \
+                                                                         raw_data=(osvm_data,bpsvm_data),\
+                                                                         startIdx=startIdx, nState=nState) \
+                                                                         for idx in xrange(len(kFold_list)) \
+                                                                         for method in method_list )
+
+
+    print "finished to run run_classifiers"
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ut.save_pickle(ROC_data, roc_pkl)
+
+    #-----------------------------------------------------------------------------------------
+    ## best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
+    ## scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
+    ##                            timeList=timeList, verbose=False)
+
+    
+    # ---------------- ROC Visualization ----------------------
+    roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
+
+def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+   
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']        
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+    if 'progress_diag' in method_list: diag = True
+    else: diag = False
+
+    #-----------------------------------------------------------------------------------------    
+    # Training HMM, and getting classifier training and testing data
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              noise_mag=0.03, diag=diag, \
+                              verbose=verbose)
+
+    #-----------------------------------------------------------------------------------------
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+    osvm_data = None ; bpsvm_data = None
+    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
+        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+                                  window=SVM_dict['raw_window_size'],
+                                  use_test=True, use_pca=False )
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                         task_name, \
+                                                                         method, ROC_data, \
+                                                                         ROC_dict, \
+                                                                         SVM_dict, HMM_dict, \
+                                                                         raw_data=(osvm_data,bpsvm_data),\
+                                                                         startIdx=startIdx, nState=nState) \
+                                                                         for idx in xrange(len(kFold_list)) \
+                                                                         for method in method_list )
+
+
+    print "finished to run run_classifiers"
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ut.save_pickle(ROC_data, roc_pkl)
+
+    #-----------------------------------------------------------------------------------------
+    ## best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
+    ## scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
+    ##                            timeList=timeList, verbose=False)
+
+    
+    # ---------------- ROC Visualization ----------------------
+    roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
+
 
 
 if __name__ == '__main__':
@@ -282,8 +534,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
 
-    p.add_option('--anomaly_info', '--ai', action='store_true', dest='anomaly_info',
-                 default=False, help='Get anomaly info.')
+    p.add_option('--eval_single', '--es', action='store_true', dest='evaluation_single',
+                 default=False, help='Evaluate with single detector.')
+    p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
+                 default=False, help='Evaluate with double detectors.')
     
     opt, args = p.parse_args()
 
@@ -295,7 +549,7 @@ if __name__ == '__main__':
     local_range   = 10.0
     nPoints = 40 #None
 
-    from hrl_anomaly_detection.AURO2016_params import *
+    from hrl_anomaly_detection.isolation.IROS2017_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
@@ -307,6 +561,8 @@ if __name__ == '__main__':
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    target_class = [11,4,13,10]
 
 
     #---------------------------------------------------------------------------           
@@ -340,9 +596,31 @@ if __name__ == '__main__':
                        max_time=param_dict['data_param']['max_time'])
 
     elif opt.bEvaluationAll:
+        '''
+        feature-wise evaluation
+        '''        
         param_dict['ROC']['methods'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                       find_param=False, data_gen=opt.bDataGen)
+                       find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+
+    elif opt.evaluation_single:
+        '''
+        evaluation with selected feature set
+        '''
+        param_dict['ROC']['methods'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                             save_pdf=opt.bSavePdf, \
+                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                             find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+
+    elif opt.evaluation_double:
+        param_dict['ROC']['methods'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                             save_pdf=opt.bSavePdf, \
+                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                             find_param=False, data_gen=opt.bDataGen)
 

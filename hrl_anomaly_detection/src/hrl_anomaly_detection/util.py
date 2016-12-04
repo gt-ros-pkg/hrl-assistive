@@ -831,14 +831,17 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
                 ##     plt.show()
                 
             else:
-                if new_time_array[-1]>time_array[-1]:
-                    interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
-                else:
-                    interp = interpolate.interp1d(time_array, target_array[i] )
+                interp = interpolate.interp1d([0.0]+time_array+[time_array[-1]+0.1], [target_array[i][0]]+target_array[i].tolist()+[target_array[i][-1]] )
+                ## if new_time_array[-1]>time_array[-1]:
+                ##     interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
+                ## else:
+                ##     interp = interpolate.interp1d(time_array, target_array[i] )
                 interp_data = interp(new_time_array)
         except:
             print "splrep failed (maybe new_time_array is over range of time_array)", spline
             print np.shape(time_array), np.shape(target_array[i]), i,n
+            print new_time_array[0], time_array[0]
+            print new_time_array[-1], time_array[-1]
             sys.exit()
             
 
