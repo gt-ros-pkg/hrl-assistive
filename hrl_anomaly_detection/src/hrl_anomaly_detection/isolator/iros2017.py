@@ -549,7 +549,7 @@ if __name__ == '__main__':
     local_range   = 10.0
     nPoints = 40 #None
 
-    from hrl_anomaly_detection.isolation.IROS2017_params import *
+    from hrl_anomaly_detection.isolator.IROS2017_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
