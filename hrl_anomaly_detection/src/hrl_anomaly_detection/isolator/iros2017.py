@@ -142,18 +142,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
-    # Select specific anomalies
-    if target_class is not None:
-        target_idx = []
-        for i, f in enumerate(d['failure_files']):
-            if int(f.split('/')[-1].split('_')[0]) in target_class:
-                target_idx.append(i)
-
-        print np.shape(d['failureIsolData']), np.shape(d['failure_files'])
-        d['failureIsolData'] = d['failureIsolData'][:,target_idx,:]
-        d['failure_files']   = [d['failure_files'][i] for i in target_idx]
-            
-
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_isol_data)):
 
@@ -613,6 +601,13 @@ if __name__ == '__main__':
         '''
         evaluation with selected feature set
         '''
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
+                                                    'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
+        
         param_dict['ROC']['methods'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
