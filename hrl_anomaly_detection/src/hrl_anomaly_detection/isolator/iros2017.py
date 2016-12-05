@@ -334,15 +334,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         timeList    = param_dict2['timeList'][startIdx:]
     else: timeList = None
 
-    if 'progress_diag' in method_list: diag = True
-    else: diag = False
-
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
-                              noise_mag=0.03, diag=diag, \
+                              noise_mag=0.03, diag=False, \
                               verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
@@ -376,12 +373,6 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
 
-    #-----------------------------------------------------------------------------------------
-    ## best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
-    ## scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
-    ##                            timeList=timeList, verbose=False)
-
-    
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
