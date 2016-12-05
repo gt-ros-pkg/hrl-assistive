@@ -1577,19 +1577,20 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                 param_dict['feature_names'].append('kinVel_z')
 
         # Unimodal feature - Kinematics --------------------------------------
-        if 'unimodal_kinJntEff_1' in feature_list:
-            unimodal_kinJntEff = d['kinJntEffList'][idx]
+        for jnt_idx in xrange(7):
+            if 'unimodal_kinJntEff_'+str(jnt_idx+1) in feature_list:
+                unimodal_kinJntEff = d['kinJntEffList'][idx]
 
-            if offset_flag:
-                offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
-                for i in xrange(len(offset)):
-                    unimodal_kinJntEff[i] -= offset[i]
+                if offset_flag:
+                    offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
+                    for i in xrange(len(offset)):
+                        unimodal_kinJntEff[i] -= offset[i]
 
 
-            if dataSample is None: dataSample = np.array( unimodal_kinJntEff[0:1] )
-            else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[0:1] ])
-            if 'kinJntEff_1' not in param_dict['feature_names']:           
-                param_dict['feature_names'].append( 'kinJntEff_1' )
+                if dataSample is None: dataSample = np.array( unimodal_kinJntEff[jnt_idx:jnt_idx+1] )
+                else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[jnt_idx:jnt_idx+1] ])
+                if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
+                    param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinJntEff' in feature_list:

@@ -412,8 +412,10 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
-        successData = d['successData']
-        failureData = d['failureData']        
+        success_isol_data = d['successIsolData']
+        failure_isol_data = d['failureIsolData']        
+        success_files = d['success_files']
+        failure_files = d['failure_files']
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -428,9 +430,23 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successData']   = successData
-        d['failureData']   = failureData
-        d['kFoldList']     = kFold_list
+        for i in xrange(len(subject_names)):
+            if i==0:
+                success_isol_data = d['successIsolDataList'][i]
+                failure_isol_data = d['failureIsolDataList'][i]
+            else:
+                success_isol_data = np.vstack([ np.swapaxes(success_isol_data,0,1), \
+                                                np.swapaxes(d['successIsolDataList'][i], 0,1)])
+                failure_isol_data = np.vstack([ np.swapaxes(failure_isol_data,0,1), \
+                                                np.swapaxes(d['failureIsolDataList'][i], 0,1)])
+                success_isol_data = np.swapaxes(success_isol_data, 0, 1)
+                failure_isol_data = np.swapaxes(failure_isol_data, 0, 1)
+
+        d['successIsolData'] = success_isol_data
+        d['failureIsolData'] = failure_isol_data
+        d['success_files']   = success_files
+        d['failure_files']   = failure_files
+        d['kFoldList']       = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
