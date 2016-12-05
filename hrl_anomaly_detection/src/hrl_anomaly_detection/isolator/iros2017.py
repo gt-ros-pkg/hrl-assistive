@@ -296,7 +296,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False and False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -587,6 +587,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         
         param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['HMM']['scale'] = 9.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
