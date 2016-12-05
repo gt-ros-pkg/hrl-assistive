@@ -601,10 +601,10 @@ if __name__ == '__main__':
 
         param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         
         
         param_dict['ROC']['methods'] = ['hmmgp']
@@ -617,14 +617,19 @@ if __name__ == '__main__':
 
     elif opt.evaluation_double:
 
-        param_dict['data_param']['handFeatures1'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
-                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
-        param_dict['data_param']['handFeatures2'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        
         param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict1 = copy.copy(param_dict)
+        param_dict1['data_param']['handFeatures1'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
+                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']
+        param_dict1['HMM']['scale'] = 14.0
+                                                     
+        param_dict2 = copy.copy(param_dict)
+        param_dict2['data_param']['handFeatures2'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        param_dict2['HMM']['scale'] = 6.11
+        
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, (param_dict1,param_dict2), \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
