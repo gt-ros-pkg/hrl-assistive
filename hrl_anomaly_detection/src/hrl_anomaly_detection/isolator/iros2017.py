@@ -134,10 +134,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    ## param_dict2 = d['param_dict']
-    ## if 'timeList' in param_dict2.keys():
-    ##     timeList    = param_dict2['timeList'][startIdx:]
-    ## else: timeList = None
 
 
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
@@ -328,11 +324,6 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
-    #-----------------------------------------------------------------------------------------
-    param_dict2 = d['param_dict']
-    if 'timeList' in param_dict2.keys():
-        timeList    = param_dict2['timeList'][startIdx:]
-    else: timeList = None
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -381,19 +372,21 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
+    (param_dict1, param_dict2) = param_dict
+
     ## Parameters
     # data
-    data_dict  = param_dict['data_param']
+    data_dict  = param_dict1['data_param']
     data_renew = data_dict['renew']
     # HMM
-    HMM_dict   = param_dict['HMM']
+    HMM_dict   = param_dict1['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
     # SVM
-    SVM_dict   = param_dict['SVM']
+    SVM_dict   = param_dict1['SVM']
 
     # ROC
-    ROC_dict = param_dict['ROC']
+    ROC_dict = param_dict1['ROC']
 
     # parameters
     startIdx    = 4
@@ -425,22 +418,12 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
+                           isolationFeatures=param_dict['data_param']['isolationFeatures'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
-        successData, failureData, success_files, failure_files, kFold_list \
-          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                           
+        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successIsolDataList'], d['failureIsolDataList'],\
                                d['successFileList'], d['failureFileList'])
-
-        for i in xrange(len(subject_names)):
-            if i==0:
-                success_isol_data = d['successIsolDataList'][i]
-                failure_isol_data = d['failureIsolDataList'][i]
-            else:
-                success_isol_data = np.vstack([ np.swapaxes(success_isol_data,0,1), \
-                                                np.swapaxes(d['successIsolDataList'][i], 0,1)])
-                failure_isol_data = np.vstack([ np.swapaxes(failure_isol_data,0,1), \
-                                                np.swapaxes(d['failureIsolDataList'][i], 0,1)])
-                success_isol_data = np.swapaxes(success_isol_data, 0, 1)
-                failure_isol_data = np.swapaxes(failure_isol_data, 0, 1)
 
         d['successIsolData'] = success_isol_data
         d['failureIsolData'] = failure_isol_data
@@ -451,20 +434,18 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
-    param_dict2 = d['param_dict']
-    if 'timeList' in param_dict2.keys():
-        timeList    = param_dict2['timeList'][startIdx:]
-    else: timeList = None
+    # feature selection
 
-    if 'progress_diag' in method_list: diag = True
-    else: diag = False
-
+    print d['param_dict'].keys()
+    sys.exit()
+    ## param_dict1
+    
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, scale, \
-                              noise_mag=0.03, diag=diag, \
+                              noise_mag=0.03, diag=False, \
                               verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
@@ -497,11 +478,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
-
-    #-----------------------------------------------------------------------------------------
-    ## best_param_idx = getBestParamIdx(method_list, ROC_data, nPoints, verbose=False)
-    ## scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
-    ##                            timeList=timeList, verbose=False)
 
     
     # ---------------- ROC Visualization ----------------------
@@ -567,7 +543,27 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = False
+        failure_viz = True
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
+        ##                                             'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
+        param_dict['data_param']['handFeatures'] = ['unimodal_kinDesEEChange',\
+                                                    'unimodal_kinEEChange',\
+                                                    ## 'unimodal_audioWristRMS', \
+                                                    ## 'unimodal_audioWristFrontRMS', \
+                                                    ## 'unimodal_audioWristAzimuth',\
+                                                    ## 'unimodal_kinJntEff', \
+                                                    'unimodal_ftForce_zero', \
+                                                    ## 'unimodal_ftForce', \
+                                                    ## 'unimodal_ftForceX', \
+                                                    ## 'unimodal_ftForceY', \
+                                                    ## 'unimodal_ftForceZ', \
+                                                    'crossmodal_landmarkEEDist', \
+                                                    'crossmodal_landmarkEEAng',\
+                                                    ## 'unimodal_fabricForce',\
+                                                    'unimodal_landmarkDist']        
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
@@ -575,7 +571,7 @@ if __name__ == '__main__':
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
-                       max_time=param_dict['data_param']['max_time'])
+                       max_time=param_dict['data_param']['max_time'], target_class=target_class)
 
     elif opt.bEvaluationAll:
         '''
@@ -599,8 +595,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
-                                                    'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
+        param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng', \
+                                                    'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
@@ -616,6 +612,10 @@ if __name__ == '__main__':
                              find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
     elif opt.evaluation_double:
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict1 = copy.copy(param_dict)

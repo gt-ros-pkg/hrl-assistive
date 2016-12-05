@@ -439,9 +439,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 cut_data=None, init_param_dict=None, \
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
-                handFeatures=['crossmodal_targetEEDist'], data_renew=False,\
+                handFeatures=[], data_renew=False,\
                 isolationFeatures=[], isolation_viz=False,\
-                time_sort=False, max_time=None):
+                time_sort=False, max_time=None, \
+                target_class=None):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -466,6 +467,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         successIsolDataList = data_dict.get('successIsolDataList',[])
         failureIsolDataList = data_dict.get('failureIsolDataList',[])
         param_dict_isol     = data_dict.get('param_dict_isol',[])
+        successFileList     = data_dict.get('successFileList',[])
+        failureFileList     = data_dict.get('failureFileList',[])
 
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
@@ -526,17 +529,17 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                                                  renew=data_renew,\
                                                  max_time=max_time)
 
-            print " --------------------- Success -----------------------------"  
-            successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
-                                                     init_param_dict=param_dict, cut_data=cut_data)
-            print " --------------------- Failure -----------------------------"  
-            failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
-                                                     init_param_dict=param_dict, cut_data=cut_data)
+            # Get data
+            if len(handFeatures) > 0:
 
-            successDataList.append(successData)
-            failureDataList.append(failureData)
-            successFileList.append(success_list)
-            failureFileList.append(failure_list)
+                print " --------------------- Success -----------------------------"  
+                successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+                                                         init_param_dict=param_dict, cut_data=cut_data)
+                print " --------------------- Failure -----------------------------"  
+                failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+                                                         init_param_dict=param_dict, cut_data=cut_data)
+                successDataList.append(successData)
+                failureDataList.append(failureData)
 
             # Get isolation data
             if len(isolationFeatures) > 0:
@@ -546,10 +549,11 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 print " --------------------- Failure -----------------------------"  
                 failureData, _ = extractHandFeature(failure_data_dict, isolationFeatures, scale=scale, \
                                                     init_param_dict=param_dict_isol, cut_data=cut_data)
-
                 successIsolDataList.append(successData)
                 failureIsolDataList.append(failureData)
             
+            successFileList.append(success_list)
+            failureFileList.append(failure_list)
 
         data_dict = {}
         data_dict['successDataList'] = successDataList
@@ -598,7 +602,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                     ax = fig.add_subplot(nPlot/2,2,i)
                 else:
                     ax = fig.add_subplot(n*100+10+i)
-                if solid_color: ax.plot(successData[i].T, c=color)
+                if solid_color: ax.plot(successData[i].T, c='b')
                 else: ax.plot(successData[i].T)
 
                 if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
@@ -610,18 +614,36 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     if failure_viz:
         if fig is None: fig = plt.figure()
 
-        for failureData in failureDataList:
+        for fidx, failureData in enumerate(failureDataList):
             if len(failureData)==0: break
             n,m,k = np.shape(failureData)            
             nPlot = n
 
-            for i in xrange(n):
+            failure_data = None
+            if target_class is not None:
+                for lidx, l in enumerate(failureFileList[fidx]):
+                    if int(l.split('/')[-1].split('_')[0]) in target_class:
+                        if failure_data is None:
+                            failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
+                        else:
+                            failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
+            else:
+                failure_data = failureData
+
+            ## if target_class is not None:
+            ##     print failureFileList[fidx][i]
+            ##     print failureFileList[fidx][i].split('/')[-1].split('_')[0], target_class
+            ##     if int(failureFileList[fidx][i].split('/')[-1].split('_')[0]) not in target_class:
+            ##         continue
+
+
+            for i in xrange(n): # per feature                
                 if n>9:
                     ax = fig.add_subplot(nPlot/2,2,i)
                 else:
                     ax = fig.add_subplot(n*100+10+i)
-                if solid_color: ax.plot(failureData[i].T, c='r')
-                else: ax.plot(failureData[i].T)
+                if solid_color: ax.plot(failure_data[i].T, c='r')
+                else: ax.plot(failure_data[i].T)
                 ax.set_title( AddFeature_names[i] )
 
     if success_viz or failure_viz:
@@ -1641,6 +1663,39 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
                     param_dict['feature_names'].append('ftForce_mag')
 
 
+        # Unimodal feature - Force zeroing -------------------------------------------
+        if 'unimodal_ftForce_zero' in feature_list:
+            ftForce = d['ftForceList'][idx]
+
+            ## from scipy import signal, fftpack, conj, stats            
+            ## ftForce = ftForce[2]
+
+            ## window_size = 20
+            ## for i in xrange(len(ftForce)):
+            ##     if i < window_size:
+            ##         f = ftForce[0]*(window_size-(i+1)) + ftForce[:i+1]
+            ##     else:
+            ##         f = ftForce[i-window_size:i+1]
+            ##     ftForce_fft = fftpack.fft(f)
+           
+            
+            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
+            for i in xrange(len(ftForce)):
+                ftForce[i] -= unimodal_ftForce_mean[i]
+                
+            ftForce = ftForce[[0,1,2]]
+            # magnitude
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            if offset_flag: #correct???????
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag_zero' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_zero')
+
+
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForceX' in feature_list:
             ftForce = d['ftForceList'][idx]
@@ -1801,13 +1856,17 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
         # Unimodal feature - Desired EE change --------------------------
         if 'unimodal_kinDesEEChange' in feature_list:
-            kinEEPos     = d['kinDesEEPosList'][idx]
+            kinEEPos     = d['kinEEPosList'][idx]
+            kinDesEEPos  = d['kinDesEEPosList'][idx]
 
+            ## if offset_flag:
+            ##     offset = np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)
+            ##     for i in xrange(len(offset)):
+            ##         kinDesEEPos[i] -= offset[i]
+            dist = np.linalg.norm(kinEEPos-kinDesEEPos, axis=0)
             if offset_flag:
-                offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
-                for i in xrange(len(offset)):
-                    kinEEPos[i] -= offset[i]
-            dist = np.linalg.norm(kinEEPos, axis=0)
+                offset = np.mean(dist[:startOffsetSize])
+                dist -= offset
 
             if dataSample is None: dataSample = np.array(dist)
             else: dataSample = np.vstack([dataSample, dist])
