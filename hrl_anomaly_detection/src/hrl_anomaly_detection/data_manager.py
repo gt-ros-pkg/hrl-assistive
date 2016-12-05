@@ -169,11 +169,10 @@ def LOPO_data_index(success_data_list, failure_data_list, \
                     target_idx.append(k)
 
             if i == 0:
-                failureIdx.append( range(len(failure_data_list[i][0])-len(target_idx)) )
+                failureIdx.append( range(len(target_idx)) )
             else:
                 failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
-                                         len(failure_data_list[i][0])-len(target_idx)) )
-
+                                         len(target_idx)) )
 
 
     # only for hmm tuning
