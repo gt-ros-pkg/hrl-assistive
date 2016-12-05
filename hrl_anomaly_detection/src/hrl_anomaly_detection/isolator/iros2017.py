@@ -587,7 +587,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
         
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['HMM']['scale'] = 18.0
+        param_dict['HMM']['scale'] = 24.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
