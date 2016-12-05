@@ -117,7 +117,8 @@ def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
     return kFold_list
 
 def LOPO_data_index(success_data_list, failure_data_list, \
-                    success_file_list, failure_file_list, many_to_one=True):
+                    success_file_list, failure_file_list, many_to_one=True,\
+                    target_class=None):
     """
     Return completed set of success and failure data with LOPO cross-validatation fold list
     """
@@ -147,6 +148,20 @@ def LOPO_data_index(success_data_list, failure_data_list, \
 
         success_files += success_file_list[i]
         failure_files += failure_file_list[i]
+
+
+    # Select specific anomalies
+    if target_class is not None:
+        target_idx = []
+        for i, f in enumerate(failure_files):
+            if int(f.split('/')[-1].split('_')[0]) in target_class:
+                target_idx.append(i)
+
+        failure_data = failure_data[:,target_idx,:]
+        failureIdx   = [failureIdx[i] for i in target_idx]
+        failure_files = [failure_files[i] for i in target_idx]
+
+
 
     # only for hmm tuning
     kFold_list = []

@@ -314,9 +314,11 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
+                           
         successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
-                               d['successFileList'], d['failureFileList'])
+                               d['successFileList'], d['failureFileList'],\
+                               target_class=target_class)
 
         d['successData']   = successData
         d['failureData']   = failureData
@@ -334,21 +336,6 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     if 'progress_diag' in method_list: diag = True
     else: diag = False
-
-
-    #-----------------------------------------------------------------------------------------    
-    # Select specific anomalies
-    if target_class is not None:
-        target_idx = []
-        for i, f in enumerate(d['failure_files']):
-            if int(f.split('/')[-1].split('_')[0]) in target_class:
-                target_idx.append(i)
-
-        print np.shape(d['failureData']), np.shape(d['failure_files'])
-        d['failureData'] = d['failureData'][:,target_idx,:]
-        d['failure_files']   = [d['failure_files'][i] for i in target_idx]
-            
-
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data

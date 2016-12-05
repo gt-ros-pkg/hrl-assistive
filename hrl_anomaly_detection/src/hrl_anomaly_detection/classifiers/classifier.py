@@ -1451,7 +1451,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         delay_l   = []
         delay_idx = 0
         tp_idx_l  = []
-        tp_labels = []
+        ## tp_labels = []
         fn_labels = []
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
@@ -1497,8 +1497,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             del delay_l[-1]
                     else:
                         tp_l.append(1)
-                        if ll_classifier_test_labels is not None:
-                            tp_labels.append(ll_classifier_test_labels[ii])                        
+                        ## if ll_classifier_test_labels is not None:
+                        ##     tp_labels.append(ll_classifier_test_labels[ii])                        
                 else:
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
@@ -1518,7 +1518,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         data[method]['tn_l'][j] += tn_l
         data[method]['delay_l'][j] += delay_l
         data[method]['tp_idx_l'][j] += tp_idx_l
-        data[method]['tp_labels'][j] += tp_labels
+        ## data[method]['tp_labels'][j] += tp_labels
         data[method]['fn_labels'][j] += fn_labels
 
     print "finished ", idx, method
