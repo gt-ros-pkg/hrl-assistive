@@ -1799,7 +1799,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
 
         # Unimodal feature - Desired EE change --------------------------
-        if 'unimodal_kinDesEE' in feature_list:
+        if 'unimodal_kinDesEEChange' in feature_list:
             kinEEPos     = d['kinDesEEPosList'][idx]
 
             if offset_flag:
