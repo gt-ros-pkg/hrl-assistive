@@ -2070,6 +2070,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
         if 'crossmodal_landmarkEEAng' in feature_list:
             kinEEQuat    = d['kinEEQuatList'][idx]
             visionLandmarkQuat = d['visionLandmarkQuatList'][idx][:4]
+            visionLandmarkPos  = d['visionLandmarkPosList'][idx] # originally length x 3*tags
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkQuat = np.reshape(visionLandmarkQuat, (4,1))
 
