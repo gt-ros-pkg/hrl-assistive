@@ -603,6 +603,9 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                                                     'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        
         
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['HMM']['scale'] = 14.0
@@ -613,6 +616,12 @@ if __name__ == '__main__':
                              find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
     elif opt.evaluation_double:
+
+        param_dict['data_param']['handFeatures1'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
+                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
+        param_dict['data_param']['handFeatures2'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        
         param_dict['ROC']['methods'] = ['hmmgp']
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
