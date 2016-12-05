@@ -595,7 +595,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng', \
+        param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEAng', \
                                                     'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']

@@ -167,6 +167,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_audioWristFrontRMS', \
                          'unimodal_audioWristAzimuth',\
                          'unimodal_kinJntEff', \
+                         'unimodal_ftForce_zero',\
+                         'unimodal_ftForce',\
                          'unimodal_ftForceX', \
                          'unimodal_ftForceY', \
                          'unimodal_ftForceZ', \
