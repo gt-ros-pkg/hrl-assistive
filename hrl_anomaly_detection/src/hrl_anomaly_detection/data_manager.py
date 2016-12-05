@@ -157,28 +157,22 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             if int(f.split('/')[-1].split('_')[0]) in target_class:
                 target_idx.append(i)
 
-        print np.shape(failure_files)
-        print np.shape(failureIdx)
-        print max(target_idx)
-
         failure_data = failure_data[:,target_idx,:]
         failure_files = [failure_files[i] for i in target_idx]
 
-        failureIdx   = [failureIdx[i] for i in target_idx]
-
+        failureIdx = []
         for i in xrange(nSubject):
 
             target_idx = []
-            for j, f in enumerate(failure_file_list[i]):
+            for k, f in enumerate(failure_file_list[i]):
                 if int(f.split('/')[-1].split('_')[0]) in target_class:
-                    target_idx.append(j)
+                    target_idx.append(k)
 
             if i == 0:
                 failureIdx.append( range(len(failure_data_list[i][0])-len(target_idx)) )
             else:
                 failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
                                          len(failure_data_list[i][0])-len(target_idx)) )
-
 
 
 
@@ -2809,6 +2803,8 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print idx, " : learned hmm exists"
             continue
+
+        print np.shape(failureData), max(abnormalTrainIdx)
 
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']

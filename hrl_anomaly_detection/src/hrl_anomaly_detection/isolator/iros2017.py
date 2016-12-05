@@ -296,7 +296,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False and False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
