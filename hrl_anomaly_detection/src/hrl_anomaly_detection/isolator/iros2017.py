@@ -211,8 +211,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
         d            = ut.load_pickle(modeling_pkl)
         ll_classifier_test_labels = d['ll_classifier_test_labels']
-
-
+        method = method_list[0]
+        
         if target_class is not None:
             tot_pos = 0
             for c in target_class:
