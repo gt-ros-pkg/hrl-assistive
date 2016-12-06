@@ -608,12 +608,13 @@ if __name__ == '__main__':
         evaluation with selected feature set
         '''
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']        
         ## param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEAng', \
         ##                                             'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
@@ -625,7 +626,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.1, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 3.0
+        param_dict['HMM']['scale'] = 5.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
