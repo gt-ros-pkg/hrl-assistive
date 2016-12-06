@@ -575,6 +575,20 @@ if __name__ == '__main__':
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                        max_time=param_dict['data_param']['max_time'], target_class=target_class)
 
+    elif opt.bLikelihoodPlot:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['HMM']['scale'] = 2.0
+
+        import hrl_anomaly_detection.data_viz as dv        
+        dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                          decision_boundary_viz=False, method='progress', \
+                          useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                          useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
+                          hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
+                          verbose=opt.bVerbose, lopo=True)
+
     elif opt.bEvaluationAll:
         '''
         feature-wise evaluation
@@ -598,7 +612,8 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist']        
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
+                                                    'crossmodal_landmarkEEAng']        
         ## param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEAng', \
         ##                                             'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
@@ -610,7 +625,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.1, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 18.0
+        param_dict['HMM']['scale'] = 3.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
