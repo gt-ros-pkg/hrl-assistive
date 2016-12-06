@@ -598,7 +598,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']        
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist']        
         ## param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEAng', \
         ##                                             'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
