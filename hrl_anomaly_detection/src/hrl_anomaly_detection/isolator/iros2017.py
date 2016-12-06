@@ -154,7 +154,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             os.system('mkdir -p '+processed_data_path)
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-        if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False:
+        if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False and \
+          data_renew is False :
             continue
 
 
