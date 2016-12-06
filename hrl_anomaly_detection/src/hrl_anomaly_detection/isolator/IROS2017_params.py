@@ -35,6 +35,10 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
 
     param_dict['SVM']['raw_window_size'] = 5
 
+    if bDataRenew:
+        param_dict['HMM']['renew'] = True
+        param_dict['SVM']['renew'] = True
+
     return raw_data_path, save_data_path, param_dict
 
 
@@ -183,15 +187,15 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     ##                      'unimodal_audioWristFrontRMS', \ #3
     ##                      'unimodal_audioWristAzimuth', #4                        
     ##                      'unimodal_kinJntEff', \ #567891011
-                         ## 'unimodal_ftForce_zero',\
-                         ## 'unimodal_ftForce',\
-    ##                      'unimodal_ftForceX', \ #12
-    ##                      'unimodal_ftForceY', \ #13
-    ##                      'unimodal_ftForceZ', \ #14
-    ##                      'crossmodal_landmarkEEDist', \ #15
-    ##                      'crossmodal_landmarkEEAng',\ #16
-    ##                      'unimodal_fabricForce',\ #17
-    ##                      'unimodal_landmarkDist'] #18
+    ##                      'unimodal_ftForce_zero',\ #12
+    ##                      'unimodal_ftForce',\ #13
+    ##                      'unimodal_ftForceX', \ #14
+    ##                      'unimodal_ftForceY', \ #15
+    ##                      'unimodal_ftForceZ', \ #16
+    ##                      'crossmodal_landmarkEEDist', \ #17
+    ##                      'crossmodal_landmarkEEAng',\ #18
+    ##                      'unimodal_fabricForce',\ #19
+    ##                      'unimodal_landmarkDist'] #20
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
