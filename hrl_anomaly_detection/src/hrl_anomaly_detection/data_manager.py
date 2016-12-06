@@ -2864,7 +2864,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             print idx, " : learned hmm exists"
             continue
 
-        print np.shape(failureData), max(abnormalTrainIdx)
+        print np.shape(failureData[0]), max(abnormalTrainIdx)
 
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
