@@ -581,7 +581,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['HMM']['scale'] = 6.0
+        param_dict['HMM']['scale'] = 5.0
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
@@ -617,8 +617,8 @@ if __name__ == '__main__':
         # 45%
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
         # 58%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
-                                                    'crossmodal_landmarkEEAng']        
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
+        ##                                             'crossmodal_landmarkEEAng']        
  
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']

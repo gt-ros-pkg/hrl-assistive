@@ -67,6 +67,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     cov      = HMM_dict['cov']
     # SVM
     SVM_dict = param_dict['SVM']
+    startIdx = 4
     
     #------------------------------------------
     if dd is None and lopo is False:        
@@ -102,7 +103,6 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     normalTestData = None                                    
     print "======================================"
     print "Success data: ", np.shape(successData)
-    ## print "Normal test data: ", np.shape(normalTestData)
     print "Failure data: ", np.shape(failureData)
     print "======================================"
 
@@ -134,9 +134,6 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
         ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
     if ret == 'Failure': sys.exit()
         
-    ## ths = threshold
-    startIdx = 4
-
     if decision_boundary_viz:
         import hrl_anomaly_detection.classifiers.classifier as cf
         
