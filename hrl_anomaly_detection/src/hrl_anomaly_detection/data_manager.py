@@ -1822,7 +1822,11 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
-                
+
+            visionLandmarkPos_mean = np.mean(visionLandmarkPos[:,:startOffsetSize], axis=1)
+            for i in xrange(len(visionLandmarkPos)):
+                visionLandmarkPos[i] -= visionLandmarkPos_mean[i]
+                            
             dist = np.linalg.norm(visionLandmarkPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
