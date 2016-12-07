@@ -618,16 +618,16 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        # 51%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
-        # 52%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEAng']
-        # 58%
+        ## # 51%
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
+        ## # 52%
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEAng']
+        ## # 58%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
         ##                                             'crossmodal_landmarkEEAng']        
-        # 57%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange',\
-                                                    'crossmodal_landmarkEEAng']
+        ## # 57%
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange',\
+        ##                                             'crossmodal_landmarkEEAng']
                                                     
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
                                                     'crossmodal_landmarkEEAng']
@@ -646,7 +646,7 @@ if __name__ == '__main__':
         
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.1, nPoints)*-1.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.3, nPoints)*-1.0
         param_dict['HMM']['scale'] = 5.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
