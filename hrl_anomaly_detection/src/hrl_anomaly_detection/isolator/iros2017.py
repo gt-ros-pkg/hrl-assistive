@@ -161,11 +161,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         #-----------------------------------------------------------------------------------------    
         # Training HMM, and getting classifier training and testing data
-        dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
-                                  task_name, processed_data_path,\
-                                  HMM_dict, data_renew, startIdx, nState, cov, scale, \
-                                  success_files=success_files, failure_files=failure_files,\
-                                  noise_mag=0.03, verbose=verbose)
+        try:
+            dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                                      task_name, processed_data_path,\
+                                      HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                      success_files=success_files, failure_files=failure_files,\
+                                      noise_mag=0.03, verbose=verbose)
+        except:
+            print "Feature: ", i
+            sys.exit()
         
         #-----------------------------------------------------------------------------------------
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
