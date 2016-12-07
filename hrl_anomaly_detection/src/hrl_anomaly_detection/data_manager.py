@@ -498,6 +498,13 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         if len(isolationFeatures) > 0:
             allData_isol, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures, scale=scale,\
                                                                cut_data=cut_data)
+
+
+        ## print param_dict.keys()
+        ## print param_dict['feature_names']
+        ## print param_dict['feature_max']
+        ## print param_dict['feature_min']
+        ## sys.exit()
                     
         # leave-one-person-out
         successDataList = []
@@ -606,7 +613,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
                 elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
                 else: ax.set_ylabel(AddFeature_names[i])
-                    ## ax.set_title( AddFeature_names[i] )
+
 
     if failure_viz:
         if fig is None: fig = plt.figure()
@@ -627,13 +634,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             else:
                 failure_data = failureData
 
-            ## if target_class is not None:
-            ##     print failureFileList[fidx][i]
-            ##     print failureFileList[fidx][i].split('/')[-1].split('_')[0], target_class
-            ##     if int(failureFileList[fidx][i].split('/')[-1].split('_')[0]) not in target_class:
-            ##         continue
-
-
             for i in xrange(n): # per feature                
                 if n>9:
                     ax = fig.add_subplot(nPlot/2,2,i)
@@ -643,13 +643,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 else: ax.plot(failure_data[i].T)
                 ax.set_title( AddFeature_names[i] )
 
-    if success_viz or failure_viz:
-        ## plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
-        ## for i in xrange(n):
-        ##     ax = fig.add_subplot(n*100+10+i)
-            ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
-            ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
 
+    if success_viz or failure_viz:
         if save_pdf:
             fig.savefig('test.pdf')
             fig.savefig('test.png')
@@ -1485,27 +1480,6 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             param_dict['unimodal_audioPower_power_max'] = power_max
             param_dict['unimodal_audioPower_power_min'] = power_min
                                 
-        ## if 'unimodal_ftForce' in feature_list:
-        ##     force_array = None
-        ##     start_force_array = None
-        ##     for idx in xrange(len(d['ftForceList'])):
-        ##         if force_array is None:
-        ##             force_array = d['ftForceList'][idx]
-        ##             ## start_force_array = d['ftForceList'][idx][:,:5]
-        ##         else:
-        ##             force_array = np.hstack([force_array, d['ftForceList'][idx] ])
-        ##             ## start_force_array = np.hstack([start_force_array, d['ftForceList'][idx][:,:5]])
-
-        ##     ftPCADim    = 2
-        ##     ftForce_pca = PCA(n_components=ftPCADim)
-        ##     res = ftForce_pca.fit_transform( force_array.T )            
-        ##     param_dict['unimodal_ftForce_pca'] = ftForce_pca
-        ##     param_dict['unimodal_ftForce_pca_dim'] = ftPCADim
-
-        ##     ## res = ftForce_pca.transform(start_force_array.T)
-        ##     ## param_dict['unimodal_ftForce_pca_init_avg'] = np.array([np.mean(res, axis=0)]).T
-        ##     ## param_dict['unimodal_ftForce_init_avg'] = np.mean(start_force_array, axis=1)
-
         if 'unimodal_ppsForce' in feature_list:
             ppsLeft  = d['ppsLeftList']
             ppsRight = d['ppsRightList']
@@ -1634,22 +1608,14 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             # magnitude
             if len(np.shape(ftForce)) > 1:
                 unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-                # individual force
-                ## unimodal_ftForce_ind = ftForce[2:3,:]
                 if offset_flag: #correct???????
                     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
                 
                 if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
                 else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-                ## if dataSample is None: dataSample = np.array(unimodal_ftForce_ind)
-                ## else: dataSample = np.vstack([dataSample, unimodal_ftForce_ind])
-
                 if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
-                    ## param_dict['feature_names'].append('ftForce_x')
-                    ## param_dict['feature_names'].append('ftForce_y')
-                    ## param_dict['feature_names'].append('ftForce_z')
             else:                
                 unimodal_ftForce_mag = ftForce
             
@@ -1664,28 +1630,16 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
         if 'unimodal_ftForce_zero' in feature_list:
             ftForce = d['ftForceList'][idx]
 
-            ## from scipy import signal, fftpack, conj, stats            
-            ## ftForce = ftForce[2]
-
-            ## window_size = 20
-            ## for i in xrange(len(ftForce)):
-            ##     if i < window_size:
-            ##         f = ftForce[0]*(window_size-(i+1)) + ftForce[:i+1]
-            ##     else:
-            ##         f = ftForce[i-window_size:i+1]
-            ##     ftForce_fft = fftpack.fft(f)
-           
-            
             unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
             for i in xrange(len(ftForce)):
                 ftForce[i] -= unimodal_ftForce_mean[i]
                 
             ## ftForce = ftForce[[0,1,2]]
-            ftForce = ftForce[[0,1,]]
+            ## ftForce = ftForce[[0,1,]]
             
             # magnitude
-            ## unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
             if offset_flag: #correct???????
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
@@ -1838,7 +1792,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if dataSample is None: dataSample = np.array(crossmodal_landmarkDist)
             else: dataSample = np.vstack([dataSample, crossmodal_landmarkDist])
             
-            if 'landmarkDistDiff' not in param_dict['feature_names']:
+            if 'landmarkDist' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('landmarkDist')
 
 
@@ -2117,20 +2071,14 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
     if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]    
-    ## print "Before scaling, max is: ", param_dict['feature_max']
-    ## print "Before scaling, min is: ", param_dict['feature_min']
-    ## print "Cur scale, max is: ", [ np.max(np.array(feature).flatten()) for feature in features ]
-    ## print "Cur scale, min is: ", [ np.min(np.array(feature).flatten()) for feature in features ]
-    ## print "-----------------------------------------------------------------"
                 
     scaled_features = []
     for i, feature in enumerate(features):
-        ## print np.amax(feature), np.amin(feature)
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
             scaled_features.append( scale*( np.array(feature) - param_dict['feature_min'][i] )\
-                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]))
+                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
     return scaled_features, param_dict
 

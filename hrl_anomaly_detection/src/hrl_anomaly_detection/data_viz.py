@@ -51,7 +51,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                    useTrain=True, useNormalTest=True, useAbnormalTest=False,\
                    useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                    data_renew=False, hmm_renew=False, save_pdf=False, verbose=False, dd=None,\
-                   nSubSample=None, lopo=False):
+                   nSubSample=None, lopo=False, plot_feature=False):
 
     from hrl_anomaly_detection import data_manager as dm
     from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -79,7 +79,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                            ae_data=False,\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'],\
-                           data_renew=data_dict['renew'], max_time=data_dict.get('max_time', None))
+                           data_renew=data_renew, max_time=data_dict.get('max_time', None))
         successData = dd['successData'] * HMM_dict['scale']
         failureData = dd['failureData'] * HMM_dict['scale']                           
     elif dd is None and lopo:
@@ -170,15 +170,12 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
 
     print "----------------------------------------------------------------------------"
-    ## fig = plt.figure()
+    fig      = plt.figure()
     min_logp = 0.0
     max_logp = 0.0
-    target_idx = 1
 
     # training data
     if useTrain:
-        ## normalTrainData = np.array(normalTrainData)[:,0:3,:]
-
         testDataY = -np.ones(len(normalTrainData[0]))
         
         ll_X, ll_Y, _ = \
@@ -186,30 +183,32 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                                                            add_logp_d=False, \
                                                            cov_type='full')
 
+        if plot_feature is False: ax = fig.add_subplot()
+        else:                     ax = fig.add_subplot(1+len(normalTrainData),1,1)
+                
+                
         exp_log_ll = []        
         for i in xrange(len(ll_X)):
 
             l_logp = np.array(ll_X)[i,:,0]
             l_post = np.array(ll_X)[i,:,-nState]
             
-            if decision_boundary_viz: # and i==target_idx:
-                fig = plt.figure()
-
             # disp
-            if useTrain_color: plt.plot(l_logp, label=str(i))
-            else: plt.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
+            if useTrain_color: ax.plot(l_logp, label=str(i))
+            else: ax.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
 
             if min_logp > np.amin(l_logp): min_logp = np.amin(l_logp)
             if max_logp < np.amax(l_logp): max_logp = np.amax(l_logp)
             
-            if decision_boundary_viz: # and i==target_idx:
+            if decision_boundary_viz:
                 l_exp_logp = dtc.predict(ll_X[i]) + l_logp
-                plt.plot(l_exp_logp, 'm-', lw=3.0)
+                ax.plot(l_exp_logp, 'm-', lw=3.0)
                 ## break
                 plt.show()        
 
         if useTrain_color: 
             plt.legend(loc=3,prop={'size':16})
+
             
             
     # normal test data
@@ -261,17 +260,21 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
                 log_ll[i].append(logp)
 
-                ## if decision_boundary_viz and i==target_idx:
-                ##     if j>=len(ll_logp[i]): continue
-                ##     l_X = [ll_logp[i][j]] + ll_post[i][j].tolist()
-                ##     exp_logp = dtc.predict(l_X)[0] + ll_logp[i][j]
-                ##     exp_log_ll[i].append(exp_logp)
-
+            #temp
+            if plot_feature is True:
+                ax = fig.add_subplot(1+len(normalTrainData),1,1)
+                ax.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
+                ax.plot(log_ll[i],'r-')
+                for j in xrange(len(normalTrainData)):
+                    ax = fig.add_subplot(1+len(normalTrainData),1,2+j)
+                    ax.plot(normalTrainData[j].T, c='b')
+                    ax.plot(abnormalTrainData[j][i], c='r')
+                plt.show()
+                continue
 
             # disp
-            plt.plot(log_ll[i], 'r-')
+            ax.plot(log_ll[i], 'r-')
             ## plt.plot(exp_log_ll[i], 'r*-')
-        plt.plot(log_ll[target_idx], 'k-', lw=3.0)            
 
 
     ## plt.ylim([min_logp, max_logp])
