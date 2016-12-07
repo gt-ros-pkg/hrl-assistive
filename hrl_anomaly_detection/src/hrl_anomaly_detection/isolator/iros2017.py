@@ -586,9 +586,9 @@ if __name__ == '__main__':
 
     elif opt.bLikelihoodPlot:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['HMM']['scale'] = 10.0
+        param_dict['HMM']['scale'] = 20.0
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']
 
         import hrl_anomaly_detection.data_viz as dv        
