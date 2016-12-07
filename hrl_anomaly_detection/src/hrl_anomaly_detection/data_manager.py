@@ -474,6 +474,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True)
 
+        data_renew = False
+
         print "start to load data"
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
@@ -498,8 +500,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         if len(isolationFeatures) > 0:
             allData_isol, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures, scale=scale,\
                                                                cut_data=cut_data)
-            
-
+                    
         # leave-one-person-out
         successDataList = []
         failureDataList = []
@@ -2092,6 +2093,7 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
 
 
         # ----------------------------------------------------------------
+        if len(np.shape(dataSample)) < 2: dataSample = np.array([dataSample])
         dataList.append(dataSample)
 
 
