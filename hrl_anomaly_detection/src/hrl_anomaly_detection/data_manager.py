@@ -474,8 +474,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True)
 
-        data_renew = False
-
         print "start to load data"
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
