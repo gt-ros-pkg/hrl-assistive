@@ -169,7 +169,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                       noise_mag=0.03, verbose=verbose)
         except:
             print "Feature: ", i
-            sys.exit()
+            continue
+            ## sys.exit()
         
         #-----------------------------------------------------------------------------------------
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
@@ -207,6 +208,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     for idx in xrange(len(success_isol_data)):
         processed_data_path = os.path.join(org_processed_data_path, str(idx))
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+        if os.path.isfile(roc_pkl) is False: continue
         ROC_data = ut.load_pickle(roc_pkl)        
         ## auc = roc_info(method_list, ROC_data, nPoints, no_plot=True, verbose=False)
 

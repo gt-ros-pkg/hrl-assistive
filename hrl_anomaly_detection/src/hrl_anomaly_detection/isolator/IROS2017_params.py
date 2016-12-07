@@ -174,9 +174,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_kinJntEff', \
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce',\
-                         ## 'unimodal_ftForceX', \
-                         ## 'unimodal_ftForceY', \
-                         ## 'unimodal_ftForceZ', \
+                         'unimodal_ftForceX', \
+                         'unimodal_ftForceY', \
+                         'unimodal_ftForceZ', \
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
                          'unimodal_fabricForce',\
