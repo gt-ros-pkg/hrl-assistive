@@ -126,12 +126,9 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
     # generative model
     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-    if data_dict['handFeatures_noise']:
-        ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                     cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
-    else:
-        ret = ml.fit(normalTrainData, cov_mult=cov_mult, ml_pkl=None, use_pkl=False) # not(renew))
+    ret = ml.fit(normalTrainData+\
+                 np.random.normal(0.0, 0.03, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                 cov_mult=cov_mult, ml_pkl=None, use_pkl=False, cov_type='full') # not(renew))
     if ret == 'Failure': sys.exit()
         
     if decision_boundary_viz:
@@ -270,6 +267,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                     ax.plot(normalTrainData[j].T, c='b')
                     ax.plot(abnormalTrainData[j][i], c='r')
                 plt.show()
+                fig      = plt.figure()
                 continue
 
             # disp

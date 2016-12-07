@@ -588,9 +588,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['HMM']['scale'] = 5.0
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
-                                                    'crossmodal_landmarkEEAng']
+        param_dict['HMM']['scale'] = 10.0
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
@@ -598,7 +597,7 @@ if __name__ == '__main__':
                           useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                          verbose=opt.bVerbose, lopo=True, plot_feature=False)
+                          verbose=opt.bVerbose, lopo=True, plot_feature=True)
 
     elif opt.bEvaluationAll:
         '''
