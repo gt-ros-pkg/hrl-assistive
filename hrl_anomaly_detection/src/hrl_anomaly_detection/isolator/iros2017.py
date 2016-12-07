@@ -141,10 +141,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_isol_data)):
 
-        successData = copy.copy(d['successIsolData'][[0,i]])
-        failureData = copy.copy(d['failureIsolData'][[0,i]])
-        ## successData = copy.copy(d['successIsolData'][i:i+1])
-        ## failureData = copy.copy(d['failureIsolData'][i:i+1])
+        ## successData = copy.copy(d['successIsolData'][[0,i]])
+        ## failureData = copy.copy(d['failureIsolData'][[0,i]])
+        successData = copy.copy(d['successIsolData'][i:i+1])
+        failureData = copy.copy(d['failureIsolData'][i:i+1])
 
         success_files = d['success_files']
         failure_files = d['failure_files']
@@ -608,7 +608,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['HMM']['scale'] = 9.0
+        param_dict['HMM']['scale'] = 5.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
@@ -636,10 +636,8 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
                                                     'crossmodal_landmarkEEAng']
 
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
-        ##                                             'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
-                                                    
- 
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForceZ', 'unimodal_kinJntEff_3']
+                                                     
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
 
