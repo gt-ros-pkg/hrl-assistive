@@ -157,8 +157,6 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             if int(f.split('/')[-1].split('_')[0]) in target_class:
                 target_idx.append(i)
 
-        print np.shape(failure_data), len(target_idx)
-
         failure_data = failure_data[:,target_idx,:]
         failure_files = [failure_files[i] for i in target_idx]
 
@@ -475,8 +473,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True)
-
-        data_renew = False
 
         print "start to load data"
         # loading and time-sync    
