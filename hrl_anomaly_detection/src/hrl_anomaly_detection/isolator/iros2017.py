@@ -559,15 +559,14 @@ if __name__ == '__main__':
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     ## 'unimodal_kinJntEff', \
                                                     'unimodal_ftForce_zero', \
-                                                    ## 'unimodal_ftForce', \
-                                                    ## 'unimodal_ftForceX', \
-                                                    ## 'unimodal_ftForceY', \
-                                                    ## 'unimodal_ftForceZ', \
+                                                    'unimodal_ftForce', \
+                                                    'unimodal_ftForceX', \
+                                                    'unimodal_ftForceY', \
+                                                    'unimodal_ftForceZ', \
                                                     'crossmodal_landmarkEEDist', \
                                                     'crossmodal_landmarkEEAng',\
                                                     ## 'unimodal_fabricForce',\
                                                     'unimodal_landmarkDist']
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']        
                                                     
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
@@ -616,12 +615,11 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         # 45%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
+        # 58%
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']        
-        ## param_dict['data_param']['handFeatures'] = ['crossmodal_landmarkEEAng', \
-        ##                                             'unimodal_ftForce_zero', 'unimodal_kinDesEEChange']        
+ 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
 
