@@ -2943,10 +2943,6 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         d['nLength']      = nLength
         d['scale']        = HMM_dict['scale']
         d['cov']          = HMM_dict['cov']
-        ## d['normalTrainData']   = normalTrainData
-        ## d['abnormalTrainData'] = abnormalTrainData
-        ## d['normalTestData']    = normalTestData
-        ## d['abnormalTestData']  = abnormalTestData
         if diag:
             d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
             d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            
