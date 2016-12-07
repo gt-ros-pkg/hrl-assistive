@@ -557,13 +557,13 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
         ##                                             'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
         param_dict['data_param']['handFeatures'] = ['unimodal_kinDesEEChange',\
-                                                    'unimodal_kinEEChange',\
+                                                    ## 'unimodal_kinEEChange',\
                                                     ## 'unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinJntEff', \
+                                                    ## 'unimodal_kinJntEff', \
                                                     'unimodal_ftForce_zero', \
-                                                    'unimodal_ftForce', \
+                                                    ## 'unimodal_ftForce', \
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
                                                     ## 'unimodal_ftForceZ', \
