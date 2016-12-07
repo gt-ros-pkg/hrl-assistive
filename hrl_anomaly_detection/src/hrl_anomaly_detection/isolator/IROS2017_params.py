@@ -167,11 +167,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
 
     isolationFeatures = ['unimodal_kinDesEEChange',\
-                         ## 'unimodal_kinEEChange',\
+                         'unimodal_kinEEChange',\
                          'unimodal_audioWristRMS', \
                          'unimodal_audioWristFrontRMS', \
                          'unimodal_audioWristAzimuth',\
-                         ## 'unimodal_kinJntEff', \
+                         'unimodal_kinJntEff', \
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce',\
                          'unimodal_ftForceX', \
@@ -181,21 +181,21 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'crossmodal_landmarkEEAng',\
                          'unimodal_fabricForce',\
                          'unimodal_landmarkDist'] 
-    isolationFeatures = ['unimodal_kinDesEEChange',\ #0 
-                         'unimodal_kinEEChange',\ #1
-                         'unimodal_audioWristRMS', \ #2
-                         'unimodal_audioWristFrontRMS', \ #3
-                         'unimodal_audioWristAzimuth', #4                        
-                         'unimodal_kinJntEff', \ #567891011
-                         'unimodal_ftForce_zero',\ #12
-                         'unimodal_ftForce',\ #13
-                         'unimodal_ftForceX', \ #14
-                         'unimodal_ftForceY', \ #15
-                         'unimodal_ftForceZ', \ #16
-                         'crossmodal_landmarkEEDist', \ #17
-                         'crossmodal_landmarkEEAng',\ #18
-                         'unimodal_fabricForce',\ #19
-                         'unimodal_landmarkDist'] #20
+    ## isolationFeatures = ['unimodal_kinDesEEChange',\ #0 
+    ##                      'unimodal_kinEEChange',\ #1
+    ##                      'unimodal_audioWristRMS', \ #2
+    ##                      'unimodal_audioWristFrontRMS', \ #3
+    ##                      'unimodal_audioWristAzimuth', #4                        
+    ##                      'unimodal_kinJntEff', \ #567891011
+    ##                      'unimodal_ftForce_zero',\ #12
+    ##                      'unimodal_ftForce',\ #13
+    ##                      'unimodal_ftForceX', \ #14
+    ##                      'unimodal_ftForceY', \ #15
+    ##                      'unimodal_ftForceZ', \ #16
+    ##                      'crossmodal_landmarkEEDist', \ #17
+    ##                      'crossmodal_landmarkEEAng',\ #18
+    ##                      'unimodal_fabricForce',\ #19
+    ##                      'unimodal_landmarkDist'] #20
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
