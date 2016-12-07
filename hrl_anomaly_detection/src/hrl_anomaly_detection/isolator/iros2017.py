@@ -557,12 +557,12 @@ if __name__ == '__main__':
                                                     ## 'unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    ## 'unimodal_kinJntEff', \
+                                                    'unimodal_kinJntEff', \
                                                     'unimodal_ftForce_zero', \
                                                     'unimodal_ftForce', \
-                                                    'unimodal_ftForceX', \
-                                                    'unimodal_ftForceY', \
-                                                    'unimodal_ftForceZ', \
+                                                    ## 'unimodal_ftForceX', \
+                                                    ## 'unimodal_ftForceY', \
+                                                    ## 'unimodal_ftForceZ', \
                                                     'crossmodal_landmarkEEDist', \
                                                     'crossmodal_landmarkEEAng',\
                                                     ## 'unimodal_fabricForce',\
