@@ -312,6 +312,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
+
+        print np.shape(d['successDataList'])
                            
         successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
@@ -326,6 +328,9 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
+
+    print np.shape(successData)
+    sys.exit()
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
