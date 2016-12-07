@@ -638,12 +638,12 @@ if __name__ == '__main__':
 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForceZ', 'unimodal_kinJntEff_3']
                                                      
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-
         # 56%
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        # 
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         
         
         param_dict['ROC']['methods'] = ['hmmgp']
