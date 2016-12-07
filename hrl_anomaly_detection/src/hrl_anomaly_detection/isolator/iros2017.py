@@ -192,7 +192,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                              ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
-                                                                             startIdx=startIdx, nState=nState) \
+                                                                             startIdx=startIdx, nState=nState,\
+                                                                             n_jobs=n_jobs) \
                                                                              for idx in xrange(len(kFold_list)) \
                                                                              for method in method_list )
 
@@ -607,7 +608,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['methods'] = ['progress']
         param_dict['HMM']['scale'] = 5.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \

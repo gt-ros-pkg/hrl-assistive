@@ -1138,7 +1138,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
                     modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
-                    save_model=False, load_model=False):
+                    save_model=False, load_model=False, n_jobs=-1):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
@@ -1380,7 +1380,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
 
     # classifier # TODO: need to make it efficient!!
-    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=False )
+    if n_jobs == 1: parallel = True
+    else: parallel = False
+    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
 
         if modeling_pkl_prefix is not None:
