@@ -638,11 +638,11 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
@@ -652,8 +652,8 @@ if __name__ == '__main__':
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen, target_class=target_class)
-                             ## find_param=False, data_gen=opt.bDataGen)
+                             find_param=False, data_gen=opt.bDataGen)
+                             ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
 
     elif opt.evaluation_double:
