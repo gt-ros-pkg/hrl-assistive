@@ -430,13 +430,12 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['handFeatures'], \
+                           handFeatures=data_dict['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
-                           isolationFeatures=data_dict['isolationFeatures'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
         success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
-          = dm.LOPO_data_index(d['successIsolDataList'], d['failureIsolDataList'],\
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
         d['successIsolData'] = success_isol_data
@@ -450,7 +449,9 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     #-----------------------------------------------------------------------------------------
     # feature selection
     for i in xrange(2):
-        print d['param_dict'+str(i+1)].keys()
+        print d.keys()
+        print d['param_dict'].keys()
+        print d['param_dict']['feature_names']
         
 
         
