@@ -1642,8 +1642,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
             # cumulation
-            ## for i in xrange(1,len(unimodal_ftForce_mag)):
-            ##     unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
+            for i in xrange(1,len(unimodal_ftForce_mag)):
+                unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
 
             ## unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
 
