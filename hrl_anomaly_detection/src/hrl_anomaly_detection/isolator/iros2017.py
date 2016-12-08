@@ -637,42 +637,38 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkDist']
 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'unimodal_kinDesEEChange']
-
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist']
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
+                                                    'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 7.0
+        param_dict['HMM']['scale'] = 6.111 #7.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                             find_param=False, data_gen=opt.bDataGen)
+                             ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
 
     elif opt.evaluation_double:
 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict1 = copy.copy(param_dict)
         param_dict1['data_param']['handFeatures1'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
                                                      'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']
-        param_dict1['HMM']['scale'] = 14.0
+        param_dict1['HMM']['scale'] = 6.111
                                                      
         param_dict2 = copy.copy(param_dict)
-        param_dict2['data_param']['handFeatures2'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        param_dict2['data_param']['handFeatures2'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist']
         param_dict2['HMM']['scale'] = 6.11
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
