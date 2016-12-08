@@ -260,7 +260,9 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             #temp
             if plot_feature is True:
                 ax = fig.add_subplot(1+len(normalTrainData),1,1)
-                ax.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
+                for j in xrange(len(ll_X)):
+                    l_logp = np.array(ll_X)[j,:,0]                
+                    ax.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
                 ax.plot(log_ll[i],'r-')
                 for j in xrange(len(normalTrainData)):
                     ax = fig.add_subplot(1+len(normalTrainData),1,2+j)

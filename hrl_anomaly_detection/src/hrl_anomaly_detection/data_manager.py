@@ -1643,13 +1643,35 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if offset_flag: #correct???????
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
-            unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
+            ## unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
 
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
             if 'ftForce_mag_zero' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_mag_zero')
+
+
+        # Unimodal feature - Force zeroing -------------------------------------------
+        if 'unimodal_ftForce_delta' in feature_list:
+            ftForce = d['ftForceList'][idx]
+
+            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
+            for i in xrange(len(ftForce)):
+                ftForce[i] -= unimodal_ftForce_mean[i]
+                
+            # magnitude
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
+            if offset_flag: #correct???????
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag_delta' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_delta')
 
 
         # Unimodal feature - Force -------------------------------------------

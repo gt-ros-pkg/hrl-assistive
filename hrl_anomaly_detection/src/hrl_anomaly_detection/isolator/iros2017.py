@@ -565,6 +565,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     ## 'unimodal_kinJntEff', \
+                                                    'unimodal_ftForce_delta', \
                                                     'unimodal_ftForce_zero', \
                                                     'unimodal_ftForce', \
                                                     ## 'unimodal_ftForceX', \
@@ -589,7 +590,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['HMM']['scale'] = 7.0
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta']
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
@@ -597,7 +598,7 @@ if __name__ == '__main__':
                           useTrain=True, useNormalTest=False, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
-                          verbose=opt.bVerbose, lopo=True, plot_feature=True)
+                          verbose=opt.bVerbose, lopo=True, plot_feature=False)
 
     elif opt.bEvaluationAll:
         '''
@@ -635,7 +636,7 @@ if __name__ == '__main__':
                                                     
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
                                                     'crossmodal_landmarkEEAng']
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForceZ', 'unimodal_kinJntEff_3']
