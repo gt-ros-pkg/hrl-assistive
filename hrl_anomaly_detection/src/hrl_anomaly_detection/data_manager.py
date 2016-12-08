@@ -2119,20 +2119,15 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
 
         # find feature
-        idx = param_dict['feature_names'].index('ftForce_mag_integ')
-        # split success
-        success_idx = d['success_idx_list']
-        # update min/max
-        param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
-        param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
+        for feature_name in ['ftForce_mag_integ', 'ftForce_mag_zero']:
+            if feature_name in param_dict['feature_names']:
+                idx = param_dict['feature_names'].index(feature_name)
+                # split success
+                success_idx = d['success_idx_list']
+                # update min/max
+                param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
+                param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
-        # find feature
-        idx = param_dict['feature_names'].index('ftForce_mag_zero')
-        # split success
-        success_idx = d['success_idx_list']
-        # update min/max
-        param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
-        param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
 
         
