@@ -629,12 +629,12 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
         ## # 51%
@@ -659,15 +659,16 @@ if __name__ == '__main__':
 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5']
-
+        
+        # 56%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
         ##                                             'crossmodal_landmarkEEAng']
-        
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
-        ##                                             'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
+        # 57%
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
+                                                    'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
 
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_ftForce_zero',\
-                                                    'crossmodal_landmarkEEDist']
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_ftForce_zero',\
+        ##                                             'crossmodal_landmarkEEDist']
 
 
         #------------------------------------------------------------------------------------------------
@@ -677,7 +678,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 2.3, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 7.0
+        param_dict['HMM']['scale'] = 9.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
