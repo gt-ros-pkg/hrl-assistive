@@ -2891,9 +2891,9 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*1.0, \
+                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
                      cov_mult=cov_mult, use_pkl=False)
-                     ## np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
+                     ## np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*1.0, \
         if ret == 'Failure' or np.isnan(ret):
             print "hmm training failed"
             sys.exit()
