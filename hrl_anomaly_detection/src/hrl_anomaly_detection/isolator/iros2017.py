@@ -452,6 +452,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     
     feature_idx_list = []
     for i in xrange(2):
+        print param_dict[i]['data_param']['handFeatures']
+        
         feature_idx_list.append([])
         for feature in param_dict[i]['data_param']['handFeatures']:
             feature_idx_list[i].append(d['param_dict']['feature_names'].index(feature))
@@ -459,8 +461,11 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         successData = copy.copy(success_isol_data[feature_idx_list[i]])
         failureData = copy.copy(failure_isol_data[feature_idx_list[i]])
         print feature_idx_list
-        HMM_dict['scale'] = param_dict
-            
+        HMM_dict['scale'] = param_dict[i]['HMM']['scale']
+
+
+        sys.exit()
+
         #-----------------------------------------------------------------------------------------    
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
@@ -468,7 +473,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                                   HMM_dict, data_renew, startIdx, nState, cov, \
                                   noise_mag=0.03, diag=False, \
                                   verbose=verbose)
-    sys.exit()
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
@@ -639,7 +643,7 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist']
 
 
-        # 84.5% scale1, 
+        # 84.5% scale1, 83.81% scale?
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -647,11 +651,11 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         # 56% scale?,  
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
@@ -672,12 +676,12 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict1 = copy.copy(param_dict)
+        param_dict1 = copy.deepcopy(param_dict)
         param_dict1['data_param']['handFeatures'] = ['audioWristRMS', 'ftForce_z', \
                                                       'landmarkEEDist', 'kinJntEff_1']
         param_dict1['HMM']['scale'] = 6.111
                                                      
-        param_dict2 = copy.copy(param_dict)
+        param_dict2 = copy.deepcopy(param_dict)
         param_dict2['data_param']['handFeatures'] = ['ftForce_mag_integ', 'landmarkEEDist']
         param_dict2['HMM']['scale'] = 6.11
         
