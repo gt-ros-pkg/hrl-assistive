@@ -626,12 +626,12 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -661,11 +661,11 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5']
         
         # 56%
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
-        ##                                             'crossmodal_landmarkEEAng']
-        # 57%
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
-                                                    'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
+                                                    'crossmodal_landmarkEEAng']
+        # 57%
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
+        ##                                             'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_ftForce_zero',\
         ##                                             'crossmodal_landmarkEEDist']
