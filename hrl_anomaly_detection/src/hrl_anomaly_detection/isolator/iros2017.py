@@ -643,7 +643,8 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
         ##                                             'crossmodal_landmarkEEAng']        
 
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForceZ', 'unimodal_kinJntEff_3']
+        param_dict['data_param']['handFeatures'] = ['unimodal_kinJntEff_3', 'unimodal_audioWristRMS',\
+                                                    'unimodal_landmarkDist', 'unimodal_kinJntEff_5']
                                                      
         ## # 56%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
@@ -661,8 +662,8 @@ if __name__ == '__main__':
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen )
-                             ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                             find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                             ## find_param=False, data_gen=opt.bDataGen )
 
     elif opt.evaluation_double:
 
