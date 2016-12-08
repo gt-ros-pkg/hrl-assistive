@@ -141,10 +141,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_isol_data)):
 
-        ## successData = copy.copy(d['successIsolData'][[0,i]])
-        ## failureData = copy.copy(d['failureIsolData'][[0,i]])
-        successData = copy.copy(d['successIsolData'][i:i+1])
-        failureData = copy.copy(d['failureIsolData'][i:i+1])
+        successData = copy.copy(d['successIsolData'][[12,i]])
+        failureData = copy.copy(d['failureIsolData'][[12,i]])
+        ## successData = copy.copy(d['successIsolData'][i:i+1])
+        ## failureData = copy.copy(d['failureIsolData'][i:i+1])
 
         success_files = d['success_files']
         failure_files = d['failure_files']
@@ -590,9 +590,9 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['HMM']['scale'] = 8.0
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta','crossmodal_landmarkEEDist']
-        
-                                                    ## 'unimodal_kinDesEEChange']
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
+                                                    'crossmodal_landmarkEEAng']
+        #'crossmodal_landmarkEEDist'
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
@@ -610,8 +610,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        param_dict['ROC']['methods'] = ['progress']
-        param_dict['HMM']['scale'] = 5.0
+        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['HMM']['scale'] = 7.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
