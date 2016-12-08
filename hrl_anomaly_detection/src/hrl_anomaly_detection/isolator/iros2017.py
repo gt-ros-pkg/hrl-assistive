@@ -588,7 +588,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['HMM']['scale'] = 20.0
+        param_dict['HMM']['scale'] = 7.0
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero']
 
         import hrl_anomaly_detection.data_viz as dv        
@@ -635,15 +635,17 @@ if __name__ == '__main__':
                                                     
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_landmarkDist',\
                                                     'crossmodal_landmarkEEAng']
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist',\
+                                                    'crossmodal_landmarkEEAng']        
 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForceZ', 'unimodal_kinJntEff_3']
                                                      
-        # 56%
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        # 
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        ## # 56%
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        ## # 
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         
         
         param_dict['ROC']['methods'] = ['hmmgp']

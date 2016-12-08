@@ -1643,6 +1643,8 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
             if offset_flag: #correct???????
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
+            unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
+
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
