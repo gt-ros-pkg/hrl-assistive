@@ -635,6 +635,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
+
         ## # 51%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
         ## # 52%
