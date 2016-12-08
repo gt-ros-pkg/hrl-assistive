@@ -1623,7 +1623,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 if 'ftForce_mag' not in param_dict['feature_names']:
                     param_dict['feature_names'].append('ftForce_mag')
 
-
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_zero' in feature_list:
             ftForce = d['ftForceList'][idx]
@@ -1641,6 +1640,27 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if offset_flag: #correct???????
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag_zero' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_zero')
+
+
+        # Unimodal feature - Force zeroing -------------------------------------------
+        if 'unimodal_ftForce_integ' in feature_list:
+            ftForce = d['ftForceList'][idx]
+
+            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
+            for i in xrange(len(ftForce)):
+                ftForce[i] -= unimodal_ftForce_mean[i]
+                
+            # magnitude
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
+            if offset_flag: #correct???????
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+
             # cumulation
             for i in xrange(1,len(unimodal_ftForce_mag)):
                 unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
@@ -1650,8 +1670,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-            if 'ftForce_mag_zero' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ftForce_mag_zero')
+            if 'ftForce_mag_integ' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_integ')
 
 
         # Unimodal feature - Force zeroing -------------------------------------------
@@ -2099,13 +2119,20 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
 
         # find feature
-        idx = param_dict['feature_names'].index('ftForce_mag_zero')
+        idx = param_dict['feature_names'].index('ftForce_mag_integ')
         # split success
         success_idx = d['success_idx_list']
         # update min/max
         param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
         param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
+        # find feature
+        idx = param_dict['feature_names'].index('ftForce_mag_zero')
+        # split success
+        success_idx = d['success_idx_list']
+        # update min/max
+        param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
+        param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
 
         
