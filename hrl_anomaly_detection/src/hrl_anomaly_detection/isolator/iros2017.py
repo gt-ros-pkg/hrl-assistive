@@ -432,7 +432,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                            downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
-                           isolationFeatures=param_dict['data_param']['isolationFeatures'], \
+                           isolationFeatures=data_dict['isolationFeatures'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
         success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \

@@ -186,17 +186,6 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
                          'unimodal_landmarkDist'] 
-    ## isolationFeatures = ['unimodal_kinDesEEChange',\ 
-    ##                      'unimodal_kinEEChange',\
-    ##                      'unimodal_audioWristRMS', \
-    ##                      'unimodal_kinJntEff', \
-    ##                      'unimodal_ftForce_delta',\
-    ##                      'unimodal_ftForce_zero',\
-    ##                      'unimodal_ftForce_integ',\
-    ##                      'unimodal_ftForce',\
-    ##                      'crossmodal_landmarkEEDist', \
-    ##                      'crossmodal_landmarkEEAng',\
-    ##                      'unimodal_landmarkDist'] 
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
