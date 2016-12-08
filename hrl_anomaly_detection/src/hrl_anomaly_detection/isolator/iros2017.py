@@ -166,7 +166,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         try:
             dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                       task_name, processed_data_path,\
-                                      HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                      HMM_dict, data_renew, startIdx, nState, cov, \
                                       success_files=success_files, failure_files=failure_files,\
                                       noise_mag=0.03, verbose=verbose)
         except:
@@ -343,7 +343,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               noise_mag=0.03, diag=False, \
                               verbose=verbose)
 
@@ -458,7 +458,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               noise_mag=0.03, diag=False, \
                               verbose=verbose)
 
@@ -625,13 +625,15 @@ if __name__ == '__main__':
         ## 62
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
-        
 
+        
+        # 57%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist']
 
+        # 59%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        

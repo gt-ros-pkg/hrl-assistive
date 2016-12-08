@@ -2821,7 +2821,7 @@ def applying_offset(data, normalTrainData, startOffsetSize, nEmissionDim):
 
 def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            task_name, processed_data_path,\
-                           HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                           HMM_dict, data_renew, startIdx, nState, cov, \
                            success_files=None, failure_files=None,\
                            noise_mag = 0.03, one_class=True,\
                            add_logp_d=False, diag=False, verbose=False):
@@ -2845,13 +2845,11 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             print idx, " : learned hmm exists"
             continue
 
-        print np.shape(failureData[0]), max(abnormalTrainIdx)
-
         # dim x sample x length
-        normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale'] 
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale'] 
-        abnormalTestData  = failureData[:, abnormalTestIdx, :] * HMM_dict['scale'] 
+        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) * HMM_dict['scale']
+        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :]) * HMM_dict['scale'] 
+        normalTestData    = copy.copy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
+        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
         if one_class: abnormalTrainData = None
 
         # training hmm
@@ -2862,7 +2860,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*scale, \
+                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
                      cov_mult=cov_mult, use_pkl=False)
         if ret == 'Failure' or np.isnan(ret):
             print "hmm training failed"
@@ -2890,7 +2888,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         if diag:
             ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
             ret = ml.fit(normalTrainData+\
-                         np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*scale, \
+                         np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
                          cov_mult=cov_mult, use_pkl=False, cov_type='diag')
             if ret == 'Failure' or np.isnan(ret): sys.exit()
 
