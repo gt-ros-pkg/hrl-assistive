@@ -2101,7 +2101,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         # find feature
         idx = param_dict['feature_names'].index('ftForce_mag_zero')
         # split success
-        success_idx = d['success_list']
+        success_idx = d['success_idx_list']
 
         # update min/max
         param_dict['feature_max'][idx] = np.max(np.array(features[idx][param_dict][success_idx]).flatten())
