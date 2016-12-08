@@ -594,9 +594,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = 8.0
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEAng']
-        #'crossmodal_landmarkEEDist'
-        
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta']
+        #'crossmodal_landmarkEEDist'        
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
@@ -653,7 +651,8 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
 
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
+        # 45%
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
 
         #------------------------------------------------------------------------------------------------
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3', \
@@ -667,17 +666,16 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         
-        
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.3, nPoints)*-1.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 2.3, nPoints)*-1.0
         param_dict['HMM']['scale'] = 7.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen, target_class=target_class)
-                             ## find_param=False, data_gen=opt.bDataGen )
+
 
     elif opt.evaluation_double:
 
