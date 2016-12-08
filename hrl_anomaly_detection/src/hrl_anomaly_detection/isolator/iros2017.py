@@ -595,6 +595,8 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEAng']
         #'crossmodal_landmarkEEDist'
+        
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta']
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
