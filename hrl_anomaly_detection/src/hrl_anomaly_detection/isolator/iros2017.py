@@ -585,7 +585,8 @@ if __name__ == '__main__':
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
-                       max_time=param_dict['data_param']['max_time'], target_class=target_class)
+                       max_time=param_dict['data_param']['max_time'])
+                       ## max_time=param_dict['data_param']['max_time'], target_class=target_class)
 
     elif opt.bLikelihoodPlot:
         save_data_path = os.path.expanduser('~')+\
