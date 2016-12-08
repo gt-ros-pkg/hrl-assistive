@@ -334,6 +334,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
+    # temp
+    kFold_list = kFold_list[:8]
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -643,8 +645,8 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
         ##                                             'crossmodal_landmarkEEAng']        
 
-        param_dict['data_param']['handFeatures'] = ['unimodal_kinJntEff_3', 'unimodal_audioWristRMS',\
-                                                    'unimodal_landmarkDist', 'unimodal_kinJntEff_5']
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinJntEff_3', 'unimodal_audioWristRMS',\
+        ##                                             'unimodal_landmarkDist', 'unimodal_kinJntEff_5']
                                                      
         ## # 56%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
@@ -657,7 +659,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(0.1, 2.3, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 5.0
+        param_dict['HMM']['scale'] = 7.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
