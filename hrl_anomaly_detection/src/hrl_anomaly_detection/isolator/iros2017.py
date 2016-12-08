@@ -649,13 +649,16 @@ if __name__ == '__main__':
         # 54%
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEAng']
-
-        ## 
+        ## 62
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
                                                     'crossmodal_landmarkEEAng']        
-
         # 45%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
+
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3',\
+                                                    'unimodal_audioWristRMS']        
+
 
         #------------------------------------------------------------------------------------------------
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3', \
