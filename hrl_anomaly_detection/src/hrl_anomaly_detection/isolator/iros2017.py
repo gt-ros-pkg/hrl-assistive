@@ -449,10 +449,12 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     #-----------------------------------------------------------------------------------------
     # feature selection
+    for i in xrange(2):
+        print d['param_dict'+str(i+1)].keys()
+        
 
-    print d['param_dict'].keys()
+        
     sys.exit()
-    ## param_dict1
     
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -630,12 +632,11 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist']
 
-        ## 73%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist',\
-                                                    'crossmodal_landmarkDist']
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
@@ -663,8 +664,8 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict1 = copy.copy(param_dict)
-        param_dict1['data_param']['handFeatures1'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
-                                                     'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']
+        param_dict1['data_param']['handFeatures1'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                                                      'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         param_dict1['HMM']['scale'] = 6.111
                                                      
         param_dict2 = copy.copy(param_dict)
