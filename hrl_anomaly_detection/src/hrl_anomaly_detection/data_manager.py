@@ -473,6 +473,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                                              time_sort=time_sort, no_split=True)
 
+        ## data_renew = False
         print "start to load data"
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
@@ -497,7 +498,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         if len(isolationFeatures) > 0:
             _, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures,\
                                                                cut_data=cut_data)
-
 
         ## print param_dict.keys()
         ## print param_dict['feature_names']
@@ -2102,11 +2102,13 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         idx = param_dict['feature_names'].index('ftForce_mag_zero')
         # split success
         success_idx = d['success_idx_list']
-
         # update min/max
-        param_dict['feature_max'][idx] = np.max(np.array(features[idx][param_dict][success_idx]).flatten())
-        param_dict['feature_min'][idx] = np.min(np.array(features[idx][param_dict][success_idx]).flatten())
-                
+        param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
+        param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
+
+
+
+        
     scaled_features = []
     for i, feature in enumerate(features):
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:

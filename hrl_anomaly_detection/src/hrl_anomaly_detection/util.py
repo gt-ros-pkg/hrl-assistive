@@ -53,7 +53,7 @@ def extrapolateData(data, maxsize):
         # need to implement incremental extrapolation
         return [x if len(x[0]) >= maxsize else x + [x[:,-1]]*(maxsize-len(x[0])) for x in data]
     else:
-        # need to implement incremental extrapolation        
+        # need to implement incremental extrapolation
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
@@ -627,6 +627,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # Extrapolate each time step
         for key in data_dict.keys():
             if 'file' in key: continue
+            if 'success_idx_list' in key: continue
+            if 'failure_idx_list' in key: continue
             if data_dict[key] == []: continue
             if 'fabric' in key:
                 data_dict[key] = [x if len(x) >= max_size else x + []*(max_size-len(x)) for x in data_dict[key]]
