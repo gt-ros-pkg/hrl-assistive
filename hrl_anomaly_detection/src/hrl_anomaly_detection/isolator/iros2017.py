@@ -652,8 +652,8 @@ if __name__ == '__main__':
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen)
-                             ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                             find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                             ## find_param=False, data_gen=opt.bDataGen)
 
 
     elif opt.evaluation_double:
