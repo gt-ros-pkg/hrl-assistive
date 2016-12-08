@@ -135,6 +135,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
 
+    #temp
+    kFold_list = kFold_list[:8]
 
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
@@ -643,7 +645,8 @@ if __name__ == '__main__':
         ## # 57%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange',\
         ##                                             'crossmodal_landmarkEEAng']
-                                                    
+
+        # 54%
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEAng']
 
@@ -652,7 +655,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEAng']        
 
         # 45%
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
 
         #------------------------------------------------------------------------------------------------
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3', \
