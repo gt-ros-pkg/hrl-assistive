@@ -646,6 +646,7 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
+        # 56% scale?,  
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
