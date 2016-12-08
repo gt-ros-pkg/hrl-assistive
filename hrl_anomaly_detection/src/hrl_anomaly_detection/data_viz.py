@@ -180,7 +180,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                                                            add_logp_d=False, \
                                                            cov_type='full')
 
-        if plot_feature is False: ax = fig.add_subplot()
+        if plot_feature is False: ax = fig.add_subplot(1,1,1)
         else:                     ax = fig.add_subplot(1+len(normalTrainData),1,1)
                 
                 
