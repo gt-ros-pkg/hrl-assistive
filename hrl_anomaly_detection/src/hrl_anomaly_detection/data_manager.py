@@ -435,7 +435,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
 def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
                 local_range, \
-                downSampleSize=200, scale=1.0, ae_data=False, \
+                downSampleSize=200, ae_data=False, \
                 cut_data=None, init_param_dict=None, \
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
@@ -459,7 +459,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         # Task-oriented hand-crafted features
-        print data_dict.keys()
         successDataList = data_dict['successDataList']
         failureDataList = data_dict['failureDataList']
         failureNameList = None #failure_data_dict['fileNameList']
@@ -472,7 +471,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
-                                            time_sort=time_sort, no_split=True)
+                                                             time_sort=time_sort, no_split=True)
 
         print "start to load data"
         # loading and time-sync    
@@ -488,15 +487,15 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
 
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
-            allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            _, _ = extractHandFeature(all_data_dict, handFeatures,\
                                             init_param_dict=init_param_dict, cut_data=cut_data)
             param_dict=init_param_dict                                            
         else:
-            allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
 
         if len(isolationFeatures) > 0:
-            allData_isol, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures, scale=scale,\
+            _, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures,\
                                                                cut_data=cut_data)
 
 
@@ -515,7 +514,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         failureFileList = []
         for i in xrange(len(subject_names)):
 
-            ## train_subjects = subject_names[:i]+subject_names[i+1:]
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
                                                                  task_name,\
                                                                  time_sort=time_sort)
@@ -537,10 +535,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             if len(handFeatures) > 0:
 
                 print " --------------------- Success -----------------------------"  
-                successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+                successData, _      = extractHandFeature(success_data_dict, handFeatures, \
                                                          init_param_dict=param_dict, cut_data=cut_data)
                 print " --------------------- Failure -----------------------------"  
-                failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+                failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
                                                          init_param_dict=param_dict, cut_data=cut_data)
                 successDataList.append(successData)
                 failureDataList.append(failureData)
@@ -548,10 +546,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             # Get isolation data
             if len(isolationFeatures) > 0:
                 print " --------------------- Success -----------------------------"  
-                successData, _ = extractHandFeature(success_data_dict, isolationFeatures, scale=scale, \
+                successData, _ = extractHandFeature(success_data_dict, isolationFeatures, \
                                                     init_param_dict=param_dict_isol, cut_data=cut_data)
                 print " --------------------- Failure -----------------------------"  
-                failureData, _ = extractHandFeature(failure_data_dict, isolationFeatures, scale=scale, \
+                failureData, _ = extractHandFeature(failure_data_dict, isolationFeatures, \
                                                     init_param_dict=param_dict_isol, cut_data=cut_data)
                 successIsolDataList.append(successData)
                 failureIsolDataList.append(failureData)
@@ -1456,7 +1454,7 @@ def variancePooling(X, param_dict):
     
 #-------------------------------------------------------------------------------------------------
 
-def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dict=None, verbose=False, \
+def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, verbose=False, \
                        renew_minmax=False):
 
     if len(d['timesList']) == 0: return [], {}
@@ -2098,14 +2096,23 @@ def extractHandFeature(d, feature_list, scale=1.0, cut_data=None, init_param_dic
     # Scaling ------------------------------------------------------------
     if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]    
+        param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
+
+        # find feature
+        idx = param_dict['feature_names'].index('ftForce_mag_zero')
+        # split success
+        success_idx = d['success_list']
+
+        # update min/max
+        param_dict['feature_max'][idx] = np.max(np.array(features[idx][param_dict][success_idx]).flatten())
+        param_dict['feature_min'][idx] = np.min(np.array(features[idx][param_dict][success_idx]).flatten())
                 
     scaled_features = []
     for i, feature in enumerate(features):
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
             scaled_features.append( np.array(feature) )
         else:
-            scaled_features.append( scale*( np.array(feature) - param_dict['feature_min'][i] )\
+            scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
                                     /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
     return scaled_features, param_dict

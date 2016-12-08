@@ -108,6 +108,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         print "Wrong max time!!!!!!!!!!!!!!!"
         sys.exit()
 
+
+    data_dict['success_idx_list'] = []
+    data_dict['failure_idx_list'] = []
+
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
@@ -117,7 +121,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         ##     for c in cause:
         ##         description += c
         raw_data_dict['fileNameList'].append(fileName)
-        data_dict['fileNameList'].append(fileName)        
+        data_dict['fileNameList'].append(fileName)
+
+        cause = os.path.split(fileName)[1]
+        if cause.find('success')>=0:
+            data_dict['success_idx_list'].append(idx)
+        else:
+            data_dict['failure_idx_list'].append(idx)
+        
 
         # Load raw data
         if verbose: print fileName

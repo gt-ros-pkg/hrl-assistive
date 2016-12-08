@@ -102,7 +102,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         '''        
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            isolationFeatures=param_dict['data_param']['isolationFeatures'], \
@@ -317,7 +317,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         '''        
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
@@ -429,7 +429,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         '''        
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            isolationFeatures=param_dict['data_param']['isolationFeatures'], \
@@ -573,14 +573,14 @@ if __name__ == '__main__':
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
                                                     ## 'unimodal_ftForceZ', \
-                                                    'crossmodal_landmarkEEDist', \
-                                                    'crossmodal_landmarkEEAng',\
+                                                    ## 'crossmodal_landmarkEEDist', \
+                                                    ## 'crossmodal_landmarkEEAng',\
                                                     ## 'unimodal_fabricForce',\
                                                     'unimodal_landmarkDist']
                                                     
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
-                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
+                       downSampleSize=param_dict['data_param']['downSampleSize'], \
                        success_viz=success_viz, failure_viz=failure_viz,\
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
