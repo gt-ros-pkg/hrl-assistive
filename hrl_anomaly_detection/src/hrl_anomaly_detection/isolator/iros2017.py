@@ -628,6 +628,9 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         ## # 51%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange']
@@ -646,6 +649,8 @@ if __name__ == '__main__':
         ## # 66%
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'crossmodal_landmarkEEDist',\
         ##                                             'crossmodal_landmarkEEAng']        
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3']
 
         #------------------------------------------------------------------------------------------------
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3', \
